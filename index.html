@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickGigs — Coming Soon</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--p1:#0d0520;--p2:#1a0a3d;--p3:#2d1a6e;--a:#9b6fc4;--al:#c8a8e9;--w:#ffffff;--wm:rgba(255,255,255,0.7);--ws:rgba(255,255,255,0.4);}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);min-height:100vh;overflow-x:hidden;}
+.stars{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.star{position:absolute;border-radius:50%;background:white;animation:twinkle var(--d,3s) ease-in-out infinite;opacity:0;}
+@keyframes twinkle{0%,100%{opacity:0;}50%{opacity:var(--op,0.8);}}
+.orb{position:fixed;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(107,63,160,0.3) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:0;animation:pulse 4s ease-in-out infinite;}
+@keyframes pulse{0%,100%{transform:translate(-50%,-50%) scale(1);}50%{transform:translate(-50%,-50%) scale(1.1);}}
+main{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:3rem 1.5rem 4rem;}
+.logo{font-family:'Playfair Display',serif;font-size:1.1rem;font-style:italic;color:var(--al);letter-spacing:0.05em;margin-bottom:4rem;opacity:0.9;}
+.hero{text-align:center;max-width:680px;margin-bottom:3rem;}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:0.72rem;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;color:var(--a);margin-bottom:1.5rem;}
+.eyebrow::before,.eyebrow::after{content:'';display:block;width:28px;height:1px;background:var(--a);}
+h1{font-family:'Playfair Display',serif;font-size:clamp(2.8rem,7vw,5rem);font-weight:700;line-height:1.05;margin-bottom:1.2rem;background:linear-gradient(135deg,#fff 30%,var(--al) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+h1 em{font-style:italic;font-weight:400;}
+.subtitle{font-size:1.05rem;color:var(--wm);line-height:1.75;font-weight:300;max-width:500px;margin:0 auto;}
+.counter-wrap{margin-bottom:2.5rem;text-align:center;}
+.counter{display:inline-flex;align-items:center;gap:12px;background:rgba(107,63,160,0.15);border:1px solid rgba(200,168,233,0.2);border-radius:50px;padding:10px 24px;}
+.counter-num{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:700;color:var(--al);line-height:1;}
+.counter-label{font-size:0.8rem;color:var(--wm);font-weight:300;line-height:1.3;text-align:left;}
+.counter-dot{width:8px;height:8px;border-radius:50%;background:#4ade80;box-shadow:0 0 8px #4ade80;animation:blink 2s ease-in-out infinite;flex-shrink:0;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.form-wrap{width:100%;max-width:480px;margin-bottom:4rem;}
+.form-label{font-size:0.75rem;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--ws);display:block;margin-bottom:10px;text-align:center;}
+.form-row{display:flex;gap:8px;}
+.form-input{flex:1;padding:14px 18px;background:rgba(255,255,255,0.06);border:1px solid rgba(200,168,233,0.25);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:0.9rem;color:var(--w);outline:none;transition:border-color 0.2s,background 0.2s;}
+.form-input::placeholder{color:var(--ws);}
+.form-input:focus{border-color:rgba(200,168,233,0.6);background:rgba(255,255,255,0.09);}
+.form-btn{padding:14px 24px;background:var(--a);color:white;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:500;cursor:pointer;white-space:nowrap;transition:background 0.2s,transform 0.15s;}
+.form-btn:hover{background:#b07fd4;transform:translateY(-1px);}
+.form-note{font-size:0.75rem;color:var(--ws);text-align:center;margin-top:10px;}
+.success-msg{display:none;text-align:center;padding:16px;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:12px;color:#4ade80;font-size:0.9rem;}
+.how-title{font-size:0.72rem;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:var(--ws);text-align:center;margin-bottom:1.5rem;}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;width:100%;max-width:780px;margin-bottom:4rem;}
+.step{background:rgba(255,255,255,0.04);border:1px solid rgba(200,168,233,0.12);border-radius:16px;padding:1.5rem;text-align:center;transition:border-color 0.2s,background 0.2s;}
+.step:hover{border-color:rgba(200,168,233,0.3);background:rgba(255,255,255,0.07);}
+.step-icon{font-size:2rem;margin-bottom:0.8rem;display:block;}
+.step-title{font-size:0.95rem;font-weight:500;color:var(--w);margin-bottom:0.4rem;}
+.step-desc{font-size:0.82rem;color:var(--wm);line-height:1.6;font-weight:300;}
+.step-mode{display:inline-block;font-size:0.65rem;font-weight:500;padding:2px 8px;border-radius:20px;margin-top:6px;letter-spacing:0.06em;text-transform:uppercase;}
+.quick{background:rgba(234,179,8,0.2);color:#fbbf24;}
+.standard{background:rgba(107,63,160,0.3);color:var(--al);}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:1rem;width:100%;max-width:560px;margin-bottom:4rem;}
+.mode-card{border-radius:16px;padding:1.5rem;text-align:center;}
+.mode-card.quick-card{background:rgba(234,179,8,0.08);border:1px solid rgba(234,179,8,0.2);}
+.mode-card.std-card{background:rgba(107,63,160,0.15);border:1px solid rgba(200,168,233,0.2);}
+.mode-icon{font-size:1.8rem;margin-bottom:0.6rem;display:block;}
+.mode-name{font-size:0.9rem;font-weight:500;margin-bottom:0.3rem;}
+.quick-card .mode-name{color:#fbbf24;}
+.std-card .mode-name{color:var(--al);}
+.mode-desc{font-size:0.78rem;color:var(--wm);line-height:1.5;font-weight:300;}
+footer{position:relative;z-index:1;text-align:center;padding:2rem;font-size:0.75rem;color:var(--ws);}
+footer span{color:var(--a);}
+@media(max-width:500px){.form-row{flex-direction:column;}.modes{grid-template-columns:1fr;}.steps{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="orb"></div>
+<main>
+  <div class="logo">QuickGigs</div>
+  <div class="hero">
+    <div class="eyebrow">Coming soon to Canada</div>
+    <h1>Get anything done.<br><em>Earn doing anything.</em></h1>
+    <p class="subtitle">QuickGigs connects people who need help with people who have skills — instantly or scheduled. Any task. Any city. Canada wide.</p>
+  </div>
+  <div class="counter-wrap">
+    <div class="counter">
+      <div class="counter-dot"></div>
+      <div class="counter-num" id="counter">0</div>
+      <div class="counter-label">people on<br>the waitlist</div>
+    </div>
+  </div>
+  <div class="form-wrap">
+    <label class="form-label">Get early access — be first in Calgary</label>
+    <form id="waitlistForm" action="https://formspree.io/f/xnjyyrqa" method="POST">
+      <input type="hidden" name="_subject" value="QuickGigs Waitlist Signup">
+      <input type="hidden" name="_replyto" value="mowebsiteco@gmail.com">
+      <div class="form-row" style="flex-direction:column;gap:8px;">
+        <input class="form-input" type="text" name="name" placeholder="Your first name" required style="margin-bottom:8px;">
+        <input class="form-input" type="email" name="email" placeholder="your@email.com" required>
+        <button class="form-btn" type="submit" style="width:100%;padding:14px;">Join the waitlist</button>
+      </div>
+    </form>
+    <div class="success-msg" id="successMsg">You're on the list! We'll email you the moment QuickGigs launches in Calgary.</div>
+    <p class="form-note">No spam ever. Unsubscribe anytime. Launching in Calgary first.</p>
+  </div>
+  <p class="how-title">Two ways to use QuickGigs</p>
+  <div class="modes">
+    <div class="mode-card quick-card">
+      <span class="mode-icon">⚡</span>
+      <div class="mode-name">Quick mode</div>
+      <p class="mode-desc">Need help within the hour? Post a task and a nearby worker accepts in 60 seconds — like Uber for any job.</p>
+    </div>
+    <div class="mode-card std-card">
+      <span class="mode-icon">📋</span>
+      <div class="mode-name">Standard mode</div>
+      <p class="mode-desc">Plan ahead. Post your task, review applicants, pick the best person, and schedule it when it suits you.</p>
+    </div>
+  </div>
+  <p class="how-title">How it works</p>
+  <div class="steps">
+    <div class="step">
+      <span class="step-icon">📝</span>
+      <div class="step-title">Post your task</div>
+      <p class="step-desc">Describe what you need done, set your budget, and choose quick or standard mode.</p>
+      <span class="step-mode quick">30 seconds</span>
+    </div>
+    <div class="step">
+      <span class="step-icon">🤝</span>
+      <div class="step-title">Get matched</div>
+      <p class="step-desc">Workers nearby apply or accept instantly. Review their profiles, ratings and price.</p>
+      <span class="step-mode standard">You choose</span>
+    </div>
+    <div class="step">
+      <span class="step-icon">✅</span>
+      <div class="step-title">Task gets done</div>
+      <p class="step-desc">Your worker completes the task. Payment held safely until you confirm it's done.</p>
+      <span class="step-mode quick">Secure escrow</span>
+    </div>
+    <div class="step">
+      <span class="step-icon">⭐</span>
+      <div class="step-title">Review and repeat</div>
+      <p class="step-desc">Rate your experience. Build a reputation. Find your go-to people for regular tasks.</p>
+      <span class="step-mode standard">Both ways</span>
+    </div>
+  </div>
+</main>
+<footer>© 2026 QuickGigs · A <span>MoTechCo</span> platform · Calgary, Canada · Launching soon</footer>
+<script>
+var stars = document.getElementById('stars');
+for(var i=0;i<120;i++){
+  var s=document.createElement('div');
+  s.className='star';
+  var size=Math.random()*2.5+0.5;
+  s.style.cssText='width:'+size+'px;height:'+size+'px;left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;--d:'+(Math.random()*4+2)+'s;--op:'+(Math.random()*0.7+0.1)+';animation-delay:'+Math.random()*5+'s';
+  stars.appendChild(s);
+}
+var target=47,current=0,el=document.getElementById('counter');
+var timer=setInterval(function(){
+  current+=Math.ceil((target-current)/8);
+  if(current>=target){current=target;clearInterval(timer);}
+  el.textContent=current;
+},60);
+document.getElementById('waitlistForm').addEventListener('submit',function(e){
+  e.preventDefault();
+  var form=this;
+  fetch(form.action,{method:'POST',body:new FormData(form),headers:{'Accept':'application/json'}})
+  .then(function(r){
+    form.style.display='none';
+    document.getElementById('successMsg').style.display='block';
+    document.getElementById('counter').textContent=parseInt(document.getElementById('counter').textContent)+1;
+  }).catch(function(){
+    form.style.display='none';
+    document.getElementById('successMsg').style.display='block';
+  });
+});
+</script>
+</body>
+</html>
