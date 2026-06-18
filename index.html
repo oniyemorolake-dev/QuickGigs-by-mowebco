@@ -16,7 +16,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);min-he
 .orb{position:fixed;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(107,63,160,0.3) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:0;animation:pulse 4s ease-in-out infinite;}
 @keyframes pulse{0%,100%{transform:translate(-50%,-50%) scale(1);}50%{transform:translate(-50%,-50%) scale(1.1);}}
 main{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:3rem 1.5rem 4rem;}
-.logo{font-family:'Playfair Display',serif;font-size:1.1rem;font-style:italic;color:var(--al);letter-spacing:0.05em;margin-bottom:4rem;opacity:0.9;}
+.logo{display:flex;flex-direction:column;align-items:center;gap:0.7rem;margin-bottom:3.2rem;opacity:0.95;}
+.logo img{width:min(260px,62vw);height:auto;display:block;filter:drop-shadow(0 10px 28px rgba(0,0,0,0.35));}
+.logo-text{font-family:'Playfair Display',serif;font-size:0.9rem;font-style:italic;color:var(--al);letter-spacing:0.06em;}
 .hero{text-align:center;max-width:680px;margin-bottom:3rem;}
 .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:0.72rem;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;color:var(--a);margin-bottom:1.5rem;}
 .eyebrow::before,.eyebrow::after{content:'';display:block;width:28px;height:1px;background:var(--a);}
@@ -67,7 +69,10 @@ footer span{color:var(--a);}
 <div class="stars" id="stars"></div>
 <div class="orb"></div>
 <main>
-  <div class="logo">QuickGigs</div>
+  <div class="logo" aria-label="QuickGigs brand">
+    <img src="QuickGigsLogo.png" alt="QuickGigs logo">
+    <div class="logo-text">QuickGigs</div>
+  </div>
   <div class="hero">
     <div class="eyebrow">Coming soon to Canada</div>
     <h1>Get anything done.<br><em>Earn doing anything.</em></h1>
