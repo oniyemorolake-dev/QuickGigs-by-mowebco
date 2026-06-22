@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-:root{--p1:#0d0520;--a:#9b6fc4;--al:#c8a8e9;--w:#ffffff;--wm:rgba(255,255,255,0.7);--ws:rgba(255,255,255,0.4);--err:#ff6b6b;}
+:root{--p1:#0d0520;--a:#9b6fc4;--al:#c8a8e9;--w:#ffffff;--wm:rgba(255,255,255,0.7);--ws:rgba(255,255,255,0.4);--err:#ff6b6b;--ok:#4ade80;}
 body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.5rem;}
 .stars{position:fixed;inset:0;z-index:0;pointer-events:none;}
 .star{position:absolute;border-radius:50%;background:white;animation:twinkle var(--d,3s) ease-in-out infinite;opacity:0;}
@@ -22,16 +22,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);min-he
 .field input{width:100%;padding:12px 16px;background:rgba(255,255,255,0.06);border:1px solid rgba(200,168,233,0.25);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.9rem;color:var(--w);outline:none;transition:border-color 0.2s;}
 .field input::placeholder{color:var(--ws);}
 .field input:focus{border-color:rgba(200,168,233,0.6);}
-.forgot{font-size:0.75rem;color:var(--al);text-decoration:none;float:right;margin-top:-20px;margin-bottom:1rem;display:block;text-align:right;}
+.forgot{font-size:0.75rem;color:var(--al);text-decoration:none;float:right;margin-top:-20px;margin-bottom:1rem;display:block;text-align:right;cursor:pointer;}
 .btn{width:100%;padding:14px;background:var(--a);color:white;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:500;cursor:pointer;transition:background 0.2s;margin-top:0.5rem;}
 .btn:hover{background:#b07fd4;}
+.btn:disabled{opacity:0.6;cursor:not-allowed;}
 .divider{display:flex;align-items:center;gap:12px;margin:1.2rem 0;}
 .divider::before,.divider::after{content:'';flex:1;height:0.5px;background:rgba(200,168,233,0.2);}
 .divider span{font-size:0.75rem;color:var(--ws);}
 .signup-link{text-align:center;font-size:0.85rem;color:var(--wm);}
 .signup-link a{color:var(--al);text-decoration:none;font-weight:500;}
-.error{font-size:0.75rem;color:var(--err);margin-top:4px;display:none;}
-.error-box{background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);border-radius:8px;padding:10px 14px;font-size:0.82rem;color:var(--err);margin-bottom:1rem;display:none;}
+.msg-box{padding:12px 16px;border-radius:10px;font-size:0.85rem;margin-bottom:1rem;display:none;}
+.msg-box.error-msg{background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);color:var(--err);}
+.msg-box.ok-msg{background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);color:var(--ok);}
 </style>
 </head>
 <body>
@@ -41,8 +43,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);min-he
   <div class="logo">QuickGigs</div>
   <h1 class="title">Welcome back</h1>
   <p class="subtitle">Log in to your QuickGigs account</p>
-  <div class="error-box" id="errorBox">Invalid email or password. Please try again.</div>
-  <form id="loginForm" onsubmit="handleLogin(event)">
+
+  <div class="msg-box error-msg" id="errorMsg"></div>
+  <div class="msg-box ok-msg" id="okMsg"></div>
+
+  <form id="loginForm">
     <div class="field">
       <label>Email address</label>
       <input type="email" id="email" placeholder="you@example.com" required>
@@ -51,16 +56,87 @@ body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);min-he
       <label>Password</label>
       <input type="password" id="password" placeholder="Your password" required>
     </div>
-    <a href="#" class="forgot">Forgot password?</a>
-    <button type="submit" class="btn">Log in</button>
+    <span class="forgot" id="forgotLink">Forgot password?</span>
+    <button type="submit" class="btn" id="submitBtn">Log in</button>
   </form>
+
   <div class="divider"><span>or</span></div>
   <div class="signup-link">Don't have an account? <a href="signup.html">Sign up free</a></div>
 </div>
-<script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBzBXgOuHjpkee0aeIDfAKNSz-iLNRGhlw",
+  authDomain: "quickgigs-7b12d.firebaseapp.com",
+  projectId: "quickgigs-7b12d",
+  storageBucket: "quickgigs-7b12d.firebasestorage.app",
+  messagingSenderId: "698985399366",
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647",
+  measurementId: "G-82SPKK654N"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
 var stars=document.getElementById('stars');
 for(var i=0;i<80;i++){var s=document.createElement('div');s.className='star';var size=Math.random()*2+0.5;s.style.cssText='width:'+size+'px;height:'+size+'px;left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;--d:'+(Math.random()*4+2)+'s;--op:'+(Math.random()*0.6+0.1)+';animation-delay:'+Math.random()*5+'s';stars.appendChild(s);}
-function handleLogin(e){e.preventDefault();var btn=document.querySelector('.btn');btn.textContent='Logging in...';btn.disabled=true;setTimeout(function(){document.getElementById('errorBox').style.display='block';btn.textContent='Log in';btn.disabled=false;},1500);}
+
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var errorMsg = document.getElementById('errorMsg');
+  var okMsg = document.getElementById('okMsg');
+  var submitBtn = document.getElementById('submitBtn');
+  errorMsg.style.display = 'none';
+  okMsg.style.display = 'none';
+
+  var email = document.getElementById('email').value;
+  var password = document.getElementById('password').value;
+
+  submitBtn.textContent = 'Logging in...';
+  submitBtn.disabled = true;
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    okMsg.textContent = 'Welcome back! Redirecting...';
+    okMsg.style.display = 'block';
+    setTimeout(function(){ window.location.href = 'dashboard.html'; }, 1500);
+  } catch (error) {
+    var message = 'Invalid email or password. Please try again.';
+    if(error.code === 'auth/invalid-email') message = 'Please enter a valid email address.';
+    if(error.code === 'auth/user-not-found') message = 'No account found with this email. Sign up first!';
+    if(error.code === 'auth/wrong-password') message = 'Incorrect password. Try again.';
+    if(error.code === 'auth/invalid-credential') message = 'Invalid email or password. Please try again.';
+    errorMsg.textContent = message;
+    errorMsg.style.display = 'block';
+    submitBtn.textContent = 'Log in';
+    submitBtn.disabled = false;
+  }
+});
+
+document.getElementById('forgotLink').addEventListener('click', async function() {
+  var email = document.getElementById('email').value;
+  var errorMsg = document.getElementById('errorMsg');
+  var okMsg = document.getElementById('okMsg');
+  errorMsg.style.display = 'none';
+  okMsg.style.display = 'none';
+
+  if(!email) {
+    errorMsg.textContent = 'Enter your email above first, then click forgot password.';
+    errorMsg.style.display = 'block';
+    return;
+  }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    okMsg.textContent = 'Password reset email sent! Check your inbox.';
+    okMsg.style.display = 'block';
+  } catch (error) {
+    errorMsg.textContent = 'Could not send reset email. Check the address and try again.';
+    errorMsg.style.display = 'block';
+  }
+});
 </script>
 </body>
 </html>

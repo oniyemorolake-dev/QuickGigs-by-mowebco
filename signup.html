@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-:root{--p1:#0d0520;--a:#9b6fc4;--al:#c8a8e9;--w:#ffffff;--wm:rgba(255,255,255,0.7);--ws:rgba(255,255,255,0.4);--err:#ff6b6b;}
+:root{--p1:#0d0520;--a:#9b6fc4;--al:#c8a8e9;--w:#ffffff;--wm:rgba(255,255,255,0.7);--ws:rgba(255,255,255,0.4);--err:#ff6b6b;--ok:#4ade80;}
 body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.5rem;}
 .stars{position:fixed;inset:0;z-index:0;pointer-events:none;}
 .star{position:absolute;border-radius:50%;background:white;animation:twinkle var(--d,3s) ease-in-out infinite;opacity:0;}
@@ -28,6 +28,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);min-he
 .field input:focus{border-color:rgba(200,168,233,0.6);}
 .btn{width:100%;padding:14px;background:var(--a);color:white;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:500;cursor:pointer;transition:background 0.2s;margin-top:0.5rem;}
 .btn:hover{background:#b07fd4;}
+.btn:disabled{opacity:0.6;cursor:not-allowed;}
 .divider{display:flex;align-items:center;gap:12px;margin:1.2rem 0;}
 .divider::before,.divider::after{content:'';flex:1;height:0.5px;background:rgba(200,168,233,0.2);}
 .divider span{font-size:0.75rem;color:var(--ws);}
@@ -36,6 +37,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);min-he
 .terms{font-size:0.75rem;color:var(--ws);text-align:center;margin-top:1rem;line-height:1.6;}
 .terms a{color:var(--al);text-decoration:none;}
 .error{font-size:0.75rem;color:var(--err);margin-top:4px;display:none;}
+.msg-box{padding:12px 16px;border-radius:10px;font-size:0.85rem;margin-bottom:1rem;display:none;}
+.msg-box.error-msg{background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);color:var(--err);}
+.msg-box.ok-msg{background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);color:var(--ok);}
 </style>
 </head>
 <body>
@@ -45,15 +49,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);min-he
   <div class="logo">QuickGigs</div>
   <h1 class="title">Create your account</h1>
   <p class="subtitle">Join thousands of Canadians getting things done</p>
+
+  <div class="msg-box error-msg" id="errorMsg"></div>
+  <div class="msg-box ok-msg" id="okMsg"></div>
+
   <div class="role-wrap">
-    <button class="role-btn active" onclick="setRole('poster',this)">
+    <button type="button" class="role-btn active" onclick="setRole('poster',this)">
       <span class="role-icon">📋</span>I need help
     </button>
-    <button class="role-btn" onclick="setRole('worker',this)">
+    <button type="button" class="role-btn" onclick="setRole('worker',this)">
       <span class="role-icon">💰</span>I want to earn
     </button>
   </div>
-  <form id="signupForm" onsubmit="handleSignup(event)">
+
+  <form id="signupForm">
     <input type="hidden" id="roleInput" value="poster">
     <div class="field">
       <label>Full name</label>
@@ -63,6 +72,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);min-he
     <div class="field">
       <label>Email address</label>
       <input type="email" id="email" placeholder="you@example.com" required>
+      <div class="error" id="emailError">Please enter a valid email address</div>
     </div>
     <div class="field">
       <label>Phone number</label>
@@ -78,17 +88,87 @@ body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);min-he
       <input type="password" id="confirmPassword" placeholder="Repeat your password" required>
       <div class="error" id="confirmError">Passwords do not match</div>
     </div>
-    <button type="submit" class="btn">Create account</button>
+    <button type="submit" class="btn" id="submitBtn">Create account</button>
   </form>
+
   <div class="divider"><span>or</span></div>
   <div class="login-link">Already have an account? <a href="login.html">Log in</a></div>
   <p class="terms">By signing up you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></p>
 </div>
-<script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBzBXgOuHjpkee0aeIDfAKNSz-iLNRGhlw",
+  authDomain: "quickgigs-7b12d.firebaseapp.com",
+  projectId: "quickgigs-7b12d",
+  storageBucket: "quickgigs-7b12d.firebasestorage.app",
+  messagingSenderId: "698985399366",
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647",
+  measurementId: "G-82SPKK654N"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+// Stars
 var stars=document.getElementById('stars');
 for(var i=0;i<80;i++){var s=document.createElement('div');s.className='star';var size=Math.random()*2+0.5;s.style.cssText='width:'+size+'px;height:'+size+'px;left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;--d:'+(Math.random()*4+2)+'s;--op:'+(Math.random()*0.6+0.1)+';animation-delay:'+Math.random()*5+'s';stars.appendChild(s);}
-function setRole(role,btn){document.querySelectorAll('.role-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');document.getElementById('roleInput').value=role;}
-function handleSignup(e){e.preventDefault();var valid=true;var name=document.getElementById('name').value;var password=document.getElementById('password').value;var confirm=document.getElementById('confirmPassword').value;document.querySelectorAll('.error').forEach(function(el){el.style.display='none';});if(name.length<2){document.getElementById('nameError').style.display='block';valid=false;}if(password.length<8){document.getElementById('passwordError').style.display='block';valid=false;}if(password!==confirm){document.getElementById('confirmError').style.display='block';valid=false;}if(valid){var btn=document.querySelector('.btn');btn.textContent='Creating account...';btn.disabled=true;setTimeout(function(){alert('Account created! Firebase connection coming soon.');btn.textContent='Create account';btn.disabled=false;},1500);}}
+
+// Role selection
+window.setRole = function(role, btn) {
+  document.querySelectorAll('.role-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('roleInput').value = role;
+};
+
+// Form submit
+document.getElementById('signupForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  var errorMsg = document.getElementById('errorMsg');
+  var okMsg = document.getElementById('okMsg');
+  var submitBtn = document.getElementById('submitBtn');
+  errorMsg.style.display = 'none';
+  okMsg.style.display = 'none';
+  document.querySelectorAll('.error').forEach(function(el){ el.style.display='none'; });
+
+  var name = document.getElementById('name').value;
+  var email = document.getElementById('email').value;
+  var password = document.getElementById('password').value;
+  var confirm = document.getElementById('confirmPassword').value;
+  var role = document.getElementById('roleInput').value;
+
+  var valid = true;
+  if(name.length < 2) { document.getElementById('nameError').style.display='block'; valid=false; }
+  if(password.length < 8) { document.getElementById('passwordError').style.display='block'; valid=false; }
+  if(password !== confirm) { document.getElementById('confirmError').style.display='block'; valid=false; }
+  if(!valid) return;
+
+  submitBtn.textContent = 'Creating account...';
+  submitBtn.disabled = true;
+
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(userCredential.user, { displayName: name });
+    okMsg.textContent = 'Account created successfully! Welcome to QuickGigs 🎉';
+    okMsg.style.display = 'block';
+    submitBtn.textContent = 'Account created!';
+    // Redirect to dashboard after 2 seconds
+    setTimeout(function(){ window.location.href = 'dashboard.html'; }, 2000);
+  } catch (error) {
+    var message = 'Something went wrong. Please try again.';
+    if(error.code === 'auth/email-already-in-use') message = 'This email is already registered. Try logging in.';
+    if(error.code === 'auth/invalid-email') message = 'Please enter a valid email address.';
+    if(error.code === 'auth/weak-password') message = 'Password is too weak. Use at least 8 characters.';
+    errorMsg.textContent = message;
+    errorMsg.style.display = 'block';
+    submitBtn.textContent = 'Create account';
+    submitBtn.disabled = false;
+  }
+});
 </script>
 </body>
 </html>
