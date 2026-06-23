@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickGigs — Post a Task</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;min-height:100vh;transition:background 0.3s,color 0.3s;}
+body.dark{background:#0b0118;color:#fff;}
+body.light{background:#fafafe;color:#1a0a3d;}
+
+/* NAV */
+.nav{padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.dark .nav{background:#0b0118;border-bottom:0.5px solid rgba(200,168,233,0.1);}
+.light .nav{background:#fff;border-bottom:0.5px solid #f0eeff;}
+.nav-logo{font-family:'Playfair Display',serif;font-style:italic;font-size:1.2rem;color:#9b6fc4;}
+.dark .nav-logo{color:#c8a8e9;}
+.light .nav-logo{color:#6b3fa0;}
+.back-btn{font-size:13px;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:4px;}
+.dark .back-btn{color:rgba(200,168,233,0.7);}
+.light .back-btn{color:#9b6fc4;}
+.mode-toggle{padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;}
+.dark .mode-toggle{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);}
+.light .mode-toggle{background:#f0eeff;color:#6b3fa0;}
+
+/* CONTENT */
+.content{max-width:580px;margin:0 auto;padding:24px 20px;}
+.step-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;margin-bottom:16px;}
+.dark .step-pill{background:rgba(107,63,160,0.2);color:#c8a8e9;}
+.light .step-pill{background:#f0eeff;color:#6b3fa0;}
+.page-title{font-size:22px;font-weight:500;margin:0 0 4px;}
+.page-sub{font-size:13px;margin:0 0 28px;}
+.dark .page-sub{color:rgba(255,255,255,0.4);}
+.light .page-sub{color:#9ca3af;}
+
+/* SECTIONS */
+.section{margin-bottom:24px;}
+.section-label{font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;display:block;margin-bottom:10px;}
+.dark .section-label{color:rgba(255,255,255,0.35);}
+.light .section-label{color:#9ca3af;}
+
+/* MODE SELECTOR */
+.mode-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.mode-card{border-radius:14px;padding:14px 12px;text-align:center;cursor:pointer;transition:all 0.2s;}
+.dark .mode-card{background:rgba(255,255,255,0.04);border:0.5px solid rgba(200,168,233,0.12);}
+.light .mode-card{background:#f8f7ff;border:0.5px solid #e8e2ff;}
+.dark .mode-card.selected{background:rgba(107,63,160,0.3);border:1.5px solid #9b6fc4;}
+.light .mode-card.selected{background:#ede9ff;border:1.5px solid #9b6fc4;}
+.mode-emoji{font-size:20px;display:block;margin-bottom:6px;}
+.mode-name{font-size:12px;font-weight:500;display:block;margin-bottom:2px;}
+.dark .mode-name{color:#fff;}
+.light .mode-name{color:#1a0a3d;}
+.mode-desc{font-size:10px;}
+.dark .mode-desc{color:rgba(255,255,255,0.35);}
+.light .mode-desc{color:#9ca3af;}
+
+/* CATEGORIES */
+.cat-wrap{display:flex;flex-wrap:wrap;gap:6px;}
+.cat-chip{padding:7px 14px;border-radius:20px;font-size:12px;cursor:pointer;transition:all 0.2s;}
+.dark .cat-chip{background:rgba(255,255,255,0.05);border:0.5px solid rgba(200,168,233,0.15);color:rgba(255,255,255,0.6);}
+.light .cat-chip{background:#f8f7ff;border:0.5px solid #e8e2ff;color:#6b7280;}
+.dark .cat-chip.selected{background:rgba(107,63,160,0.35);border:1px solid #9b6fc4;color:#fff;}
+.light .cat-chip.selected{background:#ede9ff;border:1px solid #9b6fc4;color:#6b3fa0;}
+
+/* INPUTS */
+.field{margin-bottom:16px;}
+.field-input{width:100%;border-radius:12px;padding:14px 16px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:all 0.2s;border:0.5px solid transparent;}
+.dark .field-input{background:rgba(255,255,255,0.05);color:#fff;border-color:rgba(200,168,233,0.15);}
+.light .field-input{background:#f8f7ff;color:#1a0a3d;border-color:#e8e2ff;}
+.dark .field-input:focus{border-color:#9b6fc4;background:rgba(107,63,160,0.1);}
+.light .field-input:focus{border-color:#9b6fc4;background:#ede9ff;}
+.field-input::placeholder{color:rgba(155,111,196,0.4);}
+textarea.field-input{resize:none;min-height:100px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.price-wrap{position:relative;}
+.price-pre{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-weight:500;color:#9b6fc4;font-size:14px;}
+.price-wrap .field-input{padding-left:28px;}
+
+/* RECURRING OPTIONS */
+.recurring-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;}
+.rec-opt{padding:8px;border-radius:10px;text-align:center;font-size:12px;cursor:pointer;transition:all 0.2s;}
+.dark .rec-opt{background:rgba(255,255,255,0.04);border:0.5px solid rgba(200,168,233,0.12);color:rgba(255,255,255,0.6);}
+.light .rec-opt{background:#f8f7ff;border:0.5px solid #e8e2ff;color:#6b7280;}
+.dark .rec-opt.selected{background:rgba(107,63,160,0.3);border:1px solid #9b6fc4;color:#fff;}
+.light .rec-opt.selected{background:#ede9ff;border:1px solid #9b6fc4;color:#6b3fa0;}
+
+/* HINT */
+.hint-box{border-radius:12px;padding:12px 16px;margin-bottom:24px;display:flex;align-items:center;gap:10px;}
+.dark .hint-box{background:rgba(107,63,160,0.12);border:0.5px solid rgba(200,168,233,0.15);}
+.light .hint-box{background:#f0eeff;border:0.5px solid #e0d8ff;}
+.hint-text{font-size:12px;margin:0;}
+.dark .hint-text{color:#c8a8e9;}
+.light .hint-text{color:#6b3fa0;}
+
+/* ERROR */
+.field-error{font-size:12px;color:#ff6b6b;margin-top:4px;display:none;}
+.field-input.invalid{border-color:#ff6b6b !important;}
+
+/* SUBMIT */
+.submit-btn{width:100%;padding:15px;border-radius:14px;border:none;font-size:15px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;}
+.submit-btn:disabled{opacity:0.6;cursor:not-allowed;}
+.footer-note{font-size:11px;text-align:center;margin-top:10px;}
+.dark .footer-note{color:rgba(255,255,255,0.25);}
+.light .footer-note{color:#d1c4e9;}
+
+/* SUCCESS */
+.success-screen{display:none;text-align:center;padding:60px 20px;}
+.success-icon{font-size:52px;margin-bottom:16px;}
+.success-title{font-size:22px;font-weight:500;margin-bottom:8px;}
+.success-sub{font-size:14px;margin-bottom:24px;}
+.dark .success-sub{color:rgba(255,255,255,0.5);}
+.light .success-sub{color:#9ca3af;}
+.success-btn{display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;border-radius:12px;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;border:none;font-family:'DM Sans',sans-serif;}
+</style>
+</head>
+<body class="dark">
+
+<!-- NAV -->
+<nav class="nav">
+  <a class="back-btn" href="dashboard.html">← Dashboard</a>
+  <div class="nav-logo">QuickGigs</div>
+  <button class="mode-toggle" onclick="toggleMode()" id="modeBtn">☀️ Light</button>
+</nav>
+
+<!-- MAIN FORM -->
+<div class="content" id="formContent">
+
+  <span class="step-pill">📝 Post a task</span>
+  <p class="page-title">What do you need done?</p>
+  <p class="page-sub">Takes less than 60 seconds to post</p>
+
+  <!-- TASK MODE -->
+  <div class="section">
+    <span class="section-label">How urgent is this?</span>
+    <div class="mode-grid">
+      <div class="mode-card selected" data-mode="quick" onclick="selectMode(this)">
+        <span class="mode-emoji">⚡</span>
+        <span class="mode-name">Quick</span>
+        <span class="mode-desc">Within hours</span>
+      </div>
+      <div class="mode-card" data-mode="standard" onclick="selectMode(this)">
+        <span class="mode-emoji">📋</span>
+        <span class="mode-name">Standard</span>
+        <span class="mode-desc">This week</span>
+      </div>
+      <div class="mode-card" data-mode="recurring" onclick="selectMode(this)">
+        <span class="mode-emoji">🔄</span>
+        <span class="mode-name">Recurring</span>
+        <span class="mode-desc">Ongoing</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECURRING OPTIONS (shown only for recurring) -->
+  <div class="section" id="recurringSection" style="display:none;">
+    <span class="section-label">How often?</span>
+    <div class="recurring-opts">
+      <div class="rec-opt selected" onclick="selectRec(this)">Daily</div>
+      <div class="rec-opt" onclick="selectRec(this)">Weekly</div>
+      <div class="rec-opt" onclick="selectRec(this)">Bi-weekly</div>
+      <div class="rec-opt" onclick="selectRec(this)">Monthly</div>
+      <div class="rec-opt" onclick="selectRec(this)">Weekdays</div>
+      <div class="rec-opt" onclick="selectRec(this)">Weekends</div>
+    </div>
+  </div>
+
+  <!-- CATEGORY -->
+  <div class="section">
+    <span class="section-label">Category</span>
+    <div class="cat-wrap" id="catWrap">
+      <span class="cat-chip" onclick="selectCat(this)">🚗 Errands</span>
+      <span class="cat-chip" onclick="selectCat(this)">🏠 Home</span>
+      <span class="cat-chip" onclick="selectCat(this)">🎓 Tutoring</span>
+      <span class="cat-chip" onclick="selectCat(this)">💇 Beauty</span>
+      <span class="cat-chip" onclick="selectCat(this)">🚚 Moving</span>
+      <span class="cat-chip" onclick="selectCat(this)">🍳 Cooking</span>
+      <span class="cat-chip" onclick="selectCat(this)">💻 Tech</span>
+      <span class="cat-chip" onclick="selectCat(this)">👶 Care</span>
+      <span class="cat-chip" onclick="selectCat(this)">🌿 Gardening</span>
+      <span class="cat-chip" onclick="selectCat(this)">🎉 Events</span>
+      <span class="cat-chip" onclick="selectCat(this)">🔧 Trades</span>
+      <span class="cat-chip" onclick="selectCat(this)">📦 Other</span>
+    </div>
+    <div class="field-error" id="catError">Please select a category</div>
+  </div>
+
+  <!-- TITLE -->
+  <div class="field section">
+    <span class="section-label">Task title</span>
+    <input class="field-input" id="taskTitle" type="text" placeholder="e.g. Pick up prescription from Shoppers" maxlength="100">
+    <div class="field-error" id="titleError">Please add a title</div>
+  </div>
+
+  <!-- DESCRIPTION -->
+  <div class="field section">
+    <span class="section-label">Description</span>
+    <textarea class="field-input" id="taskDesc" placeholder="Add details — location, timing, anything helpful..."></textarea>
+  </div>
+
+  <!-- BUDGET + LOCATION -->
+  <div class="field-row section">
+    <div class="field">
+      <span class="section-label">Your budget</span>
+      <div class="price-wrap">
+        <span class="price-pre">$</span>
+        <input class="field-input" id="taskBudget" type="number" min="20" placeholder="40">
+      </div>
+      <div class="field-error" id="budgetError">Minimum budget is $20</div>
+    </div>
+    <div class="field">
+      <span class="section-label">Location</span>
+      <input class="field-input" id="taskLocation" type="text" placeholder="Calgary, AB">
+    </div>
+  </div>
+
+  <!-- HINT -->
+  <div class="hint-box" id="hintBox">
+    <span style="font-size:16px;">💡</span>
+    <p class="hint-text" id="hintText">Similar tasks in Calgary go for <strong>$20 – $40</strong> · Minimum is $20</p>
+  </div>
+
+  <!-- SUBMIT -->
+  <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">Post task →</button>
+  <p class="footer-note">Payment is only collected when you accept a worker</p>
+
+</div>
+
+<!-- SUCCESS SCREEN -->
+<div class="success-screen content" id="successScreen">
+  <div class="success-icon">🎉</div>
+  <p class="success-title">Task posted!</p>
+  <p class="success-sub">Workers near you will start applying soon. You'll get notified when someone applies.</p>
+  <button class="success-btn" onclick="window.location.href='dashboard.html'">Back to dashboard</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBzBXgOuHjpkee0aeIDfAKNSz-iLNRGhlw",
+  authDomain: "quickgigs-7b12d.firebaseapp.com",
+  projectId: "quickgigs-7b12d",
+  storageBucket: "quickgigs-7b12d.firebasestorage.app",
+  messagingSenderId: "698985399366",
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647",
+  measurementId: "G-82SPKK654N"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+onAuthStateChanged(auth, function(user) {
+  if(!user) window.location.href = 'login.html';
+});
+
+var isDark = true;
+var selectedMode = 'quick';
+var selectedCat = '';
+var selectedRec = 'weekly';
+
+window.toggleMode = function() {
+  isDark = !isDark;
+  document.body.className = isDark ? 'dark' : 'light';
+  document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark';
+  localStorage.setItem('qg-mode', isDark ? 'dark' : 'light');
+};
+
+var saved = localStorage.getItem('qg-mode');
+if(saved === 'light') { isDark = false; document.body.className = 'light'; document.getElementById('modeBtn').textContent = '🌙 Dark'; }
+
+window.selectMode = function(el) {
+  document.querySelectorAll('.mode-card').forEach(function(c){ c.classList.remove('selected'); });
+  el.classList.add('selected');
+  selectedMode = el.dataset.mode;
+  document.getElementById('recurringSection').style.display = selectedMode === 'recurring' ? 'block' : 'none';
+  updateHint();
+};
+
+window.selectCat = function(el) {
+  document.querySelectorAll('.cat-chip').forEach(function(c){ c.classList.remove('selected'); });
+  el.classList.add('selected');
+  selectedCat = el.textContent;
+  document.getElementById('catError').style.display = 'none';
+  el.classList.remove('invalid');
+  updateHint();
+};
+
+window.selectRec = function(el) {
+  document.querySelectorAll('.rec-opt').forEach(function(c){ c.classList.remove('selected'); });
+  el.classList.add('selected');
+  selectedRec = el.textContent;
+};
+
+function updateHint() {
+  var hints = {
+    'quick': 'Quick tasks in Calgary usually go for <strong>$20 – $60</strong>',
+    'standard': 'Standard tasks in Calgary usually go for <strong>$40 – $150</strong>',
+    'recurring': 'Recurring tasks — set a per-session rate, minimum <strong>$20</strong>'
+  };
+  document.getElementById('hintText').innerHTML = (hints[selectedMode] || '') + ' · Minimum is $20';
+}
+
+window.handleSubmit = function() {
+  var valid = true;
+  var title = document.getElementById('taskTitle').value.trim();
+  var budget = parseFloat(document.getElementById('taskBudget').value);
+
+  document.querySelectorAll('.field-error').forEach(function(e){ e.style.display='none'; });
+  document.querySelectorAll('.field-input').forEach(function(i){ i.classList.remove('invalid'); });
+
+  if(!selectedCat) {
+    document.getElementById('catError').style.display = 'block';
+    valid = false;
+  }
+  if(!title) {
+    document.getElementById('titleError').style.display = 'block';
+    document.getElementById('taskTitle').classList.add('invalid');
+    valid = false;
+  }
+  if(!budget || budget < 20) {
+    document.getElementById('budgetError').style.display = 'block';
+    document.getElementById('taskBudget').classList.add('invalid');
+    valid = false;
+  }
+  if(!valid) return;
+
+  var btn = document.getElementById('submitBtn');
+  btn.textContent = 'Posting...';
+  btn.disabled = true;
+
+  setTimeout(function() {
+    document.getElementById('formContent').style.display = 'none';
+    document.getElementById('successScreen').style.display = 'block';
+  }, 1200);
+};
+</script>
+</body>
+</html>
