@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickGigs — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;min-height:100vh;transition:background 0.3s,color 0.3s;}
+
+/* DARK MODE */
+body.dark{background:#0d0520;color:#ffffff;}
+body.dark .nav{background:#0d0520;border-bottom:0.5px solid rgba(200,168,233,0.15);}
+body.dark .nav-link{color:rgba(255,255,255,0.6);}
+body.dark .content{background:#0d0520;}
+body.dark .stat-card{background:rgba(255,255,255,0.06);border:0.5px solid rgba(200,168,233,0.12);}
+body.dark .stat-label{color:rgba(255,255,255,0.5);}
+body.dark .stat-num{color:#ffffff;}
+body.dark .card{background:rgba(255,255,255,0.05);border:0.5px solid rgba(200,168,233,0.15);}
+body.dark .card-title{color:#ffffff;}
+body.dark .task-item{background:rgba(255,255,255,0.04);}
+body.dark .task-title{color:#ffffff;}
+body.dark .task-sub{color:rgba(255,255,255,0.4);}
+body.dark .task-price{color:#ffffff;}
+body.dark .welcome-title{color:#ffffff;}
+body.dark .welcome-sub{color:rgba(255,255,255,0.5);}
+body.dark .secondary-btn{background:rgba(255,255,255,0.06);border:0.5px solid rgba(200,168,233,0.2);color:#ffffff;}
+body.dark .secondary-btn .btn-sub{color:rgba(255,255,255,0.5);}
+body.dark .secondary-btn i{color:#c8a8e9;}
+body.dark .toggle-btn{background:rgba(255,255,255,0.08);border:0.5px solid rgba(200,168,233,0.2);color:rgba(255,255,255,0.7);}
+body.dark .see-all{color:#9b6fc4;}
+body.dark .empty-text{color:rgba(255,255,255,0.4);}
+body.dark .progress-bg{background:rgba(255,255,255,0.1);}
+body.dark .profile-sub{color:rgba(255,255,255,0.5);}
+body.dark .nav-secondary{background:#1a0a3d;border-bottom:0.5px solid rgba(200,168,233,0.1);}
+body.dark .online-text{color:#4ade80;}
+body.dark .earnings-text{color:rgba(255,255,255,0.6);}
+
+/* LIGHT MODE */
+body.light{background:#f8f7ff;color:#1a1a2e;}
+body.light .nav{background:#ffffff;border-bottom:0.5px solid #ebebf5;}
+body.light .nav-link{color:#6b7280;}
+body.light .content{background:#f8f7ff;}
+body.light .stat-card{background:#f0eeff;border:0.5px solid #e0d8ff;}
+body.light .stat-label{color:#9ca3af;}
+body.light .stat-num{color:#1a1a2e;}
+body.light .card{background:#ffffff;border:0.5px solid #ebebf5;}
+body.light .card-title{color:#1a1a2e;}
+body.light .task-item{background:#f8f7ff;}
+body.light .task-title{color:#1a1a2e;}
+body.light .task-sub{color:#9ca3af;}
+body.light .task-price{color:#1a1a2e;}
+body.light .welcome-title{color:#1a1a2e;}
+body.light .welcome-sub{color:#6b7280;}
+body.light .secondary-btn{background:#ffffff;border:0.5px solid #ebebf5;color:#1a1a2e;}
+body.light .secondary-btn .btn-sub{color:#9ca3af;}
+body.light .secondary-btn i{color:#6b3fa0;}
+body.light .toggle-btn{background:#f0eeff;border:0.5px solid #e0d8ff;color:#6b3fa0;}
+body.light .see-all{color:#6b3fa0;}
+body.light .empty-text{color:#9ca3af;}
+body.light .progress-bg{background:#e5e7eb;}
+body.light .profile-sub{color:#9ca3af;}
+body.light .nav-secondary{background:#f0eeff;border-bottom:0.5px solid #e0d8ff;}
+body.light .online-text{color:#16a34a;}
+body.light .earnings-text{color:#6b7280;}
+
+/* SHARED */
+.nav{padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.nav-logo{font-family:'Playfair Display',serif;font-style:italic;color:#9b6fc4;font-size:1.2rem;}
+.dark .nav-logo{color:#c8a8e9;}
+.light .nav-logo{color:#6b3fa0;}
+.nav-right{display:flex;align-items:center;gap:16px;}
+.nav-link{font-size:13px;text-decoration:none;cursor:pointer;}
+.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#c8a8e9);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:white;cursor:pointer;}
+.toggle-btn{padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;}
+.nav-secondary{padding:10px 24px;display:flex;align-items:center;justify-content:space-between;}
+.online-badge{display:flex;align-items:center;gap:6px;}
+.online-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.content{padding:20px 24px;max-width:900px;margin:0 auto;}
+.welcome-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.welcome-title{font-size:20px;font-weight:500;margin-bottom:2px;}
+.welcome-sub{font-size:13px;}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px;}
+.stat-card{border-radius:12px;padding:14px 16px;}
+.stat-label{font-size:11px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
+.stat-num{font-size:24px;font-weight:500;}
+.actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.primary-btn{background:linear-gradient(135deg,#6b3fa0,#9b6fc4);border-radius:14px;padding:18px;cursor:pointer;border:none;text-align:left;width:100%;}
+.primary-btn .btn-title{font-size:14px;font-weight:500;color:#fff;display:block;margin-bottom:3px;}
+.primary-btn .btn-sub{font-size:12px;color:rgba(255,255,255,0.65);display:block;}
+.primary-btn i{font-size:20px;color:rgba(255,255,255,0.8);margin-bottom:8px;display:block;}
+.secondary-btn{border-radius:14px;padding:18px;cursor:pointer;text-align:left;width:100%;font-family:'DM Sans',sans-serif;}
+.secondary-btn .btn-title{font-size:14px;font-weight:500;display:block;margin-bottom:3px;}
+.secondary-btn .btn-sub{font-size:12px;display:block;}
+.secondary-btn i{font-size:20px;margin-bottom:8px;display:block;}
+.card{border-radius:16px;padding:16px;margin-bottom:12px;}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.card-title{font-size:14px;font-weight:500;}
+.see-all{font-size:12px;cursor:pointer;text-decoration:none;}
+.task-item{display:flex;align-items:center;justify-content:space-between;padding:12px;border-radius:10px;margin-bottom:8px;}
+.task-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:12px;}
+.task-info{flex:1;}
+.task-title{font-size:13px;font-weight:500;margin-bottom:2px;}
+.task-sub{font-size:11px;}
+.task-right{text-align:right;}
+.task-price{font-size:13px;font-weight:500;margin-bottom:4px;}
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;}
+.tag-quick{background:rgba(251,191,36,0.15);color:#d97706;}
+.tag-standard{background:rgba(107,63,160,0.2);color:#9b6fc4;}
+.empty-state{text-align:center;padding:24px 0;}
+.empty-state i{font-size:28px;margin-bottom:8px;display:block;color:rgba(155,111,196,0.4);}
+.empty-text{font-size:13px;}
+.progress-bg{border-radius:4px;height:5px;margin-bottom:10px;}
+.progress-fill{background:#9b6fc4;border-radius:4px;height:5px;width:20%;transition:width 0.3s;}
+.profile-sub{font-size:12px;}
+.logout-btn{background:none;border:none;cursor:pointer;font-size:12px;color:#ff6b6b;font-family:'DM Sans',sans-serif;padding:0;}
+</style>
+</head>
+<body class="dark">
+
+<!-- LOADING -->
+<div id="loading" style="position:fixed;inset:0;background:#0d0520;display:flex;align-items:center;justify-content:center;z-index:999;">
+  <div style="text-align:center;">
+    <p style="font-family:'Playfair Display',serif;font-style:italic;color:#c8a8e9;font-size:1.8rem;margin-bottom:8px;">QuickGigs</p>
+    <p style="font-size:13px;color:rgba(255,255,255,0.5);">Loading your dashboard...</p>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">QuickGigs</div>
+  <div class="nav-right">
+    <a class="nav-link" href="browse-tasks.html">Browse tasks</a>
+    <a class="nav-link" href="#">My tasks</a>
+    <a class="nav-link" href="#">Messages</a>
+    <button class="toggle-btn" onclick="toggleMode()">
+      <i class="ti ti-sun" id="modeIcon"></i>
+      <span id="modeText">Light</span>
+    </button>
+    <div class="avatar" id="avatarEl">M</div>
+    <button class="logout-btn" onclick="handleLogout()">Log out</button>
+  </div>
+</nav>
+
+<!-- ONLINE BAR -->
+<div class="nav-secondary">
+  <div class="online-badge">
+    <div class="online-dot"></div>
+    <span class="online-text" style="font-size:13px;font-weight:500;">Online — quick tasks enabled</span>
+  </div>
+  <span class="earnings-text" style="font-size:13px;">Today's earnings: <strong style="color:#4ade80;">$0.00</strong></span>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- WELCOME -->
+  <div class="welcome-row">
+    <div>
+      <p class="welcome-title" id="welcomeName">Good morning!</p>
+      <p class="welcome-sub">Welcome back to QuickGigs 🇨🇦</p>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <p class="stat-label">Tasks posted</p>
+      <p class="stat-num" id="statTasks">0</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">Applications</p>
+      <p class="stat-num" id="statApps">0</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">Total earned</p>
+      <p class="stat-num" style="color:#4ade80;" id="statEarned">$0</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">Your rating</p>
+      <p class="stat-num" style="color:#fbbf24;" id="statRating">—</p>
+    </div>
+  </div>
+
+  <!-- QUICK ACTIONS -->
+  <div class="actions-grid">
+    <button class="primary-btn" onclick="window.location.href='post-task.html'">
+      <i class="ti ti-plus" aria-hidden="true"></i>
+      <span class="btn-title">Post a task</span>
+      <span class="btn-sub">Need something done?</span>
+    </button>
+    <button class="secondary-btn" onclick="window.location.href='browse-tasks.html'">
+      <i class="ti ti-search" aria-hidden="true"></i>
+      <span class="btn-title">Browse tasks</span>
+      <span class="btn-sub">Find work near you</span>
+    </button>
+  </div>
+
+  <!-- NEARBY TASKS -->
+  <div class="card">
+    <div class="card-header">
+      <p class="card-title">Tasks near you</p>
+      <a class="see-all" href="browse-tasks.html">See all</a>
+    </div>
+    <div class="task-item">
+      <div class="task-icon" style="background:rgba(251,191,36,0.15);">
+        <i class="ti ti-truck" style="font-size:18px;color:#fbbf24;" aria-hidden="true"></i>
+      </div>
+      <div class="task-info">
+        <p class="task-title">Grocery run — Superstore NW</p>
+        <p class="task-sub">1.2km away</p>
+      </div>
+      <div class="task-right">
+        <p class="task-price">$30</p>
+        <span class="tag tag-quick">Quick</span>
+      </div>
+    </div>
+    <div class="task-item">
+      <div class="task-icon" style="background:rgba(107,63,160,0.2);">
+        <i class="ti ti-home" style="font-size:18px;color:#9b6fc4;" aria-hidden="true"></i>
+      </div>
+      <div class="task-info">
+        <p class="task-title">Deep clean 2 bedroom apartment</p>
+        <p class="task-sub">2.4km away</p>
+      </div>
+      <div class="task-right">
+        <p class="task-price">$120</p>
+        <span class="tag tag-standard">Standard</span>
+      </div>
+    </div>
+    <div class="task-item">
+      <div class="task-icon" style="background:rgba(74,222,128,0.1);">
+        <i class="ti ti-book" style="font-size:18px;color:#4ade80;" aria-hidden="true"></i>
+      </div>
+      <div class="task-info">
+        <p class="task-title">Math tutor for Grade 10 student</p>
+        <p class="task-sub">0.8km away</p>
+      </div>
+      <div class="task-right">
+        <p class="task-price">$35/hr</p>
+        <span class="tag tag-standard">Standard</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MY TASKS -->
+  <div class="card">
+    <div class="card-header">
+      <p class="card-title">My posted tasks</p>
+    </div>
+    <div class="empty-state">
+      <i class="ti ti-clipboard-list" aria-hidden="true"></i>
+      <p class="empty-text">No tasks posted yet. Post your first task!</p>
+    </div>
+  </div>
+
+  <!-- MY APPLICATIONS -->
+  <div class="card">
+    <div class="card-header">
+      <p class="card-title">My applications</p>
+    </div>
+    <div class="empty-state">
+      <i class="ti ti-briefcase" aria-hidden="true"></i>
+      <p class="empty-text">No applications yet. Browse tasks and start earning!</p>
+    </div>
+  </div>
+
+  <!-- PROFILE COMPLETION -->
+  <div class="card">
+    <div class="card-header">
+      <p class="card-title">Complete your profile</p>
+      <span style="font-size:12px;color:#9b6fc4;font-weight:500;">20%</span>
+    </div>
+    <div class="progress-bg">
+      <div class="progress-fill"></div>
+    </div>
+    <p class="profile-sub">Add a profile photo and bio to get more tasks and build trust with posters.</p>
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
+  authDomain: "quickgigs-7b12d.firebaseapp.com",
+  projectId: "quickgigs-7b12d",
+  storageBucket: "quickgigs-7b12d.firebasestorage.app",
+  messagingSenderId: "698985399366",
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647",
+  measurementId: "G-82SPKK654N"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+onAuthStateChanged(auth, function(user) {
+  document.getElementById('loading').style.display = 'none';
+  if(!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+  var name = user.displayName || user.email.split('@')[0];
+  var initial = name.charAt(0).toUpperCase();
+  document.getElementById('avatarEl').textContent = initial;
+  var hour = new Date().getHours();
+  var greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('welcomeName').textContent = greeting + ', ' + name + '!';
+});
+
+window.handleLogout = async function() {
+  await signOut(auth);
+  window.location.href = 'login.html';
+};
+
+var isDark = true;
+window.toggleMode = function() {
+  isDark = !isDark;
+  document.body.className = isDark ? 'dark' : 'light';
+  document.getElementById('modeIcon').className = isDark ? 'ti ti-sun' : 'ti ti-moon';
+  document.getElementById('modeText').textContent = isDark ? 'Light' : 'Dark';
+  localStorage.setItem('qg-mode', isDark ? 'dark' : 'light');
+};
+
+var saved = localStorage.getItem('qg-mode');
+if(saved === 'light') { isDark = false; document.body.className = 'light'; document.getElementById('modeIcon').className = 'ti ti-moon'; document.getElementById('modeText').textContent = 'Dark'; }
+</script>
+</body>
+</html>
