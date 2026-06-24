@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickGigs — What are you here to do?</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0b0118;
+  --surface:rgba(255,255,255,0.05);
+  --surface-hover:rgba(107,63,160,0.15);
+  --border:rgba(200,168,233,0.12);
+  --text:#fff;
+  --text-muted:rgba(255,255,255,0.4);
+  --purple:#6b3fa0;
+  --purple-light:#9b6fc4;
+  --lavender:#c8a8e9;
+}
+body.light{
+  --bg:#fafafe;
+  --surface:#fff;
+  --surface-hover:#f5f2ff;
+  --border:#ede9ff;
+  --text:#1a0a3d;
+  --text-muted:#9ca3af;
+  --lavender:#6b3fa0;
+}
+
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:24px 20px;
+  transition:background 0.25s,color 0.25s;
+}
+
+.mode-btn{position:fixed;top:18px;right:18px;padding:6px 14px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);transition:all 0.2s;}
+body.light .mode-btn{background:#f0eeff;color:var(--purple);}
+
+.card{width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;}
+
+.logo{font-family:'Playfair Display',serif;font-style:italic;font-size:1.5rem;color:var(--lavender);margin-bottom:36px;}
+
+.greeting{text-align:center;margin-bottom:36px;}
+.greeting-hi{font-size:1.6rem;font-weight:500;margin-bottom:8px;color:var(--text);}
+.greeting-sub{font-size:14px;color:var(--text-muted);line-height:1.5;}
+
+.choice-card{
+  width:100%;
+  border-radius:18px;
+  padding:22px 20px;
+  margin-bottom:12px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  border:0.5px solid transparent;
+  transition:all 0.2s;
+  text-decoration:none;
+}
+.choice-card:hover{transform:translateY(-1px);}
+.choice-card.hire{
+  background:linear-gradient(135deg,#6b3fa0,#9b6fc4);
+  border-color:rgba(200,168,233,0.3);
+}
+.choice-card.hire:hover{background:linear-gradient(135deg,#7a4ab5,#a97fd4);}
+.choice-card.earn{
+  background:var(--surface);
+  border-color:var(--border);
+}
+.choice-card.earn:hover{background:var(--surface-hover);border-color:var(--purple-light);}
+
+.choice-icon{font-size:32px;flex-shrink:0;width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;}
+.hire .choice-icon{background:rgba(255,255,255,0.15);}
+.earn .choice-icon{background:rgba(107,63,160,0.2);}
+body.light .earn .choice-icon{background:#ede9ff;}
+
+.choice-text{}
+.choice-title{font-size:17px;font-weight:500;margin-bottom:4px;}
+.hire .choice-title{color:#fff;}
+.earn .choice-title{color:var(--text);}
+.choice-desc{font-size:13px;line-height:1.5;}
+.hire .choice-desc{color:rgba(255,255,255,0.7);}
+.earn .choice-desc{color:var(--text-muted);}
+
+.choice-arrow{margin-left:auto;font-size:18px;flex-shrink:0;}
+.hire .choice-arrow{color:rgba(255,255,255,0.6);}
+.earn .choice-arrow{color:var(--purple-light);}
+
+.both-link{margin-top:8px;font-size:13px;color:var(--purple-light);cursor:pointer;text-decoration:none;opacity:0.8;transition:opacity 0.15s;}
+.both-link:hover{opacity:1;}
+</style>
+</head>
+<body>
+
+<button class="mode-btn" id="modeBtn" onclick="toggleMode()">☀️ Light</button>
+
+<div class="card">
+  <div class="logo">QuickGigs</div>
+
+  <div class="greeting">
+    <div class="greeting-hi" id="greetingHi">Hey there 👋</div>
+    <div class="greeting-sub">What are you here to do today?<br>You can always switch later.</div>
+  </div>
+
+  <a class="choice-card hire" href="dashboard.html?mode=poster" onclick="setMode('poster')">
+    <div class="choice-icon">📋</div>
+    <div class="choice-text">
+      <div class="choice-title">I need help</div>
+      <div class="choice-desc">Post a task and find someone local to get it done</div>
+    </div>
+    <div class="choice-arrow">→</div>
+  </a>
+
+  <a class="choice-card earn" href="dashboard.html?mode=worker" onclick="setMode('worker')">
+    <div class="choice-icon">💼</div>
+    <div class="choice-text">
+      <div class="choice-title">I want to earn</div>
+      <div class="choice-desc">Browse tasks near you, apply and get paid</div>
+    </div>
+    <div class="choice-arrow">→</div>
+  </a>
+
+  <a class="both-link" href="dashboard.html?mode=poster" onclick="setMode('poster')">I want to do both — start as poster →</a>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "REPLACE_WITH_YOUR_API_KEY",
+  authDomain: "quickgigs-7b12d.firebaseapp.com",
+  projectId: "quickgigs-7b12d",
+  storageBucket: "quickgigs-7b12d.firebasestorage.app",
+  messagingSenderId: "698985399366",
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+onAuthStateChanged(auth, (user) => {
+  if (!user) { window.location.href = 'login.html'; return; }
+  const name = user.displayName || user.email.split('@')[0];
+  const firstName = name.split(' ')[0];
+  document.getElementById('greetingHi').textContent = 'Hey ' + firstName + ' 👋';
+
+  // If they only signed up as poster or worker, skip this screen
+  const role = localStorage.getItem('qg-role');
+  if (role === 'poster') { window.location.href = 'dashboard.html?mode=poster'; }
+  if (role === 'worker') { window.location.href = 'dashboard.html?mode=worker'; }
+});
+</script>
+
+<script>
+function setMode(mode) {
+  localStorage.setItem('qg-session-mode', mode);
+}
+
+var isDark = localStorage.getItem('qg-mode') !== 'light';
+function applyTheme() {
+  document.body.className = isDark ? '' : 'light';
+  document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark';
+}
+window.toggleMode = function() {
+  isDark = !isDark;
+  localStorage.setItem('qg-mode', isDark ? 'dark' : 'light');
+  applyTheme();
+};
+applyTheme();
+</script>
+</body>
+</html>
