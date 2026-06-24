@@ -4,287 +4,190 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QuickGigs — Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'DM Sans',sans-serif;min-height:100vh;transition:background 0.3s,color 0.3s;}
+:root{
+  --bg:#0b0118;
+  --surface:rgba(255,255,255,0.04);
+  --surface-hover:rgba(107,63,160,0.1);
+  --border:rgba(200,168,233,0.1);
+  --border-hover:#9b6fc4;
+  --text:#fff;
+  --text-muted:rgba(255,255,255,0.35);
+  --text-faint:rgba(255,255,255,0.22);
+  --purple:#6b3fa0;
+  --purple-light:#9b6fc4;
+  --lavender:#c8a8e9;
+  --nav-bg:#0b0118;
+  --tab-bg:#0e021f;
+  --card-bg:rgba(255,255,255,0.04);
+  --input-bg:rgba(255,255,255,0.06);
+  --green:#4ade80;
+}
+body.light{
+  --bg:#fafafe;
+  --surface:#fff;
+  --surface-hover:#f5f2ff;
+  --border:#f0eeff;
+  --border-hover:#9b6fc4;
+  --text:#1a0a3d;
+  --text-muted:#6b7280;
+  --text-faint:#9ca3af;
+  --nav-bg:#fff;
+  --tab-bg:#fff;
+  --card-bg:#fff;
+  --input-bg:#f0eeff;
+  --green:#16a34a;
+}
 
-/* DARK MODE */
-body.dark{background:#0d0520;color:#ffffff;}
-body.dark .nav{background:#0d0520;border-bottom:0.5px solid rgba(200,168,233,0.15);}
-body.dark .nav-link{color:rgba(255,255,255,0.6);}
-body.dark .content{background:#0d0520;}
-body.dark .stat-card{background:rgba(255,255,255,0.06);border:0.5px solid rgba(200,168,233,0.12);}
-body.dark .stat-label{color:rgba(255,255,255,0.5);}
-body.dark .stat-num{color:#ffffff;}
-body.dark .card{background:rgba(255,255,255,0.05);border:0.5px solid rgba(200,168,233,0.15);}
-body.dark .card-title{color:#ffffff;}
-body.dark .task-item{background:rgba(255,255,255,0.04);}
-body.dark .task-title{color:#ffffff;}
-body.dark .task-sub{color:rgba(255,255,255,0.4);}
-body.dark .task-price{color:#ffffff;}
-body.dark .welcome-title{color:#ffffff;}
-body.dark .welcome-sub{color:rgba(255,255,255,0.5);}
-body.dark .secondary-btn{background:rgba(255,255,255,0.06);border:0.5px solid rgba(200,168,233,0.2);color:#ffffff;}
-body.dark .secondary-btn .btn-sub{color:rgba(255,255,255,0.5);}
-body.dark .secondary-btn i{color:#c8a8e9;}
-body.dark .toggle-btn{background:rgba(255,255,255,0.08);border:0.5px solid rgba(200,168,233,0.2);color:rgba(255,255,255,0.7);}
-body.dark .see-all{color:#9b6fc4;}
-body.dark .empty-text{color:rgba(255,255,255,0.4);}
-body.dark .progress-bg{background:rgba(255,255,255,0.1);}
-body.dark .profile-sub{color:rgba(255,255,255,0.5);}
-body.dark .nav-secondary{background:#1a0a3d;border-bottom:0.5px solid rgba(200,168,233,0.1);}
-body.dark .online-text{color:#4ade80;}
-body.dark .earnings-text{color:rgba(255,255,255,0.6);}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:76px;transition:background 0.25s,color 0.25s;}
 
-/* LIGHT MODE */
-body.light{background:#f8f7ff;color:#1a1a2e;}
-body.light .nav{background:#ffffff;border-bottom:0.5px solid #ebebf5;}
-body.light .nav-link{color:#6b7280;}
-body.light .content{background:#f8f7ff;}
-body.light .stat-card{background:#f0eeff;border:0.5px solid #e0d8ff;}
-body.light .stat-label{color:#9ca3af;}
-body.light .stat-num{color:#1a1a2e;}
-body.light .card{background:#ffffff;border:0.5px solid #ebebf5;}
-body.light .card-title{color:#1a1a2e;}
-body.light .task-item{background:#f8f7ff;}
-body.light .task-title{color:#1a1a2e;}
-body.light .task-sub{color:#9ca3af;}
-body.light .task-price{color:#1a1a2e;}
-body.light .welcome-title{color:#1a1a2e;}
-body.light .welcome-sub{color:#6b7280;}
-body.light .secondary-btn{background:#ffffff;border:0.5px solid #ebebf5;color:#1a1a2e;}
-body.light .secondary-btn .btn-sub{color:#9ca3af;}
-body.light .secondary-btn i{color:#6b3fa0;}
-body.light .toggle-btn{background:#f0eeff;border:0.5px solid #e0d8ff;color:#6b3fa0;}
-body.light .see-all{color:#6b3fa0;}
-body.light .empty-text{color:#9ca3af;}
-body.light .progress-bg{background:#e5e7eb;}
-body.light .profile-sub{color:#9ca3af;}
-body.light .nav-secondary{background:#f0eeff;border-bottom:0.5px solid #e0d8ff;}
-body.light .online-text{color:#16a34a;}
-body.light .earnings-text{color:#6b7280;}
+/* NAV */
+.nav{position:sticky;top:0;z-index:50;background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;transition:background 0.25s;}
+.nav-logo{font-family:'Playfair Display',serif;font-style:italic;font-size:1.3rem;color:var(--lavender);}
+body.light .nav-logo{color:var(--purple);}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.switch-btn{padding:6px 13px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:0.5px solid var(--border);background:var(--surface);color:var(--text-muted);font-family:'DM Sans',sans-serif;transition:all 0.2s;white-space:nowrap;}
+.switch-btn:hover{border-color:var(--purple-light);color:var(--purple-light);}
+.mode-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);transition:all 0.2s;}
+body.light .mode-btn{background:#f0eeff;color:var(--purple);}
+.avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#c8a8e9);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#fff;flex-shrink:0;}
 
-/* SHARED */
-.nav{padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
-.nav-logo{font-family:'Playfair Display',serif;font-style:italic;color:#9b6fc4;font-size:1.2rem;}
-.dark .nav-logo{color:#c8a8e9;}
-.light .nav-logo{color:#6b3fa0;}
-.nav-right{display:flex;align-items:center;gap:16px;}
-.nav-link{font-size:13px;text-decoration:none;cursor:pointer;}
-.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#c8a8e9);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:white;cursor:pointer;}
-.toggle-btn{padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;}
-.nav-secondary{padding:10px 24px;display:flex;align-items:center;justify-content:space-between;}
-.online-badge{display:flex;align-items:center;gap:6px;}
-.online-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;animation:blink 2s infinite;}
-@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.4;}}
-.content{padding:20px 24px;max-width:900px;margin:0 auto;}
-.welcome-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
-.welcome-title{font-size:20px;font-weight:500;margin-bottom:2px;}
-.welcome-sub{font-size:13px;}
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px;}
-.stat-card{border-radius:12px;padding:14px 16px;}
-.stat-label{font-size:11px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
-.stat-num{font-size:24px;font-weight:500;}
-.actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
-.primary-btn{background:linear-gradient(135deg,#6b3fa0,#9b6fc4);border-radius:14px;padding:18px;cursor:pointer;border:none;text-align:left;width:100%;}
-.primary-btn .btn-title{font-size:14px;font-weight:500;color:#fff;display:block;margin-bottom:3px;}
-.primary-btn .btn-sub{font-size:12px;color:rgba(255,255,255,0.65);display:block;}
-.primary-btn i{font-size:20px;color:rgba(255,255,255,0.8);margin-bottom:8px;display:block;}
-.secondary-btn{border-radius:14px;padding:18px;cursor:pointer;text-align:left;width:100%;font-family:'DM Sans',sans-serif;}
-.secondary-btn .btn-title{font-size:14px;font-weight:500;display:block;margin-bottom:3px;}
-.secondary-btn .btn-sub{font-size:12px;display:block;}
-.secondary-btn i{font-size:20px;margin-bottom:8px;display:block;}
-.card{border-radius:16px;padding:16px;margin-bottom:12px;}
-.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-.card-title{font-size:14px;font-weight:500;}
-.see-all{font-size:12px;cursor:pointer;text-decoration:none;}
-.task-item{display:flex;align-items:center;justify-content:space-between;padding:12px;border-radius:10px;margin-bottom:8px;}
-.task-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:12px;}
-.task-info{flex:1;}
-.task-title{font-size:13px;font-weight:500;margin-bottom:2px;}
-.task-sub{font-size:11px;}
-.task-right{text-align:right;}
-.task-price{font-size:13px;font-weight:500;margin-bottom:4px;}
-.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;}
-.tag-quick{background:rgba(251,191,36,0.15);color:#d97706;}
-.tag-standard{background:rgba(107,63,160,0.2);color:#9b6fc4;}
-.empty-state{text-align:center;padding:24px 0;}
-.empty-state i{font-size:28px;margin-bottom:8px;display:block;color:rgba(155,111,196,0.4);}
-.empty-text{font-size:13px;}
-.progress-bg{border-radius:4px;height:5px;margin-bottom:10px;}
-.progress-fill{background:#9b6fc4;border-radius:4px;height:5px;width:20%;transition:width 0.3s;}
-.profile-sub{font-size:12px;}
-.logout-btn{background:none;border:none;cursor:pointer;font-size:12px;color:#ff6b6b;font-family:'DM Sans',sans-serif;padding:0;}
+/* GREETING */
+.greeting{padding:20px 20px 16px;background:var(--nav-bg);transition:background 0.25s;}
+.mode-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border-radius:20px;margin-bottom:10px;}
+.tag-poster{background:rgba(107,63,160,0.25);color:var(--lavender);}
+body.light .tag-poster{background:#ede9ff;color:var(--purple);}
+.tag-worker{background:rgba(74,222,128,0.12);color:#16a34a;}
+.greet-name{font-size:1.4rem;font-weight:500;color:var(--text);margin-bottom:3px;}
+.greet-sub{font-size:13px;color:var(--text-muted);}
+
+/* STAT CARDS */
+.stats{padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.stat-card{border-radius:16px;padding:14px 15px;border:0.5px solid var(--border);background:var(--card-bg);transition:all 0.2s;}
+.stat-card:hover{border-color:var(--border-hover);}
+.stat-icon{font-size:20px;margin-bottom:8px;}
+.stat-val{font-size:22px;font-weight:500;color:var(--text);margin-bottom:3px;}
+.stat-val.green{color:var(--green);}
+.stat-val.purple{color:var(--lavender);}
+body.light .stat-val.purple{color:var(--purple);}
+.stat-lbl{font-size:11px;color:var(--text-faint);}
+
+/* ACTION CARDS */
+.actions{padding:0 20px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.action-card{border-radius:16px;padding:16px 15px;cursor:pointer;text-decoration:none;display:block;transition:all 0.2s;}
+.action-card:hover{transform:translateY(-1px);}
+.action-card.primary{background:linear-gradient(135deg,#6b3fa0,#9b6fc4);}
+.action-card.secondary{background:var(--card-bg);border:0.5px solid var(--border);}
+.action-card.secondary:hover{border-color:var(--border-hover);background:var(--surface-hover);}
+.action-icon{font-size:22px;margin-bottom:8px;}
+.action-title{font-size:13px;font-weight:500;margin-bottom:3px;}
+.action-card.primary .action-title{color:#fff;}
+.action-card.secondary .action-title{color:var(--text);}
+.action-desc{font-size:11px;}
+.action-card.primary .action-desc{color:rgba(255,255,255,0.65);}
+.action-card.secondary .action-desc{color:var(--text-muted);}
+
+/* SECTION */
+.section{padding:0 20px 20px;}
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.section-title{font-size:15px;font-weight:500;color:var(--text);}
+.see-all{font-size:12px;color:var(--purple-light);text-decoration:none;}
+.see-all:hover{text-decoration:underline;}
+
+/* TASK ROWS */
+.task-row{display:flex;align-items:center;gap:12px;padding:12px 0;cursor:pointer;transition:opacity 0.15s;}
+.task-row:hover{opacity:0.8;}
+.task-row+.task-row{border-top:0.5px solid var(--border);}
+.task-dot{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.task-info{flex:1;min-width:0;}
+.task-name{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.task-meta{font-size:11px;color:var(--text-faint);}
+.task-right{text-align:right;flex-shrink:0;}
+.task-price{font-size:14px;font-weight:500;color:var(--text);margin-bottom:3px;}
+.task-badge{font-size:9px;padding:2px 8px;border-radius:20px;display:inline-block;}
+.badge-quick{background:rgba(251,191,36,0.15);color:#d97706;}
+.badge-standard{background:rgba(107,63,160,0.2);color:var(--lavender);}
+body.light .badge-standard{background:#ede9ff;color:var(--purple);}
+.badge-recurring{background:rgba(74,222,128,0.1);color:#16a34a;}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:32px 0;border:0.5px dashed var(--border);border-radius:16px;}
+.empty-icon{font-size:32px;margin-bottom:10px;}
+.empty-txt{font-size:13px;color:var(--text-muted);margin-bottom:12px;}
+.empty-btn{padding:9px 20px;border-radius:12px;background:var(--purple);color:#fff;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;display:inline-block;}
+
+/* TAB BAR */
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--tab-bg);border-top:0.5px solid var(--border);display:flex;padding:8px 0 14px;z-index:100;transition:background 0.25s;}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;text-decoration:none;}
+.tab-icon{font-size:22px;color:var(--text-faint);transition:color 0.15s;}
+.tab-lbl{font-size:10px;color:var(--text-faint);transition:color 0.15s;}
+.tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:var(--purple-light);}
+body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color:var(--purple);}
 </style>
 </head>
-<body class="dark">
-
-<!-- LOADING -->
-<div id="loading" style="position:fixed;inset:0;background:#0d0520;display:flex;align-items:center;justify-content:center;z-index:999;">
-  <div style="text-align:center;">
-    <p style="font-family:'Playfair Display',serif;font-style:italic;color:#c8a8e9;font-size:1.8rem;margin-bottom:8px;">QuickGigs</p>
-    <p style="font-size:13px;color:rgba(255,255,255,0.5);">Loading your dashboard...</p>
-  </div>
-</div>
+<body>
 
 <!-- NAV -->
 <nav class="nav">
   <div class="nav-logo">QuickGigs</div>
   <div class="nav-right">
-    <a class="nav-link" href="browse-tasks.html">Browse tasks</a>
-    <a class="nav-link" href="#">My tasks</a>
-    <a class="nav-link" href="#">Messages</a>
-    <button class="toggle-btn" onclick="toggleMode()">
-      <i class="ti ti-sun" id="modeIcon"></i>
-      <span id="modeText">Light</span>
-    </button>
+    <button class="switch-btn" id="switchBtn" onclick="switchMode()">Switch to worker</button>
+    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
     <div class="avatar" id="avatarEl">M</div>
-    <button class="logout-btn" onclick="handleLogout()">Log out</button>
   </div>
 </nav>
 
-<!-- ONLINE BAR -->
-<div class="nav-secondary">
-  <div class="online-badge">
-    <div class="online-dot"></div>
-    <span class="online-text" style="font-size:13px;font-weight:500;">Online — quick tasks enabled</span>
-  </div>
-  <span class="earnings-text" style="font-size:13px;">Today's earnings: <strong style="color:#4ade80;">$0.00</strong></span>
+<!-- GREETING -->
+<div class="greeting">
+  <div class="mode-tag tag-poster" id="modeTag">📋 Poster mode</div>
+  <div class="greet-name" id="greetName">Good evening 👋</div>
+  <div class="greet-sub" id="greetSub">Welcome back to QuickGigs</div>
 </div>
 
-<!-- CONTENT -->
-<div class="content">
+<!-- STATS -->
+<div class="stats" id="statsGrid"></div>
 
-  <!-- WELCOME -->
-  <div class="welcome-row">
-    <div>
-      <p class="welcome-title" id="welcomeName">Good morning!</p>
-      <p class="welcome-sub">Welcome back to QuickGigs 🇨🇦</p>
-    </div>
+<!-- ACTION CARDS -->
+<div class="actions" id="actionsGrid"></div>
+
+<!-- NEARBY / ACTIVITY SECTION -->
+<div class="section">
+  <div class="section-hdr">
+    <span class="section-title" id="sectionTitle">Tasks near you</span>
+    <a class="see-all" href="browse-tasks.html">See all</a>
   </div>
-
-  <!-- STATS -->
-  <div class="stats-grid">
-    <div class="stat-card">
-      <p class="stat-label">Tasks posted</p>
-      <p class="stat-num" id="statTasks">0</p>
-    </div>
-    <div class="stat-card">
-      <p class="stat-label">Applications</p>
-      <p class="stat-num" id="statApps">0</p>
-    </div>
-    <div class="stat-card">
-      <p class="stat-label">Total earned</p>
-      <p class="stat-num" style="color:#4ade80;" id="statEarned">$0</p>
-    </div>
-    <div class="stat-card">
-      <p class="stat-label">Your rating</p>
-      <p class="stat-num" style="color:#fbbf24;" id="statRating">—</p>
-    </div>
-  </div>
-
-  <!-- QUICK ACTIONS -->
-  <div class="actions-grid">
-    <button class="primary-btn" onclick="window.location.href='post-task.html'">
-      <i class="ti ti-plus" aria-hidden="true"></i>
-      <span class="btn-title">Post a task</span>
-      <span class="btn-sub">Need something done?</span>
-    </button>
-    <button class="secondary-btn" onclick="window.location.href='browse-tasks.html'">
-      <i class="ti ti-search" aria-hidden="true"></i>
-      <span class="btn-title">Browse tasks</span>
-      <span class="btn-sub">Find work near you</span>
-    </button>
-  </div>
-
-  <!-- NEARBY TASKS -->
-  <div class="card">
-    <div class="card-header">
-      <p class="card-title">Tasks near you</p>
-      <a class="see-all" href="browse-tasks.html">See all</a>
-    </div>
-    <div class="task-item">
-      <div class="task-icon" style="background:rgba(251,191,36,0.15);">
-        <i class="ti ti-truck" style="font-size:18px;color:#fbbf24;" aria-hidden="true"></i>
-      </div>
-      <div class="task-info">
-        <p class="task-title">Grocery run — Superstore NW</p>
-        <p class="task-sub">1.2km away</p>
-      </div>
-      <div class="task-right">
-        <p class="task-price">$30</p>
-        <span class="tag tag-quick">Quick</span>
-      </div>
-    </div>
-    <div class="task-item">
-      <div class="task-icon" style="background:rgba(107,63,160,0.2);">
-        <i class="ti ti-home" style="font-size:18px;color:#9b6fc4;" aria-hidden="true"></i>
-      </div>
-      <div class="task-info">
-        <p class="task-title">Deep clean 2 bedroom apartment</p>
-        <p class="task-sub">2.4km away</p>
-      </div>
-      <div class="task-right">
-        <p class="task-price">$120</p>
-        <span class="tag tag-standard">Standard</span>
-      </div>
-    </div>
-    <div class="task-item">
-      <div class="task-icon" style="background:rgba(74,222,128,0.1);">
-        <i class="ti ti-book" style="font-size:18px;color:#4ade80;" aria-hidden="true"></i>
-      </div>
-      <div class="task-info">
-        <p class="task-title">Math tutor for Grade 10 student</p>
-        <p class="task-sub">0.8km away</p>
-      </div>
-      <div class="task-right">
-        <p class="task-price">$35/hr</p>
-        <span class="tag tag-standard">Standard</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- MY TASKS -->
-  <div class="card">
-    <div class="card-header">
-      <p class="card-title">My posted tasks</p>
-    </div>
-    <div class="empty-state">
-      <i class="ti ti-clipboard-list" aria-hidden="true"></i>
-      <p class="empty-text">No tasks posted yet. Post your first task!</p>
-    </div>
-  </div>
-
-  <!-- MY APPLICATIONS -->
-  <div class="card">
-    <div class="card-header">
-      <p class="card-title">My applications</p>
-    </div>
-    <div class="empty-state">
-      <i class="ti ti-briefcase" aria-hidden="true"></i>
-      <p class="empty-text">No applications yet. Browse tasks and start earning!</p>
-    </div>
-  </div>
-
-  <!-- PROFILE COMPLETION -->
-  <div class="card">
-    <div class="card-header">
-      <p class="card-title">Complete your profile</p>
-      <span style="font-size:12px;color:#9b6fc4;font-weight:500;">20%</span>
-    </div>
-    <div class="progress-bg">
-      <div class="progress-fill"></div>
-    </div>
-    <p class="profile-sub">Add a profile photo and bio to get more tasks and build trust with posters.</p>
-  </div>
-
+  <div id="tasksList"></div>
 </div>
+
+<!-- TAB BAR -->
+<nav class="tab-bar">
+  <a class="tab-item active" href="dashboard.html">
+    <span class="tab-icon">🏠</span>
+    <span class="tab-lbl">Home</span>
+  </a>
+  <a class="tab-item" href="browse-tasks.html">
+    <span class="tab-icon">🔍</span>
+    <span class="tab-lbl">Browse</span>
+  </a>
+  <a class="tab-item" href="post-task.html">
+    <span class="tab-icon">➕</span>
+    <span class="tab-lbl">Post</span>
+  </a>
+  <a class="tab-item" href="my-tasks.html">
+    <span class="tab-icon">✅</span>
+    <span class="tab-lbl">My Tasks</span>
+  </a>
+  <a class="tab-item" href="messages.html">
+    <span class="tab-icon">💬</span>
+    <span class="tab-lbl">Messages</span>
+  </a>
+</nav>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
@@ -292,43 +195,126 @@ const firebaseConfig = {
   projectId: "quickgigs-7b12d",
   storageBucket: "quickgigs-7b12d.firebasestorage.app",
   messagingSenderId: "698985399366",
-  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647",
-  measurementId: "G-82SPKK654N"
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-onAuthStateChanged(auth, function(user) {
-  document.getElementById('loading').style.display = 'none';
-  if(!user) {
-    window.location.href = 'login.html';
-    return;
-  }
-  var name = user.displayName || user.email.split('@')[0];
-  var initial = name.charAt(0).toUpperCase();
-  document.getElementById('avatarEl').textContent = initial;
-  var hour = new Date().getHours();
-  var greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  document.getElementById('welcomeName').textContent = greeting + ', ' + name + '!';
+onAuthStateChanged(auth, (user) => {
+  if (!user) { window.location.href = 'login.html'; return; }
+  const name = user.displayName || user.email.split('@')[0];
+  const firstName = name.split(' ')[0];
+  window._userName = firstName;
+  document.getElementById('avatarEl').textContent = firstName.charAt(0).toUpperCase();
+  renderGreeting();
 });
+</script>
 
-window.handleLogout = async function() {
-  await signOut(auth);
-  window.location.href = 'login.html';
-};
-
-var isDark = true;
-window.toggleMode = function() {
+<script>
+// ── THEME ──────────────────────────────────────────────
+var isDark = localStorage.getItem('qg-mode') !== 'light';
+function applyTheme(){
+  document.body.className = isDark ? '' : 'light';
+  document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark';
+}
+window.toggleTheme = function(){
   isDark = !isDark;
-  document.body.className = isDark ? 'dark' : 'light';
-  document.getElementById('modeIcon').className = isDark ? 'ti ti-sun' : 'ti ti-moon';
-  document.getElementById('modeText').textContent = isDark ? 'Light' : 'Dark';
   localStorage.setItem('qg-mode', isDark ? 'dark' : 'light');
+  applyTheme();
+};
+applyTheme();
+
+// ── MODE (poster / worker) ─────────────────────────────
+// Read from URL param first, then localStorage
+var params = new URLSearchParams(window.location.search);
+var sessionMode = params.get('mode') || localStorage.getItem('qg-session-mode') || 'poster';
+localStorage.setItem('qg-session-mode', sessionMode);
+
+var isPoster = sessionMode === 'poster';
+
+window.switchMode = function(){
+  isPoster = !isPoster;
+  var newMode = isPoster ? 'poster' : 'worker';
+  localStorage.setItem('qg-session-mode', newMode);
+  renderAll();
 };
 
-var saved = localStorage.getItem('qg-mode');
-if(saved === 'light') { isDark = false; document.body.className = 'light'; document.getElementById('modeIcon').className = 'ti ti-moon'; document.getElementById('modeText').textContent = 'Dark'; }
+// ── GREETING ───────────────────────────────────────────
+function getTimeGreeting(){
+  var h = new Date().getHours();
+  if(h < 12) return 'Good morning';
+  if(h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+function renderGreeting(){
+  var name = window._userName || '';
+  document.getElementById('greetName').textContent = getTimeGreeting() + (name ? ', ' + name : '') + ' 👋';
+  document.getElementById('greetSub').textContent = new Date().toLocaleDateString('en-CA', {weekday:'long', month:'long', day:'numeric'}) + ' · Calgary';
+}
+
+// ── DATA ───────────────────────────────────────────────
+var nearbyTasks = [
+  {icon:'🚗', bg:'rgba(251,191,36,0.15)', name:'Grocery run — Superstore NW',       meta:'📍 1.2km away · 5 mins ago',  price:'$30',    badge:'badge-quick',    badgeLabel:'⚡ Quick',    href:'browse-tasks.html'},
+  {icon:'🏠', bg:'rgba(107,63,160,0.2)',  name:'Deep clean 2 bedroom apartment',     meta:'📍 2.4km away · 2 hrs ago',   price:'$120',   badge:'badge-standard', badgeLabel:'Standard',    href:'browse-tasks.html'},
+  {icon:'🎓', bg:'rgba(74,222,128,0.1)', name:'Math tutor for Grade 10 student',    meta:'📍 0.8km away · 30 mins ago', price:'$35/hr', badge:'badge-recurring', badgeLabel:'🔄 Recurring', href:'browse-tasks.html'},
+];
+
+// ── RENDER ─────────────────────────────────────────────
+function renderAll(){
+  renderGreeting();
+
+  // Mode tag + switch button
+  var tag = document.getElementById('modeTag');
+  if(isPoster){
+    tag.className = 'mode-tag tag-poster';
+    tag.textContent = '📋 Poster mode';
+    document.getElementById('switchBtn').textContent = 'Switch to worker';
+  } else {
+    tag.className = 'mode-tag tag-worker';
+    tag.textContent = '💼 Worker mode';
+    document.getElementById('switchBtn').textContent = 'Switch to poster';
+  }
+
+  // Stats
+  var stats = isPoster
+    ? [{icon:'📋',val:'0',cls:'',lbl:'Tasks posted'},{icon:'👥',val:'0',cls:'purple',lbl:'Applicants'},{icon:'✅',val:'0',cls:'',lbl:'Completed'},{icon:'💸',val:'$0',cls:'green',lbl:'Total spent'}]
+    : [{icon:'📨',val:'0',cls:'',lbl:'Applications'},{icon:'⭐',val:'—',cls:'purple',lbl:'Your rating'},{icon:'✅',val:'0',cls:'',lbl:'Jobs done'},{icon:'💰',val:'$0',cls:'green',lbl:'Total earned'}];
+  document.getElementById('statsGrid').innerHTML = stats.map(function(s){
+    return '<div class="stat-card"><div class="stat-icon">'+s.icon+'</div><div class="stat-val '+s.cls+'">'+s.val+'</div><div class="stat-lbl">'+s.lbl+'</div></div>';
+  }).join('');
+
+  // Action cards
+  var actions = isPoster
+    ? [{icon:'➕',title:'Post a task',desc:'Need something done?',href:'post-task.html',cls:'primary'},{icon:'📂',title:'My tasks',desc:'See applicants & progress',href:'my-tasks.html',cls:'secondary'}]
+    : [{icon:'🔍',title:'Browse tasks',desc:'Find work near you',href:'browse-tasks.html',cls:'primary'},{icon:'📨',title:'My applications',desc:'Track your bids',href:'my-tasks.html',cls:'secondary'}];
+  document.getElementById('actionsGrid').innerHTML = actions.map(function(a){
+    return '<a class="action-card '+a.cls+'" href="'+a.href+'"><div class="action-icon">'+a.icon+'</div><div class="action-title">'+a.title+'</div><div class="action-desc">'+a.desc+'</div></a>';
+  }).join('');
+
+  // Section title
+  document.getElementById('sectionTitle').textContent = isPoster ? 'Tasks near you' : 'Tasks near you';
+
+  // Tasks list — show nearby tasks for both modes, empty posted tasks for poster
+  var html = nearbyTasks.map(function(t){
+    return '<a class="task-row" href="'+t.href+'" style="text-decoration:none">' +
+      '<div class="task-dot" style="background:'+t.bg+'">'+t.icon+'</div>' +
+      '<div class="task-info"><div class="task-name">'+t.name+'</div><div class="task-meta">'+t.meta+'</div></div>' +
+      '<div class="task-right"><div class="task-price">'+t.price+'</div><span class="task-badge '+t.badge+'">'+t.badgeLabel+'</span></div>' +
+    '</a>';
+  }).join('');
+
+  // If poster, also show "my posted tasks" empty state
+  if(isPoster){
+    html += '<div style="margin-top:16px"></div>' +
+      '<div class="section-hdr"><span class="section-title">My posted tasks</span><a class="see-all" href="my-tasks.html">See all</a></div>' +
+      '<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">No tasks posted yet</div><a class="empty-btn" href="post-task.html">Post your first task</a></div>';
+  }
+
+  document.getElementById('tasksList').innerHTML = html;
+}
+
+renderAll();
 </script>
 </body>
 </html>
