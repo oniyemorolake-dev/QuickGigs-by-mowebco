@@ -106,16 +106,43 @@ const firebaseConfig = {
   projectId: "quickgigs-7b12d",
   storageBucket: "quickgigs-7b12d.firebasestorage.app",
   messagingSenderId: "698985399366",
-  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647",
-  measurementId: "G-82SPKK654N"
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const ORDS_BASE = 'https://iacademy2.oracle.com/ords/ca_a832_sql_s12/quickgigs/';
+
+// Save user to Oracle USERS table
+async function saveUserToOracle(userData) {
+  try {
+    const res = await fetch(ORDS_BASE + 'users/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name:  userData.name,
+        email: userData.email,
+        phone: userData.phone || '',
+        role:  userData.role
+      })
+    });
+    if (!res.ok) throw new Error('Oracle save failed: ' + res.status);
+    console.log('User saved to Oracle successfully');
+  } catch (err) {
+    // Don't block signup if Oracle fails — Firebase account still created
+    console.warn('Could not save user to Oracle:', err);
+  }
+}
 
 // Stars
-var stars=document.getElementById('stars');
-for(var i=0;i<80;i++){var s=document.createElement('div');s.className='star';var size=Math.random()*2+0.5;s.style.cssText='width:'+size+'px;height:'+size+'px;left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;--d:'+(Math.random()*4+2)+'s;--op:'+(Math.random()*0.6+0.1)+';animation-delay:'+Math.random()*5+'s';stars.appendChild(s);}
+var stars = document.getElementById('stars');
+for(var i = 0; i < 80; i++){
+  var s = document.createElement('div');
+  s.className = 'star';
+  var size = Math.random() * 2 + 0.5;
+  s.style.cssText = 'width:'+size+'px;height:'+size+'px;left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;--d:'+(Math.random()*4+2)+'s;--op:'+(Math.random()*0.6+0.1)+';animation-delay:'+Math.random()*5+'s';
+  stars.appendChild(s);
+}
 
 // Role selection
 window.setRole = function(role, btn) {
@@ -128,45 +155,60 @@ window.setRole = function(role, btn) {
 document.getElementById('signupForm').addEventListener('submit', async function(e) {
   e.preventDefault();
 
-  var errorMsg = document.getElementById('errorMsg');
-  var okMsg = document.getElementById('okMsg');
+  var errorMsg  = document.getElementById('errorMsg');
+  var okMsg     = document.getElementById('okMsg');
   var submitBtn = document.getElementById('submitBtn');
   errorMsg.style.display = 'none';
-  okMsg.style.display = 'none';
-  document.querySelectorAll('.error').forEach(function(el){ el.style.display='none'; });
+  okMsg.style.display    = 'none';
+  document.querySelectorAll('.error').forEach(function(el){ el.style.display = 'none'; });
 
-  var name = document.getElementById('name').value;
-  var email = document.getElementById('email').value;
-  var password = document.getElementById('password').value;
+  var name    = document.getElementById('name').value.trim();
+  var email   = document.getElementById('email').value.trim();
+  var phone   = document.getElementById('phone').value.trim();
+  var password= document.getElementById('password').value;
   var confirm = document.getElementById('confirmPassword').value;
-  var role = document.getElementById('roleInput').value;
+  var role    = document.getElementById('roleInput').value;
 
+  // Validate
   var valid = true;
-  if(name.length < 2) { document.getElementById('nameError').style.display='block'; valid=false; }
-  if(password.length < 8) { document.getElementById('passwordError').style.display='block'; valid=false; }
-  if(password !== confirm) { document.getElementById('confirmError').style.display='block'; valid=false; }
-  if(!valid) return;
+  if (name.length < 2)        { document.getElementById('nameError').style.display     = 'block'; valid = false; }
+  if (password.length < 8)    { document.getElementById('passwordError').style.display = 'block'; valid = false; }
+  if (password !== confirm)   { document.getElementById('confirmError').style.display  = 'block'; valid = false; }
+  if (!valid) return;
 
   submitBtn.textContent = 'Creating account...';
-  submitBtn.disabled = true;
+  submitBtn.disabled    = true;
 
   try {
+    // 1. Create Firebase account
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(userCredential.user, { displayName: name });
-    okMsg.textContent = 'Account created successfully! Welcome to QuickGigs 🎉';
-    okMsg.style.display = 'block';
+
+    // 2. Save user to Oracle USERS table
+    await saveUserToOracle({ name, email, phone, role });
+
+    // 3. Save role to localStorage so login redirect works
+    localStorage.setItem('qg-role', role);
+
+    // 4. Show success and redirect
+    okMsg.textContent    = 'Account created successfully! Welcome to QuickGigs 🎉';
+    okMsg.style.display  = 'block';
     submitBtn.textContent = 'Account created!';
-    // Redirect to dashboard after 2 seconds
-    setTimeout(function(){ window.location.href = 'dashboard.html'; }, 2000);
+
+    // Redirect — if role is both go to mode-select, otherwise go straight to dashboard
+    setTimeout(function(){
+      window.location.href = role === 'both' ? 'mode-select.html' : 'dashboard.html';
+    }, 2000);
+
   } catch (error) {
     var message = 'Something went wrong. Please try again.';
-    if(error.code === 'auth/email-already-in-use') message = 'This email is already registered. Try logging in.';
-    if(error.code === 'auth/invalid-email') message = 'Please enter a valid email address.';
-    if(error.code === 'auth/weak-password') message = 'Password is too weak. Use at least 8 characters.';
-    errorMsg.textContent = message;
+    if (error.code === 'auth/email-already-in-use') message = 'This email is already registered. Try logging in.';
+    if (error.code === 'auth/invalid-email')        message = 'Please enter a valid email address.';
+    if (error.code === 'auth/weak-password')        message = 'Password is too weak. Use at least 8 characters.';
+    errorMsg.textContent   = message;
     errorMsg.style.display = 'block';
-    submitBtn.textContent = 'Create account';
-    submitBtn.disabled = false;
+    submitBtn.textContent  = 'Create account';
+    submitBtn.disabled     = false;
   }
 });
 </script>
