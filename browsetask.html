@@ -8,114 +8,64 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --bg:#0b0118;
-  --surface:rgba(255,255,255,0.04);
-  --surface-hover:rgba(107,63,160,0.1);
-  --border:rgba(200,168,233,0.1);
-  --border-hover:rgba(155,111,196,0.4);
-  --text:#fff;
-  --text-muted:rgba(255,255,255,0.35);
-  --text-faint:rgba(255,255,255,0.22);
-  --purple:#6b3fa0;
-  --purple-light:#9b6fc4;
-  --lavender:#c8a8e9;
-  --nav-bg:#0b0118;
-  --tab-bg:#0e021f;
-  --input-bg:rgba(255,255,255,0.06);
-  --pill-inactive-bg:transparent;
-  --pill-inactive-color:rgba(255,255,255,0.35);
-  --pill-inactive-border:rgba(200,168,233,0.12);
-  --cat-inactive-bg:rgba(255,255,255,0.04);
-  --cat-inactive-color:rgba(255,255,255,0.4);
-  --cat-inactive-border:rgba(200,168,233,0.1);
-  --cat-active-bg:rgba(107,63,160,0.35);
-  --cat-active-color:#c8a8e9;
-  --card-bg:rgba(255,255,255,0.04);
-  --modal-bg:#150830;
-  --results-color:rgba(255,255,255,0.3);
-  --desc-color:rgba(255,255,255,0.38);
-  --info-color:rgba(255,255,255,0.28);
-  --empty-color:rgba(200,168,233,0.3);
-  --cancel-color:rgba(255,255,255,0.5);
-  --cancel-border:rgba(200,168,233,0.25);
+  --bg:#0b0118;--surface:rgba(255,255,255,0.04);--surface-hover:rgba(107,63,160,0.1);
+  --border:rgba(200,168,233,0.1);--border-hover:rgba(155,111,196,0.4);--text:#fff;
+  --text-muted:rgba(255,255,255,0.35);--text-faint:rgba(255,255,255,0.22);
+  --purple:#6b3fa0;--purple-light:#9b6fc4;--lavender:#c8a8e9;--nav-bg:#0b0118;
+  --tab-bg:#0e021f;--input-bg:rgba(255,255,255,0.06);
+  --pill-inactive-bg:transparent;--pill-inactive-color:rgba(255,255,255,0.35);--pill-inactive-border:rgba(200,168,233,0.12);
+  --cat-inactive-bg:rgba(255,255,255,0.04);--cat-inactive-color:rgba(255,255,255,0.4);--cat-inactive-border:rgba(200,168,233,0.1);
+  --cat-active-bg:rgba(107,63,160,0.35);--cat-active-color:#c8a8e9;--card-bg:rgba(255,255,255,0.04);
+  --modal-bg:#150830;--results-color:rgba(255,255,255,0.3);--desc-color:rgba(255,255,255,0.38);
+  --info-color:rgba(255,255,255,0.28);--empty-color:rgba(200,168,233,0.3);
+  --cancel-color:rgba(255,255,255,0.5);--cancel-border:rgba(200,168,233,0.25);
 }
 body.light{
-  --bg:#fafafe;
-  --surface:#fff;
-  --surface-hover:#faf8ff;
-  --border:#f0eeff;
-  --border-hover:#9b6fc4;
-  --text:#1a0a3d;
-  --text-muted:#6b7280;
-  --text-faint:#9ca3af;
-  --nav-bg:#fff;
-  --tab-bg:#fff;
-  --input-bg:#f0eeff;
-  --pill-inactive-bg:#f8f7ff;
-  --pill-inactive-color:#6b7280;
-  --pill-inactive-border:#e8e2ff;
-  --cat-inactive-bg:#f8f7ff;
-  --cat-inactive-color:#6b7280;
-  --cat-inactive-border:#e8e2ff;
-  --cat-active-bg:#ede9ff;
-  --cat-active-color:#6b3fa0;
-  --card-bg:#fff;
-  --modal-bg:#fff;
-  --results-color:#9ca3af;
-  --desc-color:#6b7280;
-  --info-color:#9ca3af;
-  --empty-color:#c8b8e8;
-  --cancel-color:#6b7280;
-  --cancel-border:#e8e2ff;
+  --bg:#fafafe;--surface:#fff;--surface-hover:#faf8ff;--border:#f0eeff;--border-hover:#9b6fc4;
+  --text:#1a0a3d;--text-muted:#6b7280;--text-faint:#9ca3af;--nav-bg:#fff;--tab-bg:#fff;
+  --input-bg:#f0eeff;--pill-inactive-bg:#f8f7ff;--pill-inactive-color:#6b7280;--pill-inactive-border:#e8e2ff;
+  --cat-inactive-bg:#f8f7ff;--cat-inactive-color:#6b7280;--cat-inactive-border:#e8e2ff;
+  --cat-active-bg:#ede9ff;--cat-active-color:#6b3fa0;--card-bg:#fff;--modal-bg:#fff;
+  --results-color:#9ca3af;--desc-color:#6b7280;--info-color:#9ca3af;--empty-color:#c8b8e8;
+  --cancel-color:#6b7280;--cancel-border:#e8e2ff;--lavender:#6b3fa0;
 }
-
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background 0.25s,color 0.25s;padding-bottom:72px;}
-
-/* NAV */
 .nav{position:sticky;top:0;z-index:50;background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;transition:background 0.25s;}
 .nav-logo{font-family:'Playfair Display',serif;font-style:italic;font-size:1.25rem;color:var(--lavender);}
 body.light .nav-logo{color:var(--purple);}
 .nav-right{display:flex;align-items:center;gap:12px;}
 .nav-icon{background:none;border:none;cursor:pointer;color:var(--lavender);opacity:0.6;font-size:18px;padding:2px;}
-body.light .nav-icon{color:var(--purple-light);opacity:1;}
-.mode-btn{padding:5px 12px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.65);transition:all 0.2s;}
+.mode-btn{padding:5px 12px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.65);}
 body.light .mode-btn{background:#f0eeff;color:var(--purple);}
 .avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#c8a8e9);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:#fff;}
-
-/* SEARCH */
 .search-wrap{padding:14px 18px 0;background:var(--nav-bg);transition:background 0.25s;}
-.search-box{display:flex;align-items:center;gap:8px;background:var(--input-bg);border:0.5px solid var(--border);border-radius:14px;padding:11px 15px;transition:border-color 0.2s;}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--input-bg);border:0.5px solid var(--border);border-radius:14px;padding:11px 15px;}
 .search-box:focus-within{border-color:var(--purple-light);}
 .search-icon{color:var(--purple-light);opacity:0.5;font-size:16px;flex-shrink:0;}
 .search-input{flex:1;background:none;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);}
 .search-input::placeholder{color:var(--lavender);opacity:0.35;}
-
-/* MODE FILTER */
-.mode-row{padding:12px 18px 0;background:var(--nav-bg);display:flex;gap:7px;overflow-x:auto;transition:background 0.25s;}
+.mode-row{padding:12px 18px 0;background:var(--nav-bg);display:flex;gap:7px;overflow-x:auto;}
 .mode-row::-webkit-scrollbar{display:none;}
 .mpill{padding:7px 15px;border-radius:20px;font-size:12px;cursor:pointer;white-space:nowrap;border:0.5px solid var(--pill-inactive-border);background:var(--pill-inactive-bg);color:var(--pill-inactive-color);transition:all 0.18s;user-select:none;}
-.mpill:hover{opacity:0.85;}
 .mpill.active-all{background:rgba(107,63,160,0.35);color:var(--lavender);border-color:var(--purple);}
-body.light .mpill.active-all{background:var(--purple);color:#fff;border-color:var(--purple);}
+body.light .mpill.active-all{background:var(--purple);color:#fff;}
 .mpill.active-quick{background:rgba(251,191,36,0.15);color:#d97706;border-color:rgba(251,191,36,0.45);}
 .mpill.active-standard{background:rgba(107,63,160,0.22);color:var(--lavender);border-color:var(--purple-light);}
-body.light .mpill.active-standard{background:#ede9ff;color:var(--purple);border-color:var(--purple-light);}
+body.light .mpill.active-standard{background:#ede9ff;color:var(--purple);}
 .mpill.active-recurring{background:rgba(74,222,128,0.12);color:#16a34a;border-color:rgba(74,222,128,0.4);}
-
-/* CATEGORY PILLS */
-.cat-wrap-outer{background:var(--nav-bg);padding:10px 18px 12px;border-bottom:0.5px solid var(--border);transition:background 0.25s;}
+.cat-wrap-outer{background:var(--nav-bg);padding:10px 18px 12px;border-bottom:0.5px solid var(--border);}
 .cat-label-txt{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);margin-bottom:8px;display:block;}
 .cat-row{display:flex;gap:7px;overflow-x:auto;}
 .cat-row::-webkit-scrollbar{display:none;}
 .cpill{padding:6px 13px;border-radius:20px;font-size:12px;cursor:pointer;white-space:nowrap;border:0.5px solid var(--cat-inactive-border);background:var(--cat-inactive-bg);color:var(--cat-inactive-color);transition:all 0.18s;user-select:none;}
 .cpill.cat-active{background:var(--cat-active-bg);color:var(--cat-active-color);border-color:var(--purple-light);}
-
-/* RESULTS */
 .results-bar{padding:12px 18px 0;display:flex;align-items:center;justify-content:space-between;}
 .results-txt{font-size:12px;color:var(--results-color);}
 .sort-sel{font-size:12px;background:none;border:none;color:var(--purple-light);font-family:'DM Sans',sans-serif;cursor:pointer;outline:none;}
-
-/* CARDS */
+.loading-state{text-align:center;padding:48px 0;}
+.loading-spinner{font-size:32px;animation:spin 1.2s linear infinite;display:inline-block;margin-bottom:10px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-txt{font-size:13px;color:var(--results-color);}
 .cards-area{padding:10px 18px 0;}
 .task-card{border-radius:16px;padding:15px;margin-bottom:10px;border:0.5px solid var(--border);background:var(--card-bg);cursor:pointer;transition:border-color 0.18s,background 0.18s;}
 .task-card:hover{border-color:var(--border-hover);background:var(--surface-hover);}
@@ -132,29 +82,23 @@ body.light .badge-standard{background:#ede9ff;color:var(--purple);}
 .badge-recurring{background:rgba(74,222,128,0.1);color:#16a34a;}
 .tc-desc{font-size:12px;line-height:1.6;color:var(--desc-color);margin-bottom:11px;}
 .tc-bottom{display:flex;align-items:center;justify-content:space-between;}
-.tc-price-block{}
 .tc-price{font-size:16px;font-weight:500;color:var(--text);}
 .tc-info{font-size:10px;color:var(--info-color);margin-top:1px;}
-.apply-btn{padding:9px 18px;border-radius:11px;border:none;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;color:#fff;transition:opacity 0.15s;}
-.apply-btn:hover{opacity:0.88;}
+.apply-btn{padding:9px 18px;border-radius:11px;border:none;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;color:#fff;}
 .btn-quick{background:#d97706;}
 .btn-standard{background:var(--purple);}
 .btn-recurring{background:#16a34a;}
-
-/* EMPTY STATE */
 .empty-state{text-align:center;padding:48px 0 32px;}
 .empty-emoji{font-size:40px;margin-bottom:10px;}
 .empty-txt{font-size:13px;color:var(--empty-color);}
-
-/* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:200;display:none;align-items:flex-end;justify-content:center;}
 .modal-overlay.open{display:flex;}
-.modal{width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:20px 22px 32px;background:var(--modal-bg);border:0.5px solid var(--border);transition:background 0.25s;}
+.modal{width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:20px 22px 32px;background:var(--modal-bg);border:0.5px solid var(--border);}
 .modal-handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 18px;}
 .modal-title{font-size:15px;font-weight:500;color:var(--text);margin-bottom:3px;}
 .modal-sub{font-size:12px;color:var(--text-muted);margin-bottom:18px;}
 .modal-label{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);display:block;margin-bottom:6px;}
-.modal-input{width:100%;background:var(--input-bg);border:0.5px solid var(--border);border-radius:12px;padding:11px 14px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;transition:border-color 0.2s;margin-bottom:13px;}
+.modal-input{width:100%;background:var(--input-bg);border:0.5px solid var(--border);border-radius:12px;padding:11px 14px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;margin-bottom:13px;}
 .modal-input:focus{border-color:var(--purple-light);}
 .modal-input::placeholder{color:var(--lavender);opacity:0.35;}
 body.light .modal-input::placeholder{color:var(--purple);opacity:0.3;}
@@ -164,55 +108,42 @@ textarea.modal-input{resize:none;min-height:80px;}
 .price-pre{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--purple-light);font-weight:500;font-size:13px;}
 .price-wrap .modal-input{padding-left:26px;margin-bottom:0;}
 .modal-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;}
-.cancel-btn{padding:13px;border-radius:13px;border:0.5px solid var(--cancel-border);background:none;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;color:var(--cancel-color);transition:opacity 0.15s;}
-.cancel-btn:hover{opacity:0.75;}
-.submit-btn{padding:13px;border-radius:13px;border:none;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:opacity 0.15s;}
-.submit-btn:hover{opacity:0.9;}
-
-/* TOAST */
-.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:#4ade80;color:#0b0118;padding:11px 24px;border-radius:20px;font-size:13px;font-weight:500;display:none;z-index:300;white-space:nowrap;box-shadow:0 4px 20px rgba(74,222,128,0.25);}
-
-/* TAB BAR */
-.tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--tab-bg);border-top:0.5px solid var(--border);display:flex;padding:8px 0 12px;z-index:100;transition:background 0.25s;}
+.cancel-btn{padding:13px;border-radius:13px;border:0.5px solid var(--cancel-border);background:none;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;color:var(--cancel-color);}
+.submit-btn{padding:13px;border-radius:13px;border:none;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;}
+.submit-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:#4ade80;color:#0b0118;padding:11px 24px;border-radius:20px;font-size:13px;font-weight:500;display:none;z-index:300;white-space:nowrap;}
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--tab-bg);border-top:0.5px solid var(--border);display:flex;padding:8px 0 12px;z-index:100;}
 .tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;text-decoration:none;}
-.tab-icon{font-size:20px;color:var(--text-faint);transition:color 0.15s;}
-.tab-lbl{font-size:10px;color:var(--text-faint);transition:color 0.15s;}
+.tab-icon{font-size:20px;color:var(--text-faint);}
+.tab-lbl{font-size:10px;color:var(--text-faint);}
 .tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:var(--purple-light);}
 body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color:var(--purple);}
 </style>
 </head>
 <body>
-
-<!-- NAV -->
 <nav class="nav">
   <div class="nav-logo">QuickGigs</div>
   <div class="nav-right">
-    <button class="nav-icon" aria-label="Notifications">🔔</button>
+    <button class="nav-icon">🔔</button>
     <button class="mode-btn" id="modeBtn" onclick="toggleMode()">☀️ Light</button>
     <div class="avatar" id="avatarEl">M</div>
   </div>
 </nav>
-
-<!-- SEARCH -->
 <div class="search-wrap">
   <div class="search-box">
     <span class="search-icon">🔍</span>
     <input class="search-input" id="searchInput" placeholder="Search tasks near you..." oninput="applyFilters()">
   </div>
 </div>
-
-<!-- MODE FILTER PILLS -->
 <div class="mode-row" id="modeRow">
   <span class="mpill active-all" onclick="setMode(this,'all')">All tasks</span>
   <span class="mpill" onclick="setMode(this,'quick')">⚡ Quick</span>
   <span class="mpill" onclick="setMode(this,'standard')">📋 Standard</span>
   <span class="mpill" onclick="setMode(this,'recurring')">🔄 Recurring</span>
 </div>
-
-<!-- CATEGORY PILLS -->
 <div class="cat-wrap-outer">
   <span class="cat-label-txt">Category</span>
-  <div class="cat-row" id="catRow">
+  <div class="cat-row">
     <span class="cpill cat-active" onclick="setCat(this,'all')">All</span>
     <span class="cpill" onclick="setCat(this,'errands')">🚗 Errands</span>
     <span class="cpill" onclick="setCat(this,'home')">🏠 Home</span>
@@ -228,79 +159,45 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
     <span class="cpill" onclick="setCat(this,'other')">📦 Other</span>
   </div>
 </div>
-
-<!-- RESULTS BAR -->
 <div class="results-bar">
-  <span class="results-txt" id="resultsCount">6 tasks near Calgary</span>
+  <span class="results-txt" id="resultsCount">Loading tasks...</span>
   <select class="sort-sel" onchange="applyFilters()">
     <option>Newest first</option>
     <option>Highest pay</option>
-    <option>Nearest</option>
   </select>
 </div>
-
-<!-- TASK CARDS -->
-<div class="cards-area" id="cardsArea"></div>
-
-<!-- APPLY MODAL -->
+<div class="cards-area" id="cardsArea">
+  <div class="loading-state"><div class="loading-spinner">⏳</div><div class="loading-txt">Loading tasks near you...</div></div>
+</div>
 <div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
   <div class="modal">
     <div class="modal-handle"></div>
     <p class="modal-title" id="modalTitle">Apply for task</p>
     <p class="modal-sub" id="modalSub">Submit your offer to the poster</p>
     <div class="price-grid">
-      <div>
-        <span class="modal-label">Your offer</span>
-        <div class="price-wrap">
-          <span class="price-pre">$</span>
-          <input class="modal-input" id="offerPrice" type="number" min="20" placeholder="40">
-        </div>
-      </div>
-      <div>
-        <span class="modal-label">Availability</span>
-        <input class="modal-input" id="offerAvail" type="text" placeholder="e.g. This Saturday">
-      </div>
+      <div><span class="modal-label">Your offer</span><div class="price-wrap"><span class="price-pre">$</span><input class="modal-input" id="offerPrice" type="number" min="20" placeholder="40"></div></div>
+      <div><span class="modal-label">Availability</span><input class="modal-input" id="offerAvail" type="text" placeholder="e.g. This Saturday"></div>
     </div>
     <span class="modal-label">Message to poster</span>
     <textarea class="modal-input" id="offerMsg" placeholder="Tell them why you're the right person..."></textarea>
     <div class="modal-btns">
       <button class="cancel-btn" onclick="closeModal()">Cancel</button>
-      <button class="submit-btn" onclick="submitApplication()">Send application</button>
+      <button class="submit-btn" id="applySubmitBtn" onclick="submitApplication()">Send application</button>
     </div>
   </div>
 </div>
-
-<!-- TOAST -->
 <div class="toast" id="toast">Application sent! You'll hear back soon 🎉</div>
-
-<!-- TAB BAR -->
 <nav class="tab-bar">
-  <a class="tab-item" href="dashboard.html">
-    <span class="tab-icon">🏠</span>
-    <span class="tab-lbl">Home</span>
-  </a>
-  <a class="tab-item active" href="browse-tasks.html">
-    <span class="tab-icon">🔍</span>
-    <span class="tab-lbl">Browse</span>
-  </a>
-  <a class="tab-item" href="post-task.html">
-    <span class="tab-icon">➕</span>
-    <span class="tab-lbl">Post</span>
-  </a>
-  <a class="tab-item" href="my-tasks.html">
-    <span class="tab-icon">✅</span>
-    <span class="tab-lbl">My Tasks</span>
-  </a>
-  <a class="tab-item" href="messages.html">
-    <span class="tab-icon">💬</span>
-    <span class="tab-lbl">Messages</span>
-  </a>
+  <a class="tab-item" href="dashboard.html"><span class="tab-icon">🏠</span><span class="tab-lbl">Home</span></a>
+  <a class="tab-item active" href="browse-tasks.html"><span class="tab-icon">🔍</span><span class="tab-lbl">Browse</span></a>
+  <a class="tab-item" href="post-task.html"><span class="tab-icon">➕</span><span class="tab-lbl">Post</span></a>
+  <a class="tab-item" href="my-tasks.html"><span class="tab-icon">✅</span><span class="tab-lbl">My Tasks</span></a>
+  <a class="tab-item" href="messages.html"><span class="tab-icon">💬</span><span class="tab-lbl">Messages</span></a>
 </nav>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
-
 const firebaseConfig = {
   apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
   authDomain: "quickgigs-7b12d.firebaseapp.com",
@@ -309,145 +206,141 @@ const firebaseConfig = {
   messagingSenderId: "698985399366",
   appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
 };
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-
 onAuthStateChanged(auth, (user) => {
   if (!user) { window.location.href = 'login.html'; return; }
   const name = user.displayName || user.email.split('@')[0];
   document.getElementById('avatarEl').textContent = name.charAt(0).toUpperCase();
+  window._currentUser = user;
 });
 </script>
 
 <script>
-// ── STATE ──────────────────────────────────────────────
-var activeMode = 'all';
-var activeCat  = 'all';
-var activeTask = null;
-var isDark = localStorage.getItem('qg-mode') !== 'light';
-
-// ── DATA ───────────────────────────────────────────────
-var tasks = [
-  {id:1, mode:'quick',     cat:'errands',  catLabel:'Errands',  icon:'🚗', iconBg:'rgba(251,191,36,0.15)',   title:'Pick up prescription from Shoppers Drug Mart',          desc:'Grab my prescription on 17th Ave SW and drop off at my condo. Very quick, takes 20 mins max.',                  price:20,  priceLabel:'$20',     dist:'0.8km', posted:'5 mins ago',  applicants:0},
-  {id:2, mode:'quick',     cat:'tech',     catLabel:'Tech',     icon:'💻', iconBg:'rgba(107,63,160,0.2)',    title:'Fix cracked screen on Samsung S22 — need it today',     desc:'Screen is badly cracked, phone still works. Need someone experienced. Come to me or I can drop off.',            price:60,  priceLabel:'$60',     dist:'1.2km', posted:'12 mins ago', applicants:1},
-  {id:3, mode:'quick',     cat:'errands',  catLabel:'Errands',  icon:'🚗', iconBg:'rgba(251,191,36,0.15)',   title:'Grocery run — Walmart list ready, just need a driver',  desc:'I have a full list ready. Need someone with a car to pick up and deliver to my building lobby.',                 price:25,  priceLabel:'$25',     dist:'0.5km', posted:'18 mins ago', applicants:2},
-  {id:4, mode:'standard',  cat:'home',     catLabel:'Home',     icon:'🏠', iconBg:'rgba(107,63,160,0.2)',    title:'Deep clean 2 bedroom apartment before move out',        desc:'Full deep clean needed before I hand over keys this Saturday. Kitchen, 2 bathrooms, bedrooms and living room.', price:120, priceLabel:'$120',    dist:'2.1km', posted:'2 hrs ago',   applicants:3},
-  {id:5, mode:'standard',  cat:'beauty',   catLabel:'Beauty',   icon:'💇', iconBg:'rgba(200,168,233,0.15)',  title:'Box braids — medium length, natural hair',              desc:'Looking for someone experienced with box braids on natural hair. Medium length. Hair already purchased.',         price:80,  priceLabel:'$80',     dist:'3.2km', posted:'3 hrs ago',   applicants:2},
-  {id:6, mode:'standard',  cat:'moving',   catLabel:'Moving',   icon:'🚚', iconBg:'rgba(107,63,160,0.2)',    title:'Help moving couch and dining table to storage unit',    desc:'Need 1–2 strong helpers to move furniture from 3rd floor apartment to storage nearby. This Saturday morning.',  price:60,  priceLabel:'$60',     dist:'4.5km', posted:'5 hrs ago',   applicants:4},
-  {id:7, mode:'standard',  cat:'cooking',  catLabel:'Cooking',  icon:'🍳', iconBg:'rgba(251,191,36,0.12)',   title:'Meal prep for the week — 5 dinners, 2 people',          desc:'Need someone to cook 5 healthy dinners (no pork). Groceries provided. Come to my kitchen, Saturday afternoon.', price:75,  priceLabel:'$75',     dist:'1.8km', posted:'6 hrs ago',   applicants:1},
-  {id:8, mode:'recurring', cat:'care',     catLabel:'Care',     icon:'👶', iconBg:'rgba(74,222,128,0.1)',    title:'Reliable nanny needed Monday to Friday 9am–3pm',        desc:'Looking for a caring and experienced nanny for two kids aged 4 and 7. Starting next Monday, ongoing weekly.',   price:20,  priceLabel:'$20/hr',  dist:'1.4km', posted:'1 hr ago',    applicants:1},
-  {id:9, mode:'recurring', cat:'tutoring', catLabel:'Tutoring', icon:'🎓', iconBg:'rgba(74,222,128,0.1)',    title:'Math tutor for Grade 10 student — twice a week',        desc:'My daughter needs a patient tutor for algebra. Twice a week after school, flexible schedule.',                  price:35,  priceLabel:'$35/hr',  dist:'0.9km', posted:'30 mins ago', applicants:0},
-  {id:10,mode:'recurring', cat:'gardening',catLabel:'Gardening',icon:'🌿', iconBg:'rgba(74,222,128,0.08)',   title:'Weekly garden maintenance — small backyard in NW Calgary',desc:'Mowing, weeding and watering once a week. About 2 hours per visit. Supplies and tools provided.',              price:40,  priceLabel:'$40/hr',  dist:'6.1km', posted:'4 hrs ago',   applicants:0},
-];
-
-// ── RENDER ─────────────────────────────────────────────
-function getBadge(mode){
-  if(mode==='quick')     return '<span class="tc-badge badge-quick">⚡ Quick</span>';
-  if(mode==='recurring') return '<span class="tc-badge badge-recurring">🔄 Recurring</span>';
-  return '<span class="tc-badge badge-standard">📋 Standard</span>';
+const ORDS_BASE = 'https://iacademy2.oracle.com/ords/ca_a832_sql_s12/quickgigs/';
+var CAT_MAP = {
+  'errands':{label:'Errands',icon:'🚗',bg:'rgba(251,191,36,0.15)'},
+  'home':{label:'Home',icon:'🏠',bg:'rgba(107,63,160,0.2)'},
+  'tutoring':{label:'Tutoring',icon:'🎓',bg:'rgba(74,222,128,0.1)'},
+  'beauty':{label:'Beauty',icon:'💇',bg:'rgba(200,168,233,0.15)'},
+  'moving':{label:'Moving',icon:'🚚',bg:'rgba(107,63,160,0.2)'},
+  'cooking':{label:'Cooking',icon:'🍳',bg:'rgba(251,191,36,0.12)'},
+  'tech':{label:'Tech',icon:'💻',bg:'rgba(107,63,160,0.2)'},
+  'care':{label:'Care',icon:'👶',bg:'rgba(74,222,128,0.1)'},
+  'gardening':{label:'Gardening',icon:'🌿',bg:'rgba(74,222,128,0.08)'},
+  'events':{label:'Events',icon:'🎉',bg:'rgba(200,168,233,0.15)'},
+  'trades':{label:'Trades',icon:'🔧',bg:'rgba(107,63,160,0.2)'},
+  'other':{label:'Other',icon:'📦',bg:'rgba(255,255,255,0.06)'},
+};
+function getCatInfo(cat){ var k=(cat||'').toLowerCase().trim(); return CAT_MAP[k]||{label:cat||'Other',icon:'📦',bg:'rgba(255,255,255,0.06)'}; }
+function normaliseTask(row){
+  var catInfo=getCatInfo(row.CATEGORY||row.category);
+  var mode=(row.TASK_MODE||row.task_mode||'standard').toLowerCase();
+  var budget=parseFloat(row.BUDGET||row.budget||0);
+  return {
+    id:row.TASK_ID||row.task_id,
+    mode:mode,
+    cat:(row.CATEGORY||row.category||'other').toLowerCase(),
+    catLabel:catInfo.label,icon:catInfo.icon,iconBg:catInfo.bg,
+    title:row.TITLE||row.title||'Untitled task',
+    desc:row.DESCRIPTION||row.description||'',
+    price:budget,
+    priceLabel:'$'+budget+(mode==='recurring'?'/hr':''),
+    location:row.LOCATION||row.location||'Calgary, AB',
+    posted:'Recently',applicants:0,
+    status:(row.STATUS||row.status||'open').toLowerCase()
+  };
 }
-function getBtnClass(mode){ return 'btn-'+mode; }
-function getBtnLabel(mode){ return mode==='quick' ? 'Apply ⚡' : 'Apply'; }
+var allTasks=[],activeMode='all',activeCat='all',activeTask=null;
+var isDark=localStorage.getItem('qg-mode')!=='light';
+
+async function loadTasks(){
+  try{
+    var res=await fetch(ORDS_BASE+'task/',{method:'GET',headers:{'Content-Type':'application/json'}});
+    if(!res.ok) throw new Error('status '+res.status);
+    var data=await res.json();
+    var items=data.items||[];
+    allTasks=items.map(normaliseTask).filter(function(t){return t.status==='open';});
+  }catch(err){
+    console.warn('Oracle unreachable, using demo data:',err);
+    allTasks=getDemoTasks();
+  }
+  renderCards();
+}
+
+function getDemoTasks(){
+  return [
+    {id:1,mode:'quick',cat:'errands',catLabel:'Errands',icon:'🚗',iconBg:'rgba(251,191,36,0.15)',title:'Pick up prescription from Shoppers Drug Mart',desc:'Grab my prescription on 17th Ave SW and drop off at my condo. 20 mins max.',price:20,priceLabel:'$20',location:'Calgary, AB',posted:'5 mins ago',applicants:0,status:'open'},
+    {id:2,mode:'quick',cat:'tech',catLabel:'Tech',icon:'💻',iconBg:'rgba(107,63,160,0.2)',title:'Fix cracked screen on Samsung S22 — need it today',desc:'Screen is badly cracked, phone still works. Need someone experienced.',price:60,priceLabel:'$60',location:'Calgary, AB',posted:'12 mins ago',applicants:1,status:'open'},
+    {id:3,mode:'standard',cat:'home',catLabel:'Home',icon:'🏠',iconBg:'rgba(107,63,160,0.2)',title:'Deep clean 2 bedroom apartment before move out',desc:'Full deep clean before handing over keys this Saturday.',price:120,priceLabel:'$120',location:'Calgary, AB',posted:'2 hrs ago',applicants:3,status:'open'},
+    {id:4,mode:'standard',cat:'beauty',catLabel:'Beauty',icon:'💇',iconBg:'rgba(200,168,233,0.15)',title:'Box braids — medium length, natural hair',desc:'Looking for someone experienced with box braids on natural hair.',price:80,priceLabel:'$80',location:'Calgary, AB',posted:'3 hrs ago',applicants:2,status:'open'},
+    {id:5,mode:'recurring',cat:'care',catLabel:'Care',icon:'👶',iconBg:'rgba(74,222,128,0.1)',title:'Reliable nanny needed Monday to Friday 9am–3pm',desc:'Caring nanny for two kids aged 4 and 7. Starting next Monday.',price:20,priceLabel:'$20/hr',location:'Calgary, AB',posted:'1 hr ago',applicants:1,status:'open'},
+    {id:6,mode:'recurring',cat:'tutoring',catLabel:'Tutoring',icon:'🎓',iconBg:'rgba(74,222,128,0.1)',title:'Math tutor for Grade 10 student — twice a week',desc:'My daughter needs a patient tutor for algebra. Twice a week after school.',price:35,priceLabel:'$35/hr',location:'Calgary, AB',posted:'30 mins ago',applicants:0,status:'open'},
+  ];
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function getBadge(m){if(m==='quick')return '<span class="tc-badge badge-quick">⚡ Quick</span>';if(m==='recurring')return '<span class="tc-badge badge-recurring">🔄 Recurring</span>';return '<span class="tc-badge badge-standard">📋 Standard</span>';}
+function getBtnClass(m){return 'btn-'+m;}
+function getBtnLabel(m){return m==='quick'?'Apply ⚡':'Apply';}
 
 function renderCards(){
-  var search = document.getElementById('searchInput').value.toLowerCase().trim();
-  var filtered = tasks.filter(function(t){
-    var modeOk  = activeMode==='all' || t.mode===activeMode;
-    var catOk   = activeCat==='all'  || t.cat===activeCat;
-    var searchOk = !search || t.title.toLowerCase().includes(search) || t.catLabel.toLowerCase().includes(search) || t.desc.toLowerCase().includes(search);
-    return modeOk && catOk && searchOk;
+  var search=(document.getElementById('searchInput').value||'').toLowerCase().trim();
+  var filtered=allTasks.filter(function(t){
+    return (activeMode==='all'||t.mode===activeMode)&&(activeCat==='all'||t.cat===activeCat)&&(!search||t.title.toLowerCase().includes(search)||t.catLabel.toLowerCase().includes(search)||t.desc.toLowerCase().includes(search));
   });
-  document.getElementById('resultsCount').textContent = filtered.length + ' task' + (filtered.length!==1?'s':'') + ' near Calgary';
-  var area = document.getElementById('cardsArea');
-  if(!filtered.length){
-    area.innerHTML = '<div class="empty-state"><div class="empty-emoji">🔍</div><p class="empty-txt">No tasks match this filter — try a different one</p></div>';
-    return;
-  }
-  area.innerHTML = filtered.map(function(t){
-    return '<div class="task-card" role="article">' +
-      '<div class="tc-top">' +
-        '<div class="tc-left">' +
-          '<div class="tc-icon" style="background:'+t.iconBg+'">'+t.icon+'</div>' +
-          '<div class="tc-meta"><p class="tc-cat">'+t.catLabel+'</p><p class="tc-title">'+t.title+'</p></div>' +
-        '</div>' +
-        getBadge(t.mode) +
-      '</div>' +
-      '<p class="tc-desc">'+t.desc+'</p>' +
-      '<div class="tc-bottom">' +
-        '<div class="tc-price-block">' +
-          '<div class="tc-price">'+t.priceLabel+'</div>' +
-          '<div class="tc-info">📍 '+t.dist+' · '+t.posted+(t.applicants>0?' · '+t.applicants+' applied':'')+'</div>' +
-        '</div>' +
-        '<button class="apply-btn '+getBtnClass(t.mode)+'" onclick="openModal('+t.id+',event)">'+getBtnLabel(t.mode)+'</button>' +
-      '</div>' +
-    '</div>';
+  document.getElementById('resultsCount').textContent=filtered.length+' task'+(filtered.length!==1?'s':'')+' near Calgary';
+  var area=document.getElementById('cardsArea');
+  if(!filtered.length){area.innerHTML='<div class="empty-state"><div class="empty-emoji">🔍</div><p class="empty-txt">'+(allTasks.length===0?'No tasks posted yet — be the first!':'No tasks match this filter')+'</p></div>';return;}
+  area.innerHTML=filtered.map(function(t){
+    return '<div class="task-card">'+
+      '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+t.iconBg+'">'+t.icon+'</div><div class="tc-meta"><p class="tc-cat">'+esc(t.catLabel)+'</p><p class="tc-title">'+esc(t.title)+'</p></div></div>'+getBadge(t.mode)+'</div>'+
+      '<p class="tc-desc">'+esc(t.desc)+'</p>'+
+      '<div class="tc-bottom"><div><div class="tc-price">'+esc(t.priceLabel)+'</div><div class="tc-info">📍 '+esc(t.location)+' · '+esc(t.posted)+(t.applicants>0?' · '+t.applicants+' applied':'')+'</div></div>'+
+      '<button class="apply-btn '+getBtnClass(t.mode)+'" onclick="openModal(\''+t.id+'\',event)">'+getBtnLabel(t.mode)+'</button></div></div>';
   }).join('');
 }
 
-// ── FILTER HANDLERS ────────────────────────────────────
-window.setMode = function(el, mode){
-  document.querySelectorAll('.mpill').forEach(function(p){ p.className='mpill'; });
-  activeMode = mode;
-  el.className = 'mpill active-'+mode;
-  renderCards();
-};
+window.setMode=function(el,mode){document.querySelectorAll('.mpill').forEach(function(p){p.className='mpill';});activeMode=mode;el.className='mpill active-'+mode;renderCards();};
+window.setCat=function(el,cat){document.querySelectorAll('.cpill').forEach(function(p){p.classList.remove('cat-active');});el.classList.add('cat-active');activeCat=cat;renderCards();};
+window.applyFilters=renderCards;
 
-window.setCat = function(el, cat){
-  document.querySelectorAll('.cpill').forEach(function(p){ p.classList.remove('cat-active'); });
-  el.classList.add('cat-active');
-  activeCat = cat;
-  renderCards();
-};
-
-window.applyFilters = renderCards;
-
-// ── MODAL ──────────────────────────────────────────────
-window.openModal = function(id, e){
+window.openModal=function(id,e){
   e.stopPropagation();
-  activeTask = tasks.find(function(t){ return t.id===id; });
-  document.getElementById('modalTitle').textContent = activeTask.catLabel+' — '+activeTask.title.substring(0,40)+(activeTask.title.length>40?'…':'');
-  document.getElementById('modalSub').textContent   = 'Budget: '+activeTask.priceLabel+' · '+activeTask.dist+' away';
-  document.getElementById('offerPrice').value = activeTask.price;
-  document.getElementById('offerMsg').value   = '';
-  document.getElementById('offerAvail').value = '';
+  activeTask=allTasks.find(function(t){return t.id==id;});
+  if(!activeTask)return;
+  document.getElementById('modalTitle').textContent=activeTask.catLabel+' — '+activeTask.title.substring(0,40)+(activeTask.title.length>40?'…':'');
+  document.getElementById('modalSub').textContent='Budget: '+activeTask.priceLabel+' · '+activeTask.location;
+  document.getElementById('offerPrice').value=activeTask.price;
+  document.getElementById('offerMsg').value='';
+  document.getElementById('offerAvail').value='';
   document.getElementById('modalOverlay').classList.add('open');
 };
+window.closeModal=function(){document.getElementById('modalOverlay').classList.remove('open');};
+window.handleOverlayClick=function(e){if(e.target===document.getElementById('modalOverlay'))closeModal();};
 
-window.closeModal = function(){
-  document.getElementById('modalOverlay').classList.remove('open');
-};
-
-window.handleOverlayClick = function(e){
-  if(e.target===document.getElementById('modalOverlay')) closeModal();
-};
-
-window.submitApplication = function(){
-  var price = document.getElementById('offerPrice').value;
-  var msg   = document.getElementById('offerMsg').value.trim();
-  if(!price || price < 20){ alert('Please enter an offer of at least $20'); return; }
-  if(!msg){ alert('Please add a message to the poster'); return; }
+window.submitApplication=async function(){
+  var price=document.getElementById('offerPrice').value;
+  var msg=document.getElementById('offerMsg').value.trim();
+  var avail=document.getElementById('offerAvail').value.trim();
+  if(!price||price<20){alert('Please enter an offer of at least $20');return;}
+  if(!msg){alert('Please add a message to the poster');return;}
+  var btn=document.getElementById('applySubmitBtn');
+  btn.textContent='Sending...';btn.disabled=true;
+  var userId=window._currentUser?window._currentUser.uid:'anonymous';
+  try{
+    await fetch(ORDS_BASE+'applications/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task_id:activeTask.id,worker_id:userId,message:msg+(avail?' — Available: '+avail:''),price:parseFloat(price)})});
+  }catch(err){console.warn('Application save error:',err);}
   closeModal();
-  var toast = document.getElementById('toast');
-  toast.style.display = 'block';
-  setTimeout(function(){ toast.style.display='none'; }, 3000);
+  btn.textContent='Send application';btn.disabled=false;
+  var toast=document.getElementById('toast');toast.style.display='block';
+  setTimeout(function(){toast.style.display='none';},3000);
 };
 
-// ── DARK / LIGHT ───────────────────────────────────────
-window.toggleMode = function(){
-  isDark = !isDark;
-  applyTheme();
-};
-
-function applyTheme(){
-  document.body.className = isDark ? '' : 'light';
-  document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark';
-  localStorage.setItem('qg-mode', isDark ? 'dark' : 'light');
-}
-
-// ── INIT ───────────────────────────────────────────────
+window.toggleMode=function(){isDark=!isDark;applyTheme();};
+function applyTheme(){document.body.className=isDark?'':'light';document.getElementById('modeBtn').textContent=isDark?'☀️ Light':'🌙 Dark';localStorage.setItem('qg-mode',isDark?'dark':'light');}
 applyTheme();
-renderCards();
+loadTasks();
 </script>
 </body>
 </html>
