@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickGigs — Messages</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0b0118;
+  --surface:rgba(255,255,255,0.04);
+  --surface-hover:rgba(107,63,160,0.08);
+  --border:rgba(200,168,233,0.1);
+  --text:#fff;
+  --text-muted:rgba(255,255,255,0.35);
+  --text-faint:rgba(255,255,255,0.22);
+  --purple:#6b3fa0;
+  --purple-light:#9b6fc4;
+  --lavender:#c8a8e9;
+  --nav-bg:#0b0118;
+  --tab-bg:#0e021f;
+  --input-bg:rgba(255,255,255,0.06);
+  --input-border:rgba(200,168,233,0.15);
+  --unread-preview:#fff;
+  --read-preview:rgba(255,255,255,0.3);
+}
+body.light{
+  --bg:#fafafe;
+  --surface:#fff;
+  --surface-hover:#f5f2ff;
+  --border:#f0eeff;
+  --text:#1a0a3d;
+  --text-muted:#6b7280;
+  --text-faint:#9ca3af;
+  --nav-bg:#fff;
+  --tab-bg:#fff;
+  --input-bg:#f0eeff;
+  --input-border:#e8e2ff;
+  --unread-preview:#1a0a3d;
+  --read-preview:#9ca3af;
+  --lavender:#6b3fa0;
+}
+
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:76px;transition:background 0.25s,color 0.25s;}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:50;background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;transition:background 0.25s;}
+.nav-logo{font-family:'Playfair Display',serif;font-style:italic;font-size:1.25rem;color:var(--lavender);}
+.nav-title{font-size:16px;font-weight:500;color:var(--text);}
+.mode-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);}
+body.light .mode-btn{background:#f0eeff;color:var(--purple);}
+
+/* SEARCH */
+.search-wrap{padding:12px 20px;background:var(--nav-bg);border-bottom:0.5px solid var(--border);transition:background 0.25s;}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--input-bg);border:0.5px solid var(--input-border);border-radius:14px;padding:11px 15px;transition:border-color 0.2s;}
+.search-box:focus-within{border-color:var(--purple-light);}
+.search-icon{color:var(--purple-light);opacity:0.5;font-size:15px;}
+.search-input{flex:1;background:none;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);}
+.search-input::placeholder{color:var(--lavender);opacity:0.35;}
+
+/* EMPTY STATE */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 40px;text-align:center;}
+.empty-icon{font-size:48px;margin-bottom:16px;}
+.empty-title{font-size:17px;font-weight:500;color:var(--text);margin-bottom:8px;}
+.empty-sub{font-size:14px;color:var(--text-muted);line-height:1.6;margin-bottom:24px;}
+.empty-btn{padding:12px 24px;border-radius:14px;background:var(--purple);color:#fff;border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;display:inline-block;}
+
+/* SECTION LABEL */
+.section-label{padding:14px 20px 8px;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);}
+
+/* CONVERSATION ITEM */
+.conv-item{display:flex;align-items:center;gap:14px;padding:14px 20px;cursor:pointer;transition:background 0.15s;text-decoration:none;}
+.conv-item:hover{background:var(--surface-hover);}
+.conv-item+.conv-item{border-top:0.5px solid var(--border);}
+.conv-avatar{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:500;color:#fff;flex-shrink:0;position:relative;}
+.unread-dot{width:10px;height:10px;border-radius:50%;background:var(--purple-light);position:absolute;top:1px;right:1px;border:2px solid var(--nav-bg);}
+.conv-info{flex:1;min-width:0;}
+.conv-name{font-size:14px;font-weight:500;color:var(--text);margin-bottom:2px;}
+.conv-task{font-size:11px;color:var(--purple-light);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+body.light .conv-task{color:var(--purple);}
+.conv-preview{font-size:12px;color:var(--read-preview);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.conv-preview.unread{color:var(--unread-preview);font-weight:500;}
+.conv-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}
+.conv-time{font-size:11px;color:var(--text-faint);}
+.conv-badge{background:var(--purple);color:#fff;font-size:10px;font-weight:500;border-radius:20px;padding:2px 7px;min-width:20px;text-align:center;}
+
+/* LOCKED BANNER */
+.locked-banner{margin:16px 20px;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;background:rgba(107,63,160,0.12);border:0.5px solid rgba(200,168,233,0.15);}
+body.light .locked-banner{background:#f5f2ff;border-color:#e8e2ff;}
+.locked-icon{font-size:22px;flex-shrink:0;}
+.locked-text{}
+.locked-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px;}
+.locked-sub{font-size:12px;color:var(--text-muted);line-height:1.5;}
+
+/* TAB BAR */
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--tab-bg);border-top:0.5px solid var(--border);display:flex;padding:8px 0 14px;z-index:100;transition:background 0.25s;}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;text-decoration:none;}
+.tab-icon{font-size:22px;color:var(--text-faint);transition:color 0.15s;}
+.tab-lbl{font-size:10px;color:var(--text-faint);transition:color 0.15s;}
+.tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:var(--purple-light);}
+body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color:var(--purple);}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">QuickGigs</div>
+  <div class="nav-title">Messages</div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
+</nav>
+
+<div class="search-wrap">
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" id="searchInput" placeholder="Search conversations..." oninput="filterConvs()">
+  </div>
+</div>
+
+<div id="mainContent"></div>
+
+<nav class="tab-bar">
+  <a class="tab-item" href="dashboard.html"><span class="tab-icon">🏠</span><span class="tab-lbl">Home</span></a>
+  <a class="tab-item" href="browse-tasks.html"><span class="tab-icon">🔍</span><span class="tab-lbl">Browse</span></a>
+  <a class="tab-item" href="post-task.html"><span class="tab-icon">➕</span><span class="tab-lbl">Post</span></a>
+  <a class="tab-item" href="my-tasks.html"><span class="tab-icon">✅</span><span class="tab-lbl">My Tasks</span></a>
+  <a class="tab-item active" href="messages.html"><span class="tab-icon">💬</span><span class="tab-lbl">Messages</span></a>
+</nav>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
+  authDomain: "quickgigs-7b12d.firebaseapp.com",
+  projectId: "quickgigs-7b12d",
+  storageBucket: "quickgigs-7b12d.firebasestorage.app",
+  messagingSenderId: "698985399366",
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+onAuthStateChanged(auth, (user) => {
+  if (!user) { window.location.href = 'login.html'; return; }
+  window._currentUser = user;
+  renderContent();
+});
+</script>
+
+<script>
+// ── THEME ──────────────────────────────────────────────
+var isDark = localStorage.getItem('qg-mode') !== 'light';
+function applyTheme(){
+  document.body.className = isDark ? '' : 'light';
+  document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark';
+}
+window.toggleTheme = function(){
+  isDark = !isDark;
+  localStorage.setItem('qg-mode', isDark ? 'dark' : 'light');
+  applyTheme();
+};
+applyTheme();
+
+// ── DEMO CONVERSATIONS ─────────────────────────────────
+// In production these will come from Firebase Firestore
+// Chat is only created after poster accepts applicant + payment goes to escrow
+var conversations = [
+  {
+    id:'conv1',
+    name:'Sarah K.',
+    initials:'S',
+    avatarBg:'linear-gradient(135deg,#6b3fa0,#c8a8e9)',
+    taskName:'Deep clean 2 bedroom apartment',
+    taskIcon:'🏠',
+    lastMessage:'I can do it this Saturday morning!',
+    time:'2m ago',
+    unread:2,
+    status:'in_progress',
+    paid:true
+  },
+  {
+    id:'conv2',
+    name:'James O.',
+    initials:'J',
+    avatarBg:'linear-gradient(135deg,#16a34a,#4ade80)',
+    taskName:'Grocery run — Superstore NW',
+    taskIcon:'🚗',
+    lastMessage:'On my way to the store now',
+    time:'1hr ago',
+    unread:0,
+    status:'in_progress',
+    paid:true
+  },
+  {
+    id:'conv3',
+    name:'Aisha M.',
+    initials:'A',
+    avatarBg:'linear-gradient(135deg,#d97706,#fbbf24)',
+    taskName:'Math tutor for Grade 10 student',
+    taskIcon:'🎓',
+    lastMessage:'What days work for you?',
+    time:'3hr ago',
+    unread:0,
+    status:'in_progress',
+    paid:true
+  },
+  {
+    id:'conv4',
+    name:'David T.',
+    initials:'D',
+    avatarBg:'linear-gradient(135deg,#9b6fc4,#c8a8e9)',
+    taskName:'Box braids — medium length',
+    taskIcon:'💇',
+    lastMessage:'Thank you! Great experience 🌟',
+    time:'Yesterday',
+    unread:0,
+    status:'completed',
+    paid:true
+  },
+];
+
+var filtered = conversations.slice();
+
+function getStatusLabel(status){
+  if(status==='in_progress') return '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(74,222,128,0.12);color:#16a34a;">In progress</span>';
+  if(status==='completed')   return '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(107,63,160,0.2);color:#9b6fc4;">Completed</span>';
+  return '';
+}
+
+function renderContent(){
+  var content = document.getElementById('mainContent');
+
+  // No conversations at all
+  if(!conversations.length){
+    content.innerHTML =
+      '<div class="empty-state">' +
+        '<div class="empty-icon">💬</div>' +
+        '<div class="empty-title">No messages yet</div>' +
+        '<div class="empty-sub">Your conversations will appear here once a task application is accepted and payment is made.</div>' +
+        '<a class="empty-btn" href="browse-tasks.html">Browse tasks</a>' +
+      '</div>';
+    return;
+  }
+
+  // How it works banner
+  var html = '<div class="locked-banner">' +
+    '<div class="locked-icon">🔒</div>' +
+    '<div class="locked-text">' +
+      '<div class="locked-title">Messages unlock after payment</div>' +
+      '<div class="locked-sub">Chats open automatically once a task is accepted and escrow payment is made — keeping everyone safe.</div>' +
+    '</div>' +
+  '</div>';
+
+  // Active conversations
+  var active = filtered.filter(function(c){ return c.status === 'in_progress'; });
+  var completed = filtered.filter(function(c){ return c.status === 'completed'; });
+
+  if(active.length){
+    html += '<div class="section-label">Active tasks</div>';
+    html += active.map(renderConvItem).join('');
+  }
+
+  if(completed.length){
+    html += '<div class="section-label">Completed</div>';
+    html += completed.map(renderConvItem).join('');
+  }
+
+  content.innerHTML = html;
+}
+
+function renderConvItem(c){
+  return '<a class="conv-item" href="chat.html?conv='+c.id+'" style="text-decoration:none">' +
+    '<div class="conv-avatar" style="background:'+c.avatarBg+'">' +
+      c.initials +
+      (c.unread > 0 ? '<div class="unread-dot"></div>' : '') +
+    '</div>' +
+    '<div class="conv-info">' +
+      '<div class="conv-name">'+c.name+'</div>' +
+      '<div class="conv-task">'+c.taskIcon+' '+c.taskName+'</div>' +
+      '<div class="conv-preview'+(c.unread>0?' unread':'')+'">'+c.lastMessage+'</div>' +
+    '</div>' +
+    '<div class="conv-right">' +
+      '<div class="conv-time">'+c.time+'</div>' +
+      (c.unread > 0 ? '<div class="conv-badge">'+c.unread+'</div>' : getStatusLabel(c.status)) +
+    '</div>' +
+  '</a>';
+}
+
+window.filterConvs = function(){
+  var q = document.getElementById('searchInput').value.toLowerCase().trim();
+  filtered = !q ? conversations.slice() : conversations.filter(function(c){
+    return c.name.toLowerCase().includes(q) || c.taskName.toLowerCase().includes(q);
+  });
+  renderContent();
+};
+</script>
+</body>
+</html>

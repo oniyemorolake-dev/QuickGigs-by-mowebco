@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickGigs — Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0b0118;
+  --surface:rgba(255,255,255,0.04);
+  --border:rgba(200,168,233,0.1);
+  --text:#fff;
+  --text-muted:rgba(255,255,255,0.35);
+  --text-faint:rgba(255,255,255,0.22);
+  --purple:#6b3fa0;
+  --purple-light:#9b6fc4;
+  --lavender:#c8a8e9;
+  --nav-bg:#0b0118;
+  --tab-bg:#0e021f;
+  --input-bg:rgba(255,255,255,0.06);
+  --input-border:rgba(200,168,233,0.15);
+  --bubble-mine:#6b3fa0;
+  --bubble-theirs:rgba(255,255,255,0.07);
+  --bubble-theirs-text:rgba(255,255,255,0.88);
+  --time-color:rgba(255,255,255,0.25);
+}
+body.light{
+  --bg:#fafafe;
+  --surface:#fff;
+  --border:#f0eeff;
+  --text:#1a0a3d;
+  --text-muted:#6b7280;
+  --text-faint:#9ca3af;
+  --nav-bg:#fff;
+  --tab-bg:#fff;
+  --input-bg:#f0eeff;
+  --input-border:#e8e2ff;
+  --bubble-theirs:#fff;
+  --bubble-theirs-text:#1a0a3d;
+  --time-color:#9ca3af;
+  --lavender:#6b3fa0;
+}
+
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;transition:background 0.25s,color 0.25s;overflow:hidden;}
+
+/* NAV */
+.nav{background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:12px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0;transition:background 0.25s;}
+.back-btn{font-size:20px;color:var(--purple-light);cursor:pointer;text-decoration:none;flex-shrink:0;}
+.nav-center{flex:1;min-width:0;text-align:center;}
+.nav-name{font-size:15px;font-weight:500;color:var(--text);}
+.nav-sub{font-size:11px;color:var(--text-muted);}
+.nav-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.mode-btn{padding:5px 11px;border-radius:20px;font-size:10px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);}
+body.light .mode-btn{background:#f0eeff;color:var(--purple);}
+
+/* TASK BANNER */
+.task-banner{background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:10px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0;transition:background 0.25s;}
+.tb-dot{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.tb-info{flex:1;min-width:0;}
+.tb-title{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tb-meta{font-size:11px;color:var(--text-muted);margin-top:1px;}
+.tb-status{font-size:10px;padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+.status-progress{background:rgba(74,222,128,0.12);color:#16a34a;}
+.status-done{background:rgba(107,63,160,0.2);color:var(--purple-light);}
+
+/* FRAUD WARNING */
+.fraud-bar{background:rgba(251,191,36,0.07);border-bottom:0.5px solid rgba(251,191,36,0.15);padding:8px 18px;font-size:11px;color:rgba(251,191,36,0.75);line-height:1.5;flex-shrink:0;}
+body.light .fraud-bar{background:#fffbeb;color:#92400e;border-color:#fde68a;}
+
+/* CHAT SCROLL AREA */
+.chat-scroll{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:10px;}
+.chat-scroll::-webkit-scrollbar{width:3px;}
+.chat-scroll::-webkit-scrollbar-thumb{background:rgba(200,168,233,0.2);border-radius:2px;}
+
+/* DATE DIVIDER */
+.date-divider{text-align:center;font-size:11px;color:var(--text-faint);margin:4px 0;}
+
+/* BUBBLES */
+.bubble-row{display:flex;flex-direction:column;}
+.bubble-row.mine{align-items:flex-end;}
+.bubble-row.theirs{align-items:flex-start;}
+.bubble{max-width:72%;padding:10px 14px;border-radius:18px;font-size:13px;line-height:1.55;word-wrap:break-word;}
+.bubble-row.mine .bubble{background:var(--bubble-mine);color:#fff;border-bottom-right-radius:5px;}
+.bubble-row.theirs .bubble{background:var(--bubble-theirs);color:var(--bubble-theirs-text);border-bottom-left-radius:5px;border:0.5px solid var(--border);}
+.bubble-time{font-size:10px;color:var(--time-color);margin-top:4px;padding:0 2px;}
+
+/* BLOCKED MESSAGE */
+.blocked-msg{background:rgba(239,68,68,0.1);border:0.5px solid rgba(239,68,68,0.25);border-radius:12px;padding:10px 14px;font-size:12px;color:#ef4444;line-height:1.5;margin:0 0 6px;}
+body.light .blocked-msg{background:#fef2f2;border-color:#fecaca;color:#dc2626;}
+
+/* INPUT AREA */
+.input-area{background:var(--nav-bg);border-top:0.5px solid var(--border);padding:12px 18px;display:flex;align-items:flex-end;gap:10px;flex-shrink:0;transition:background 0.25s;}
+.input-wrap{flex:1;background:var(--input-bg);border:0.5px solid var(--input-border);border-radius:20px;padding:10px 16px;transition:border-color 0.2s;}
+.input-wrap:focus-within{border-color:var(--purple-light);}
+.msg-input{width:100%;background:none;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);resize:none;max-height:100px;min-height:20px;line-height:1.4;}
+.msg-input::placeholder{color:var(--lavender);opacity:0.35;}
+body.light .msg-input::placeholder{color:var(--purple);opacity:0.3;}
+.send-btn{width:42px;height:42px;border-radius:50%;background:var(--purple);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;transition:opacity 0.15s;}
+.send-btn:hover{opacity:0.85;}
+.send-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* FRAUD WARNING INLINE */
+.fraud-inline{font-size:11px;padding:8px 12px;border-radius:10px;background:rgba(239,68,68,0.08);color:#ef4444;border:0.5px solid rgba(239,68,68,0.2);display:none;margin-top:6px;line-height:1.5;}
+body.light .fraud-inline{background:#fef2f2;color:#dc2626;border-color:#fecaca;}
+
+/* LOCKED STATE */
+.locked-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 30px;text-align:center;}
+.locked-icon{font-size:48px;margin-bottom:16px;}
+.locked-title{font-size:18px;font-weight:500;color:var(--text);margin-bottom:8px;}
+.locked-sub{font-size:14px;color:var(--text-muted);line-height:1.6;}
+
+/* TAB BAR */
+.tab-bar{background:var(--tab-bg);border-top:0.5px solid var(--border);display:flex;padding:8px 0 14px;flex-shrink:0;transition:background 0.25s;}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;text-decoration:none;}
+.tab-icon{font-size:22px;color:var(--text-faint);}
+.tab-lbl{font-size:10px;color:var(--text-faint);}
+.tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:var(--purple-light);}
+body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color:var(--purple);}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a class="back-btn" href="messages.html">←</a>
+  <div class="nav-center">
+    <div class="nav-name" id="chatName">Sarah K.</div>
+    <div class="nav-sub" id="chatSub">Applied to your task</div>
+  </div>
+  <div class="nav-right">
+    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
+  </div>
+</nav>
+
+<!-- TASK BANNER -->
+<div class="task-banner" id="taskBanner">
+  <div class="tb-dot" id="taskIcon" style="background:rgba(107,63,160,0.2)">🏠</div>
+  <div class="tb-info">
+    <div class="tb-title" id="taskTitle">Deep clean 2 bedroom apartment</div>
+    <div class="tb-meta" id="taskMeta">$120 · Standard · Escrow paid ✓</div>
+  </div>
+  <span class="tb-status status-progress" id="taskStatus">In progress</span>
+</div>
+
+<!-- FRAUD WARNING BAR -->
+<div class="fraud-bar">
+  ⚠️ Keep all communication and payments on QuickGigs. Sharing contact details or taking payments off-platform violates our Terms of Service.
+</div>
+
+<!-- CHAT AREA -->
+<div class="chat-scroll" id="chatScroll"></div>
+
+<!-- INPUT -->
+<div class="input-area">
+  <div style="flex:1">
+    <div class="input-wrap">
+      <textarea class="msg-input" id="msgInput" placeholder="Type a message..." rows="1" oninput="handleInput(this)" onkeydown="handleKey(event)"></textarea>
+    </div>
+    <div class="fraud-inline" id="fraudInline">
+      🚫 You can't share phone numbers or email addresses on QuickGigs. Keep all communication here to stay protected.
+    </div>
+  </div>
+  <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>➤</button>
+</div>
+
+<!-- TAB BAR -->
+<nav class="tab-bar">
+  <a class="tab-item" href="dashboard.html"><span class="tab-icon">🏠</span><span class="tab-lbl">Home</span></a>
+  <a class="tab-item" href="browse-tasks.html"><span class="tab-icon">🔍</span><span class="tab-lbl">Browse</span></a>
+  <a class="tab-item" href="post-task.html"><span class="tab-icon">➕</span><span class="tab-lbl">Post</span></a>
+  <a class="tab-item" href="my-tasks.html"><span class="tab-icon">✅</span><span class="tab-lbl">My Tasks</span></a>
+  <a class="tab-item active" href="messages.html"><span class="tab-icon">💬</span><span class="tab-lbl">Messages</span></a>
+</nav>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "REPLACE_WITH_YOUR_API_KEY",
+  authDomain: "quickgigs-7b12d.firebaseapp.com",
+  projectId: "quickgigs-7b12d",
+  storageBucket: "quickgigs-7b12d.firebasestorage.app",
+  messagingSenderId: "698985399366",
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+onAuthStateChanged(auth, (user) => {
+  if (!user) { window.location.href = 'login.html'; return; }
+  window._currentUser = user;
+  initChat();
+});
+</script>
+
+<script>
+// ── THEME ──────────────────────────────────────────────
+var isDark = localStorage.getItem('qg-mode') !== 'light';
+function applyTheme(){
+  document.body.className = isDark ? '' : 'light';
+  document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark';
+}
+window.toggleTheme = function(){
+  isDark = !isDark;
+  localStorage.setItem('qg-mode', isDark ? 'dark' : 'light');
+  applyTheme();
+};
+applyTheme();
+
+// ── FRAUD DETECTION ────────────────────────────────────
+// Catches phone numbers (various formats) and email addresses
+var FRAUD_PATTERNS = [
+  /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/,          // 587-990-8645 / 5879908645
+  /\b\(\d{3}\)\s?\d{3}[-.\s]?\d{4}\b/,           // (587) 990-8645
+  /\b\d{10}\b/,                                    // 5879908645
+  /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/,  // email@domain.com
+  /\+\d[\d\s\-]{8,}/,                              // +1 587 990 8645
+];
+
+function containsFraud(text){
+  return FRAUD_PATTERNS.some(function(p){ return p.test(text); });
+}
+
+// ── DEMO MESSAGES ──────────────────────────────────────
+// In production these load from Firebase Firestore in real time
+var messages = [
+  {id:1, from:'them', text:'Hi! I saw your task. I have 3 years of professional cleaning experience 🧹', time:'10:02 AM', date:'Today'},
+  {id:2, from:'me',   text:'Great! Do you have your own supplies or should I provide them?', time:'10:05 AM', date:'Today'},
+  {id:3, from:'them', text:'I bring everything — eco-friendly products too. I can do this Saturday morning!', time:'10:06 AM', date:'Today'},
+  {id:4, from:'me',   text:'Perfect, 9am works for me 👍 I\'ll make sure the door is open.', time:'10:08 AM', date:'Today'},
+  {id:5, from:'them', text:'Sounds great! See you Saturday 😊', time:'10:09 AM', date:'Today'},
+];
+
+var nextId = 6;
+
+function initChat(){
+  renderMessages();
+  scrollToBottom();
+}
+
+function renderMessages(){
+  var scroll = document.getElementById('chatScroll');
+  var lastDate = '';
+  var html = '';
+  messages.forEach(function(m){
+    if(m.date !== lastDate){
+      html += '<div class="date-divider">'+m.date+'</div>';
+      lastDate = m.date;
+    }
+    var isMe = m.from === 'me';
+    html += '<div class="bubble-row '+(isMe?'mine':'theirs')+'">' +
+      '<div class="bubble">'+escapeHtml(m.text)+'</div>' +
+      '<div class="bubble-time">'+m.time+'</div>' +
+    '</div>';
+  });
+  scroll.innerHTML = html;
+}
+
+function scrollToBottom(){
+  var scroll = document.getElementById('chatScroll');
+  scroll.scrollTop = scroll.scrollHeight;
+}
+
+function escapeHtml(text){
+  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function getTime(){
+  return new Date().toLocaleTimeString('en-CA', {hour:'numeric', minute:'2-digit', hour12:true});
+}
+
+// ── INPUT HANDLING ─────────────────────────────────────
+var fraudDetected = false;
+
+window.handleInput = function(el){
+  // Auto-resize textarea
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+
+  var val = el.value.trim();
+  var sendBtn = document.getElementById('sendBtn');
+  var fraudInline = document.getElementById('fraudInline');
+
+  // Check for fraud patterns
+  if(containsFraud(val)){
+    fraudDetected = true;
+    fraudInline.style.display = 'block';
+    sendBtn.disabled = true;
+  } else {
+    fraudDetected = false;
+    fraudInline.style.display = 'none';
+    sendBtn.disabled = !val;
+  }
+};
+
+window.handleKey = function(e){
+  // Send on Enter (not Shift+Enter)
+  if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    if(!document.getElementById('sendBtn').disabled){
+      sendMessage();
+    }
+  }
+};
+
+window.sendMessage = function(){
+  var input = document.getElementById('msgInput');
+  var text = input.value.trim();
+  if(!text || fraudDetected) return;
+
+  // Double-check fraud before sending
+  if(containsFraud(text)){
+    document.getElementById('fraudInline').style.display = 'block';
+    return;
+  }
+
+  messages.push({
+    id: nextId++,
+    from: 'me',
+    text: text,
+    time: getTime(),
+    date: 'Today'
+  });
+
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('sendBtn').disabled = true;
+  document.getElementById('fraudInline').style.display = 'none';
+  fraudDetected = false;
+
+  renderMessages();
+  scrollToBottom();
+
+  // Simulate reply after 1.5 seconds (demo only — remove in production)
+  setTimeout(simulateReply, 1500);
+};
+
+// Demo auto-reply — remove when real Firebase messaging is connected
+var replies = [
+  'Sounds good! 👍',
+  'Got it, I\'ll be there!',
+  'Perfect, see you then 😊',
+  'No problem at all!',
+  'Thanks for letting me know!',
+];
+var replyIndex = 0;
+function simulateReply(){
+  messages.push({
+    id: nextId++,
+    from: 'them',
+    text: replies[replyIndex % replies.length],
+    time: getTime(),
+    date: 'Today'
+  });
+  replyIndex++;
+  renderMessages();
+  scrollToBottom();
+}
+</script>
+</body>
+</html>
