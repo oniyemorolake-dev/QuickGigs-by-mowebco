@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickGigs — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0b0118;
+  --surface:rgba(255,255,255,0.04);
+  --surface-hover:rgba(255,255,255,0.06);
+  --border:rgba(200,168,233,0.1);
+  --text:#fff;
+  --text-muted:rgba(255,255,255,0.35);
+  --text-faint:rgba(255,255,255,0.22);
+  --purple:#6b3fa0;
+  --purple-light:#9b6fc4;
+  --lavender:#c8a8e9;
+  --nav-bg:#0b0118;
+  --card-bg:rgba(255,255,255,0.04);
+  --input-bg:rgba(255,255,255,0.06);
+  --input-border:rgba(200,168,233,0.15);
+  --col-h:rgba(255,255,255,0.25);
+  --row-border:rgba(200,168,233,0.06);
+}
+body.light{
+  --bg:#fafafe;
+  --surface:#fff;
+  --surface-hover:#f5f2ff;
+  --border:#f0eeff;
+  --text:#1a0a3d;
+  --text-muted:#6b7280;
+  --text-faint:#9ca3af;
+  --nav-bg:#fff;
+  --card-bg:#fff;
+  --input-bg:#f0eeff;
+  --input-border:#e8e2ff;
+  --col-h:#9ca3af;
+  --row-border:#f0eeff;
+  --lavender:#6b3fa0;
+}
+
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background 0.25s,color 0.25s;}
+
+/* ACCESS DENIED */
+.access-denied{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:40px;}
+.access-denied.show{display:flex;}
+.ad-icon{font-size:56px;margin-bottom:16px;}
+.ad-title{font-size:22px;font-weight:500;margin-bottom:8px;}
+.ad-sub{font-size:14px;color:var(--text-muted);margin-bottom:24px;}
+.ad-btn{padding:12px 28px;border-radius:14px;background:var(--purple);color:#fff;border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;}
+
+/* NAV */
+.nav{background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:13px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;transition:background 0.25s;}
+.nav-left{display:flex;align-items:center;gap:10px;}
+.nav-logo{font-family:'Playfair Display',serif;font-style:italic;font-size:1.25rem;color:var(--lavender);}
+.admin-badge{font-size:10px;padding:3px 10px;border-radius:20px;background:rgba(239,68,68,0.15);color:#ef4444;border:0.5px solid rgba(239,68,68,0.25);}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.nav-date{font-size:12px;color:var(--text-faint);}
+.mode-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);}
+body.light .mode-btn{background:#f0eeff;color:var(--purple);}
+.avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#c8a8e9);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:#fff;}
+.logout-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:0.5px solid rgba(239,68,68,0.3);background:transparent;color:#ef4444;font-family:'DM Sans',sans-serif;}
+
+/* MAIN */
+.main{max-width:1100px;margin:0 auto;padding:24px;}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.stat-card{border-radius:16px;padding:16px;background:var(--card-bg);border:0.5px solid var(--border);}
+.stat-icon{font-size:22px;margin-bottom:10px;}
+.stat-val{font-size:24px;font-weight:500;color:var(--text);margin-bottom:3px;}
+.stat-val.green{color:#4ade80;}
+.stat-val.purple{color:var(--lavender);}
+body.light .stat-val.purple{color:var(--purple);}
+.stat-val.amber{color:#fbbf24;}
+.stat-val.red{color:#ef4444;}
+.stat-lbl{font-size:12px;color:var(--text-faint);}
+.stat-trend{font-size:11px;margin-top:5px;color:#4ade80;}
+.stat-trend.warn{color:#ef4444;}
+.stat-trend.neutral{color:var(--text-faint);}
+
+/* TABS */
+.tabs{display:flex;gap:8px;margin-bottom:16px;}
+.tab-btn{padding:9px 18px;border-radius:20px;font-size:13px;cursor:pointer;border:0.5px solid var(--border);background:transparent;color:var(--text-muted);font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+.tab-btn:hover{border-color:var(--purple-light);color:var(--purple-light);}
+.tab-btn.active{background:rgba(107,63,160,0.3);color:var(--lavender);border-color:var(--purple);}
+body.light .tab-btn.active{background:var(--purple);color:#fff;border-color:var(--purple);}
+
+/* TABLE CARD */
+.table-card{border-radius:16px;background:var(--card-bg);border:0.5px solid var(--border);overflow:hidden;}
+.table-header{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--border);}
+.table-title{font-size:15px;font-weight:500;color:var(--text);}
+.table-count{font-size:12px;color:var(--text-faint);margin-left:8px;}
+.search-input{padding:7px 14px;border-radius:20px;background:var(--input-bg);border:0.5px solid var(--input-border);font-size:12px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;width:200px;transition:border-color 0.2s;}
+.search-input:focus{border-color:var(--purple-light);}
+.search-input::placeholder{color:var(--lavender);opacity:0.35;}
+
+/* TABLE */
+.col-row{display:grid;padding:10px 20px;border-bottom:0.5px solid var(--border);}
+.col-h{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--col-h);}
+.data-row{display:grid;padding:13px 20px;align-items:center;border-bottom:0.5px solid var(--row-border);transition:background 0.15s;cursor:pointer;}
+.data-row:last-child{border-bottom:none;}
+.data-row:hover{background:var(--surface-hover);}
+
+/* USERS COLS */
+.g-users{grid-template-columns:2fr 1.8fr 0.8fr 1fr 1.2fr;}
+/* TASKS COLS */
+.g-tasks{grid-template-columns:2.5fr 1.2fr 0.8fr 1fr 1fr;}
+/* DISPUTES COLS */
+.g-disputes{grid-template-columns:2fr 1fr 1fr 1fr 1.2fr;}
+
+.cell{font-size:13px;color:var(--text-muted);}
+.cell-name{display:flex;align-items:center;gap:9px;}
+.u-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#fff;flex-shrink:0;}
+.u-name{font-size:13px;font-weight:500;color:var(--text);}
+.u-joined{font-size:11px;color:var(--text-faint);}
+.cell-title{font-size:13px;font-weight:500;color:var(--text);}
+
+/* STATUS PILLS */
+.pill{display:inline-block;font-size:10px;padding:3px 9px;border-radius:20px;font-weight:500;}
+.pill-active{background:rgba(74,222,128,0.12);color:#16a34a;}
+.pill-warned{background:rgba(251,191,36,0.12);color:#d97706;}
+.pill-banned{background:rgba(239,68,68,0.12);color:#ef4444;}
+.pill-posted{background:rgba(107,63,160,0.2);color:var(--purple-light);}
+body.light .pill-posted{background:#ede9ff;color:var(--purple);}
+.pill-progress{background:rgba(107,63,160,0.2);color:var(--purple-light);}
+body.light .pill-progress{background:#ede9ff;color:var(--purple);}
+.pill-done{background:rgba(74,222,128,0.12);color:#16a34a;}
+.pill-open{background:rgba(239,68,68,0.1);color:#ef4444;}
+.pill-resolved{background:rgba(74,222,128,0.12);color:#16a34a;}
+
+/* ACTION BUTTONS */
+.actions{display:flex;gap:5px;justify-content:flex-end;flex-wrap:wrap;}
+.act-btn{padding:4px 10px;border-radius:8px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;font-weight:500;transition:opacity 0.15s;}
+.act-btn:hover{opacity:0.8;}
+.btn-view{background:rgba(107,63,160,0.3);color:var(--lavender);}
+body.light .btn-view{background:#ede9ff;color:var(--purple);}
+.btn-warn{background:rgba(251,191,36,0.15);color:#d97706;}
+.btn-ban{background:rgba(239,68,68,0.12);color:#ef4444;}
+.btn-unban{background:rgba(74,222,128,0.12);color:#16a34a;}
+.btn-remove{background:rgba(239,68,68,0.12);color:#ef4444;}
+.btn-resolve{background:rgba(74,222,128,0.12);color:#16a34a;}
+
+/* EMPTY */
+.empty-row{padding:40px;text-align:center;color:var(--text-faint);font-size:13px;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:#150830;border:0.5px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:420px;}
+body.light .modal{background:#fff;}
+.modal-title{font-size:17px;font-weight:500;color:var(--text);margin-bottom:6px;}
+.modal-sub{font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.5;}
+.modal-field{margin-bottom:14px;}
+.modal-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);display:block;margin-bottom:6px;}
+.modal-value{font-size:14px;color:var(--text);}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;}
+.modal-cancel{padding:10px 20px;border-radius:12px;border:0.5px solid var(--border);background:transparent;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;}
+.modal-confirm{padding:10px 20px;border-radius:12px;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;color:#fff;}
+.modal-confirm.danger{background:#ef4444;}
+.modal-confirm.warn{background:#d97706;}
+.modal-confirm.success{background:#16a34a;}
+.modal-confirm.purple{background:var(--purple);}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:11px 24px;border-radius:20px;font-size:13px;font-weight:500;display:none;z-index:300;white-space:nowrap;}
+.toast.green{background:#4ade80;color:#0b0118;}
+.toast.red{background:#ef4444;color:#fff;}
+.toast.amber{background:#fbbf24;color:#0b0118;}
+</style>
+</head>
+<body>
+
+<!-- ACCESS DENIED -->
+<div class="access-denied" id="accessDenied">
+  <div class="ad-icon">🔐</div>
+  <div class="ad-title">Access denied</div>
+  <div class="ad-sub">This page is only accessible to QuickGigs admins.</div>
+  <button class="ad-btn" onclick="window.location.href='dashboard.html'">Back to dashboard</button>
+</div>
+
+<!-- MAIN ADMIN UI (hidden until auth check passes) -->
+<div id="adminUI" style="display:none;">
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-left">
+      <span class="nav-logo">QuickGigs</span>
+      <span class="admin-badge">🔐 Admin</span>
+    </div>
+    <div class="nav-right">
+      <span class="nav-date" id="navDate"></span>
+      <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
+      <div class="avatar" id="avatarEl">M</div>
+      <button class="logout-btn" onclick="doLogout()">Log out</button>
+    </div>
+  </nav>
+
+  <div class="main">
+
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-val purple" id="statUsers">—</div>
+        <div class="stat-lbl">Total users</div>
+        <div class="stat-trend" id="statUsersTrend"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📋</div>
+        <div class="stat-val" id="statTasks">—</div>
+        <div class="stat-lbl">Tasks posted</div>
+        <div class="stat-trend" id="statTasksTrend"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-val green" id="statRevenue">$0</div>
+        <div class="stat-lbl">Platform revenue</div>
+        <div class="stat-trend neutral" id="statRevenueTrend">Beta — no live payments yet</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🚨</div>
+        <div class="stat-val red" id="statDisputes">—</div>
+        <div class="stat-lbl">Open disputes</div>
+        <div class="stat-trend warn" id="statDisputesTrend"></div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('users',this)">👥 Users</button>
+      <button class="tab-btn" onclick="showTab('tasks',this)">📋 Tasks</button>
+      <button class="tab-btn" onclick="showTab('disputes',this)">🚨 Disputes</button>
+    </div>
+
+    <!-- USERS TABLE -->
+    <div class="table-card" id="usersTable">
+      <div class="table-header">
+        <div><span class="table-title">All users</span><span class="table-count" id="usersCount"></span></div>
+        <input class="search-input" placeholder="🔍 Search users..." oninput="filterTable('users',this.value)">
+      </div>
+      <div class="col-row g-users">
+        <div class="col-h">User</div>
+        <div class="col-h">Email</div>
+        <div class="col-h">Role</div>
+        <div class="col-h">Status</div>
+        <div class="col-h" style="text-align:right">Actions</div>
+      </div>
+      <div id="usersBody"></div>
+    </div>
+
+    <!-- TASKS TABLE -->
+    <div class="table-card" id="tasksTable" style="display:none">
+      <div class="table-header">
+        <div><span class="table-title">All tasks</span><span class="table-count" id="tasksCount"></span></div>
+        <input class="search-input" placeholder="🔍 Search tasks..." oninput="filterTable('tasks',this.value)">
+      </div>
+      <div class="col-row g-tasks">
+        <div class="col-h">Task</div>
+        <div class="col-h">Posted by</div>
+        <div class="col-h">Budget</div>
+        <div class="col-h">Status</div>
+        <div class="col-h" style="text-align:right">Actions</div>
+      </div>
+      <div id="tasksBody"></div>
+    </div>
+
+    <!-- DISPUTES TABLE -->
+    <div class="table-card" id="disputesTable" style="display:none">
+      <div class="table-header">
+        <div><span class="table-title">Disputes</span><span class="table-count" id="disputesCount"></span></div>
+        <input class="search-input" placeholder="🔍 Search disputes..." oninput="filterTable('disputes',this.value)">
+      </div>
+      <div class="col-row g-disputes">
+        <div class="col-h">Task</div>
+        <div class="col-h">Poster</div>
+        <div class="col-h">Worker</div>
+        <div class="col-h">Status</div>
+        <div class="col-h" style="text-align:right">Actions</div>
+      </div>
+      <div id="disputesBody"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Confirm action</div>
+    <div class="modal-sub" id="modalSub">Are you sure?</div>
+    <div id="modalFields"></div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-confirm" id="modalConfirm" onclick="confirmAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
+  authDomain: "quickgigs-7b12d.firebaseapp.com",
+  projectId: "quickgigs-7b12d",
+  storageBucket: "quickgigs-7b12d.firebasestorage.app",
+  messagingSenderId: "698985399366",
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+// ADMIN EMAIL — only this email can access the admin dashboard
+const ADMIN_EMAIL = 'mowebsiteco@gmail.com';
+
+onAuthStateChanged(auth, (user) => {
+  if (!user || user.email !== ADMIN_EMAIL) {
+    document.getElementById('accessDenied').classList.add('show');
+    return;
+  }
+  // Access granted
+  document.getElementById('adminUI').style.display = 'block';
+  const name = user.displayName || user.email.split('@')[0];
+  document.getElementById('avatarEl').textContent = name.charAt(0).toUpperCase();
+  window._auth = auth;
+  initAdmin();
+});
+
+window.doLogout = function() {
+  signOut(auth).then(function(){ window.location.href = 'login.html'; });
+};
+</script>
+
+<script>
+// ── THEME ──────────────────────────────────────────────
+var isDark = localStorage.getItem('qg-mode') !== 'light';
+function applyTheme(){
+  document.body.className = isDark ? '' : 'light';
+  document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark';
+}
+window.toggleTheme = function(){
+  isDark = !isDark;
+  localStorage.setItem('qg-mode', isDark ? 'dark' : 'light');
+  applyTheme();
+};
+applyTheme();
+
+// ── DATE ───────────────────────────────────────────────
+document.getElementById('navDate').textContent = new Date().toLocaleDateString('en-CA', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+
+// ── DEMO DATA ──────────────────────────────────────────
+// When Oracle ORDS is connected, replace these with real API calls
+var users = [
+  {id:1, name:'Sarah K.',  email:'sarah@gmail.com',  role:'Worker', joined:'Jun 10, 2026', status:'active',    avatarBg:'linear-gradient(135deg,#6b3fa0,#c8a8e9)'},
+  {id:2, name:'James O.',  email:'james@gmail.com',  role:'Both',   joined:'Jun 12, 2026', status:'active',    avatarBg:'linear-gradient(135deg,#16a34a,#4ade80)'},
+  {id:3, name:'Aisha M.',  email:'aisha@gmail.com',  role:'Poster', joined:'Jun 15, 2026', status:'warned',    avatarBg:'linear-gradient(135deg,#d97706,#fbbf24)'},
+  {id:4, name:'David T.',  email:'david@gmail.com',  role:'Worker', joined:'Jun 8, 2026',  status:'banned',    avatarBg:'linear-gradient(135deg,#ef4444,#f87171)'},
+  {id:5, name:'Priya N.',  email:'priya@gmail.com',  role:'Both',   joined:'Jun 18, 2026', status:'active',    avatarBg:'linear-gradient(135deg,#9b6fc4,#c8a8e9)'},
+  {id:6, name:'Marcus L.', email:'marcus@gmail.com', role:'Worker', joined:'Jun 20, 2026', status:'active',    avatarBg:'linear-gradient(135deg,#0ea5e9,#7dd3fc)'},
+];
+
+var tasks = [
+  {id:1, title:'Deep clean 2 bedroom apartment', poster:'James O.', budget:'$120', status:'in_progress'},
+  {id:2, title:'Grocery run — Superstore NW',    poster:'Aisha M.', budget:'$30',  status:'completed'},
+  {id:3, title:'Math tutor for Grade 10 student',poster:'Sarah K.', budget:'$35/hr',status:'posted'},
+  {id:4, title:'Box braids — natural hair',       poster:'Priya N.', budget:'$80',  status:'completed'},
+  {id:5, title:'Moving couch to storage unit',    poster:'Marcus L.',budget:'$60',  status:'in_progress'},
+];
+
+var disputes = [
+  {id:1, task:'Box braids — natural hair',    poster:'Priya N.',  worker:'Sarah K.', status:'open',     reason:'Worker did not complete the task as agreed'},
+  {id:2, task:'Moving couch to storage unit', poster:'Marcus L.', worker:'David T.', status:'open',     reason:'Poster refused to release payment after completion'},
+  {id:3, task:'Grocery run — Superstore NW',  poster:'Aisha M.', worker:'James O.', status:'resolved', reason:'Item was damaged during delivery'},
+];
+
+// ── INIT ───────────────────────────────────────────────
+function initAdmin(){
+  var activeUsers    = users.filter(function(u){ return u.status === 'active'; }).length;
+  var openDisputes   = disputes.filter(function(d){ return d.status === 'open'; }).length;
+
+  document.getElementById('statUsers').textContent         = users.length;
+  document.getElementById('statUsersTrend').textContent    = activeUsers + ' active · ' + (users.length - activeUsers) + ' restricted';
+  document.getElementById('statTasks').textContent         = tasks.length;
+  document.getElementById('statTasksTrend').textContent    = tasks.filter(function(t){ return t.status==='completed'; }).length + ' completed';
+  document.getElementById('statDisputes').textContent      = openDisputes;
+  document.getElementById('statDisputesTrend').textContent = openDisputes > 0 ? openDisputes + ' need your attention' : 'All clear!';
+  if(openDisputes === 0) document.getElementById('statDisputesTrend').className = 'stat-trend';
+
+  renderUsers(users);
+  renderTasks(tasks);
+  renderDisputes(disputes);
+}
+
+// ── RENDER USERS ───────────────────────────────────────
+function renderUsers(data){
+  document.getElementById('usersCount').textContent = '· ' + data.length + ' total';
+  if(!data.length){ document.getElementById('usersBody').innerHTML = '<div class="empty-row">No users found</div>'; return; }
+  document.getElementById('usersBody').innerHTML = data.map(function(u){
+    var pillClass = u.status==='active' ? 'pill-active' : u.status==='warned' ? 'pill-warned' : 'pill-banned';
+    var pillLabel = u.status.charAt(0).toUpperCase() + u.status.slice(1);
+    var actions = u.status === 'banned'
+      ? '<button class="act-btn btn-view" onclick="viewUser('+u.id+')">View</button><button class="act-btn btn-unban" onclick="actionUser('+u.id+',\'unban\')">Unban</button>'
+      : '<button class="act-btn btn-view" onclick="viewUser('+u.id+')">View</button><button class="act-btn btn-warn" onclick="actionUser('+u.id+',\'warn\')">Warn</button><button class="act-btn btn-ban" onclick="actionUser('+u.id+',\'ban\')">Ban</button>';
+    return '<div class="data-row g-users">' +
+      '<div class="cell-name"><div class="u-av" style="background:'+u.avatarBg+'">'+u.name.charAt(0)+'</div><div><div class="u-name">'+u.name+'</div><div class="u-joined">Joined '+u.joined+'</div></div></div>' +
+      '<div class="cell">'+u.email+'</div>' +
+      '<div class="cell">'+u.role+'</div>' +
+      '<div class="cell"><span class="pill '+pillClass+'">'+pillLabel+'</span></div>' +
+      '<div class="actions">'+actions+'</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ── RENDER TASKS ───────────────────────────────────────
+function renderTasks(data){
+  document.getElementById('tasksCount').textContent = '· ' + data.length + ' total';
+  if(!data.length){ document.getElementById('tasksBody').innerHTML = '<div class="empty-row">No tasks found</div>'; return; }
+  document.getElementById('tasksBody').innerHTML = data.map(function(t){
+    var pillClass = t.status==='completed' ? 'pill-done' : t.status==='in_progress' ? 'pill-progress' : 'pill-posted';
+    var pillLabel = t.status==='in_progress' ? 'In progress' : t.status.charAt(0).toUpperCase()+t.status.slice(1);
+    return '<div class="data-row g-tasks">' +
+      '<div class="cell-title">'+t.title+'</div>' +
+      '<div class="cell">'+t.poster+'</div>' +
+      '<div class="cell">'+t.budget+'</div>' +
+      '<div class="cell"><span class="pill '+pillClass+'">'+pillLabel+'</span></div>' +
+      '<div class="actions"><button class="act-btn btn-view" onclick="viewTask('+t.id+')">View</button><button class="act-btn btn-remove" onclick="removeTask('+t.id+')">Remove</button></div>' +
+    '</div>';
+  }).join('');
+}
+
+// ── RENDER DISPUTES ────────────────────────────────────
+function renderDisputes(data){
+  var open = data.filter(function(d){ return d.status==='open'; }).length;
+  document.getElementById('disputesCount').textContent = '· ' + open + ' open, ' + (data.length - open) + ' resolved';
+  if(!data.length){ document.getElementById('disputesBody').innerHTML = '<div class="empty-row">No disputes found</div>'; return; }
+  document.getElementById('disputesBody').innerHTML = data.map(function(d){
+    var pillClass = d.status==='open' ? 'pill-open' : 'pill-resolved';
+    var pillLabel = d.status==='open' ? '⚠️ Open' : '✓ Resolved';
+    var actions = d.status==='open'
+      ? '<button class="act-btn btn-view" onclick="viewDispute('+d.id+')">Review</button><button class="act-btn btn-resolve" onclick="resolveDispute('+d.id+')">Resolve</button>'
+      : '<button class="act-btn btn-view" onclick="viewDispute('+d.id+')">View</button>';
+    return '<div class="data-row g-disputes">' +
+      '<div class="cell-title">'+d.task+'</div>' +
+      '<div class="cell">'+d.poster+'</div>' +
+      '<div class="cell">'+d.worker+'</div>' +
+      '<div class="cell"><span class="pill '+pillClass+'">'+pillLabel+'</span></div>' +
+      '<div class="actions">'+actions+'</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ── TABS ───────────────────────────────────────────────
+var activeTab = 'users';
+window.showTab = function(tab, btn){
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('usersTable').style.display    = tab==='users'    ? 'block' : 'none';
+  document.getElementById('tasksTable').style.display    = tab==='tasks'    ? 'block' : 'none';
+  document.getElementById('disputesTable').style.display = tab==='disputes' ? 'block' : 'none';
+};
+
+// ── SEARCH / FILTER ────────────────────────────────────
+window.filterTable = function(type, query){
+  var q = query.toLowerCase().trim();
+  if(type==='users'){
+    renderUsers(!q ? users : users.filter(function(u){ return u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q); }));
+  } else if(type==='tasks'){
+    renderTasks(!q ? tasks : tasks.filter(function(t){ return t.title.toLowerCase().includes(q) || t.poster.toLowerCase().includes(q); }));
+  } else {
+    renderDisputes(!q ? disputes : disputes.filter(function(d){ return d.task.toLowerCase().includes(q) || d.poster.toLowerCase().includes(q) || d.worker.toLowerCase().includes(q); }));
+  }
+};
+
+// ── MODAL ──────────────────────────────────────────────
+var pendingAction = null;
+
+function openModal(title, sub, fields, confirmLabel, confirmClass, onConfirm){
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalSub').textContent   = sub;
+  document.getElementById('modalFields').innerHTML  = fields;
+  var btn = document.getElementById('modalConfirm');
+  btn.textContent  = confirmLabel;
+  btn.className    = 'modal-confirm ' + confirmClass;
+  pendingAction    = onConfirm;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+window.closeModal = function(e){
+  if(e && e.target !== document.getElementById('modalOverlay')) return;
+  document.getElementById('modalOverlay').classList.remove('open');
+  pendingAction = null;
+};
+
+window.confirmAction = function(){
+  if(pendingAction) pendingAction();
+  document.getElementById('modalOverlay').classList.remove('open');
+  pendingAction = null;
+};
+
+function showToast(msg, type){
+  var t = document.getElementById('toast');
+  t.textContent  = msg;
+  t.className    = 'toast ' + (type||'green');
+  t.style.display = 'block';
+  setTimeout(function(){ t.style.display='none'; }, 3000);
+}
+
+// ── USER ACTIONS ───────────────────────────────────────
+window.viewUser = function(id){
+  var u = users.find(function(x){ return x.id===id; });
+  openModal('User profile', u.name + ' · ' + u.role,
+    '<div style="display:grid;gap:10px">' +
+    '<div><div class="modal-label">Email</div><div class="modal-value">'+u.email+'</div></div>' +
+    '<div><div class="modal-label">Joined</div><div class="modal-value">'+u.joined+'</div></div>' +
+    '<div><div class="modal-label">Status</div><div class="modal-value">'+u.status+'</div></div>' +
+    '</div>',
+    'Close', 'purple', function(){});
+};
+
+window.actionUser = function(id, action){
+  var u = users.find(function(x){ return x.id===id; });
+  var titles = {warn:'Issue a warning', ban:'Ban user', unban:'Unban user'};
+  var subs   = {
+    warn: 'This will send a warning email to ' + u.name + '. A second warning leads to suspension.',
+    ban:  'This will permanently ban ' + u.name + ' from QuickGigs. They will not be able to log in.',
+    unban:'This will restore ' + u.name + '\'s access to QuickGigs.'
+  };
+  var classes = {warn:'warn', ban:'danger', unban:'success'};
+  var labels  = {warn:'Issue warning', ban:'Ban user', unban:'Unban user'};
+  openModal(titles[action], subs[action], '', labels[action], classes[action], function(){
+    var newStatus = action==='warn' ? 'warned' : action==='ban' ? 'banned' : 'active';
+    u.status = newStatus;
+    renderUsers(users);
+    showToast(u.name + ' has been ' + (action==='unban'?'unbanned':action+'ned') + '.', action==='ban'?'red':action==='warn'?'amber':'green');
+    // TODO: Update user status in Oracle USERS table via ORDS
+  });
+};
+
+// ── TASK ACTIONS ───────────────────────────────────────
+window.viewTask = function(id){
+  var t = tasks.find(function(x){ return x.id===id; });
+  openModal('Task details', t.title,
+    '<div style="display:grid;gap:10px">' +
+    '<div><div class="modal-label">Posted by</div><div class="modal-value">'+t.poster+'</div></div>' +
+    '<div><div class="modal-label">Budget</div><div class="modal-value">'+t.budget+'</div></div>' +
+    '<div><div class="modal-label">Status</div><div class="modal-value">'+t.status+'</div></div>' +
+    '</div>',
+    'Close', 'purple', function(){});
+};
+
+window.removeTask = function(id){
+  var t = tasks.find(function(x){ return x.id===id; });
+  openModal('Remove task', 'Are you sure you want to remove "'+t.title+'"? This cannot be undone.', '', 'Remove task', 'danger', function(){
+    tasks = tasks.filter(function(x){ return x.id!==id; });
+    renderTasks(tasks);
+    document.getElementById('statTasks').textContent = tasks.length;
+    showToast('Task removed successfully.', 'red');
+    // TODO: Delete task from Oracle TASKS table via ORDS
+  });
+};
+
+// ── DISPUTE ACTIONS ────────────────────────────────────
+window.viewDispute = function(id){
+  var d = disputes.find(function(x){ return x.id===id; });
+  openModal('Dispute details', d.task,
+    '<div style="display:grid;gap:10px">' +
+    '<div><div class="modal-label">Poster</div><div class="modal-value">'+d.poster+'</div></div>' +
+    '<div><div class="modal-label">Worker</div><div class="modal-value">'+d.worker+'</div></div>' +
+    '<div><div class="modal-label">Reason</div><div class="modal-value">'+d.reason+'</div></div>' +
+    '<div><div class="modal-label">Status</div><div class="modal-value">'+d.status+'</div></div>' +
+    '</div>',
+    'Close', 'purple', function(){});
+};
+
+window.resolveDispute = function(id){
+  var d = disputes.find(function(x){ return x.id===id; });
+  openModal('Resolve dispute', 'Mark this dispute as resolved? Both parties will be notified.', '', 'Mark resolved', 'success', function(){
+    d.status = 'resolved';
+    renderDisputes(disputes);
+    var open = disputes.filter(function(x){ return x.status==='open'; }).length;
+    document.getElementById('statDisputes').textContent = open;
+    showToast('Dispute marked as resolved.', 'green');
+    // TODO: Update dispute status in Oracle via ORDS
+  });
+};
+</script>
+</body>
+</html>
