@@ -156,7 +156,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <div class="section">
   <div class="section-hdr">
     <span class="section-title" id="sectionTitle">Tasks near you</span>
-    <a class="see-all" href="browse-tasks.html">See all</a>
+    <a class="see-all" href="browsetask.html">See all</a>
   </div>
   <div id="tasksList"></div>
 </div>
@@ -167,11 +167,11 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
     <span class="tab-icon">🏠</span>
     <span class="tab-lbl">Home</span>
   </a>
-  <a class="tab-item" href="browse-tasks.html">
+  <a class="tab-item" href="browsetask.html">
     <span class="tab-icon">🔍</span>
     <span class="tab-lbl">Browse</span>
   </a>
-  <a class="tab-item" href="post-task.html">
+  <a class="tab-item" href="posttask.html">
     <span class="tab-icon">➕</span>
     <span class="tab-lbl">Post</span>
   </a>
@@ -255,9 +255,9 @@ function renderGreeting(){
 
 // ── DATA ───────────────────────────────────────────────
 var nearbyTasks = [
-  {icon:'🚗', bg:'rgba(251,191,36,0.15)', name:'Grocery run — Superstore NW',       meta:'📍 1.2km away · 5 mins ago',  price:'$30',    badge:'badge-quick',    badgeLabel:'⚡ Quick',    href:'browse-tasks.html'},
-  {icon:'🏠', bg:'rgba(107,63,160,0.2)',  name:'Deep clean 2 bedroom apartment',     meta:'📍 2.4km away · 2 hrs ago',   price:'$120',   badge:'badge-standard', badgeLabel:'Standard',    href:'browse-tasks.html'},
-  {icon:'🎓', bg:'rgba(74,222,128,0.1)', name:'Math tutor for Grade 10 student',    meta:'📍 0.8km away · 30 mins ago', price:'$35/hr', badge:'badge-recurring', badgeLabel:'🔄 Recurring', href:'browse-tasks.html'},
+  {icon:'🚗', bg:'rgba(251,191,36,0.15)', name:'Grocery run — Superstore NW',       meta:'📍 1.2km away · 5 mins ago',  price:'$30',    badge:'badge-quick',    badgeLabel:'⚡ Quick',    href:'browsetask.html'},
+  {icon:'🏠', bg:'rgba(107,63,160,0.2)',  name:'Deep clean 2 bedroom apartment',     meta:'📍 2.4km away · 2 hrs ago',   price:'$120',   badge:'badge-standard', badgeLabel:'Standard',    href:'browsetask.html'},
+  {icon:'🎓', bg:'rgba(74,222,128,0.1)', name:'Math tutor for Grade 10 student',    meta:'📍 0.8km away · 30 mins ago', price:'$35/hr', badge:'badge-recurring', badgeLabel:'🔄 Recurring', href:'browsetask.html'},
 ];
 
 // ── RENDER ─────────────────────────────────────────────
@@ -286,8 +286,8 @@ function renderAll(){
 
   // Action cards
   var actions = isPoster
-    ? [{icon:'➕',title:'Post a task',desc:'Need something done?',href:'post-task.html',cls:'primary'},{icon:'📂',title:'My tasks',desc:'See applicants & progress',href:'my-tasks.html',cls:'secondary'}]
-    : [{icon:'🔍',title:'Browse tasks',desc:'Find work near you',href:'browse-tasks.html',cls:'primary'},{icon:'📨',title:'My applications',desc:'Track your bids',href:'my-tasks.html',cls:'secondary'}];
+    ? [{icon:'➕',title:'Post a task',desc:'Need something done?',href:'posttask.html',cls:'primary'},{icon:'📂',title:'My tasks',desc:'See applicants & progress',href:'my-tasks.html',cls:'secondary'}]
+    : [{icon:'🔍',title:'Browse tasks',desc:'Find work near you',href:'browsetask.html',cls:'primary'},{icon:'📨',title:'My applications',desc:'Track your bids',href:'my-tasks.html',cls:'secondary'}];
   document.getElementById('actionsGrid').innerHTML = actions.map(function(a){
     return '<a class="action-card '+a.cls+'" href="'+a.href+'"><div class="action-icon">'+a.icon+'</div><div class="action-title">'+a.title+'</div><div class="action-desc">'+a.desc+'</div></a>';
   }).join('');
@@ -308,7 +308,7 @@ function renderAll(){
   if(isPoster){
     html += '<div style="margin-top:16px"></div>' +
       '<div class="section-hdr"><span class="section-title">My posted tasks</span><a class="see-all" href="my-tasks.html">See all</a></div>' +
-      '<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">No tasks posted yet</div><a class="empty-btn" href="post-task.html">Post your first task</a></div>';
+      '<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">No tasks posted yet</div><a class="empty-btn" href="posttask.html">Post your first task</a></div>';
   }
 
   document.getElementById('tasksList').innerHTML = html;
