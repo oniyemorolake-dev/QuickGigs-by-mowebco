@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickGigs — My Tasks</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0b0118;--surface:rgba(255,255,255,0.04);--border:rgba(200,168,233,0.1);
+  --text:#fff;--text-muted:rgba(255,255,255,0.35);--text-faint:rgba(255,255,255,0.22);
+  --purple:#6b3fa0;--purple-light:#9b6fc4;--lavender:#c8a8e9;
+  --nav-bg:#0b0118;--tab-bg:#0e021f;--card-bg:rgba(255,255,255,0.04);
+}
+body.light{
+  --bg:#fafafe;--surface:#fff;--border:#f0eeff;--text:#1a0a3d;
+  --text-muted:#6b7280;--text-faint:#9ca3af;--nav-bg:#fff;--tab-bg:#fff;
+  --card-bg:#fff;--lavender:#6b3fa0;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:76px;transition:background 0.25s,color 0.25s;}
+
+.nav{position:sticky;top:0;z-index:50;background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;transition:background 0.25s;}
+.nav-logo{font-family:'Playfair Display',serif;font-style:italic;font-size:1.25rem;color:var(--lavender);}
+.nav-title{font-size:16px;font-weight:500;color:var(--text);}
+.mode-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);}
+body.light .mode-btn{background:#f0eeff;color:var(--purple);}
+
+/* TABS */
+.tabs-wrap{background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:0 20px;display:flex;gap:0;overflow-x:auto;transition:background 0.25s;}
+.tabs-wrap::-webkit-scrollbar{display:none;}
+.tab-btn{padding:12px 16px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;font-family:'DM Sans',sans-serif;color:var(--text-muted);border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.15s;}
+.tab-btn.active{color:var(--purple-light);border-bottom-color:var(--purple-light);}
+body.light .tab-btn.active{color:var(--purple);border-bottom-color:var(--purple);}
+
+/* CONTENT */
+.content{padding:16px 20px;}
+
+/* CARDS */
+.task-card{border-radius:16px;padding:15px;margin-bottom:10px;border:0.5px solid var(--border);background:var(--card-bg);}
+.tc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;}
+.tc-left{display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0;}
+.tc-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.tc-cat{font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);margin-bottom:3px;}
+.tc-title{font-size:13px;font-weight:500;color:var(--text);line-height:1.4;}
+.tc-badge{padding:3px 9px;border-radius:20px;font-size:9px;font-weight:500;white-space:nowrap;flex-shrink:0;}
+.badge-open{background:rgba(107,63,160,0.2);color:#9b6fc4;}
+body.light .badge-open{background:#ede9ff;color:var(--purple);}
+.badge-progress{background:rgba(251,191,36,0.15);color:#d97706;}
+.badge-done{background:rgba(74,222,128,0.12);color:#16a34a;}
+.tc-meta{font-size:11px;color:var(--text-faint);margin-bottom:10px;}
+.tc-bottom{display:flex;align-items:center;justify-content:space-between;}
+.tc-price{font-size:15px;font-weight:500;color:var(--text);}
+.tc-applicants{font-size:11px;color:var(--purple-light);}
+body.light .tc-applicants{color:var(--purple);}
+
+/* ACTION BUTTONS */
+.action-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.act-btn{padding:8px 16px;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;border:none;transition:opacity 0.15s;}
+.act-btn:hover{opacity:0.85;}
+.btn-primary{background:var(--purple);color:#fff;}
+.btn-secondary{background:var(--surface);border:0.5px solid var(--border);color:var(--text-muted);}
+.btn-success{background:#16a34a;color:#fff;}
+.btn-review{background:rgba(251,191,36,0.15);color:#d97706;border:0.5px solid rgba(251,191,36,0.3);}
+
+/* APPLICANT ROW */
+.applicant-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:0.5px solid var(--border);}
+.app-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#c8a8e9);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#fff;flex-shrink:0;}
+.app-info{flex:1;min-width:0;}
+.app-name{font-size:13px;font-weight:500;color:var(--text);}
+.app-msg{font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.app-price{font-size:13px;font-weight:500;color:var(--text);flex-shrink:0;}
+.accept-btn{padding:6px 14px;border-radius:8px;background:var(--purple);color:#fff;border:none;font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:60px 20px;}
+.empty-icon{font-size:44px;margin-bottom:14px;}
+.empty-title{font-size:16px;font-weight:500;color:var(--text);margin-bottom:8px;}
+.empty-sub{font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.6;}
+.empty-btn{padding:12px 24px;border-radius:13px;background:var(--purple);color:#fff;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;display:inline-block;}
+
+/* TOAST */
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:#4ade80;color:#0b0118;padding:11px 24px;border-radius:20px;font-size:13px;font-weight:500;display:none;z-index:300;white-space:nowrap;}
+
+/* TAB BAR */
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--tab-bg);border-top:0.5px solid var(--border);display:flex;padding:8px 0 14px;z-index:100;}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;}
+.tab-icon{font-size:22px;color:var(--text-faint);}
+.tab-lbl{font-size:10px;color:var(--text-faint);}
+.tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:var(--purple-light);}
+body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color:var(--purple);}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">QuickGigs</div>
+  <div class="nav-title">My Tasks</div>
+  <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
+</nav>
+
+<div class="tabs-wrap">
+  <button class="tab-btn active" onclick="showTab('posted',this)">Posted</button>
+  <button class="tab-btn" onclick="showTab('applied',this)">Applied</button>
+  <button class="tab-btn" onclick="showTab('inprogress',this)">In Progress</button>
+  <button class="tab-btn" onclick="showTab('completed',this)">Completed</button>
+</div>
+
+<div class="content" id="tabContent"></div>
+
+<div class="toast" id="toast"></div>
+
+<nav class="tab-bar">
+  <a class="tab-item" href="dashboard.html"><span class="tab-icon">🏠</span><span class="tab-lbl">Home</span></a>
+  <a class="tab-item" href="browsetask.html"><span class="tab-icon">🔍</span><span class="tab-lbl">Browse</span></a>
+  <a class="tab-item" href="posttask.html"><span class="tab-icon">➕</span><span class="tab-lbl">Post</span></a>
+  <a class="tab-item active" href="mytasks.html"><span class="tab-icon">✅</span><span class="tab-lbl">My Tasks</span></a>
+  <a class="tab-item" href="messages.html"><span class="tab-icon">💬</span><span class="tab-lbl">Messages</span></a>
+</nav>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
+  authDomain: "quickgigs-7b12d.firebaseapp.com",
+  projectId: "quickgigs-7b12d",
+  storageBucket: "quickgigs-7b12d.firebasestorage.app",
+  messagingSenderId: "698985399366",
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+onAuthStateChanged(auth, (user) => {
+  if (!user) { window.location.href = 'login.html'; return; }
+  window._currentUser = user;
+  loadData();
+});
+</script>
+
+<script>
+const ORDS_BASE = 'https://iacademy2.oracle.com/ords/ca_a832_sql_s12/quickgigs/';
+var activeTab = 'posted';
+var allTasks = [], allApplications = [];
+var isDark = localStorage.getItem('qg-mode') !== 'light';
+
+function applyTheme(){ document.body.className = isDark ? '' : 'light'; document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark'; }
+window.toggleTheme = function(){ isDark = !isDark; localStorage.setItem('qg-mode', isDark?'dark':'light'); applyTheme(); };
+applyTheme();
+
+async function loadData(){
+  var userId = window._currentUser ? window._currentUser.uid : null;
+  if(!userId) return;
+  try {
+    var [tasksRes, appsRes] = await Promise.all([
+      fetch(ORDS_BASE + 'task/', {headers:{'Content-Type':'application/json'}}),
+      fetch(ORDS_BASE + 'applications/', {headers:{'Content-Type':'application/json'}})
+    ]);
+    var tasksData = await tasksRes.json();
+    var appsData  = await appsRes.json();
+    allTasks        = (tasksData.items || []);
+    allApplications = (appsData.items  || []);
+  } catch(err) {
+    console.warn('Oracle unreachable, using demo data:', err);
+    allTasks        = getDemoTasks();
+    allApplications = getDemoApps();
+  }
+  renderTab();
+}
+
+function getDemoTasks(){
+  return [
+    {TASK_ID:1,TITLE:'Deep clean 2 bedroom apartment',CATEGORY:'home',TASK_MODE:'standard',BUDGET:120,LOCATION:'Calgary, AB',STATUS:'open',POSTED_BY:window._currentUser?window._currentUser.uid:'me'},
+    {TASK_ID:2,TITLE:'Grocery run — Superstore NW',CATEGORY:'errands',TASK_MODE:'quick',BUDGET:30,LOCATION:'Calgary, AB',STATUS:'in_progress',POSTED_BY:window._currentUser?window._currentUser.uid:'me'},
+    {TASK_ID:3,TITLE:'Math tutor Grade 10',CATEGORY:'tutoring',TASK_MODE:'recurring',BUDGET:35,LOCATION:'Calgary, AB',STATUS:'completed',POSTED_BY:'someone_else'},
+  ];
+}
+function getDemoApps(){
+  return [
+    {APP_ID:1,TASK_ID:3,WORKER_ID:window._currentUser?window._currentUser.uid:'me',MESSAGE:'I can help with math tutoring!',PRICE:35,STATUS:'pending'},
+  ];
+}
+
+var CAT_ICONS = {home:'🏠',errands:'🚗',tutoring:'🎓',beauty:'💇',moving:'🚚',cooking:'🍳',tech:'💻',care:'👶',gardening:'🌿',events:'🎉',trades:'🔧',other:'📦'};
+var CAT_BG    = {home:'rgba(107,63,160,0.2)',errands:'rgba(251,191,36,0.15)',tutoring:'rgba(74,222,128,0.1)',beauty:'rgba(200,168,233,0.15)',moving:'rgba(107,63,160,0.2)',cooking:'rgba(251,191,36,0.12)',tech:'rgba(107,63,160,0.2)',care:'rgba(74,222,128,0.1)',gardening:'rgba(74,222,128,0.08)',events:'rgba(200,168,233,0.15)',trades:'rgba(107,63,160,0.2)',other:'rgba(255,255,255,0.06)'};
+
+function getCat(t){ var k=(t.CATEGORY||t.category||'other').toLowerCase(); return {icon:CAT_ICONS[k]||'📦',bg:CAT_BG[k]||'rgba(255,255,255,0.06)'}; }
+function getField(row,f){ return row[f]||row[f.toLowerCase()]||''; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function showToast(msg, color){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = color || '#4ade80';
+  t.style.color = color ? '#fff' : '#0b0118';
+  t.style.display = 'block';
+  setTimeout(function(){ t.style.display='none'; }, 3000);
+}
+
+window.showTab = function(tab, btn){
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  renderTab();
+};
+
+function renderTab(){
+  var userId = window._currentUser ? window._currentUser.uid : null;
+  var content = document.getElementById('tabContent');
+
+  if(activeTab === 'posted'){
+    var myTasks = allTasks.filter(function(t){ return getField(t,'POSTED_BY') === userId && getField(t,'STATUS') === 'open'; });
+    if(!myTasks.length){
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No tasks posted yet</div><div class="empty-sub">Post your first task and workers near you will start applying.</div><a class="empty-btn" href="posttask.html">Post a task</a></div>';
+      return;
+    }
+    content.innerHTML = myTasks.map(function(t){
+      var cat = getCat(t);
+      var apps = allApplications.filter(function(a){ return getField(a,'TASK_ID') == getField(t,'TASK_ID'); });
+      var appHtml = apps.length ? apps.map(function(a){
+        return '<div class="applicant-row">'+
+          '<div class="app-avatar">'+getField(a,'WORKER_ID').charAt(0).toUpperCase()+'</div>'+
+          '<div class="app-info"><div class="app-name">Applicant</div><div class="app-msg">'+esc(getField(a,'MESSAGE'))+'</div></div>'+
+          '<div class="app-price">$'+getField(a,'PRICE')+'</div>'+
+          '<button class="accept-btn" onclick="acceptApplicant('+getField(t,'TASK_ID')+','+getField(a,'APP_ID')+')">Accept</button>'+
+        '</div>';
+      }).join('') : '<div style="font-size:12px;color:var(--text-faint);padding:10px 0">No applicants yet — check back soon</div>';
+      return '<div class="task-card">'+
+        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-open">Open</span></div>'+
+        '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+' budget</div>'+
+        '<div class="tc-applicants">'+apps.length+' applicant'+(apps.length!==1?'s':'')+'</div>'+
+        appHtml+'</div>';
+    }).join('');
+  }
+
+  else if(activeTab === 'applied'){
+    var myApps = allApplications.filter(function(a){ return getField(a,'WORKER_ID') === userId; });
+    if(!myApps.length){
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">📨</div><div class="empty-title">No applications yet</div><div class="empty-sub">Browse tasks near you and apply to start earning.</div><a class="empty-btn" href="browsetask.html">Browse tasks</a></div>';
+      return;
+    }
+    content.innerHTML = myApps.map(function(a){
+      var task = allTasks.find(function(t){ return getField(t,'TASK_ID') == getField(a,'TASK_ID'); }) || {};
+      var cat = getCat(task);
+      var statusLabel = getField(a,'STATUS') === 'accepted' ? '<span class="tc-badge badge-done">✓ Accepted</span>' : '<span class="tc-badge badge-open">Pending</span>';
+      return '<div class="task-card">'+
+        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">Your application</div><div class="tc-title">'+esc(getField(task,'TITLE')||'Task #'+getField(a,'TASK_ID'))+'</div></div></div>'+statusLabel+'</div>'+
+        '<div class="tc-meta">Your offer: $'+getField(a,'PRICE')+' · '+esc(getField(a,'MESSAGE')).substring(0,60)+'...</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  else if(activeTab === 'inprogress'){
+    var inProg = allTasks.filter(function(t){ return (getField(t,'POSTED_BY')===userId || allApplications.some(function(a){ return getField(a,'TASK_ID')==getField(t,'TASK_ID')&&getField(a,'WORKER_ID')===userId&&getField(a,'STATUS')==='accepted'; })) && getField(t,'STATUS')==='in_progress'; });
+    if(!inProg.length){
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Nothing in progress</div><div class="empty-sub">Tasks move here once a worker is accepted and payment is in escrow.</div></div>';
+      return;
+    }
+    content.innerHTML = inProg.map(function(t){
+      var cat = getCat(t);
+      return '<div class="task-card">'+
+        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-progress">⏳ In progress</span></div>'+
+        '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+'</div>'+
+        '<div class="action-row"><button class="act-btn btn-success" onclick="markComplete('+getField(t,'TASK_ID')+')">✓ Mark complete</button><a class="act-btn btn-secondary" href="messages.html">💬 Message</a></div>'+
+      '</div>';
+    }).join('');
+  }
+
+  else if(activeTab === 'completed'){
+    var done = allTasks.filter(function(t){ return getField(t,'STATUS')==='completed' && (getField(t,'POSTED_BY')===userId || allApplications.some(function(a){ return getField(a,'TASK_ID')==getField(t,'TASK_ID')&&getField(a,'WORKER_ID')===userId; })); });
+    if(!done.length){
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No completed tasks yet</div><div class="empty-sub">Completed tasks will appear here once both sides confirm the work is done.</div></div>';
+      return;
+    }
+    content.innerHTML = done.map(function(t){
+      var cat = getCat(t);
+      return '<div class="task-card">'+
+        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-done">✓ Done</span></div>'+
+        '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+'</div>'+
+        '<div class="action-row"><a class="act-btn btn-review" href="review.html?task='+esc(getField(t,'TITLE'))+'&price='+getField(t,'BUDGET')+'">⭐ Leave review</a></div>'+
+      '</div>';
+    }).join('');
+  }
+}
+
+window.acceptApplicant = function(taskId, appId){
+  showToast('Applicant accepted! Payment escrow coming soon 🎉');
+  // TODO: Update application status in Oracle + trigger Stripe escrow
+};
+
+window.markComplete = function(taskId){
+  showToast('Task marked complete! Both parties can now leave a review.');
+  // TODO: Update task status to completed in Oracle via ORDS
+};
+</script>
+</body>
+</html>
