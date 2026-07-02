@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickGigs — Privacy Policy</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--bg:#0b0118;--border:rgba(200,168,233,0.1);--text:#fff;--text-muted:rgba(255,255,255,0.55);--purple:#6b3fa0;--purple-light:#9b6fc4;--lavender:#c8a8e9;--nav-bg:#0b0118;}
+body.light{--bg:#fafafe;--border:#f0eeff;--text:#1a0a3d;--text-muted:#6b7280;--nav-bg:#fff;--lavender:#6b3fa0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background 0.25s,color 0.25s;}
+.nav{position:sticky;top:0;z-index:50;background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;transition:background 0.25s;}
+.nav-logo{font-family:'Playfair Display',serif;font-style:italic;font-size:1.25rem;color:var(--lavender);}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.back-btn{font-size:13px;color:var(--purple-light);text-decoration:none;}
+.mode-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);}
+body.light .mode-btn{background:#f0eeff;color:var(--purple);}
+.content{max-width:680px;margin:0 auto;padding:32px 20px 60px;}
+.page-label{font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:var(--purple-light);margin-bottom:10px;display:block;}
+.page-title{font-family:'Playfair Display',serif;font-size:2rem;color:var(--text);margin-bottom:8px;}
+.page-date{font-size:13px;color:var(--text-muted);margin-bottom:32px;}
+.section{margin-bottom:32px;}
+.section-title{font-size:16px;font-weight:500;color:var(--text);margin-bottom:10px;padding-bottom:8px;border-bottom:0.5px solid var(--border);}
+p{font-size:14px;line-height:1.8;color:var(--text-muted);margin-bottom:12px;}
+ul,ol{padding-left:20px;margin-bottom:12px;}
+li{font-size:14px;line-height:1.8;color:var(--text-muted);margin-bottom:4px;}
+strong{color:var(--text);font-weight:500;}
+.info-box{border-radius:14px;padding:16px 18px;margin-bottom:20px;border:0.5px solid rgba(200,168,233,0.2);background:rgba(107,63,160,0.1);}
+.info-box p{color:var(--lavender);margin:0;}
+body.light .info-box{background:#f5f2ff;border-color:#e8e2ff;}
+body.light .info-box p{color:var(--purple);}
+.service-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.service-card{border-radius:12px;padding:13px 15px;border:0.5px solid var(--border);background:rgba(255,255,255,0.03);}
+body.light .service-card{background:#fff;}
+.service-name{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px;}
+.service-desc{font-size:12px;color:var(--text-muted);}
+.contact-card{border-radius:16px;padding:20px;border:0.5px solid var(--border);background:rgba(255,255,255,0.04);margin-top:16px;}
+body.light .contact-card{background:#fff;}
+.contact-card p{margin-bottom:4px;}
+.contact-card a{color:var(--purple-light);text-decoration:none;}
+body.light .contact-card a{color:var(--purple);}
+a{color:var(--purple-light);}
+body.light a{color:var(--purple);}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-logo">QuickGigs</div>
+  <div class="nav-right">
+    <a class="back-btn" href="index.html">← Back</a>
+    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
+  </div>
+</nav>
+
+<div class="content">
+  <span class="page-label">Legal</span>
+  <h1 class="page-title">Privacy Policy</h1>
+  <p class="page-date">Last updated: July 2, 2026 · Effective: July 2, 2026</p>
+
+  <p>This Privacy Policy describes how MoTechCo ("we," "us," or "our"), operating QuickGigs at quickgigs.ca, collects, uses, and protects your personal information. We are committed to complying with Canada's Personal Information Protection and Electronic Documents Act (PIPEDA) and Alberta's Personal Information Protection Act (PIPA).</p>
+
+  <div class="section">
+    <div class="section-title">1. Who We Are</div>
+    <p>QuickGigs is operated by MoTechCo, a sole proprietorship registered in Alberta, Canada. Our contact email is mowebsiteco@gmail.com.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">2. Information We Collect</div>
+    <p><strong>Information you provide directly:</strong></p>
+    <ul>
+      <li>Full name</li>
+      <li>Email address</li>
+      <li>Phone number</li>
+      <li>Password (stored in encrypted form via Firebase Authentication — we never see it in plain text)</li>
+      <li>Task listings you post including title, description, category, budget, and location</li>
+      <li>Applications you submit including bid price and messages</li>
+      <li>Reviews and ratings you leave</li>
+      <li>Payment information (processed and stored by Stripe — we do not store your card details)</li>
+    </ul>
+    <p><strong>Information collected automatically:</strong></p>
+    <ul>
+      <li>Device type and browser information</li>
+      <li>IP address</li>
+      <li>Pages visited and actions taken on the platform</li>
+      <li>Date and time of activity</li>
+    </ul>
+    <p><strong>Information from third parties:</strong></p>
+    <ul>
+      <li>Firebase Authentication provides us with your account creation date and login activity</li>
+      <li>Stripe provides us with payment confirmation and transaction records (not full card details)</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-title">3. How We Use Your Information</div>
+    <p>We use your personal information to:</p>
+    <ul>
+      <li>Create and manage your QuickGigs account</li>
+      <li>Connect Posters with Workers and facilitate task completion</li>
+      <li>Process payments through Stripe</li>
+      <li>Send you notifications about your tasks and applications</li>
+      <li>Respond to your questions and support requests</li>
+      <li>Detect and prevent fraud, abuse, and prohibited activity</li>
+      <li>Improve and maintain the platform</li>
+      <li>Comply with legal obligations</li>
+    </ul>
+    <div class="info-box"><p>We do not sell your personal information to third parties. Ever.</p></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">4. How We Protect Contact Information</div>
+    <p>To protect users from fraud and off-platform solicitation, QuickGigs restricts the sharing of contact details between users. Phone numbers and email addresses shared in messages are automatically detected and blocked by our platform. Full contact details are never publicly displayed on the platform.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">5. Sharing Your Information</div>
+    <p><strong>Other users:</strong> Your first name, profile rating, and task or application details are visible to relevant parties (e.g. a Poster can see a Worker's application message and bid).</p>
+    <p><strong>Service providers:</strong> We use the following third-party services to operate the platform:</p>
+    <div class="service-grid">
+      <div class="service-card"><div class="service-name">Firebase (Google)</div><div class="service-desc">Authentication and data</div></div>
+      <div class="service-card"><div class="service-name">Stripe</div><div class="service-desc">Payment processing</div></div>
+      <div class="service-card"><div class="service-name">Oracle</div><div class="service-desc">Database storage</div></div>
+      <div class="service-card"><div class="service-name">GitHub Pages</div><div class="service-desc">Website hosting</div></div>
+    </div>
+    <p><strong>Legal requirements:</strong> We may disclose your information if required by law, court order, or government authority, or if we believe disclosure is necessary to protect the rights, property, or safety of MoTechCo, our users, or the public.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">6. Data Retention</div>
+    <p>We retain your personal information for as long as your account is active or as needed to provide services. If you delete your account, we will remove your personal data within 30 days, except where we are required to retain it for legal or financial compliance purposes such as transaction records.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">7. Your Rights Under PIPEDA and PIPA</div>
+    <p>As a Canadian user you have the right to:</p>
+    <ul>
+      <li>Access the personal information we hold about you</li>
+      <li>Request correction of inaccurate information</li>
+      <li>Withdraw consent to collection and use of your information</li>
+      <li>Request deletion of your account and associated data</li>
+      <li>File a complaint with the Office of the Privacy Commissioner of Canada (<a href="https://priv.gc.ca" target="_blank">priv.gc.ca</a>) or the Office of the Information and Privacy Commissioner of Alberta (<a href="https://oipc.ab.ca" target="_blank">oipc.ab.ca</a>)</li>
+    </ul>
+    <p>To exercise any of these rights, contact us at mowebsiteco@gmail.com.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">8. Cookies and Local Storage</div>
+    <p>QuickGigs uses browser localStorage to save your theme preference (dark or light mode) and session information. We do not use third-party advertising cookies. Firebase and Stripe may use cookies for authentication and fraud prevention as described in their respective privacy policies.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">9. Children and Minors</div>
+    <p>QuickGigs is intended for users 18 and older. Users aged 16–17 may only use the platform through a parent or guardian account. We do not knowingly collect personal information from anyone under 16. If you believe a minor under 16 has created an account, please contact us immediately at mowebsiteco@gmail.com.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">10. Changes to This Policy</div>
+    <p>We may update this Privacy Policy from time to time. We will notify registered users of material changes by email. Continued use of the platform after changes are posted constitutes acceptance of the updated policy.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">11. Contact Us</div>
+    <div class="contact-card">
+      <p><strong>MoTechCo — Privacy Officer</strong></p>
+      <p>Email: <a href="mailto:mowebsiteco@gmail.com">mowebsiteco@gmail.com</a></p>
+      <p>Website: <a href="https://quickgigs.ca">quickgigs.ca</a></p>
+      <p>Calgary, Alberta, Canada</p>
+      <p style="margin-top:12px;font-size:12px;">You may also contact the <strong>Office of the Information and Privacy Commissioner of Alberta:</strong><br>
+      Website: <a href="https://oipc.ab.ca" target="_blank">oipc.ab.ca</a> · Phone: 1-888-878-4044</p>
+    </div>
+  </div>
+</div>
+
+<script>
+var isDark = localStorage.getItem('qg-mode') !== 'light';
+function applyTheme(){ document.body.className = isDark ? '' : 'light'; document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark'; }
+window.toggleTheme = function(){ isDark = !isDark; localStorage.setItem('qg-mode', isDark?'dark':'light'); applyTheme(); };
+applyTheme();
+</script>
+</body>
+</html>
