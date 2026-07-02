@@ -264,20 +264,25 @@ onAuthStateChanged(auth, function(user) {
 </script>
 
 <script>
-// ── ORDS CONFIG ────────────────────────────────────────
-const ORDS_BASE = 'https://iacademy2.oracle.com/ords/ca_a832_sql_s12/quickgigs/';
+const SUPABASE_URL = 'https://nuyfqsxstsrbloztzgau.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51eWZxc3hzdHNyYmxvenR6Z2F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NzkyNjUsImV4cCI6MjA5ODU1NTI2NX0.UpagWLifoxHmWu30lNnBO89gNYKIh4KxtYu28DKlSBM';
+const SUPABASE_HEADERS = {
+  'Content-Type': 'application/json',
+  'apikey': SUPABASE_ANON_KEY,
+  'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+};
 
-async function saveTaskToOracle(taskData) {
+async function saveTaskToSupabase(taskData) {
   try {
-    const res = await fetch(ORDS_BASE + 'task/', {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/tasks', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: Object.assign({}, SUPABASE_HEADERS, { 'Prefer': 'return=minimal' }),
       body: JSON.stringify(taskData)
     });
-    if (!res.ok) throw new Error('Oracle save failed: ' + res.status);
+    if (!res.ok) throw new Error('Supabase save failed: ' + res.status);
     return { success: true };
   } catch (err) {
-    console.error('ORDS error:', err);
+    console.error('Supabase error:', err);
     return { success: false, error: err.message };
   }
 }
@@ -370,19 +375,18 @@ window.handleSubmit = async function() {
   // Get current Firebase user ID
   var userId = window._currentUser ? window._currentUser.uid : 'anonymous';
 
-  // Build task object for Oracle
+  // Build task object for Supabase
   var taskData = {
     title:       title,
     description: desc || '',
     category:    selectedCat,
-    task_mode:   selectedMode,  // NOT mode — Oracle reserved word
+    task_mode:   selectedMode,
     budget:      budget,
     location:    location,
     posted_by:   userId
   };
 
-  // Save to Oracle via ORDS
-  var result = await saveTaskToOracle(taskData);
+  var result = await saveTaskToSupabase(taskData);
 
   if (result.success) {
     // Show success screen

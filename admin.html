@@ -357,9 +357,18 @@ applyTheme();
 // ── DATE ───────────────────────────────────────────────
 document.getElementById('navDate').textContent = new Date().toLocaleDateString('en-CA', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
 
-// ── DEMO DATA ──────────────────────────────────────────
-// When Oracle ORDS is connected, replace these with real API calls
-var users = [
+const SUPABASE_URL = 'https://nuyfqsxstsrbloztzgau.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51eWZxc3hzdHNyYmxvenR6Z2F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NzkyNjUsImV4cCI6MjA5ODU1NTI2NX0.UpagWLifoxHmWu30lNnBO89gNYKIh4KxtYu28DKlSBM';
+const SUPABASE_HEADERS = {
+  'Content-Type': 'application/json',
+  'apikey': SUPABASE_ANON_KEY,
+  'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+};
+
+var users = [];
+var tasks = [];
+
+var demoUsers = [
   {id:1, name:'Sarah K.',  email:'sarah@gmail.com',  role:'Worker', joined:'Jun 10, 2026', status:'active',    avatarBg:'linear-gradient(135deg,#6b3fa0,#c8a8e9)'},
   {id:2, name:'James O.',  email:'james@gmail.com',  role:'Both',   joined:'Jun 12, 2026', status:'active',    avatarBg:'linear-gradient(135deg,#16a34a,#4ade80)'},
   {id:3, name:'Aisha M.',  email:'aisha@gmail.com',  role:'Poster', joined:'Jun 15, 2026', status:'warned',    avatarBg:'linear-gradient(135deg,#d97706,#fbbf24)'},
@@ -368,7 +377,7 @@ var users = [
   {id:6, name:'Marcus L.', email:'marcus@gmail.com', role:'Worker', joined:'Jun 20, 2026', status:'active',    avatarBg:'linear-gradient(135deg,#0ea5e9,#7dd3fc)'},
 ];
 
-var tasks = [
+var demoTasks = [
   {id:1, title:'Deep clean 2 bedroom apartment', poster:'James O.', budget:'$120', status:'in_progress'},
   {id:2, title:'Grocery run — Superstore NW',    poster:'Aisha M.', budget:'$30',  status:'completed'},
   {id:3, title:'Math tutor for Grade 10 student',poster:'Sarah K.', budget:'$35/hr',status:'posted'},
@@ -382,8 +391,67 @@ var disputes = [
   {id:3, task:'Grocery run — Superstore NW',  poster:'Aisha M.', worker:'James O.', status:'resolved', reason:'Item was damaged during delivery'},
 ];
 
+function formatJoined(dateValue){
+  if(!dateValue) return 'Unknown';
+  var date = new Date(dateValue);
+  return isNaN(date.getTime()) ? 'Unknown' : date.toLocaleDateString('en-CA', {month:'short', day:'numeric', year:'numeric'});
+}
+
+function getRoleLabel(role){
+  if(!role) return 'Unknown';
+  return String(role).charAt(0).toUpperCase() + String(role).slice(1);
+}
+
+function normalizeUser(row){
+  var status = (row.status || 'active').toLowerCase();
+  return {
+    id: row.id,
+    name: row.name || row.email || 'Unknown user',
+    email: row.email || '—',
+    role: getRoleLabel(row.role),
+    joined: formatJoined(row.created_at),
+    status: status,
+    avatarBg: status === 'banned'
+      ? 'linear-gradient(135deg,#ef4444,#f87171)'
+      : status === 'warned'
+      ? 'linear-gradient(135deg,#d97706,#fbbf24)'
+      : 'linear-gradient(135deg,#6b3fa0,#c8a8e9)'
+  };
+}
+
+function normalizeTask(row){
+  var budget = row.budget != null ? '$' + row.budget + (row.task_mode === 'recurring' ? '/hr' : '') : '—';
+  return {
+    id: row.id || row.task_id,
+    title: row.title || 'Untitled task',
+    poster: row.posted_by || 'Unknown',
+    budget: budget,
+    status: row.status || 'posted'
+  };
+}
+
+async function loadAdminData(){
+  try {
+    var [usersRes, tasksRes] = await Promise.all([
+      fetch(SUPABASE_URL + '/rest/v1/users?order=created_at.desc', { headers: SUPABASE_HEADERS }),
+      fetch(SUPABASE_URL + '/rest/v1/tasks?order=created_at.desc', { headers: SUPABASE_HEADERS })
+    ]);
+    if (!usersRes.ok) throw new Error('users status ' + usersRes.status);
+    if (!tasksRes.ok) throw new Error('tasks status ' + tasksRes.status);
+    var usersData = await usersRes.json();
+    var tasksData = await tasksRes.json();
+    users = Array.isArray(usersData) ? usersData.map(normalizeUser) : [];
+    tasks = Array.isArray(tasksData) ? tasksData.map(normalizeTask) : [];
+  } catch (err) {
+    console.warn('Supabase admin load failed, using demo data:', err);
+    users = demoUsers.slice();
+    tasks = demoTasks.slice();
+  }
+}
+
 // ── INIT ───────────────────────────────────────────────
-function initAdmin(){
+async function initAdmin(){
+  await loadAdminData();
   var activeUsers    = users.filter(function(u){ return u.status === 'active'; }).length;
   var openDisputes   = disputes.filter(function(d){ return d.status === 'open'; }).length;
 
@@ -542,7 +610,7 @@ window.actionUser = function(id, action){
     u.status = newStatus;
     renderUsers(users);
     showToast(u.name + ' has been ' + (action==='unban'?'unbanned':action+'ned') + '.', action==='ban'?'red':action==='warn'?'amber':'green');
-    // TODO: Update user status in Oracle USERS table via ORDS
+    // TODO: Persist user status updates to Supabase when admin write actions are enabled.
   });
 };
 
@@ -565,7 +633,7 @@ window.removeTask = function(id){
     renderTasks(tasks);
     document.getElementById('statTasks').textContent = tasks.length;
     showToast('Task removed successfully.', 'red');
-    // TODO: Delete task from Oracle TASKS table via ORDS
+    // TODO: Delete the task from Supabase when admin write actions are enabled.
   });
 };
 
@@ -590,7 +658,7 @@ window.resolveDispute = function(id){
     var open = disputes.filter(function(x){ return x.status==='open'; }).length;
     document.getElementById('statDisputes').textContent = open;
     showToast('Dispute marked as resolved.', 'green');
-    // TODO: Update dispute status in Oracle via ORDS
+    // TODO: Persist dispute status to Supabase when a disputes table is available.
   });
 };
 </script>

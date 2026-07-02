@@ -139,7 +139,13 @@ onAuthStateChanged(auth, (user) => {
 </script>
 
 <script>
-const ORDS_BASE = 'https://iacademy2.oracle.com/ords/ca_a832_sql_s12/quickgigs/';
+const SUPABASE_URL = 'https://nuyfqsxstsrbloztzgau.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51eWZxc3hzdHNyYmxvenR6Z2F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NzkyNjUsImV4cCI6MjA5ODU1NTI2NX0.UpagWLifoxHmWu30lNnBO89gNYKIh4KxtYu28DKlSBM';
+const SUPABASE_HEADERS = {
+  'Content-Type': 'application/json',
+  'apikey': SUPABASE_ANON_KEY,
+  'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+};
 var activeTab = 'posted';
 var allTasks = [], allApplications = [];
 var isDark = localStorage.getItem('qg-mode') !== 'light';
@@ -153,15 +159,17 @@ async function loadData(){
   if(!userId) return;
   try {
     var [tasksRes, appsRes] = await Promise.all([
-      fetch(ORDS_BASE + 'task/', {headers:{'Content-Type':'application/json'}}),
-      fetch(ORDS_BASE + 'applications/', {headers:{'Content-Type':'application/json'}})
+      fetch(SUPABASE_URL + '/rest/v1/tasks?order=created_at.desc', {headers:SUPABASE_HEADERS}),
+      fetch(SUPABASE_URL + '/rest/v1/applications?order=created_at.desc', {headers:SUPABASE_HEADERS})
     ]);
+    if (!tasksRes.ok) throw new Error('tasks status ' + tasksRes.status);
+    if (!appsRes.ok) throw new Error('applications status ' + appsRes.status);
     var tasksData = await tasksRes.json();
     var appsData  = await appsRes.json();
-    allTasks        = (tasksData.items || []);
-    allApplications = (appsData.items  || []);
+    allTasks        = Array.isArray(tasksData) ? tasksData : [];
+    allApplications = Array.isArray(appsData) ? appsData : [];
   } catch(err) {
-    console.warn('Oracle unreachable, using demo data:', err);
+    console.warn('Supabase unreachable, using demo data:', err);
     allTasks        = getDemoTasks();
     allApplications = getDemoApps();
   }
@@ -185,7 +193,27 @@ var CAT_ICONS = {home:'🏠',errands:'🚗',tutoring:'🎓',beauty:'💇',moving
 var CAT_BG    = {home:'rgba(107,63,160,0.2)',errands:'rgba(251,191,36,0.15)',tutoring:'rgba(74,222,128,0.1)',beauty:'rgba(200,168,233,0.15)',moving:'rgba(107,63,160,0.2)',cooking:'rgba(251,191,36,0.12)',tech:'rgba(107,63,160,0.2)',care:'rgba(74,222,128,0.1)',gardening:'rgba(74,222,128,0.08)',events:'rgba(200,168,233,0.15)',trades:'rgba(107,63,160,0.2)',other:'rgba(255,255,255,0.06)'};
 
 function getCat(t){ var k=(t.CATEGORY||t.category||'other').toLowerCase(); return {icon:CAT_ICONS[k]||'📦',bg:CAT_BG[k]||'rgba(255,255,255,0.06)'}; }
-function getField(row,f){ return row[f]||row[f.toLowerCase()]||''; }
+function getField(row,f){
+  var fieldMap = {
+    APP_ID:['APP_ID','app_id','id'],
+    TASK_ID:['TASK_ID','task_id','id'],
+    TITLE:['TITLE','title'],
+    CATEGORY:['CATEGORY','category'],
+    TASK_MODE:['TASK_MODE','task_mode'],
+    BUDGET:['BUDGET','budget'],
+    LOCATION:['LOCATION','location'],
+    STATUS:['STATUS','status'],
+    POSTED_BY:['POSTED_BY','posted_by'],
+    WORKER_ID:['WORKER_ID','worker_id'],
+    MESSAGE:['MESSAGE','message'],
+    PRICE:['PRICE','price']
+  };
+  var keys = fieldMap[f] || [f, f.toLowerCase()];
+  for(var i = 0; i < keys.length; i++){
+    if(row && row[keys[i]] != null) return row[keys[i]];
+  }
+  return '';
+}
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function showToast(msg, color){

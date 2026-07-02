@@ -255,6 +255,14 @@ window.toggleTheme = function(){
 };
 applyTheme();
 
+const SUPABASE_URL = 'https://nuyfqsxstsrbloztzgau.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51eWZxc3hzdHNyYmxvenR6Z2F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NzkyNjUsImV4cCI6MjA5ODU1NTI2NX0.UpagWLifoxHmWu30lNnBO89gNYKIh4KxtYu28DKlSBM';
+const SUPABASE_HEADERS = {
+  'Content-Type': 'application/json',
+  'apikey': SUPABASE_ANON_KEY,
+  'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+};
+
 // ── STATE ──────────────────────────────────────────────
 var currentRating = 0;
 var selectedTags  = [];
@@ -338,24 +346,40 @@ function updateSubmitBtn(){
 }
 
 // ── SUBMIT ─────────────────────────────────────────────
-window.submitReview = function(){
+window.submitReview = async function(){
   if(currentRating === 0){ return; }
 
   var comment = document.getElementById('commentInput').value.trim();
+  var submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submitting...';
 
   var reviewData = {
-    reviewee:    reviewee,
-    rating:      currentRating,
-    tags:        selectedTags,
-    comment:     comment,
-    taskTitle:   taskTitle,
-    taskPrice:   taskPrice,
-    submittedAt: new Date().toISOString()
+    task_id:        params.get('taskId') || null,
+    reviewer_id:    window._currentUser ? window._currentUser.uid : null,
+    reviewee_id:    params.get('revieweeId') || reviewee,
+    rating:         currentRating,
+    review_comment: comment,
+    tags:           selectedTags,
+    task_title:     taskTitle,
+    task_price:     taskPrice,
+    created_at:     new Date().toISOString()
   };
 
-  // TODO: When Oracle ORDS is connected, POST reviewData to the REVIEWS table
-  // Fields: task_id, reviewer_id, reviewee_id, rating, review_comment (NOT comment — reserved word)
-  console.log('Review submitted:', reviewData);
+  try {
+    var res = await fetch(SUPABASE_URL + '/rest/v1/reviews', {
+      method: 'POST',
+      headers: Object.assign({}, SUPABASE_HEADERS, { 'Prefer': 'return=minimal' }),
+      body: JSON.stringify(reviewData)
+    });
+    if (!res.ok) throw new Error('status ' + res.status);
+  } catch (err) {
+    console.warn('Review save error:', err);
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit review';
+    alert('Could not submit your review right now. Please try again.');
+    return;
+  }
 
   // Show success screen
   var starsStr = '⭐'.repeat(currentRating);
