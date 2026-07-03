@@ -182,7 +182,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
     <span class="tab-icon">➕</span>
     <span class="tab-lbl">Post</span>
   </a>
-  <a class="tab-item" href="my-tasks.html">
+  <a class="tab-item" href="mytasks.html">
     <span class="tab-icon">✅</span>
     <span class="tab-lbl">My Tasks</span>
   </a>
@@ -293,8 +293,8 @@ function renderAll(){
 
   // Action cards
   var actions = isPoster
-    ? [{icon:'➕',title:'Post a task',desc:'Need something done?',href:'posttask.html',cls:'primary'},{icon:'📂',title:'My tasks',desc:'See applicants & progress',href:'my-tasks.html',cls:'secondary'}]
-    : [{icon:'🔍',title:'Browse tasks',desc:'Find work near you',href:'browsetask.html',cls:'primary'},{icon:'📨',title:'My applications',desc:'Track your bids',href:'my-tasks.html',cls:'secondary'}];
+    ? [{icon:'➕',title:'Post a task',desc:'Need something done?',href:'posttask.html',cls:'primary'},{icon:'📂',title:'My tasks',desc:'See applicants & progress',href:'mytasks.html',cls:'secondary'}]
+    : [{icon:'🔍',title:'Browse tasks',desc:'Find work near you',href:'browsetask.html',cls:'primary'},{icon:'📨',title:'My applications',desc:'Track your bids',href:'mytasks.html',cls:'secondary'}];
   document.getElementById('actionsGrid').innerHTML = actions.map(function(a){
     return '<a class="action-card '+a.cls+'" href="'+a.href+'"><div class="action-icon">'+a.icon+'</div><div class="action-title">'+a.title+'</div><div class="action-desc">'+a.desc+'</div></a>';
   }).join('');
@@ -314,7 +314,7 @@ function renderAll(){
   // If poster, also show "my posted tasks" empty state
   if(isPoster){
     html += '<div style="margin-top:16px"></div>' +
-      '<div class="section-hdr"><span class="section-title">My posted tasks</span><a class="see-all" href="my-tasks.html">See all</a></div>' +
+      '<div class="section-hdr"><span class="section-title">My posted tasks</span><a class="see-all" href="mytasks.html">See all</a></div>' +
       '<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">No tasks posted yet</div><a class="empty-btn" href="posttask.html">Post your first task</a></div>';
   }
 
