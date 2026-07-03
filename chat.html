@@ -30,20 +30,20 @@ body.light{
   --bg:#fafafe;
   --surface:#fff;
   --border:#f0eeff;
-  --text:#1a0a3d;
-  --text-muted:#6b7280;
+  --text:#2d1b4e;
+  --text-muted:#5a5a72;
   --text-faint:#9ca3af;
   --nav-bg:#fff;
   --tab-bg:#fff;
   --input-bg:#f0eeff;
   --input-border:#e8e2ff;
   --bubble-theirs:#fff;
-  --bubble-theirs-text:#1a0a3d;
+  --bubble-theirs-text:#2d1b4e;
   --time-color:#9ca3af;
   --lavender:#6b3fa0;
 }
 
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;transition:background 0.25s,color 0.25s;overflow:hidden;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:15px;height:100vh;display:flex;flex-direction:column;transition:background 0.25s,color 0.25s;overflow:hidden;}
 
 /* NAV */
 .nav{background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:12px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0;transition:background 0.25s;}
@@ -83,6 +83,7 @@ body.light .fraud-bar{background:#fffbeb;color:#92400e;border-color:#fde68a;}
 .bubble-row.theirs{align-items:flex-start;}
 .bubble{max-width:72%;padding:10px 14px;border-radius:18px;font-size:13px;line-height:1.55;word-wrap:break-word;}
 .bubble-row.mine .bubble{background:var(--bubble-mine);color:#fff;border-bottom-right-radius:5px;}
+body.light .bubble-row.mine .bubble{color:#2d1b4e;}
 .bubble-row.theirs .bubble{background:var(--bubble-theirs);color:var(--bubble-theirs-text);border-bottom-left-radius:5px;border:0.5px solid var(--border);}
 .bubble-time{font-size:10px;color:var(--time-color);margin-top:4px;padding:0 2px;}
 
@@ -100,6 +101,7 @@ body.light .msg-input::placeholder{color:var(--purple);opacity:0.3;}
 .send-btn{width:42px;height:42px;border-radius:50%;background:var(--purple);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;transition:opacity 0.15s;}
 .send-btn:hover{opacity:0.85;}
 .send-btn:disabled{opacity:0.4;cursor:not-allowed;}
+body.light .send-btn{color:#2d1b4e;}
 
 /* FRAUD WARNING INLINE */
 .fraud-inline{font-size:11px;padding:8px 12px;border-radius:10px;background:rgba(239,68,68,0.08);color:#ef4444;border:0.5px solid rgba(239,68,68,0.2);display:none;margin-top:6px;line-height:1.5;}

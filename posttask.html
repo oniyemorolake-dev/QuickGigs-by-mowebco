@@ -7,9 +7,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'DM Sans',sans-serif;min-height:100vh;transition:background 0.3s,color 0.3s;}
+body{font-family:'DM Sans',sans-serif;font-size:15px;min-height:100vh;transition:background 0.3s,color 0.3s;}
 body.dark{background:#0b0118;color:#fff;}
-body.light{background:#fafafe;color:#1a0a3d;}
+body.light{background:#fafafe;color:#2d1b4e;}
 
 /* NAV */
 .nav{padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
@@ -43,7 +43,8 @@ body.light{background:#fafafe;color:#1a0a3d;}
 
 /* MODE SELECTOR */
 .mode-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
-.mode-card{border-radius:14px;padding:14px 12px;text-align:center;cursor:pointer;transition:all 0.2s;}
+.light .mode-grid{background:#f0eeff;border-radius:12px;padding:10px;}
+.mode-card{border-radius:14px;padding:16px 14px;text-align:center;cursor:pointer;transition:all 0.2s;font-size:13px;}
 .dark .mode-card{background:rgba(255,255,255,0.04);border:0.5px solid rgba(200,168,233,0.12);}
 .light .mode-card{background:#f8f7ff;border:0.5px solid #e8e2ff;}
 .dark .mode-card.selected{background:rgba(107,63,160,0.3);border:1.5px solid #9b6fc4;}
@@ -51,16 +52,17 @@ body.light{background:#fafafe;color:#1a0a3d;}
 .mode-emoji{font-size:20px;display:block;margin-bottom:6px;}
 .mode-name{font-size:12px;font-weight:500;display:block;margin-bottom:2px;}
 .dark .mode-name{color:#fff;}
-.light .mode-name{color:#1a0a3d;}
+.light .mode-name{color:#2d1b4e;}
 .mode-desc{font-size:10px;}
 .dark .mode-desc{color:rgba(255,255,255,0.35);}
 .light .mode-desc{color:#9ca3af;}
 
 /* CATEGORIES */
 .cat-wrap{display:flex;flex-wrap:wrap;gap:6px;}
-.cat-chip{padding:7px 14px;border-radius:20px;font-size:12px;cursor:pointer;transition:all 0.2s;}
+.light .cat-wrap{background:#f0eeff;border-radius:12px;padding:10px;}
+.cat-chip{padding:9px 18px;border-radius:20px;font-size:13px;cursor:pointer;transition:all 0.2s;}
 .dark .cat-chip{background:rgba(255,255,255,0.05);border:0.5px solid rgba(200,168,233,0.15);color:rgba(255,255,255,0.6);}
-.light .cat-chip{background:#f8f7ff;border:0.5px solid #e8e2ff;color:#6b7280;}
+.light .cat-chip{background:#f8f7ff;border:0.5px solid #e8e2ff;color:#5a5a72;}
 .dark .cat-chip.selected{background:rgba(107,63,160,0.35);border:1px solid #9b6fc4;color:#fff;}
 .light .cat-chip.selected{background:#ede9ff;border:1px solid #9b6fc4;color:#6b3fa0;}
 
@@ -68,7 +70,7 @@ body.light{background:#fafafe;color:#1a0a3d;}
 .field{margin-bottom:16px;}
 .field-input{width:100%;border-radius:12px;padding:14px 16px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:all 0.2s;border:0.5px solid transparent;}
 .dark .field-input{background:rgba(255,255,255,0.05);color:#fff;border-color:rgba(200,168,233,0.15);}
-.light .field-input{background:#f8f7ff;color:#1a0a3d;border-color:#e8e2ff;}
+.light .field-input{background:#f8f7ff;color:#2d1b4e;border-color:#e8e2ff;}
 .dark .field-input:focus{border-color:#9b6fc4;background:rgba(107,63,160,0.1);}
 .light .field-input:focus{border-color:#9b6fc4;background:#ede9ff;}
 .field-input::placeholder{color:rgba(155,111,196,0.4);}
@@ -101,6 +103,7 @@ textarea.field-input{resize:none;min-height:100px;}
 /* SUBMIT */
 .submit-btn{width:100%;padding:15px;border-radius:14px;border:none;font-size:15px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;}
 .submit-btn:disabled{opacity:0.6;cursor:not-allowed;}
+body.light .submit-btn{color:#2d1b4e;}
 .footer-note{font-size:11px;text-align:center;margin-top:10px;}
 .dark .footer-note{color:rgba(255,255,255,0.25);}
 .light .footer-note{color:#d1c4e9;}
@@ -116,6 +119,7 @@ textarea.field-input{resize:none;min-height:100px;}
 .dark .success-sub{color:rgba(255,255,255,0.5);}
 .light .success-sub{color:#9ca3af;}
 .success-btn{display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;border-radius:12px;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;border:none;font-family:'DM Sans',sans-serif;}
+body.light .success-btn{color:#2d1b4e;}
 </style>
 </head>
 <body class="dark">
