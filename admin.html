@@ -170,6 +170,88 @@ body.light .modal{background:#fff;}
 .toast.green{background:#4ade80;color:#0b0118;}
 .toast.red{background:#ef4444;color:#fff;}
 .toast.amber{background:#fbbf24;color:#0b0118;}
+
+/* ADMIN CONTROLS */
+.control-row{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;margin-bottom:16px;}
+.global-search{padding:10px 16px;border-radius:22px;background:var(--input-bg);border:0.5px solid var(--input-border);font-size:13px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;min-width:260px;}
+.global-search:focus{border-color:var(--purple-light);}
+.bulk-wrap{display:flex;align-items:center;gap:8px;}
+.mini-btn{padding:8px 12px;border-radius:12px;border:0.5px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.mini-btn.danger{border-color:rgba(239,68,68,0.3);color:#ef4444;}
+.mini-btn.warn{border-color:rgba(251,191,36,0.3);color:#d97706;}
+.mini-btn:hover{opacity:0.85;}
+.alert-wrap,.account-wrap{position:relative;}
+.bell-btn{width:36px;height:36px;border-radius:50%;border:0.5px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;position:relative;}
+.bell-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 5px;border-radius:20px;background:#ef4444;color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;}
+.account-btn{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:22px;border:0.5px solid var(--border);background:var(--surface);cursor:pointer;color:var(--text);font-size:12px;}
+.dropdown{position:absolute;right:0;top:44px;width:250px;background:var(--card-bg);border:0.5px solid var(--border);border-radius:14px;overflow:hidden;display:none;z-index:180;backdrop-filter:blur(8px);}
+.dropdown.open{display:block;}
+.drop-head{padding:10px 12px;border-bottom:0.5px solid var(--border);font-size:11px;color:var(--text-faint);}
+.drop-item{padding:10px 12px;font-size:12px;color:var(--text);cursor:pointer;display:flex;justify-content:space-between;gap:8px;align-items:center;}
+.drop-item:hover{background:var(--surface-hover);}
+.drop-sub{font-size:11px;color:var(--text-faint);}
+.alert-list{max-height:260px;overflow:auto;}
+
+/* INSIGHT PANELS */
+.insight-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:18px;}
+.insight-card{border-radius:16px;padding:14px;background:var(--card-bg);border:0.5px solid var(--border);}
+.insight-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:10px;}
+.health-num{font-size:34px;font-weight:500;color:#4ade80;line-height:1;}
+.health-sub{font-size:12px;color:var(--text-faint);margin-top:8px;}
+.small-list{display:grid;gap:8px;}
+.small-item{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--text-muted);padding:8px 10px;border-radius:10px;background:var(--surface);}
+.risk-high{color:#ef4444;}
+.risk-mid{color:#fbbf24;}
+.risk-low{color:#4ade80;}
+
+/* ANALYTICS */
+.analytics{margin-top:18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+.chart-card{border-radius:16px;padding:14px;background:var(--card-bg);border:0.5px solid var(--border);}
+.chart-title{font-size:13px;color:var(--text);margin-bottom:12px;font-weight:500;}
+.bar-list{display:grid;gap:8px;}
+.bar-row{display:grid;grid-template-columns:70px 1fr 40px;gap:8px;align-items:center;font-size:11px;color:var(--text-faint);}
+.bar{height:8px;border-radius:20px;background:rgba(107,63,160,0.18);overflow:hidden;}
+.bar > span{display:block;height:100%;background:linear-gradient(90deg,#6b3fa0,#c8a8e9);}
+
+/* USER DRAWER */
+.drawer{position:fixed;top:0;right:-440px;width:100%;max-width:420px;height:100vh;background:var(--card-bg);border-left:0.5px solid var(--border);z-index:220;backdrop-filter:blur(8px);transition:right 0.22s;padding:18px;overflow:auto;}
+.drawer.open{right:0;}
+.drawer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.drawer-title{font-size:17px;font-weight:500;color:var(--text);}
+.drawer-close{border:none;background:transparent;color:var(--text-muted);font-size:18px;cursor:pointer;}
+.drawer-block{margin-bottom:14px;padding:12px;border-radius:12px;background:var(--surface);}
+.drawer-label{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);margin-bottom:6px;}
+.drawer-value{font-size:13px;color:var(--text);}
+
+/* USER TABLE ENHANCEMENTS */
+.select-cell{display:flex;align-items:center;justify-content:center;}
+.check{accent-color:#6b3fa0;cursor:pointer;}
+
+/* 2FA */
+.twofa{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:260;display:none;align-items:center;justify-content:center;padding:20px;}
+.twofa.show{display:flex;}
+.twofa-card{width:100%;max-width:420px;border-radius:18px;background:#150830;border:0.5px solid var(--border);padding:22px;}
+body.light .twofa-card{background:#fff;}
+.twofa-title{font-size:18px;font-weight:500;color:var(--text);margin-bottom:8px;}
+.twofa-sub{font-size:13px;color:var(--text-muted);margin-bottom:14px;}
+.twofa-input{width:100%;padding:11px 14px;border-radius:12px;border:0.5px solid var(--input-border);background:var(--input-bg);color:var(--text);font-size:16px;letter-spacing:0.2em;text-align:center;}
+.twofa-btn{margin-top:12px;width:100%;padding:11px;border:none;border-radius:12px;background:var(--purple);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;}
+
+@media (max-width: 980px){
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
+  .insight-grid,.analytics{grid-template-columns:1fr;}
+  .control-row{grid-template-columns:1fr 1fr;}
+}
+@media (max-width: 760px){
+  .nav{padding:11px 14px;}
+  .main{padding:14px;}
+  .nav-date{display:none;}
+  .control-row{grid-template-columns:1fr;}
+  .global-search{min-width:0;width:100%;}
+  .g-users{grid-template-columns:32px 1.7fr 1.4fr 0.8fr 0.9fr 1.2fr;}
+  .g-tasks{grid-template-columns:2fr 1fr 0.9fr 0.9fr 1fr;}
+  .g-disputes{grid-template-columns:1.7fr 1fr 1fr 0.9fr 1.2fr;}
+}
 </style>
 </head>
 <body>
@@ -194,12 +276,38 @@ body.light .modal{background:#fff;}
     <div class="nav-right">
       <span class="nav-date" id="navDate"></span>
       <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
-      <div class="avatar" id="avatarEl">M</div>
-      <button class="logout-btn" onclick="doLogout()">Log out</button>
+      <div class="alert-wrap">
+        <button class="bell-btn" onclick="toggleAlerts()">🔔<span class="bell-badge" id="alertCount">0</span></button>
+        <div class="dropdown" id="alertsMenu">
+          <div class="drop-head">Real-time alerts</div>
+          <div class="alert-list" id="alertList"></div>
+        </div>
+      </div>
+      <div class="account-wrap">
+        <button class="account-btn" onclick="toggleAccountMenu()">
+          <div class="avatar" id="avatarEl">M</div>
+          Account
+        </button>
+        <div class="dropdown" id="accountMenu">
+          <div class="drop-head" id="sessionTimeoutView">Session timeout: 30m</div>
+          <div class="drop-item" onclick="lockSession()">Lock session <span class="drop-sub">2FA required</span></div>
+          <div class="drop-item" onclick="doLogout()">Log out <span class="drop-sub">End admin session</span></div>
+        </div>
+      </div>
     </div>
   </nav>
 
   <div class="main">
+
+    <div class="control-row">
+      <input class="global-search" id="globalSearch" placeholder="Search users, tasks, disputes in one place..." oninput="runGlobalSearch(this.value)">
+      <div class="bulk-wrap">
+        <button class="mini-btn warn" onclick="bulkUserAction('warn')">Warn selected</button>
+        <button class="mini-btn danger" onclick="bulkUserAction('ban')">Ban selected</button>
+      </div>
+      <button class="mini-btn" onclick="generateDailySummaryEmail()">Daily summary email</button>
+      <button class="mini-btn" onclick="toggleTabSearchScope()" id="scopeBtn">Scope: Active tab</button>
+    </div>
 
     <!-- STATS -->
     <div class="stats-grid">
@@ -227,6 +335,23 @@ body.light .modal{background:#fff;}
         <div class="stat-lbl">Open disputes</div>
         <div class="stat-trend warn" id="statDisputesTrend"></div>
       </div>
+      <div class="stat-card">
+        <div class="stat-icon">🧠</div>
+        <div class="stat-val green" id="statHealth">—</div>
+        <div class="stat-lbl">Platform health score</div>
+        <div class="stat-trend" id="statHealthTrend"></div>
+      </div>
+    </div>
+
+    <div class="insight-grid">
+      <div class="insight-card">
+        <div class="insight-title">Security center</div>
+        <div class="small-list" id="securityList"></div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-title">Suspicious activity monitor</div>
+        <div class="small-list" id="suspiciousList"></div>
+      </div>
     </div>
 
     <!-- TABS -->
@@ -243,6 +368,7 @@ body.light .modal{background:#fff;}
         <input class="search-input" placeholder="🔍 Search users..." oninput="filterTable('users',this.value)">
       </div>
       <div class="col-row g-users">
+        <div class="col-h select-cell"><input type="checkbox" class="check" id="usersSelectAll" onchange="toggleSelectAllUsers(this.checked)"></div>
         <div class="col-h">User</div>
         <div class="col-h">Email</div>
         <div class="col-h">Role</div>
@@ -287,6 +413,25 @@ body.light .modal{background:#fff;}
   </div>
 </div>
 
+<!-- USER DRAWER -->
+<aside class="drawer" id="userDrawer">
+  <div class="drawer-head">
+    <div class="drawer-title" id="drawerName">User details</div>
+    <button class="drawer-close" onclick="closeUserDrawer()">✕</button>
+  </div>
+  <div id="drawerBody"></div>
+</aside>
+
+<!-- 2FA GATE -->
+<div class="twofa" id="twofaGate">
+  <div class="twofa-card">
+    <div class="twofa-title">Admin verification required</div>
+    <div class="twofa-sub">Enter your admin code to access security controls.</div>
+    <input id="twofaInput" class="twofa-input" maxlength="6" placeholder="000000">
+    <button class="twofa-btn" onclick="verifyTwoFactor()">Verify and continue</button>
+  </div>
+</div>
+
 <!-- CONFIRM MODAL -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
   <div class="modal">
@@ -321,18 +466,61 @@ const auth = getAuth(app);
 
 // ADMIN EMAIL — only this email can access the admin dashboard
 const ADMIN_EMAIL = 'mowebsiteco@gmail.com';
+const ADMIN_2FA_CODE = '246810';
+
+function getStoredAttempts(){
+  try { return JSON.parse(localStorage.getItem('qg-login-attempts') || '[]'); }
+  catch(_) { return []; }
+}
+
+function pushLoginAttempt(entry){
+  var list = getStoredAttempts();
+  list.unshift(entry);
+  localStorage.setItem('qg-login-attempts', JSON.stringify(list.slice(0, 80)));
+}
+
+window.verifyTwoFactor = function(){
+  var val = document.getElementById('twofaInput').value.trim();
+  if(val === ADMIN_2FA_CODE){
+    document.getElementById('twofaGate').classList.remove('show');
+    initAdmin();
+    return;
+  }
+  pushLoginAttempt({
+    ts: new Date().toISOString(),
+    email: ADMIN_EMAIL,
+    outcome: 'failed',
+    reason: '2FA mismatch',
+    ip: 'Unavailable'
+  });
+  alert('Invalid admin code.');
+};
 
 onAuthStateChanged(auth, (user) => {
   if (!user || user.email !== ADMIN_EMAIL) {
+    pushLoginAttempt({
+      ts: new Date().toISOString(),
+      email: user && user.email ? user.email : 'anonymous',
+      outcome: 'failed',
+      reason: 'Unauthorized admin access attempt',
+      ip: 'Unavailable'
+    });
     document.getElementById('accessDenied').classList.add('show');
     return;
   }
   // Access granted
+  pushLoginAttempt({
+    ts: new Date().toISOString(),
+    email: user.email,
+    outcome: 'success',
+    reason: 'Admin login success',
+    ip: 'Unavailable'
+  });
   document.getElementById('adminUI').style.display = 'block';
+  document.getElementById('twofaGate').classList.add('show');
   const name = user.displayName || user.email.split('@')[0];
   document.getElementById('avatarEl').textContent = name.charAt(0).toUpperCase();
   window._auth = auth;
-  initAdmin();
 });
 
 window.doLogout = function() {
@@ -367,28 +555,80 @@ const SUPABASE_HEADERS = {
 
 var users = [];
 var tasks = [];
+var filteredUsers = [];
+var filteredTasks = [];
+var filteredDisputes = [];
+var selectedUserIds = {};
+var alerts = [];
+var loginAttempts = [];
+var securityEvents = [];
+var searchScopeAll = false;
+var sessionSecondsRemaining = 30 * 60;
+var sessionTick = null;
+
+var signupTrend = [
+  {label:'Mon', value:8},
+  {label:'Tue', value:11},
+  {label:'Wed', value:6},
+  {label:'Thu', value:14},
+  {label:'Fri', value:10},
+  {label:'Sat', value:17},
+  {label:'Sun', value:13}
+];
+
+var tasksTrend = [
+  {label:'Mon', value:12},
+  {label:'Tue', value:15},
+  {label:'Wed', value:9},
+  {label:'Thu', value:19},
+  {label:'Fri', value:17},
+  {label:'Sat', value:21},
+  {label:'Sun', value:16}
+];
+
+var neighbourhoods = [
+  {label:'Beltline', value:24},
+  {label:'Bridgeland', value:18},
+  {label:'Kensington', value:15},
+  {label:'Mahogany', value:11},
+  {label:'Seton', value:9}
+];
+
+var postingHours = [
+  {label:'06:00', value:4},
+  {label:'09:00', value:11},
+  {label:'12:00', value:15},
+  {label:'15:00', value:19},
+  {label:'18:00', value:23},
+  {label:'21:00', value:13}
+];
+
+var messageScannerEvents = [
+  {id:1, user:'Sarah K.', blocked:'Phone number share blocked in chat #298', ts:'10 min ago'},
+  {id:2, user:'Marcus L.', blocked:'Attempted WhatsApp number share in chat #302', ts:'42 min ago'}
+];
 
 var demoUsers = [
-  {id:1, name:'Sarah K.',  email:'sarah@gmail.com',  role:'Worker', joined:'Jun 10, 2026', status:'active',    avatarBg:'linear-gradient(135deg,#6b3fa0,#c8a8e9)'},
-  {id:2, name:'James O.',  email:'james@gmail.com',  role:'Both',   joined:'Jun 12, 2026', status:'active',    avatarBg:'linear-gradient(135deg,#16a34a,#4ade80)'},
-  {id:3, name:'Aisha M.',  email:'aisha@gmail.com',  role:'Poster', joined:'Jun 15, 2026', status:'warned',    avatarBg:'linear-gradient(135deg,#d97706,#fbbf24)'},
-  {id:4, name:'David T.',  email:'david@gmail.com',  role:'Worker', joined:'Jun 8, 2026',  status:'banned',    avatarBg:'linear-gradient(135deg,#ef4444,#f87171)'},
-  {id:5, name:'Priya N.',  email:'priya@gmail.com',  role:'Both',   joined:'Jun 18, 2026', status:'active',    avatarBg:'linear-gradient(135deg,#9b6fc4,#c8a8e9)'},
-  {id:6, name:'Marcus L.', email:'marcus@gmail.com', role:'Worker', joined:'Jun 20, 2026', status:'active',    avatarBg:'linear-gradient(135deg,#0ea5e9,#7dd3fc)'},
+  {id:1, name:'Sarah K.',  email:'sarah@gmail.com',  role:'Worker', joined:'Jun 10, 2026', status:'active', warnings:1, ip:'198.162.2.11', taskPosts1h:1, applies1h:7, history:['Completed 11 tasks this month','1 warning for late delivery'], avatarBg:'linear-gradient(135deg,#6b3fa0,#c8a8e9)'},
+  {id:2, name:'James O.',  email:'james@gmail.com',  role:'Both',   joined:'Jun 12, 2026', status:'active', warnings:0, ip:'198.162.2.12', taskPosts1h:6, applies1h:2, history:['Posted 18 tasks in total','Top-rated response speed'], avatarBg:'linear-gradient(135deg,#16a34a,#4ade80)'},
+  {id:3, name:'Aisha M.',  email:'aisha@gmail.com',  role:'Poster', joined:'Jun 15, 2026', status:'warned', warnings:2, ip:'198.162.2.12', taskPosts1h:2, applies1h:1, history:['2 warnings for payment dispute delays'], avatarBg:'linear-gradient(135deg,#d97706,#fbbf24)'},
+  {id:4, name:'David T.',  email:'david@gmail.com',  role:'Worker', joined:'Jun 8, 2026',  status:'banned', warnings:3, ip:'112.88.45.23', taskPosts1h:0, applies1h:0, history:['Banned after repeated no-shows'], avatarBg:'linear-gradient(135deg,#ef4444,#f87171)'},
+  {id:5, name:'Priya N.',  email:'priya@gmail.com',  role:'Both',   joined:'Jun 18, 2026', status:'active', warnings:0, ip:'90.17.22.140', taskPosts1h:3, applies1h:9, history:['High completion streak: 9'], avatarBg:'linear-gradient(135deg,#9b6fc4,#c8a8e9)'},
+  {id:6, name:'Marcus L.', email:'marcus@gmail.com', role:'Worker', joined:'Jun 20, 2026', status:'active', warnings:1, ip:'78.51.23.99', taskPosts1h:0, applies1h:12, history:['Flagged once for spam applying'], avatarBg:'linear-gradient(135deg,#0ea5e9,#7dd3fc)'},
 ];
 
 var demoTasks = [
-  {id:1, title:'Deep clean 2 bedroom apartment', poster:'James O.', budget:'$120', status:'in_progress'},
-  {id:2, title:'Grocery run — Superstore NW',    poster:'Aisha M.', budget:'$30',  status:'completed'},
-  {id:3, title:'Math tutor for Grade 10 student',poster:'Sarah K.', budget:'$35/hr',status:'posted'},
-  {id:4, title:'Box braids — natural hair',       poster:'Priya N.', budget:'$80',  status:'completed'},
-  {id:5, title:'Moving couch to storage unit',    poster:'Marcus L.',budget:'$60',  status:'in_progress'},
+  {id:1, title:'Deep clean 2 bedroom apartment', poster:'James O.', budget:'$120', status:'in_progress', description:'Need a full apartment deep clean before move-out.', applicants:['Sarah K.','Marcus L.']},
+  {id:2, title:'Grocery run — Superstore NW',    poster:'Aisha M.', budget:'$30',  status:'completed', description:'Pick up grocery list with receipt photo proof.', applicants:['James O.']},
+  {id:3, title:'Math tutor for Grade 10 student',poster:'Sarah K.', budget:'$35/hr',status:'posted', description:'Algebra tutoring two evenings per week.', applicants:['David T.','Priya N.','Marcus L.']},
+  {id:4, title:'Box braids — natural hair',       poster:'Priya N.', budget:'$80',  status:'completed', description:'Protective style with medium-length braids.', applicants:['Sarah K.']},
+  {id:5, title:'Moving couch to storage unit',    poster:'Marcus L.',budget:'$60',  status:'in_progress', description:'Need one helper with a van for 1-hour move.', applicants:['James O.','David T.']},
 ];
 
 var disputes = [
-  {id:1, task:'Box braids — natural hair',    poster:'Priya N.',  worker:'Sarah K.', status:'open',     reason:'Worker did not complete the task as agreed'},
-  {id:2, task:'Moving couch to storage unit', poster:'Marcus L.', worker:'David T.', status:'open',     reason:'Poster refused to release payment after completion'},
-  {id:3, task:'Grocery run — Superstore NW',  poster:'Aisha M.', worker:'James O.', status:'resolved', reason:'Item was damaged during delivery'},
+  {id:1, task:'Box braids — natural hair',    poster:'Priya N.',  worker:'Sarah K.', status:'open',     reason:'Worker did not complete the task as agreed', notes:''},
+  {id:2, task:'Moving couch to storage unit', poster:'Marcus L.', worker:'David T.', status:'open',     reason:'Poster refused to release payment after completion', notes:''},
+  {id:3, task:'Grocery run — Superstore NW',  poster:'Aisha M.', worker:'James O.', status:'resolved', reason:'Item was damaged during delivery', notes:'Resolved with 50 percent refund credit'},
 ];
 
 function formatJoined(dateValue){
@@ -411,6 +651,11 @@ function normalizeUser(row){
     role: getRoleLabel(row.role),
     joined: formatJoined(row.created_at),
     status: status,
+    warnings: Number(row.warnings || 0),
+    ip: row.ip_address || 'Unavailable',
+    taskPosts1h: Number(row.task_posts_1h || 0),
+    applies1h: Number(row.applies_1h || 0),
+    history: Array.isArray(row.history) ? row.history : ['No history available'],
     avatarBg: status === 'banned'
       ? 'linear-gradient(135deg,#ef4444,#f87171)'
       : status === 'warned'
@@ -426,8 +671,124 @@ function normalizeTask(row){
     title: row.title || 'Untitled task',
     poster: row.posted_by || 'Unknown',
     budget: budget,
-    status: row.status || 'posted'
+    status: row.status || 'posted',
+    description: row.description || 'No description available',
+    applicants: Array.isArray(row.applicants) ? row.applicants : []
   };
+}
+
+function pushAlert(type, text){
+  alerts.unshift({ id: Date.now() + Math.random(), type: type, text: text, ts: new Date().toLocaleTimeString('en-CA', {hour:'2-digit', minute:'2-digit'}) });
+  alerts = alerts.slice(0, 30);
+  renderAlerts();
+}
+
+function renderAlerts(){
+  document.getElementById('alertCount').textContent = String(alerts.length);
+  var list = document.getElementById('alertList');
+  if(!alerts.length){
+    list.innerHTML = '<div class="drop-item">No alerts yet</div>';
+    return;
+  }
+  list.innerHTML = alerts.map(function(a){
+    return '<div class="drop-item"><span>' + a.text + '</span><span class="drop-sub">' + a.ts + '</span></div>';
+  }).join('');
+}
+
+function computeSecurityInsights(){
+  loginAttempts = [];
+  try { loginAttempts = JSON.parse(localStorage.getItem('qg-login-attempts') || '[]'); }
+  catch(_) { loginAttempts = []; }
+
+  var failedAttempts = loginAttempts.filter(function(x){ return x.outcome === 'failed'; });
+  var flaggedUsers = users.filter(function(u){ return u.taskPosts1h >= 5 || u.applies1h >= 10; });
+  var duplicateIpsMap = {};
+  users.forEach(function(u){
+    if(!u.ip || u.ip === 'Unavailable') return;
+    duplicateIpsMap[u.ip] = (duplicateIpsMap[u.ip] || 0) + 1;
+  });
+  var duplicateIps = Object.keys(duplicateIpsMap).filter(function(ip){ return duplicateIpsMap[ip] > 1; });
+
+  securityEvents = [
+    {label:'Failed admin logins', value:String(failedAttempts.length), risk: failedAttempts.length > 4 ? 'high' : failedAttempts.length > 1 ? 'mid' : 'low'},
+    {label:'Users sharing IPs', value:String(duplicateIps.length), risk: duplicateIps.length > 0 ? 'mid' : 'low'},
+    {label:'Suspicious users', value:String(flaggedUsers.length), risk: flaggedUsers.length > 0 ? 'mid' : 'low'},
+    {label:'Fraud blocks (24h)', value:String(messageScannerEvents.length), risk: messageScannerEvents.length > 2 ? 'mid' : 'low'}
+  ];
+
+  var securityList = document.getElementById('securityList');
+  securityList.innerHTML = securityEvents.map(function(item){
+    return '<div class="small-item"><span>' + item.label + '</span><strong class="risk-' + item.risk + '">' + item.value + '</strong></div>';
+  }).join('');
+
+  var suspiciousList = document.getElementById('suspiciousList');
+  if(!flaggedUsers.length){
+    suspiciousList.innerHTML = '<div class="small-item"><span>No unusual spikes detected</span><strong class="risk-low">Clear</strong></div>';
+  } else {
+    suspiciousList.innerHTML = flaggedUsers.map(function(u){
+      var reason = u.taskPosts1h >= 5 ? (u.taskPosts1h + ' posts in 1h') : (u.applies1h + ' applies in 1h');
+      return '<div class="small-item"><span>' + u.name + ' • ' + reason + '</span><strong class="risk-mid">Flagged</strong></div>';
+    }).join('');
+  }
+
+  flaggedUsers.forEach(function(u){
+    pushAlert('risk', 'Suspicious activity: ' + u.name + ' flagged');
+  });
+}
+
+function renderAnalytics(){
+  var existing = document.getElementById('analyticsWrap');
+  if(existing) existing.remove();
+  var wrap = document.createElement('div');
+  wrap.id = 'analyticsWrap';
+  wrap.className = 'analytics';
+  wrap.innerHTML =
+    '<div class="chart-card"><div class="chart-title">Signups over time</div>' + buildBars(signupTrend) + '</div>' +
+    '<div class="chart-card"><div class="chart-title">Tasks posted per day</div>' + buildBars(tasksTrend) + '</div>' +
+    '<div class="chart-card"><div class="chart-title">Most active Calgary neighbourhoods</div>' + buildBars(neighbourhoods) + '</div>' +
+    '<div class="chart-card"><div class="chart-title">Peak posting hours</div>' + buildBars(postingHours) + '</div>';
+  document.querySelector('.main').appendChild(wrap);
+}
+
+function buildBars(series){
+  var max = Math.max.apply(Math, series.map(function(x){ return x.value; }));
+  return '<div class="bar-list">' + series.map(function(x){
+    var width = max ? Math.round((x.value / max) * 100) : 0;
+    return '<div class="bar-row"><span>' + x.label + '</span><div class="bar"><span style="width:' + width + '%"></span></div><strong>' + x.value + '</strong></div>';
+  }).join('') + '</div>';
+}
+
+function updateHealthScore(){
+  var completed = tasks.filter(function(t){ return t.status === 'completed'; }).length;
+  var completionRate = tasks.length ? completed / tasks.length : 0;
+  var openDisputes = disputes.filter(function(d){ return d.status === 'open'; }).length;
+  var disputePenalty = disputes.length ? openDisputes / disputes.length : 0;
+  var growth = signupTrend[signupTrend.length - 1].value - signupTrend[0].value;
+  var growthBonus = Math.max(0, Math.min(1, growth / 12));
+  var score = Math.round(((completionRate * 55) + ((1 - disputePenalty) * 30) + (growthBonus * 15)));
+  document.getElementById('statHealth').textContent = score + '/100';
+  document.getElementById('statHealthTrend').textContent = 'Completion ' + Math.round(completionRate * 100) + '% • Dispute rate ' + Math.round(disputePenalty * 100) + '%';
+}
+
+function resetSessionTimer(){
+  sessionSecondsRemaining = 30 * 60;
+}
+
+function setupSessionTimeout(){
+  ['click','mousemove','keydown','scroll'].forEach(function(evt){
+    window.addEventListener(evt, resetSessionTimer, { passive:true });
+  });
+  if(sessionTick) clearInterval(sessionTick);
+  sessionTick = setInterval(function(){
+    sessionSecondsRemaining -= 1;
+    var mins = Math.ceil(sessionSecondsRemaining / 60);
+    document.getElementById('sessionTimeoutView').textContent = 'Session timeout: ' + mins + 'm';
+    if(sessionSecondsRemaining <= 0){
+      clearInterval(sessionTick);
+      pushAlert('session', 'Session expired due to inactivity');
+      doLogout();
+    }
+  }, 1000);
 }
 
 async function loadAdminData(){
@@ -452,6 +813,18 @@ async function loadAdminData(){
 // ── INIT ───────────────────────────────────────────────
 async function initAdmin(){
   await loadAdminData();
+  filteredUsers = users.slice();
+  filteredTasks = tasks.slice();
+  filteredDisputes = disputes.slice();
+
+  // Auto-ban users who reached 3 warnings.
+  users.forEach(function(u){
+    if(u.warnings >= 3 && u.status !== 'banned'){
+      u.status = 'banned';
+      pushAlert('ban', 'Auto-ban triggered for ' + u.name + ' (3 warnings)');
+    }
+  });
+
   var activeUsers    = users.filter(function(u){ return u.status === 'active'; }).length;
   var openDisputes   = disputes.filter(function(d){ return d.status === 'open'; }).length;
 
@@ -463,22 +836,33 @@ async function initAdmin(){
   document.getElementById('statDisputesTrend').textContent = openDisputes > 0 ? openDisputes + ' need your attention' : 'All clear!';
   if(openDisputes === 0) document.getElementById('statDisputesTrend').className = 'stat-trend';
 
-  renderUsers(users);
-  renderTasks(tasks);
-  renderDisputes(disputes);
+  renderUsers(filteredUsers);
+  renderTasks(filteredTasks);
+  renderDisputes(filteredDisputes);
+  renderAlerts();
+  computeSecurityInsights();
+  updateHealthScore();
+  renderAnalytics();
+  setupSessionTimeout();
+
+  var newUserSpike = signupTrend[signupTrend.length - 1].value >= 15;
+  if(newUserSpike) pushAlert('growth', 'New user spike detected today');
+  if(openDisputes > 0) pushAlert('dispute', openDisputes + ' open disputes require review');
 }
 
 // ── RENDER USERS ───────────────────────────────────────
 function renderUsers(data){
+  filteredUsers = data.slice();
   document.getElementById('usersCount').textContent = '· ' + data.length + ' total';
   if(!data.length){ document.getElementById('usersBody').innerHTML = '<div class="empty-row">No users found</div>'; return; }
   document.getElementById('usersBody').innerHTML = data.map(function(u){
     var pillClass = u.status==='active' ? 'pill-active' : u.status==='warned' ? 'pill-warned' : 'pill-banned';
     var pillLabel = u.status.charAt(0).toUpperCase() + u.status.slice(1);
     var actions = u.status === 'banned'
-      ? '<button class="act-btn btn-view" onclick="viewUser('+u.id+')">View</button><button class="act-btn btn-unban" onclick="actionUser('+u.id+',\'unban\')">Unban</button>'
-      : '<button class="act-btn btn-view" onclick="viewUser('+u.id+')">View</button><button class="act-btn btn-warn" onclick="actionUser('+u.id+',\'warn\')">Warn</button><button class="act-btn btn-ban" onclick="actionUser('+u.id+',\'ban\')">Ban</button>';
+      ? '<button class="act-btn btn-view" onclick="openUserDrawer('+u.id+')">Details</button><button class="act-btn btn-unban" onclick="actionUser('+u.id+',\'unban\')">Unban</button>'
+      : '<button class="act-btn btn-view" onclick="openUserDrawer('+u.id+')">Details</button><button class="act-btn btn-warn" onclick="actionUser('+u.id+',\'warn\')">Warn</button><button class="act-btn btn-ban" onclick="actionUser('+u.id+',\'ban\')">Ban</button>';
     return '<div class="data-row g-users">' +
+      '<div class="select-cell"><input type="checkbox" class="check" ' + (selectedUserIds[u.id] ? 'checked' : '') + ' onchange="toggleUserSelection('+u.id+', this.checked)"></div>' +
       '<div class="cell-name"><div class="u-av" style="background:'+u.avatarBg+'">'+u.name.charAt(0)+'</div><div><div class="u-name">'+u.name+'</div><div class="u-joined">Joined '+u.joined+'</div></div></div>' +
       '<div class="cell">'+u.email+'</div>' +
       '<div class="cell">'+u.role+'</div>' +
@@ -490,6 +874,7 @@ function renderUsers(data){
 
 // ── RENDER TASKS ───────────────────────────────────────
 function renderTasks(data){
+  filteredTasks = data.slice();
   document.getElementById('tasksCount').textContent = '· ' + data.length + ' total';
   if(!data.length){ document.getElementById('tasksBody').innerHTML = '<div class="empty-row">No tasks found</div>'; return; }
   document.getElementById('tasksBody').innerHTML = data.map(function(t){
@@ -500,13 +885,14 @@ function renderTasks(data){
       '<div class="cell">'+t.poster+'</div>' +
       '<div class="cell">'+t.budget+'</div>' +
       '<div class="cell"><span class="pill '+pillClass+'">'+pillLabel+'</span></div>' +
-      '<div class="actions"><button class="act-btn btn-view" onclick="viewTask('+t.id+')">View</button><button class="act-btn btn-remove" onclick="removeTask('+t.id+')">Remove</button></div>' +
+      '<div class="actions"><button class="act-btn btn-view" onclick="viewTask('+t.id+')">Preview</button><button class="act-btn btn-remove" onclick="removeTask('+t.id+')">Remove</button></div>' +
     '</div>';
   }).join('');
 }
 
 // ── RENDER DISPUTES ────────────────────────────────────
 function renderDisputes(data){
+  filteredDisputes = data.slice();
   var open = data.filter(function(d){ return d.status==='open'; }).length;
   document.getElementById('disputesCount').textContent = '· ' + open + ' open, ' + (data.length - open) + ' resolved';
   if(!data.length){ document.getElementById('disputesBody').innerHTML = '<div class="empty-row">No disputes found</div>'; return; }
@@ -546,6 +932,41 @@ window.filterTable = function(type, query){
     renderTasks(!q ? tasks : tasks.filter(function(t){ return t.title.toLowerCase().includes(q) || t.poster.toLowerCase().includes(q); }));
   } else {
     renderDisputes(!q ? disputes : disputes.filter(function(d){ return d.task.toLowerCase().includes(q) || d.poster.toLowerCase().includes(q) || d.worker.toLowerCase().includes(q); }));
+  }
+};
+
+window.toggleTabSearchScope = function(){
+  searchScopeAll = !searchScopeAll;
+  document.getElementById('scopeBtn').textContent = searchScopeAll ? 'Scope: Whole platform' : 'Scope: Active tab';
+};
+
+window.runGlobalSearch = function(query){
+  var q = query.toLowerCase().trim();
+  if(!q){
+    renderUsers(users);
+    renderTasks(tasks);
+    renderDisputes(disputes);
+    return;
+  }
+
+  var matchedUsers = users.filter(function(u){
+    return (u.name + ' ' + u.email + ' ' + u.role + ' ' + u.status + ' ' + u.ip).toLowerCase().includes(q);
+  });
+  var matchedTasks = tasks.filter(function(t){
+    return (t.title + ' ' + t.poster + ' ' + t.budget + ' ' + t.description).toLowerCase().includes(q);
+  });
+  var matchedDisputes = disputes.filter(function(d){
+    return (d.task + ' ' + d.poster + ' ' + d.worker + ' ' + d.reason + ' ' + (d.notes || '')).toLowerCase().includes(q);
+  });
+
+  if(searchScopeAll){
+    renderUsers(matchedUsers);
+    renderTasks(matchedTasks);
+    renderDisputes(matchedDisputes);
+  } else {
+    if(activeTab === 'users') renderUsers(matchedUsers);
+    if(activeTab === 'tasks') renderTasks(matchedTasks);
+    if(activeTab === 'disputes') renderDisputes(matchedDisputes);
   }
 };
 
@@ -595,8 +1016,51 @@ window.viewUser = function(id){
     'Close', 'purple', function(){});
 };
 
-window.actionUser = function(id, action){
+window.openUserDrawer = function(id){
   var u = users.find(function(x){ return x.id===id; });
+  if(!u) return;
+  document.getElementById('drawerName').textContent = u.name + ' profile';
+  document.getElementById('drawerBody').innerHTML =
+    '<div class="drawer-block"><div class="drawer-label">Account</div><div class="drawer-value">' + u.email + ' • ' + u.role + '</div></div>' +
+    '<div class="drawer-block"><div class="drawer-label">Security</div><div class="drawer-value">IP: ' + u.ip + '<br>Warnings: ' + u.warnings + '<br>Status: ' + u.status + '</div></div>' +
+    '<div class="drawer-block"><div class="drawer-label">Activity (last hour)</div><div class="drawer-value">Posts: ' + u.taskPosts1h + '<br>Applies: ' + u.applies1h + '</div></div>' +
+    '<div class="drawer-block"><div class="drawer-label">History</div><div class="drawer-value">' + u.history.join('<br>') + '</div></div>';
+  document.getElementById('userDrawer').classList.add('open');
+};
+
+window.closeUserDrawer = function(){
+  document.getElementById('userDrawer').classList.remove('open');
+};
+
+window.toggleUserSelection = function(id, checked){
+  selectedUserIds[id] = checked;
+};
+
+window.toggleSelectAllUsers = function(checked){
+  filteredUsers.forEach(function(u){ selectedUserIds[u.id] = checked; });
+  renderUsers(filteredUsers);
+};
+
+window.bulkUserAction = function(action){
+  var ids = Object.keys(selectedUserIds).filter(function(id){ return selectedUserIds[id]; }).map(function(id){ return Number(id); });
+  if(!ids.length){
+    showToast('Select at least one user first.', 'amber');
+    return;
+  }
+  ids.forEach(function(id){ actionUser(id, action, true); });
+  renderUsers(filteredUsers);
+  showToast('Bulk action completed for ' + ids.length + ' users.', action === 'ban' ? 'red' : 'amber');
+};
+
+window.actionUser = function(id, action, skipModal){
+  var u = users.find(function(x){ return x.id===id; });
+  if(!u) return;
+
+  if(skipModal){
+    applyUserAction(u, action);
+    return;
+  }
+
   var titles = {warn:'Issue a warning', ban:'Ban user', unban:'Unban user'};
   var subs   = {
     warn: 'This will send a warning email to ' + u.name + '. A second warning leads to suspension.',
@@ -606,21 +1070,44 @@ window.actionUser = function(id, action){
   var classes = {warn:'warn', ban:'danger', unban:'success'};
   var labels  = {warn:'Issue warning', ban:'Ban user', unban:'Unban user'};
   openModal(titles[action], subs[action], '', labels[action], classes[action], function(){
-    var newStatus = action==='warn' ? 'warned' : action==='ban' ? 'banned' : 'active';
-    u.status = newStatus;
-    renderUsers(users);
-    showToast(u.name + ' has been ' + (action==='unban'?'unbanned':action+'ned') + '.', action==='ban'?'red':action==='warn'?'amber':'green');
-    // TODO: Persist user status updates to Supabase when admin write actions are enabled.
+    applyUserAction(u, action);
   });
 };
+
+function applyUserAction(u, action){
+  if(action === 'warn'){
+    u.warnings = (u.warnings || 0) + 1;
+    u.status = u.warnings >= 3 ? 'banned' : 'warned';
+    if(u.status === 'banned'){
+      pushAlert('ban', 'Auto-ban triggered: ' + u.name + ' reached 3 warnings');
+      showToast(u.name + ' auto-banned after 3 warnings.', 'red');
+    } else {
+      showToast(u.name + ' warned (' + u.warnings + '/3).', 'amber');
+    }
+  }
+  if(action === 'ban'){
+    u.status = 'banned';
+    pushAlert('ban', 'User banned: ' + u.name);
+    showToast(u.name + ' has been banned.', 'red');
+  }
+  if(action === 'unban'){
+    u.status = 'active';
+    u.warnings = 0;
+    showToast(u.name + ' has been unbanned.', 'green');
+  }
+  renderUsers(filteredUsers);
+  computeSecurityInsights();
+}
 
 // ── TASK ACTIONS ───────────────────────────────────────
 window.viewTask = function(id){
   var t = tasks.find(function(x){ return x.id===id; });
   openModal('Task details', t.title,
     '<div style="display:grid;gap:10px">' +
+    '<div><div class="modal-label">Description</div><div class="modal-value">'+t.description+'</div></div>' +
     '<div><div class="modal-label">Posted by</div><div class="modal-value">'+t.poster+'</div></div>' +
     '<div><div class="modal-label">Budget</div><div class="modal-value">'+t.budget+'</div></div>' +
+    '<div><div class="modal-label">Applicants</div><div class="modal-value">'+(t.applicants && t.applicants.length ? t.applicants.join(', ') : 'No applicants yet')+'</div></div>' +
     '<div><div class="modal-label">Status</div><div class="modal-value">'+t.status+'</div></div>' +
     '</div>',
     'Close', 'purple', function(){});
@@ -652,15 +1139,61 @@ window.viewDispute = function(id){
 
 window.resolveDispute = function(id){
   var d = disputes.find(function(x){ return x.id===id; });
-  openModal('Resolve dispute', 'Mark this dispute as resolved? Both parties will be notified.', '', 'Mark resolved', 'success', function(){
+  var notesField = '<div class="modal-field"><label class="modal-label">Internal resolution notes</label><textarea id="resolveNote" style="width:100%;min-height:88px;border-radius:10px;border:0.5px solid var(--input-border);background:var(--input-bg);color:var(--text);padding:10px;font-family:DM Sans,sans-serif;font-size:12px;" placeholder="Add context for internal records"></textarea></div>';
+  openModal('Resolve dispute', 'Mark this dispute as resolved? Both parties will be notified.', notesField, 'Mark resolved', 'success', function(){
+    d.notes = document.getElementById('resolveNote') ? document.getElementById('resolveNote').value.trim() : '';
     d.status = 'resolved';
     renderDisputes(disputes);
     var open = disputes.filter(function(x){ return x.status==='open'; }).length;
     document.getElementById('statDisputes').textContent = open;
+    pushAlert('dispute', 'Dispute #' + d.id + ' resolved');
     showToast('Dispute marked as resolved.', 'green');
     // TODO: Persist dispute status to Supabase when a disputes table is available.
   });
 };
+
+window.toggleAlerts = function(){
+  document.getElementById('alertsMenu').classList.toggle('open');
+  document.getElementById('accountMenu').classList.remove('open');
+};
+
+window.toggleAccountMenu = function(){
+  document.getElementById('accountMenu').classList.toggle('open');
+  document.getElementById('alertsMenu').classList.remove('open');
+};
+
+window.lockSession = function(){
+  document.getElementById('twofaInput').value = '';
+  document.getElementById('twofaGate').classList.add('show');
+  document.getElementById('accountMenu').classList.remove('open');
+};
+
+window.generateDailySummaryEmail = function(){
+  var signedUpToday = signupTrend[signupTrend.length - 1].value;
+  var tasksPosted = tasksTrend[tasksTrend.length - 1].value;
+  var revenue = '$' + (tasks.reduce(function(sum, t){
+    var num = Number(String(t.budget).replace(/[^0-9.]/g, ''));
+    return sum + (isNaN(num) ? 0 : num);
+  }, 0) * 0.12).toFixed(2);
+  var body = [
+    'QuickGigs Daily Admin Summary',
+    '',
+    'Users signed up today: ' + signedUpToday,
+    'Tasks posted today: ' + tasksPosted,
+    'Estimated platform revenue: ' + revenue,
+    'Open disputes: ' + disputes.filter(function(d){ return d.status === 'open'; }).length
+  ].join('%0D%0A');
+  window.location.href = 'mailto:mowebsiteco@gmail.com?subject=QuickGigs%20Daily%20Summary&body=' + body;
+};
+
+document.addEventListener('click', function(e){
+  if(!e.target.closest('.alert-wrap')) document.getElementById('alertsMenu').classList.remove('open');
+  if(!e.target.closest('.account-wrap')) document.getElementById('accountMenu').classList.remove('open');
+});
+
+messageScannerEvents.forEach(function(ev){
+  pushAlert('fraud', 'Fraud alert: ' + ev.blocked);
+});
 </script>
 </body>
 </html>
