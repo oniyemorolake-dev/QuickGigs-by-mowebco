@@ -3,1351 +3,578 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QuickGigs — Admin</title>
+<title>QuickGigs — Admin Console</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --bg:#0b0118;
-  --surface:rgba(255,255,255,0.04);
-  --surface-hover:rgba(255,255,255,0.06);
-  --border:rgba(200,168,233,0.1);
-  --text:#fff;
-  --text-muted:rgba(255,255,255,0.35);
-  --text-faint:rgba(255,255,255,0.22);
-  --purple:#6b3fa0;
-  --purple-light:#9b6fc4;
-  --lavender:#c8a8e9;
-  --nav-bg:#0b0118;
-  --card-bg:rgba(255,255,255,0.04);
-  --input-bg:rgba(255,255,255,0.06);
-  --input-border:rgba(200,168,233,0.15);
-  --col-h:rgba(255,255,255,0.25);
-  --row-border:rgba(200,168,233,0.06);
+  --bg:#06000f;--bg2:#0b0118;--surface:rgba(255,255,255,0.03);--surface2:rgba(255,255,255,0.05);
+  --border:rgba(200,168,233,0.1);--border2:rgba(200,168,233,0.06);
+  --text:#fff;--text-muted:rgba(255,255,255,0.45);--text-faint:rgba(255,255,255,0.22);
+  --purple:#6b3fa0;--purple-light:#9b6fc4;--lavender:#c8a8e9;
+  --green:#4ade80;--green-dim:#16a34a;--amber:#fbbf24;--amber-dim:#d97706;
+  --red:#ef4444;--red-dim:#dc2626;--blue:#60a5fa;
 }
-body.light{
-  --bg:#fafafe;
-  --surface:#fff;
-  --surface-hover:#f5f2ff;
-  --border:#f0eeff;
-  --text:#1a0a3d;
-  --text-muted:#6b7280;
-  --text-faint:#9ca3af;
-  --nav-bg:#fff;
-  --card-bg:#fff;
-  --input-bg:#f0eeff;
-  --input-border:#e8e2ff;
-  --col-h:#9ca3af;
-  --row-border:#f0eeff;
-  --lavender:#6b3fa0;
-}
-
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background 0.25s,color 0.25s;}
-
-/* ACCESS DENIED */
-.access-denied{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:40px;}
-.access-denied.show{display:flex;}
-.ad-icon{font-size:56px;margin-bottom:16px;}
-.ad-title{font-size:22px;font-weight:500;margin-bottom:8px;}
-.ad-sub{font-size:14px;color:var(--text-muted);margin-bottom:24px;}
-.ad-btn{padding:12px 28px;border-radius:14px;background:var(--purple);color:#fff;border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;}
-
-/* NAV */
-.nav{background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:13px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;transition:background 0.25s;}
-.nav-left{display:flex;align-items:center;gap:10px;}
-.nav-logo{font-family:'Playfair Display',serif;font-style:italic;font-size:1.25rem;color:var(--lavender);}
-.admin-badge{font-size:10px;padding:3px 10px;border-radius:20px;background:rgba(239,68,68,0.15);color:#ef4444;border:0.5px solid rgba(239,68,68,0.25);}
-.nav-right{display:flex;align-items:center;gap:10px;}
-.nav-date{font-size:12px;color:var(--text-faint);}
-.mode-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);}
-body.light .mode-btn{background:#f0eeff;color:var(--purple);}
-.avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#c8a8e9);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:#fff;}
-.logout-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:0.5px solid rgba(239,68,68,0.3);background:transparent;color:#ef4444;font-family:'DM Sans',sans-serif;}
-
-/* MAIN */
-.main{max-width:1100px;margin:0 auto;padding:24px;}
-
-/* STATS */
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
-.stat-card{border-radius:16px;padding:16px;background:var(--card-bg);border:0.5px solid var(--border);}
-.stat-icon{font-size:22px;margin-bottom:10px;}
-.stat-val{font-size:24px;font-weight:500;color:var(--text);margin-bottom:3px;}
-.stat-val.green{color:#4ade80;}
-.stat-val.purple{color:var(--lavender);}
-body.light .stat-val.purple{color:var(--purple);}
-.stat-val.amber{color:#fbbf24;}
-.stat-val.red{color:#ef4444;}
-.stat-lbl{font-size:12px;color:var(--text-faint);}
-.stat-trend{font-size:11px;margin-top:5px;color:#4ade80;}
-.stat-trend.warn{color:#ef4444;}
-.stat-trend.neutral{color:var(--text-faint);}
-
-/* TABS */
-.tabs{display:flex;gap:8px;margin-bottom:16px;}
-.tab-btn{padding:9px 18px;border-radius:20px;font-size:13px;cursor:pointer;border:0.5px solid var(--border);background:transparent;color:var(--text-muted);font-family:'DM Sans',sans-serif;transition:all 0.15s;}
-.tab-btn:hover{border-color:var(--purple-light);color:var(--purple-light);}
-.tab-btn.active{background:rgba(107,63,160,0.3);color:var(--lavender);border-color:var(--purple);}
-body.light .tab-btn.active{background:var(--purple);color:#fff;border-color:var(--purple);}
-
-/* TABLE CARD */
-.table-card{border-radius:16px;background:var(--card-bg);border:0.5px solid var(--border);overflow:hidden;}
-.table-header{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--border);}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:220px;background:var(--bg2);border-right:0.5px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+.sidebar-logo{padding:20px 18px 16px;border-bottom:0.5px solid var(--border);}
+.logo-text{font-family:'Playfair Display',serif;font-style:italic;font-size:1.2rem;color:var(--lavender);}
+.admin-badge{font-size:9px;padding:2px 8px;border-radius:20px;background:rgba(239,68,68,0.15);color:var(--red);border:0.5px solid rgba(239,68,68,0.25);margin-top:4px;display:inline-block;}
+.sidebar-nav{flex:1;padding:12px 10px;overflow-y:auto;}
+.nav-section{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);padding:10px 8px 6px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;cursor:pointer;margin-bottom:2px;transition:all 0.15s;color:var(--text-muted);font-size:13px;border:none;background:none;width:100%;text-align:left;font-family:inherit;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:rgba(107,63,160,0.25);color:var(--lavender);}
+.nav-icon{font-size:16px;width:20px;text-align:center;}
+.nav-badge{margin-left:auto;font-size:10px;padding:1px 6px;border-radius:20px;background:var(--red);color:#fff;font-weight:500;}
+.sidebar-footer{padding:14px;border-top:0.5px solid var(--border);}
+.admin-user{display:flex;align-items:center;gap:10px;}
+.admin-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#c8a8e9);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;}
+.admin-name{font-size:12px;font-weight:500;color:var(--text);}
+.admin-role{font-size:10px;color:var(--text-faint);}
+.logout-btn{margin-left:auto;font-size:11px;color:var(--red);cursor:pointer;background:none;border:none;font-family:inherit;}
+.session-timer{font-size:11px;color:var(--text-faint);text-align:center;padding:8px;border-top:0.5px solid var(--border);}
+.session-timer.warn{color:var(--amber);}
+.main{margin-left:220px;flex:1;padding:24px;overflow-y:auto;}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.page-title{font-size:22px;font-weight:500;color:var(--text);}
+.page-sub{font-size:13px;color:var(--text-faint);margin-top:2px;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.health-score{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:12px;background:var(--surface);border:0.5px solid var(--border);}
+.health-label{font-size:12px;color:var(--text-faint);}
+.health-val{font-size:16px;font-weight:500;color:var(--green);}
+.notif-btn{position:relative;width:38px;height:38px;border-radius:10px;background:var(--surface);border:0.5px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;}
+.notif-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--red);border:2px solid var(--bg);}
+.alert-banner{display:flex;align-items:center;gap:12px;padding:13px 18px;border-radius:14px;background:rgba(239,68,68,0.07);border:0.5px solid rgba(239,68,68,0.2);margin-bottom:20px;}
+.alert-icon{font-size:18px;}
+.alert-text{font-size:13px;color:rgba(255,150,150,0.9);flex:1;}
+.alert-action{font-size:12px;padding:6px 14px;border-radius:20px;background:rgba(239,68,68,0.15);border:0.5px solid rgba(239,68,68,0.3);color:var(--red);cursor:pointer;font-family:inherit;white-space:nowrap;}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.stat-card{border-radius:16px;padding:18px;background:var(--surface);border:0.5px solid var(--border);position:relative;overflow:hidden;}
+.stat-accent{position:absolute;top:0;left:0;right:0;height:2px;}
+.accent-purple{background:linear-gradient(90deg,#6b3fa0,#9b6fc4);}
+.accent-green{background:linear-gradient(90deg,#16a34a,#4ade80);}
+.accent-amber{background:linear-gradient(90deg,#d97706,#fbbf24);}
+.accent-red{background:linear-gradient(90deg,#dc2626,#ef4444);}
+.stat-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.stat-icon{font-size:20px;}
+.trend{font-size:11px;padding:3px 8px;border-radius:20px;}
+.trend-up{background:rgba(74,222,128,0.12);color:var(--green);}
+.trend-warn{background:rgba(239,68,68,0.12);color:var(--red);}
+.trend-neutral{background:rgba(255,255,255,0.06);color:var(--text-faint);}
+.stat-val{font-size:30px;font-weight:500;margin-bottom:4px;}
+.stat-val.c-purple{color:var(--lavender);}
+.stat-val.c-green{color:var(--green);}
+.stat-val.c-amber{color:var(--amber);}
+.stat-val.c-red{color:var(--red);}
+.stat-label{font-size:12px;color:var(--text-faint);}
+.stat-sub{font-size:11px;color:rgba(255,255,255,0.2);margin-top:5px;}
+.mini-chart{display:flex;align-items:flex-end;gap:3px;height:28px;margin-top:10px;}
+.bar{flex:1;border-radius:2px 2px 0 0;}
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px;}
+.mini-card{border-radius:16px;padding:18px;background:var(--surface);border:0.5px solid var(--border);}
+.mc-title{font-size:14px;font-weight:500;color:var(--text);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.mc-sub{font-size:11px;color:var(--text-faint);}
+.activity-item{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border2);}
+.activity-item:last-child{border-bottom:none;}
+.act-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.act-content{flex:1;}
+.act-text{font-size:12px;color:var(--text-muted);line-height:1.4;}
+.act-time{font-size:10px;color:var(--text-faint);margin-top:2px;}
+.bar-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid var(--border2);}
+.bar-item:last-child{border-bottom:none;}
+.bar-label{font-size:12px;color:var(--text-muted);width:90px;flex-shrink:0;}
+.bar-track{flex:1;height:5px;background:rgba(255,255,255,0.05);border-radius:3px;}
+.bar-fill{height:5px;border-radius:3px;background:linear-gradient(90deg,#6b3fa0,#9b6fc4);}
+.bar-val{font-size:12px;color:var(--text-faint);width:50px;text-align:right;flex-shrink:0;}
+.health-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.health-item{border-radius:12px;padding:14px;background:var(--surface);border:0.5px solid var(--border);}
+.health-item-label{font-size:11px;color:var(--text-faint);margin-bottom:6px;}
+.health-item-val{font-size:20px;font-weight:500;margin-bottom:4px;}
+.health-item-bar{height:4px;border-radius:2px;background:rgba(255,255,255,0.06);margin-top:6px;}
+.health-item-fill{height:4px;border-radius:2px;}
+.table-card{border-radius:16px;background:var(--surface);border:0.5px solid var(--border);overflow:hidden;margin-bottom:20px;}
+.table-header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--border2);}
 .table-title{font-size:15px;font-weight:500;color:var(--text);}
 .table-count{font-size:12px;color:var(--text-faint);margin-left:8px;}
-.search-input{padding:7px 14px;border-radius:20px;background:var(--input-bg);border:0.5px solid var(--input-border);font-size:12px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;width:200px;transition:border-color 0.2s;}
-.search-input:focus{border-color:var(--purple-light);}
-.search-input::placeholder{color:var(--lavender);opacity:0.35;}
-
-/* TABLE */
-.col-row{display:grid;padding:10px 20px;border-bottom:0.5px solid var(--border);}
-.col-h{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--col-h);}
-.data-row{display:grid;padding:13px 20px;align-items:center;border-bottom:0.5px solid var(--row-border);transition:background 0.15s;cursor:pointer;}
+.table-actions{display:flex;gap:8px;align-items:center;}
+.search-bar{padding:8px 14px;border-radius:20px;background:var(--surface2);border:0.5px solid var(--border);font-size:12px;color:var(--text);font-family:inherit;outline:none;width:200px;}
+.search-bar::placeholder{color:var(--text-faint);}
+.action-pill{padding:7px 14px;border-radius:20px;font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.15s;border:none;}
+.pill-filter{background:transparent;border:0.5px solid var(--border);color:var(--text-muted);}
+.pill-export{background:rgba(107,63,160,0.2);border:0.5px solid rgba(200,168,233,0.2);color:var(--lavender);}
+.bulk-actions{padding:10px 20px;display:none;align-items:center;gap:8px;background:rgba(107,63,160,0.08);border-bottom:0.5px solid var(--border2);}
+.bulk-actions.show{display:flex;}
+.bulk-label{font-size:12px;color:var(--lavender);}
+.bulk-btn{padding:5px 12px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit;border:none;font-weight:500;}
+.bulk-warn{background:rgba(251,191,36,0.15);color:var(--amber);}
+.bulk-ban{background:rgba(239,68,68,0.12);color:var(--red);}
+.col-row{display:grid;padding:10px 20px;border-bottom:0.5px solid var(--border2);}
+.col-h{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);}
+.g-users{grid-template-columns:32px 2.2fr 1.6fr 0.8fr 0.7fr 1fr 1.2fr;}
+.g-tasks{grid-template-columns:32px 2.5fr 1fr 0.8fr 0.8fr 1fr 1fr;}
+.g-disputes{grid-template-columns:2fr 1fr 1fr 0.8fr 1fr 1.2fr;}
+.data-row{display:grid;padding:13px 20px;align-items:center;border-bottom:0.5px solid var(--border2);transition:background 0.15s;cursor:pointer;}
+.data-row:hover{background:rgba(255,255,255,0.02);}
 .data-row:last-child{border-bottom:none;}
-.data-row:hover{background:var(--surface-hover);}
-
-/* USERS COLS */
-.g-users{grid-template-columns:2fr 1.8fr 0.8fr 1fr 1.2fr;}
-/* TASKS COLS */
-.g-tasks{grid-template-columns:2.5fr 1.2fr 0.8fr 1fr 1fr;}
-/* DISPUTES COLS */
-.g-disputes{grid-template-columns:2fr 1fr 1fr 1fr 1.2fr;}
-
-.cell{font-size:13px;color:var(--text-muted);}
-.cell-name{display:flex;align-items:center;gap:9px;}
-.u-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#fff;flex-shrink:0;}
+.checkbox{width:14px;height:14px;border-radius:4px;border:0.5px solid var(--border);background:transparent;cursor:pointer;accent-color:var(--purple);}
+.user-cell{display:flex;align-items:center;gap:10px;}
+.u-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#fff;flex-shrink:0;}
 .u-name{font-size:13px;font-weight:500;color:var(--text);}
-.u-joined{font-size:11px;color:var(--text-faint);}
-.cell-title{font-size:13px;font-weight:500;color:var(--text);}
-
-/* STATUS PILLS */
-.pill{display:inline-block;font-size:10px;padding:3px 9px;border-radius:20px;font-weight:500;}
-.pill-active{background:rgba(74,222,128,0.12);color:#16a34a;}
-.pill-warned{background:rgba(251,191,36,0.12);color:#d97706;}
-.pill-banned{background:rgba(239,68,68,0.12);color:#ef4444;}
-.pill-posted{background:rgba(107,63,160,0.2);color:var(--purple-light);}
-body.light .pill-posted{background:#ede9ff;color:var(--purple);}
-.pill-progress{background:rgba(107,63,160,0.2);color:var(--purple-light);}
-body.light .pill-progress{background:#ede9ff;color:var(--purple);}
-.pill-done{background:rgba(74,222,128,0.12);color:#16a34a;}
-.pill-open{background:rgba(239,68,68,0.1);color:#ef4444;}
-.pill-resolved{background:rgba(74,222,128,0.12);color:#16a34a;}
-
-/* ACTION BUTTONS */
-.actions{display:flex;gap:5px;justify-content:flex-end;flex-wrap:wrap;}
-.act-btn{padding:4px 10px;border-radius:8px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;font-weight:500;transition:opacity 0.15s;}
-.act-btn:hover{opacity:0.8;}
-.btn-view{background:rgba(107,63,160,0.3);color:var(--lavender);}
-body.light .btn-view{background:#ede9ff;color:var(--purple);}
-.btn-warn{background:rgba(251,191,36,0.15);color:#d97706;}
-.btn-ban{background:rgba(239,68,68,0.12);color:#ef4444;}
-.btn-unban{background:rgba(74,222,128,0.12);color:#16a34a;}
-.btn-remove{background:rgba(239,68,68,0.12);color:#ef4444;}
-.btn-resolve{background:rgba(74,222,128,0.12);color:#16a34a;}
-
-/* EMPTY */
-.empty-row{padding:40px;text-align:center;color:var(--text-faint);font-size:13px;}
-
-/* MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
+.u-meta{font-size:11px;color:var(--text-faint);margin-top:1px;}
+.cell{font-size:13px;color:var(--text-muted);}
+.status-pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:3px 9px;border-radius:20px;font-weight:500;}
+.s-active{background:rgba(74,222,128,0.1);color:var(--green);}
+.s-warned{background:rgba(251,191,36,0.1);color:var(--amber);}
+.s-banned{background:rgba(239,68,68,0.1);color:var(--red);}
+.s-open{background:rgba(239,68,68,0.1);color:var(--red);}
+.s-resolved{background:rgba(74,222,128,0.1);color:var(--green);}
+.s-progress{background:rgba(107,63,160,0.2);color:var(--lavender);}
+.s-done{background:rgba(74,222,128,0.1);color:var(--green);}
+.s-posted{background:rgba(107,63,160,0.15);color:var(--purple-light);}
+.role-pill{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;}
+.r-both{background:rgba(107,63,160,0.2);color:var(--purple-light);}
+.r-poster{background:rgba(200,168,233,0.1);color:var(--lavender);}
+.r-worker{background:rgba(74,222,128,0.1);color:var(--green-dim);}
+.act-btns{display:flex;gap:4px;justify-content:flex-end;}
+.act-btn{padding:4px 10px;border-radius:8px;font-size:11px;cursor:pointer;border:none;font-family:inherit;font-weight:500;}
+.btn-view{background:rgba(107,63,160,0.25);color:var(--lavender);}
+.btn-warn{background:rgba(251,191,36,0.12);color:var(--amber);}
+.btn-ban{background:rgba(239,68,68,0.1);color:var(--red);}
+.btn-unban{background:rgba(74,222,128,0.1);color:var(--green);}
+.btn-resolve{background:rgba(74,222,128,0.1);color:var(--green);}
+.btn-remove{background:rgba(239,68,68,0.1);color:var(--red);}
+.sec-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border2);}
+.sec-item:last-child{border-bottom:none;}
+.sec-type{font-size:11px;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.sec-failed{background:rgba(239,68,68,0.1);color:var(--red);}
+.sec-blocked{background:rgba(251,191,36,0.1);color:var(--amber);}
+.sec-banned{background:rgba(239,68,68,0.15);color:var(--red);}
+.sec-signup{background:rgba(74,222,128,0.1);color:var(--green);}
+.sec-text{font-size:12px;color:var(--text-muted);flex:1;}
+.sec-time{font-size:11px;color:var(--text-faint);}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
 .modal-overlay.open{display:flex;}
-.modal{background:#150830;border:0.5px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:420px;}
-body.light .modal{background:#fff;}
-.modal-title{font-size:17px;font-weight:500;color:var(--text);margin-bottom:6px;}
+.modal{background:#120228;border:0.5px solid var(--border);border-radius:20px;padding:26px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;}
+.modal-title{font-size:18px;font-weight:500;color:var(--text);margin-bottom:6px;}
 .modal-sub{font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.5;}
-.modal-field{margin-bottom:14px;}
 .modal-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);display:block;margin-bottom:6px;}
 .modal-value{font-size:14px;color:var(--text);}
-.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;}
-.modal-cancel{padding:10px 20px;border-radius:12px;border:0.5px solid var(--border);background:transparent;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;}
-.modal-confirm{padding:10px 20px;border-radius:12px;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;color:#fff;}
-.modal-confirm.danger{background:#ef4444;}
-.modal-confirm.warn{background:#d97706;}
-.modal-confirm.success{background:#16a34a;}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;}
+.modal-cancel{padding:10px 20px;border-radius:12px;border:0.5px solid var(--border);background:transparent;color:var(--text-muted);font-family:inherit;font-size:13px;cursor:pointer;}
+.modal-confirm{padding:10px 20px;border-radius:12px;border:none;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;color:#fff;}
+.modal-confirm.danger{background:var(--red-dim);}
+.modal-confirm.warn{background:var(--amber-dim);}
+.modal-confirm.success{background:var(--green-dim);}
 .modal-confirm.purple{background:var(--purple);}
-
-/* TOAST */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:11px 24px;border-radius:20px;font-size:13px;font-weight:500;display:none;z-index:300;white-space:nowrap;}
-.toast.green{background:#4ade80;color:#0b0118;}
-.toast.red{background:#ef4444;color:#fff;}
-.toast.amber{background:#fbbf24;color:#0b0118;}
-
-/* ADMIN CONTROLS */
-.control-row{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;margin-bottom:16px;}
-.global-search{padding:10px 16px;border-radius:22px;background:var(--input-bg);border:0.5px solid var(--input-border);font-size:13px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;min-width:260px;}
-.global-search:focus{border-color:var(--purple-light);}
-.bulk-wrap{display:flex;align-items:center;gap:8px;}
-.mini-btn{padding:8px 12px;border-radius:12px;border:0.5px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;}
-.mini-btn.danger{border-color:rgba(239,68,68,0.3);color:#ef4444;}
-.mini-btn.warn{border-color:rgba(251,191,36,0.3);color:#d97706;}
-.mini-btn:hover{opacity:0.85;}
-.alert-wrap,.account-wrap{position:relative;}
-.bell-btn{width:36px;height:36px;border-radius:50%;border:0.5px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;position:relative;}
-.bell-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 5px;border-radius:20px;background:#ef4444;color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;}
-.account-btn{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:22px;border:0.5px solid var(--border);background:var(--surface);cursor:pointer;color:var(--text);font-size:12px;}
-.dropdown{position:absolute;right:0;top:44px;width:250px;background:var(--card-bg);border:0.5px solid var(--border);border-radius:14px;overflow:hidden;display:none;z-index:180;backdrop-filter:blur(8px);}
-.dropdown.open{display:block;}
-.drop-head{padding:10px 12px;border-bottom:0.5px solid var(--border);font-size:11px;color:var(--text-faint);}
-.drop-item{padding:10px 12px;font-size:12px;color:var(--text);cursor:pointer;display:flex;justify-content:space-between;gap:8px;align-items:center;}
-.drop-item:hover{background:var(--surface-hover);}
-.drop-sub{font-size:11px;color:var(--text-faint);}
-.alert-list{max-height:260px;overflow:auto;}
-
-/* INSIGHT PANELS */
-.insight-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:18px;}
-.insight-card{border-radius:16px;padding:14px;background:var(--card-bg);border:0.5px solid var(--border);}
-.insight-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:10px;}
-.health-num{font-size:34px;font-weight:500;color:#4ade80;line-height:1;}
-.health-sub{font-size:12px;color:var(--text-faint);margin-top:8px;}
-.small-list{display:grid;gap:8px;}
-.small-item{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--text-muted);padding:8px 10px;border-radius:10px;background:var(--surface);}
-.risk-high{color:#ef4444;}
-.risk-mid{color:#fbbf24;}
-.risk-low{color:#4ade80;}
-
-/* ANALYTICS */
-.analytics{margin-top:18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
-.chart-card{border-radius:16px;padding:14px;background:var(--card-bg);border:0.5px solid var(--border);}
-.chart-title{font-size:13px;color:var(--text);margin-bottom:12px;font-weight:500;}
-.bar-list{display:grid;gap:8px;}
-.bar-row{display:grid;grid-template-columns:70px 1fr 40px;gap:8px;align-items:center;font-size:11px;color:var(--text-faint);}
-.bar{height:8px;border-radius:20px;background:rgba(107,63,160,0.18);overflow:hidden;}
-.bar > span{display:block;height:100%;background:linear-gradient(90deg,#6b3fa0,#c8a8e9);}
-
-/* USER DRAWER */
-.drawer{position:fixed;top:0;right:-440px;width:100%;max-width:420px;height:100vh;background:var(--card-bg);border-left:0.5px solid var(--border);z-index:220;backdrop-filter:blur(8px);transition:right 0.22s;padding:18px;overflow:auto;}
-.drawer.open{right:0;}
-.drawer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
-.drawer-title{font-size:17px;font-weight:500;color:var(--text);}
-.drawer-close{border:none;background:transparent;color:var(--text-muted);font-size:18px;cursor:pointer;}
-.drawer-block{margin-bottom:14px;padding:12px;border-radius:12px;background:var(--surface);}
-.drawer-label{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);margin-bottom:6px;}
-.drawer-value{font-size:13px;color:var(--text);}
-
-/* USER TABLE ENHANCEMENTS */
-.select-cell{display:flex;align-items:center;justify-content:center;}
-.check{accent-color:#6b3fa0;cursor:pointer;}
-
-/* 2FA */
-.twofa{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:260;display:none;align-items:center;justify-content:center;padding:20px;}
-.twofa.show{display:flex;}
-.twofa-card{width:100%;max-width:420px;border-radius:18px;background:#150830;border:0.5px solid var(--border);padding:22px;}
-body.light .twofa-card{background:#fff;}
-.twofa-title{font-size:18px;font-weight:500;color:var(--text);margin-bottom:8px;}
-.twofa-sub{font-size:13px;color:var(--text-muted);margin-bottom:14px;}
-.twofa-input{width:100%;padding:11px 14px;border-radius:12px;border:0.5px solid var(--input-border);background:var(--input-bg);color:var(--text);font-size:16px;letter-spacing:0.2em;text-align:center;}
-.twofa-btn{margin-top:12px;width:100%;padding:11px;border:none;border-radius:12px;background:var(--purple);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;}
-
-/* VISUAL REFRESH */
-body{background:radial-gradient(1200px 500px at 70% -10%, rgba(139,92,246,0.22), transparent 55%), radial-gradient(900px 420px at -10% 8%, rgba(251,113,133,0.14), transparent 55%), #060215;}
-.main{max-width:1240px;padding:18px 20px 26px;}
-.nav{max-width:1240px;margin:8px auto 12px;border:1px solid rgba(255,255,255,0.11);border-radius:24px;background:rgba(8,4,28,0.9);padding:14px 18px;backdrop-filter:blur(8px);}
-body.light .nav{background:rgba(255,255,255,0.96);}
-.admin-badge{background:rgba(239,68,68,0.17);padding:6px 12px;font-size:11px;}
-.mode-btn,.account-btn,.bell-btn{border:1px solid rgba(255,255,255,0.14);}
-
-.attention-banner{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 18px;border:1px solid rgba(239,68,68,0.3);border-radius:18px;background:linear-gradient(90deg, rgba(127,29,29,0.35), rgba(127,29,29,0.15));margin-bottom:14px;}
-.attention-copy{font-size:28px;color:#f87171;display:flex;align-items:center;gap:10px;font-weight:500;}
-.review-btn{padding:11px 18px;border-radius:14px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:#fff;font-size:19px;cursor:pointer;font-family:'DM Sans',sans-serif;}
-
-.control-row{grid-template-columns:1fr auto auto;gap:12px;}
-.bulk-wrap{display:none;}
-.global-search{padding:14px 16px;border-radius:14px;font-size:16px;background:rgba(255,255,255,0.1);}
-.mini-btn{padding:13px 16px;border-radius:14px;font-size:14px;background:rgba(10,6,35,0.7);}
-
-.stats-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
-.stat-card{position:relative;border-radius:22px;padding:16px 16px 14px;background:linear-gradient(180deg, rgba(15,9,44,0.92), rgba(9,6,33,0.88));border:1px solid rgba(255,255,255,0.12);overflow:hidden;}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#8b5cf6,#22c55e);opacity:0.85;}
-.stat-card:nth-child(2)::before{background:linear-gradient(90deg,#22c55e,#84cc16);}
-.stat-card:nth-child(3)::before{background:linear-gradient(90deg,#f59e0b,#facc15);}
-.stat-card:nth-child(4)::before{background:linear-gradient(90deg,#f97316,#ef4444);}
-.stat-card:nth-child(5)::before{background:linear-gradient(90deg,#06b6d4,#22c55e);}
-.stat-icon{font-size:19px;opacity:0.95;}
-.stat-val{font-size:42px;margin-top:8px;}
-.stat-lbl{font-size:17px;margin-top:8px;}
-.stat-trend{font-size:14px;margin-top:6px;line-height:1.3;}
-
-.insight-grid{margin:12px 0 16px;}
-.insight-card{border-radius:18px;background:rgba(10,6,35,0.72);border:1px solid rgba(255,255,255,0.11);}
-
-.tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;padding:8px;border-radius:16px;border:1px solid rgba(255,255,255,0.11);background:rgba(10,6,35,0.68);}
-.tab-btn{border-radius:12px;padding:14px 12px;font-size:15px;color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.12);background:rgba(8,5,26,0.75);}
-.tab-btn.active{background:rgba(30,19,75,0.92);border-color:rgba(167,139,250,0.7);color:#fff;}
-
-.table-card{border-radius:20px;border:1px solid rgba(255,255,255,0.12);background:rgba(8,5,30,0.83);}
-.table-header{padding:16px 18px;}
-.table-title{font-size:36px;}
-.table-count{font-size:15px;}
-.search-input{width:320px;padding:14px 16px;border-radius:12px;font-size:14px;background:rgba(255,255,255,0.14);}
-.col-row{padding:11px 18px;background:rgba(255,255,255,0.02);}
-.col-h{font-size:11px;}
-.data-row{padding:15px 18px;}
-.u-av{width:44px;height:44px;font-size:16px;}
-.u-name,.cell-title{font-size:21px;}
-.u-joined,.cell{font-size:14px;}
-.actions{gap:8px;}
-.act-btn{padding:8px 16px;border-radius:12px;font-size:14px;border:1px solid rgba(255,255,255,0.2);background:rgba(8,5,25,0.7);}
-.btn-view{background:transparent;color:#fff;border-color:rgba(255,255,255,0.24);}
-.btn-warn{background:rgba(234,179,8,0.15);}
-.btn-ban,.btn-remove{background:rgba(239,68,68,0.13);}
-.btn-unban,.btn-resolve{background:rgba(34,197,94,0.14);}
-
-.dashboard-bottom{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px;}
-.panel-card{border-radius:18px;background:rgba(10,6,35,0.78);border:1px solid rgba(255,255,255,0.12);padding:14px;}
-.panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-.panel-title{font-size:19px;font-weight:500;color:#fff;}
-.panel-sub{font-size:14px;color:var(--text-faint);}
-.panel-list{display:grid;gap:8px;}
-.panel-item{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:14px;color:var(--text-muted);}
-.panel-item:last-child{border-bottom:none;}
-
-body.light .attention-banner{background:linear-gradient(90deg,#fef2f2,#fff1f2);}
-body.light .tabs,
-body.light .table-card,
-body.light .panel-card,
-body.light .insight-card{background:#fff;}
-body.light .tab-btn,
-body.light .act-btn{background:#fff;}
-body.light .btn-view{border-color:#d4ccff;color:#4c1d95;}
-
-@media (max-width: 980px){
-  .stats-grid{grid-template-columns:repeat(2,1fr);}
-  .insight-grid,.analytics{grid-template-columns:1fr;}
-  .control-row{grid-template-columns:1fr;}
-  .tabs{grid-template-columns:repeat(3,minmax(0,1fr));}
-  .dashboard-bottom{grid-template-columns:1fr;}
-}
-@media (max-width: 760px){
-  .nav{padding:11px 14px;}
-  .main{padding:14px;}
-  .nav-date{display:none;}
-  .control-row{grid-template-columns:1fr;}
-  .global-search{min-width:0;width:100%;}
-  .attention-banner{flex-direction:column;align-items:flex-start;}
-  .review-btn{width:100%;}
-  .search-input{width:100%;}
-  .tabs{grid-template-columns:1fr 1fr;}
-  .g-users{grid-template-columns:32px 2fr 1.2fr 0.8fr 1fr 1.2fr;}
-  .g-tasks{grid-template-columns:1.7fr 1fr 0.8fr 0.9fr 1fr;}
-  .g-disputes{grid-template-columns:1.6fr 1fr 1fr 0.8fr 1.1fr;}
-}
+.modal-textarea{width:100%;background:rgba(255,255,255,0.05);border:0.5px solid var(--border);border-radius:10px;padding:10px 13px;color:var(--text);font-family:inherit;font-size:13px;resize:none;min-height:80px;outline:none;margin-bottom:14px;}
+.notif-panel{position:fixed;top:0;right:-360px;width:340px;height:100vh;background:#0e0220;border-left:0.5px solid var(--border);z-index:300;transition:right 0.3s;padding:20px;overflow-y:auto;}
+.notif-panel.open{right:0;}
+.notif-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.notif-title{font-size:16px;font-weight:500;color:var(--text);}
+.notif-close{font-size:20px;cursor:pointer;color:var(--text-faint);background:none;border:none;}
+.notif-item{padding:12px 14px;border-radius:12px;background:var(--surface);border:0.5px solid var(--border);margin-bottom:8px;}
+.notif-item.unread{border-color:rgba(200,168,233,0.2);background:rgba(107,63,160,0.08);}
+.notif-item-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px;}
+.notif-item-text{font-size:12px;color:var(--text-muted);line-height:1.5;}
+.notif-item-time{font-size:11px;color:var(--text-faint);margin-top:5px;}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:11px 24px;border-radius:20px;font-size:13px;font-weight:500;display:none;z-index:400;white-space:nowrap;}
+.toast.green{background:var(--green);color:#0b0118;}
+.toast.red{background:var(--red);color:#fff;}
+.toast.amber{background:var(--amber);color:#0b0118;}
 </style>
 </head>
 <body>
-
-<!-- ACCESS DENIED -->
-<div class="access-denied" id="accessDenied">
-  <div class="ad-icon">🔐</div>
-  <div class="ad-title">Access denied</div>
-  <div class="ad-sub">This page is only accessible to QuickGigs admins.</div>
-  <button class="ad-btn" onclick="window.location.href='dashboard.html'">Back to dashboard</button>
-</div>
-
-<!-- MAIN ADMIN UI (hidden until auth check passes) -->
-<div id="adminUI" style="display:none;">
-
-  <!-- NAV -->
-  <nav class="nav">
-    <div class="nav-left">
-      <span class="nav-logo">QuickGigs</span>
-      <span class="admin-badge">🔐 Admin</span>
-    </div>
-    <div class="nav-right">
-      <span class="nav-date" id="navDate"></span>
-      <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
-      <div class="alert-wrap">
-        <button class="bell-btn" onclick="toggleAlerts()">🔔<span class="bell-badge" id="alertCount">0</span></button>
-        <div class="dropdown" id="alertsMenu">
-          <div class="drop-head">Real-time alerts</div>
-          <div class="alert-list" id="alertList"></div>
-        </div>
-      </div>
-      <div class="account-wrap">
-        <button class="account-btn" onclick="toggleAccountMenu()">
-          <div class="avatar" id="avatarEl">M</div>
-          Account
-        </button>
-        <div class="dropdown" id="accountMenu">
-          <div class="drop-head" id="sessionTimeoutView">Session timeout: 30m</div>
-          <div class="drop-item" onclick="lockSession()">Lock session <span class="drop-sub">2FA required</span></div>
-          <div class="drop-item" onclick="doLogout()">Log out <span class="drop-sub">End admin session</span></div>
-        </div>
-      </div>
-    </div>
+<div class="layout">
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-text">QuickGigs</div>
+    <div class="admin-badge">🔐 Admin Console</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <button class="nav-item active" onclick="showSection('overview',this)"><span class="nav-icon">📊</span>Dashboard</button>
+    <button class="nav-item" onclick="showSection('analytics',this)"><span class="nav-icon">📈</span>Analytics</button>
+    <div class="nav-section">Management</div>
+    <button class="nav-item" onclick="showSection('users',this)"><span class="nav-icon">👥</span>Users</button>
+    <button class="nav-item" onclick="showSection('tasks',this)"><span class="nav-icon">📋</span>Tasks</button>
+    <button class="nav-item" onclick="showSection('disputes',this)"><span class="nav-icon">🚨</span>Disputes <span class="nav-badge" id="disputeBadge">2</span></button>
+    <button class="nav-item" onclick="showSection('revenue',this)"><span class="nav-icon">💰</span>Revenue</button>
+    <div class="nav-section">Security</div>
+    <button class="nav-item" onclick="showSection('security',this)"><span class="nav-icon">🔒</span>Security Log</button>
+    <button class="nav-item" onclick="showSection('fraud',this)"><span class="nav-icon">🚫</span>Fraud Alerts</button>
+    <div class="nav-section">Settings</div>
+    <button class="nav-item" onclick="showSection('settings',this)"><span class="nav-icon">⚙️</span>Platform Settings</button>
   </nav>
-
-  <div class="main">
-
-    <div class="attention-banner">
-      <div class="attention-copy">🚨 <span id="attentionText">2 open disputes require your attention</span></div>
-      <button class="review-btn" onclick="focusDisputes()">Review now →</button>
+  <div class="session-timer" id="sessionTimer">Session: 30:00 remaining</div>
+  <div class="sidebar-footer">
+    <div class="admin-user">
+      <div class="admin-av">M</div>
+      <div><div class="admin-name">Morolake O.</div><div class="admin-role">Super Admin</div></div>
+      <button class="logout-btn" onclick="doLogout()">Out</button>
     </div>
-
-    <div class="control-row">
-      <input class="global-search" id="globalSearch" placeholder="Search users, tasks, disputes in one place..." oninput="runGlobalSearch(this.value)">
-      <div class="bulk-wrap">
-        <button class="mini-btn warn" onclick="bulkUserAction('warn')">Warn selected</button>
-        <button class="mini-btn danger" onclick="bulkUserAction('ban')">Ban selected</button>
-      </div>
-      <button class="mini-btn" onclick="generateDailySummaryEmail()">Daily summary email</button>
-      <button class="mini-btn" onclick="toggleTabSearchScope()" id="scopeBtn">Scope: Active tab</button>
-    </div>
-
-    <!-- STATS -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon">👥</div>
-        <div class="stat-val purple" id="statUsers">—</div>
-        <div class="stat-lbl">Total users</div>
-        <div class="stat-trend" id="statUsersTrend"></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">📋</div>
-        <div class="stat-val" id="statTasks">—</div>
-        <div class="stat-lbl">Tasks posted</div>
-        <div class="stat-trend" id="statTasksTrend"></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">💰</div>
-        <div class="stat-val green" id="statRevenue">$0</div>
-        <div class="stat-lbl">Platform revenue</div>
-        <div class="stat-trend neutral" id="statRevenueTrend">Beta — no live payments yet</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">🚨</div>
-        <div class="stat-val red" id="statDisputes">—</div>
-        <div class="stat-lbl">Open disputes</div>
-        <div class="stat-trend warn" id="statDisputesTrend"></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">🧠</div>
-        <div class="stat-val green" id="statHealth">—</div>
-        <div class="stat-lbl">Platform health score</div>
-        <div class="stat-trend" id="statHealthTrend"></div>
-      </div>
-    </div>
-
-    <div class="insight-grid">
-      <div class="insight-card">
-        <div class="insight-title">Security center</div>
-        <div class="small-list" id="securityList"></div>
-      </div>
-      <div class="insight-card">
-        <div class="insight-title">Suspicious activity monitor</div>
-        <div class="small-list" id="suspiciousList"></div>
-      </div>
-    </div>
-
-    <!-- TABS -->
-    <div class="tabs">
-      <button class="tab-btn active" onclick="showTab('users',this)">👥 Users</button>
-      <button class="tab-btn" onclick="showTab('tasks',this)">📋 Tasks</button>
-      <button class="tab-btn" onclick="showTab('disputes',this)">🚨 Disputes</button>
-      <button class="tab-btn" onclick="showRevenueSummary(this)">💰 Revenue</button>
-      <button class="tab-btn" onclick="showAnalyticsPanel(this)">📊 Analytics</button>
-    </div>
-
-    <!-- USERS TABLE -->
-    <div class="table-card" id="usersTable">
-      <div class="table-header">
-        <div><span class="table-title">All users</span><span class="table-count" id="usersCount"></span></div>
-        <input class="search-input" placeholder="🔍 Search users..." oninput="filterTable('users',this.value)">
-      </div>
-      <div class="col-row g-users">
-        <div class="col-h select-cell"><input type="checkbox" class="check" id="usersSelectAll" onchange="toggleSelectAllUsers(this.checked)"></div>
-        <div class="col-h">User</div>
-        <div class="col-h">Email</div>
-        <div class="col-h">Role</div>
-        <div class="col-h">Status</div>
-        <div class="col-h" style="text-align:right">Actions</div>
-      </div>
-      <div id="usersBody"></div>
-    </div>
-
-    <!-- TASKS TABLE -->
-    <div class="table-card" id="tasksTable" style="display:none">
-      <div class="table-header">
-        <div><span class="table-title">All tasks</span><span class="table-count" id="tasksCount"></span></div>
-        <input class="search-input" placeholder="🔍 Search tasks..." oninput="filterTable('tasks',this.value)">
-      </div>
-      <div class="col-row g-tasks">
-        <div class="col-h">Task</div>
-        <div class="col-h">Posted by</div>
-        <div class="col-h">Budget</div>
-        <div class="col-h">Status</div>
-        <div class="col-h" style="text-align:right">Actions</div>
-      </div>
-      <div id="tasksBody"></div>
-    </div>
-
-    <!-- DISPUTES TABLE -->
-    <div class="table-card" id="disputesTable" style="display:none">
-      <div class="table-header">
-        <div><span class="table-title">Disputes</span><span class="table-count" id="disputesCount"></span></div>
-        <input class="search-input" placeholder="🔍 Search disputes..." oninput="filterTable('disputes',this.value)">
-      </div>
-      <div class="col-row g-disputes">
-        <div class="col-h">Task</div>
-        <div class="col-h">Poster</div>
-        <div class="col-h">Worker</div>
-        <div class="col-h">Status</div>
-        <div class="col-h" style="text-align:right">Actions</div>
-      </div>
-      <div id="disputesBody"></div>
-    </div>
-
-    <div class="dashboard-bottom">
-      <div class="panel-card">
-        <div class="panel-head">
-          <div class="panel-title">Recent activity</div>
-          <div class="panel-sub">Last 24hrs</div>
-        </div>
-        <div class="panel-list" id="recentActivityList"></div>
-      </div>
-      <div class="panel-card">
-        <div class="panel-head">
-          <div class="panel-title">Top categories</div>
-          <div class="panel-sub">By task volume</div>
-        </div>
-        <div class="panel-list" id="topCategoriesList"></div>
-      </div>
-    </div>
-
   </div>
-</div>
-
-<!-- USER DRAWER -->
-<aside class="drawer" id="userDrawer">
-  <div class="drawer-head">
-    <div class="drawer-title" id="drawerName">User details</div>
-    <button class="drawer-close" onclick="closeUserDrawer()">✕</button>
-  </div>
-  <div id="drawerBody"></div>
 </aside>
 
-<!-- 2FA GATE -->
-<div class="twofa" id="twofaGate">
-  <div class="twofa-card">
-    <div class="twofa-title">Admin verification required</div>
-    <div class="twofa-sub">Enter your admin code to access security controls.</div>
-    <input id="twofaInput" class="twofa-input" maxlength="6" placeholder="000000">
-    <button class="twofa-btn" onclick="verifyTwoFactor()">Verify and continue</button>
-  </div>
-</div>
-
-<!-- CONFIRM MODAL -->
-<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
-  <div class="modal">
-    <div class="modal-title" id="modalTitle">Confirm action</div>
-    <div class="modal-sub" id="modalSub">Are you sure?</div>
-    <div id="modalFields"></div>
-    <div class="modal-btns">
-      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
-      <button class="modal-confirm" id="modalConfirm" onclick="confirmAction()">Confirm</button>
+<main class="main">
+  <div class="topbar">
+    <div><div class="page-title" id="pageTitle">Dashboard Overview</div><div class="page-sub" id="pageSub"></div></div>
+    <div class="topbar-right">
+      <div class="health-score"><span class="health-label">Platform health</span><span class="health-val">87</span><span style="font-size:13px">/ 100</span></div>
+      <button class="notif-btn" onclick="toggleNotifs()">🔔<div class="notif-dot"></div></button>
     </div>
   </div>
+
+  <div class="alert-banner" id="alertBanner">
+    <span class="alert-icon">🚨</span>
+    <span class="alert-text">2 open disputes require your attention — review and resolve to maintain platform trust.</span>
+    <button class="alert-action" onclick="showSection('disputes',null)">Review disputes →</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div id="section-overview">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-accent accent-purple"></div><div class="stat-header"><span class="stat-icon">👥</span><span class="trend trend-up" id="userTrend">Loading</span></div><div class="stat-val c-purple" id="statUsers">—</div><div class="stat-label">Total users</div><div class="stat-sub" id="statUsersSub"></div><div class="mini-chart" id="chartUsers"></div></div>
+      <div class="stat-card"><div class="stat-accent accent-green"></div><div class="stat-header"><span class="stat-icon">📋</span><span class="trend trend-up" id="taskTrend">Loading</span></div><div class="stat-val" id="statTasks">—</div><div class="stat-label">Tasks posted</div><div class="stat-sub" id="statTasksSub"></div><div class="mini-chart" id="chartTasks"></div></div>
+      <div class="stat-card"><div class="stat-accent accent-amber"></div><div class="stat-header"><span class="stat-icon">💰</span><span class="trend trend-neutral">Beta mode</span></div><div class="stat-val c-green">$0</div><div class="stat-label">Platform revenue</div><div class="stat-sub">Stripe not live yet</div><div class="mini-chart" id="chartRevenue"></div></div>
+      <div class="stat-card"><div class="stat-accent accent-red"></div><div class="stat-header"><span class="stat-icon">🚨</span><span class="trend trend-warn" id="disputeTrend">Needs attention</span></div><div class="stat-val c-red" id="statDisputes">—</div><div class="stat-label">Open disputes</div><div class="stat-sub" id="statDisputesSub"></div><div class="mini-chart" id="chartDisputes"></div></div>
+    </div>
+    <div class="mini-card" style="margin-bottom:20px">
+      <div class="mc-title">Platform health breakdown <span class="mc-sub">Updated live</span></div>
+      <div class="health-grid">
+        <div class="health-item"><div class="health-item-label">Task completion rate</div><div class="health-item-val" style="color:var(--green)">78%</div><div class="health-item-bar"><div class="health-item-fill" style="width:78%;background:linear-gradient(90deg,#16a34a,#4ade80)"></div></div></div>
+        <div class="health-item"><div class="health-item-label">User satisfaction</div><div class="health-item-val" style="color:var(--lavender)">4.8★</div><div class="health-item-bar"><div class="health-item-fill" style="width:96%;background:linear-gradient(90deg,#6b3fa0,#9b6fc4)"></div></div></div>
+        <div class="health-item"><div class="health-item-label">Dispute rate</div><div class="health-item-val" style="color:var(--amber)">5.1%</div><div class="health-item-bar"><div class="health-item-fill" style="width:5%;background:linear-gradient(90deg,#d97706,#fbbf24)"></div></div></div>
+        <div class="health-item"><div class="health-item-label">Worker acceptance rate</div><div class="health-item-val" style="color:var(--green)">91%</div><div class="health-item-bar"><div class="health-item-fill" style="width:91%;background:linear-gradient(90deg,#16a34a,#4ade80)"></div></div></div>
+      </div>
+    </div>
+    <div class="bottom-grid">
+      <div class="mini-card"><div class="mc-title">Live activity <span class="mc-sub">Last 24hrs</span></div><div id="activityFeed"></div></div>
+      <div class="mini-card"><div class="mc-title">Top categories <span class="mc-sub">By volume</span></div><div id="categoryChart"></div></div>
+      <div class="mini-card"><div class="mc-title">Recent signups <span class="mc-sub">Last 7 days</span></div><div id="recentSignups"></div></div>
+    </div>
+  </div>
+
+  <!-- USERS -->
+  <div id="section-users" style="display:none">
+    <div class="table-card">
+      <div class="table-header"><div><span class="table-title">All users</span><span class="table-count" id="usersCount"></span></div><div class="table-actions"><input class="search-bar" placeholder="🔍 Search users..." oninput="filterUsers(this.value)"><button class="action-pill pill-filter">Filter ▾</button><button class="action-pill pill-export" onclick="exportCSV('users')">↓ Export CSV</button></div></div>
+      <div class="bulk-actions" id="bulkActions"><span class="bulk-label" id="bulkLabel">0 selected</span><button class="bulk-btn bulk-warn" onclick="bulkAction('warn')">⚠ Warn all</button><button class="bulk-btn bulk-ban" onclick="bulkAction('ban')">✕ Ban all</button></div>
+      <div class="col-row g-users"><div class="col-h"><input type="checkbox" class="checkbox" onchange="selectAll(this)"></div><div class="col-h">User</div><div class="col-h">Email</div><div class="col-h">Role</div><div class="col-h">Tasks</div><div class="col-h">Status</div><div class="col-h" style="text-align:right">Actions</div></div>
+      <div id="usersBody"></div>
+    </div>
+  </div>
+
+  <!-- TASKS -->
+  <div id="section-tasks" style="display:none">
+    <div class="table-card">
+      <div class="table-header"><div><span class="table-title">All tasks</span><span class="table-count" id="tasksCount"></span></div><div class="table-actions"><input class="search-bar" placeholder="🔍 Search tasks..." oninput="filterTasks(this.value)"><button class="action-pill pill-export" onclick="exportCSV('tasks')">↓ Export CSV</button></div></div>
+      <div class="col-row g-tasks"><div class="col-h"></div><div class="col-h">Task</div><div class="col-h">Posted by</div><div class="col-h">Budget</div><div class="col-h">Mode</div><div class="col-h">Status</div><div class="col-h" style="text-align:right">Actions</div></div>
+      <div id="tasksBody"></div>
+    </div>
+  </div>
+
+  <!-- DISPUTES -->
+  <div id="section-disputes" style="display:none">
+    <div class="table-card">
+      <div class="table-header"><div><span class="table-title">Disputes</span><span class="table-count" id="disputesCount"></span></div><div class="table-actions"><input class="search-bar" placeholder="🔍 Search disputes..."></div></div>
+      <div class="col-row g-disputes"><div class="col-h">Task</div><div class="col-h">Poster</div><div class="col-h">Worker</div><div class="col-h">Status</div><div class="col-h">Opened</div><div class="col-h" style="text-align:right">Actions</div></div>
+      <div id="disputesBody"></div>
+    </div>
+  </div>
+
+  <!-- SECURITY -->
+  <div id="section-security" style="display:none">
+    <div class="table-card"><div class="table-header"><div><span class="table-title">Security log</span><span class="table-count">Last 50 events</span></div><div class="table-actions"><button class="action-pill pill-export" onclick="exportCSV('security')">↓ Export log</button></div></div><div id="securityLog" style="padding:0 20px"></div></div>
+  </div>
+
+  <!-- FRAUD -->
+  <div id="section-fraud" style="display:none">
+    <div class="table-card"><div class="table-header"><div><span class="table-title">Fraud alerts</span><span class="table-count">Contact sharing attempts</span></div></div><div id="fraudLog" style="padding:0 20px"></div></div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div id="section-analytics" style="display:none">
+    <div class="bottom-grid" style="grid-template-columns:1fr 1fr">
+      <div class="mini-card"><div class="mc-title">Signups over time</div><div style="display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:10px" id="signupChart"></div><div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--text-faint)"><span>Jun 20</span><span>Jun 22</span><span>Jun 24</span><span>Jun 26</span><span>Jun 28</span><span>Jun 30</span><span>Jul 2</span></div></div>
+      <div class="mini-card"><div class="mc-title">Tasks posted over time</div><div style="display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:10px" id="taskChart"></div><div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--text-faint)"><span>Jun 20</span><span>Jun 22</span><span>Jun 24</span><span>Jun 26</span><span>Jun 28</span><span>Jun 30</span><span>Jul 2</span></div></div>
+    </div>
+    <div class="bottom-grid" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="mini-card"><div class="mc-title">Peak posting hours</div><div id="peakHours"></div></div>
+      <div class="mini-card"><div class="mc-title">Avg task value</div><div style="font-size:36px;font-weight:500;color:var(--green);margin-top:10px">$67</div><div style="font-size:12px;color:var(--text-faint);margin-top:4px">CAD per task</div></div>
+      <div class="mini-card"><div class="mc-title">Top neighbourhoods</div><div id="neighbourhoods"></div></div>
+    </div>
+  </div>
+
+  <!-- REVENUE -->
+  <div id="section-revenue" style="display:none">
+    <div class="mini-card" style="text-align:center;padding:40px"><div style="font-size:48px;margin-bottom:16px">💰</div><div style="font-size:20px;font-weight:500;margin-bottom:8px">Revenue tracking coming soon</div><div style="font-size:14px;color:var(--text-muted);line-height:1.6;max-width:400px;margin:0 auto">Once Stripe Connect is live, you'll see real-time revenue, platform fees, worker payouts and transaction history here.</div></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="section-settings" style="display:none">
+    <div class="mini-card" style="margin-bottom:14px">
+      <div class="mc-title">Platform fees</div>
+      <div style="display:grid;gap:12px;grid-template-columns:1fr 1fr 1fr">
+        <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:14px;border:0.5px solid var(--border)"><div style="font-size:11px;color:var(--text-faint);margin-bottom:6px">Standard fee</div><div style="font-size:24px;font-weight:500;color:var(--lavender)">25%</div><div style="font-size:11px;color:var(--text-faint);margin-top:4px">All standard users</div></div>
+        <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:14px;border:0.5px solid var(--border)"><div style="font-size:11px;color:var(--text-faint);margin-bottom:6px">Subscriber fee</div><div style="font-size:24px;font-weight:500;color:var(--green)">20%</div><div style="font-size:11px;color:var(--text-faint);margin-top:4px">$9.99/month plan</div></div>
+        <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:14px;border:0.5px solid var(--border)"><div style="font-size:11px;color:var(--text-faint);margin-bottom:6px">Top-rated fee</div><div style="font-size:24px;font-weight:500;color:var(--amber)">15%</div><div style="font-size:11px;color:var(--text-faint);margin-top:4px">4.8★+ rating</div></div>
+      </div>
+    </div>
+    <div class="mini-card">
+      <div class="mc-title">Platform toggles</div>
+      <div style="display:grid;gap:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:0.5px solid var(--border2)"><div><div style="font-size:13px;font-weight:500">Auto-ban after 3 warnings</div><div style="font-size:11px;color:var(--text-faint);margin-top:2px">Automatically ban users who receive 3 warnings</div></div><div style="width:40px;height:22px;border-radius:20px;background:rgba(107,63,160,0.4);border:0.5px solid var(--purple-light);display:flex;align-items:center;cursor:pointer;padding:2px"><div style="width:18px;height:18px;border-radius:50%;background:#9b6fc4;margin-left:auto"></div></div></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:0.5px solid var(--border2)"><div><div style="font-size:13px;font-weight:500">Daily summary email</div><div style="font-size:11px;color:var(--text-faint);margin-top:2px">Send daily stats to mowebsiteco@gmail.com</div></div><div style="width:40px;height:22px;border-radius:20px;background:rgba(107,63,160,0.4);border:0.5px solid var(--purple-light);display:flex;align-items:center;cursor:pointer;padding:2px"><div style="width:18px;height:18px;border-radius:50%;background:#9b6fc4;margin-left:auto"></div></div></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 0"><div><div style="font-size:13px;font-weight:500">Fraud alert notifications</div><div style="font-size:11px;color:var(--text-faint);margin-top:2px">Alert when phone/email sharing is blocked</div></div><div style="width:40px;height:22px;border-radius:20px;background:rgba(107,63,160,0.4);border:0.5px solid var(--purple-light);display:flex;align-items:center;cursor:pointer;padding:2px"><div style="width:18px;height:18px;border-radius:50%;background:#9b6fc4;margin-left:auto"></div></div></div>
+      </div>
+    </div>
+  </div>
+</main>
 </div>
 
-<!-- TOAST -->
+<!-- NOTIF PANEL -->
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-header"><div class="notif-title">Notifications</div><button class="notif-close" onclick="toggleNotifs()">✕</button></div>
+  <div id="notifList"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Confirm</div>
+    <div class="modal-sub" id="modalSub"></div>
+    <div id="modalFields"></div>
+    <textarea class="modal-textarea" id="modalNote" placeholder="Add a note (optional)..." style="display:none"></textarea>
+    <div class="modal-btns"><button class="modal-cancel" onclick="closeModalDirect()">Cancel</button><button class="modal-confirm" id="modalConfirm" onclick="confirmAction()">Confirm</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
-
 const firebaseConfig = {
-  apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
+  apiKey: "REPLACE_WITH_YOUR_API_KEY",
   authDomain: "quickgigs-7b12d.firebaseapp.com",
   projectId: "quickgigs-7b12d",
   storageBucket: "quickgigs-7b12d.firebasestorage.app",
   messagingSenderId: "698985399366",
   appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
 };
-
+const ADMIN_EMAIL = 'mowebsiteco@gmail.com';
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-
-// ADMIN EMAIL — only this email can access the admin dashboard
-const ADMIN_EMAIL = 'mowebsiteco@gmail.com';
-const ADMIN_2FA_CODE = '246810';
-
-function getStoredAttempts(){
-  try { return JSON.parse(localStorage.getItem('qg-login-attempts') || '[]'); }
-  catch(_) { return []; }
-}
-
-function pushLoginAttempt(entry){
-  var list = getStoredAttempts();
-  list.unshift(entry);
-  localStorage.setItem('qg-login-attempts', JSON.stringify(list.slice(0, 80)));
-}
-
-window.verifyTwoFactor = function(){
-  var val = document.getElementById('twofaInput').value.trim();
-  if(val === ADMIN_2FA_CODE){
-    document.getElementById('twofaGate').classList.remove('show');
-    initAdmin();
-    return;
-  }
-  pushLoginAttempt({
-    ts: new Date().toISOString(),
-    email: ADMIN_EMAIL,
-    outcome: 'failed',
-    reason: '2FA mismatch',
-    ip: 'Unavailable'
-  });
-  alert('Invalid admin code.');
-};
-
 onAuthStateChanged(auth, (user) => {
   if (!user || user.email !== ADMIN_EMAIL) {
-    pushLoginAttempt({
-      ts: new Date().toISOString(),
-      email: user && user.email ? user.email : 'anonymous',
-      outcome: 'failed',
-      reason: 'Unauthorized admin access attempt',
-      ip: 'Unavailable'
-    });
-    document.getElementById('accessDenied').classList.add('show');
+    document.body.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:40px;font-family:DM Sans,sans-serif;background:#06000f;color:#fff"><div style="font-size:56px;margin-bottom:16px">🔐</div><div style="font-size:22px;font-weight:500;margin-bottom:8px">Access denied</div><div style="font-size:14px;color:rgba(255,255,255,0.4);margin-bottom:24px">This page is only accessible to QuickGigs admins.</div><a href="dashboard.html" style="padding:12px 28px;border-radius:14px;background:#6b3fa0;color:#fff;text-decoration:none;font-size:14px;font-weight:500">Back to dashboard</a></div>';
     return;
   }
-  // Access granted
-  pushLoginAttempt({
-    ts: new Date().toISOString(),
-    email: user.email,
-    outcome: 'success',
-    reason: 'Admin login success',
-    ip: 'Unavailable'
-  });
-  document.getElementById('adminUI').style.display = 'block';
-  document.getElementById('twofaGate').classList.add('show');
-  const name = user.displayName || user.email.split('@')[0];
-  document.getElementById('avatarEl').textContent = name.charAt(0).toUpperCase();
   window._auth = auth;
+  initAdmin();
 });
-
-window.doLogout = function() {
-  signOut(auth).then(function(){ window.location.href = 'login.html'; });
-};
+window.doLogout = function() { signOut(auth).then(function(){ window.location.href='login.html'; }); };
 </script>
 
 <script>
-// ── THEME ──────────────────────────────────────────────
-var isDark = localStorage.getItem('qg-mode') !== 'light';
-function applyTheme(){
-  document.body.className = isDark ? '' : 'light';
-  document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark';
+const SUPABASE_URL='https://nuyfqsxstsrbloztzgau.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51eWZxc3hzdHNyYmxvenR6Z2F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NzkyNjUsImV4cCI6MjA5ODU1NTI2NX0.UpagWLifoxHmWu30lNnBO89gNYKIh4KxtYu28DKlSBM';
+const SB_HEADERS={'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY};
+var users=[],tasks=[],disputes=[],selectedUsers=[],pendingFn=null,currentSection='overview';
+var sessionSeconds=30*60;
+
+function updateTimer(){
+  sessionSeconds--;
+  if(sessionSeconds<=0){doLogout();return;}
+  var m=Math.floor(sessionSeconds/60),s=sessionSeconds%60;
+  var el=document.getElementById('sessionTimer');
+  el.textContent='Session: '+m+':'+(s<10?'0':'')+s+' remaining';
+  el.className='session-timer'+(sessionSeconds<300?' warn':'');
 }
-window.toggleTheme = function(){
-  isDark = !isDark;
-  localStorage.setItem('qg-mode', isDark ? 'dark' : 'light');
-  applyTheme();
-};
-applyTheme();
+setInterval(updateTimer,1000);
+document.addEventListener('click',function(){sessionSeconds=30*60;});
+document.addEventListener('keypress',function(){sessionSeconds=30*60;});
 
-// ── DATE ───────────────────────────────────────────────
-document.getElementById('navDate').textContent = new Date().toLocaleDateString('en-CA', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
-
-const SUPABASE_URL = 'https://nuyfqsxstsrbloztzgau.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51eWZxc3hzdHNyYmxvenR6Z2F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NzkyNjUsImV4cCI6MjA5ODU1NTI2NX0.UpagWLifoxHmWu30lNnBO89gNYKIh4KxtYu28DKlSBM';
-const SUPABASE_HEADERS = {
-  'Content-Type': 'application/json',
-  'apikey': SUPABASE_ANON_KEY,
-  'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
-};
-
-var users = [];
-var tasks = [];
-var filteredUsers = [];
-var filteredTasks = [];
-var filteredDisputes = [];
-var selectedUserIds = {};
-var alerts = [];
-var loginAttempts = [];
-var securityEvents = [];
-var searchScopeAll = false;
-var sessionSecondsRemaining = 30 * 60;
-var sessionTick = null;
-
-var signupTrend = [
-  {label:'Mon', value:8},
-  {label:'Tue', value:11},
-  {label:'Wed', value:6},
-  {label:'Thu', value:14},
-  {label:'Fri', value:10},
-  {label:'Sat', value:17},
-  {label:'Sun', value:13}
-];
-
-var tasksTrend = [
-  {label:'Mon', value:12},
-  {label:'Tue', value:15},
-  {label:'Wed', value:9},
-  {label:'Thu', value:19},
-  {label:'Fri', value:17},
-  {label:'Sat', value:21},
-  {label:'Sun', value:16}
-];
-
-var neighbourhoods = [
-  {label:'Beltline', value:24},
-  {label:'Bridgeland', value:18},
-  {label:'Kensington', value:15},
-  {label:'Mahogany', value:11},
-  {label:'Seton', value:9}
-];
-
-var postingHours = [
-  {label:'06:00', value:4},
-  {label:'09:00', value:11},
-  {label:'12:00', value:15},
-  {label:'15:00', value:19},
-  {label:'18:00', value:23},
-  {label:'21:00', value:13}
-];
-
-var messageScannerEvents = [
-  {id:1, user:'Sarah K.', blocked:'Phone number share blocked in chat #298', ts:'10 min ago'},
-  {id:2, user:'Marcus L.', blocked:'Attempted WhatsApp number share in chat #302', ts:'42 min ago'}
-];
-
-var demoUsers = [
-  {id:1, name:'Sarah K.',  email:'sarah@gmail.com',  role:'Worker', joined:'Jun 10, 2026', status:'active', warnings:1, ip:'198.162.2.11', taskPosts1h:1, applies1h:7, history:['Completed 11 tasks this month','1 warning for late delivery'], avatarBg:'linear-gradient(135deg,#6b3fa0,#c8a8e9)'},
-  {id:2, name:'James O.',  email:'james@gmail.com',  role:'Both',   joined:'Jun 12, 2026', status:'active', warnings:0, ip:'198.162.2.12', taskPosts1h:6, applies1h:2, history:['Posted 18 tasks in total','Top-rated response speed'], avatarBg:'linear-gradient(135deg,#16a34a,#4ade80)'},
-  {id:3, name:'Aisha M.',  email:'aisha@gmail.com',  role:'Poster', joined:'Jun 15, 2026', status:'warned', warnings:2, ip:'198.162.2.12', taskPosts1h:2, applies1h:1, history:['2 warnings for payment dispute delays'], avatarBg:'linear-gradient(135deg,#d97706,#fbbf24)'},
-  {id:4, name:'David T.',  email:'david@gmail.com',  role:'Worker', joined:'Jun 8, 2026',  status:'banned', warnings:3, ip:'112.88.45.23', taskPosts1h:0, applies1h:0, history:['Banned after repeated no-shows'], avatarBg:'linear-gradient(135deg,#ef4444,#f87171)'},
-  {id:5, name:'Priya N.',  email:'priya@gmail.com',  role:'Both',   joined:'Jun 18, 2026', status:'active', warnings:0, ip:'90.17.22.140', taskPosts1h:3, applies1h:9, history:['High completion streak: 9'], avatarBg:'linear-gradient(135deg,#9b6fc4,#c8a8e9)'},
-  {id:6, name:'Marcus L.', email:'marcus@gmail.com', role:'Worker', joined:'Jun 20, 2026', status:'active', warnings:1, ip:'78.51.23.99', taskPosts1h:0, applies1h:12, history:['Flagged once for spam applying'], avatarBg:'linear-gradient(135deg,#0ea5e9,#7dd3fc)'},
-];
-
-var demoTasks = [
-  {id:1, title:'Deep clean 2 bedroom apartment', poster:'James O.', budget:'$120', status:'in_progress', description:'Need a full apartment deep clean before move-out.', applicants:['Sarah K.','Marcus L.']},
-  {id:2, title:'Grocery run — Superstore NW',    poster:'Aisha M.', budget:'$30',  status:'completed', description:'Pick up grocery list with receipt photo proof.', applicants:['James O.']},
-  {id:3, title:'Math tutor for Grade 10 student',poster:'Sarah K.', budget:'$35/hr',status:'posted', description:'Algebra tutoring two evenings per week.', applicants:['David T.','Priya N.','Marcus L.']},
-  {id:4, title:'Box braids — natural hair',       poster:'Priya N.', budget:'$80',  status:'completed', description:'Protective style with medium-length braids.', applicants:['Sarah K.']},
-  {id:5, title:'Moving couch to storage unit',    poster:'Marcus L.',budget:'$60',  status:'in_progress', description:'Need one helper with a van for 1-hour move.', applicants:['James O.','David T.']},
-];
-
-var disputes = [
-  {id:1, task:'Box braids — natural hair',    poster:'Priya N.',  worker:'Sarah K.', status:'open',     reason:'Worker did not complete the task as agreed', notes:''},
-  {id:2, task:'Moving couch to storage unit', poster:'Marcus L.', worker:'David T.', status:'open',     reason:'Poster refused to release payment after completion', notes:''},
-  {id:3, task:'Grocery run — Superstore NW',  poster:'Aisha M.', worker:'James O.', status:'resolved', reason:'Item was damaged during delivery', notes:'Resolved with 50 percent refund credit'},
-];
-
-function formatJoined(dateValue){
-  if(!dateValue) return 'Unknown';
-  var date = new Date(dateValue);
-  return isNaN(date.getTime()) ? 'Unknown' : date.toLocaleDateString('en-CA', {month:'short', day:'numeric', year:'numeric'});
+async function initAdmin(){
+  document.getElementById('pageSub').textContent=new Date().toLocaleDateString('en-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' · Admin Console';
+  await loadData();
+  renderOverview();
+  renderNotifications();
+  setInterval(async function(){ await loadData(); if(currentSection==='overview') renderOverview(); },60000);
 }
 
-function getRoleLabel(role){
-  if(!role) return 'Unknown';
-  return String(role).charAt(0).toUpperCase() + String(role).slice(1);
+async function loadData(){
+  try{
+    var[ur,tr]=await Promise.all([fetch(SUPABASE_URL+'/rest/v1/users?order=created_at.desc',{headers:SB_HEADERS}),fetch(SUPABASE_URL+'/rest/v1/tasks?order=created_at.desc',{headers:SB_HEADERS})]);
+    var ud=await ur.json(),td=await tr.json();
+    if(Array.isArray(ud)) users=ud;
+    if(Array.isArray(td)) tasks=td;
+    if(!users.length) users=getDemoUsers();
+    if(!tasks.length) tasks=getDemoTasks();
+  }catch(e){users=getDemoUsers();tasks=getDemoTasks();}
+  disputes=getDemoDisputes();
 }
 
-function normalizeUser(row){
-  var status = (row.status || 'active').toLowerCase();
-  return {
-    id: row.id,
-    name: row.name || row.email || 'Unknown user',
-    email: row.email || '—',
-    role: getRoleLabel(row.role),
-    joined: formatJoined(row.created_at),
-    status: status,
-    warnings: Number(row.warnings || 0),
-    ip: row.ip_address || 'Unavailable',
-    taskPosts1h: Number(row.task_posts_1h || 0),
-    applies1h: Number(row.applies_1h || 0),
-    history: Array.isArray(row.history) ? row.history : ['No history available'],
-    avatarBg: status === 'banned'
-      ? 'linear-gradient(135deg,#ef4444,#f87171)'
-      : status === 'warned'
-      ? 'linear-gradient(135deg,#d97706,#fbbf24)'
-      : 'linear-gradient(135deg,#6b3fa0,#c8a8e9)'
-  };
+function getDemoUsers(){return [{user_id:'1',name:'Sarah K.',email:'sarah@gmail.com',role:'worker',created_at:'2026-06-10',status:'active'},{user_id:'2',name:'James O.',email:'james@gmail.com',role:'both',created_at:'2026-06-12',status:'active'},{user_id:'3',name:'Aisha M.',email:'aisha@gmail.com',role:'poster',created_at:'2026-06-15',status:'warned'},{user_id:'4',name:'David T.',email:'david@gmail.com',role:'worker',created_at:'2026-06-08',status:'banned'},{user_id:'5',name:'Priya N.',email:'priya@gmail.com',role:'both',created_at:'2026-06-18',status:'active'},{user_id:'6',name:'Marcus L.',email:'marcus@gmail.com',role:'worker',created_at:'2026-06-20',status:'active'}];}
+function getDemoTasks(){return [{task_id:'1',title:'Deep clean 2 bedroom apartment',posted_by:'James O.',budget:120,task_mode:'standard',status:'in_progress',created_at:'2026-06-21'},{task_id:'2',title:'Grocery run — Superstore NW',posted_by:'Aisha M.',budget:30,task_mode:'quick',status:'completed',created_at:'2026-06-20'},{task_id:'3',title:'Math tutor Grade 10',posted_by:'Sarah K.',budget:35,task_mode:'recurring',status:'open',created_at:'2026-06-22'},{task_id:'4',title:'Box braids — natural hair',posted_by:'Priya N.',budget:80,task_mode:'standard',status:'completed',created_at:'2026-06-19'},{task_id:'5',title:'Moving couch to storage',posted_by:'Marcus L.',budget:60,task_mode:'standard',status:'in_progress',created_at:'2026-06-21'}];}
+function getDemoDisputes(){return [{id:'1',task:'Box braids — natural hair',poster:'Priya N.',worker:'Sarah K.',status:'open',opened:'2 hrs ago',reason:'Worker did not complete task as agreed'},{id:'2',task:'Moving couch to storage',poster:'Marcus L.',worker:'David T.',status:'open',opened:'5 hrs ago',reason:'Poster refused to release payment'},{id:'3',task:'Grocery run NW',poster:'Aisha M.',worker:'James O.',status:'resolved',opened:'2 days ago',reason:'Item damaged during delivery'}];}
+
+function renderOverview(){
+  var active=users.filter(function(u){return u.status==='active';}).length;
+  var warned=users.filter(function(u){return u.status==='warned';}).length;
+  var banned=users.filter(function(u){return u.status==='banned';}).length;
+  var openD=disputes.filter(function(d){return d.status==='open';}).length;
+  var doneT=tasks.filter(function(t){return t.status==='completed';}).length;
+  document.getElementById('statUsers').textContent=users.length;
+  document.getElementById('statUsersSub').textContent=active+' active · '+warned+' warned · '+banned+' banned';
+  document.getElementById('userTrend').textContent='↑ '+users.length+' total';
+  document.getElementById('statTasks').textContent=tasks.length;
+  document.getElementById('statTasksSub').textContent=doneT+' completed · '+(tasks.length-doneT)+' active';
+  document.getElementById('statDisputes').textContent=openD;
+  document.getElementById('statDisputesSub').textContent=openD+' open · '+(disputes.length-openD)+' resolved';
+  document.getElementById('disputeBadge').textContent=openD;
+  if(openD===0){document.getElementById('alertBanner').style.display='none';document.getElementById('disputeTrend').textContent='All clear ✓';document.getElementById('disputeTrend').className='trend trend-up';}
+  renderMiniChart('chartUsers',[5,8,12,18,22,30,users.length],'#9b6fc4');
+  renderMiniChart('chartTasks',[1,2,3,5,7,10,tasks.length],'#16a34a');
+  renderMiniChart('chartRevenue',[0,0,0,0,0,0,0],'#d97706');
+  renderMiniChart('chartDisputes',[0,1,2,1,3,2,openD],'#ef4444');
+  renderActivity();renderCategories();renderRecentSignups();
 }
 
-function normalizeTask(row){
-  var budget = row.budget != null ? '$' + row.budget + (row.task_mode === 'recurring' ? '/hr' : '') : '—';
-  return {
-    id: row.id || row.task_id,
-    title: row.title || 'Untitled task',
-    poster: row.posted_by || 'Unknown',
-    budget: budget,
-    status: row.status || 'posted',
-    description: row.description || 'No description available',
-    applicants: Array.isArray(row.applicants) ? row.applicants : []
-  };
-}
-
-function pushAlert(type, text){
-  alerts.unshift({ id: Date.now() + Math.random(), type: type, text: text, ts: new Date().toLocaleTimeString('en-CA', {hour:'2-digit', minute:'2-digit'}) });
-  alerts = alerts.slice(0, 30);
-  renderAlerts();
-}
-
-function renderAlerts(){
-  document.getElementById('alertCount').textContent = String(alerts.length);
-  var list = document.getElementById('alertList');
-  if(!alerts.length){
-    list.innerHTML = '<div class="drop-item">No alerts yet</div>';
-    return;
-  }
-  list.innerHTML = alerts.map(function(a){
-    return '<div class="drop-item"><span>' + a.text + '</span><span class="drop-sub">' + a.ts + '</span></div>';
+function renderMiniChart(id,data,color){
+  var max=Math.max.apply(null,data)||1;
+  document.getElementById(id).innerHTML=data.map(function(v,i){
+    var h=Math.max(8,Math.round((v/max)*100));
+    var op=i===data.length-1?1:0.4+i*0.08;
+    return '<div class="bar" style="height:'+h+'%;background:'+color+';opacity:'+op+'"></div>';
   }).join('');
 }
 
-function computeSecurityInsights(){
-  loginAttempts = [];
-  try { loginAttempts = JSON.parse(localStorage.getItem('qg-login-attempts') || '[]'); }
-  catch(_) { loginAttempts = []; }
+function renderActivity(){
+  var items=[{dot:'#4ade80',text:'Sarah K. completed Deep clean apartment',time:'2m ago'},{dot:'#9b6fc4',text:'New user signed up — Priya N.',time:'15m ago'},{dot:'#ef4444',text:'Dispute opened — Box braids task',time:'1hr ago'},{dot:'#fbbf24',text:'Contact share attempt blocked in chat',time:'2hr ago'},{dot:'#4ade80',text:'James O. applied to 2 tasks',time:'3hr ago'},{dot:'#9b6fc4',text:'Task posted — Math tutor Grade 10',time:'4hr ago'}];
+  document.getElementById('activityFeed').innerHTML=items.map(function(i){return '<div class="activity-item"><div class="act-dot" style="background:'+i.dot+'"></div><div class="act-content"><div class="act-text">'+i.text+'</div><div class="act-time">'+i.time+'</div></div></div>';}).join('');
+}
 
-  var failedAttempts = loginAttempts.filter(function(x){ return x.outcome === 'failed'; });
-  var flaggedUsers = users.filter(function(u){ return u.taskPosts1h >= 5 || u.applies1h >= 10; });
-  var duplicateIpsMap = {};
-  users.forEach(function(u){
-    if(!u.ip || u.ip === 'Unavailable') return;
-    duplicateIpsMap[u.ip] = (duplicateIpsMap[u.ip] || 0) + 1;
-  });
-  var duplicateIps = Object.keys(duplicateIpsMap).filter(function(ip){ return duplicateIpsMap[ip] > 1; });
+function renderCategories(){
+  var cats=[{label:'🚗 Errands',pct:90,val:'4'},{label:'🏠 Home',pct:70,val:'3'},{label:'🎓 Tutoring',pct:50,val:'2'},{label:'💇 Beauty',pct:35,val:'1'},{label:'💻 Tech',pct:25,val:'1'},{label:'👶 Care',pct:25,val:'1'}];
+  document.getElementById('categoryChart').innerHTML=cats.map(function(c){return '<div class="bar-item"><div class="bar-label">'+c.label+'</div><div class="bar-track"><div class="bar-fill" style="width:'+c.pct+'%"></div></div><div class="bar-val">'+c.val+' tasks</div></div>';}).join('');
+}
 
-  securityEvents = [
-    {label:'Failed admin logins', value:String(failedAttempts.length), risk: failedAttempts.length > 4 ? 'high' : failedAttempts.length > 1 ? 'mid' : 'low'},
-    {label:'Users sharing IPs', value:String(duplicateIps.length), risk: duplicateIps.length > 0 ? 'mid' : 'low'},
-    {label:'Suspicious users', value:String(flaggedUsers.length), risk: flaggedUsers.length > 0 ? 'mid' : 'low'},
-    {label:'Fraud blocks (24h)', value:String(messageScannerEvents.length), risk: messageScannerEvents.length > 2 ? 'mid' : 'low'}
-  ];
+function renderRecentSignups(){
+  var colors=['linear-gradient(135deg,#6b3fa0,#c8a8e9)','linear-gradient(135deg,#16a34a,#4ade80)','linear-gradient(135deg,#d97706,#fbbf24)','linear-gradient(135deg,#0ea5e9,#7dd3fc)'];
+  document.getElementById('recentSignups').innerHTML=users.slice(0,5).map(function(u,i){return '<div class="activity-item"><div style="width:28px;height:28px;border-radius:50%;background:'+colors[i%colors.length]+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0;">'+u.name.charAt(0)+'</div><div class="act-content"><div class="act-text">'+u.name+' · '+u.role+'</div><div class="act-time">'+u.email+'</div></div></div>';}).join('');
+}
 
-  var securityList = document.getElementById('securityList');
-  securityList.innerHTML = securityEvents.map(function(item){
-    return '<div class="small-item"><span>' + item.label + '</span><strong class="risk-' + item.risk + '">' + item.value + '</strong></div>';
+function renderUsers(data){
+  document.getElementById('usersCount').textContent='· '+data.length+' total';
+  var colors=['linear-gradient(135deg,#6b3fa0,#c8a8e9)','linear-gradient(135deg,#16a34a,#4ade80)','linear-gradient(135deg,#d97706,#fbbf24)','linear-gradient(135deg,#ef4444,#f87171)','linear-gradient(135deg,#9b6fc4,#c8a8e9)','linear-gradient(135deg,#0ea5e9,#7dd3fc)'];
+  if(!data.length){document.getElementById('usersBody').innerHTML='<div style="padding:40px;text-align:center;color:var(--text-faint);font-size:13px">No users found</div>';return;}
+  document.getElementById('usersBody').innerHTML=data.map(function(u,i){
+    var rc=u.role==='both'?'r-both':u.role==='poster'?'r-poster':'r-worker';
+    var sc=u.status==='active'?'s-active':u.status==='warned'?'s-warned':'s-banned';
+    var sl=u.status==='active'?'● Active':u.status==='warned'?'⚠ Warned':'✕ Banned';
+    var tc=tasks.filter(function(t){return t.posted_by===u.name||t.posted_by===u.user_id;}).length;
+    var actions=u.status==='banned'?'<button class="act-btn btn-view" onclick="viewUser(\''+u.user_id+'\')">View</button><button class="act-btn btn-unban" onclick="actionUser(\''+u.user_id+'\',\'unban\')">Unban</button>':'<button class="act-btn btn-view" onclick="viewUser(\''+u.user_id+'\')">View</button><button class="act-btn btn-warn" onclick="actionUser(\''+u.user_id+'\',\'warn\')">Warn</button><button class="act-btn btn-ban" onclick="actionUser(\''+u.user_id+'\',\'ban\')">Ban</button>';
+    return '<div class="data-row g-users"><input type="checkbox" class="checkbox" value="'+u.user_id+'" onchange="updateBulk()"><div class="user-cell"><div class="u-av" style="background:'+colors[i%colors.length]+'">'+u.name.charAt(0)+'</div><div><div class="u-name">'+u.name+'</div><div class="u-meta">'+u.email+'</div></div></div><div class="cell">'+u.email+'</div><div class="cell"><span class="role-pill '+rc+'">'+u.role+'</span></div><div class="cell">'+tc+'</div><div class="cell"><span class="status-pill '+sc+'">'+sl+'</span></div><div class="act-btns">'+actions+'</div></div>';
   }).join('');
+}
 
-  var suspiciousList = document.getElementById('suspiciousList');
-  if(!flaggedUsers.length){
-    suspiciousList.innerHTML = '<div class="small-item"><span>No unusual spikes detected</span><strong class="risk-low">Clear</strong></div>';
-  } else {
-    suspiciousList.innerHTML = flaggedUsers.map(function(u){
-      var reason = u.taskPosts1h >= 5 ? (u.taskPosts1h + ' posts in 1h') : (u.applies1h + ' applies in 1h');
-      return '<div class="small-item"><span>' + u.name + ' • ' + reason + '</span><strong class="risk-mid">Flagged</strong></div>';
-    }).join('');
-  }
+window.filterUsers=function(q){renderUsers(!q?users:users.filter(function(u){return u.name.toLowerCase().includes(q.toLowerCase())||u.email.toLowerCase().includes(q.toLowerCase());}));};
 
-  flaggedUsers.forEach(function(u){
-    pushAlert('risk', 'Suspicious activity: ' + u.name + ' flagged');
-  });
+function renderTasks(data){
+  document.getElementById('tasksCount').textContent='· '+data.length+' total';
+  if(!data.length){document.getElementById('tasksBody').innerHTML='<div style="padding:40px;text-align:center;color:var(--text-faint);font-size:13px">No tasks found</div>';return;}
+  document.getElementById('tasksBody').innerHTML=data.map(function(t){
+    var sc=t.status==='completed'?'s-done':t.status==='in_progress'?'s-progress':'s-posted';
+    var sl=t.status==='in_progress'?'In progress':t.status.charAt(0).toUpperCase()+t.status.slice(1);
+    return '<div class="data-row g-tasks"><div></div><div class="user-cell"><div><div class="u-name">'+t.title+'</div><div class="u-meta">'+new Date(t.created_at).toLocaleDateString('en-CA',{month:'short',day:'numeric'})+'</div></div></div><div class="cell">'+t.posted_by+'</div><div class="cell">$'+t.budget+'</div><div class="cell">'+t.task_mode+'</div><div class="cell"><span class="status-pill '+sc+'">'+sl+'</span></div><div class="act-btns"><button class="act-btn btn-view" onclick="viewTask(\''+t.task_id+'\')">View</button><button class="act-btn btn-remove" onclick="removeTask(\''+t.task_id+'\')">Remove</button></div></div>';
+  }).join('');
+}
+
+window.filterTasks=function(q){renderTasks(!q?tasks:tasks.filter(function(t){return t.title.toLowerCase().includes(q.toLowerCase())||t.posted_by.toLowerCase().includes(q.toLowerCase());}));};
+
+function renderDisputes(){
+  var open=disputes.filter(function(d){return d.status==='open';}).length;
+  document.getElementById('disputesCount').textContent='· '+open+' open, '+(disputes.length-open)+' resolved';
+  document.getElementById('disputesBody').innerHTML=disputes.map(function(d){
+    var sc=d.status==='open'?'s-open':'s-resolved';
+    var sl=d.status==='open'?'⚠ Open':'✓ Resolved';
+    var actions=d.status==='open'?'<button class="act-btn btn-view" onclick="viewDispute(\''+d.id+'\')">Review</button><button class="act-btn btn-resolve" onclick="resolveDispute(\''+d.id+'\')">Resolve</button>':'<button class="act-btn btn-view" onclick="viewDispute(\''+d.id+'\')">View</button>';
+    return '<div class="data-row g-disputes"><div class="user-cell"><div><div class="u-name">'+d.task+'</div><div class="u-meta">'+d.reason.substring(0,45)+'...</div></div></div><div class="cell">'+d.poster+'</div><div class="cell">'+d.worker+'</div><div class="cell"><span class="status-pill '+sc+'">'+sl+'</span></div><div class="cell">'+d.opened+'</div><div class="act-btns">'+actions+'</div></div>';
+  }).join('');
+}
+
+function renderSecurityLog(){
+  var events=[{type:'sec-failed',label:'Failed login',text:'3 failed login attempts — aisha@gmail.com',time:'10m ago'},{type:'sec-blocked',label:'Contact blocked',text:'Phone number sharing blocked in chat — James O.',time:'2hr ago'},{type:'sec-blocked',label:'Contact blocked',text:'Email sharing blocked in chat — Sarah K.',time:'3hr ago'},{type:'sec-banned',label:'User banned',text:'David T. permanently banned',time:'1 day ago'},{type:'sec-signup',label:'New signup',text:'Priya N. signed up — Calgary, AB',time:'2 days ago'},{type:'sec-failed',label:'Failed login',text:'5 failed login attempts — unknown@gmail.com',time:'3 days ago'},{type:'sec-signup',label:'New signup',text:'Marcus L. signed up — Calgary, AB',time:'4 days ago'}];
+  document.getElementById('securityLog').innerHTML=events.map(function(e){return '<div class="sec-item"><span class="sec-type '+e.type+'">'+e.label+'</span><div class="sec-text">'+e.text+'</div><div class="sec-time">'+e.time+'</div></div>';}).join('');
+}
+
+function renderFraudLog(){
+  var events=[{text:'James O. tried to share phone number in chat with Sarah K.',task:'Deep clean apartment',time:'2hr ago'},{text:'Sarah K. tried to share email in chat with Priya N.',task:'Box braids',time:'3hr ago'},{text:'Aisha M. tried to share phone number in chat with Marcus L.',task:'Moving task',time:'5 days ago'}];
+  document.getElementById('fraudLog').innerHTML=events.map(function(e){return '<div class="sec-item"><span class="sec-type sec-blocked">🚫 Blocked</span><div class="sec-text"><strong style="color:rgba(255,255,255,0.8)">'+e.text+'</strong><br><span style="font-size:11px;color:var(--text-faint)">Task: '+e.task+'</span></div><div class="sec-time">'+e.time+'</div></div>';}).join('');
 }
 
 function renderAnalytics(){
-  var existing = document.getElementById('analyticsWrap');
-  if(existing) existing.remove();
-  var wrap = document.createElement('div');
-  wrap.id = 'analyticsWrap';
-  wrap.className = 'analytics';
-  wrap.innerHTML =
-    '<div class="chart-card"><div class="chart-title">Signups over time</div>' + buildBars(signupTrend) + '</div>' +
-    '<div class="chart-card"><div class="chart-title">Tasks posted per day</div>' + buildBars(tasksTrend) + '</div>' +
-    '<div class="chart-card"><div class="chart-title">Most active Calgary neighbourhoods</div>' + buildBars(neighbourhoods) + '</div>' +
-    '<div class="chart-card"><div class="chart-title">Peak posting hours</div>' + buildBars(postingHours) + '</div>';
-  document.querySelector('.main').appendChild(wrap);
+  var sd=[2,5,8,12,18,25,39],td=[0,1,3,5,7,10,12];
+  var m1=Math.max.apply(null,sd),m2=Math.max.apply(null,td);
+  document.getElementById('signupChart').innerHTML=sd.map(function(v,i){var h=Math.max(8,Math.round((v/m1)*100));return '<div style="flex:1;background:linear-gradient(180deg,#9b6fc4,#6b3fa0);border-radius:4px 4px 0 0;height:'+h+'%;opacity:'+(0.4+i*0.08)+'" title="'+v+' signups"></div>';}).join('');
+  document.getElementById('taskChart').innerHTML=td.map(function(v,i){var h=Math.max(8,Math.round((v/m2)*100));return '<div style="flex:1;background:linear-gradient(180deg,#4ade80,#16a34a);border-radius:4px 4px 0 0;height:'+h+'%;opacity:'+(0.4+i*0.08)+'" title="'+v+' tasks"></div>';}).join('');
+  document.getElementById('peakHours').innerHTML=['6am','9am','12pm','3pm','6pm','9pm'].map(function(h,i){var p=[10,25,40,30,80,60][i];return '<div class="bar-item"><div class="bar-label">'+h+'</div><div class="bar-track"><div class="bar-fill" style="width:'+p+'%"></div></div><div class="bar-val">'+p+'%</div></div>';}).join('');
+  document.getElementById('neighbourhoods').innerHTML=['NW Calgary','SE Calgary','Beltline','NE Calgary','SW Calgary'].map(function(n,i){var p=[90,70,60,45,30][i];return '<div class="bar-item"><div class="bar-label" style="width:110px">'+n+'</div><div class="bar-track"><div class="bar-fill" style="width:'+p+'%"></div></div></div>';}).join('');
 }
 
-function buildBars(series){
-  var max = Math.max.apply(Math, series.map(function(x){ return x.value; }));
-  return '<div class="bar-list">' + series.map(function(x){
-    var width = max ? Math.round((x.value / max) * 100) : 0;
-    return '<div class="bar-row"><span>' + x.label + '</span><div class="bar"><span style="width:' + width + '%"></span></div><strong>' + x.value + '</strong></div>';
-  }).join('') + '</div>';
-}
-
-function updateHealthScore(){
-  var completed = tasks.filter(function(t){ return t.status === 'completed'; }).length;
-  var completionRate = tasks.length ? completed / tasks.length : 0;
-  var openDisputes = disputes.filter(function(d){ return d.status === 'open'; }).length;
-  var disputePenalty = disputes.length ? openDisputes / disputes.length : 0;
-  var growth = signupTrend[signupTrend.length - 1].value - signupTrend[0].value;
-  var growthBonus = Math.max(0, Math.min(1, growth / 12));
-  var score = Math.round(((completionRate * 55) + ((1 - disputePenalty) * 30) + (growthBonus * 15)));
-  document.getElementById('statHealth').textContent = score + '/100';
-  document.getElementById('statHealthTrend').textContent = 'Completion ' + Math.round(completionRate * 100) + '% • Dispute rate ' + Math.round(disputePenalty * 100) + '%';
-}
-
-function renderBottomPanels(){
-  var openDisputes = disputes.filter(function(d){ return d.status === 'open'; }).length;
-  var recent = [
-    {txt:(users[0] ? users[0].name : 'User') + ' completed a task', when:'2m ago'},
-    {txt:'New user signed up', when:'15m ago'},
-    {txt:'Dispute opened for moving task', when:'1hr ago'},
-    {txt:'Task posted in Tutoring', when:'2hr ago'}
-  ];
-  document.getElementById('recentActivityList').innerHTML = recent.map(function(item){
-    return '<div class="panel-item"><span>' + item.txt + '</span><strong>' + item.when + '</strong></div>';
-  }).join('');
-
-  var categoryMap = { Errands:0, Home:0, Tutoring:0, Beauty:0, Tech:0 };
-  tasks.forEach(function(t){
-    var text = (t.title || '').toLowerCase();
-    if(text.indexOf('clean') !== -1 || text.indexOf('moving') !== -1) categoryMap.Home += 1;
-    else if(text.indexOf('tutor') !== -1 || text.indexOf('math') !== -1) categoryMap.Tutoring += 1;
-    else if(text.indexOf('braid') !== -1 || text.indexOf('hair') !== -1) categoryMap.Beauty += 1;
-    else if(text.indexOf('computer') !== -1 || text.indexOf('tech') !== -1) categoryMap.Tech += 1;
-    else categoryMap.Errands += 1;
-  });
-  var sorted = Object.keys(categoryMap).map(function(k){ return {name:k, count:categoryMap[k]}; }).sort(function(a,b){ return b.count - a.count; });
-  document.getElementById('topCategoriesList').innerHTML = sorted.map(function(c){
-    return '<div class="panel-item"><span>' + c.name + '</span><strong>' + c.count + ' tasks</strong></div>';
-  }).join('');
-
-  document.getElementById('attentionText').textContent = openDisputes + ' open disputes require your attention';
-}
-
-function resetSessionTimer(){
-  sessionSecondsRemaining = 30 * 60;
-}
-
-function setupSessionTimeout(){
-  ['click','mousemove','keydown','scroll'].forEach(function(evt){
-    window.addEventListener(evt, resetSessionTimer, { passive:true });
-  });
-  if(sessionTick) clearInterval(sessionTick);
-  sessionTick = setInterval(function(){
-    sessionSecondsRemaining -= 1;
-    var mins = Math.ceil(sessionSecondsRemaining / 60);
-    document.getElementById('sessionTimeoutView').textContent = 'Session timeout: ' + mins + 'm';
-    if(sessionSecondsRemaining <= 0){
-      clearInterval(sessionTick);
-      pushAlert('session', 'Session expired due to inactivity');
-      doLogout();
-    }
-  }, 1000);
-}
-
-async function loadAdminData(){
-  try {
-    var [usersRes, tasksRes] = await Promise.all([
-      fetch(SUPABASE_URL + '/rest/v1/users?order=created_at.desc', { headers: SUPABASE_HEADERS }),
-      fetch(SUPABASE_URL + '/rest/v1/tasks?order=created_at.desc', { headers: SUPABASE_HEADERS })
-    ]);
-    if (!usersRes.ok) throw new Error('users status ' + usersRes.status);
-    if (!tasksRes.ok) throw new Error('tasks status ' + tasksRes.status);
-    var usersData = await usersRes.json();
-    var tasksData = await tasksRes.json();
-    users = Array.isArray(usersData) ? usersData.map(normalizeUser) : [];
-    tasks = Array.isArray(tasksData) ? tasksData.map(normalizeTask) : [];
-  } catch (err) {
-    console.warn('Supabase admin load failed, using demo data:', err);
-    users = demoUsers.slice();
-    tasks = demoTasks.slice();
-  }
-}
-
-// ── INIT ───────────────────────────────────────────────
-async function initAdmin(){
-  await loadAdminData();
-  filteredUsers = users.slice();
-  filteredTasks = tasks.slice();
-  filteredDisputes = disputes.slice();
-
-  // Auto-ban users who reached 3 warnings.
-  users.forEach(function(u){
-    if(u.warnings >= 3 && u.status !== 'banned'){
-      u.status = 'banned';
-      pushAlert('ban', 'Auto-ban triggered for ' + u.name + ' (3 warnings)');
-    }
-  });
-
-  var activeUsers    = users.filter(function(u){ return u.status === 'active'; }).length;
-  var openDisputes   = disputes.filter(function(d){ return d.status === 'open'; }).length;
-
-  document.getElementById('statUsers').textContent         = users.length;
-  document.getElementById('statUsersTrend').textContent    = activeUsers + ' active · ' + (users.length - activeUsers) + ' restricted';
-  document.getElementById('statTasks').textContent         = tasks.length;
-  document.getElementById('statTasksTrend').textContent    = tasks.filter(function(t){ return t.status==='completed'; }).length + ' completed';
-  document.getElementById('statDisputes').textContent      = openDisputes;
-  document.getElementById('statDisputesTrend').textContent = openDisputes > 0 ? openDisputes + ' need your attention' : 'All clear!';
-  if(openDisputes === 0) document.getElementById('statDisputesTrend').className = 'stat-trend';
-
-  renderUsers(filteredUsers);
-  renderTasks(filteredTasks);
-  renderDisputes(filteredDisputes);
-  renderAlerts();
-  computeSecurityInsights();
-  updateHealthScore();
-  renderAnalytics();
-  renderBottomPanels();
-  setupSessionTimeout();
-
-  var newUserSpike = signupTrend[signupTrend.length - 1].value >= 15;
-  if(newUserSpike) pushAlert('growth', 'New user spike detected today');
-  if(openDisputes > 0) pushAlert('dispute', openDisputes + ' open disputes require review');
-}
-
-// ── RENDER USERS ───────────────────────────────────────
-function renderUsers(data){
-  filteredUsers = data.slice();
-  document.getElementById('usersCount').textContent = '· ' + data.length + ' total';
-  if(!data.length){ document.getElementById('usersBody').innerHTML = '<div class="empty-row">No users found</div>'; return; }
-  document.getElementById('usersBody').innerHTML = data.map(function(u){
-    var pillClass = u.status==='active' ? 'pill-active' : u.status==='warned' ? 'pill-warned' : 'pill-banned';
-    var pillLabel = u.status.charAt(0).toUpperCase() + u.status.slice(1);
-    var actions = u.status === 'banned'
-      ? '<button class="act-btn btn-view" onclick="openUserDrawer('+u.id+')">Details</button><button class="act-btn btn-unban" onclick="actionUser('+u.id+',\'unban\')">Unban</button>'
-      : '<button class="act-btn btn-view" onclick="openUserDrawer('+u.id+')">Details</button><button class="act-btn btn-warn" onclick="actionUser('+u.id+',\'warn\')">Warn</button><button class="act-btn btn-ban" onclick="actionUser('+u.id+',\'ban\')">Ban</button>';
-    return '<div class="data-row g-users">' +
-      '<div class="select-cell"><input type="checkbox" class="check" ' + (selectedUserIds[u.id] ? 'checked' : '') + ' onchange="toggleUserSelection('+u.id+', this.checked)"></div>' +
-      '<div class="cell-name"><div class="u-av" style="background:'+u.avatarBg+'">'+u.name.charAt(0)+'</div><div><div class="u-name">'+u.name+'</div><div class="u-joined">Joined '+u.joined+'</div></div></div>' +
-      '<div class="cell">'+u.email+'</div>' +
-      '<div class="cell">'+u.role+'</div>' +
-      '<div class="cell"><span class="pill '+pillClass+'">'+pillLabel+'</span></div>' +
-      '<div class="actions">'+actions+'</div>' +
-    '</div>';
-  }).join('');
-}
-
-// ── RENDER TASKS ───────────────────────────────────────
-function renderTasks(data){
-  filteredTasks = data.slice();
-  document.getElementById('tasksCount').textContent = '· ' + data.length + ' total';
-  if(!data.length){ document.getElementById('tasksBody').innerHTML = '<div class="empty-row">No tasks found</div>'; return; }
-  document.getElementById('tasksBody').innerHTML = data.map(function(t){
-    var pillClass = t.status==='completed' ? 'pill-done' : t.status==='in_progress' ? 'pill-progress' : 'pill-posted';
-    var pillLabel = t.status==='in_progress' ? 'In progress' : t.status.charAt(0).toUpperCase()+t.status.slice(1);
-    return '<div class="data-row g-tasks">' +
-      '<div class="cell-title">'+t.title+'</div>' +
-      '<div class="cell">'+t.poster+'</div>' +
-      '<div class="cell">'+t.budget+'</div>' +
-      '<div class="cell"><span class="pill '+pillClass+'">'+pillLabel+'</span></div>' +
-      '<div class="actions"><button class="act-btn btn-view" onclick="viewTask('+t.id+')">Preview</button><button class="act-btn btn-remove" onclick="removeTask('+t.id+')">Remove</button></div>' +
-    '</div>';
-  }).join('');
-}
-
-// ── RENDER DISPUTES ────────────────────────────────────
-function renderDisputes(data){
-  filteredDisputes = data.slice();
-  var open = data.filter(function(d){ return d.status==='open'; }).length;
-  document.getElementById('disputesCount').textContent = '· ' + open + ' open, ' + (data.length - open) + ' resolved';
-  if(!data.length){ document.getElementById('disputesBody').innerHTML = '<div class="empty-row">No disputes found</div>'; return; }
-  document.getElementById('disputesBody').innerHTML = data.map(function(d){
-    var pillClass = d.status==='open' ? 'pill-open' : 'pill-resolved';
-    var pillLabel = d.status==='open' ? '⚠️ Open' : '✓ Resolved';
-    var actions = d.status==='open'
-      ? '<button class="act-btn btn-view" onclick="viewDispute('+d.id+')">Review</button><button class="act-btn btn-resolve" onclick="resolveDispute('+d.id+')">Resolve</button>'
-      : '<button class="act-btn btn-view" onclick="viewDispute('+d.id+')">View</button>';
-    return '<div class="data-row g-disputes">' +
-      '<div class="cell-title">'+d.task+'</div>' +
-      '<div class="cell">'+d.poster+'</div>' +
-      '<div class="cell">'+d.worker+'</div>' +
-      '<div class="cell"><span class="pill '+pillClass+'">'+pillLabel+'</span></div>' +
-      '<div class="actions">'+actions+'</div>' +
-    '</div>';
-  }).join('');
-}
-
-// ── TABS ───────────────────────────────────────────────
-var activeTab = 'users';
-window.showTab = function(tab, btn){
-  activeTab = tab;
-  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
-  btn.classList.add('active');
-  document.getElementById('usersTable').style.display    = tab==='users'    ? 'block' : 'none';
-  document.getElementById('tasksTable').style.display    = tab==='tasks'    ? 'block' : 'none';
-  document.getElementById('disputesTable').style.display = tab==='disputes' ? 'block' : 'none';
+window.showSection=function(section,btn){
+  document.querySelectorAll('[id^="section-"]').forEach(function(el){el.style.display='none';});
+  document.getElementById('section-'+section).style.display='block';
+  document.querySelectorAll('.nav-item').forEach(function(el){el.classList.remove('active');});
+  if(btn) btn.classList.add('active');
+  currentSection=section;
+  var titles={overview:'Dashboard Overview',users:'User Management',tasks:'Task Management',disputes:'Dispute Center',security:'Security Log',fraud:'Fraud Alerts',analytics:'Analytics',revenue:'Revenue',settings:'Platform Settings'};
+  document.getElementById('pageTitle').textContent=titles[section]||section;
+  if(section==='users') renderUsers(users);
+  if(section==='tasks') renderTasks(tasks);
+  if(section==='disputes') renderDisputes();
+  if(section==='security') renderSecurityLog();
+  if(section==='fraud') renderFraudLog();
+  if(section==='analytics') renderAnalytics();
 };
 
-window.focusDisputes = function(){
-  var btns = document.querySelectorAll('.tab-btn');
-  if(btns[2]) showTab('disputes', btns[2]);
-};
+window.selectAll=function(cb){document.querySelectorAll('#usersBody .checkbox').forEach(function(c){c.checked=cb.checked;});updateBulk();};
+window.updateBulk=function(){selectedUsers=Array.from(document.querySelectorAll('#usersBody .checkbox:checked')).map(function(c){return c.value;});var bulk=document.getElementById('bulkActions');if(selectedUsers.length>0){bulk.classList.add('show');document.getElementById('bulkLabel').textContent=selectedUsers.length+' selected';}else{bulk.classList.remove('show');}};
+window.bulkAction=function(action){openModal(action==='warn'?'Warn '+selectedUsers.length+' users':'Ban '+selectedUsers.length+' users','This will '+action+' all '+selectedUsers.length+' selected users.','',action==='warn'?'Issue warnings':'Ban all',action==='warn'?'warn':'danger',function(){selectedUsers.forEach(function(id){var u=users.find(function(x){return x.user_id===id;});if(u) u.status=action==='warn'?'warned':'banned';});renderUsers(users);document.getElementById('bulkActions').classList.remove('show');showToast(selectedUsers.length+' users '+action+'ned',action==='ban'?'red':'amber');});};
 
-window.showRevenueSummary = function(btn){
-  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
-  btn.classList.add('active');
-  var revenue = document.getElementById('statRevenue').textContent;
-  showToast('Revenue snapshot: ' + revenue, 'green');
-};
+window.viewUser=function(id){var u=users.find(function(x){return x.user_id===id;});if(!u) return;openModal('User profile',u.name,'<div style="display:grid;gap:12px"><div><div class="modal-label">Email</div><div class="modal-value">'+u.email+'</div></div><div><div class="modal-label">Role</div><div class="modal-value">'+u.role+'</div></div><div><div class="modal-label">Status</div><div class="modal-value">'+u.status+'</div></div><div><div class="modal-label">Joined</div><div class="modal-value">'+new Date(u.created_at).toLocaleDateString('en-CA',{month:'long',day:'numeric',year:'numeric'})+'</div></div></div>','Close','purple',function(){});};
+window.actionUser=function(id,action){var u=users.find(function(x){return x.user_id===id;});if(!u) return;var titles={warn:'Issue a warning to '+u.name,ban:'Ban '+u.name,unban:'Unban '+u.name};var subs={warn:'A warning email will be sent. 3 warnings leads to automatic ban.',ban:'This permanently bans '+u.name+'. They cannot log in.',unban:'This restores '+u.name+'\'s access to the platform.'};var classes={warn:'warn',ban:'danger',unban:'success'};var labels={warn:'Issue warning',ban:'Ban user',unban:'Unban user'};openModal(titles[action],subs[action],'',labels[action],classes[action],function(){u.status=action==='warn'?'warned':action==='ban'?'banned':'active';renderUsers(users);showToast(u.name+' '+(action==='unban'?'unbanned':action+'ned'),action==='ban'?'red':action==='warn'?'amber':'green');},true);};
+window.viewTask=function(id){var t=tasks.find(function(x){return x.task_id===id;});if(!t) return;openModal('Task details',t.title,'<div style="display:grid;gap:12px"><div><div class="modal-label">Posted by</div><div class="modal-value">'+t.posted_by+'</div></div><div><div class="modal-label">Budget</div><div class="modal-value">$'+t.budget+'</div></div><div><div class="modal-label">Mode</div><div class="modal-value">'+t.task_mode+'</div></div><div><div class="modal-label">Status</div><div class="modal-value">'+t.status+'</div></div></div>','Close','purple',function(){});};
+window.removeTask=function(id){var t=tasks.find(function(x){return x.task_id===id;});if(!t) return;openModal('Remove task','Remove "'+t.title+'"? This cannot be undone.','','Remove','danger',function(){tasks=tasks.filter(function(x){return x.task_id!==id;});renderTasks(tasks);document.getElementById('statTasks').textContent=tasks.length;showToast('Task removed','red');});};
+window.viewDispute=function(id){var d=disputes.find(function(x){return x.id===id;});if(!d) return;openModal('Dispute — '+d.task,'Review this dispute and add resolution notes.','<div style="display:grid;gap:12px"><div><div class="modal-label">Poster</div><div class="modal-value">'+d.poster+'</div></div><div><div class="modal-label">Worker</div><div class="modal-value">'+d.worker+'</div></div><div><div class="modal-label">Reason</div><div class="modal-value">'+d.reason+'</div></div></div>','Close','purple',function(){},true);};
+window.resolveDispute=function(id){var d=disputes.find(function(x){return x.id===id;});if(!d) return;openModal('Resolve dispute','Mark "'+d.task+'" dispute as resolved?','','Mark resolved','success',function(){d.status='resolved';renderDisputes();var open=disputes.filter(function(x){return x.status==='open';}).length;document.getElementById('statDisputes').textContent=open;document.getElementById('disputeBadge').textContent=open;if(open===0){document.getElementById('alertBanner').style.display='none';}showToast('Dispute resolved','green');},true);};
 
-window.showAnalyticsPanel = function(btn){
-  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
-  btn.classList.add('active');
-  var wrap = document.getElementById('analyticsWrap');
-  if(wrap) wrap.scrollIntoView({ behavior:'smooth', block:'start' });
-};
+window.exportCSV=function(type){var data,filename,headers;if(type==='users'){data=users;filename='quickgigs-users.csv';headers='Name,Email,Role,Status,Joined';}else if(type==='tasks'){data=tasks;filename='quickgigs-tasks.csv';headers='Title,Posted By,Budget,Mode,Status';}else{showToast('Exported','green');return;}var rows=data.map(function(r){return Object.values(r).join(',');});var csv=headers+'\n'+rows.join('\n');var blob=new Blob([csv],{type:'text/csv'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download=filename;a.click();showToast('Exported '+data.length+' rows','green');};
 
-// ── SEARCH / FILTER ────────────────────────────────────
-window.filterTable = function(type, query){
-  var q = query.toLowerCase().trim();
-  if(type==='users'){
-    renderUsers(!q ? users : users.filter(function(u){ return u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q); }));
-  } else if(type==='tasks'){
-    renderTasks(!q ? tasks : tasks.filter(function(t){ return t.title.toLowerCase().includes(q) || t.poster.toLowerCase().includes(q); }));
-  } else {
-    renderDisputes(!q ? disputes : disputes.filter(function(d){ return d.task.toLowerCase().includes(q) || d.poster.toLowerCase().includes(q) || d.worker.toLowerCase().includes(q); }));
-  }
-};
+function renderNotifications(){
+  var notifs=[{title:'🚨 Open dispute',text:'Box braids task — Priya N. vs Sarah K.',time:'2hr ago',unread:true},{title:'🚨 Open dispute',text:'Moving task — Marcus L. vs David T.',time:'5hr ago',unread:true},{title:'🚫 Fraud attempt',text:'Phone sharing blocked — James O.',time:'2hr ago',unread:true},{title:'👤 New signup',text:'Priya N. joined as Both',time:'1 day ago',unread:false},{title:'⚠️ Warning issued',text:'Aisha M. received a warning',time:'2 days ago',unread:false}];
+  document.getElementById('notifList').innerHTML=notifs.map(function(n){return '<div class="notif-item'+(n.unread?' unread':'')+'"><div class="notif-item-title">'+n.title+'</div><div class="notif-item-text">'+n.text+'</div><div class="notif-item-time">'+n.time+'</div></div>';}).join('');
+}
 
-window.toggleTabSearchScope = function(){
-  searchScopeAll = !searchScopeAll;
-  document.getElementById('scopeBtn').textContent = searchScopeAll ? 'Scope: Whole platform' : 'Scope: Active tab';
-};
-
-window.runGlobalSearch = function(query){
-  var q = query.toLowerCase().trim();
-  if(!q){
-    renderUsers(users);
-    renderTasks(tasks);
-    renderDisputes(disputes);
-    return;
-  }
-
-  var matchedUsers = users.filter(function(u){
-    return (u.name + ' ' + u.email + ' ' + u.role + ' ' + u.status + ' ' + u.ip).toLowerCase().includes(q);
-  });
-  var matchedTasks = tasks.filter(function(t){
-    return (t.title + ' ' + t.poster + ' ' + t.budget + ' ' + t.description).toLowerCase().includes(q);
-  });
-  var matchedDisputes = disputes.filter(function(d){
-    return (d.task + ' ' + d.poster + ' ' + d.worker + ' ' + d.reason + ' ' + (d.notes || '')).toLowerCase().includes(q);
-  });
-
-  if(searchScopeAll){
-    renderUsers(matchedUsers);
-    renderTasks(matchedTasks);
-    renderDisputes(matchedDisputes);
-  } else {
-    if(activeTab === 'users') renderUsers(matchedUsers);
-    if(activeTab === 'tasks') renderTasks(matchedTasks);
-    if(activeTab === 'disputes') renderDisputes(matchedDisputes);
-  }
-};
-
-// ── MODAL ──────────────────────────────────────────────
-var pendingAction = null;
-
-function openModal(title, sub, fields, confirmLabel, confirmClass, onConfirm){
-  document.getElementById('modalTitle').textContent = title;
-  document.getElementById('modalSub').textContent   = sub;
-  document.getElementById('modalFields').innerHTML  = fields;
-  var btn = document.getElementById('modalConfirm');
-  btn.textContent  = confirmLabel;
-  btn.className    = 'modal-confirm ' + confirmClass;
-  pendingAction    = onConfirm;
+function openModal(title,sub,fields,confirmLabel,confirmClass,onConfirm,showNote){
+  document.getElementById('modalTitle').textContent=title;
+  document.getElementById('modalSub').textContent=sub;
+  document.getElementById('modalFields').innerHTML=fields;
+  var btn=document.getElementById('modalConfirm');
+  btn.textContent=confirmLabel;btn.className='modal-confirm '+confirmClass;
+  document.getElementById('modalNote').style.display=showNote?'block':'none';
+  pendingFn=onConfirm;
   document.getElementById('modalOverlay').classList.add('open');
 }
+window.closeModal=function(e){if(e&&e.target!==document.getElementById('modalOverlay')) return;closeModalDirect();};
+window.closeModalDirect=function(){document.getElementById('modalOverlay').classList.remove('open');pendingFn=null;};
+window.confirmAction=function(){if(pendingFn) pendingFn();closeModalDirect();};
 
-window.closeModal = function(e){
-  if(e && e.target !== document.getElementById('modalOverlay')) return;
-  document.getElementById('modalOverlay').classList.remove('open');
-  pendingAction = null;
-};
-
-window.confirmAction = function(){
-  if(pendingAction) pendingAction();
-  document.getElementById('modalOverlay').classList.remove('open');
-  pendingAction = null;
-};
-
-function showToast(msg, type){
-  var t = document.getElementById('toast');
-  t.textContent  = msg;
-  t.className    = 'toast ' + (type||'green');
-  t.style.display = 'block';
-  setTimeout(function(){ t.style.display='none'; }, 3000);
-}
-
-// ── USER ACTIONS ───────────────────────────────────────
-window.viewUser = function(id){
-  var u = users.find(function(x){ return x.id===id; });
-  openModal('User profile', u.name + ' · ' + u.role,
-    '<div style="display:grid;gap:10px">' +
-    '<div><div class="modal-label">Email</div><div class="modal-value">'+u.email+'</div></div>' +
-    '<div><div class="modal-label">Joined</div><div class="modal-value">'+u.joined+'</div></div>' +
-    '<div><div class="modal-label">Status</div><div class="modal-value">'+u.status+'</div></div>' +
-    '</div>',
-    'Close', 'purple', function(){});
-};
-
-window.openUserDrawer = function(id){
-  var u = users.find(function(x){ return x.id===id; });
-  if(!u) return;
-  document.getElementById('drawerName').textContent = u.name + ' profile';
-  document.getElementById('drawerBody').innerHTML =
-    '<div class="drawer-block"><div class="drawer-label">Account</div><div class="drawer-value">' + u.email + ' • ' + u.role + '</div></div>' +
-    '<div class="drawer-block"><div class="drawer-label">Security</div><div class="drawer-value">IP: ' + u.ip + '<br>Warnings: ' + u.warnings + '<br>Status: ' + u.status + '</div></div>' +
-    '<div class="drawer-block"><div class="drawer-label">Activity (last hour)</div><div class="drawer-value">Posts: ' + u.taskPosts1h + '<br>Applies: ' + u.applies1h + '</div></div>' +
-    '<div class="drawer-block"><div class="drawer-label">History</div><div class="drawer-value">' + u.history.join('<br>') + '</div></div>';
-  document.getElementById('userDrawer').classList.add('open');
-};
-
-window.closeUserDrawer = function(){
-  document.getElementById('userDrawer').classList.remove('open');
-};
-
-window.toggleUserSelection = function(id, checked){
-  selectedUserIds[id] = checked;
-};
-
-window.toggleSelectAllUsers = function(checked){
-  filteredUsers.forEach(function(u){ selectedUserIds[u.id] = checked; });
-  renderUsers(filteredUsers);
-};
-
-window.bulkUserAction = function(action){
-  var ids = Object.keys(selectedUserIds).filter(function(id){ return selectedUserIds[id]; }).map(function(id){ return Number(id); });
-  if(!ids.length){
-    showToast('Select at least one user first.', 'amber');
-    return;
-  }
-  ids.forEach(function(id){ actionUser(id, action, true); });
-  renderUsers(filteredUsers);
-  showToast('Bulk action completed for ' + ids.length + ' users.', action === 'ban' ? 'red' : 'amber');
-};
-
-window.actionUser = function(id, action, skipModal){
-  var u = users.find(function(x){ return x.id===id; });
-  if(!u) return;
-
-  if(skipModal){
-    applyUserAction(u, action);
-    return;
-  }
-
-  var titles = {warn:'Issue a warning', ban:'Ban user', unban:'Unban user'};
-  var subs   = {
-    warn: 'This will send a warning email to ' + u.name + '. A second warning leads to suspension.',
-    ban:  'This will permanently ban ' + u.name + ' from QuickGigs. They will not be able to log in.',
-    unban:'This will restore ' + u.name + '\'s access to QuickGigs.'
-  };
-  var classes = {warn:'warn', ban:'danger', unban:'success'};
-  var labels  = {warn:'Issue warning', ban:'Ban user', unban:'Unban user'};
-  openModal(titles[action], subs[action], '', labels[action], classes[action], function(){
-    applyUserAction(u, action);
-  });
-};
-
-function applyUserAction(u, action){
-  if(action === 'warn'){
-    u.warnings = (u.warnings || 0) + 1;
-    u.status = u.warnings >= 3 ? 'banned' : 'warned';
-    if(u.status === 'banned'){
-      pushAlert('ban', 'Auto-ban triggered: ' + u.name + ' reached 3 warnings');
-      showToast(u.name + ' auto-banned after 3 warnings.', 'red');
-    } else {
-      showToast(u.name + ' warned (' + u.warnings + '/3).', 'amber');
-    }
-  }
-  if(action === 'ban'){
-    u.status = 'banned';
-    pushAlert('ban', 'User banned: ' + u.name);
-    showToast(u.name + ' has been banned.', 'red');
-  }
-  if(action === 'unban'){
-    u.status = 'active';
-    u.warnings = 0;
-    showToast(u.name + ' has been unbanned.', 'green');
-  }
-  renderUsers(filteredUsers);
-  renderBottomPanels();
-  computeSecurityInsights();
-}
-
-// ── TASK ACTIONS ───────────────────────────────────────
-window.viewTask = function(id){
-  var t = tasks.find(function(x){ return x.id===id; });
-  openModal('Task details', t.title,
-    '<div style="display:grid;gap:10px">' +
-    '<div><div class="modal-label">Description</div><div class="modal-value">'+t.description+'</div></div>' +
-    '<div><div class="modal-label">Posted by</div><div class="modal-value">'+t.poster+'</div></div>' +
-    '<div><div class="modal-label">Budget</div><div class="modal-value">'+t.budget+'</div></div>' +
-    '<div><div class="modal-label">Applicants</div><div class="modal-value">'+(t.applicants && t.applicants.length ? t.applicants.join(', ') : 'No applicants yet')+'</div></div>' +
-    '<div><div class="modal-label">Status</div><div class="modal-value">'+t.status+'</div></div>' +
-    '</div>',
-    'Close', 'purple', function(){});
-};
-
-window.removeTask = function(id){
-  var t = tasks.find(function(x){ return x.id===id; });
-  openModal('Remove task', 'Are you sure you want to remove "'+t.title+'"? This cannot be undone.', '', 'Remove task', 'danger', function(){
-    tasks = tasks.filter(function(x){ return x.id!==id; });
-    renderTasks(tasks);
-    renderBottomPanels();
-    document.getElementById('statTasks').textContent = tasks.length;
-    showToast('Task removed successfully.', 'red');
-    // TODO: Delete the task from Supabase when admin write actions are enabled.
-  });
-};
-
-// ── DISPUTE ACTIONS ────────────────────────────────────
-window.viewDispute = function(id){
-  var d = disputes.find(function(x){ return x.id===id; });
-  openModal('Dispute details', d.task,
-    '<div style="display:grid;gap:10px">' +
-    '<div><div class="modal-label">Poster</div><div class="modal-value">'+d.poster+'</div></div>' +
-    '<div><div class="modal-label">Worker</div><div class="modal-value">'+d.worker+'</div></div>' +
-    '<div><div class="modal-label">Reason</div><div class="modal-value">'+d.reason+'</div></div>' +
-    '<div><div class="modal-label">Status</div><div class="modal-value">'+d.status+'</div></div>' +
-    '</div>',
-    'Close', 'purple', function(){});
-};
-
-window.resolveDispute = function(id){
-  var d = disputes.find(function(x){ return x.id===id; });
-  var notesField = '<div class="modal-field"><label class="modal-label">Internal resolution notes</label><textarea id="resolveNote" style="width:100%;min-height:88px;border-radius:10px;border:0.5px solid var(--input-border);background:var(--input-bg);color:var(--text);padding:10px;font-family:DM Sans,sans-serif;font-size:12px;" placeholder="Add context for internal records"></textarea></div>';
-  openModal('Resolve dispute', 'Mark this dispute as resolved? Both parties will be notified.', notesField, 'Mark resolved', 'success', function(){
-    d.notes = document.getElementById('resolveNote') ? document.getElementById('resolveNote').value.trim() : '';
-    d.status = 'resolved';
-    renderDisputes(disputes);
-    renderBottomPanels();
-    var open = disputes.filter(function(x){ return x.status==='open'; }).length;
-    document.getElementById('statDisputes').textContent = open;
-    pushAlert('dispute', 'Dispute #' + d.id + ' resolved');
-    showToast('Dispute marked as resolved.', 'green');
-    // TODO: Persist dispute status to Supabase when a disputes table is available.
-  });
-};
-
-window.toggleAlerts = function(){
-  document.getElementById('alertsMenu').classList.toggle('open');
-  document.getElementById('accountMenu').classList.remove('open');
-};
-
-window.toggleAccountMenu = function(){
-  document.getElementById('accountMenu').classList.toggle('open');
-  document.getElementById('alertsMenu').classList.remove('open');
-};
-
-window.lockSession = function(){
-  document.getElementById('twofaInput').value = '';
-  document.getElementById('twofaGate').classList.add('show');
-  document.getElementById('accountMenu').classList.remove('open');
-};
-
-window.generateDailySummaryEmail = function(){
-  var signedUpToday = signupTrend[signupTrend.length - 1].value;
-  var tasksPosted = tasksTrend[tasksTrend.length - 1].value;
-  var revenue = '$' + (tasks.reduce(function(sum, t){
-    var num = Number(String(t.budget).replace(/[^0-9.]/g, ''));
-    return sum + (isNaN(num) ? 0 : num);
-  }, 0) * 0.12).toFixed(2);
-  var body = [
-    'QuickGigs Daily Admin Summary',
-    '',
-    'Users signed up today: ' + signedUpToday,
-    'Tasks posted today: ' + tasksPosted,
-    'Estimated platform revenue: ' + revenue,
-    'Open disputes: ' + disputes.filter(function(d){ return d.status === 'open'; }).length
-  ].join('%0D%0A');
-  window.location.href = 'mailto:mowebsiteco@gmail.com?subject=QuickGigs%20Daily%20Summary&body=' + body;
-};
-
-document.addEventListener('click', function(e){
-  if(!e.target.closest('.alert-wrap')) document.getElementById('alertsMenu').classList.remove('open');
-  if(!e.target.closest('.account-wrap')) document.getElementById('accountMenu').classList.remove('open');
-});
-
-messageScannerEvents.forEach(function(ev){
-  pushAlert('fraud', 'Fraud alert: ' + ev.blocked);
-});
+function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(type||'green');t.style.display='block';setTimeout(function(){t.style.display='none';},3000);}
+window.toggleNotifs=function(){document.getElementById('notifPanel').classList.toggle('open');};
 </script>
 </body>
 </html>
