@@ -237,10 +237,84 @@ body.light .twofa-card{background:#fff;}
 .twofa-input{width:100%;padding:11px 14px;border-radius:12px;border:0.5px solid var(--input-border);background:var(--input-bg);color:var(--text);font-size:16px;letter-spacing:0.2em;text-align:center;}
 .twofa-btn{margin-top:12px;width:100%;padding:11px;border:none;border-radius:12px;background:var(--purple);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;}
 
+/* VISUAL REFRESH */
+body{background:radial-gradient(1200px 500px at 70% -10%, rgba(139,92,246,0.22), transparent 55%), radial-gradient(900px 420px at -10% 8%, rgba(251,113,133,0.14), transparent 55%), #060215;}
+.main{max-width:1240px;padding:18px 20px 26px;}
+.nav{max-width:1240px;margin:8px auto 12px;border:1px solid rgba(255,255,255,0.11);border-radius:24px;background:rgba(8,4,28,0.9);padding:14px 18px;backdrop-filter:blur(8px);}
+body.light .nav{background:rgba(255,255,255,0.96);}
+.admin-badge{background:rgba(239,68,68,0.17);padding:6px 12px;font-size:11px;}
+.mode-btn,.account-btn,.bell-btn{border:1px solid rgba(255,255,255,0.14);}
+
+.attention-banner{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 18px;border:1px solid rgba(239,68,68,0.3);border-radius:18px;background:linear-gradient(90deg, rgba(127,29,29,0.35), rgba(127,29,29,0.15));margin-bottom:14px;}
+.attention-copy{font-size:28px;color:#f87171;display:flex;align-items:center;gap:10px;font-weight:500;}
+.review-btn{padding:11px 18px;border-radius:14px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:#fff;font-size:19px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+
+.control-row{grid-template-columns:1fr auto auto;gap:12px;}
+.bulk-wrap{display:none;}
+.global-search{padding:14px 16px;border-radius:14px;font-size:16px;background:rgba(255,255,255,0.1);}
+.mini-btn{padding:13px 16px;border-radius:14px;font-size:14px;background:rgba(10,6,35,0.7);}
+
+.stats-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+.stat-card{position:relative;border-radius:22px;padding:16px 16px 14px;background:linear-gradient(180deg, rgba(15,9,44,0.92), rgba(9,6,33,0.88));border:1px solid rgba(255,255,255,0.12);overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#8b5cf6,#22c55e);opacity:0.85;}
+.stat-card:nth-child(2)::before{background:linear-gradient(90deg,#22c55e,#84cc16);}
+.stat-card:nth-child(3)::before{background:linear-gradient(90deg,#f59e0b,#facc15);}
+.stat-card:nth-child(4)::before{background:linear-gradient(90deg,#f97316,#ef4444);}
+.stat-card:nth-child(5)::before{background:linear-gradient(90deg,#06b6d4,#22c55e);}
+.stat-icon{font-size:19px;opacity:0.95;}
+.stat-val{font-size:42px;margin-top:8px;}
+.stat-lbl{font-size:17px;margin-top:8px;}
+.stat-trend{font-size:14px;margin-top:6px;line-height:1.3;}
+
+.insight-grid{margin:12px 0 16px;}
+.insight-card{border-radius:18px;background:rgba(10,6,35,0.72);border:1px solid rgba(255,255,255,0.11);}
+
+.tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;padding:8px;border-radius:16px;border:1px solid rgba(255,255,255,0.11);background:rgba(10,6,35,0.68);}
+.tab-btn{border-radius:12px;padding:14px 12px;font-size:15px;color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.12);background:rgba(8,5,26,0.75);}
+.tab-btn.active{background:rgba(30,19,75,0.92);border-color:rgba(167,139,250,0.7);color:#fff;}
+
+.table-card{border-radius:20px;border:1px solid rgba(255,255,255,0.12);background:rgba(8,5,30,0.83);}
+.table-header{padding:16px 18px;}
+.table-title{font-size:36px;}
+.table-count{font-size:15px;}
+.search-input{width:320px;padding:14px 16px;border-radius:12px;font-size:14px;background:rgba(255,255,255,0.14);}
+.col-row{padding:11px 18px;background:rgba(255,255,255,0.02);}
+.col-h{font-size:11px;}
+.data-row{padding:15px 18px;}
+.u-av{width:44px;height:44px;font-size:16px;}
+.u-name,.cell-title{font-size:21px;}
+.u-joined,.cell{font-size:14px;}
+.actions{gap:8px;}
+.act-btn{padding:8px 16px;border-radius:12px;font-size:14px;border:1px solid rgba(255,255,255,0.2);background:rgba(8,5,25,0.7);}
+.btn-view{background:transparent;color:#fff;border-color:rgba(255,255,255,0.24);}
+.btn-warn{background:rgba(234,179,8,0.15);}
+.btn-ban,.btn-remove{background:rgba(239,68,68,0.13);}
+.btn-unban,.btn-resolve{background:rgba(34,197,94,0.14);}
+
+.dashboard-bottom{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px;}
+.panel-card{border-radius:18px;background:rgba(10,6,35,0.78);border:1px solid rgba(255,255,255,0.12);padding:14px;}
+.panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.panel-title{font-size:19px;font-weight:500;color:#fff;}
+.panel-sub{font-size:14px;color:var(--text-faint);}
+.panel-list{display:grid;gap:8px;}
+.panel-item{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:14px;color:var(--text-muted);}
+.panel-item:last-child{border-bottom:none;}
+
+body.light .attention-banner{background:linear-gradient(90deg,#fef2f2,#fff1f2);}
+body.light .tabs,
+body.light .table-card,
+body.light .panel-card,
+body.light .insight-card{background:#fff;}
+body.light .tab-btn,
+body.light .act-btn{background:#fff;}
+body.light .btn-view{border-color:#d4ccff;color:#4c1d95;}
+
 @media (max-width: 980px){
   .stats-grid{grid-template-columns:repeat(2,1fr);}
   .insight-grid,.analytics{grid-template-columns:1fr;}
-  .control-row{grid-template-columns:1fr 1fr;}
+  .control-row{grid-template-columns:1fr;}
+  .tabs{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .dashboard-bottom{grid-template-columns:1fr;}
 }
 @media (max-width: 760px){
   .nav{padding:11px 14px;}
@@ -248,9 +322,13 @@ body.light .twofa-card{background:#fff;}
   .nav-date{display:none;}
   .control-row{grid-template-columns:1fr;}
   .global-search{min-width:0;width:100%;}
-  .g-users{grid-template-columns:32px 1.7fr 1.4fr 0.8fr 0.9fr 1.2fr;}
-  .g-tasks{grid-template-columns:2fr 1fr 0.9fr 0.9fr 1fr;}
-  .g-disputes{grid-template-columns:1.7fr 1fr 1fr 0.9fr 1.2fr;}
+  .attention-banner{flex-direction:column;align-items:flex-start;}
+  .review-btn{width:100%;}
+  .search-input{width:100%;}
+  .tabs{grid-template-columns:1fr 1fr;}
+  .g-users{grid-template-columns:32px 2fr 1.2fr 0.8fr 1fr 1.2fr;}
+  .g-tasks{grid-template-columns:1.7fr 1fr 0.8fr 0.9fr 1fr;}
+  .g-disputes{grid-template-columns:1.6fr 1fr 1fr 0.8fr 1.1fr;}
 }
 </style>
 </head>
@@ -298,6 +376,11 @@ body.light .twofa-card{background:#fff;}
   </nav>
 
   <div class="main">
+
+    <div class="attention-banner">
+      <div class="attention-copy">🚨 <span id="attentionText">2 open disputes require your attention</span></div>
+      <button class="review-btn" onclick="focusDisputes()">Review now →</button>
+    </div>
 
     <div class="control-row">
       <input class="global-search" id="globalSearch" placeholder="Search users, tasks, disputes in one place..." oninput="runGlobalSearch(this.value)">
@@ -359,6 +442,8 @@ body.light .twofa-card{background:#fff;}
       <button class="tab-btn active" onclick="showTab('users',this)">👥 Users</button>
       <button class="tab-btn" onclick="showTab('tasks',this)">📋 Tasks</button>
       <button class="tab-btn" onclick="showTab('disputes',this)">🚨 Disputes</button>
+      <button class="tab-btn" onclick="showRevenueSummary(this)">💰 Revenue</button>
+      <button class="tab-btn" onclick="showAnalyticsPanel(this)">📊 Analytics</button>
     </div>
 
     <!-- USERS TABLE -->
@@ -408,6 +493,23 @@ body.light .twofa-card{background:#fff;}
         <div class="col-h" style="text-align:right">Actions</div>
       </div>
       <div id="disputesBody"></div>
+    </div>
+
+    <div class="dashboard-bottom">
+      <div class="panel-card">
+        <div class="panel-head">
+          <div class="panel-title">Recent activity</div>
+          <div class="panel-sub">Last 24hrs</div>
+        </div>
+        <div class="panel-list" id="recentActivityList"></div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-head">
+          <div class="panel-title">Top categories</div>
+          <div class="panel-sub">By task volume</div>
+        </div>
+        <div class="panel-list" id="topCategoriesList"></div>
+      </div>
     </div>
 
   </div>
@@ -770,6 +872,35 @@ function updateHealthScore(){
   document.getElementById('statHealthTrend').textContent = 'Completion ' + Math.round(completionRate * 100) + '% • Dispute rate ' + Math.round(disputePenalty * 100) + '%';
 }
 
+function renderBottomPanels(){
+  var openDisputes = disputes.filter(function(d){ return d.status === 'open'; }).length;
+  var recent = [
+    {txt:(users[0] ? users[0].name : 'User') + ' completed a task', when:'2m ago'},
+    {txt:'New user signed up', when:'15m ago'},
+    {txt:'Dispute opened for moving task', when:'1hr ago'},
+    {txt:'Task posted in Tutoring', when:'2hr ago'}
+  ];
+  document.getElementById('recentActivityList').innerHTML = recent.map(function(item){
+    return '<div class="panel-item"><span>' + item.txt + '</span><strong>' + item.when + '</strong></div>';
+  }).join('');
+
+  var categoryMap = { Errands:0, Home:0, Tutoring:0, Beauty:0, Tech:0 };
+  tasks.forEach(function(t){
+    var text = (t.title || '').toLowerCase();
+    if(text.indexOf('clean') !== -1 || text.indexOf('moving') !== -1) categoryMap.Home += 1;
+    else if(text.indexOf('tutor') !== -1 || text.indexOf('math') !== -1) categoryMap.Tutoring += 1;
+    else if(text.indexOf('braid') !== -1 || text.indexOf('hair') !== -1) categoryMap.Beauty += 1;
+    else if(text.indexOf('computer') !== -1 || text.indexOf('tech') !== -1) categoryMap.Tech += 1;
+    else categoryMap.Errands += 1;
+  });
+  var sorted = Object.keys(categoryMap).map(function(k){ return {name:k, count:categoryMap[k]}; }).sort(function(a,b){ return b.count - a.count; });
+  document.getElementById('topCategoriesList').innerHTML = sorted.map(function(c){
+    return '<div class="panel-item"><span>' + c.name + '</span><strong>' + c.count + ' tasks</strong></div>';
+  }).join('');
+
+  document.getElementById('attentionText').textContent = openDisputes + ' open disputes require your attention';
+}
+
 function resetSessionTimer(){
   sessionSecondsRemaining = 30 * 60;
 }
@@ -843,6 +974,7 @@ async function initAdmin(){
   computeSecurityInsights();
   updateHealthScore();
   renderAnalytics();
+  renderBottomPanels();
   setupSessionTimeout();
 
   var newUserSpike = signupTrend[signupTrend.length - 1].value >= 15;
@@ -921,6 +1053,25 @@ window.showTab = function(tab, btn){
   document.getElementById('usersTable').style.display    = tab==='users'    ? 'block' : 'none';
   document.getElementById('tasksTable').style.display    = tab==='tasks'    ? 'block' : 'none';
   document.getElementById('disputesTable').style.display = tab==='disputes' ? 'block' : 'none';
+};
+
+window.focusDisputes = function(){
+  var btns = document.querySelectorAll('.tab-btn');
+  if(btns[2]) showTab('disputes', btns[2]);
+};
+
+window.showRevenueSummary = function(btn){
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  var revenue = document.getElementById('statRevenue').textContent;
+  showToast('Revenue snapshot: ' + revenue, 'green');
+};
+
+window.showAnalyticsPanel = function(btn){
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  var wrap = document.getElementById('analyticsWrap');
+  if(wrap) wrap.scrollIntoView({ behavior:'smooth', block:'start' });
 };
 
 // ── SEARCH / FILTER ────────────────────────────────────
@@ -1096,6 +1247,7 @@ function applyUserAction(u, action){
     showToast(u.name + ' has been unbanned.', 'green');
   }
   renderUsers(filteredUsers);
+  renderBottomPanels();
   computeSecurityInsights();
 }
 
@@ -1118,6 +1270,7 @@ window.removeTask = function(id){
   openModal('Remove task', 'Are you sure you want to remove "'+t.title+'"? This cannot be undone.', '', 'Remove task', 'danger', function(){
     tasks = tasks.filter(function(x){ return x.id!==id; });
     renderTasks(tasks);
+    renderBottomPanels();
     document.getElementById('statTasks').textContent = tasks.length;
     showToast('Task removed successfully.', 'red');
     // TODO: Delete the task from Supabase when admin write actions are enabled.
@@ -1144,6 +1297,7 @@ window.resolveDispute = function(id){
     d.notes = document.getElementById('resolveNote') ? document.getElementById('resolveNote').value.trim() : '';
     d.status = 'resolved';
     renderDisputes(disputes);
+    renderBottomPanels();
     var open = disputes.filter(function(x){ return x.status==='open'; }).length;
     document.getElementById('statDisputes').textContent = open;
     pushAlert('dispute', 'Dispute #' + d.id + ' resolved');
