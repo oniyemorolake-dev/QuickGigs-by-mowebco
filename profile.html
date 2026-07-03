@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickGigs — Profile</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0b0118;--surface:rgba(255,255,255,0.04);--border:rgba(200,168,233,0.1);
+  --text:#fff;--text-muted:rgba(255,255,255,0.45);--text-faint:rgba(255,255,255,0.22);
+  --purple:#6b3fa0;--purple-light:#9b6fc4;--lavender:#c8a8e9;
+  --nav-bg:#0b0118;--tab-bg:#0e021f;--card-bg:rgba(255,255,255,0.04);
+}
+body.light{
+  --bg:#fafafe;--surface:#fff;--border:#f0eeff;--text:#2d1b4e;
+  --text-muted:#5a5a72;--text-faint:#9ca3af;--nav-bg:#fff;--tab-bg:#fff;
+  --card-bg:#fff;--lavender:#6b3fa0;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:76px;transition:background 0.25s,color 0.25s;}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:50;background:transparent;padding:13px 20px;display:flex;align-items:center;justify-content:space-between;}
+.back-btn{font-size:20px;color:#fff;text-decoration:none;opacity:0.9;}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.mode-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(0,0,0,0.3);color:rgba(255,255,255,0.8);}
+body.light .mode-btn{background:rgba(0,0,0,0.2);color:#fff;}
+
+/* BANNER */
+.banner{height:140px;background:linear-gradient(135deg,#6b3fa0 0%,#9b6fc4 60%,#c8a8e9 100%);position:relative;margin-top:-56px;}
+.banner-overlay{position:absolute;inset:0;background:rgba(11,1,24,0.25);}
+
+/* AVATAR SECTION */
+.avatar-section{display:flex;flex-direction:column;align-items:center;margin-top:-36px;padding:0 20px 16px;position:relative;z-index:1;}
+.avatar-wrap{position:relative;margin-bottom:12px;}
+.avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#4a1d8a,#9b6fc4);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:500;color:#fff;border:3px solid var(--bg);transition:border-color 0.25s;}
+.verified{position:absolute;bottom:2px;right:2px;width:20px;height:20px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid var(--bg);transition:border-color 0.25s;}
+.profile-name{font-size:20px;font-weight:500;color:var(--text);margin-bottom:5px;text-align:center;}
+.role-tags{display:flex;gap:6px;justify-content:center;margin-bottom:10px;flex-wrap:wrap;}
+.role-tag{font-size:11px;padding:4px 12px;border-radius:20px;background:rgba(107,63,160,0.25);color:var(--lavender);border:0.5px solid rgba(200,168,233,0.2);}
+body.light .role-tag{background:#ede9ff;border-color:#d8cfff;}
+.rating-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.stars{font-size:14px;}
+.rating-score{font-size:15px;font-weight:500;color:var(--text);}
+.rating-count{font-size:12px;color:var(--text-faint);}
+.member-since{font-size:12px;color:var(--text-faint);}
+
+/* EDIT BUTTON */
+.edit-btn{margin:0 20px 16px;width:calc(100% - 40px);padding:12px;border-radius:14px;border:0.5px solid rgba(200,168,233,0.25);background:rgba(107,63,160,0.12);color:var(--lavender);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;}
+.edit-btn:hover{background:rgba(107,63,160,0.2);}
+body.light .edit-btn{background:#ede9ff;border-color:#d8cfff;color:var(--purple);}
+
+/* DIVIDER */
+.divider{height:0.5px;background:var(--border);margin:0 20px 16px;}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;margin:0 20px 16px;border-radius:16px;overflow:hidden;border:0.5px solid var(--border);}
+.stat{padding:14px 8px;text-align:center;background:var(--card-bg);}
+.stat+.stat{border-left:0.5px solid var(--border);}
+.stat-num{font-size:20px;font-weight:500;color:var(--text);margin-bottom:3px;}
+.stat-num.green{color:#4ade80;}
+body.light .stat-num.green{color:#16a34a;}
+.stat-lbl{font-size:10px;color:var(--text-faint);}
+
+/* SECTION */
+.section{margin:0 20px 16px;}
+.sec-title{font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);margin-bottom:10px;}
+.sec-content{font-size:14px;line-height:1.7;color:var(--text-muted);}
+
+/* SKILLS */
+.skills{display:flex;flex-wrap:wrap;gap:8px;}
+.skill{font-size:13px;padding:6px 14px;border-radius:20px;background:var(--card-bg);border:0.5px solid var(--border);color:var(--text-muted);}
+
+/* REVIEWS */
+.review-card{background:var(--card-bg);border:0.5px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;}
+.review-card:last-child{margin-bottom:0;}
+.rev-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.rev-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#fff;flex-shrink:0;}
+.rev-info{flex:1;}
+.rev-name{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px;}
+.rev-task{font-size:11px;color:var(--purple-light);}
+body.light .rev-task{color:var(--purple);}
+.rev-stars{font-size:12px;flex-shrink:0;}
+.rev-text{font-size:13px;line-height:1.6;color:var(--text-muted);}
+
+/* EDIT PROFILE MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:20px 22px 40px;background:#150830;border:0.5px solid var(--border);}
+body.light .modal{background:#fff;}
+.modal-handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 18px;}
+.modal-title{font-size:17px;font-weight:500;color:var(--text);margin-bottom:18px;}
+.modal-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);display:block;margin-bottom:6px;}
+.modal-input{width:100%;background:rgba(255,255,255,0.05);border:0.5px solid var(--border);border-radius:12px;padding:12px 15px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;margin-bottom:14px;transition:border-color 0.2s;}
+body.light .modal-input{background:#f8f7ff;border-color:#e8e2ff;}
+.modal-input:focus{border-color:var(--purple-light);}
+.modal-input::placeholder{color:var(--lavender);opacity:0.35;}
+textarea.modal-input{resize:none;min-height:80px;}
+.skills-edit{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
+.skill-toggle{font-size:12px;padding:6px 13px;border-radius:20px;cursor:pointer;border:0.5px solid var(--border);background:var(--card-bg);color:var(--text-muted);transition:all 0.15s;}
+.skill-toggle.selected{background:rgba(107,63,160,0.3);border-color:var(--purple-light);color:var(--lavender);}
+body.light .skill-toggle.selected{background:#ede9ff;color:var(--purple);}
+.save-btn{width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;}
+
+/* TOAST */
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:#4ade80;color:#0b0118;padding:11px 24px;border-radius:20px;font-size:13px;font-weight:500;display:none;z-index:300;white-space:nowrap;}
+
+/* TAB BAR */
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--tab-bg);border-top:0.5px solid var(--border);display:flex;padding:8px 0 14px;z-index:100;transition:background 0.25s;}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;}
+.tab-icon{font-size:22px;color:var(--text-faint);}
+.tab-lbl{font-size:10px;color:var(--text-faint);}
+.tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:var(--purple-light);}
+body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color:var(--purple);}
+</style>
+</head>
+<body>
+
+<!-- NAV overlaid on banner -->
+<nav class="nav">
+  <a class="back-btn" href="dashboard.html">←</a>
+  <div class="nav-right">
+    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
+  </div>
+</nav>
+
+<!-- BANNER -->
+<div class="banner"><div class="banner-overlay"></div></div>
+
+<!-- AVATAR + INFO -->
+<div class="avatar-section">
+  <div class="avatar-wrap">
+    <div class="avatar" id="avatarEl">M</div>
+    <div class="verified" title="Verified user">✓</div>
+  </div>
+  <div class="profile-name" id="profileName">Loading...</div>
+  <div class="role-tags" id="roleTags"></div>
+  <div class="rating-row">
+    <span class="stars" id="starsEl">⭐⭐⭐⭐⭐</span>
+    <span class="rating-score" id="ratingScore">—</span>
+    <span class="rating-count" id="ratingCount"></span>
+  </div>
+  <div class="member-since" id="memberSince"></div>
+</div>
+
+<!-- EDIT BUTTON (own profile only) -->
+<button class="edit-btn" id="editBtn" onclick="openEditModal()" style="display:none">✏️ Edit profile</button>
+
+<div class="divider"></div>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat"><div class="stat-num" id="statPosted">0</div><div class="stat-lbl">Posted</div></div>
+  <div class="stat"><div class="stat-num" id="statDone">0</div><div class="stat-lbl">Completed</div></div>
+  <div class="stat"><div class="stat-num green" id="statEarned">$0</div><div class="stat-lbl">Earned</div></div>
+</div>
+
+<!-- BIO -->
+<div class="section" id="bioSection">
+  <div class="sec-title">About</div>
+  <div class="sec-content" id="bioText">No bio yet.</div>
+</div>
+
+<!-- SKILLS -->
+<div class="section" id="skillsSection">
+  <div class="sec-title">Skills</div>
+  <div class="skills" id="skillsList"></div>
+</div>
+
+<!-- REVIEWS -->
+<div class="section" id="reviewsSection">
+  <div class="sec-title">Reviews</div>
+  <div id="reviewsList">
+    <div style="font-size:13px;color:var(--text-faint);padding:8px 0;">No reviews yet.</div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">Profile saved! 🎉</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlay(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Edit profile</div>
+    <span class="modal-label">Display name</span>
+    <input class="modal-input" id="editName" type="text" placeholder="Your name">
+    <span class="modal-label">Bio</span>
+    <textarea class="modal-input" id="editBio" placeholder="Tell people a bit about yourself..."></textarea>
+    <span class="modal-label">Skills (select all that apply)</span>
+    <div class="skills-edit" id="skillsEdit"></div>
+    <button class="save-btn" onclick="saveProfile()">Save profile</button>
+  </div>
+</div>
+
+<!-- TAB BAR -->
+<nav class="tab-bar">
+  <a class="tab-item" href="dashboard.html"><span class="tab-icon">🏠</span><span class="tab-lbl">Home</span></a>
+  <a class="tab-item" href="browsetask.html"><span class="tab-icon">🔍</span><span class="tab-lbl">Browse</span></a>
+  <a class="tab-item" href="posttask.html"><span class="tab-icon">➕</span><span class="tab-lbl">Post</span></a>
+  <a class="tab-item" href="mytasks.html"><span class="tab-icon">✅</span><span class="tab-lbl">My Tasks</span></a>
+  <a class="tab-item active" href="profile.html"><span class="tab-icon">👤</span><span class="tab-lbl">Profile</span></a>
+</nav>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
+  authDomain: "quickgigs-7b12d.firebaseapp.com",
+  projectId: "quickgigs-7b12d",
+  storageBucket: "quickgigs-7b12d.firebasestorage.app",
+  messagingSenderId: "698985399366",
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+let authChecked = false;
+const redirectTimeout = setTimeout(() => {
+  if (!authChecked) window.location.href = 'login.html';
+}, 3000);
+
+onAuthStateChanged(auth, (user) => {
+  authChecked = true;
+  clearTimeout(redirectTimeout);
+  if (!user) { window.location.href = 'login.html'; return; }
+  window._currentUser = user;
+  loadProfile(user);
+});
+</script>
+
+<script>
+const SUPABASE_URL = 'https://nuyfqsxstsrbloztzgau.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51eWZxc3hzdHNyYmxvenR6Z2F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NzkyNjUsImV4cCI6MjA5ODU1NTI2NX0.UpagWLifoxHmWu30lNnBO89gNYKIh4KxtYu28DKlSBM';
+const HEADERS = { 'Content-Type':'application/json', 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+SUPABASE_ANON_KEY };
+
+var ALL_SKILLS = ['💻 Tech','🎓 Tutoring','🚗 Errands','🏠 Home','🚚 Moving','🍳 Cooking','👶 Care','🌿 Gardening','🎉 Events','🔧 Trades','💇 Beauty','📋 Admin'];
+var profileData = {};
+var isDark = localStorage.getItem('qg-mode') !== 'light';
+
+function applyTheme(){ document.body.className = isDark ? '' : 'light'; document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark'; }
+window.toggleTheme = function(){ isDark = !isDark; localStorage.setItem('qg-mode', isDark?'dark':'light'); applyTheme(); };
+applyTheme();
+
+// Check URL for viewing another user's profile
+var params = new URLSearchParams(window.location.search);
+var viewUserId = params.get('user');
+
+async function loadProfile(user) {
+  var isOwnProfile = !viewUserId || viewUserId === user.uid;
+  var targetId = viewUserId || user.uid;
+
+  // Show edit button only for own profile
+  if (isOwnProfile) document.getElementById('editBtn').style.display = 'block';
+
+  // Load from localStorage first for instant display
+  var saved = localStorage.getItem('qg-profile-' + targetId);
+  if (saved) {
+    profileData = JSON.parse(saved);
+  } else {
+    profileData = {
+      name: user.displayName || user.email.split('@')[0],
+      bio: '',
+      skills: [],
+      role: localStorage.getItem('qg-role') || 'poster'
+    };
+  }
+
+  // Load tasks from Supabase to calculate real stats
+  try {
+    var tasksRes = await fetch(SUPABASE_URL + '/rest/v1/tasks?posted_by=eq.' + targetId, { headers: HEADERS });
+    var tasks = await tasksRes.json();
+    var posted = Array.isArray(tasks) ? tasks.length : 0;
+    var completed = Array.isArray(tasks) ? tasks.filter(function(t){ return t.status === 'completed'; }).length : 0;
+    document.getElementById('statPosted').textContent = posted;
+    document.getElementById('statDone').textContent = completed;
+
+    // Load reviews
+    var revRes = await fetch(SUPABASE_URL + '/rest/v1/reviews?reviewee_id=eq.' + targetId + '&order=created_at.desc', { headers: HEADERS });
+    var reviews = await revRes.json();
+    if (Array.isArray(reviews) && reviews.length) {
+      var avg = reviews.reduce(function(s,r){ return s + (r.rating||0); }, 0) / reviews.length;
+      document.getElementById('ratingScore').textContent = avg.toFixed(1);
+      document.getElementById('ratingCount').textContent = '· ' + reviews.length + ' review' + (reviews.length!==1?'s':'');
+      renderReviews(reviews);
+    } else {
+      document.getElementById('ratingScore').textContent = 'New';
+      document.getElementById('ratingCount').textContent = '· No reviews yet';
+    }
+  } catch(err) {
+    console.warn('Could not load stats:', err);
+    document.getElementById('ratingScore').textContent = 'New';
+  }
+
+  renderProfile(user);
+}
+
+function renderProfile(user) {
+  var name = profileData.name || user.displayName || user.email.split('@')[0];
+  var initial = name.charAt(0).toUpperCase();
+  document.getElementById('avatarEl').textContent = initial;
+  document.getElementById('profileName').textContent = name;
+  document.getElementById('memberSince').textContent = 'Member since ' + new Date(user.metadata.creationTime).toLocaleDateString('en-CA', {month:'long', year:'numeric'});
+
+  // Role tags
+  var role = profileData.role || localStorage.getItem('qg-role') || 'poster';
+  var roleHtml = '';
+  if(role === 'poster' || role === 'both') roleHtml += '<span class="role-tag">📋 Poster</span>';
+  if(role === 'worker' || role === 'both') roleHtml += '<span class="role-tag">💼 Worker</span>';
+  document.getElementById('roleTags').innerHTML = roleHtml;
+
+  // Bio
+  document.getElementById('bioText').textContent = profileData.bio || 'No bio yet — tap Edit profile to add one.';
+
+  // Skills
+  var skills = profileData.skills || [];
+  document.getElementById('skillsList').innerHTML = skills.length
+    ? skills.map(function(s){ return '<span class="skill">'+s+'</span>'; }).join('')
+    : '<span style="font-size:13px;color:var(--text-faint)">No skills added yet.</span>';
+}
+
+function renderReviews(reviews) {
+  var colors = ['linear-gradient(135deg,#6b3fa0,#c8a8e9)','linear-gradient(135deg,#16a34a,#4ade80)','linear-gradient(135deg,#d97706,#fbbf24)','linear-gradient(135deg,#0ea5e9,#7dd3fc)'];
+  document.getElementById('reviewsList').innerHTML = reviews.slice(0,5).map(function(r, i){
+    var stars = '⭐'.repeat(r.rating || 5);
+    return '<div class="review-card">' +
+      '<div class="rev-top">' +
+        '<div class="rev-avatar" style="background:'+colors[i%colors.length]+'">'+r.reviewer_id.charAt(0).toUpperCase()+'</div>' +
+        '<div class="rev-info"><div class="rev-name">User</div><div class="rev-task">Verified task</div></div>' +
+        '<div class="rev-stars">'+stars+'</div>' +
+      '</div>' +
+      '<div class="rev-text">'+(r.review_comment||'Great experience!')+'</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ── EDIT MODAL ──────────────────────────────────────────
+window.openEditModal = function() {
+  document.getElementById('editName').value = profileData.name || '';
+  document.getElementById('editBio').value = profileData.bio || '';
+  var selectedSkills = profileData.skills || [];
+  document.getElementById('skillsEdit').innerHTML = ALL_SKILLS.map(function(s){
+    var sel = selectedSkills.includes(s) ? ' selected' : '';
+    return '<span class="skill-toggle'+sel+'" onclick="toggleSkill(this)">'+s+'</span>';
+  }).join('');
+  document.getElementById('modalOverlay').classList.add('open');
+};
+
+window.toggleSkill = function(el){
+  el.classList.toggle('selected');
+};
+
+window.handleOverlay = function(e){
+  if(e.target === document.getElementById('modalOverlay')) document.getElementById('modalOverlay').classList.remove('open');
+};
+
+window.saveProfile = function() {
+  var user = window._currentUser;
+  if(!user) return;
+  var name = document.getElementById('editName').value.trim() || profileData.name;
+  var bio  = document.getElementById('editBio').value.trim();
+  var skills = Array.from(document.querySelectorAll('.skill-toggle.selected')).map(function(el){ return el.textContent; });
+
+  profileData = { ...profileData, name, bio, skills };
+  localStorage.setItem('qg-profile-' + user.uid, JSON.stringify(profileData));
+
+  document.getElementById('modalOverlay').classList.remove('open');
+  renderProfile(user);
+
+  var t = document.getElementById('toast');
+  t.style.display = 'block';
+  setTimeout(function(){ t.style.display='none'; }, 3000);
+};
+</script>
+</body>
+</html>
