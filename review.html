@@ -235,7 +235,13 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+let authChecked = false;
+const redirectTimeout = setTimeout(() => {
+  if (!authChecked) window.location.href = 'login.html';
+}, 3000);
 onAuthStateChanged(auth, (user) => {
+  authChecked = true;
+  clearTimeout(redirectTimeout);
   if (!user) { window.location.href = 'login.html'; return; }
   window._currentUser = user;
 });

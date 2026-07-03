@@ -82,7 +82,6 @@ body.light .mode-btn{background:#f0eeff;color:var(--purple);}
 .earn .choice-icon{background:rgba(107,63,160,0.2);}
 body.light .earn .choice-icon{background:#ede9ff;}
 
-.choice-text{}
 .choice-title{font-size:17px;font-weight:500;margin-bottom:4px;}
 .hire .choice-title{color:#fff;}
 .earn .choice-title{color:var(--text);}
@@ -146,8 +145,14 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+let authChecked = false;
+const redirectTimeout = setTimeout(() => {
+  if (!authChecked) window.location.href = 'login.html';
+}, 3000);
 
 onAuthStateChanged(auth, (user) => {
+  authChecked = true;
+  clearTimeout(redirectTimeout);
   if (!user) { window.location.href = 'login.html'; return; }
   const name = user.displayName || user.email.split('@')[0];
   const firstName = name.split(' ')[0];
