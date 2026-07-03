@@ -102,7 +102,14 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
   submitBtn.disabled = true;
 
   try {
-    await signInWithEmailAndPassword(auth, email, password);
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    if (!userCredential.user.emailVerified) {
+      errorMsg.textContent = 'Please verify your email before logging in. Check your inbox for the verification link.';
+      errorMsg.style.display = 'block';
+      submitBtn.textContent = 'Log in';
+      submitBtn.disabled = false;
+      return;
+    }
     okMsg.textContent = 'Welcome back! Redirecting...';
     okMsg.style.display = 'block';
     setTimeout(function(){ window.location.href = 'dashboard.html'; }, 1500);

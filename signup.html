@@ -98,7 +98,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);font-s
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
@@ -188,6 +188,7 @@ document.getElementById('signupForm').addEventListener('submit', async function(
     // 1. Create Firebase account
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(userCredential.user, { displayName: name });
+    await sendEmailVerification(userCredential.user);
 
     // 2. Save user to Supabase USERS table
     await saveUserToSupabase({ name, email, phone, role });
@@ -195,15 +196,11 @@ document.getElementById('signupForm').addEventListener('submit', async function(
     // 3. Save role to localStorage so login redirect works
     localStorage.setItem('qg-role', role);
 
-    // 4. Show success and redirect
-    okMsg.textContent    = 'Account created successfully! Welcome to QuickGigs 🎉';
-    okMsg.style.display  = 'block';
-    submitBtn.textContent = 'Account created!';
-
-    // Redirect — if role is both go to mode-select, otherwise go straight to dashboard
-    setTimeout(function(){
-      window.location.href = role === 'both' ? 'modeselector.html' : 'dashboard.html';
-    }, 2000);
+    // 4. Show success and require email verification before login
+    okMsg.textContent = 'Account created! Check your email to verify your account before logging in 📧';
+    okMsg.style.display = 'block';
+    submitBtn.textContent = 'Check your email';
+    submitBtn.disabled = true;
 
   } catch (error) {
     var message = 'Something went wrong. Please try again.';
