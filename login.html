@@ -62,6 +62,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);font-s
     <span class="forgot" id="forgotLink">Forgot password?</span>
     <button type="submit" class="btn" id="submitBtn">Log in</button>
     <button type="button" class="btn" id="resendBtn" style="display:none;background:rgba(255,255,255,0.08);margin-top:10px;">Resend verification email</button>
+    <button type="button" class="btn" id="verifiedBtn" style="display:none;background:rgba(255,255,255,0.08);margin-top:10px;">I verified my email — check again</button>
   </form>
 
   <div class="divider"><span>or</span></div>
@@ -86,6 +87,35 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 let pendingVerificationUser = null;
 let resendCooldown = null;
+
+function showVerificationNeeded(errorMsg, resendBtn, verifiedBtn) {
+  errorMsg.textContent = 'Please verify your email before logging in. Check your inbox, spam, and promotions folders for the link from Firebase.';
+  errorMsg.style.display = 'block';
+  resendBtn.style.display = 'block';
+  resendBtn.disabled = false;
+  resendBtn.textContent = 'Resend verification email';
+  verifiedBtn.style.display = 'block';
+  verifiedBtn.disabled = false;
+  verifiedBtn.textContent = 'I verified my email — check again';
+}
+
+async function tryLogin(email, password, options) {
+  options = options || {};
+  var userCredential = await signInWithEmailAndPassword(auth, email, password);
+  await userCredential.user.reload();
+  var user = auth.currentUser;
+  if (!user) throw new Error('No user session');
+
+  if (!user.emailVerified) {
+    pendingVerificationUser = user;
+    if (options.signOutIfUnverified) {
+      await signOut(auth);
+    }
+    return { verified: false, user: user };
+  }
+
+  return { verified: true, user: user };
+}
 
 function startResendCooldown(seconds) {
   var resendBtn = document.getElementById('resendBtn');
@@ -117,28 +147,24 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
   var okMsg = document.getElementById('okMsg');
   var submitBtn = document.getElementById('submitBtn');
   var resendBtn = document.getElementById('resendBtn');
+  var verifiedBtn = document.getElementById('verifiedBtn');
   errorMsg.style.display = 'none';
   okMsg.style.display = 'none';
   resendBtn.style.display = 'none';
+  verifiedBtn.style.display = 'none';
 
-  var email = document.getElementById('email').value;
+  var email = document.getElementById('email').value.trim();
   var password = document.getElementById('password').value;
 
   submitBtn.textContent = 'Logging in...';
   submitBtn.disabled = true;
 
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    if (!userCredential.user.emailVerified) {
-      pendingVerificationUser = userCredential.user;
-      errorMsg.textContent = 'Please verify your email before logging in. Check your inbox for the verification link.';
-      errorMsg.style.display = 'block';
+    var result = await tryLogin(email, password, { signOutIfUnverified: true });
+    if (!result.verified) {
       submitBtn.textContent = 'Log in';
       submitBtn.disabled = false;
-      resendBtn.style.display = 'block';
-      resendBtn.disabled = false;
-      resendBtn.textContent = 'Resend verification email';
-      await signOut(auth);
+      showVerificationNeeded(errorMsg, resendBtn, verifiedBtn);
       return;
     }
     okMsg.textContent = 'Welcome back! Redirecting...';
@@ -161,11 +187,14 @@ document.getElementById('resendBtn').addEventListener('click', async function() 
   var errorMsg = document.getElementById('errorMsg');
   var okMsg = document.getElementById('okMsg');
   var resendBtn = document.getElementById('resendBtn');
+  var verifiedBtn = document.getElementById('verifiedBtn');
+  var email = document.getElementById('email').value.trim();
+  var password = document.getElementById('password').value;
   errorMsg.style.display = 'none';
   okMsg.style.display = 'none';
 
-  if (!pendingVerificationUser) {
-    errorMsg.textContent = 'Please try logging in once, then resend verification.';
+  if (!email || !password) {
+    errorMsg.textContent = 'Enter your email and password above, then resend verification.';
     errorMsg.style.display = 'block';
     return;
   }
@@ -173,15 +202,59 @@ document.getElementById('resendBtn').addEventListener('click', async function() 
   try {
     resendBtn.disabled = true;
     resendBtn.textContent = 'Sending...';
-    await sendEmailVerification(pendingVerificationUser);
-    okMsg.textContent = 'Verification email sent. Check inbox, spam, or promotions.';
+    var userCredential = await signInWithEmailAndPassword(auth, email, password);
+    pendingVerificationUser = userCredential.user;
+    await sendEmailVerification(userCredential.user);
+    await signOut(auth);
+    okMsg.textContent = 'Verification email sent. Check inbox, spam, and promotions, then click the link before logging in again.';
     okMsg.style.display = 'block';
+    verifiedBtn.style.display = 'block';
     startResendCooldown(45);
   } catch (error) {
     errorMsg.textContent = 'Could not resend verification email right now. Please try again in a moment.';
     errorMsg.style.display = 'block';
     resendBtn.disabled = false;
     resendBtn.textContent = 'Resend verification email';
+  }
+});
+
+document.getElementById('verifiedBtn').addEventListener('click', async function() {
+  var errorMsg = document.getElementById('errorMsg');
+  var okMsg = document.getElementById('okMsg');
+  var verifiedBtn = document.getElementById('verifiedBtn');
+  var resendBtn = document.getElementById('resendBtn');
+  var email = document.getElementById('email').value.trim();
+  var password = document.getElementById('password').value;
+  errorMsg.style.display = 'none';
+  okMsg.style.display = 'none';
+
+  if (!email || !password) {
+    errorMsg.textContent = 'Enter your email and password above, then check verification again.';
+    errorMsg.style.display = 'block';
+    return;
+  }
+
+  verifiedBtn.disabled = true;
+  verifiedBtn.textContent = 'Checking...';
+
+  try {
+    var result = await tryLogin(email, password, { signOutIfUnverified: true });
+    if (!result.verified) {
+      errorMsg.textContent = 'Still not verified. Open the email link on this device, wait a few seconds, then try again.';
+      errorMsg.style.display = 'block';
+      verifiedBtn.disabled = false;
+      verifiedBtn.textContent = 'I verified my email — check again';
+      resendBtn.style.display = 'block';
+      return;
+    }
+    okMsg.textContent = 'Email verified! Welcome back — redirecting...';
+    okMsg.style.display = 'block';
+    setTimeout(function(){ window.location.href = 'dashboard.html'; }, 1200);
+  } catch (error) {
+    errorMsg.textContent = 'Could not check verification. Try logging in again.';
+    errorMsg.style.display = 'block';
+    verifiedBtn.disabled = false;
+    verifiedBtn.textContent = 'I verified my email — check again';
   }
 });
 
