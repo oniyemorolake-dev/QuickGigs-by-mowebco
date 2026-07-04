@@ -245,6 +245,8 @@ body.light .success-btn{color:#2d1b4e;}
   <button class="success-btn" onclick="window.location.href='dashboard.html'">Back to dashboard</button>
 </div>
 
+<script src="qg-utils.js"></script>
+<script src="supabase-db.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
@@ -274,29 +276,6 @@ onAuthStateChanged(auth, function(user) {
 </script>
 
 <script>
-const SUPABASE_URL = 'https://nuyfqsxstsrbloztzgau.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51eWZxc3hzdHNyYmxvenR6Z2F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NzkyNjUsImV4cCI6MjA5ODU1NTI2NX0.UpagWLifoxHmWu30lNnBO89gNYKIh4KxtYu28DKlSBM';
-const SUPABASE_HEADERS = {
-  'Content-Type': 'application/json',
-  'apikey': SUPABASE_ANON_KEY,
-  'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
-};
-
-async function saveTaskToSupabase(taskData) {
-  try {
-    const res = await fetch(SUPABASE_URL + '/rest/v1/tasks', {
-      method: 'POST',
-      headers: Object.assign({}, SUPABASE_HEADERS, { 'Prefer': 'return=minimal' }),
-      body: JSON.stringify(taskData)
-    });
-    if (!res.ok) throw new Error('Supabase save failed: ' + res.status);
-    return { success: true };
-  } catch (err) {
-    console.error('Supabase error:', err);
-    return { success: false, error: err.message };
-  }
-}
-
 // ── THEME ──────────────────────────────────────────────
 var isDark = localStorage.getItem('qg-mode') !== 'light';
 function applyTheme() {
@@ -349,10 +328,10 @@ function updateHint() {
 
 // ── SUBMIT ─────────────────────────────────────────────
 window.handleSubmit = async function() {
-  var title    = document.getElementById('taskTitle').value.trim();
-  var desc     = document.getElementById('taskDesc').value.trim();
+  var title    = window.sanitizeInput(document.getElementById('taskTitle').value, 120);
+  var desc     = window.sanitizeInput(document.getElementById('taskDesc').value, 2000);
   var budget   = parseFloat(document.getElementById('taskBudget').value);
-  var location = document.getElementById('taskLocation').value.trim() || 'Calgary, AB';
+  var location = window.sanitizeInput(document.getElementById('taskLocation').value, 100) || 'Calgary, AB';
   var valid    = true;
 
   // Clear previous errors
@@ -396,7 +375,7 @@ window.handleSubmit = async function() {
     posted_by:   userId
   };
 
-  var result = await saveTaskToSupabase(taskData);
+  var result = await postTask(taskData);
 
   if (result.success) {
     // Show success screen

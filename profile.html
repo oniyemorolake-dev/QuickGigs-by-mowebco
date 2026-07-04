@@ -233,10 +233,9 @@ onAuthStateChanged(auth, (user) => {
 });
 </script>
 
+<script src="supabase-db.js"></script>
 <script>
-const SUPABASE_URL = 'https://nuyfqsxstsrbloztzgau.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51eWZxc3hzdHNyYmxvenR6Z2F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NzkyNjUsImV4cCI6MjA5ODU1NTI2NX0.UpagWLifoxHmWu30lNnBO89gNYKIh4KxtYu28DKlSBM';
-const HEADERS = { 'Content-Type':'application/json', 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+SUPABASE_ANON_KEY };
+var HEADERS = window.HEADERS;
 
 var ALL_SKILLS = ['💻 Tech','🎓 Tutoring','🚗 Errands','🏠 Home','🚚 Moving','🍳 Cooking','👶 Care','🌿 Gardening','🎉 Events','🔧 Trades','💇 Beauty','📋 Admin'];
 var profileData = {};
@@ -272,7 +271,7 @@ async function loadProfile(user) {
 
   // Load tasks from Supabase to calculate real stats
   try {
-    var tasksRes = await fetch(SUPABASE_URL + '/rest/v1/tasks?posted_by=eq.' + targetId, { headers: HEADERS });
+    var tasksRes = await fetch(window.SUPABASE_URL + '/rest/v1/tasks?posted_by=eq.' + targetId, { headers: HEADERS });
     var tasks = await tasksRes.json();
     var posted = Array.isArray(tasks) ? tasks.length : 0;
     var completed = Array.isArray(tasks) ? tasks.filter(function(t){ return t.status === 'completed'; }).length : 0;
@@ -280,7 +279,7 @@ async function loadProfile(user) {
     document.getElementById('statDone').textContent = completed;
 
     // Load reviews
-    var revRes = await fetch(SUPABASE_URL + '/rest/v1/reviews?reviewee_id=eq.' + targetId + '&order=created_at.desc', { headers: HEADERS });
+    var revRes = await fetch(window.SUPABASE_URL + '/rest/v1/reviews?reviewee_id=eq.' + targetId + '&order=created_at.desc', { headers: HEADERS });
     var reviews = await revRes.json();
     if (Array.isArray(reviews) && reviews.length) {
       var avg = reviews.reduce(function(s,r){ return s + (r.rating||0); }, 0) / reviews.length;

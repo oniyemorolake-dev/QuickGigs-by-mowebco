@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickGigs — Beta Feedback</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;font-size:15px;min-height:100vh;transition:background 0.3s,color 0.3s;padding-bottom:40px;}
+body.dark{background:#0b0118;color:#fff;}
+body.light{background:#fafafe;color:#2d1b4e;}
+
+.nav{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.dark .nav{background:#0b0118;border-bottom:0.5px solid rgba(200,168,233,0.1);}
+.light .nav{background:#fff;border-bottom:0.5px solid #f0eeff;}
+.back-btn{font-size:13px;text-decoration:none;display:flex;align-items:center;gap:4px;}
+.dark .back-btn{color:rgba(200,168,233,0.7);}
+.light .back-btn{color:#9b6fc4;}
+.nav-title{font-size:15px;font-weight:500;}
+.mode-toggle{padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;}
+.dark .mode-toggle{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);}
+.light .mode-toggle{background:#f0eeff;color:#6b3fa0;}
+
+.content{max-width:520px;margin:0 auto;padding:24px 20px;}
+.hero-icon{font-size:40px;margin-bottom:12px;}
+.page-title{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;margin-bottom:8px;}
+.page-sub{font-size:14px;line-height:1.6;margin-bottom:24px;}
+.dark .page-sub{color:rgba(255,255,255,0.55);}
+.light .page-sub{color:#5a5a72;}
+
+.beta-note{border-radius:12px;padding:12px 16px;font-size:12px;line-height:1.55;margin-bottom:24px;}
+.dark .beta-note{background:rgba(107,63,160,0.15);border:0.5px solid rgba(200,168,233,0.2);color:#c8a8e9;}
+.light .beta-note{background:#f0eeff;border:0.5px solid #e0d8ff;color:#6b3fa0;}
+
+.field{margin-bottom:18px;}
+.field label{font-size:11px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:8px;}
+.dark .field label{color:rgba(255,255,255,0.4);}
+.light .field label{color:#9ca3af;}
+.req{color:#fbbf24;}
+
+.field-input,.field-select,.field-textarea{width:100%;border-radius:12px;padding:14px 16px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;border:0.5px solid transparent;}
+.dark .field-input,.dark .field-select,.dark .field-textarea{background:rgba(255,255,255,0.05);color:#fff;border-color:rgba(200,168,233,0.15);}
+.light .field-input,.light .field-select,.light .field-textarea{background:#f8f7ff;color:#2d1b4e;border-color:#e8e2ff;}
+.dark .field-input:focus,.dark .field-select:focus,.dark .field-textarea:focus{border-color:#9b6fc4;background:rgba(107,63,160,0.1);}
+.light .field-input:focus,.light .field-select:focus,.light .field-textarea:focus{border-color:#9b6fc4;background:#ede9ff;}
+.field-textarea{resize:vertical;min-height:120px;}
+.field-hint{font-size:11px;margin-top:6px;}
+.dark .field-hint{color:rgba(255,255,255,0.35);}
+.light .field-hint{color:#9ca3af;}
+
+.submit-btn{width:100%;padding:15px;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;background:#9b6fc4;color:#fff;transition:opacity 0.2s;}
+.submit-btn:hover{opacity:0.9;}
+.submit-btn:disabled{opacity:0.55;cursor:not-allowed;}
+.light .submit-btn{color:#2d1b4e;}
+
+.msg-box{padding:14px 16px;border-radius:12px;font-size:14px;margin-bottom:18px;display:none;line-height:1.5;}
+.msg-box.ok{display:block;}
+.dark .msg-box.ok{background:rgba(74,222,128,0.1);border:0.5px solid rgba(74,222,128,0.3);color:#4ade80;}
+.light .msg-box.ok{background:#ecfdf5;border:0.5px solid #bbf7d0;color:#16a34a;}
+.msg-box.err{display:block;}
+.dark .msg-box.err{background:rgba(239,68,68,0.1);border:0.5px solid rgba(239,68,68,0.3);color:#ef4444;}
+.light .msg-box.err{background:#fef2f2;border:0.5px solid #fecaca;color:#dc2626;}
+
+.footer-note{text-align:center;font-size:12px;margin-top:20px;line-height:1.6;}
+.dark .footer-note{color:rgba(255,255,255,0.35);}
+.light .footer-note{color:#9ca3af;}
+.footer-note a{color:#9b6fc4;text-decoration:none;}
+.footer-note a:hover{text-decoration:underline;}
+
+.success-screen{display:none;text-align:center;padding:40px 10px;}
+.success-screen.show{display:block;}
+.success-icon{font-size:56px;margin-bottom:16px;}
+.success-title{font-size:20px;font-weight:500;margin-bottom:8px;}
+.success-sub{font-size:14px;line-height:1.6;margin-bottom:24px;}
+.dark .success-sub{color:rgba(255,255,255,0.5);}
+.light .success-sub{color:#5a5a72;}
+.home-link{display:inline-block;padding:12px 24px;border-radius:12px;text-decoration:none;font-size:14px;font-weight:500;background:rgba(107,63,160,0.25);color:#c8a8e9;border:0.5px solid rgba(200,168,233,0.3);}
+.light .home-link{background:#ede9ff;color:#6b3fa0;border-color:#e8e2ff;}
+</style>
+</head>
+<body class="dark">
+
+<nav class="nav">
+  <a class="back-btn" href="dashboard.html">← Dashboard</a>
+  <span class="nav-title">Beta feedback</span>
+  <button class="mode-toggle" id="modeBtn" type="button" onclick="toggleTheme()">☀️ Light</button>
+</nav>
+
+<div class="content">
+  <div id="formScreen">
+    <div class="hero-icon">🐛</div>
+    <h1 class="page-title">Help us improve QuickGigs</h1>
+    <p class="page-sub">You're in the beta — tell us what's working, what's broken, or what you'd love to see next. We read every message.</p>
+
+    <div class="beta-note">
+      💡 <strong>Payments aren't live yet</strong> during beta. For urgent issues you can also email <a href="mailto:mowebsiteco@gmail.com" style="color:inherit">mowebsiteco@gmail.com</a>.
+    </div>
+
+    <div class="msg-box err" id="errorMsg"></div>
+
+    <form id="feedbackForm" action="https://formspree.io/f/xgojdwgw" method="POST">
+      <input type="hidden" name="_subject" value="QuickGigs Beta Feedback">
+      <input type="hidden" name="source" value="feedback.html">
+
+      <div class="field">
+        <label>What is this about? <span class="req">*</span></label>
+        <select class="field-select" name="type" id="typeField" required>
+          <option value="">Select one...</option>
+          <option value="Bug — something broken">🐛 Bug — something broken</option>
+          <option value="Feature idea">💡 Feature idea</option>
+          <option value="General feedback">💬 General feedback</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Which page? <span style="font-weight:300;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <select class="field-select" name="page" id="pageField">
+          <option value="">Not sure / other</option>
+          <option value="Signup">Signup</option>
+          <option value="Login">Login</option>
+          <option value="Dashboard">Dashboard</option>
+          <option value="Post a task">Post a task</option>
+          <option value="Browse tasks">Browse tasks</option>
+          <option value="My Tasks">My Tasks</option>
+          <option value="Messages / Chat">Messages / Chat</option>
+          <option value="Profile">Profile</option>
+          <option value="Reviews">Reviews</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Tell us more <span class="req">*</span></label>
+        <textarea class="field-textarea" name="message" id="messageField" placeholder="What happened? What did you expect? Steps to reproduce if it's a bug..." required maxlength="2000"></textarea>
+        <p class="field-hint">Be as specific as you can — it helps us fix things faster.</p>
+      </div>
+
+      <div class="field">
+        <label>Your email <span style="font-weight:300;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <input class="field-input" type="email" name="email" id="emailField" placeholder="you@email.com">
+        <p class="field-hint">Only if you'd like us to follow up with you.</p>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">Submit feedback</button>
+    </form>
+
+    <p class="footer-note">
+      <a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a>
+    </p>
+  </div>
+
+  <div class="success-screen" id="successScreen">
+    <div class="success-icon">✅</div>
+    <p class="success-title">Thank you!</p>
+    <p class="success-sub">Your feedback was sent. We're a small team building QuickGigs for Canada — every report helps us ship something better.</p>
+    <a class="home-link" href="dashboard.html">Back to dashboard</a>
+  </div>
+</div>
+
+<script src="qg-utils.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
+  authDomain: "quickgigs-7b12d.firebaseapp.com",
+  projectId: "quickgigs-7b12d",
+  storageBucket: "quickgigs-7b12d.firebasestorage.app",
+  messagingSenderId: "698985399366",
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+onAuthStateChanged(auth, function(user) {
+  if (user && user.email) {
+    var emailField = document.getElementById('emailField');
+    if (emailField && !emailField.value) emailField.value = user.email;
+  }
+});
+</script>
+<script>
+var isDark = localStorage.getItem('qg-mode') !== 'light';
+function applyTheme() {
+  document.body.className = isDark ? 'dark' : 'light';
+  document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark';
+}
+window.toggleTheme = function() {
+  isDark = !isDark;
+  localStorage.setItem('qg-mode', isDark ? 'dark' : 'light');
+  applyTheme();
+};
+applyTheme();
+
+var params = new URLSearchParams(window.location.search);
+var pageParam = params.get('page');
+if (pageParam) {
+  var pageField = document.getElementById('pageField');
+  for (var i = 0; i < pageField.options.length; i++) {
+    if (pageField.options[i].value === pageParam) {
+      pageField.selectedIndex = i;
+      break;
+    }
+  }
+}
+
+document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var errorMsg = document.getElementById('errorMsg');
+  var submitBtn = document.getElementById('submitBtn');
+  errorMsg.className = 'msg-box err';
+  errorMsg.style.display = 'none';
+
+  var type = document.getElementById('typeField').value;
+  var message = window.sanitizeInput(document.getElementById('messageField').value, 2000);
+  var email = document.getElementById('emailField').value.trim();
+
+  if (!type || !message) {
+    errorMsg.textContent = 'Please select a type and describe your feedback.';
+    errorMsg.style.display = 'block';
+    return;
+  }
+
+  document.getElementById('messageField').value = message;
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Sending...';
+
+  var form = this;
+  fetch(form.action, {
+    method: 'POST',
+    body: new FormData(form),
+    headers: { 'Accept': 'application/json' }
+  }).then(function(res) {
+    if (!res.ok) throw new Error('Submit failed');
+    document.getElementById('formScreen').style.display = 'none';
+    document.getElementById('successScreen').classList.add('show');
+  }).catch(function() {
+    errorMsg.textContent = 'Something went wrong. Please try again or email mowebsiteco@gmail.com directly.';
+    errorMsg.style.display = 'block';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit feedback';
+  });
+});
+</script>
+</body>
+</html>

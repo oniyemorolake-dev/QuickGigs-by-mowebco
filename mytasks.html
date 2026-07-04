@@ -151,14 +151,9 @@ onAuthStateChanged(auth, (user) => {
 });
 </script>
 
+<script src="supabase-db.js"></script>
 <script>
-const SUPABASE_URL = 'https://nuyfqsxstsrbloztzgau.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51eWZxc3hzdHNyYmxvenR6Z2F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NzkyNjUsImV4cCI6MjA5ODU1NTI2NX0.UpagWLifoxHmWu30lNnBO89gNYKIh4KxtYu28DKlSBM';
-const SUPABASE_HEADERS = {
-  'Content-Type': 'application/json',
-  'apikey': SUPABASE_ANON_KEY,
-  'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
-};
+var SUPABASE_HEADERS = window.SUPABASE_HEADERS;
 var activeTab = 'posted';
 var allTasks = [], allApplications = [];
 var isDark = localStorage.getItem('qg-mode') !== 'light';
@@ -172,8 +167,8 @@ async function loadData(){
   if(!userId) return;
   try {
     var [tasksRes, appsRes] = await Promise.all([
-      fetch(SUPABASE_URL + '/rest/v1/tasks?order=created_at.desc', {headers:SUPABASE_HEADERS}),
-      fetch(SUPABASE_URL + '/rest/v1/applications?order=created_at.desc', {headers:SUPABASE_HEADERS})
+      fetch(window.SUPABASE_URL + '/rest/v1/tasks?order=created_at.desc', {headers:SUPABASE_HEADERS}),
+      fetch(window.SUPABASE_URL + '/rest/v1/applications?order=created_at.desc', {headers:SUPABASE_HEADERS})
     ]);
     if (!tasksRes.ok) throw new Error('tasks status ' + tasksRes.status);
     if (!appsRes.ok) throw new Error('applications status ' + appsRes.status);

@@ -1,25 +1,23 @@
 // ================================================================
 // QuickGigs — Supabase Database Utility
-// Replaces Oracle ORDS — all pages import this file
+// All data pages import this file via <script src="supabase-db.js">
 // Project URL: https://nuyfqsxstsrbloztzgau.supabase.co
 // ================================================================
 
 const SUPABASE_URL = 'https://nuyfqsxstsrbloztzgau.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51eWZxc3hzdHNyYmxvenR6Z2F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NzkyNjUsImV4cCI6MjA5ODU1NTI2NX0.UpagWLifoxHmWu30lNnBO89gNYKIh4KxtYu28DKlSBM';
 
-const HEADERS = {
+const SUPABASE_HEADERS = {
   'Content-Type': 'application/json',
   'apikey': SUPABASE_ANON_KEY,
   'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
 };
 
-// ── GENERIC HELPERS ────────────────────────────────────
-
 async function sbGet(table, filters) {
   try {
     var url = SUPABASE_URL + '/rest/v1/' + table + '?order=created_at.desc';
     if (filters) url += '&' + filters;
-    var res = await fetch(url, { method: 'GET', headers: HEADERS });
+    var res = await fetch(url, { method: 'GET', headers: SUPABASE_HEADERS });
     if (!res.ok) throw new Error('GET failed: ' + res.status);
     return await res.json();
   } catch (err) {
@@ -32,7 +30,7 @@ async function sbPost(table, data) {
   try {
     var res = await fetch(SUPABASE_URL + '/rest/v1/' + table, {
       method: 'POST',
-      headers: { ...HEADERS, 'Prefer': 'return=minimal' },
+      headers: Object.assign({}, SUPABASE_HEADERS, { 'Prefer': 'return=minimal' }),
       body: JSON.stringify(data)
     });
     if (!res.ok) {
@@ -51,7 +49,7 @@ async function sbUpdate(table, data, filters) {
     var url = SUPABASE_URL + '/rest/v1/' + table + '?' + filters;
     var res = await fetch(url, {
       method: 'PATCH',
-      headers: { ...HEADERS, 'Prefer': 'return=minimal' },
+      headers: Object.assign({}, SUPABASE_HEADERS, { 'Prefer': 'return=minimal' }),
       body: JSON.stringify(data)
     });
     if (!res.ok) throw new Error('PATCH failed: ' + res.status);
@@ -61,8 +59,6 @@ async function sbUpdate(table, data, filters) {
     return { success: false, error: err.message };
   }
 }
-
-// ── TASKS ──────────────────────────────────────────────
 
 async function getTasks() {
   return await sbGet('tasks', 'status=eq.open');
@@ -89,8 +85,6 @@ async function updateTaskStatus(taskId, status) {
   return await sbUpdate('tasks', { status: status }, 'task_id=eq.' + taskId);
 }
 
-// ── USERS ──────────────────────────────────────────────
-
 async function getUsers() {
   return await sbGet('users');
 }
@@ -103,8 +97,6 @@ async function saveUser(userData) {
     role:     userData.role  || 'poster'
   });
 }
-
-// ── APPLICATIONS ───────────────────────────────────────
 
 async function getApplicationsByTask(taskId) {
   return await sbGet('applications', 'task_id=eq.' + taskId);
@@ -128,8 +120,6 @@ async function updateApplicationStatus(appId, status) {
   return await sbUpdate('applications', { status: status }, 'app_id=eq.' + appId);
 }
 
-// ── REVIEWS ────────────────────────────────────────────
-
 async function getReviewsForUser(userId) {
   return await sbGet('reviews', 'reviewee_id=eq.' + userId);
 }
@@ -143,8 +133,6 @@ async function submitReview(reviewData) {
     review_comment: reviewData.review_comment
   });
 }
-
-// ── PAYMENTS ───────────────────────────────────────────
 
 async function getPaymentByTask(taskId) {
   var results = await sbGet('payments', 'task_id=eq.' + taskId);
@@ -164,8 +152,22 @@ async function savePayment(paymentData) {
   });
 }
 
-// ── EXPORT ─────────────────────────────────────────────
-// Usage in any HTML page:
-// <script src="supabase-db.js"></script>
-// const tasks = await getTasks();
-// const result = await postTask({ title, description, category, task_mode, budget, location, posted_by });
+window.SUPABASE_URL = SUPABASE_URL;
+window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
+window.SUPABASE_HEADERS = SUPABASE_HEADERS;
+window.SB_HEADERS = SUPABASE_HEADERS;
+window.HEADERS = SUPABASE_HEADERS;
+window.getTasks = getTasks;
+window.getTasksByUser = getTasksByUser;
+window.postTask = postTask;
+window.updateTaskStatus = updateTaskStatus;
+window.getUsers = getUsers;
+window.saveUser = saveUser;
+window.getApplicationsByTask = getApplicationsByTask;
+window.getApplicationsByWorker = getApplicationsByWorker;
+window.submitApplication = submitApplication;
+window.updateApplicationStatus = updateApplicationStatus;
+window.getReviewsForUser = getReviewsForUser;
+window.submitReview = submitReview;
+window.getPaymentByTask = getPaymentByTask;
+window.savePayment = savePayment;
