@@ -181,7 +181,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/fireba
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "REPLACE_WITH_YOUR_API_KEY",
+  apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
   authDomain: "quickgigs-7b12d.firebaseapp.com",
   projectId: "quickgigs-7b12d",
   storageBucket: "quickgigs-7b12d.firebasestorage.app",
@@ -203,6 +203,7 @@ onAuthStateChanged(auth, (user) => {
 });
 </script>
 
+<script src="qg-utils.js"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
 var isDark = localStorage.getItem('qg-mode') !== 'light';
@@ -259,7 +260,7 @@ function renderMessages(){
     }
     var isMe = m.from === 'me';
     html += '<div class="bubble-row '+(isMe?'mine':'theirs')+'">' +
-      '<div class="bubble">'+escapeHtml(m.text)+'</div>' +
+      '<div class="bubble">'+window.escapeHtml(m.text)+'</div>' +
       '<div class="bubble-time">'+m.time+'</div>' +
     '</div>';
   });
@@ -269,10 +270,6 @@ function renderMessages(){
 function scrollToBottom(){
   var scroll = document.getElementById('chatScroll');
   scroll.scrollTop = scroll.scrollHeight;
-}
-
-function escapeHtml(text){
-  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function getTime(){
@@ -315,7 +312,7 @@ window.handleKey = function(e){
 
 window.sendMessage = function(){
   var input = document.getElementById('msgInput');
-  var text = input.value.trim();
+  var text = window.sanitizeInput(input.value.trim(), 2000);
   if(!text || fraudDetected) return;
 
   // Double-check fraud before sending

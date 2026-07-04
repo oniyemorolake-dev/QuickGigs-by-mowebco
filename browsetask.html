@@ -229,14 +229,10 @@ onAuthStateChanged(auth, (user) => {
 });
 </script>
 
+<script src="qg-utils.js"></script>
+<script src="supabase-db.js"></script>
 <script>
-const SUPABASE_URL = 'https://nuyfqsxstsrbloztzgau.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51eWZxc3hzdHNyYmxvenR6Z2F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NzkyNjUsImV4cCI6MjA5ODU1NTI2NX0.UpagWLifoxHmWu30lNnBO89gNYKIh4KxtYu28DKlSBM';
-const SUPABASE_HEADERS = {
-  'Content-Type': 'application/json',
-  'apikey': SUPABASE_ANON_KEY,
-  'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
-};
+function esc(s){return window.escapeHtml(s);}
 var CAT_MAP = {
   'errands':{label:'Errands',icon:'🚗',bg:'rgba(251,191,36,0.15)'},
   'home':{label:'Home',icon:'🏠',bg:'rgba(107,63,160,0.2)'},
@@ -271,14 +267,12 @@ function normaliseTask(row){
   };
 }
 var allTasks=[],activeMode='all',activeCat='all',activeTask=null;
+var dbSubmitApplication = window.submitApplication;
 var isDark=localStorage.getItem('qg-mode')!=='light';
 
 async function loadTasks(){
   try{
-    var res=await fetch(SUPABASE_URL+'/rest/v1/tasks?order=created_at.desc&status=eq.open',{method:'GET',headers:SUPABASE_HEADERS});
-    if(!res.ok) throw new Error('status '+res.status);
-    var data=await res.json();
-    var items=Array.isArray(data)?data:[];
+    var items = await getTasks();
     allTasks=items.map(normaliseTask).filter(function(t){return t.status==='open';});
   }catch(err){
     console.warn('Supabase unreachable, using demo data:',err);
@@ -298,7 +292,7 @@ function getDemoTasks(){
   ];
 }
 
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function esc(s){return window.escapeHtml(s);}
 function getBadge(m){if(m==='quick')return '<span class="tc-badge badge-quick">⚡ Quick</span>';if(m==='recurring')return '<span class="tc-badge badge-recurring">🔄 Recurring</span>';return '<span class="tc-badge badge-standard">📋 Standard</span>';}
 function getBtnClass(m){return 'btn-'+m;}
 function getBtnLabel(m){return m==='quick'?'Apply ⚡':'Apply';}
@@ -340,17 +334,24 @@ window.handleOverlayClick=function(e){if(e.target===document.getElementById('mod
 
 window.submitApplication=async function(){
   var price=document.getElementById('offerPrice').value;
-  var msg=document.getElementById('offerMsg').value.trim();
-  var avail=document.getElementById('offerAvail').value.trim();
+  var msg=window.sanitizeInput(document.getElementById('offerMsg').value, 1000);
+  var avail=window.sanitizeInput(document.getElementById('offerAvail').value, 120);
   if(!price||price<20){alert('Please enter an offer of at least $20');return;}
   if(!msg){alert('Please add a message to the poster');return;}
   var btn=document.getElementById('applySubmitBtn');
   btn.textContent='Sending...';btn.disabled=true;
   var userId=window._currentUser?window._currentUser.uid:'anonymous';
-  try{
-    var res=await fetch(SUPABASE_URL+'/rest/v1/applications',{method:'POST',headers:Object.assign({},SUPABASE_HEADERS,{'Prefer':'return=minimal'}),body:JSON.stringify({task_id:activeTask.id,worker_id:userId,message:msg+(avail?' — Available: '+avail:''),price:parseFloat(price)})});
-    if(!res.ok) throw new Error('status '+res.status);
-  }catch(err){console.warn('Application save error:',err);}
+  try {
+    var result = await dbSubmitApplication({
+      task_id: activeTask.id,
+      worker_id: userId,
+      message: msg + (avail ? ' — Available: ' + avail : ''),
+      price: parseFloat(price)
+    });
+    if (!result.success) throw new Error(result.error || 'save failed');
+  } catch(err) {
+    console.warn('Application save error:', err);
+  }
   closeModal();
   btn.textContent='Send application';btn.disabled=false;
   var toast=document.getElementById('toast');toast.style.display='block';

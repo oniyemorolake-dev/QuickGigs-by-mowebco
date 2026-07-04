@@ -247,6 +247,8 @@ onAuthStateChanged(auth, (user) => {
 });
 </script>
 
+<script src="qg-utils.js"></script>
+<script src="supabase-db.js"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
 var isDark = localStorage.getItem('qg-mode') !== 'light';
@@ -261,17 +263,10 @@ window.toggleTheme = function(){
 };
 applyTheme();
 
-const SUPABASE_URL = 'https://nuyfqsxstsrbloztzgau.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51eWZxc3hzdHNyYmxvenR6Z2F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NzkyNjUsImV4cCI6MjA5ODU1NTI2NX0.UpagWLifoxHmWu30lNnBO89gNYKIh4KxtYu28DKlSBM';
-const SUPABASE_HEADERS = {
-  'Content-Type': 'application/json',
-  'apikey': SUPABASE_ANON_KEY,
-  'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
-};
-
 // ── STATE ──────────────────────────────────────────────
 var currentRating = 0;
 var selectedTags  = [];
+var dbSubmitReview = window.submitReview;
 
 // ── URL PARAMS ─────────────────────────────────────────
 // Usage: review.html?task=Deep clean&price=120&date=Jun 21&reviewee=Sarah K.&role=poster
@@ -355,7 +350,7 @@ function updateSubmitBtn(){
 window.submitReview = async function(){
   if(currentRating === 0){ return; }
 
-  var comment = document.getElementById('commentInput').value.trim();
+  var comment = window.sanitizeInput(document.getElementById('commentInput').value, 500);
   var submitBtn = document.getElementById('submitBtn');
   submitBtn.disabled = true;
   submitBtn.textContent = 'Submitting...';
@@ -373,12 +368,14 @@ window.submitReview = async function(){
   };
 
   try {
-    var res = await fetch(SUPABASE_URL + '/rest/v1/reviews', {
-      method: 'POST',
-      headers: Object.assign({}, SUPABASE_HEADERS, { 'Prefer': 'return=minimal' }),
-      body: JSON.stringify(reviewData)
+    var result = await dbSubmitReview({
+      task_id:        params.get('taskId') || null,
+      reviewer_id:    window._currentUser ? window._currentUser.uid : null,
+      reviewee_id:    params.get('revieweeId') || reviewee,
+      rating:         currentRating,
+      review_comment: comment
     });
-    if (!res.ok) throw new Error('status ' + res.status);
+    if (!result.success) throw new Error(result.error || 'save failed');
   } catch (err) {
     console.warn('Review save error:', err);
     submitBtn.disabled = false;

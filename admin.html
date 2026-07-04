@@ -378,10 +378,9 @@ onAuthStateChanged(auth, (user) => {
 window.doLogout = function() { signOut(auth).then(function(){ window.location.href='login.html'; }); };
 </script>
 
+<script src="supabase-db.js"></script>
 <script>
-const SUPABASE_URL='https://nuyfqsxstsrbloztzgau.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51eWZxc3hzdHNyYmxvenR6Z2F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NzkyNjUsImV4cCI6MjA5ODU1NTI2NX0.UpagWLifoxHmWu30lNnBO89gNYKIh4KxtYu28DKlSBM';
-const SB_HEADERS={'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY};
+var SB_HEADERS = window.SB_HEADERS;
 var users=[],tasks=[],disputes=[],selectedUsers=[],pendingFn=null,currentSection='overview';
 var sessionSeconds=30*60;
 
@@ -407,7 +406,7 @@ async function initAdmin(){
 
 async function loadData(){
   try{
-    var[ur,tr]=await Promise.all([fetch(SUPABASE_URL+'/rest/v1/users?order=created_at.desc',{headers:SB_HEADERS}),fetch(SUPABASE_URL+'/rest/v1/tasks?order=created_at.desc',{headers:SB_HEADERS})]);
+    var[ur,tr]=await Promise.all([fetch(window.SUPABASE_URL+'/rest/v1/users?order=created_at.desc',{headers:SB_HEADERS}),fetch(window.SUPABASE_URL+'/rest/v1/tasks?order=created_at.desc',{headers:SB_HEADERS})]);
     var ud=await ur.json(),td=await tr.json();
     if(Array.isArray(ud)) users=ud;
     if(Array.isArray(td)) tasks=td;
