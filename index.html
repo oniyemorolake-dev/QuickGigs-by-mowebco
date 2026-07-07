@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QuickGigs — Coming Soon</title>
+<title>QuickGigs — Get everyday tasks done in Calgary & Edmonton</title>
 <link rel="icon" type="image/png" sizes="32x32" href="QuickGigsLogo.png">
 <link rel="icon" type="image/png" sizes="192x192" href="QuickGigsLogo.png">
 <link rel="apple-touch-icon" href="QuickGigsLogo.png">
@@ -43,6 +43,18 @@ h1 em{font-style:italic;font-weight:400;}
 .form-btn{padding:14px 24px;background:var(--a);color:white;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:500;cursor:pointer;white-space:nowrap;transition:background 0.2s,transform 0.15s;}
 .form-btn:hover{background:#b07fd4;transform:translateY(-1px);}
 .form-note{font-size:0.75rem;color:var(--ws);text-align:center;margin-top:10px;}
+.cta-wrap{width:100%;max-width:520px;margin-bottom:3rem;}
+.cta-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.cta-btn{display:block;text-align:center;padding:16px 18px;border-radius:14px;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:500;text-decoration:none;transition:transform 0.15s,background 0.2s;}
+.cta-btn:hover{transform:translateY(-1px);}
+.cta-primary{background:var(--a);color:#fff;border:1px solid rgba(200,168,233,0.3);}
+.cta-primary:hover{background:#b07fd4;}
+.cta-secondary{background:rgba(255,255,255,0.06);color:var(--w);border:1px solid rgba(200,168,233,0.25);}
+.cta-secondary:hover{background:rgba(107,63,160,0.2);border-color:rgba(200,168,233,0.45);}
+.cta-label{font-size:0.7rem;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;opacity:0.75;display:block;margin-bottom:4px;}
+.cta-login{text-align:center;font-size:0.85rem;color:var(--wm);}
+.cta-login a{color:var(--al);text-decoration:none;font-weight:500;}
+.beta-badge{display:inline-flex;align-items:center;gap:6px;font-size:0.72rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:#4ade80;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.25);border-radius:20px;padding:6px 14px;margin-bottom:1rem;}
 .success-msg{display:none;text-align:center;padding:16px;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:12px;color:#4ade80;font-size:0.9rem;}
 .how-title{font-size:0.72rem;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:var(--ws);text-align:center;margin-bottom:1.5rem;}
 .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;width:100%;max-width:780px;margin-bottom:4rem;}
@@ -66,7 +78,7 @@ h1 em{font-style:italic;font-weight:400;}
 .legal-footer{position:relative;z-index:1;text-align:center;padding:20px;font-size:11px;color:var(--text-faint);}
 .legal-footer a{color:var(--purple-light);text-decoration:none;}
 .legal-footer a:hover{text-decoration:underline;}
-@media(max-width:500px){.form-row{flex-direction:column;}.modes{grid-template-columns:1fr;}.steps{grid-template-columns:1fr;}}
+@media(max-width:500px){.form-row{flex-direction:column;}.modes{grid-template-columns:1fr;}.steps{grid-template-columns:1fr;}.cta-grid{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -78,30 +90,45 @@ h1 em{font-style:italic;font-weight:400;}
     <div class="logo-text">QuickGigs</div>
   </div>
   <div class="hero">
-    <div class="eyebrow">Coming to Calgary & Edmonton first</div>
-    <h1>Get anything done.<br><em>Earn doing anything.</em></h1>
-    <p class="subtitle">QuickGigs connects people who need help with people who have skills — instantly or scheduled. Any task. Any city. Canada wide.</p>
+    <div class="beta-badge">🚀 Beta live · Calgary & Edmonton</div>
+    <div class="eyebrow">Canadian-built · CAD only · Canada-wide</div>
+    <h1>Get everyday tasks done<br><em>in Calgary & Edmonton.</em></h1>
+    <p class="subtitle">QuickGigs connects people who need help with people who have skills — post a task in 30 seconds or earn money helping others nearby.</p>
   </div>
-  <div class="counter-wrap">
-    <div class="counter">
-      <div class="counter-dot"></div>
-      <div class="counter-num" id="counter">0</div>
-      <div class="counter-label">people on<br>the waitlist</div>
+  <div class="cta-wrap">
+    <div class="cta-grid">
+      <a class="cta-btn cta-primary" href="signup.html?role=poster">
+        <span class="cta-label">Need something done?</span>
+        Post a task
+      </a>
+      <a class="cta-btn cta-secondary" href="signup.html?role=worker">
+        <span class="cta-label">Want to earn?</span>
+        Earn as a tasker
+      </a>
     </div>
+    <p class="cta-login">Already have an account? <a href="login.html">Log in</a></p>
+    <p class="form-note" style="margin-top:12px">Beta — payments not live yet. Sign up free and explore the platform.</p>
   </div>
-  <div class="form-wrap">
-    <label class="form-label">Get early access — be first in Calgary & Edmonton</label>
-    <form id="waitlistForm" action="https://formspree.io/f/xgojedwj" method="POST">
-      <input type="hidden" name="_subject" value="QuickGigs Waitlist Signup">
-      <input type="hidden" name="_replyto" value="mowebsiteco@gmail.com">
-      <div class="form-row" style="flex-direction:column;gap:8px;">
-        <input class="form-input" type="text" name="name" placeholder="Your first name" required style="margin-bottom:8px;">
-        <input class="form-input" type="email" name="email" placeholder="your@email.com" required>
-        <button class="form-btn" type="submit" style="width:100%;padding:14px;">Join the waitlist</button>
-      </div>
-    </form>
-    <div class="success-msg" id="successMsg">You're on the list! We'll email you the moment QuickGigs launches in Calgary and Edmonton.</div>
-    <p class="form-note">No spam ever. Unsubscribe anytime. Launching in Calgary and Edmonton first.</p>
+  <p class="how-title">How it works</p>
+  <div class="steps">
+    <div class="step">
+      <span class="step-icon">📝</span>
+      <div class="step-title">1. Post or browse</div>
+      <p class="step-desc">Need help? Post your task with a budget. Want work? Browse tasks near you in Calgary & Edmonton.</p>
+      <span class="step-mode quick">30 seconds</span>
+    </div>
+    <div class="step">
+      <span class="step-icon">🤝</span>
+      <div class="step-title">2. Get matched</div>
+      <p class="step-desc">Workers apply or accept instantly. Review profiles, ratings, and offers — you choose who to hire.</p>
+      <span class="step-mode standard">You choose</span>
+    </div>
+    <div class="step">
+      <span class="step-icon">✅</span>
+      <div class="step-title">3. Task gets done</div>
+      <p class="step-desc">Your task gets completed. Leave a review and find your go-to people for next time.</p>
+      <span class="step-mode quick">Beta mode</span>
+    </div>
   </div>
   <p class="how-title">Two ways to use QuickGigs</p>
   <div class="modes">
@@ -114,33 +141,6 @@ h1 em{font-style:italic;font-weight:400;}
       <span class="mode-icon">📋</span>
       <div class="mode-name">Standard mode</div>
       <p class="mode-desc">Plan ahead. Post your task, review applicants, pick the best person, and schedule it when it suits you.</p>
-    </div>
-  </div>
-  <p class="how-title">How it works</p>
-  <div class="steps">
-    <div class="step">
-      <span class="step-icon">📝</span>
-      <div class="step-title">Post your task</div>
-      <p class="step-desc">Describe what you need done, set your budget, and choose quick or standard mode.</p>
-      <span class="step-mode quick">30 seconds</span>
-    </div>
-    <div class="step">
-      <span class="step-icon">🤝</span>
-      <div class="step-title">Get matched</div>
-      <p class="step-desc">Workers nearby apply or accept instantly. Review their profiles, ratings and price.</p>
-      <span class="step-mode standard">You choose</span>
-    </div>
-    <div class="step">
-      <span class="step-icon">✅</span>
-      <div class="step-title">Task gets done</div>
-      <p class="step-desc">Your worker completes the task. Payment held safely until you confirm it's done.</p>
-      <span class="step-mode quick">Secure escrow</span>
-    </div>
-    <div class="step">
-      <span class="step-icon">⭐</span>
-      <div class="step-title">Review and repeat</div>
-      <p class="step-desc">Rate your experience. Build a reputation. Find your go-to people for regular tasks.</p>
-      <span class="step-mode standard">Both ways</span>
     </div>
   </div>
 </main>
@@ -156,25 +156,6 @@ for(var i=0;i<120;i++){
   s.style.cssText='width:'+size+'px;height:'+size+'px;left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;--d:'+(Math.random()*4+2)+'s;--op:'+(Math.random()*0.7+0.1)+';animation-delay:'+Math.random()*5+'s';
   stars.appendChild(s);
 }
-var target=47,current=0,el=document.getElementById('counter');
-var timer=setInterval(function(){
-  current+=Math.ceil((target-current)/8);
-  if(current>=target){current=target;clearInterval(timer);}
-  el.textContent=current;
-},60);
-document.getElementById('waitlistForm').addEventListener('submit',function(e){
-  e.preventDefault();
-  var form=this;
-  fetch(form.action,{method:'POST',body:new FormData(form),headers:{'Accept':'application/json'}})
-  .then(function(r){
-    form.style.display='none';
-    document.getElementById('successMsg').style.display='block';
-    document.getElementById('counter').textContent=parseInt(document.getElementById('counter').textContent)+1;
-  }).catch(function(){
-    form.style.display='none';
-    document.getElementById('successMsg').style.display='block';
-  });
-});
 </script>
 </body>
 </html>

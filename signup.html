@@ -131,6 +131,14 @@ window.setRole = function(role, btn) {
   document.getElementById('roleInput').value = role;
 };
 
+(function applySignupRoleFromUrl() {
+  var roleParam = new URLSearchParams(window.location.search).get('role');
+  if (roleParam === 'worker') {
+    var workerBtn = document.querySelector('.role-btn[onclick*="worker"]');
+    if (workerBtn) setRole('worker', workerBtn);
+  }
+})();
+
 // Form submit
 document.getElementById('signupForm').addEventListener('submit', async function(e) {
   e.preventDefault();
