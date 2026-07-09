@@ -100,7 +100,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);font-s
 <script src="supabase-db.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
@@ -130,6 +130,14 @@ window.setRole = function(role, btn) {
   btn.classList.add('active');
   document.getElementById('roleInput').value = role;
 };
+
+(function applySignupRoleFromUrl() {
+  var roleParam = new URLSearchParams(window.location.search).get('role');
+  if (roleParam === 'worker') {
+    var workerBtn = document.querySelector('.role-btn[onclick*="worker"]');
+    if (workerBtn) setRole('worker', workerBtn);
+  }
+})();
 
 // Form submit
 document.getElementById('signupForm').addEventListener('submit', async function(e) {
@@ -163,7 +171,6 @@ document.getElementById('signupForm').addEventListener('submit', async function(
     // 1. Create Firebase account
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(userCredential.user, { displayName: name });
-    await sendEmailVerification(userCredential.user);
 
     // 2. Save user to Supabase USERS table
     var saveResult = await saveUser({ name, email, phone, role, firebase_uid: userCredential.user.uid });
@@ -172,11 +179,10 @@ document.getElementById('signupForm').addEventListener('submit', async function(
     // 3. Save role to localStorage so login redirect works
     localStorage.setItem('qg-role', role);
 
-    // 4. Show success and require email verification before login
-    okMsg.textContent = 'Account created! Check your email to verify your account before logging in 📧';
+    // 4. Go straight to dashboard — no email verification during beta
+    okMsg.textContent = 'Account created! Welcome to QuickGigs 🎉 Redirecting...';
     okMsg.style.display = 'block';
-    submitBtn.textContent = 'Check your email';
-    submitBtn.disabled = true;
+    setTimeout(function(){ window.location.href = 'dashboard.html'; }, 1500);
 
   } catch (error) {
     var message = 'Something went wrong. Please try again.';

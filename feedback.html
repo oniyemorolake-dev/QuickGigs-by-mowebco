@@ -40,10 +40,37 @@ body.light{background:#fafafe;color:#2d1b4e;}
 .req{color:#fbbf24;}
 
 .field-input,.field-select,.field-textarea{width:100%;border-radius:12px;padding:14px 16px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;border:0.5px solid transparent;}
-.dark .field-input,.dark .field-select,.dark .field-textarea{background:rgba(255,255,255,0.05);color:#fff;border-color:rgba(200,168,233,0.15);}
-.light .field-input,.light .field-select,.light .field-textarea{background:#f8f7ff;color:#2d1b4e;border-color:#e8e2ff;}
+.field-select{
+  appearance:none;
+  -webkit-appearance:none;
+  cursor:pointer;
+  padding-right:42px;
+  background-repeat:no-repeat;
+  background-position:right 16px center;
+  background-size:12px 8px;
+}
+.dark .field-input,.dark .field-textarea{background:rgba(255,255,255,0.05);color:#fff;border-color:rgba(200,168,233,0.15);}
+.dark .field-select{
+  color-scheme:dark;
+  background-color:#150830;
+  color:#fff;
+  border-color:rgba(200,168,233,0.25);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23c8a8e9' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+}
+.dark .field-select option,.dark .field-select optgroup{background:#150830;color:#fff;}
+.light .field-input,.light .field-textarea{background:#f8f7ff;color:#2d1b4e;border-color:#e8e2ff;}
+.light .field-select{
+  color-scheme:light;
+  background-color:#f8f7ff;
+  color:#2d1b4e;
+  border-color:#e8e2ff;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236b3fa0' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+}
+.light .field-select option,.light .field-select optgroup{background:#fff;color:#2d1b4e;}
 .dark .field-input:focus,.dark .field-select:focus,.dark .field-textarea:focus{border-color:#9b6fc4;background:rgba(107,63,160,0.1);}
+.dark .field-select:focus{background-color:#1a0a3d;}
 .light .field-input:focus,.light .field-select:focus,.light .field-textarea:focus{border-color:#9b6fc4;background:#ede9ff;}
+.light .field-select:focus{background-color:#ede9ff;}
 .field-textarea{resize:vertical;min-height:120px;}
 .field-hint{font-size:11px;margin-top:6px;}
 .dark .field-hint{color:rgba(255,255,255,0.35);}
