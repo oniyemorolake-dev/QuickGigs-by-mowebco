@@ -260,7 +260,7 @@ function renderContent(){
       '<div class="empty-state">' +
         '<div class="empty-icon">💬</div>' +
         '<div class="empty-title">No messages yet</div>' +
-        '<div class="empty-sub">Your conversations will appear here once a task application is accepted and payment is made.</div>' +
+        '<div class="empty-sub">Your conversations will appear here once a poster accepts your application (or you accept an applicant).</div>' +
         '<a class="empty-btn" href="browsetask.html">Browse tasks</a>' +
       '</div>';
     return;
@@ -268,10 +268,10 @@ function renderContent(){
 
   // How it works banner
   var html = '<div class="locked-banner">' +
-    '<div class="locked-icon">🔒</div>' +
+    '<div class="locked-icon">💬</div>' +
     '<div class="locked-text">' +
-      '<div class="locked-title">Messages unlock after payment</div>' +
-      '<div class="locked-sub">Chats open automatically once a task is accepted and escrow payment is made — keeping everyone safe.</div>' +
+      '<div class="locked-title">Beta — chat opens when you accept</div>' +
+      '<div class="locked-sub">For beta testing, messaging unlocks as soon as a poster accepts an applicant. Escrow payments will be required before launch.</div>' +
     '</div>' +
   '</div>';
 

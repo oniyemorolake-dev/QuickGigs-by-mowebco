@@ -275,7 +275,7 @@ async function initChat(){
   document.getElementById('chatName').textContent = otherName;
   document.getElementById('chatSub').textContent = isPoster ? 'Worker on your task' : 'Task poster';
   document.getElementById('taskTitle').textContent = currentConv.task_title || 'Task';
-  document.getElementById('taskMeta').textContent = currentConv.is_unlocked ? 'Escrow paid ✓ · Chat open' : 'Payment pending · Chat locked';
+  document.getElementById('taskMeta').textContent = currentConv.is_unlocked ? 'Beta · Chat open' : 'Payment pending · Chat locked';
   document.getElementById('taskIcon').textContent = CAT_ICONS[cat] || '📦';
   document.getElementById('taskIcon').style.background = CAT_BG[cat] || 'rgba(107,63,160,0.2)';
   document.getElementById('taskStatus').textContent = currentConv.status === 'completed' ? 'Completed' : 'In progress';

@@ -291,7 +291,7 @@ function renderTab(){
   else if(activeTab === 'inprogress'){
     var inProg = allTasks.filter(function(t){ return (getField(t,'POSTED_BY')===userId || allApplications.some(function(a){ return getField(a,'TASK_ID')==getField(t,'TASK_ID')&&getField(a,'WORKER_ID')===userId&&getField(a,'STATUS')==='accepted'; })) && getField(t,'STATUS')==='in_progress'; });
     if(!inProg.length){
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Nothing in progress</div><div class="empty-sub">Tasks move here once a worker is accepted and payment is in escrow.</div></div>';
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Nothing in progress</div><div class="empty-sub">Tasks move here once you accept a worker (beta — no payment required yet).</div></div>';
       return;
     }
     content.innerHTML = inProg.map(function(t){
