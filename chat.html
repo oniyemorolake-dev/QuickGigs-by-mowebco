@@ -203,6 +203,7 @@ onAuthStateChanged(auth, (user) => {
 });
 </script>
 
+<script src="supabase-db.js"></script>
 <script src="qg-utils.js"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
@@ -218,33 +219,100 @@ window.toggleTheme = function(){
 };
 applyTheme();
 
+var CAT_ICONS = {home:'🏠',errands:'🚗',tutoring:'🎓',beauty:'💇',moving:'🚚',cooking:'🍳',tech:'💻',care:'👶',gardening:'🌿',events:'🎉',trades:'🔧',other:'📦'};
+var CAT_BG = {home:'rgba(107,63,160,0.2)',errands:'rgba(251,191,36,0.15)',tutoring:'rgba(74,222,128,0.1)',beauty:'rgba(200,168,233,0.15)',moving:'rgba(107,63,160,0.2)',cooking:'rgba(251,191,36,0.12)',tech:'rgba(107,63,160,0.2)',care:'rgba(74,222,128,0.1)',gardening:'rgba(74,222,128,0.08)',events:'rgba(200,168,233,0.15)',trades:'rgba(107,63,160,0.2)',other:'rgba(255,255,255,0.06)'};
+
+var convId = new URLSearchParams(window.location.search).get('conv');
+var currentConv = null;
+var messages = [];
+var pollTimer = null;
+var currentUserId = null;
+
 // ── FRAUD DETECTION ────────────────────────────────────
-// Catches phone numbers (various formats) and email addresses
 var FRAUD_PATTERNS = [
-  /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/,          // 587-990-8645 / 5879908645
-  /\b\(\d{3}\)\s?\d{3}[-.\s]?\d{4}\b/,           // (587) 990-8645
-  /\b\d{10}\b/,                                    // 5879908645
-  /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/,  // email@domain.com
-  /\+\d[\d\s\-]{8,}/,                              // +1 587 990 8645
+  /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/,
+  /\b\(\d{3}\)\s?\d{3}[-.\s]?\d{4}\b/,
+  /\b\d{10}\b/,
+  /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/,
+  /\+\d[\d\s\-]{8,}/,
 ];
 
 function containsFraud(text){
   return FRAUD_PATTERNS.some(function(p){ return p.test(text); });
 }
 
-// ── DEMO MESSAGES ──────────────────────────────────────
-// In production these load from Firebase Firestore in real time
-var messages = [
-  {id:1, from:'them', text:'Hi! I saw your task. I have 3 years of professional cleaning experience 🧹', time:'10:02 AM', date:'Today'},
-  {id:2, from:'me',   text:'Great! Do you have your own supplies or should I provide them?', time:'10:05 AM', date:'Today'},
-  {id:3, from:'them', text:'I bring everything — eco-friendly products too. I can do this Saturday morning!', time:'10:06 AM', date:'Today'},
-  {id:4, from:'me',   text:'Perfect, 9am works for me 👍 I\'ll make sure the door is open.', time:'10:08 AM', date:'Today'},
-  {id:5, from:'them', text:'Sounds great! See you Saturday 😊', time:'10:09 AM', date:'Today'},
-];
+function formatMessageTime(iso){
+  return new Date(iso).toLocaleTimeString('en-CA', {hour:'numeric', minute:'2-digit', hour12:true});
+}
 
-var nextId = 6;
+function formatMessageDate(iso){
+  var d = new Date(iso);
+  var today = new Date();
+  if(d.toDateString() === today.toDateString()) return 'Today';
+  var yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if(d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return d.toLocaleDateString('en-CA', {month:'short', day:'numeric', year:'numeric'});
+}
 
-function initChat(){
+async function initChat(){
+  currentUserId = window._currentUser ? window._currentUser.uid : null;
+  if(!convId || !currentUserId){
+    window.location.href = 'messages.html';
+    return;
+  }
+
+  currentConv = await getConversation(convId);
+  if(!currentConv || (currentConv.poster_id !== currentUserId && currentConv.worker_id !== currentUserId)){
+    window.location.href = 'messages.html';
+    return;
+  }
+
+  var isPoster = currentConv.poster_id === currentUserId;
+  var otherName = isPoster ? (currentConv.worker_name || 'Worker') : (currentConv.poster_name || 'Poster');
+  var cat = (currentConv.task_category || 'other').toLowerCase();
+
+  document.getElementById('chatName').textContent = otherName;
+  document.getElementById('chatSub').textContent = isPoster ? 'Worker on your task' : 'Task poster';
+  document.getElementById('taskTitle').textContent = currentConv.task_title || 'Task';
+  document.getElementById('taskMeta').textContent = currentConv.is_unlocked ? 'Escrow paid ✓ · Chat open' : 'Payment pending · Chat locked';
+  document.getElementById('taskIcon').textContent = CAT_ICONS[cat] || '📦';
+  document.getElementById('taskIcon').style.background = CAT_BG[cat] || 'rgba(107,63,160,0.2)';
+  document.getElementById('taskStatus').textContent = currentConv.status === 'completed' ? 'Completed' : 'In progress';
+  document.getElementById('taskStatus').className = 'tb-status ' + (currentConv.status === 'completed' ? 'status-done' : 'status-progress');
+
+  if(!currentConv.is_unlocked){
+    showLockedState();
+    return;
+  }
+
+  await refreshMessages();
+  await markConversationRead(convId, currentUserId, currentConv.poster_id);
+  pollTimer = setInterval(refreshMessages, 4000);
+}
+
+function showLockedState(){
+  document.querySelector('.input-area').style.display = 'none';
+  document.getElementById('chatScroll').innerHTML =
+    '<div class="locked-state">' +
+      '<div class="locked-icon">🔒</div>' +
+      '<div class="locked-title">Chat locked</div>' +
+      '<div class="locked-sub">Messaging opens once the task is accepted and payment is in escrow.</div>' +
+    '</div>';
+}
+
+async function refreshMessages(){
+  if(!convId) return;
+  var rows = await getMessagesForConversation(convId);
+  messages = (rows || []).map(function(m){
+    return {
+      id: m.message_id,
+      from: m.sender_id === currentUserId ? 'me' : 'them',
+      text: m.body,
+      time: formatMessageTime(m.created_at),
+      date: formatMessageDate(m.created_at)
+    };
+  });
   renderMessages();
   scrollToBottom();
 }
@@ -270,10 +338,6 @@ function renderMessages(){
 function scrollToBottom(){
   var scroll = document.getElementById('chatScroll');
   scroll.scrollTop = scroll.scrollHeight;
-}
-
-function getTime(){
-  return new Date().toLocaleTimeString('en-CA', {hour:'numeric', minute:'2-digit', hour12:true});
 }
 
 // ── INPUT HANDLING ─────────────────────────────────────
@@ -310,59 +374,38 @@ window.handleKey = function(e){
   }
 };
 
-window.sendMessage = function(){
+window.sendMessage = async function(){
   var input = document.getElementById('msgInput');
   var text = window.sanitizeInput(input.value.trim(), 2000);
-  if(!text || fraudDetected) return;
+  if(!text || fraudDetected || !currentConv || !currentConv.is_unlocked) return;
 
-  // Double-check fraud before sending
   if(containsFraud(text)){
     document.getElementById('fraudInline').style.display = 'block';
     return;
   }
 
-  messages.push({
-    id: nextId++,
-    from: 'me',
-    text: text,
-    time: getTime(),
-    date: 'Today'
-  });
+  var sendBtn = document.getElementById('sendBtn');
+  sendBtn.disabled = true;
+
+  var result = await sendChatMessage(convId, currentUserId, text);
+  if(!result.success){
+    alert('Could not send message. Please try again.');
+    sendBtn.disabled = false;
+    return;
+  }
 
   input.value = '';
   input.style.height = 'auto';
-  document.getElementById('sendBtn').disabled = true;
   document.getElementById('fraudInline').style.display = 'none';
   fraudDetected = false;
 
-  renderMessages();
+  await refreshMessages();
   scrollToBottom();
-
-  // Simulate reply after 1.5 seconds (demo only — remove in production)
-  setTimeout(simulateReply, 1500);
 };
 
-// Demo auto-reply — remove when real Firebase messaging is connected
-var replies = [
-  'Sounds good! 👍',
-  'Got it, I\'ll be there!',
-  'Perfect, see you then 😊',
-  'No problem at all!',
-  'Thanks for letting me know!',
-];
-var replyIndex = 0;
-function simulateReply(){
-  messages.push({
-    id: nextId++,
-    from: 'them',
-    text: replies[replyIndex % replies.length],
-    time: getTime(),
-    date: 'Today'
-  });
-  replyIndex++;
-  renderMessages();
-  scrollToBottom();
-}
+window.addEventListener('beforeunload', function(){
+  if(pollTimer) clearInterval(pollTimer);
+});
 </script>
 </body>
 </html>

@@ -155,10 +155,11 @@ onAuthStateChanged(auth, (user) => {
   clearTimeout(redirectTimeout);
   if (!user) { window.location.href = 'login.html'; return; }
   window._currentUser = user;
-  renderContent();
+  loadConversations();
 });
 </script>
 
+<script src="supabase-db.js"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
 var isDark = localStorage.getItem('qg-mode') !== 'light';
@@ -173,70 +174,81 @@ window.toggleTheme = function(){
 };
 applyTheme();
 
-// ── DEMO CONVERSATIONS ─────────────────────────────────
-// In production these will come from Firebase Firestore
-// Chat is only created after poster accepts applicant + payment goes to escrow
-var conversations = [
-  {
-    id:'conv1',
-    name:'Sarah K.',
-    initials:'S',
-    avatarBg:'linear-gradient(135deg,#6b3fa0,#c8a8e9)',
-    taskName:'Deep clean 2 bedroom apartment',
-    taskIcon:'🏠',
-    lastMessage:'I can do it this Saturday morning!',
-    time:'2m ago',
-    unread:2,
-    status:'in_progress',
-    paid:true
-  },
-  {
-    id:'conv2',
-    name:'James O.',
-    initials:'J',
-    avatarBg:'linear-gradient(135deg,#16a34a,#4ade80)',
-    taskName:'Grocery run — Superstore NW',
-    taskIcon:'🚗',
-    lastMessage:'On my way to the store now',
-    time:'1hr ago',
-    unread:0,
-    status:'in_progress',
-    paid:true
-  },
-  {
-    id:'conv3',
-    name:'Aisha M.',
-    initials:'A',
-    avatarBg:'linear-gradient(135deg,#d97706,#fbbf24)',
-    taskName:'Math tutor for Grade 10 student',
-    taskIcon:'🎓',
-    lastMessage:'What days work for you?',
-    time:'3hr ago',
-    unread:0,
-    status:'in_progress',
-    paid:true
-  },
-  {
-    id:'conv4',
-    name:'David T.',
-    initials:'D',
-    avatarBg:'linear-gradient(135deg,#9b6fc4,#c8a8e9)',
-    taskName:'Box braids — medium length',
-    taskIcon:'💇',
-    lastMessage:'Thank you! Great experience 🌟',
-    time:'Yesterday',
-    unread:0,
-    status:'completed',
-    paid:true
-  },
+var conversations = [];
+var filtered = [];
+var CAT_ICONS = {home:'🏠',errands:'🚗',tutoring:'🎓',beauty:'💇',moving:'🚚',cooking:'🍳',tech:'💻',care:'👶',gardening:'🌿',events:'🎉',trades:'🔧',other:'📦'};
+var AVATAR_GRADIENTS = [
+  'linear-gradient(135deg,#6b3fa0,#c8a8e9)',
+  'linear-gradient(135deg,#16a34a,#4ade80)',
+  'linear-gradient(135deg,#d97706,#fbbf24)',
+  'linear-gradient(135deg,#9b6fc4,#c8a8e9)',
+  'linear-gradient(135deg,#2563eb,#60a5fa)'
 ];
 
-var filtered = conversations.slice();
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function getStatusLabel(status){
-  if(status==='in_progress') return '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(74,222,128,0.12);color:#16a34a;">In progress</span>';
-  if(status==='completed')   return '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(107,63,160,0.2);color:#9b6fc4;">Completed</span>';
-  return '';
+function avatarGradient(name){
+  var n = 0;
+  for(var i = 0; i < (name || '').length; i++) n += name.charCodeAt(i);
+  return AVATAR_GRADIENTS[n % AVATAR_GRADIENTS.length];
+}
+
+function formatRelativeTime(iso){
+  if(!iso) return '';
+  var diff = Date.now() - new Date(iso).getTime();
+  var mins = Math.floor(diff / 60000);
+  if(mins < 1) return 'Just now';
+  if(mins < 60) return mins + 'm ago';
+  var hrs = Math.floor(mins / 60);
+  if(hrs < 24) return hrs + 'hr ago';
+  var days = Math.floor(hrs / 24);
+  if(days === 1) return 'Yesterday';
+  if(days < 7) return days + 'd ago';
+  return new Date(iso).toLocaleDateString('en-CA', {month:'short', day:'numeric'});
+}
+
+function countUnread(conv, userId){
+  var lastRead = userId === conv.poster_id ? conv.poster_last_read_at : conv.worker_last_read_at;
+  if(!conv.last_message_at) return 0;
+  if(!lastRead) return conv.last_message && conv.last_message_at ? 1 : 0;
+  return new Date(conv.last_message_at) > new Date(lastRead) ? 1 : 0;
+}
+
+function mapConversation(conv, userId){
+  var isPoster = conv.poster_id === userId;
+  var otherName = isPoster ? (conv.worker_name || 'Worker') : (conv.poster_name || 'Poster');
+  var cat = (conv.task_category || 'other').toLowerCase();
+  return {
+    id: conv.conv_id,
+    name: otherName,
+    initials: otherName.charAt(0).toUpperCase(),
+    avatarBg: avatarGradient(otherName),
+    taskName: conv.task_title || 'Task',
+    taskIcon: CAT_ICONS[cat] || '📦',
+    lastMessage: conv.last_message || 'No messages yet',
+    time: formatRelativeTime(conv.last_message_at || conv.created_at),
+    unread: countUnread(conv, userId),
+    status: conv.status === 'completed' ? 'completed' : 'in_progress',
+    paid: conv.is_unlocked,
+    locked: !conv.is_unlocked
+  };
+}
+
+async function loadConversations(){
+  var userId = window._currentUser ? window._currentUser.uid : null;
+  if(!userId) return;
+  var content = document.getElementById('mainContent');
+  content.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Loading messages...</div></div>';
+
+  try {
+    var rows = await getConversationsForUser(userId);
+    conversations = (rows || []).map(function(c){ return mapConversation(c, userId); });
+    filtered = conversations.slice();
+    renderContent();
+  } catch(err) {
+    console.error('Failed to load conversations:', err);
+    content.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Could not load messages</div><div class="empty-sub">Make sure you ran supabase/messaging.sql in your Supabase project.</div></div>';
+  }
 }
 
 function renderContent(){
@@ -281,21 +293,27 @@ function renderContent(){
 }
 
 function renderConvItem(c){
-  return '<a class="conv-item" href="chat.html?conv='+c.id+'" style="text-decoration:none">' +
+  return '<a class="conv-item" href="chat.html?conv='+encodeURIComponent(c.id)+'" style="text-decoration:none">' +
     '<div class="conv-avatar" style="background:'+c.avatarBg+'">' +
-      c.initials +
+      esc(c.initials) +
       (c.unread > 0 ? '<div class="unread-dot"></div>' : '') +
     '</div>' +
     '<div class="conv-info">' +
-      '<div class="conv-name">'+c.name+'</div>' +
-      '<div class="conv-task">'+c.taskIcon+' '+c.taskName+'</div>' +
-      '<div class="conv-preview'+(c.unread>0?' unread':'')+'">'+c.lastMessage+'</div>' +
+      '<div class="conv-name">'+esc(c.name)+'</div>' +
+      '<div class="conv-task">'+c.taskIcon+' '+esc(c.taskName)+'</div>' +
+      '<div class="conv-preview'+(c.unread>0?' unread':'')+'">'+esc(c.lastMessage)+'</div>' +
     '</div>' +
     '<div class="conv-right">' +
-      '<div class="conv-time">'+c.time+'</div>' +
+      '<div class="conv-time">'+esc(c.time)+'</div>' +
       (c.unread > 0 ? '<div class="conv-badge">'+c.unread+'</div>' : getStatusLabel(c.status)) +
     '</div>' +
   '</a>';
+}
+
+function getStatusLabel(status){
+  if(status==='in_progress') return '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(74,222,128,0.12);color:#16a34a;">In progress</span>';
+  if(status==='completed')   return '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(107,63,160,0.2);color:#9b6fc4;">Completed</span>';
+  return '';
 }
 
 window.filterConvs = function(){

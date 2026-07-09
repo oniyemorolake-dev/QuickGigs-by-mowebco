@@ -13,9 +13,9 @@ const SUPABASE_HEADERS = {
   'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
 };
 
-async function sbGet(table, filters) {
+async function sbGet(table, filters, order) {
   try {
-    var url = SUPABASE_URL + '/rest/v1/' + table + '?order=created_at.desc';
+    var url = SUPABASE_URL + '/rest/v1/' + table + '?order=' + (order || 'created_at.desc');
     if (filters) url += '&' + filters;
     var res = await fetch(url, { method: 'GET', headers: SUPABASE_HEADERS });
     if (!res.ok) throw new Error('GET failed: ' + res.status);
@@ -23,6 +23,25 @@ async function sbGet(table, filters) {
   } catch (err) {
     console.error('Supabase GET error:', err);
     return [];
+  }
+}
+
+async function sbPostReturn(table, data) {
+  try {
+    var res = await fetch(SUPABASE_URL + '/rest/v1/' + table, {
+      method: 'POST',
+      headers: Object.assign({}, SUPABASE_HEADERS, { 'Prefer': 'return=representation' }),
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) {
+      var err = await res.text();
+      throw new Error('POST failed: ' + res.status + ' ' + err);
+    }
+    var rows = await res.json();
+    return { success: true, data: rows[0] || null };
+  } catch (err) {
+    console.error('Supabase POST error:', err);
+    return { success: false, error: err.message };
   }
 }
 
@@ -91,11 +110,82 @@ async function getUsers() {
 
 async function saveUser(userData) {
   return await sbPost('users', {
-    name:     userData.name,
-    email:    userData.email,
-    phone:    userData.phone || '',
-    role:     userData.role  || 'poster'
+    name:         userData.name,
+    email:        userData.email,
+    phone:        userData.phone || '',
+    role:         userData.role  || 'poster',
+    firebase_uid: userData.firebase_uid || ''
   });
+}
+
+async function getUserByFirebaseUid(firebaseUid) {
+  var results = await sbGet('users', 'firebase_uid=eq.' + encodeURIComponent(firebaseUid));
+  return results[0] || null;
+}
+
+async function getConversationsForUser(userId) {
+  return await sbGet(
+    'conversations',
+    'or=(poster_id.eq.' + encodeURIComponent(userId) + ',worker_id.eq.' + encodeURIComponent(userId) + ')',
+    'last_message_at.desc.nullslast,created_at.desc'
+  );
+}
+
+async function getConversation(convId) {
+  var results = await sbGet('conversations', 'conv_id=eq.' + encodeURIComponent(convId));
+  return results[0] || null;
+}
+
+async function getConversationForTask(taskId, posterId, workerId) {
+  var results = await sbGet(
+    'conversations',
+    'task_id=eq.' + taskId + '&poster_id=eq.' + encodeURIComponent(posterId) + '&worker_id=eq.' + encodeURIComponent(workerId)
+  );
+  return results[0] || null;
+}
+
+async function createConversation(convData) {
+  var existing = await getConversationForTask(convData.task_id, convData.poster_id, convData.worker_id);
+  if (existing) return { success: true, data: existing, existing: true };
+
+  return await sbPostReturn('conversations', {
+    task_id:       convData.task_id,
+    poster_id:     convData.poster_id,
+    worker_id:     convData.worker_id,
+    poster_name:   convData.poster_name || '',
+    worker_name:   convData.worker_name || '',
+    task_title:    convData.task_title || '',
+    task_category: convData.task_category || '',
+    status:        convData.status || 'in_progress',
+    is_unlocked:   convData.is_unlocked !== false
+  });
+}
+
+async function getMessagesForConversation(convId) {
+  return await sbGet('messages', 'conv_id=eq.' + encodeURIComponent(convId), 'created_at.asc');
+}
+
+async function sendChatMessage(convId, senderId, body) {
+  var result = await sbPostReturn('messages', {
+    conv_id:   convId,
+    sender_id: senderId,
+    body:      body
+  });
+  if (!result.success) return result;
+
+  await sbUpdate('conversations', {
+    last_message:    body,
+    last_message_at: new Date().toISOString()
+  }, 'conv_id=eq.' + encodeURIComponent(convId));
+
+  return result;
+}
+
+async function markConversationRead(convId, userId, posterId) {
+  var field = userId === posterId ? 'poster_last_read_at' : 'worker_last_read_at';
+  var patch = {};
+  patch[field] = new Date().toISOString();
+  return await sbUpdate('conversations', patch, 'conv_id=eq.' + encodeURIComponent(convId));
 }
 
 async function getApplicationsByTask(taskId) {
@@ -163,6 +253,14 @@ window.postTask = postTask;
 window.updateTaskStatus = updateTaskStatus;
 window.getUsers = getUsers;
 window.saveUser = saveUser;
+window.getUserByFirebaseUid = getUserByFirebaseUid;
+window.getConversationsForUser = getConversationsForUser;
+window.getConversation = getConversation;
+window.getConversationForTask = getConversationForTask;
+window.createConversation = createConversation;
+window.getMessagesForConversation = getMessagesForConversation;
+window.sendChatMessage = sendChatMessage;
+window.markConversationRead = markConversationRead;
 window.getApplicationsByTask = getApplicationsByTask;
 window.getApplicationsByWorker = getApplicationsByWorker;
 window.submitApplication = submitApplication;

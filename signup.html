@@ -166,7 +166,7 @@ document.getElementById('signupForm').addEventListener('submit', async function(
     await sendEmailVerification(userCredential.user);
 
     // 2. Save user to Supabase USERS table
-    var saveResult = await saveUser({ name, email, phone, role });
+    var saveResult = await saveUser({ name, email, phone, role, firebase_uid: userCredential.user.uid });
     if (!saveResult.success) console.warn('Could not save user to Supabase:', saveResult.error);
 
     // 3. Save role to localStorage so login redirect works

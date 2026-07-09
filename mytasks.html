@@ -279,9 +279,11 @@ function renderTab(){
       var task = allTasks.find(function(t){ return getField(t,'TASK_ID') == getField(a,'TASK_ID'); }) || {};
       var cat = getCat(task);
       var statusLabel = getField(a,'STATUS') === 'accepted' ? '<span class="tc-badge badge-done">✓ Accepted</span>' : '<span class="tc-badge badge-open">Pending</span>';
+      var msgBtn = getField(a,'STATUS') === 'accepted' ? '<div class="action-row"><button class="act-btn btn-secondary" onclick="openChatForTask('+getField(a,'TASK_ID')+')">💬 Message poster</button></div>' : '';
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">Your application</div><div class="tc-title">'+esc(getField(task,'TITLE')||'Task #'+getField(a,'TASK_ID'))+'</div></div></div>'+statusLabel+'</div>'+
         '<div class="tc-meta">Your offer: $'+getField(a,'PRICE')+' · '+esc(getField(a,'MESSAGE')).substring(0,60)+'...</div>'+
+        msgBtn+
       '</div>';
     }).join('');
   }
@@ -297,7 +299,7 @@ function renderTab(){
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-progress">⏳ In progress</span></div>'+
         '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+'</div>'+
-        '<div class="action-row"><button class="act-btn btn-success" onclick="markComplete('+getField(t,'TASK_ID')+')">✓ Mark complete</button><a class="act-btn btn-secondary" href="messages.html">💬 Message</a></div>'+
+        '<div class="action-row"><button class="act-btn btn-success" onclick="markComplete('+getField(t,'TASK_ID')+')">✓ Mark complete</button><button class="act-btn btn-secondary" onclick="openChatForTask('+getField(t,'TASK_ID')+')">💬 Message</button></div>'+
       '</div>';
     }).join('');
   }
@@ -319,9 +321,74 @@ function renderTab(){
   }
 }
 
-window.acceptApplicant = function(taskId, appId){
-  showToast('Applicant accepted! Payment escrow coming soon 🎉');
-  // TODO: Update application status in Oracle + trigger Stripe escrow
+window.acceptApplicant = async function(taskId, appId){
+  var userId = window._currentUser ? window._currentUser.uid : null;
+  if(!userId) return;
+
+  var task = allTasks.find(function(t){ return getField(t,'TASK_ID') == taskId; });
+  var app = allApplications.find(function(a){ return getField(a,'APP_ID') == appId; });
+  if(!task || !app){
+    showToast('Could not find task or application', '#ef4444');
+    return;
+  }
+
+  var workerId = getField(app, 'WORKER_ID');
+  var appStatus = await updateApplicationStatus(appId, 'accepted');
+  if(!appStatus.success){
+    showToast('Could not accept applicant', '#ef4444');
+    return;
+  }
+
+  await updateTaskStatus(taskId, 'in_progress');
+
+  var workerUser = await getUserByFirebaseUid(workerId);
+  var posterName = window._currentUser.displayName || window._currentUser.email.split('@')[0];
+  var workerName = workerUser ? workerUser.name : 'Worker';
+
+  var convResult = await createConversation({
+    task_id:       taskId,
+    poster_id:     userId,
+    worker_id:     workerId,
+    poster_name:   posterName,
+    worker_name:   workerName,
+    task_title:    getField(task, 'TITLE'),
+    task_category: getField(task, 'CATEGORY'),
+    is_unlocked:   true
+  });
+
+  if(!convResult.success){
+    showToast('Accepted, but chat could not be created. Run supabase/messaging.sql first.', '#f59e0b');
+    loadData();
+    return;
+  }
+
+  showToast('Applicant accepted! Chat is open 💬');
+  loadData();
+};
+
+window.openChatForTask = async function(taskId){
+  var userId = window._currentUser ? window._currentUser.uid : null;
+  if(!userId) return;
+
+  var task = allTasks.find(function(t){ return getField(t,'TASK_ID') == taskId; });
+  if(!task) return;
+
+  var posterId = getField(task, 'POSTED_BY');
+  var acceptedApp = allApplications.find(function(a){
+    return getField(a,'TASK_ID') == taskId && getField(a,'STATUS') === 'accepted';
+  });
+  if(!acceptedApp){
+    window.location.href = 'messages.html';
+    return;
+  }
+
+  var workerId = getField(acceptedApp, 'WORKER_ID');
+  var conv = await getConversationForTask(taskId, posterId, workerId);
+  if(conv && conv.conv_id){
+    window.location.href = 'chat.html?conv=' + encodeURIComponent(conv.conv_id);
+  } else {
+    window.location.href = 'messages.html';
+  }
 };
 
 window.markComplete = function(taskId){
