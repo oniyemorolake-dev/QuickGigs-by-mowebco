@@ -274,14 +274,30 @@ var dbSubmitApplication = window.submitApplication;
 var isDark=localStorage.getItem('qg-mode')!=='light';
 
 async function loadTasks(){
+  var cached = typeof readTasksCache === 'function' ? readTasksCache() : null;
+  if (cached && cached.length) {
+    allTasks = cached.map(normaliseTask).filter(function(t){ return t.status === 'open'; });
+    renderCards();
+  }
   try{
     var items = await getTasks();
-    allTasks=items.map(normaliseTask).filter(function(t){return t.status==='open';});
+    if (items && items.length) {
+      allTasks = items.map(normaliseTask);
+    } else if (!cached || !cached.length) {
+      allTasks = getDemoTasks();
+    }
   }catch(err){
     console.warn('Supabase unreachable, using demo data:',err);
-    allTasks=getDemoTasks();
+    if (!cached || !cached.length) allTasks = getDemoTasks();
   }
   renderCards();
+  if (typeof fetchAllTasksFresh === 'function') {
+    fetchAllTasksFresh().then(function(fresh){
+      if (!fresh || !fresh.length) return;
+      allTasks = fresh.map(normaliseTask).filter(function(t){ return t.status === 'open'; });
+      renderCards();
+    });
+  }
 }
 
 function getDemoTasks(){

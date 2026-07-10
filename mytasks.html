@@ -166,20 +166,25 @@ function applyTheme(){ window.QG_applyTheme(isDark, 'modeBtn', false); }
 window.toggleTheme = function(){ isDark = !isDark; localStorage.setItem('qg-mode', isDark?'dark':'light'); applyTheme(); };
 applyTheme();
 
+var _tasksPrefetch = typeof fetchTasksWithCache === 'function'
+  ? fetchTasksWithCache()
+  : fetch(window.SUPABASE_URL + '/rest/v1/tasks?order=created_at.desc&limit=100', { headers: SUPABASE_HEADERS }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
+var _appsPrefetch = fetch(window.SUPABASE_URL + '/rest/v1/applications?order=created_at.desc&limit=200', { headers: SUPABASE_HEADERS }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
+
 async function loadData(){
   var userId = window._currentUser ? window._currentUser.uid : null;
   if(!userId) return;
   try {
-    var [tasksRes, appsRes] = await Promise.all([
-      fetch(window.SUPABASE_URL + '/rest/v1/tasks?order=created_at.desc', {headers:SUPABASE_HEADERS}),
-      fetch(window.SUPABASE_URL + '/rest/v1/applications?order=created_at.desc', {headers:SUPABASE_HEADERS})
-    ]);
-    if (!tasksRes.ok) throw new Error('tasks status ' + tasksRes.status);
-    if (!appsRes.ok) throw new Error('applications status ' + appsRes.status);
-    var tasksData = await tasksRes.json();
-    var appsData  = await appsRes.json();
-    allTasks        = Array.isArray(tasksData) ? tasksData : [];
+    var cached = typeof readTasksCache === 'function' ? readTasksCache() : null;
+    if (cached && cached.length) {
+      allTasks = cached;
+      renderTab();
+    }
+    var tasksData = await _tasksPrefetch;
+    var appsData = await _appsPrefetch;
+    allTasks = Array.isArray(tasksData) ? tasksData : [];
     allApplications = Array.isArray(appsData) ? appsData : [];
+    if (typeof fetchAllTasksFresh === 'function') fetchAllTasksFresh();
   } catch(err) {
     console.warn('Supabase unreachable, using demo data:', err);
     allTasks        = getDemoTasks();

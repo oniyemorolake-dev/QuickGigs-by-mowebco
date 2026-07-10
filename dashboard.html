@@ -320,21 +320,25 @@ function renderGreeting(){
 
 async function loadDashboardData(userId) {
   dashData.userId = userId;
+  var cached = typeof readTasksCache === 'function' ? readTasksCache() : null;
+  if (cached && cached.length) {
+    dashData.posted = cached;
+    renderAll();
+  }
   try {
     var headers = window.SUPABASE_HEADERS;
     var res = await Promise.all([
-      fetch(window.SUPABASE_URL + '/rest/v1/tasks?order=created_at.desc', { headers: headers }),
-      fetch(window.SUPABASE_URL + '/rest/v1/applications?order=created_at.desc', { headers: headers })
+      typeof fetchAllTasksFresh === 'function' ? fetchAllTasksFresh() : fetch(window.SUPABASE_URL + '/rest/v1/tasks?order=created_at.desc&limit=100', { headers: headers }).then(function (r) { return r.ok ? r.json() : []; }),
+      fetch(window.SUPABASE_URL + '/rest/v1/applications?order=created_at.desc&limit=200', { headers: headers }).then(function (r) { return r.ok ? r.json() : []; })
     ]);
-    if (!res[0].ok || !res[1].ok) throw new Error('fetch failed');
-    dashData.posted = await res[0].json();
-    dashData.apps = await res[1].json();
-    if (!Array.isArray(dashData.posted)) dashData.posted = [];
-    if (!Array.isArray(dashData.apps)) dashData.apps = [];
+    dashData.posted = Array.isArray(res[0]) ? res[0] : [];
+    dashData.apps = Array.isArray(res[1]) ? res[1] : [];
   } catch (err) {
     console.warn('Dashboard stats load failed:', err);
-    dashData.posted = [];
-    dashData.apps = [];
+    if (!cached || !cached.length) {
+      dashData.posted = [];
+      dashData.apps = [];
+    }
   }
   renderAll();
 }

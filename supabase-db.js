@@ -13,16 +13,46 @@ const SUPABASE_HEADERS = {
   'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
 };
 
-async function sbGet(table, filters, order) {
+var TASKS_CACHE_KEY = 'qg-tasks-cache-v1';
+var TASKS_CACHE_MS = 60000;
+
+function readTasksCache() {
+  try {
+    var raw = sessionStorage.getItem(TASKS_CACHE_KEY);
+    if (!raw) return null;
+    var parsed = JSON.parse(raw);
+    if (!parsed || !parsed.at || (Date.now() - parsed.at) > TASKS_CACHE_MS) return null;
+    return parsed.items || null;
+  } catch (err) {
+    return null;
+  }
+}
+
+function writeTasksCache(items) {
+  try {
+    sessionStorage.setItem(TASKS_CACHE_KEY, JSON.stringify({ at: Date.now(), items: items || [] }));
+  } catch (err) {}
+}
+
+function invalidateTasksCache() {
+  try { sessionStorage.removeItem(TASKS_CACHE_KEY); } catch (err) {}
+}
+
+async function sbGet(table, filters, order, limit) {
+  var controller = new AbortController();
+  var timeoutId = setTimeout(function () { controller.abort(); }, 8000);
   try {
     var url = SUPABASE_URL + '/rest/v1/' + table + '?order=' + (order || 'created_at.desc');
     if (filters) url += '&' + filters;
-    var res = await fetch(url, { method: 'GET', headers: SUPABASE_HEADERS });
+    if (limit) url += '&limit=' + limit;
+    var res = await fetch(url, { method: 'GET', headers: SUPABASE_HEADERS, signal: controller.signal });
     if (!res.ok) throw new Error('GET failed: ' + res.status);
     return await res.json();
   } catch (err) {
     console.error('Supabase GET error:', err);
     return [];
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -80,15 +110,34 @@ async function sbUpdate(table, data, filters) {
 }
 
 async function getTasks() {
-  return await sbGet('tasks', 'status=eq.open');
+  return await sbGet('tasks', 'status=eq.open', 'created_at.desc', 100);
+}
+
+async function getAllTasks() {
+  return await sbGet('tasks', null, 'created_at.desc', 100);
+}
+
+async function fetchTasksWithCache() {
+  var cached = readTasksCache();
+  if (cached) {
+    fetchAllTasksFresh();
+    return cached;
+  }
+  return await fetchAllTasksFresh();
+}
+
+async function fetchAllTasksFresh() {
+  var items = await getAllTasks();
+  if (Array.isArray(items) && items.length) writeTasksCache(items);
+  return items;
 }
 
 async function getTasksByUser(userId) {
-  return await sbGet('tasks', 'posted_by=eq.' + userId);
+  return await sbGet('tasks', 'posted_by=eq.' + userId, 'created_at.desc', 50);
 }
 
 async function postTask(taskData) {
-  return await sbPost('tasks', {
+  var result = await sbPost('tasks', {
     title:       taskData.title,
     description: taskData.description || '',
     category:    taskData.category,
@@ -98,10 +147,14 @@ async function postTask(taskData) {
     status:      'open',
     posted_by:   taskData.posted_by
   });
+  if (result.success) invalidateTasksCache();
+  return result;
 }
 
 async function updateTaskStatus(taskId, status) {
-  return await sbUpdate('tasks', { status: status }, 'task_id=eq.' + taskId);
+  var result = await sbUpdate('tasks', { status: status }, 'task_id=eq.' + taskId);
+  if (result.success) invalidateTasksCache();
+  return result;
 }
 
 async function getUsers() {
@@ -248,6 +301,11 @@ window.SUPABASE_HEADERS = SUPABASE_HEADERS;
 window.SB_HEADERS = SUPABASE_HEADERS;
 window.HEADERS = SUPABASE_HEADERS;
 window.getTasks = getTasks;
+window.getAllTasks = getAllTasks;
+window.fetchTasksWithCache = fetchTasksWithCache;
+window.fetchAllTasksFresh = fetchAllTasksFresh;
+window.readTasksCache = readTasksCache;
+window.invalidateTasksCache = invalidateTasksCache;
 window.getTasksByUser = getTasksByUser;
 window.postTask = postTask;
 window.updateTaskStatus = updateTaskStatus;

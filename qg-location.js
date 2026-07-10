@@ -42,7 +42,7 @@
             .catch(function () { resolve(DEFAULT); });
         },
         function () { resolve(DEFAULT); },
-        { timeout: 10000, maximumAge: 600000 }
+        { timeout: 4000, maximumAge: 600000 }
       );
     });
   };
