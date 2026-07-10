@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QuickGigs — Browse Tasks</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="qg-layout.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -128,6 +129,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 </style>
 </head>
 <body>
+<script src="qg-theme.js"></script>
 <nav class="nav">
   <div class="nav-logo">QuickGigs</div>
   <div class="nav-right">
@@ -231,6 +233,7 @@ onAuthStateChanged(auth, (user) => {
 
 <script src="qg-utils.js"></script>
 <script src="supabase-db.js"></script>
+<script src="qg-location.js"></script>
 <script>
 function esc(s){return window.escapeHtml(s);}
 var CAT_MAP = {
@@ -302,7 +305,8 @@ function renderCards(){
   var filtered=allTasks.filter(function(t){
     return (activeMode==='all'||t.mode===activeMode)&&(activeCat==='all'||t.cat===activeCat)&&(!search||t.title.toLowerCase().includes(search)||t.catLabel.toLowerCase().includes(search)||t.desc.toLowerCase().includes(search));
   });
-  document.getElementById('resultsCount').textContent=filtered.length+' task'+(filtered.length!==1?'s':'')+' near Calgary';
+  var city = window.getUserCityLabel ? window.getUserCityLabel() : 'Calgary';
+  document.getElementById('resultsCount').textContent=filtered.length+' task'+(filtered.length!==1?'s':'')+' near '+city;
   var area=document.getElementById('cardsArea');
   if(!filtered.length){area.innerHTML='<div class="empty-state"><div class="empty-emoji">🔍</div><p class="empty-txt">'+(allTasks.length===0?'No tasks posted yet — be the first!':'No tasks match this filter')+'</p></div>';return;}
   area.innerHTML=filtered.map(function(t){
@@ -359,8 +363,9 @@ window.submitApplication=async function(){
 };
 
 window.toggleMode=function(){isDark=!isDark;applyTheme();};
-function applyTheme(){document.body.className=isDark?'':'light';document.getElementById('modeBtn').textContent=isDark?'☀️ Light':'🌙 Dark';localStorage.setItem('qg-mode',isDark?'dark':'light');}
+function applyTheme(){window.QG_applyTheme(isDark,'modeBtn',false);localStorage.setItem('qg-mode',isDark?'dark':'light');}
 applyTheme();
+initUserLocation().then(function(){ renderCards(); });
 loadTasks();
 </script>
 </body>
