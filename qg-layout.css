@@ -1,0 +1,44 @@
+/* QuickGigs — wider layouts on laptop/desktop */
+@media (min-width: 768px) {
+  .qg-page-wrap {
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .qg-page-wide {
+    max-width: 960px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .stats {
+    max-width: 960px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .actions {
+    max-width: 960px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .section.qg-page-wide,
+  .greeting.qg-page-wide {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+/* Light mode button contrast fixes */
+body.light .btn-secondary,
+body.light .act-btn.btn-secondary {
+  background: #f0eeff;
+  border-color: #c4b5fd;
+  color: #4c1d95;
+}
+body.light .switch-btn {
+  background: #f0eeff;
+  border-color: #e8e2ff;
+  color: #4c1d95;
+}
+body.light .tab-btn {
+  color: #5a5a72;
+}

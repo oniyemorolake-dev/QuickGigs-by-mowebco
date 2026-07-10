@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QuickGigs — Post a Task</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="qg-layout.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'DM Sans',sans-serif;font-size:15px;min-height:100vh;transition:background 0.3s,color 0.3s;}
@@ -122,7 +123,9 @@ body.light .submit-btn{color:#2d1b4e;}
 body.light .success-btn{color:#2d1b4e;}
 </style>
 </head>
-<body class="dark">
+<body class="theme-posttask">
+<script src="qg-theme.js"></script>
+<script src="qg-location.js"></script>
 
 <!-- NAV -->
 <nav class="nav">
@@ -242,7 +245,8 @@ body.light .success-btn{color:#2d1b4e;}
   <div class="success-icon">🎉</div>
   <p class="success-title">Task posted!</p>
   <p class="success-sub">Workers near you will start applying soon. You'll get notified when someone applies.</p>
-  <button class="success-btn" onclick="window.location.href='dashboard.html'">Back to dashboard</button>
+  <button class="success-btn" onclick="window.location.href='mytasks.html'">View in My Tasks</button>
+  <button class="success-btn" style="margin-left:8px;background:rgba(255,255,255,0.1)" onclick="window.location.href='dashboard.html'">Back to dashboard</button>
 </div>
 
 <script src="qg-utils.js"></script>
@@ -276,11 +280,9 @@ onAuthStateChanged(auth, function(user) {
 </script>
 
 <script>
-// ── THEME ──────────────────────────────────────────────
 var isDark = localStorage.getItem('qg-mode') !== 'light';
 function applyTheme() {
-  document.body.className = isDark ? 'dark' : 'light';
-  document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark';
+  window.QG_applyTheme(isDark, 'modeBtn', true);
 }
 window.toggleMode = function() {
   isDark = !isDark;
@@ -289,10 +291,24 @@ window.toggleMode = function() {
 };
 applyTheme();
 
-// ── STATE ──────────────────────────────────────────────
 var selectedMode = 'quick';
 var selectedCat  = '';
 var selectedRec  = 'Daily';
+var CAT_SLUGS = {
+  'Errands': 'errands', 'Home': 'home', 'Tutoring': 'tutoring', 'Beauty': 'beauty',
+  'Moving': 'moving', 'Cooking': 'cooking', 'Tech': 'tech', 'Care': 'care',
+  'Gardening': 'gardening', 'Events': 'events', 'Trades': 'trades', 'Other': 'other'
+};
+
+function applyLocationDefaults() {
+  var loc = window.getUserLocation ? window.getUserLocation() : 'Calgary, AB';
+  var city = window.getUserCityLabel ? window.getUserCityLabel() : 'Calgary';
+  var locInput = document.getElementById('taskLocation');
+  if (locInput && !locInput.value) locInput.placeholder = loc;
+  updateHint(city);
+}
+initUserLocation().then(applyLocationDefaults);
+applyLocationDefaults();
 
 // ── MODE / CAT / REC ───────────────────────────────────
 window.selectMode = function(el) {
@@ -306,7 +322,8 @@ window.selectMode = function(el) {
 window.selectCat = function(el) {
   document.querySelectorAll('.cat-chip').forEach(function(c){ c.classList.remove('selected'); });
   el.classList.add('selected');
-  selectedCat = el.textContent.replace(/[^\w\s]/g, '').trim(); // strip emoji
+  var label = el.textContent.replace(/[^\w\s]/g, '').trim();
+  selectedCat = CAT_SLUGS[label] || label.toLowerCase();
   document.getElementById('catError').style.display = 'none';
   updateHint();
 };
@@ -317,10 +334,11 @@ window.selectRec = function(el) {
   selectedRec = el.textContent;
 };
 
-function updateHint() {
+function updateHint(city) {
+  city = city || (window.getUserCityLabel ? window.getUserCityLabel() : 'Calgary');
   var hints = {
-    'quick':     'Quick tasks in Calgary usually go for <strong>$20 – $60</strong>',
-    'standard':  'Standard tasks in Calgary usually go for <strong>$40 – $150</strong>',
+    'quick':     'Quick tasks in ' + city + ' usually go for <strong>$20 – $60</strong>',
+    'standard':  'Standard tasks in ' + city + ' usually go for <strong>$40 – $150</strong>',
     'recurring': 'Recurring tasks — set a per-session rate, minimum <strong>$20</strong>'
   };
   document.getElementById('hintText').innerHTML = (hints[selectedMode] || '') + ' · Minimum is $20';
@@ -331,7 +349,7 @@ window.handleSubmit = async function() {
   var title    = window.sanitizeInput(document.getElementById('taskTitle').value, 120);
   var desc     = window.sanitizeInput(document.getElementById('taskDesc').value, 2000);
   var budget   = parseFloat(document.getElementById('taskBudget').value);
-  var location = window.sanitizeInput(document.getElementById('taskLocation').value, 100) || 'Calgary, AB';
+  var location = window.sanitizeInput(document.getElementById('taskLocation').value, 100) || (window.getUserLocation ? window.getUserLocation() : 'Calgary, AB');
   var valid    = true;
 
   // Clear previous errors

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QuickGigs — Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="qg-layout.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -138,6 +139,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 </style>
 </head>
 <body>
+<script src="qg-theme.js"></script>
 
 <!-- NAV -->
 <nav class="nav">
@@ -155,7 +157,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 </nav>
 
 <!-- GREETING -->
-<div class="greeting">
+<div class="greeting qg-page-wide">
   <div class="mode-tag tag-poster" id="modeTag">📋 Poster mode</div>
   <div class="greet-name" id="greetName">Good evening 👋</div>
   <div class="greet-sub" id="greetSub">Welcome back to QuickGigs</div>
@@ -168,7 +170,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <div class="actions" id="actionsGrid"></div>
 
 <!-- NEARBY / ACTIVITY SECTION -->
-<div class="section">
+<div class="section qg-page-wide">
   <div class="section-hdr">
     <span class="section-title" id="sectionTitle">Tasks near you</span>
     <a class="see-all" href="browsetask.html">See all</a>
@@ -239,16 +241,17 @@ onAuthStateChanged(auth, (user) => {
   const firstName = name.split(' ')[0];
   window._userName = firstName;
   document.getElementById('avatarEl').textContent = firstName.charAt(0).toUpperCase();
-  renderGreeting();
+  loadDashboardData(user.uid);
 });
 </script>
 
+<script src="supabase-db.js"></script>
+<script src="qg-location.js"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
 var isDark = localStorage.getItem('qg-mode') !== 'light';
 function applyTheme(){
-  document.body.className = isDark ? '' : 'light';
-  document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark';
+  window.QG_applyTheme(isDark, 'modeBtn', false);
 }
 window.toggleTheme = function(){
   isDark = !isDark;
@@ -258,45 +261,97 @@ window.toggleTheme = function(){
 applyTheme();
 
 // ── MODE (poster / worker) ─────────────────────────────
-// Read from URL param first, then localStorage
 var params = new URLSearchParams(window.location.search);
 var sessionMode = params.get('mode') || localStorage.getItem('qg-session-mode') || 'poster';
 localStorage.setItem('qg-session-mode', sessionMode);
-
 var isPoster = sessionMode === 'poster';
+var dashData = { posted: [], apps: [], userId: null };
 
 window.switchMode = function(){
   isPoster = !isPoster;
-  var newMode = isPoster ? 'poster' : 'worker';
-  localStorage.setItem('qg-session-mode', newMode);
+  localStorage.setItem('qg-session-mode', isPoster ? 'poster' : 'worker');
   renderAll();
 };
 
-// ── GREETING ───────────────────────────────────────────
+function taskField(row, key) {
+  var map = {
+    id: ['task_id', 'TASK_ID', 'id'],
+    title: ['title', 'TITLE'],
+    status: ['status', 'STATUS'],
+    budget: ['budget', 'BUDGET'],
+    posted_by: ['posted_by', 'POSTED_BY'],
+    mode: ['task_mode', 'TASK_MODE'],
+    category: ['category', 'CATEGORY']
+  };
+  var keys = map[key] || [key];
+  for (var i = 0; i < keys.length; i++) {
+    if (row && row[keys[i]] != null) return row[keys[i]];
+  }
+  return '';
+}
+
+function appField(row, key) {
+  var map = {
+    id: ['app_id', 'APP_ID', 'id'],
+    task_id: ['task_id', 'TASK_ID'],
+    worker_id: ['worker_id', 'WORKER_ID'],
+    status: ['status', 'STATUS']
+  };
+  var keys = map[key] || [key];
+  for (var i = 0; i < keys.length; i++) {
+    if (row && row[keys[i]] != null) return row[keys[i]];
+  }
+  return '';
+}
+
 function getTimeGreeting(){
   var h = new Date().getHours();
   if(h < 12) return 'Good morning';
   if(h < 17) return 'Good afternoon';
   return 'Good evening';
 }
+
 function renderGreeting(){
   var name = window._userName || '';
+  var city = window.getUserCityLabel ? window.getUserCityLabel() : 'Calgary';
   document.getElementById('greetName').textContent = getTimeGreeting() + (name ? ', ' + name : '') + ' 👋';
-  document.getElementById('greetSub').textContent = new Date().toLocaleDateString('en-CA', {weekday:'long', month:'long', day:'numeric'}) + ' · Calgary';
+  document.getElementById('greetSub').textContent = new Date().toLocaleDateString('en-CA', {weekday:'long', month:'long', day:'numeric'}) + ' · ' + city;
 }
 
-// ── DATA ───────────────────────────────────────────────
-var nearbyTasks = [
-  {icon:'🚗', bg:'rgba(251,191,36,0.15)', name:'Grocery run — Superstore NW',       meta:'📍 1.2km away · 5 mins ago',  price:'$30',    badge:'badge-quick',    badgeLabel:'⚡ Quick',    href:'browsetask.html'},
-  {icon:'🏠', bg:'rgba(107,63,160,0.2)',  name:'Deep clean 2 bedroom apartment',     meta:'📍 2.4km away · 2 hrs ago',   price:'$120',   badge:'badge-standard', badgeLabel:'Standard',    href:'browsetask.html'},
-  {icon:'🎓', bg:'rgba(74,222,128,0.1)', name:'Math tutor for Grade 10 student',    meta:'📍 0.8km away · 30 mins ago', price:'$35/hr', badge:'badge-recurring', badgeLabel:'🔄 Recurring', href:'browsetask.html'},
-];
+async function loadDashboardData(userId) {
+  dashData.userId = userId;
+  try {
+    var headers = window.SUPABASE_HEADERS;
+    var res = await Promise.all([
+      fetch(window.SUPABASE_URL + '/rest/v1/tasks?order=created_at.desc', { headers: headers }),
+      fetch(window.SUPABASE_URL + '/rest/v1/applications?order=created_at.desc', { headers: headers })
+    ]);
+    if (!res[0].ok || !res[1].ok) throw new Error('fetch failed');
+    dashData.posted = await res[0].json();
+    dashData.apps = await res[1].json();
+    if (!Array.isArray(dashData.posted)) dashData.posted = [];
+    if (!Array.isArray(dashData.apps)) dashData.apps = [];
+  } catch (err) {
+    console.warn('Dashboard stats load failed:', err);
+    dashData.posted = [];
+    dashData.apps = [];
+  }
+  renderAll();
+}
 
-// ── RENDER ─────────────────────────────────────────────
 function renderAll(){
   renderGreeting();
+  var userId = dashData.userId;
+  var myPosted = userId ? dashData.posted.filter(function(t){ return taskField(t, 'posted_by') === userId; }) : [];
+  var myOpenPosted = myPosted.filter(function(t){ return taskField(t, 'status') === 'open'; });
+  var myCompleted = myPosted.filter(function(t){ return taskField(t, 'status') === 'completed'; });
+  var myApps = userId ? dashData.apps.filter(function(a){ return appField(a, 'worker_id') === userId; }) : [];
+  var myAcceptedApps = myApps.filter(function(a){ return appField(a, 'status') === 'accepted'; });
+  var applicantCount = userId ? dashData.apps.filter(function(a){
+    return myPosted.some(function(t){ return String(taskField(t, 'id')) === String(appField(a, 'task_id')); });
+  }).length : 0;
+  var totalSpent = myPosted.reduce(function(s, t){ return s + (parseFloat(taskField(t, 'budget')) || 0); }, 0);
 
-  // Mode tag + switch button
   var tag = document.getElementById('modeTag');
   if(isPoster){
     tag.className = 'mode-tag tag-poster';
@@ -308,46 +363,72 @@ function renderAll(){
     document.getElementById('switchBtn').textContent = 'Switch to poster';
   }
 
-  // Stats
   var stats = isPoster
-    ? [{icon:'📋',val:'0',cls:'',lbl:'Tasks posted'},{icon:'👥',val:'0',cls:'purple',lbl:'Applicants'},{icon:'✅',val:'0',cls:'',lbl:'Completed'},{icon:'💸',val:'$0',cls:'green',lbl:'Total spent'}]
-    : [{icon:'📨',val:'0',cls:'',lbl:'Applications'},{icon:'⭐',val:'—',cls:'purple',lbl:'Your rating'},{icon:'✅',val:'0',cls:'',lbl:'Jobs done'},{icon:'💰',val:'$0',cls:'green',lbl:'Total earned'}];
+    ? [
+        {icon:'📋', val: String(myPosted.length), cls:'', lbl:'Tasks posted'},
+        {icon:'👥', val: String(applicantCount), cls:'purple', lbl:'Applicants'},
+        {icon:'✅', val: String(myCompleted.length), cls:'', lbl:'Completed'},
+        {icon:'💸', val: '$' + totalSpent, cls:'green', lbl:'Total posted'}
+      ]
+    : [
+        {icon:'📨', val: String(myApps.length), cls:'', lbl:'Applications'},
+        {icon:'📋', val: String(myPosted.length), cls:'purple', lbl:'Tasks posted'},
+        {icon:'✅', val: String(myAcceptedApps.length), cls:'', lbl:'Jobs accepted'},
+        {icon:'💰', val: '—', cls:'green', lbl:'Total earned'}
+      ];
+
   document.getElementById('statsGrid').innerHTML = stats.map(function(s){
     return '<div class="stat-card"><div class="stat-icon">'+s.icon+'</div><div class="stat-val '+s.cls+'">'+s.val+'</div><div class="stat-lbl">'+s.lbl+'</div></div>';
   }).join('');
 
-  // Action cards
   var actions = isPoster
     ? [{icon:'➕',title:'Post a task',desc:'Need something done?',href:'posttask.html',cls:'primary'},{icon:'📂',title:'My tasks',desc:'See applicants & progress',href:'mytasks.html',cls:'secondary'}]
-    : [{icon:'🔍',title:'Browse tasks',desc:'Find work near you',href:'browsetask.html',cls:'primary'},{icon:'📨',title:'My applications',desc:'Track your bids',href:'mytasks.html',cls:'secondary'}];
+    : [{icon:'🔍',title:'Browse tasks',desc:'Find work near you',href:'browsetask.html',cls:'primary'},{icon:'📨',title:'My applications',desc:'Track your bids',href:'mytasks.html',cls:'secondary'},{icon:'➕',title:'Post a task',desc:'Need help with something?',href:'posttask.html',cls:'secondary'}];
   document.getElementById('actionsGrid').innerHTML = actions.map(function(a){
     return '<a class="action-card '+a.cls+'" href="'+a.href+'"><div class="action-icon">'+a.icon+'</div><div class="action-title">'+a.title+'</div><div class="action-desc">'+a.desc+'</div></a>';
   }).join('') +
     '<a class="action-card secondary" href="feedback.html" style="grid-column:1/-1;margin-top:2px"><div class="action-icon">🐛</div><div class="action-title">Beta feedback</div><div class="action-desc">Report a bug or share an idea — we read every message</div></a>';
 
-  // Section title
-  document.getElementById('sectionTitle').textContent = isPoster ? 'Tasks near you' : 'Tasks near you';
+  document.getElementById('sectionTitle').textContent = 'Open tasks near you';
 
-  // Tasks list — show nearby tasks for both modes, empty posted tasks for poster
-  var html = nearbyTasks.map(function(t){
-    return '<a class="task-row" href="'+t.href+'" style="text-decoration:none">' +
-      '<div class="task-dot" style="background:'+t.bg+'">'+t.icon+'</div>' +
-      '<div class="task-info"><div class="task-name">'+t.name+'</div><div class="task-meta">'+t.meta+'</div></div>' +
-      '<div class="task-right"><div class="task-price">'+t.price+'</div><span class="task-badge '+t.badge+'">'+t.badgeLabel+'</span></div>' +
-    '</a>';
-  }).join('');
+  var city = window.getUserCityLabel ? window.getUserCityLabel() : 'Calgary';
+  var openNearby = dashData.posted.filter(function(t){ return taskField(t, 'status') === 'open'; }).slice(0, 5);
+  var html = '';
 
-  // If poster, also show "my posted tasks" empty state
-  if(isPoster){
-    html += '<div style="margin-top:16px"></div>' +
-      '<div class="section-hdr"><span class="section-title">My posted tasks</span><a class="see-all" href="mytasks.html">See all</a></div>' +
-      '<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">No tasks posted yet</div><a class="empty-btn" href="posttask.html">Post your first task</a></div>';
+  if (openNearby.length) {
+    html = openNearby.map(function(t){
+      var mode = taskField(t, 'mode') || 'standard';
+      var badge = mode === 'quick' ? 'badge-quick' : mode === 'recurring' ? 'badge-recurring' : 'badge-standard';
+      var badgeLabel = mode === 'quick' ? '⚡ Quick' : mode === 'recurring' ? '🔄 Recurring' : 'Standard';
+      return '<a class="task-row" href="browsetask.html" style="text-decoration:none">' +
+        '<div class="task-dot" style="background:rgba(107,63,160,0.2)">📋</div>' +
+        '<div class="task-info"><div class="task-name">'+String(taskField(t,'title')).replace(/</g,'&lt;')+'</div><div class="task-meta">📍 '+String(taskField(t,'location')||city)+'</div></div>' +
+        '<div class="task-right"><div class="task-price">$'+taskField(t,'budget')+'</div><span class="task-badge '+badge+'">'+badgeLabel+'</span></div>' +
+      '</a>';
+    }).join('');
+  } else {
+    html = '<div class="empty"><div class="empty-icon">🔍</div><div class="empty-txt">No open tasks yet — post one or check back soon</div><a class="empty-btn" href="browsetask.html">Browse tasks</a></div>';
+  }
+
+  html += '<div style="margin-top:16px"></div>' +
+    '<div class="section-hdr"><span class="section-title">My posted tasks</span><a class="see-all" href="mytasks.html">See all</a></div>';
+
+  if (myOpenPosted.length) {
+    html += myOpenPosted.slice(0, 3).map(function(t){
+      return '<a class="task-row" href="mytasks.html" style="text-decoration:none">' +
+        '<div class="task-dot" style="background:rgba(107,63,160,0.2)">📋</div>' +
+        '<div class="task-info"><div class="task-name">'+String(taskField(t,'title')).replace(/</g,'&lt;')+'</div><div class="task-meta">Open · $'+taskField(t,'budget')+'</div></div>' +
+        '<div class="task-right"><div class="task-price">View</div></div>' +
+      '</a>';
+    }).join('');
+  } else {
+    html += '<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">No tasks posted yet</div><a class="empty-btn" href="posttask.html">Post your first task</a></div>';
   }
 
   document.getElementById('tasksList').innerHTML = html;
 }
 
-renderAll();
+initUserLocation().then(function(){ renderGreeting(); });
 
 window.toggleAvatarMenu = function() {
   var menu = document.getElementById('avatarMenu');
