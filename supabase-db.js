@@ -162,7 +162,13 @@ async function postTask(taskData) {
 }
 
 async function updateTaskStatus(taskId, status) {
-  var result = await sbUpdate('tasks', { status: status }, 'task_id=eq.' + encodeURIComponent(taskId));
+  var id = encodeURIComponent(String(taskId));
+  var filters = ['task_id=eq.' + id, 'id=eq.' + id];
+  var result = { success: false, error: 'Could not update task' };
+  for (var i = 0; i < filters.length; i++) {
+    result = await sbUpdate('tasks', { status: status }, filters[i]);
+    if (result.success) break;
+  }
   if (result.success) invalidateTasksCache();
   return result;
 }
@@ -311,9 +317,11 @@ async function submitApplication(appData) {
 
 async function updateApplicationStatus(appId, status) {
   var id = encodeURIComponent(String(appId));
-  var result = await sbUpdate('applications', { status: status }, 'app_id=eq.' + id);
-  if (!result.success) {
-    result = await sbUpdate('applications', { status: status }, 'id=eq.' + id);
+  var filters = ['app_id=eq.' + id, 'id=eq.' + id, 'application_id=eq.' + id];
+  var result = { success: false, error: 'Could not update application' };
+  for (var i = 0; i < filters.length; i++) {
+    result = await sbUpdate('applications', { status: status }, filters[i]);
+    if (result.success) break;
   }
   return result;
 }

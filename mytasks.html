@@ -72,7 +72,10 @@ body.light .tc-applicants-toggle{color:var(--purple);}
 .btn-review{background:rgba(251,191,36,0.15);color:#d97706;border:0.5px solid rgba(251,191,36,0.3);}
 
 /* APPLICANT ROW */
-.applicant-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:0.5px solid var(--border);}
+.applicant-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:0.5px solid var(--border);transition:opacity 0.25s,background 0.25s;}
+.applicant-row.is-faded{opacity:0.35;}
+.applicant-row.is-accepted{background:rgba(74,222,128,0.1);border-radius:10px;padding:10px 8px;}
+.applicant-row.is-accepting{background:rgba(107,63,160,0.12);border-radius:10px;}
 .app-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#c8a8e9);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#fff;flex-shrink:0;}
 body.light .app-avatar{color:#2d1b4e;}
 .app-info{flex:1;min-width:0;}
@@ -84,7 +87,12 @@ body.light .btn-success,
 body.light .accept-btn{color:#2d1b4e;}
 .app-msg{font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .app-price{font-size:13px;font-weight:500;color:var(--text);flex-shrink:0;}
-.accept-btn{padding:6px 14px;border-radius:8px;background:var(--purple);color:#fff;border:none;font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;}
+.accept-btn{padding:6px 14px;border-radius:8px;background:var(--purple);color:#fff;border:none;font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;transition:opacity 0.2s,background 0.2s;}
+.accept-btn:hover:not(:disabled){opacity:0.88;}
+.accept-btn:disabled{opacity:0.55;cursor:not-allowed;}
+.accept-btn.is-done{background:#16a34a;opacity:1;}
+.accept-status{font-size:11px;font-weight:500;color:#16a34a;flex-shrink:0;}
+.accept-status.declined{color:var(--text-faint);}
 
 /* EMPTY */
 .empty-state{text-align:center;padding:60px 20px;}
@@ -182,12 +190,60 @@ function taskDomId(taskId) {
   return 'apps-' + String(taskId).replace(/[^a-zA-Z0-9_-]/g, '_');
 }
 
+function setRowStatus(row, status) {
+  if (!row) return;
+  row.status = status;
+  row.STATUS = status;
+}
+
+function applyLocalAcceptState(taskId, appId) {
+  taskId = String(taskId);
+  appId = String(appId);
+  allTasks.forEach(function(t) {
+    if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, 'in_progress');
+  });
+  allApplications.forEach(function(a) {
+    if (String(getField(a, 'TASK_ID')) !== taskId) return;
+    if (String(getField(a, 'APP_ID')) === appId) setRowStatus(a, 'accepted');
+    else if (getField(a, 'STATUS') === 'pending' || !getField(a, 'STATUS')) setRowStatus(a, 'declined');
+  });
+  if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
+}
+
+function renderApplicantAction(a, taskId) {
+  var appId = getField(a, 'APP_ID');
+  var status = (getField(a, 'STATUS') || 'pending').toLowerCase();
+  if (status === 'accepted') return '<span class="accept-status">✓ Accepted</span>';
+  if (status === 'declined') return '<span class="accept-status declined">Not selected</span>';
+  return '<button type="button" class="accept-btn" data-task-id="'+escAttr(taskId)+'" data-app-id="'+escAttr(appId)+'">Accept</button>';
+}
+
 function escAttr(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
     .replace(/</g, '&lt;');
+}
+
+function setAcceptLoading(acceptBtn, loading) {
+  if (!acceptBtn) return;
+  var row = acceptBtn.closest('.applicant-row');
+  var panel = acceptBtn.closest('.applicants-panel');
+  if (loading) {
+    acceptBtn.disabled = true;
+    acceptBtn.textContent = 'Accepting…';
+    if (row) row.classList.add('is-accepting');
+    if (panel) {
+      panel.querySelectorAll('.applicant-row').forEach(function(other) {
+        if (other !== row) other.classList.add('is-faded');
+      });
+    }
+  } else {
+    acceptBtn.disabled = false;
+    acceptBtn.textContent = 'Accept';
+    if (row) row.classList.remove('is-accepting');
+  }
 }
 
 window.toggleApplicants = function(taskId) {
@@ -298,7 +354,13 @@ document.getElementById('tabContent').addEventListener('click', function(e) {
   var acceptBtn = e.target.closest('.accept-btn');
   if (acceptBtn) {
     e.preventDefault();
-    acceptApplicant(acceptBtn.getAttribute('data-task-id'), acceptBtn.getAttribute('data-app-id'));
+    if (acceptBtn.disabled) return;
+    setAcceptLoading(acceptBtn, true);
+    acceptApplicant(
+      acceptBtn.getAttribute('data-task-id'),
+      acceptBtn.getAttribute('data-app-id'),
+      acceptBtn
+    );
     return;
   }
   var toggleBtn = e.target.closest('.tc-applicants-toggle');
@@ -349,25 +411,30 @@ function renderTab(){
       var cat = getCat(t);
       var taskId = getField(t,'TASK_ID');
       var apps = allApplications.filter(function(a){ return String(getField(a,'TASK_ID')) === String(taskId); });
-      var pendingApps = apps.filter(function(a){ return getField(a,'STATUS') === 'pending' || !getField(a,'STATUS'); });
-      var isOpen = !!expandedApplicantTasks[String(taskId)];
+      var pendingApps = apps.filter(function(a){ var s = (getField(a,'STATUS') || 'pending').toLowerCase(); return s === 'pending'; });
+      var hasAccepted = apps.some(function(a){ return (getField(a,'STATUS') || '').toLowerCase() === 'accepted'; });
+      var listApps = hasAccepted ? apps : pendingApps;
+      var isOpen = !!expandedApplicantTasks[String(taskId)] || hasAccepted;
       var namePreview = pendingApps.slice(0, 3).map(function(a){
         return displayName(getField(a,'WORKER_ID'), a);
       }).join(', ');
-      var appHtml = pendingApps.length ? pendingApps.map(function(a){
+      var appHtml = listApps.length ? listApps.map(function(a){
         var workerId = getField(a,'WORKER_ID');
         var workerName = displayName(workerId, a);
-        var appId = getField(a,'APP_ID');
-        return '<div class="applicant-row">'+
+        var status = (getField(a,'STATUS') || 'pending').toLowerCase();
+        var rowClass = 'applicant-row';
+        if (status === 'accepted') rowClass += ' is-accepted';
+        else if (status === 'declined') rowClass += ' is-faded';
+        return '<div class="'+rowClass+'">'+
           '<div class="app-avatar">'+esc(workerName.charAt(0).toUpperCase())+'</div>'+
           '<div class="app-info"><div class="app-name">'+esc(workerName)+'</div><div class="app-msg">'+esc(getField(a,'MESSAGE'))+'</div></div>'+
           '<div class="app-price">$'+getField(a,'PRICE')+'</div>'+
-          '<button type="button" class="accept-btn" data-task-id="'+escAttr(taskId)+'" data-app-id="'+escAttr(appId)+'">Accept</button>'+
+          renderApplicantAction(a, taskId)+
         '</div>';
       }).join('') : '<div style="font-size:12px;color:var(--text-faint);padding:10px 0">No pending applicants</div>';
       var toggleLabel = pendingApps.length
         ? pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : '') + (namePreview ? ' · ' + namePreview + (pendingApps.length > 3 ? '…' : '') : '') + ' — Tap to ' + (isOpen ? 'hide' : 'view')
-        : 'No applicants yet';
+        : (hasAccepted ? 'Worker accepted — Tap to view' : 'No applicants yet');
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-open">Open</span></div>'+
         '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+' budget</div>'+
@@ -442,39 +509,60 @@ function renderTab(){
   }
 }
 
-window.acceptApplicant = async function(taskId, appId){
+window.acceptApplicant = async function(taskId, appId, acceptBtn){
   var userId = window._currentUser ? window._currentUser.uid : null;
   if(!userId) return;
 
   taskId = String(taskId);
   appId = String(appId);
+  if (!appId) {
+    setAcceptLoading(acceptBtn, false);
+    showToast('Invalid application — refresh and try again', '#ef4444');
+    return;
+  }
 
   var task = allTasks.find(function(t){ return String(getField(t,'TASK_ID')) === taskId; });
   var app = allApplications.find(function(a){ return String(getField(a,'APP_ID')) === appId; });
   if(!task || !app){
+    setAcceptLoading(acceptBtn, false);
     showToast('Could not find task or application', '#ef4444');
     return;
   }
 
   var workerId = getField(app, 'WORKER_ID');
-  showToast('Accepting applicant…', '#9b6fc4');
+  var workerName = displayName(workerId, app);
 
   var appStatus = await updateApplicationStatus(appId, 'accepted');
   if(!appStatus.success){
     console.error('Accept failed:', appStatus.error);
+    setAcceptLoading(acceptBtn, false);
     showToast('Could not accept — run supabase/tasks-beta-fix.sql in Supabase', '#ef4444');
     return;
   }
 
   var taskStatus = await updateTaskStatus(taskId, 'in_progress');
-  if(!taskStatus.success){
-    console.error('Task status update failed:', taskStatus.error);
-    showToast('Applicant accepted but task status did not update', '#f59e0b');
+  if(!taskStatus.success) console.warn('Task status update failed:', taskStatus.error);
+
+  applyLocalAcceptState(taskId, appId);
+
+  if (acceptBtn) {
+    acceptBtn.textContent = '✓ Accepted';
+    acceptBtn.classList.add('is-done');
+    acceptBtn.disabled = true;
+    var row = acceptBtn.closest('.applicant-row');
+    if (row) {
+      row.classList.remove('is-accepting');
+      row.classList.add('is-accepted');
+    }
   }
 
+  activeTab = 'inprogress';
+  syncTabButtons();
+  renderTab();
+
   var workerUser = await getUserByFirebaseUid(workerId);
+  if (workerUser && workerUser.name) workerName = workerUser.name;
   var posterName = window._currentUser.displayName || window._currentUser.email.split('@')[0];
-  var workerName = workerUser ? workerUser.name : displayName(workerId, app);
 
   var convResult = await createConversation({
     task_id:       taskId,
@@ -490,7 +578,7 @@ window.acceptApplicant = async function(taskId, appId){
   if(!convResult.success){
     showToast('Accepted ' + workerName + '! Chat setup pending.', '#f59e0b');
   } else {
-    showToast('Accepted ' + workerName + '! Chat is open 💬');
+    showToast('Accepted ' + workerName + '! Moved to In Progress 💬');
   }
   loadData();
 };
