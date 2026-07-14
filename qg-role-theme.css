@@ -1,64 +1,63 @@
-/* QuickGigs — Worker mode: full alternate skin (poster stays default purple) */
+/* QuickGigs — Tasker mode: different layout, same purple brand */
 
 /* ══════════════════════════════════════════════════════
-   WORKER — override design tokens globally
+   TASKER — same palette, slightly deeper bg
    ══════════════════════════════════════════════════════ */
 html[data-qg-mode="worker"],
 body.qg-mode-worker {
-  --bg: #041612;
+  --bg: #0e061c;
   --surface: rgba(255, 255, 255, 0.05);
-  --surface-hover: rgba(16, 185, 129, 0.12);
-  --border: rgba(52, 211, 153, 0.14);
-  --border-hover: #34d399;
-  --text: #ecfdf5;
-  --text-muted: rgba(236, 253, 245, 0.45);
-  --text-faint: rgba(236, 253, 245, 0.28);
-  --nav-bg: #052e24;
-  --tab-bg: #052e24;
+  --surface-hover: rgba(107, 63, 160, 0.14);
+  --border: rgba(200, 168, 233, 0.16);
+  --border-hover: #c8a8e9;
+  --text: #fff;
+  --text-muted: rgba(255, 255, 255, 0.4);
+  --text-faint: rgba(255, 255, 255, 0.25);
+  --nav-bg: #120828;
+  --tab-bg: #120828;
   --card-bg: rgba(255, 255, 255, 0.05);
   --input-bg: rgba(255, 255, 255, 0.07);
-  --purple-light: #34d399;
-  --lavender: #6ee7b7;
-  --purple: #059669;
-  --green: #34d399;
-  --role-accent: #34d399;
-  --role-accent-soft: rgba(16, 185, 129, 0.2);
+  --purple-light: #c8a8e9;
+  --lavender: #c8a8e9;
+  --purple: #9b6fc4;
+  --role-accent: #c8a8e9;
+  --role-accent-soft: rgba(107, 63, 160, 0.22);
 }
 
 html[data-qg-mode="worker"] body.light,
 body.light.qg-mode-worker {
-  --bg: #f0fdf8;
+  --bg: #f8f6ff;
   --surface: #fff;
-  --surface-hover: #ecfdf5;
-  --border: #bbf7d0;
-  --border-hover: #059669;
-  --text: #064e3b;
-  --text-muted: #047857;
-  --text-faint: #6b7280;
+  --surface-hover: #f5f2ff;
+  --border: #e8e2ff;
+  --border-hover: #9b6fc4;
+  --text: #2d1b4e;
+  --text-muted: #5a5a72;
+  --text-faint: #9ca3af;
   --nav-bg: #fff;
   --tab-bg: #fff;
   --card-bg: #fff;
-  --input-bg: #ecfdf5;
-  --purple-light: #059669;
-  --lavender: #059669;
-  --purple: #047857;
+  --input-bg: #f0eeff;
+  --purple-light: #6b3fa0;
+  --lavender: #6b3fa0;
+  --purple: #6b3fa0;
 }
 
 /* ══════════════════════════════════════════════════════
-   NAV — worker gets a green header bar + earn badge
+   NAV — tasker: accent bar + "tasker" label
    ══════════════════════════════════════════════════════ */
 html[data-qg-mode="worker"] .nav,
 body.qg-mode-worker .nav {
   background: var(--nav-bg);
   border-bottom: none;
-  box-shadow: 0 3px 0 #059669, 0 1px 0 rgba(52, 211, 153, 0.3);
+  box-shadow: 0 3px 0 #6b3fa0, 0 1px 0 rgba(200, 168, 233, 0.25);
   padding-top: 14px;
   padding-bottom: 14px;
 }
 
 html[data-qg-mode="worker"] .nav-logo,
 body.qg-mode-worker .nav-logo {
-  color: #6ee7b7;
+  color: var(--lavender);
   font-style: normal;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -66,19 +65,19 @@ body.qg-mode-worker .nav-logo {
 
 html[data-qg-mode="worker"] .nav-logo::after,
 body.qg-mode-worker .nav-logo::after {
-  content: ' earn';
+  content: ' tasker';
   font-family: 'DM Sans', sans-serif;
   font-size: 11px;
   font-weight: 500;
-  color: #34d399;
+  color: var(--purple-light);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   margin-left: 4px;
   vertical-align: middle;
 }
 
-body.light.qg-mode-worker .nav-logo { color: #047857; }
-body.light.qg-mode-worker .nav-logo::after { color: #059669; }
+body.light.qg-mode-worker .nav-logo { color: var(--purple); }
+body.light.qg-mode-worker .nav-logo::after { color: #9b6fc4; }
 
 html[data-qg-mode="worker"] .nav-title,
 body.qg-mode-worker .nav-title {
@@ -88,24 +87,24 @@ body.qg-mode-worker .nav-title {
 
 html[data-qg-mode="worker"] .avatar,
 body.qg-mode-worker .avatar {
-  background: linear-gradient(135deg, #047857, #34d399);
-  box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.35);
+  background: linear-gradient(135deg, #6b3fa0, #c8a8e9);
+  box-shadow: 0 0 0 2px rgba(200, 168, 233, 0.35);
 }
 
 html[data-qg-mode="worker"] .mode-btn,
 body.qg-mode-worker .mode-btn {
-  background: rgba(52, 211, 153, 0.15);
-  color: #6ee7b7;
+  background: rgba(107, 63, 160, 0.2);
+  color: var(--lavender);
   border-radius: 999px;
 }
 
 body.light.qg-mode-worker .mode-btn {
-  background: #ecfdf5;
-  color: #047857;
+  background: #f0eeff;
+  color: var(--purple);
 }
 
 /* ══════════════════════════════════════════════════════
-   BOTTOM TAB BAR — worker: floating pill nav
+   BOTTOM TAB BAR — tasker: floating pill nav
    ══════════════════════════════════════════════════════ */
 html[data-qg-mode="worker"] .tab-bar,
 body.qg-mode-worker .tab-bar {
@@ -113,7 +112,7 @@ body.qg-mode-worker .tab-bar {
   border-top: none;
   margin: 0 12px 10px;
   border-radius: 20px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(52, 211, 153, 0.2);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(200, 168, 233, 0.2);
   padding: 6px 6px 10px;
   left: 0;
   right: 0;
@@ -121,7 +120,7 @@ body.qg-mode-worker .tab-bar {
 }
 
 body.light.qg-mode-worker .tab-bar {
-  box-shadow: 0 4px 20px rgba(5, 150, 105, 0.12), 0 0 0 1px #bbf7d0;
+  box-shadow: 0 4px 20px rgba(107, 63, 160, 0.12), 0 0 0 1px #e8e2ff;
 }
 
 html[data-qg-mode="worker"] .tab-item,
@@ -133,30 +132,28 @@ body.qg-mode-worker .tab-item {
 
 html[data-qg-mode="worker"] .tab-item.active,
 body.qg-mode-worker .tab-item.active {
-  background: rgba(16, 185, 129, 0.22);
+  background: rgba(107, 63, 160, 0.28);
 }
 
 body.light.qg-mode-worker .tab-item.active {
-  background: #d1fae5;
+  background: #ede9ff;
 }
 
 html[data-qg-mode="worker"] .tab-item.active .tab-icon,
 html[data-qg-mode="worker"] .tab-item.active .tab-lbl,
 body.qg-mode-worker .tab-item.active .tab-icon,
 body.qg-mode-worker .tab-item.active .tab-lbl {
-  color: #34d399;
+  color: var(--lavender);
 }
 
 body.light.qg-mode-worker .tab-item.active .tab-icon,
 body.light.qg-mode-worker .tab-item.active .tab-lbl {
-  color: #047857;
+  color: var(--purple);
 }
 
 /* ══════════════════════════════════════════════════════
-   DASHBOARD — stats & actions layout differs by role
+   DASHBOARD — layout differs; colours stay purple
    ══════════════════════════════════════════════════════ */
-
-/* Poster: classic 2×2 grid (default in page CSS) */
 html[data-qg-mode="poster"] .stats,
 body.qg-mode-poster .stats {
   display: grid;
@@ -164,7 +161,6 @@ body.qg-mode-poster .stats {
   gap: 10px;
 }
 
-/* Worker: horizontal scrolling stat chips */
 html[data-qg-mode="worker"] .stats,
 body.qg-mode-worker .stats {
   display: flex;
@@ -185,8 +181,8 @@ body.qg-mode-worker .stat-card {
   text-align: center;
   border-radius: 999px;
   padding: 12px 16px;
-  border: 1px solid rgba(52, 211, 153, 0.25);
-  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(200, 168, 233, 0.25);
+  background: rgba(107, 63, 160, 0.12);
 }
 
 html[data-qg-mode="worker"] .stat-icon,
@@ -199,9 +195,11 @@ html[data-qg-mode="worker"] .stat-lbl,
 body.qg-mode-worker .stat-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; }
 
 html[data-qg-mode="worker"] .stat-val.purple,
-body.qg-mode-worker .stat-val.purple { color: #34d399; }
+body.qg-mode-worker .stat-val.purple { color: var(--lavender); }
 
-/* Worker action cards: stacked full-width pill buttons */
+body.light.qg-mode-worker .stat-val.purple { color: var(--purple); }
+
+/* Tasker action cards: stacked full-width pill buttons */
 html[data-qg-mode="worker"] .actions,
 body.qg-mode-worker .actions {
   display: flex;
@@ -233,14 +231,14 @@ body.qg-mode-worker .action-card .action-desc { display: none; }
 
 html[data-qg-mode="worker"] .action-card.primary,
 body.qg-mode-worker .action-card.primary {
-  background: linear-gradient(135deg, #047857, #34d399);
-  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, #6b3fa0, #9b6fc4);
+  box-shadow: 0 4px 16px rgba(107, 63, 160, 0.35);
 }
 
 html[data-qg-mode="worker"] .action-card.secondary,
 body.qg-mode-worker .action-card.secondary {
   background: transparent;
-  border: 1.5px solid rgba(52, 211, 153, 0.35);
+  border: 1.5px solid rgba(200, 168, 233, 0.35);
 }
 
 html[data-qg-mode="worker"] .action-card[style*="grid-column"],
@@ -249,7 +247,7 @@ body.qg-mode-worker .action-card[style*="grid-column"] {
   margin-top: 0 !important;
 }
 
-/* Worker task feed: card blocks instead of divider rows */
+/* Tasker feed: card blocks instead of divider rows */
 html[data-qg-mode="worker"] .task-row,
 body.qg-mode-worker .task-row {
   background: var(--card-bg);
@@ -267,17 +265,17 @@ body.qg-mode-worker .task-row + .task-row {
 html[data-qg-mode="worker"] .task-dot,
 body.qg-mode-worker .task-dot {
   border-radius: 50%;
-  background: rgba(16, 185, 129, 0.2) !important;
+  background: rgba(107, 63, 160, 0.22) !important;
 }
 
 html[data-qg-mode="worker"] .see-all,
-body.qg-mode-worker .see-all { color: #34d399; font-weight: 500; }
+body.qg-mode-worker .see-all { color: var(--lavender); font-weight: 500; }
 
-body.light.qg-mode-worker .see-all { color: #047857; }
+body.light.qg-mode-worker .see-all { color: var(--purple); }
 
 html[data-qg-mode="worker"] .empty-btn,
 body.qg-mode-worker .empty-btn {
-  background: linear-gradient(135deg, #047857, #34d399);
+  background: linear-gradient(135deg, #6b3fa0, #9b6fc4);
   border-radius: 999px;
   padding: 12px 28px;
 }
@@ -285,42 +283,42 @@ body.qg-mode-worker .empty-btn {
 html[data-qg-mode="worker"] .empty,
 body.qg-mode-worker .empty {
   border-radius: 20px;
-  border-color: rgba(52, 211, 153, 0.25);
-  background: rgba(16, 185, 129, 0.06);
+  border-color: rgba(200, 168, 233, 0.25);
+  background: rgba(107, 63, 160, 0.08);
 }
 
-/* Mode switcher stays same spot — worker active state uses green */
+/* Mode switcher — tasker active state (purple) */
 html[data-qg-mode="worker"] .mode-switch-opt.active-worker,
 body.qg-mode-worker .mode-switch-opt.active-worker {
-  border-color: #34d399;
-  background: rgba(16, 185, 129, 0.15);
-  box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.3);
+  border-color: var(--purple-light);
+  background: rgba(107, 63, 160, 0.2);
+  box-shadow: 0 0 0 1px rgba(155, 111, 196, 0.3);
 }
 
 body.light.qg-mode-worker .mode-switch-opt.active-worker {
-  background: #d1fae5;
+  background: #ede9ff;
 }
 
 /* ══════════════════════════════════════════════════════
-   MY TASKS / BROWSE / MESSAGES — worker skin
+   MY TASKS / BROWSE / MESSAGES — tasker layout skin
    ══════════════════════════════════════════════════════ */
 html[data-qg-mode="worker"] .tab-btn.active,
 body.qg-mode-worker .tab-btn.active {
-  color: #34d399;
-  border-bottom-color: #34d399;
+  color: var(--lavender);
+  border-bottom-color: var(--lavender);
 }
 
 body.light.qg-mode-worker .tab-btn.active {
-  color: #047857;
-  border-bottom-color: #047857;
+  color: var(--purple);
+  border-bottom-color: var(--purple);
 }
 
 html[data-qg-mode="worker"] .task-card,
 body.qg-mode-worker .task-card {
   border-radius: 18px;
-  border: 1px solid rgba(52, 211, 153, 0.2);
+  border: 1px solid rgba(200, 168, 233, 0.2);
   border-left: none;
-  background: rgba(16, 185, 129, 0.06);
+  background: rgba(107, 63, 160, 0.08);
 }
 
 html[data-qg-mode="worker"] .btn-primary,
@@ -329,31 +327,30 @@ html[data-qg-mode="worker"] .empty-btn,
 body.qg-mode-worker .btn-primary,
 body.qg-mode-worker .accept-btn,
 body.qg-mode-worker .empty-btn {
-  background: linear-gradient(135deg, #047857, #34d399);
+  background: linear-gradient(135deg, #6b3fa0, #9b6fc4);
   border-radius: 999px;
 }
 
 html[data-qg-mode="worker"] .tc-applicants,
 html[data-qg-mode="worker"] .tc-applicants-toggle,
 body.qg-mode-worker .tc-applicants,
-body.qg-mode-worker .tc-applicants-toggle { color: #34d399; }
+body.qg-mode-worker .tc-applicants-toggle { color: var(--lavender); }
 
 body.light.qg-mode-worker .tc-applicants,
-body.light.qg-mode-worker .tc-applicants-toggle { color: #047857; }
+body.light.qg-mode-worker .tc-applicants-toggle { color: var(--purple); }
 
-/* Browse filters — green pills */
 html[data-qg-mode="worker"] .mpill.active-all,
 body.qg-mode-worker .mpill.active-all {
-  background: rgba(16, 185, 129, 0.25);
-  color: #6ee7b7;
-  border-color: rgba(52, 211, 153, 0.4);
+  background: rgba(107, 63, 160, 0.28);
+  color: var(--lavender);
+  border-color: rgba(200, 168, 233, 0.4);
   border-radius: 999px;
 }
 
 html[data-qg-mode="worker"] .cat-active,
 body.qg-mode-worker .cat-active {
-  background: rgba(16, 185, 129, 0.3) !important;
-  color: #6ee7b7 !important;
+  background: rgba(107, 63, 160, 0.32) !important;
+  color: var(--lavender) !important;
   border-radius: 999px;
 }
 
@@ -362,16 +359,16 @@ html[data-qg-mode="worker"] .cpill,
 body.qg-mode-worker .mpill,
 body.qg-mode-worker .cpill { border-radius: 999px; }
 
-/* Search boxes */
 html[data-qg-mode="worker"] .search-box,
 body.qg-mode-worker .search-box {
   border-radius: 999px;
-  border: 1px solid rgba(52, 211, 153, 0.2);
+  border: 1px solid rgba(200, 168, 233, 0.2);
 }
 
-/* Legal footer */
 html[data-qg-mode="worker"] .legal-footer a,
-body.qg-mode-worker .legal-footer a { color: #34d399; }
+body.qg-mode-worker .legal-footer a { color: var(--lavender); }
+
+body.light.qg-mode-worker .legal-footer a { color: var(--purple); }
 
 html[data-qg-mode="worker"] body,
 body.qg-mode-worker {
