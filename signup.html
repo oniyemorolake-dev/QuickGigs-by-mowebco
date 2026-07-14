@@ -36,6 +36,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);font-s
 .login-link a{color:var(--al);text-decoration:none;font-weight:500;}
 .terms{font-size:0.75rem;color:var(--ws);text-align:center;margin-top:1rem;line-height:1.6;}
 .terms a{color:var(--al);text-decoration:none;}
+.terms-check{display:flex;align-items:flex-start;gap:10px;margin-top:1rem;text-align:left;}
+.terms-check input{margin-top:3px;accent-color:var(--a);}
+.terms-check label{font-size:0.75rem;color:var(--wm);line-height:1.5;cursor:pointer;}
 .error{font-size:0.75rem;color:var(--err);margin-top:4px;display:none;}
 .msg-box{padding:12px 16px;border-radius:10px;font-size:0.85rem;margin-bottom:1rem;display:none;}
 .msg-box.error-msg{background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);color:var(--err);}
@@ -88,12 +91,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);font-s
       <input type="password" id="confirmPassword" placeholder="Repeat your password" required>
       <div class="error" id="confirmError">Passwords do not match</div>
     </div>
+    <div class="terms-check">
+      <input type="checkbox" id="termsAgree" required>
+      <label for="termsAgree">I agree to the <a href="terms.html" target="_blank">Terms of Service</a> and <a href="privacy.html" target="_blank">Privacy Policy</a></label>
+    </div>
     <button type="submit" class="btn" id="submitBtn">Create account</button>
   </form>
 
   <div class="divider"><span>or</span></div>
   <div class="login-link">Already have an account? <a href="login.html">Log in</a></div>
-  <p class="terms">By signing up you agree to our <a href="terms.html">Terms of Service</a> and <a href="privacy.html">Privacy Policy</a></p>
 </div>
 
 <script src="qg-utils.js"></script>
@@ -162,6 +168,11 @@ document.getElementById('signupForm').addEventListener('submit', async function(
   if (name.length < 2)        { document.getElementById('nameError').style.display     = 'block'; valid = false; }
   if (password.length < 8)    { document.getElementById('passwordError').style.display = 'block'; valid = false; }
   if (password !== confirm)   { document.getElementById('confirmError').style.display  = 'block'; valid = false; }
+  if (!document.getElementById('termsAgree').checked) {
+    errorMsg.textContent = 'Please agree to the Terms of Service and Privacy Policy.';
+    errorMsg.style.display = 'block';
+    valid = false;
+  }
   if (!valid) return;
 
   submitBtn.textContent = 'Creating account...';

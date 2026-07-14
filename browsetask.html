@@ -255,6 +255,9 @@ function normaliseTask(row){
   var catInfo=getCatInfo(row.CATEGORY||row.category);
   var mode=(row.TASK_MODE||row.task_mode||'standard').toLowerCase();
   var budget=parseFloat(row.BUDGET||row.budget||0);
+  var posterUid=row.posted_by||row.POSTED_BY||'';
+  var posterName=row.poster_name||row.POSTER_NAME||'';
+  if(!posterName&&posterUid&&typeof resolveUserName==='function') posterName=resolveUserName(posterUid,row,userNames);
   return {
     id:row.id||row.TASK_ID||row.task_id,
     mode:mode,
@@ -266,14 +269,19 @@ function normaliseTask(row){
     priceLabel:'$'+budget+(mode==='recurring'?'/hr':''),
     location:row.LOCATION||row.location||'Calgary, AB',
     posted:'Recently',applicants:0,
-    status:(row.STATUS||row.status||'open').toLowerCase()
+    status:(row.STATUS||row.status||'open').toLowerCase(),
+    posterName:posterName||'QuickGigs user'
   };
 }
 var allTasks=[],activeMode='all',activeCat='all',activeTask=null;
+var userNames={};
 var dbSubmitApplication = window.submitApplication;
 var isDark=localStorage.getItem('qg-mode')!=='light';
 
 async function loadTasks(){
+  if (typeof getUsersNameMap === 'function') {
+    getUsersNameMap().then(function(map){ userNames = map || {}; renderCards(); });
+  }
   var cached = typeof readTasksCache === 'function' ? readTasksCache() : null;
   if (cached && cached.length) {
     allTasks = cached.map(normaliseTask).filter(function(t){ return t.status === 'open'; });
@@ -329,7 +337,7 @@ function renderCards(){
     return '<div class="task-card">'+
       '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+t.iconBg+'">'+t.icon+'</div><div class="tc-meta"><p class="tc-cat">'+esc(t.catLabel)+'</p><p class="tc-title">'+esc(t.title)+'</p></div></div>'+getBadge(t.mode)+'</div>'+
       '<p class="tc-desc">'+esc(t.desc)+'</p>'+
-      '<div class="tc-bottom"><div><div class="tc-price">'+esc(t.priceLabel)+'</div><div class="tc-info">📍 '+esc(t.location)+' · '+esc(t.posted)+(t.applicants>0?' · '+t.applicants+' applied':'')+'</div></div>'+
+      '<div class="tc-bottom"><div><div class="tc-price">'+esc(t.priceLabel)+'</div><div class="tc-info">👤 '+esc(t.posterName)+' · 📍 '+esc(t.location)+' · '+esc(t.posted)+(t.applicants>0?' · '+t.applicants+' applied':'')+'</div></div>'+
       '<button class="apply-btn '+getBtnClass(t.mode)+'" onclick="openModal(\''+t.id+'\',event)">'+getBtnLabel(t.mode)+'</button></div></div>';
   }).join('');
 }

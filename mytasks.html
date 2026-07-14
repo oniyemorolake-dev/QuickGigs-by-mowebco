@@ -109,14 +109,14 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 </nav>
 
 <div class="tabs-wrap">
-  <button class="tab-btn active" onclick="showTab('posted',this)">Posted</button>
-  <button class="tab-btn" onclick="showTab('applied',this)">Applied</button>
-  <button class="tab-btn" onclick="showTab('inprogress',this)">In Progress</button>
-  <button class="tab-btn" onclick="showTab('completed',this)">Completed</button>
+  <button class="tab-btn active" id="tabPosted" onclick="showTab('posted',this)">Posted</button>
+  <button class="tab-btn" id="tabApplied" onclick="showTab('applied',this)">Applied</button>
+  <button class="tab-btn" id="tabInprogress" onclick="showTab('inprogress',this)">In Progress</button>
+  <button class="tab-btn" id="tabCompleted" onclick="showTab('completed',this)">Completed</button>
 </div>
 
 <div class="content qg-page-wrap" id="tabContent">
-  <div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Loading your tasks...</div></div>
+  <div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Loading...</div></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -160,11 +160,42 @@ onAuthStateChanged(auth, (user) => {
 var SUPABASE_HEADERS = window.SUPABASE_HEADERS;
 var activeTab = 'posted';
 var allTasks = [], allApplications = [];
+var userNames = {};
 var isDark = localStorage.getItem('qg-mode') !== 'light';
+var TAB_IDS = { posted: 'tabPosted', applied: 'tabApplied', inprogress: 'tabInprogress', completed: 'tabCompleted' };
 
 function applyTheme(){ window.QG_applyTheme(isDark, 'modeBtn', false); }
 window.toggleTheme = function(){ isDark = !isDark; localStorage.setItem('qg-mode', isDark?'dark':'light'); applyTheme(); };
 applyTheme();
+
+function pickDefaultTab() {
+  var params = new URLSearchParams(window.location.search);
+  var tabParam = params.get('tab');
+  if (tabParam && TAB_IDS[tabParam]) {
+    activeTab = tabParam;
+    return;
+  }
+  var userId = window._currentUser ? window._currentUser.uid : null;
+  if (!userId) return;
+  var hasPosted = allTasks.some(function(t){ return getField(t, 'POSTED_BY') === userId; });
+  var hasApps = allApplications.some(function(a){ return getField(a, 'WORKER_ID') === userId; });
+  if (!hasPosted && hasApps) activeTab = 'applied';
+  else if (!hasPosted && !hasApps && localStorage.getItem('qg-session-mode') === 'worker') activeTab = 'applied';
+}
+
+function syncTabButtons() {
+  Object.keys(TAB_IDS).forEach(function(key) {
+    var el = document.getElementById(TAB_IDS[key]);
+    if (el) el.classList.toggle('active', activeTab === key);
+  });
+}
+
+function displayName(uid, task) {
+  if (typeof resolveUserName === 'function') return resolveUserName(uid, task, userNames);
+  if (task && (task.poster_name || task.POSTER_NAME)) return task.poster_name || task.POSTER_NAME;
+  if (userNames[uid]) return userNames[uid];
+  return 'QuickGigs user';
+}
 
 var _tasksPrefetch = typeof fetchTasksWithCache === 'function'
   ? fetchTasksWithCache()
@@ -178,10 +209,14 @@ async function loadData(){
     var cached = typeof readTasksCache === 'function' ? readTasksCache() : null;
     if (cached && cached.length) {
       allTasks = cached;
+      pickDefaultTab();
+      syncTabButtons();
       renderTab();
     }
+    var namesPromise = typeof getUsersNameMap === 'function' ? getUsersNameMap() : Promise.resolve({});
     var tasksData = await _tasksPrefetch;
     var appsData = await _appsPrefetch;
+    userNames = await namesPromise;
     allTasks = Array.isArray(tasksData) ? tasksData : [];
     allApplications = Array.isArray(appsData) ? appsData : [];
     if (typeof fetchAllTasksFresh === 'function') fetchAllTasksFresh();
@@ -190,6 +225,8 @@ async function loadData(){
     allTasks        = getDemoTasks();
     allApplications = getDemoApps();
   }
+  pickDefaultTab();
+  syncTabButtons();
   renderTab();
 }
 
@@ -221,6 +258,7 @@ function getField(row,f){
     LOCATION:['LOCATION','location'],
     STATUS:['STATUS','status'],
     POSTED_BY:['POSTED_BY','posted_by'],
+    POSTER_NAME:['POSTER_NAME','poster_name'],
     WORKER_ID:['WORKER_ID','worker_id'],
     MESSAGE:['MESSAGE','message'],
     PRICE:['PRICE','price']
@@ -245,7 +283,13 @@ function showToast(msg, color){
 window.showTab = function(tab, btn){
   activeTab = tab;
   document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
-  btn.classList.add('active');
+  if (btn) btn.classList.add('active');
+  else syncTabButtons();
+  if (window.history && window.history.replaceState) {
+    var url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    window.history.replaceState({}, '', url.pathname + url.search);
+  }
   renderTab();
 };
 
@@ -256,6 +300,12 @@ function renderTab(){
   if(activeTab === 'posted'){
     var myTasks = allTasks.filter(function(t){ return getField(t,'POSTED_BY') === userId && getField(t,'STATUS') === 'open'; });
     if(!myTasks.length){
+      var userId = window._currentUser ? window._currentUser.uid : null;
+      var hasApps = allApplications.some(function(a){ return getField(a,'WORKER_ID') === userId; });
+      if (hasApps) {
+        content.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">You haven\'t posted any open tasks. Check the <strong>Applied</strong> tab for tasks you\'ve applied to.</div><button class="empty-btn" onclick="showTab(\'applied\',document.getElementById(\'tabApplied\'))">View applications</button></div>';
+        return;
+      }
       content.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">Tasks you post appear here. Workers in your area can apply — whether you\'re in poster or worker mode.</div><a class="empty-btn" href="posttask.html">Post a task</a></div>';
       return;
     }
@@ -263,9 +313,11 @@ function renderTab(){
       var cat = getCat(t);
       var apps = allApplications.filter(function(a){ return getField(a,'TASK_ID') == getField(t,'TASK_ID'); });
       var appHtml = apps.length ? apps.map(function(a){
+        var workerId = getField(a,'WORKER_ID');
+        var workerName = displayName(workerId, null);
         return '<div class="applicant-row">'+
-          '<div class="app-avatar">'+getField(a,'WORKER_ID').charAt(0).toUpperCase()+'</div>'+
-          '<div class="app-info"><div class="app-name">Applicant</div><div class="app-msg">'+esc(getField(a,'MESSAGE'))+'</div></div>'+
+          '<div class="app-avatar">'+esc(workerName.charAt(0).toUpperCase())+'</div>'+
+          '<div class="app-info"><div class="app-name">'+esc(workerName)+'</div><div class="app-msg">'+esc(getField(a,'MESSAGE'))+'</div></div>'+
           '<div class="app-price">$'+getField(a,'PRICE')+'</div>'+
           '<button class="accept-btn" onclick="acceptApplicant('+getField(t,'TASK_ID')+','+getField(a,'APP_ID')+')">Accept</button>'+
         '</div>';
@@ -287,10 +339,12 @@ function renderTab(){
     content.innerHTML = myApps.map(function(a){
       var task = allTasks.find(function(t){ return getField(t,'TASK_ID') == getField(a,'TASK_ID'); }) || {};
       var cat = getCat(task);
+      var posterId = getField(task, 'POSTED_BY');
+      var posterName = displayName(posterId, task);
       var statusLabel = getField(a,'STATUS') === 'accepted' ? '<span class="tc-badge badge-done">✓ Accepted</span>' : '<span class="tc-badge badge-open">Pending</span>';
       var msgBtn = getField(a,'STATUS') === 'accepted' ? '<div class="action-row"><button class="act-btn btn-secondary" onclick="openChatForTask('+getField(a,'TASK_ID')+')">💬 Message poster</button></div>' : '';
       return '<div class="task-card">'+
-        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">Your application</div><div class="tc-title">'+esc(getField(task,'TITLE')||'Task #'+getField(a,'TASK_ID'))+'</div></div></div>'+statusLabel+'</div>'+
+        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">Applied · Posted by '+esc(posterName)+'</div><div class="tc-title">'+esc(getField(task,'TITLE')||'Task #'+getField(a,'TASK_ID'))+'</div></div></div>'+statusLabel+'</div>'+
         '<div class="tc-meta">Your offer: $'+getField(a,'PRICE')+' · '+esc(getField(a,'MESSAGE')).substring(0,60)+'...</div>'+
         msgBtn+
       '</div>';
@@ -305,8 +359,11 @@ function renderTab(){
     }
     content.innerHTML = inProg.map(function(t){
       var cat = getCat(t);
+      var userId = window._currentUser ? window._currentUser.uid : null;
+      var isPoster = getField(t,'POSTED_BY') === userId;
+      var roleLabel = isPoster ? 'You posted' : 'Posted by '+esc(displayName(getField(t,'POSTED_BY'), t));
       return '<div class="task-card">'+
-        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-progress">⏳ In progress</span></div>'+
+        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+roleLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-progress">⏳ In progress</span></div>'+
         '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+'</div>'+
         '<div class="action-row"><button class="act-btn btn-success" onclick="markComplete('+getField(t,'TASK_ID')+')">✓ Mark complete</button><button class="act-btn btn-secondary" onclick="openChatForTask('+getField(t,'TASK_ID')+')">💬 Message</button></div>'+
       '</div>';
@@ -400,9 +457,14 @@ window.openChatForTask = async function(taskId){
   }
 };
 
-window.markComplete = function(taskId){
-  showToast('Task marked complete! Both parties can now leave a review.');
-  // TODO: Update task status to completed in Oracle via ORDS
+window.markComplete = async function(taskId){
+  var result = await updateTaskStatus(taskId, 'completed');
+  if (!result.success) {
+    showToast('Could not mark complete. Try again.', '#ef4444');
+    return;
+  }
+  showToast('Task marked complete! Leave a review when ready.');
+  loadData();
 };
 </script>
 </body>
