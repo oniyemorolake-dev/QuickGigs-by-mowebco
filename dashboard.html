@@ -51,6 +51,19 @@ body.light .nav-logo{color:var(--purple);}
 .nav-right{display:flex;align-items:center;gap:10px;}
 .switch-btn{padding:6px 13px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:0.5px solid var(--border);background:var(--surface);color:var(--text-muted);font-family:'DM Sans',sans-serif;transition:all 0.2s;white-space:nowrap;}
 .switch-btn:hover{border-color:var(--purple-light);color:var(--purple-light);}
+.mode-switcher{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.mode-switch-opt{border-radius:14px;padding:12px 10px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;transition:all 0.2s;color:var(--text);}
+.mode-switch-opt:hover{border-color:var(--purple-light);}
+.mode-switch-opt.active{border-color:var(--purple-light);background:rgba(107,63,160,0.18);box-shadow:0 0 0 1px rgba(155,111,196,0.25);}
+body.light .mode-switch-opt.active{background:#ede9ff;}
+.mode-switch-opt.active-worker{border-color:#16a34a;background:rgba(74,222,128,0.12);box-shadow:0 0 0 1px rgba(74,222,128,0.2);}
+body.light .mode-switch-opt.active-worker{background:#ecfdf5;}
+.mode-switch-icon{font-size:20px;display:block;margin-bottom:4px;}
+.mode-switch-label{font-size:13px;font-weight:500;display:block;color:var(--text);}
+.mode-switch-desc{font-size:10px;color:var(--text-muted);display:block;margin-top:2px;}
+.mode-switch-note{font-size:11px;color:var(--text-faint);margin-top:10px;line-height:1.5;}
+.stat-card-link{text-decoration:none;color:inherit;display:block;cursor:pointer;}
+.stat-card-link:hover{transform:translateY(-1px);border-color:var(--border-hover);}
 .mode-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);transition:all 0.2s;}
 body.light .mode-btn{background:#f0eeff;color:var(--purple);}
 .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#c8a8e9);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#fff;flex-shrink:0;}
@@ -145,7 +158,6 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <nav class="nav">
   <div class="nav-logo">QuickGigs</div>
   <div class="nav-right">
-    <button class="switch-btn" id="switchBtn" onclick="switchMode()">Switch to worker</button>
     <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
     <div class="avatar" id="avatarEl" onclick="toggleAvatarMenu()" style="cursor:pointer">M</div>
     <div id="avatarMenu" style="display:none;position:absolute;top:56px;right:20px;background:#150830;border:0.5px solid rgba(200,168,233,0.2);border-radius:14px;padding:6px;min-width:160px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
@@ -158,9 +170,21 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <!-- GREETING -->
 <div class="greeting qg-page-wide">
-  <div class="mode-tag tag-poster" id="modeTag">📋 Poster mode</div>
   <div class="greet-name" id="greetName">Good evening 👋</div>
   <div class="greet-sub" id="greetSub">Welcome back to QuickGigs</div>
+  <div class="mode-switcher" id="modeSwitcher">
+    <button type="button" class="mode-switch-opt" data-mode="poster" onclick="setDashboardMode('poster')">
+      <span class="mode-switch-icon">📋</span>
+      <span class="mode-switch-label">I need help</span>
+      <span class="mode-switch-desc">Post tasks & hire</span>
+    </button>
+    <button type="button" class="mode-switch-opt" data-mode="worker" onclick="setDashboardMode('worker')">
+      <span class="mode-switch-icon">💼</span>
+      <span class="mode-switch-label">I want to earn</span>
+      <span class="mode-switch-desc">Browse & apply to gigs</span>
+    </button>
+  </div>
+  <p class="mode-switch-note">One login works for both — tap above to switch. No need to sign out.</p>
 </div>
 
 <!-- STATS -->
@@ -257,6 +281,23 @@ window.switchMode = function(){
   else window.location.href = 'dashboard.html?mode=' + (isPoster ? 'worker' : 'poster');
 };
 
+window.setDashboardMode = function(mode) {
+  mode = mode === 'worker' ? 'worker' : 'poster';
+  var current = isPoster ? 'poster' : 'worker';
+  if (mode === current) return;
+  if (typeof setSessionMode === 'function') setSessionMode(mode);
+  window.location.href = 'dashboard.html?mode=' + mode;
+};
+
+function updateModeSwitcherUI() {
+  document.querySelectorAll('.mode-switch-opt').forEach(function(btn) {
+    var isPosterBtn = btn.getAttribute('data-mode') === 'poster';
+    var active = isPosterBtn ? isPoster : !isPoster;
+    btn.classList.toggle('active', isPosterBtn && active);
+    btn.classList.toggle('active-worker', !isPosterBtn && active);
+  });
+}
+
 function taskField(row, key) {
   var map = {
     id: ['task_id', 'TASK_ID', 'id'],
@@ -350,34 +391,28 @@ function renderAll(){
     });
   }).length : 0;
 
-  var tag = document.getElementById('modeTag');
-  if(isPoster){
-    tag.className = 'mode-tag tag-poster';
-    tag.textContent = '📋 Poster mode';
-    document.getElementById('switchBtn').textContent = 'Switch to worker';
-  } else {
-    tag.className = 'mode-tag tag-worker';
-    tag.textContent = '💼 Worker mode';
-    document.getElementById('switchBtn').textContent = 'Switch to poster';
-  }
-
   var stats = isPoster
     ? [
-        {icon:'📋', val: String(myPosted.length), cls:'', lbl:'Tasks posted'},
-        {icon:'👥', val: String(applicantCount), cls:'purple', lbl:'Applicants'},
-        {icon:'✅', val: String(myCompleted.length), cls:'', lbl:'Completed'},
-        {icon:'💸', val: '$' + totalSpent, cls:'green', lbl:'Total posted'}
+        {icon:'📋', val: String(myPosted.length), cls:'', lbl:'Tasks posted', href:'mytasks.html?tab=posted'},
+        {icon:'👥', val: String(applicantCount), cls:'purple', lbl:'Applicants', href:'mytasks.html?tab=posted&applicants=1'},
+        {icon:'✅', val: String(myCompleted.length), cls:'', lbl:'Completed', href:'mytasks.html?tab=completed'},
+        {icon:'💸', val: '$' + totalSpent, cls:'green', lbl:'Total posted', href:'mytasks.html?tab=posted'}
       ]
     : [
-        {icon:'📨', val: String(myApps.length), cls:'', lbl:'Applications'},
-        {icon:'✅', val: String(myAcceptedApps.length), cls:'purple', lbl:'Jobs accepted'},
-        {icon:'⏳', val: String(myInProgressWorker), cls:'', lbl:'In progress'},
-        {icon:'💰', val: '—', cls:'green', lbl:'Total earned'}
+        {icon:'📨', val: String(myApps.length), cls:'', lbl:'Applications', href:'mytasks.html?tab=applied'},
+        {icon:'✅', val: String(myAcceptedApps.length), cls:'purple', lbl:'Jobs accepted', href:'mytasks.html?tab=applied'},
+        {icon:'⏳', val: String(myInProgressWorker), cls:'', lbl:'In progress', href:'mytasks.html?tab=inprogress'},
+        {icon:'💰', val: '—', cls:'green', lbl:'Total earned', href:'mytasks.html?tab=applied'}
       ];
 
   document.getElementById('statsGrid').innerHTML = stats.map(function(s){
-    return '<div class="stat-card"><div class="stat-icon">'+s.icon+'</div><div class="stat-val '+s.cls+'">'+s.val+'</div><div class="stat-lbl">'+s.lbl+'</div></div>';
+    return '<a class="stat-card stat-card-link" href="'+s.href+'">' +
+      '<div class="stat-icon">'+s.icon+'</div>' +
+      '<div class="stat-val '+s.cls+'">'+s.val+'</div>' +
+      '<div class="stat-lbl">'+s.lbl+'</div></a>';
   }).join('');
+
+  updateModeSwitcherUI();
 
   var actions = isPoster
     ? [
@@ -400,13 +435,15 @@ function renderAll(){
 
   if (isPoster) {
     sectionTitle.textContent = 'Your open tasks';
-    if (seeAll) { seeAll.href = 'mytasks.html?tab=posted'; seeAll.textContent = 'See all'; }
+    if (seeAll) { seeAll.href = 'mytasks.html?tab=posted&applicants=1'; seeAll.textContent = 'See all'; }
     if (myOpenPosted.length) {
       html = myOpenPosted.slice(0, 5).map(function(t){
         var appsOnTask = dashData.apps.filter(function(a){
           return String(appField(a, 'task_id')) === String(taskField(t, 'id'));
         }).length;
-        return '<a class="task-row" href="mytasks.html?tab=posted" style="text-decoration:none">' +
+        var taskId = taskField(t, 'id');
+        var taskHref = 'mytasks.html?tab=posted' + (appsOnTask ? '&expand=' + encodeURIComponent(String(taskId)) : '');
+        return '<a class="task-row" href="'+taskHref+'" style="text-decoration:none">' +
           '<div class="task-dot" style="background:rgba(107,63,160,0.2)">📋</div>' +
           '<div class="task-info"><div class="task-name">'+String(taskField(t,'title')).replace(/</g,'&lt;')+'</div><div class="task-meta">Open · $'+taskField(t,'budget')+(appsOnTask ? ' · '+appsOnTask+' applicant'+(appsOnTask!==1?'s':'') : '')+'</div></div>' +
           '<div class="task-right"><div class="task-price">Review</div></div>' +
@@ -415,7 +452,7 @@ function renderAll(){
     } else {
       html = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">No open tasks yet — post one in under a minute</div><a class="empty-btn" href="posttask.html">Post a task</a></div>';
     }
-    html += '<p style="text-align:center;margin-top:16px;font-size:12px;color:var(--text-muted)">Want to earn instead? <a href="#" onclick="switchMode();return false;" style="color:var(--purple-light);text-decoration:none;font-weight:500">Switch to worker mode →</a></p>';
+    html += '<p style="text-align:center;margin-top:16px;font-size:12px;color:var(--text-muted)">Also want to earn? Use <strong>I want to earn</strong> above — same account.</p>';
   } else {
     sectionTitle.textContent = 'Gigs near you';
     if (seeAll) { seeAll.href = 'browsetask.html'; seeAll.textContent = 'See all'; }
@@ -444,7 +481,7 @@ function renderAll(){
           '<div class="task-info"><div class="task-name">'+String(taskField(t,'title')).replace(/</g,'&lt;')+'</div><div class="task-meta">You posted · $'+taskField(t,'budget')+'</div></div></a>';
       }).join('');
     }
-    html += '<p style="text-align:center;margin-top:16px;font-size:12px;color:var(--text-muted)">Need to hire someone? <a href="#" onclick="switchMode();return false;" style="color:var(--purple-light);text-decoration:none;font-weight:500">Switch to poster mode →</a></p>';
+    html += '<p style="text-align:center;margin-top:16px;font-size:12px;color:var(--text-muted)">Need to hire someone? Use <strong>I need help</strong> above — same account.</p>';
   }
 
   document.getElementById('tasksList').innerHTML = html;

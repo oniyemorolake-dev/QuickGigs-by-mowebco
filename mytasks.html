@@ -280,6 +280,30 @@ window.toggleApplicants = function(taskId) {
   }
 };
 
+function applyExpandFromUrl() {
+  var params = new URLSearchParams(window.location.search);
+  var expand = params.get('expand');
+  if (expand) {
+    expandedApplicantTasks[String(expand)] = true;
+    activeTab = 'posted';
+    return;
+  }
+  if (params.get('applicants') === '1') {
+    activeTab = 'posted';
+    var userId = window._currentUser ? window._currentUser.uid : null;
+    if (!userId) return;
+    allTasks.forEach(function(t) {
+      if (getField(t, 'POSTED_BY') !== userId || getField(t, 'STATUS') !== 'open') return;
+      var taskId = String(getField(t, 'TASK_ID'));
+      var hasPending = allApplications.some(function(a) {
+        return String(getField(a, 'TASK_ID')) === taskId &&
+          (getField(a, 'STATUS') || 'pending').toLowerCase() === 'pending';
+      });
+      if (hasPending) expandedApplicantTasks[taskId] = true;
+    });
+  }
+}
+
 async function loadData(){
   var userId = window._currentUser ? window._currentUser.uid : null;
   if (!userId) return;
@@ -289,6 +313,7 @@ async function loadData(){
     if (cached && cached.length) {
       allTasks = cached;
       pickDefaultTab();
+      applyExpandFromUrl();
       syncRoleTabs();
       syncTabButtons();
       renderTab();
@@ -317,9 +342,18 @@ async function loadData(){
   }
 
   pickDefaultTab();
+  applyExpandFromUrl();
   syncRoleTabs();
   syncTabButtons();
   renderTab();
+
+  var expandTarget = new URLSearchParams(window.location.search).get('expand');
+  if (expandTarget) {
+    setTimeout(function () {
+      var panel = document.getElementById(taskDomId(expandTarget));
+      if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
+  }
 }
 window.loadData = loadData;
 
