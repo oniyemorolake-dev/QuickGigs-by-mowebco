@@ -374,13 +374,18 @@ window.handleSubmit = async function() {
   }
   if (!valid) return;
 
+  if (!window._currentUser) {
+    var banner = document.getElementById('errorBanner');
+    banner.textContent = 'Please log in again to post a task.';
+    banner.style.display = 'block';
+    setTimeout(function(){ window.location.href = 'login.html'; }, 2000);
+    return;
+  }
+
   // Show loading state
   var btn = document.getElementById('submitBtn');
   btn.textContent = 'Posting...';
   btn.disabled = true;
-
-  // Get current Firebase user ID
-  var userId = window._currentUser ? window._currentUser.uid : 'anonymous';
 
   // Build task object for Supabase
   var taskData = {
@@ -390,20 +395,19 @@ window.handleSubmit = async function() {
     task_mode:   selectedMode,
     budget:      budget,
     location:    location,
-    posted_by:   userId,
+    posted_by:   window._currentUser.uid,
     poster_name: window._currentUser.displayName || window._currentUser.email.split('@')[0]
   };
 
   var result = await postTask(taskData);
 
   if (result.success) {
-    // Show success screen
     document.getElementById('formContent').style.display = 'none';
     document.getElementById('successScreen').style.display = 'block';
   } else {
-    // Show error and re-enable button
     var banner = document.getElementById('errorBanner');
-    banner.textContent = 'Something went wrong saving your task. Please try again.';
+    banner.textContent = 'Could not save your task. Check your connection and try again. If this keeps happening, tell us via Beta feedback.';
+    console.error('postTask failed:', result.error);
     banner.style.display = 'block';
     btn.textContent = 'Post task →';
     btn.disabled = false;

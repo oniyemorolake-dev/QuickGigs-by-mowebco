@@ -140,15 +140,23 @@ async function postTask(taskData) {
   var row = {
     title:       taskData.title,
     description: taskData.description || '',
-    category:    taskData.category,
+    category:    String(taskData.category || 'other').toLowerCase(),
     task_mode:   taskData.task_mode,
-    budget:      taskData.budget,
+    budget:      Math.round(Number(taskData.budget) || 0),
     location:    taskData.location || 'Calgary, AB',
     status:      'open',
     posted_by:   taskData.posted_by
   };
-  if (taskData.poster_name) row.poster_name = taskData.poster_name;
-  var result = await sbPost('tasks', row);
+
+  var result;
+  if (taskData.poster_name) {
+    var withName = Object.assign({}, row, { poster_name: taskData.poster_name });
+    result = await sbPost('tasks', withName);
+    if (!result.success) result = await sbPost('tasks', row);
+  } else {
+    result = await sbPost('tasks', row);
+  }
+
   if (result.success) invalidateTasksCache();
   return result;
 }

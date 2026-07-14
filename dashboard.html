@@ -262,7 +262,8 @@ applyTheme();
 
 // ── MODE (poster / worker) ─────────────────────────────
 var params = new URLSearchParams(window.location.search);
-var sessionMode = params.get('mode') || localStorage.getItem('qg-session-mode') || 'poster';
+var sessionMode = params.get('mode') || localStorage.getItem('qg-session-mode') || localStorage.getItem('qg-role') || 'poster';
+if (sessionMode !== 'worker') sessionMode = 'poster';
 localStorage.setItem('qg-session-mode', sessionMode);
 var isPoster = sessionMode === 'poster';
 var dashData = { posted: [], apps: [], userId: null };

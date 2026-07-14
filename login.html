@@ -67,6 +67,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);font-s
   <div class="signup-link">Don't have an account? <a href="signup.html">Sign up free</a></div>
 </div>
 
+<script src="qg-utils.js"></script>
+<script src="supabase-db.js"></script>
+<script>
+attachPasswordToggle('password');
+</script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
@@ -102,10 +107,15 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
   submitBtn.disabled = true;
 
   try {
-    await signInWithEmailAndPassword(auth, email, password);
+    var cred = await signInWithEmailAndPassword(auth, email, password);
+    if (typeof getUserByFirebaseUid === 'function') {
+      var dbUser = await getUserByFirebaseUid(cred.user.uid);
+      if (dbUser && dbUser.role) localStorage.setItem('qg-role', dbUser.role);
+    }
     okMsg.textContent = 'Welcome back! Redirecting...';
     okMsg.style.display = 'block';
-    setTimeout(function(){ window.location.href = 'dashboard.html'; }, 1500);
+    var dest = typeof getDashboardUrl === 'function' ? getDashboardUrl() : 'dashboard.html';
+    setTimeout(function(){ window.location.href = dest; }, 1200);
   } catch (error) {
     var message = 'Invalid email or password. Please try again.';
     if(error.code === 'auth/invalid-email') message = 'Please enter a valid email address.';

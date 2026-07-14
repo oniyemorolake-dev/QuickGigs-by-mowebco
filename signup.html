@@ -104,6 +104,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);font-s
 
 <script src="qg-utils.js"></script>
 <script src="supabase-db.js"></script>
+<script>
+attachPasswordToggle('password');
+attachPasswordToggle('confirmPassword');
+</script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
@@ -179,21 +183,19 @@ document.getElementById('signupForm').addEventListener('submit', async function(
   submitBtn.disabled    = true;
 
   try {
-    // 1. Create Firebase account
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(userCredential.user, { displayName: name });
 
-    // 2. Save user to Supabase USERS table
     var saveResult = await saveUser({ name, email, phone, role, firebase_uid: userCredential.user.uid });
     if (!saveResult.success) console.warn('Could not save user to Supabase:', saveResult.error);
 
-    // 3. Save role to localStorage so login redirect works
     localStorage.setItem('qg-role', role);
+    localStorage.setItem('qg-session-mode', role === 'worker' ? 'worker' : 'poster');
 
-    // 4. Go straight to dashboard — no email verification during beta
     okMsg.textContent = 'Account created! Welcome to QuickGigs 🎉 Redirecting...';
     okMsg.style.display = 'block';
-    setTimeout(function(){ window.location.href = 'dashboard.html'; }, 1500);
+    var dest = typeof getDashboardUrl === 'function' ? getDashboardUrl(role) : ('dashboard.html?mode=' + (role === 'worker' ? 'worker' : 'poster'));
+    setTimeout(function(){ window.location.href = dest; }, 1500);
 
   } catch (error) {
     var message = 'Something went wrong. Please try again.';

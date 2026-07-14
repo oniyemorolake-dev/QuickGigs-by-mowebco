@@ -92,21 +92,21 @@ h1 em{font-style:italic;font-weight:400;}
   <div class="hero">
     <div class="beta-badge">🚀 Beta live · Calgary & Edmonton</div>
     <div class="eyebrow">Canadian-built · CAD only · Canada-wide</div>
-    <h1>Get everyday tasks done<br><em>in Calgary & Edmonton.</em></h1>
-    <p class="subtitle">QuickGigs connects people who need help with people who have skills — post a task in 30 seconds or earn money helping others nearby.</p>
+    <h1 id="heroTitle">Get everyday tasks done<br><em>in Calgary & Edmonton.</em></h1>
+    <p class="subtitle" id="heroSubtitle">QuickGigs connects people who need help with people who have skills — post a task in 30 seconds or earn money helping others nearby.</p>
   </div>
-  <div class="cta-wrap">
-    <div class="cta-grid">
-      <a class="cta-btn cta-primary" href="signup.html?role=poster">
+  <div class="cta-wrap" id="ctaWrap">
+    <div class="cta-grid" id="ctaGrid">
+      <a class="cta-btn cta-primary" id="ctaPoster" href="signup.html?role=poster">
         <span class="cta-label">Need something done?</span>
         Post a task
       </a>
-      <a class="cta-btn cta-secondary" href="signup.html?role=worker">
+      <a class="cta-btn cta-secondary" id="ctaWorker" href="signup.html?role=worker">
         <span class="cta-label">Want to earn?</span>
         Earn as a tasker
       </a>
     </div>
-    <p class="cta-login">Already have an account? <a href="login.html">Log in</a></p>
+    <p class="cta-login">Already have an account? <a href="login.html" id="loginLink">Log in</a></p>
     <p class="form-note" style="margin-top:12px">Beta — payments not live yet. Sign up free and explore the platform.</p>
   </div>
   <p class="how-title">How it works</p>
@@ -147,6 +147,7 @@ h1 em{font-style:italic;font-weight:400;}
 <footer class="legal-footer">
   <a href="terms.html">Terms of Service</a> · <a href="privacy.html">Privacy Policy</a>
 </footer>
+<script src="qg-utils.js"></script>
 <script>
 var stars = document.getElementById('stars');
 for(var i=0;i<120;i++){
@@ -156,6 +157,35 @@ for(var i=0;i<120;i++){
   s.style.cssText='width:'+size+'px;height:'+size+'px;left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;--d:'+(Math.random()*4+2)+'s;--op:'+(Math.random()*0.7+0.1)+';animation-delay:'+Math.random()*5+'s';
   stars.appendChild(s);
 }
+
+(function applyWorkerLanding() {
+  var role = new URLSearchParams(window.location.search).get('role') || localStorage.getItem('qg-role');
+  if (role !== 'worker') return;
+
+  document.getElementById('heroTitle').innerHTML = 'Earn money helping others<br><em>in Calgary & Edmonton.</em>';
+  document.getElementById('heroSubtitle').textContent =
+    'Sign up as a service provider, browse tasks near you, apply in seconds, and get hired for gigs like braiding, errands, tutoring, and more.';
+
+  var poster = document.getElementById('ctaPoster');
+  var worker = document.getElementById('ctaWorker');
+  worker.className = 'cta-btn cta-primary';
+  worker.innerHTML = '<span class="cta-label">Ready to earn?</span>Browse & apply to tasks';
+  worker.href = 'signup.html?role=worker';
+  poster.className = 'cta-btn cta-secondary';
+  poster.innerHTML = '<span class="cta-label">Need help instead?</span>Post a task';
+  poster.href = 'signup.html?role=poster';
+
+  var loginLink = document.getElementById('loginLink');
+  if (loginLink) loginLink.href = 'login.html';
+
+  if (localStorage.getItem('qg-role') === 'worker') {
+    var dash = document.createElement('p');
+    dash.className = 'form-note';
+    dash.style.marginTop = '10px';
+    dash.innerHTML = 'Already signed up as a provider? <a href="dashboard.html?mode=worker" style="color:var(--al);text-decoration:none;font-weight:500;">Go to your worker dashboard →</a>';
+    document.getElementById('ctaWrap').appendChild(dash);
+  }
+})();
 </script>
 </body>
 </html>
