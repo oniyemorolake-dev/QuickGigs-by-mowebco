@@ -6,6 +6,8 @@
 <title>QuickGigs — Post a Task</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
+<link rel="stylesheet" href="qg-role-theme.css">
+<script>document.documentElement.setAttribute('data-qg-mode','poster');</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'DM Sans',sans-serif;font-size:15px;min-height:100vh;transition:background 0.3s,color 0.3s;}
@@ -142,6 +144,11 @@ body{padding-bottom:76px;}
   <div class="nav-logo">QuickGigs</div>
   <button class="mode-toggle" onclick="toggleMode()" id="modeBtn">☀️ Light</button>
 </nav>
+
+<div class="role-page-banner">
+  <div class="role-page-banner-title">📋 Hiring mode</div>
+  <div class="role-page-banner-sub">Describe what you need — taskers nearby can apply.</div>
+</div>
 
 <!-- MAIN FORM -->
 <div class="content" id="formContent">

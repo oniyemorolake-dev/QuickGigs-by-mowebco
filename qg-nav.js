@@ -47,6 +47,21 @@
     window.location.href = 'dashboard.html?mode=' + next;
   }
 
+  function getThemeMode() {
+    var path = (window.location.pathname || '').toLowerCase();
+    var page = path.split('/').pop() || '';
+    if (page === 'browsetask.html' || page === 'browsetask') return 'worker';
+    if (page === 'posttask.html' || page === 'posttask') return 'poster';
+    return getSessionMode();
+  }
+
+  function applyRoleTheme() {
+    var mode = getThemeMode();
+    document.body.classList.toggle('qg-mode-worker', mode === 'worker');
+    document.body.classList.toggle('qg-mode-poster', mode === 'poster');
+    document.documentElement.setAttribute('data-qg-mode', mode);
+  }
+
   function renderQuickGigsTabBar(activeId) {
     var bar = document.getElementById('qgTabBar');
     if (!bar) return;
@@ -58,8 +73,11 @@
         '<span class="tab-icon">' + item.icon + '</span>' +
         '<span class="tab-lbl">' + item.label + '</span></a>';
     }).join('');
-    document.body.classList.toggle('qg-mode-worker', mode === 'worker');
-    document.body.classList.toggle('qg-mode-poster', mode === 'poster');
+    applyRoleTheme();
+  }
+
+  function initRoleThemeEarly() {
+    applyRoleTheme();
   }
 
   function applyMyTasksTabsForMode(options) {
@@ -84,4 +102,7 @@
   window.switchRoleMode = switchRoleMode;
   window.renderQuickGigsTabBar = renderQuickGigsTabBar;
   window.applyMyTasksTabsForMode = applyMyTasksTabsForMode;
+  window.applyRoleTheme = applyRoleTheme;
+  window.getThemeMode = getThemeMode;
+  initRoleThemeEarly();
 })();
