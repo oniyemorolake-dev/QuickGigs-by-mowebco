@@ -131,11 +131,6 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
 </nav>
 
-<div class="role-page-banner" id="rolePageBanner">
-  <div class="role-page-banner-title" id="roleBannerTitle">📋 Hiring view</div>
-  <div class="role-page-banner-sub" id="roleBannerSub">Manage tasks you posted and review applicants.</div>
-</div>
-
 <div class="tabs-wrap">
   <button class="tab-btn active" id="tabPosted" onclick="showTab('posted',this)">Posted</button>
   <button class="tab-btn" id="tabApplied" onclick="showTab('applied',this)">Applied</button>
@@ -156,21 +151,6 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <script>
 var navActive = (typeof isWorkerMode === 'function' && isWorkerMode()) ? 'jobs' : 'tasks';
 renderQuickGigsTabBar(navActive);
-
-function updateRoleBanner() {
-  var isWorker = typeof isWorkerMode === 'function' && isWorkerMode();
-  var title = document.getElementById('roleBannerTitle');
-  var sub = document.getElementById('roleBannerSub');
-  if (!title) return;
-  if (isWorker) {
-    title.textContent = '💼 Tasker view';
-    sub.textContent = 'Track applications, active jobs, and completed work.';
-  } else {
-    title.textContent = '📋 Hiring view';
-    sub.textContent = 'Manage tasks you posted and review applicants.';
-  }
-}
-updateRoleBanner();
 </script>
 <script>
 var activeTab = 'posted';
@@ -205,7 +185,6 @@ function syncRoleTabs() {
   if (typeof applyMyTasksTabsForMode === 'function') {
     applyMyTasksTabsForMode({ hasPosted: hasPosted, hasApps: hasApps });
   }
-  if (typeof updateRoleBanner === 'function') updateRoleBanner();
   if (typeof isWorkerMode === 'function' && isWorkerMode() && activeTab === 'posted' && !hasPosted) {
     activeTab = 'applied';
   }

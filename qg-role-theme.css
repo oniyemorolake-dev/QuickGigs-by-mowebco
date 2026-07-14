@@ -1,357 +1,379 @@
-/* QuickGigs — distinct visual identity per role (poster vs worker) */
+/* QuickGigs — Worker mode: full alternate skin (poster stays default purple) */
 
-html[data-qg-mode="poster"],
-body.qg-mode-poster {
-  --role-accent: #9b6fc4;
-  --role-accent-soft: rgba(107, 63, 160, 0.22);
-  --role-accent-border: rgba(200, 168, 233, 0.35);
-  --role-hero-bg: linear-gradient(145deg, #1a0a3d 0%, #2d1a6e 45%, #0d0520 100%);
-  --role-cta-bg: linear-gradient(135deg, #6b3fa0, #9b6fc4);
-  --role-panel-bg: rgba(107, 63, 160, 0.08);
-  --role-glow: rgba(155, 111, 196, 0.15);
-  --role-page-tint: radial-gradient(ellipse 120% 40% at 50% -10%, rgba(107, 63, 160, 0.35), transparent 70%);
-}
-
+/* ══════════════════════════════════════════════════════
+   WORKER — override design tokens globally
+   ══════════════════════════════════════════════════════ */
 html[data-qg-mode="worker"],
 body.qg-mode-worker {
+  --bg: #041612;
+  --surface: rgba(255, 255, 255, 0.05);
+  --surface-hover: rgba(16, 185, 129, 0.12);
+  --border: rgba(52, 211, 153, 0.14);
+  --border-hover: #34d399;
+  --text: #ecfdf5;
+  --text-muted: rgba(236, 253, 245, 0.45);
+  --text-faint: rgba(236, 253, 245, 0.28);
+  --nav-bg: #052e24;
+  --tab-bg: #052e24;
+  --card-bg: rgba(255, 255, 255, 0.05);
+  --input-bg: rgba(255, 255, 255, 0.07);
+  --purple-light: #34d399;
+  --lavender: #6ee7b7;
+  --purple: #059669;
+  --green: #34d399;
   --role-accent: #34d399;
-  --role-accent-soft: rgba(16, 185, 129, 0.18);
-  --role-accent-border: rgba(52, 211, 153, 0.35);
-  --role-hero-bg: linear-gradient(145deg, #042f2e 0%, #064e3b 42%, #0b0118 100%);
-  --role-cta-bg: linear-gradient(135deg, #059669, #34d399);
-  --role-panel-bg: rgba(16, 185, 129, 0.08);
-  --role-glow: rgba(52, 211, 153, 0.12);
-  --role-page-tint: radial-gradient(ellipse 120% 40% at 50% -10%, rgba(16, 185, 129, 0.28), transparent 70%);
+  --role-accent-soft: rgba(16, 185, 129, 0.2);
 }
 
-/* Page-wide tint behind nav + hero */
-html[data-qg-mode="poster"] body::before,
-body.qg-mode-poster::before,
-html[data-qg-mode="worker"] body::before,
-body.qg-mode-worker::before {
-  content: '';
-  position: fixed;
-  inset: 0 0 auto 0;
-  height: 320px;
-  background: var(--role-page-tint);
-  pointer-events: none;
-  z-index: 0;
+html[data-qg-mode="worker"] body.light,
+body.light.qg-mode-worker {
+  --bg: #f0fdf8;
+  --surface: #fff;
+  --surface-hover: #ecfdf5;
+  --border: #bbf7d0;
+  --border-hover: #059669;
+  --text: #064e3b;
+  --text-muted: #047857;
+  --text-faint: #6b7280;
+  --nav-bg: #fff;
+  --tab-bg: #fff;
+  --card-bg: #fff;
+  --input-bg: #ecfdf5;
+  --purple-light: #059669;
+  --lavender: #059669;
+  --purple: #047857;
 }
 
-html[data-qg-mode="poster"] body > *,
-html[data-qg-mode="worker"] body > *,
-body.qg-mode-poster > *,
-body.qg-mode-worker > * {
-  position: relative;
-  z-index: 1;
+/* ══════════════════════════════════════════════════════
+   NAV — worker gets a green header bar + earn badge
+   ══════════════════════════════════════════════════════ */
+html[data-qg-mode="worker"] .nav,
+body.qg-mode-worker .nav {
+  background: var(--nav-bg);
+  border-bottom: none;
+  box-shadow: 0 3px 0 #059669, 0 1px 0 rgba(52, 211, 153, 0.3);
+  padding-top: 14px;
+  padding-bottom: 14px;
 }
 
-body.light.qg-mode-poster,
-html[data-qg-mode="poster"] body.light {
-  --role-hero-bg: linear-gradient(145deg, #f5f2ff 0%, #ede9ff 50%, #fafafe 100%);
-  --role-panel-bg: #fff;
+html[data-qg-mode="worker"] .nav-logo,
+body.qg-mode-worker .nav-logo {
+  color: #6ee7b7;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
-body.light.qg-mode-worker,
-html[data-qg-mode="worker"] body.light {
-  --role-hero-bg: linear-gradient(145deg, #ecfdf5 0%, #d1fae5 45%, #fafafe 100%);
-  --role-panel-bg: #fff;
-}
-
-/* ── Role hero (dashboard) ── */
-.role-hero {
-  margin: 0 20px 0;
-  padding: 22px 20px 18px;
-  border-radius: 20px;
-  background: var(--role-hero-bg);
-  border: 1px solid var(--role-accent-border);
-  box-shadow: 0 12px 40px var(--role-glow);
-  position: relative;
-  overflow: hidden;
-}
-
-.role-hero::after {
-  content: '';
-  position: absolute;
-  top: -40px;
-  right: -30px;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: var(--role-accent-soft);
-  pointer-events: none;
-}
-
-.role-hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--role-accent);
-  background: var(--role-accent-soft);
-  border: 1px solid var(--role-accent-border);
-  border-radius: 20px;
-  padding: 5px 12px;
-  margin-bottom: 12px;
-  position: relative;
-  z-index: 1;
-}
-
-.role-hero .greet-name {
-  font-size: 1.55rem;
-  font-weight: 500;
-  margin-bottom: 4px;
-  position: relative;
-  z-index: 1;
-}
-
-.role-hero .greet-sub {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-bottom: 16px;
-  position: relative;
-  z-index: 1;
-}
-
-.role-hero-cta {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 14px 18px;
-  border-radius: 14px;
-  background: var(--role-cta-bg);
-  color: #fff;
+html[data-qg-mode="worker"] .nav-logo::after,
+body.qg-mode-worker .nav-logo::after {
+  content: ' earn';
   font-family: 'DM Sans', sans-serif;
-  font-size: 15px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #34d399;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+body.light.qg-mode-worker .nav-logo { color: #047857; }
+body.light.qg-mode-worker .nav-logo::after { color: #059669; }
+
+html[data-qg-mode="worker"] .nav-title,
+body.qg-mode-worker .nav-title {
   font-weight: 600;
-  text-decoration: none;
-  border: none;
-  cursor: pointer;
-  position: relative;
-  z-index: 1;
-  transition: transform 0.15s, opacity 0.15s;
-  box-shadow: 0 4px 20px var(--role-glow);
+  letter-spacing: -0.01em;
 }
 
-body.light .role-hero-cta { color: #0b0118; }
-
-.role-hero-cta:hover { transform: translateY(-1px); opacity: 0.95; }
-
-.role-hero-secondary {
-  display: block;
-  text-align: center;
-  margin-top: 10px;
-  font-size: 12px;
-  color: var(--text-muted);
-  text-decoration: none;
-  position: relative;
-  z-index: 1;
+html[data-qg-mode="worker"] .avatar,
+body.qg-mode-worker .avatar {
+  background: linear-gradient(135deg, #047857, #34d399);
+  box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.35);
 }
 
-.role-hero-secondary:hover { color: var(--role-accent); }
-
-/* Mode switcher — compact under hero */
-.mode-switch-wrap {
-  padding: 14px 20px 0;
+html[data-qg-mode="worker"] .mode-btn,
+body.qg-mode-worker .mode-btn {
+  background: rgba(52, 211, 153, 0.15);
+  color: #6ee7b7;
+  border-radius: 999px;
 }
 
-.mode-switcher.compact {
-  margin-top: 0;
-  gap: 8px;
+body.light.qg-mode-worker .mode-btn {
+  background: #ecfdf5;
+  color: #047857;
 }
 
-.mode-switcher.compact .mode-switch-opt {
-  padding: 10px 8px;
-  text-align: center;
+/* ══════════════════════════════════════════════════════
+   BOTTOM TAB BAR — worker: floating pill nav
+   ══════════════════════════════════════════════════════ */
+html[data-qg-mode="worker"] .tab-bar,
+body.qg-mode-worker .tab-bar {
+  background: var(--tab-bg);
+  border-top: none;
+  margin: 0 12px 10px;
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(52, 211, 153, 0.2);
+  padding: 6px 6px 10px;
+  left: 0;
+  right: 0;
+  width: auto;
 }
 
-.mode-switcher.compact .mode-switch-desc { display: none; }
-
-/* Dashboard section order — poster: hero → switcher → stats; worker: hero → stats → switcher */
-.dashboard-role-stack {
-  display: flex;
-  flex-direction: column;
+body.light.qg-mode-worker .tab-bar {
+  box-shadow: 0 4px 20px rgba(5, 150, 105, 0.12), 0 0 0 1px #bbf7d0;
 }
 
-html[data-qg-mode="poster"] .role-hero,
-body.qg-mode-poster .role-hero { order: 1; }
-html[data-qg-mode="poster"] .mode-switch-wrap,
-body.qg-mode-poster .mode-switch-wrap { order: 2; }
-html[data-qg-mode="poster"] .stats-poster-layout,
-body.qg-mode-poster .stats-poster-layout { order: 3; }
+html[data-qg-mode="worker"] .tab-item,
+body.qg-mode-worker .tab-item {
+  border-radius: 14px;
+  padding: 4px 0;
+  transition: background 0.15s;
+}
 
-html[data-qg-mode="worker"] .role-hero,
-body.qg-mode-worker .role-hero { order: 1; }
-html[data-qg-mode="worker"] .stats-worker-layout,
-body.qg-mode-worker .stats-worker-layout { order: 2; margin-top: 4px; }
-html[data-qg-mode="worker"] .mode-switch-wrap,
-body.qg-mode-worker .mode-switch-wrap { order: 3; padding-top: 8px; }
+html[data-qg-mode="worker"] .tab-item.active,
+body.qg-mode-worker .tab-item.active {
+  background: rgba(16, 185, 129, 0.22);
+}
 
-/* Poster: 2×2 stat grid with left accent */
-body.qg-mode-poster .stats,
-html[data-qg-mode="poster"] .stats-poster-layout {
+body.light.qg-mode-worker .tab-item.active {
+  background: #d1fae5;
+}
+
+html[data-qg-mode="worker"] .tab-item.active .tab-icon,
+html[data-qg-mode="worker"] .tab-item.active .tab-lbl,
+body.qg-mode-worker .tab-item.active .tab-icon,
+body.qg-mode-worker .tab-item.active .tab-lbl {
+  color: #34d399;
+}
+
+body.light.qg-mode-worker .tab-item.active .tab-icon,
+body.light.qg-mode-worker .tab-item.active .tab-lbl {
+  color: #047857;
+}
+
+/* ══════════════════════════════════════════════════════
+   DASHBOARD — stats & actions layout differs by role
+   ══════════════════════════════════════════════════════ */
+
+/* Poster: classic 2×2 grid (default in page CSS) */
+html[data-qg-mode="poster"] .stats,
+body.qg-mode-poster .stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
-html[data-qg-mode="poster"] .stat-card,
-body.qg-mode-poster .stat-card {
-  border-left: 3px solid var(--role-accent);
-  border-radius: 14px 16px 16px 14px;
-}
-
-/* Worker: horizontal stat strip — compact pill cards */
-body.qg-mode-worker .stats,
-html[data-qg-mode="worker"] .stats-worker-layout {
+/* Worker: horizontal scrolling stat chips */
+html[data-qg-mode="worker"] .stats,
+body.qg-mode-worker .stats {
   display: flex;
   gap: 10px;
   overflow-x: auto;
-  padding-bottom: 4px;
-  -webkit-overflow-scrolling: touch;
+  padding-bottom: 6px;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 
-html[data-qg-mode="worker"] .stats-worker-layout::-webkit-scrollbar,
+html[data-qg-mode="worker"] .stats::-webkit-scrollbar,
 body.qg-mode-worker .stats::-webkit-scrollbar { display: none; }
 
-body.qg-mode-worker .stats .stat-card,
-html[data-qg-mode="worker"] .stats-worker-layout .stat-card {
-  min-width: 112px;
+html[data-qg-mode="worker"] .stat-card,
+body.qg-mode-worker .stat-card {
+  min-width: 108px;
   flex: 0 0 auto;
   text-align: center;
-  border-top: 3px solid #34d399;
-  border-radius: 16px 16px 14px 14px;
-  padding: 12px 10px;
+  border-radius: 999px;
+  padding: 12px 16px;
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  background: rgba(16, 185, 129, 0.1);
 }
 
-body.qg-mode-worker .stats .stat-icon,
-html[data-qg-mode="worker"] .stats-worker-layout .stat-icon {
-  margin-bottom: 4px;
-  font-size: 18px;
+html[data-qg-mode="worker"] .stat-icon,
+body.qg-mode-worker .stat-icon { font-size: 16px; margin-bottom: 2px; }
+
+html[data-qg-mode="worker"] .stat-val,
+body.qg-mode-worker .stat-val { font-size: 18px; }
+
+html[data-qg-mode="worker"] .stat-lbl,
+body.qg-mode-worker .stat-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+html[data-qg-mode="worker"] .stat-val.purple,
+body.qg-mode-worker .stat-val.purple { color: #34d399; }
+
+/* Worker action cards: stacked full-width pill buttons */
+html[data-qg-mode="worker"] .actions,
+body.qg-mode-worker .actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-body.qg-mode-worker .stats .stat-val,
-html[data-qg-mode="worker"] .stats-worker-layout .stat-val {
-  font-size: 20px;
+html[data-qg-mode="worker"] .action-card,
+body.qg-mode-worker .action-card {
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
 }
 
-body.qg-mode-worker .stats .stat-lbl,
-html[data-qg-mode="worker"] .stats-worker-layout .stat-lbl {
-  font-size: 10px;
+html[data-qg-mode="worker"] .action-card .action-icon,
+body.qg-mode-worker .action-card .action-icon {
+  margin-bottom: 0;
+  font-size: 24px;
+  flex-shrink: 0;
 }
 
-/* Hide generic action grid — CTA lives in hero */
-.actions-role { display: none !important; }
+html[data-qg-mode="worker"] .action-card .action-title,
+body.qg-mode-worker .action-card .action-title { margin-bottom: 0; font-size: 14px; }
 
-/* Role panels for feed sections */
-.role-panel {
-  margin: 0 20px;
-  padding: 16px;
-  border-radius: 18px;
-  background: var(--role-panel-bg);
-  border: 1px solid var(--role-accent-border);
+html[data-qg-mode="worker"] .action-card .action-desc,
+body.qg-mode-worker .action-card .action-desc { display: none; }
+
+html[data-qg-mode="worker"] .action-card.primary,
+body.qg-mode-worker .action-card.primary {
+  background: linear-gradient(135deg, #047857, #34d399);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
 }
 
-body.qg-mode-poster .section-feed { margin-top: 8px; }
-body.qg-mode-worker .section-feed { margin-top: 8px; }
-
-body.qg-mode-poster .section-title::before { content: '📋 '; }
-body.qg-mode-worker .section-title::before { content: '💼 '; }
-
-body.qg-mode-poster .see-all { color: var(--role-accent); }
-body.qg-mode-worker .see-all { color: #34d399; }
-body.light.qg-mode-worker .see-all { color: #059669; }
-
-body.qg-mode-worker .stat-val.purple,
-body.qg-mode-worker .stat-card-link .stat-val.purple { color: #34d399; }
-body.light.qg-mode-worker .stat-val.purple { color: #059669; }
-
-body.qg-mode-worker .tab-item.active .tab-icon,
-body.qg-mode-worker .tab-item.active .tab-lbl { color: #34d399; }
-body.light.qg-mode-worker .tab-item.active .tab-icon,
-body.light.qg-mode-worker .tab-item.active .tab-lbl { color: #059669; }
-
-body.qg-mode-poster .nav-logo { color: #c8a8e9; }
-body.qg-mode-worker .nav-logo { color: #6ee7b7; }
-body.light.qg-mode-worker .nav-logo { color: #059669; }
-
-body.qg-mode-worker .avatar {
-  background: linear-gradient(135deg, #059669, #34d399);
+html[data-qg-mode="worker"] .action-card.secondary,
+body.qg-mode-worker .action-card.secondary {
+  background: transparent;
+  border: 1.5px solid rgba(52, 211, 153, 0.35);
 }
 
-body.qg-mode-worker .empty-btn {
-  background: linear-gradient(135deg, #059669, #34d399);
+html[data-qg-mode="worker"] .action-card[style*="grid-column"],
+body.qg-mode-worker .action-card[style*="grid-column"] {
+  grid-column: unset !important;
+  margin-top: 0 !important;
 }
 
-body.qg-mode-worker .task-row .task-dot {
+/* Worker task feed: card blocks instead of divider rows */
+html[data-qg-mode="worker"] .task-row,
+body.qg-mode-worker .task-row {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+html[data-qg-mode="worker"] .task-row + .task-row,
+body.qg-mode-worker .task-row + .task-row {
+  border-top: none;
+}
+
+html[data-qg-mode="worker"] .task-dot,
+body.qg-mode-worker .task-dot {
+  border-radius: 50%;
   background: rgba(16, 185, 129, 0.2) !important;
 }
 
-/* My Tasks / Browse page headers */
-.role-page-banner {
-  margin: 0 20px 12px;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: var(--role-hero-bg);
-  border: 1px solid var(--role-accent-border);
+html[data-qg-mode="worker"] .see-all,
+body.qg-mode-worker .see-all { color: #34d399; font-weight: 500; }
+
+body.light.qg-mode-worker .see-all { color: #047857; }
+
+html[data-qg-mode="worker"] .empty-btn,
+body.qg-mode-worker .empty-btn {
+  background: linear-gradient(135deg, #047857, #34d399);
+  border-radius: 999px;
+  padding: 12px 28px;
 }
 
-.role-page-banner-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--role-accent);
-  margin-bottom: 4px;
+html[data-qg-mode="worker"] .empty,
+body.qg-mode-worker .empty {
+  border-radius: 20px;
+  border-color: rgba(52, 211, 153, 0.25);
+  background: rgba(16, 185, 129, 0.06);
 }
 
-.role-page-banner-sub {
-  font-size: 12px;
-  color: var(--text-muted);
-  line-height: 1.5;
+/* Mode switcher stays same spot — worker active state uses green */
+html[data-qg-mode="worker"] .mode-switch-opt.active-worker,
+body.qg-mode-worker .mode-switch-opt.active-worker {
+  border-color: #34d399;
+  background: rgba(16, 185, 129, 0.15);
+  box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.3);
 }
 
+body.light.qg-mode-worker .mode-switch-opt.active-worker {
+  background: #d1fae5;
+}
+
+/* ══════════════════════════════════════════════════════
+   MY TASKS / BROWSE / MESSAGES — worker skin
+   ══════════════════════════════════════════════════════ */
+html[data-qg-mode="worker"] .tab-btn.active,
 body.qg-mode-worker .tab-btn.active {
   color: #34d399;
   border-bottom-color: #34d399;
 }
 
 body.light.qg-mode-worker .tab-btn.active {
-  color: #059669;
-  border-bottom-color: #059669;
+  color: #047857;
+  border-bottom-color: #047857;
 }
 
-body.qg-mode-poster .nav-title::after,
-html[data-qg-mode="poster"] .nav-title::after { content: ' · Hiring'; font-size: 12px; color: var(--role-accent); font-weight: 400; }
-body.qg-mode-worker .nav-title::after,
-html[data-qg-mode="worker"] .nav-title::after { content: ' · Earning'; font-size: 12px; color: #34d399; font-weight: 400; }
-
-/* Browse page — worker-only green filter pills */
-html[data-qg-mode="worker"] .mpill.active-all,
-body.qg-mode-worker .mpill.active-all { background: rgba(16, 185, 129, 0.25); color: #6ee7b7; border-color: rgba(52, 211, 153, 0.4); }
-html[data-qg-mode="worker"] .cat-active,
-body.qg-mode-worker .cat-active { background: rgba(16, 185, 129, 0.3) !important; color: #6ee7b7 !important; }
-
-/* My Tasks — role-specific task cards */
 html[data-qg-mode="worker"] .task-card,
-body.qg-mode-worker .task-card { border-left: 3px solid #34d399; border-radius: 14px 16px 16px 14px; }
-html[data-qg-mode="poster"] .task-card,
-body.qg-mode-poster .task-card { border-left: 3px solid var(--role-accent); border-radius: 14px 16px 16px 14px; }
+body.qg-mode-worker .task-card {
+  border-radius: 18px;
+  border: 1px solid rgba(52, 211, 153, 0.2);
+  border-left: none;
+  background: rgba(16, 185, 129, 0.06);
+}
 
 html[data-qg-mode="worker"] .btn-primary,
 html[data-qg-mode="worker"] .accept-btn,
-body.qg-mode-worker .btn-primary,
-body.qg-mode-worker .accept-btn { background: linear-gradient(135deg, #059669, #34d399); }
 html[data-qg-mode="worker"] .empty-btn,
-body.qg-mode-worker .empty-btn { background: linear-gradient(135deg, #059669, #34d399); }
+body.qg-mode-worker .btn-primary,
+body.qg-mode-worker .accept-btn,
+body.qg-mode-worker .empty-btn {
+  background: linear-gradient(135deg, #047857, #34d399);
+  border-radius: 999px;
+}
 
 html[data-qg-mode="worker"] .tc-applicants,
 html[data-qg-mode="worker"] .tc-applicants-toggle,
 body.qg-mode-worker .tc-applicants,
 body.qg-mode-worker .tc-applicants-toggle { color: #34d399; }
+
 body.light.qg-mode-worker .tc-applicants,
-body.light.qg-mode-worker .tc-applicants-toggle { color: #059669; }
+body.light.qg-mode-worker .tc-applicants-toggle { color: #047857; }
+
+/* Browse filters — green pills */
+html[data-qg-mode="worker"] .mpill.active-all,
+body.qg-mode-worker .mpill.active-all {
+  background: rgba(16, 185, 129, 0.25);
+  color: #6ee7b7;
+  border-color: rgba(52, 211, 153, 0.4);
+  border-radius: 999px;
+}
+
+html[data-qg-mode="worker"] .cat-active,
+body.qg-mode-worker .cat-active {
+  background: rgba(16, 185, 129, 0.3) !important;
+  color: #6ee7b7 !important;
+  border-radius: 999px;
+}
+
+html[data-qg-mode="worker"] .mpill,
+html[data-qg-mode="worker"] .cpill,
+body.qg-mode-worker .mpill,
+body.qg-mode-worker .cpill { border-radius: 999px; }
+
+/* Search boxes */
+html[data-qg-mode="worker"] .search-box,
+body.qg-mode-worker .search-box {
+  border-radius: 999px;
+  border: 1px solid rgba(52, 211, 153, 0.2);
+}
+
+/* Legal footer */
+html[data-qg-mode="worker"] .legal-footer a,
+body.qg-mode-worker .legal-footer a { color: #34d399; }
+
+html[data-qg-mode="worker"] body,
+body.qg-mode-worker {
+  padding-bottom: 88px;
+}

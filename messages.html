@@ -122,11 +122,6 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
 </nav>
 
-<div class="role-page-banner" id="rolePageBanner">
-  <div class="role-page-banner-title" id="roleBannerTitle">💬 Messages</div>
-  <div class="role-page-banner-sub" id="roleBannerSub">Chat with people you're working with.</div>
-</div>
-
 <div class="search-wrap">
   <div class="search-box">
     <span class="search-icon">🔍</span>
@@ -138,22 +133,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <nav class="tab-bar" id="qgTabBar"></nav>
 <script src="qg-nav.js"></script>
-<script>
-renderQuickGigsTabBar('messages');
-(function () {
-  var isWorker = typeof isWorkerMode === 'function' && isWorkerMode();
-  var title = document.getElementById('roleBannerTitle');
-  var sub = document.getElementById('roleBannerSub');
-  if (!title) return;
-  if (isWorker) {
-    title.textContent = '💼 Tasker inbox';
-    sub.textContent = 'Messages about gigs you applied to or are working on.';
-  } else {
-    title.textContent = '📋 Hiring inbox';
-    sub.textContent = 'Messages with taskers you hired or are reviewing.';
-  }
-})();
-</script>
+<script>renderQuickGigsTabBar('messages');</script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";

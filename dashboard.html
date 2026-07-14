@@ -87,7 +87,7 @@ body.light .tag-poster{background:#ede9ff;color:var(--purple);}
 .greet-sub{font-size:13px;color:var(--text-muted);}
 
 /* STAT CARDS */
-.stats{padding:16px 20px;gap:10px;}
+.stats{padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .stat-card{border-radius:16px;padding:14px 15px;border:0.5px solid var(--border);background:var(--card-bg);transition:all 0.2s;}
 .light .stat-card{box-shadow:0 1px 3px rgba(107,63,160,0.08);}
 .stat-card:hover{border-color:var(--border-hover);}
@@ -176,48 +176,38 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   </div>
 </nav>
 
-<div class="dashboard-role-stack">
-<!-- ROLE HERO -->
-<div class="role-hero qg-page-wide" id="roleHero">
-  <div class="role-hero-badge" id="roleBadge">📋 Hiring hub</div>
+<!-- GREETING + MODE SWITCH -->
+<div class="greeting qg-page-wide">
   <div class="greet-name" id="greetName">Good evening 👋</div>
-  <div class="greet-sub" id="greetSub">Welcome back</div>
-  <a class="role-hero-cta" id="roleHeroCta" href="posttask.html">➕ Post a new task</a>
-  <a class="role-hero-secondary" id="roleHeroSecondary" href="mytasks.html?tab=posted&applicants=1">Review applicants →</a>
-</div>
-
-<div class="mode-switch-wrap qg-page-wide">
-  <div class="mode-switcher compact" id="modeSwitcher">
+  <div class="greet-sub" id="greetSub">Welcome back to QuickGigs</div>
+  <div class="mode-switcher" id="modeSwitcher">
     <button type="button" class="mode-switch-opt" data-mode="poster" onclick="setDashboardMode('poster')">
       <span class="mode-switch-icon">📋</span>
       <span class="mode-switch-label">I need help</span>
-      <span class="mode-switch-desc">Post & hire</span>
+      <span class="mode-switch-desc">Post tasks & hire</span>
     </button>
     <button type="button" class="mode-switch-opt" data-mode="worker" onclick="setDashboardMode('worker')">
       <span class="mode-switch-icon">💼</span>
       <span class="mode-switch-label">I want to earn</span>
-      <span class="mode-switch-desc">Browse gigs</span>
+      <span class="mode-switch-desc">Browse & apply to gigs</span>
     </button>
   </div>
-  <p class="mode-switch-note">Same account — pick how you're using QuickGigs today.</p>
+  <p class="mode-switch-note">One login works for both — tap above to switch. No need to sign out.</p>
 </div>
 
 <!-- STATS -->
-<div class="stats stats-poster-layout" id="statsGrid"></div>
-</div>
+<div class="stats" id="statsGrid"></div>
 
-<!-- ACTION CARDS (hidden — hero CTA replaces) -->
-<div class="actions actions-role" id="actionsGrid"></div>
+<!-- ACTION CARDS -->
+<div class="actions" id="actionsGrid"></div>
 
 <!-- FEED SECTION -->
-<div class="section section-feed qg-page-wide">
-  <div class="role-panel">
-    <div class="section-hdr">
+<div class="section qg-page-wide">
+  <div class="section-hdr">
     <span class="section-title" id="sectionTitle">Tasks near you</span>
     <a class="see-all" href="browsetask.html">See all</a>
   </div>
   <div id="tasksList"></div>
-  </div>
 </div>
 
 <footer class="legal-footer">
@@ -389,43 +379,13 @@ async function loadDashboardData(userId) {
   renderAll();
 }
 
-function updateRoleHeroUI(applicantCount) {
-  var badge = document.getElementById('roleBadge');
-  var cta = document.getElementById('roleHeroCta');
-  var sec = document.getElementById('roleHeroSecondary');
-  var statsEl = document.getElementById('statsGrid');
-  if (statsEl) statsEl.className = isPoster ? 'stats stats-poster-layout' : 'stats stats-worker-layout';
+function applyDashboardRoleTheme() {
   document.documentElement.setAttribute('data-qg-mode', isPoster ? 'poster' : 'worker');
   if (typeof applyRoleTheme === 'function') applyRoleTheme();
-
-  if (!badge || !cta) return;
-  if (isPoster) {
-    badge.textContent = '📋 Hiring hub';
-    cta.href = 'posttask.html';
-    cta.textContent = '➕ Post a new task';
-    if (sec) {
-      sec.href = 'mytasks.html?tab=posted&applicants=1';
-      sec.textContent = 'Review applicants →';
-      sec.style.display = applicantCount > 0 ? 'block' : 'none';
-    }
-  } else {
-    badge.textContent = '💼 Tasker hub';
-    cta.href = 'browsetask.html';
-    cta.textContent = '🔍 Browse gigs near you';
-    if (sec) {
-      sec.href = 'mytasks.html?tab=applied';
-      sec.textContent = 'View my applications →';
-      sec.style.display = 'block';
-    }
-  }
 }
 
 function initDashboardRoleShell() {
-  var statsEl = document.getElementById('statsGrid');
-  if (statsEl) statsEl.className = isPoster ? 'stats stats-poster-layout' : 'stats stats-worker-layout';
-  document.documentElement.setAttribute('data-qg-mode', isPoster ? 'poster' : 'worker');
-  if (typeof applyRoleTheme === 'function') applyRoleTheme();
-  updateRoleHeroUI(0);
+  applyDashboardRoleTheme();
   updateModeSwitcherUI();
   renderGreeting();
 }
@@ -472,8 +432,22 @@ function renderAll(){
       '<div class="stat-lbl">'+s.lbl+'</div></a>';
   }).join('');
 
-  updateRoleHeroUI(applicantCount);
+  applyDashboardRoleTheme();
   updateModeSwitcherUI();
+
+  var actions = isPoster
+    ? [
+        {icon:'➕',title:'Post a task',desc:'Need something done?',href:'posttask.html',cls:'primary'},
+        {icon:'📂',title:'Review applicants',desc:'See who applied to your tasks',href:'mytasks.html?tab=posted',cls:'secondary'}
+      ]
+    : [
+        {icon:'🔍',title:'Browse gigs',desc:'Find work near you',href:'browsetask.html',cls:'primary'},
+        {icon:'💼',title:'My jobs',desc:'Applications & active work',href:'mytasks.html?tab=applied',cls:'secondary'}
+      ];
+  document.getElementById('actionsGrid').innerHTML = actions.map(function(a){
+    return '<a class="action-card '+a.cls+'" href="'+a.href+'"><div class="action-icon">'+a.icon+'</div><div class="action-title">'+a.title+'</div><div class="action-desc">'+a.desc+'</div></a>';
+  }).join('') +
+    '<a class="action-card secondary" href="feedback.html" style="grid-column:1/-1;margin-top:2px"><div class="action-icon">🐛</div><div class="action-title">Beta feedback</div><div class="action-desc">Report a bug or share an idea — we read every message</div></a>';
 
   var sectionTitle = document.getElementById('sectionTitle');
   var seeAll = document.querySelector('.section-hdr .see-all');
