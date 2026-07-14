@@ -183,28 +183,9 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 </footer>
 
 <!-- TAB BAR -->
-<nav class="tab-bar">
-  <a class="tab-item active" href="dashboard.html">
-    <span class="tab-icon">🏠</span>
-    <span class="tab-lbl">Home</span>
-  </a>
-  <a class="tab-item" href="browsetask.html">
-    <span class="tab-icon">🔍</span>
-    <span class="tab-lbl">Browse</span>
-  </a>
-  <a class="tab-item" href="posttask.html">
-    <span class="tab-icon">➕</span>
-    <span class="tab-lbl">Post</span>
-  </a>
-  <a class="tab-item" href="mytasks.html">
-    <span class="tab-icon">✅</span>
-    <span class="tab-lbl">My Tasks</span>
-  </a>
-  <a class="tab-item" href="messages.html">
-    <span class="tab-icon">💬</span>
-    <span class="tab-lbl">Messages</span>
-  </a>
-</nav>
+<nav class="tab-bar" id="qgTabBar"></nav>
+<script src="qg-nav.js"></script>
+<script>renderQuickGigsTabBar('home');</script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
@@ -263,15 +244,17 @@ applyTheme();
 // ── MODE (poster / worker) ─────────────────────────────
 var params = new URLSearchParams(window.location.search);
 var sessionMode = params.get('mode') || localStorage.getItem('qg-session-mode') || localStorage.getItem('qg-role') || 'poster';
-if (sessionMode !== 'worker') sessionMode = 'poster';
-localStorage.setItem('qg-session-mode', sessionMode);
+if (typeof setSessionMode === 'function') sessionMode = setSessionMode(sessionMode);
+else {
+  sessionMode = sessionMode === 'worker' ? 'worker' : 'poster';
+  localStorage.setItem('qg-session-mode', sessionMode);
+}
 var isPoster = sessionMode === 'poster';
 var dashData = { posted: [], apps: [], userId: null };
 
 window.switchMode = function(){
-  isPoster = !isPoster;
-  localStorage.setItem('qg-session-mode', isPoster ? 'poster' : 'worker');
-  renderAll();
+  if (typeof switchRoleMode === 'function') switchRoleMode();
+  else window.location.href = 'dashboard.html?mode=' + (isPoster ? 'worker' : 'poster');
 };
 
 function taskField(row, key) {
@@ -316,7 +299,10 @@ function renderGreeting(){
   var name = window._userName || '';
   var city = window.getUserCityLabel ? window.getUserCityLabel() : 'Calgary';
   document.getElementById('greetName').textContent = getTimeGreeting() + (name ? ', ' + name : '') + ' 👋';
-  document.getElementById('greetSub').textContent = new Date().toLocaleDateString('en-CA', {weekday:'long', month:'long', day:'numeric'}) + ' · ' + city;
+  var sub = isPoster
+    ? 'Post tasks and review applicants · ' + city
+    : 'Browse gigs and track your applications · ' + city;
+  document.getElementById('greetSub').textContent = sub;
 }
 
 async function loadDashboardData(userId) {
@@ -357,6 +343,13 @@ function renderAll(){
   }).length : 0;
   var totalSpent = myPosted.reduce(function(s, t){ return s + (parseFloat(taskField(t, 'budget')) || 0); }, 0);
 
+  var myInProgressWorker = userId ? dashData.posted.filter(function(t){
+    if (taskField(t, 'status') !== 'in_progress') return false;
+    return myAcceptedApps.some(function(a){
+      return String(appField(a, 'task_id')) === String(taskField(t, 'id'));
+    });
+  }).length : 0;
+
   var tag = document.getElementById('modeTag');
   if(isPoster){
     tag.className = 'mode-tag tag-poster';
@@ -377,8 +370,8 @@ function renderAll(){
       ]
     : [
         {icon:'📨', val: String(myApps.length), cls:'', lbl:'Applications'},
-        {icon:'📋', val: String(myPosted.length), cls:'purple', lbl:'Tasks posted'},
-        {icon:'✅', val: String(myAcceptedApps.length), cls:'', lbl:'Jobs accepted'},
+        {icon:'✅', val: String(myAcceptedApps.length), cls:'purple', lbl:'Jobs accepted'},
+        {icon:'⏳', val: String(myInProgressWorker), cls:'', lbl:'In progress'},
         {icon:'💰', val: '—', cls:'green', lbl:'Total earned'}
       ];
 
@@ -387,47 +380,71 @@ function renderAll(){
   }).join('');
 
   var actions = isPoster
-    ? [{icon:'➕',title:'Post a task',desc:'Need something done?',href:'posttask.html',cls:'primary'},{icon:'📂',title:'My tasks',desc:'See applicants & progress',href:'mytasks.html',cls:'secondary'}]
-    : [{icon:'🔍',title:'Browse tasks',desc:'Find work near you',href:'browsetask.html',cls:'primary'},{icon:'📨',title:'My applications',desc:'Track your bids',href:'mytasks.html?tab=applied',cls:'secondary'},{icon:'➕',title:'Post a task',desc:'Need help with something?',href:'posttask.html',cls:'secondary'}];
+    ? [
+        {icon:'➕',title:'Post a task',desc:'Need something done?',href:'posttask.html',cls:'primary'},
+        {icon:'📂',title:'Review applicants',desc:'See who applied to your tasks',href:'mytasks.html?tab=posted',cls:'secondary'}
+      ]
+    : [
+        {icon:'🔍',title:'Browse gigs',desc:'Find work near you',href:'browsetask.html',cls:'primary'},
+        {icon:'💼',title:'My jobs',desc:'Applications & active work',href:'mytasks.html?tab=applied',cls:'secondary'}
+      ];
   document.getElementById('actionsGrid').innerHTML = actions.map(function(a){
     return '<a class="action-card '+a.cls+'" href="'+a.href+'"><div class="action-icon">'+a.icon+'</div><div class="action-title">'+a.title+'</div><div class="action-desc">'+a.desc+'</div></a>';
   }).join('') +
     '<a class="action-card secondary" href="feedback.html" style="grid-column:1/-1;margin-top:2px"><div class="action-icon">🐛</div><div class="action-title">Beta feedback</div><div class="action-desc">Report a bug or share an idea — we read every message</div></a>';
 
-  document.getElementById('sectionTitle').textContent = 'Open tasks near you';
-
+  var sectionTitle = document.getElementById('sectionTitle');
+  var seeAll = document.querySelector('.section-hdr .see-all');
   var city = window.getUserCityLabel ? window.getUserCityLabel() : 'Calgary';
-  var openNearby = dashData.posted.filter(function(t){ return taskField(t, 'status') === 'open'; }).slice(0, 5);
   var html = '';
 
-  if (openNearby.length) {
-    html = openNearby.map(function(t){
-      var mode = taskField(t, 'mode') || 'standard';
-      var badge = mode === 'quick' ? 'badge-quick' : mode === 'recurring' ? 'badge-recurring' : 'badge-standard';
-      var badgeLabel = mode === 'quick' ? '⚡ Quick' : mode === 'recurring' ? '🔄 Recurring' : 'Standard';
-      return '<a class="task-row" href="browsetask.html" style="text-decoration:none">' +
-        '<div class="task-dot" style="background:rgba(107,63,160,0.2)">📋</div>' +
-        '<div class="task-info"><div class="task-name">'+String(taskField(t,'title')).replace(/</g,'&lt;')+'</div><div class="task-meta">📍 '+String(taskField(t,'location')||city)+'</div></div>' +
-        '<div class="task-right"><div class="task-price">$'+taskField(t,'budget')+'</div><span class="task-badge '+badge+'">'+badgeLabel+'</span></div>' +
-      '</a>';
-    }).join('');
+  if (isPoster) {
+    sectionTitle.textContent = 'Your open tasks';
+    if (seeAll) { seeAll.href = 'mytasks.html?tab=posted'; seeAll.textContent = 'See all'; }
+    if (myOpenPosted.length) {
+      html = myOpenPosted.slice(0, 5).map(function(t){
+        var appsOnTask = dashData.apps.filter(function(a){
+          return String(appField(a, 'task_id')) === String(taskField(t, 'id'));
+        }).length;
+        return '<a class="task-row" href="mytasks.html?tab=posted" style="text-decoration:none">' +
+          '<div class="task-dot" style="background:rgba(107,63,160,0.2)">📋</div>' +
+          '<div class="task-info"><div class="task-name">'+String(taskField(t,'title')).replace(/</g,'&lt;')+'</div><div class="task-meta">Open · $'+taskField(t,'budget')+(appsOnTask ? ' · '+appsOnTask+' applicant'+(appsOnTask!==1?'s':'') : '')+'</div></div>' +
+          '<div class="task-right"><div class="task-price">Review</div></div>' +
+        '</a>';
+      }).join('');
+    } else {
+      html = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">No open tasks yet — post one in under a minute</div><a class="empty-btn" href="posttask.html">Post a task</a></div>';
+    }
+    html += '<p style="text-align:center;margin-top:16px;font-size:12px;color:var(--text-muted)">Want to earn instead? <a href="#" onclick="switchMode();return false;" style="color:var(--purple-light);text-decoration:none;font-weight:500">Switch to worker mode →</a></p>';
   } else {
-    html = '<div class="empty"><div class="empty-icon">🔍</div><div class="empty-txt">No open tasks yet — post one or check back soon</div><a class="empty-btn" href="browsetask.html">Browse tasks</a></div>';
-  }
-
-  html += '<div style="margin-top:16px"></div>' +
-    '<div class="section-hdr"><span class="section-title">My posted tasks</span><a class="see-all" href="mytasks.html">See all</a></div>';
-
-  if (myOpenPosted.length) {
-    html += myOpenPosted.slice(0, 3).map(function(t){
-      return '<a class="task-row" href="mytasks.html" style="text-decoration:none">' +
-        '<div class="task-dot" style="background:rgba(107,63,160,0.2)">📋</div>' +
-        '<div class="task-info"><div class="task-name">'+String(taskField(t,'title')).replace(/</g,'&lt;')+'</div><div class="task-meta">Open · $'+taskField(t,'budget')+'</div></div>' +
-        '<div class="task-right"><div class="task-price">View</div></div>' +
-      '</a>';
-    }).join('');
-  } else {
-    html += '<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">No tasks posted yet</div><a class="empty-btn" href="posttask.html">Post your first task</a></div>';
+    sectionTitle.textContent = 'Gigs near you';
+    if (seeAll) { seeAll.href = 'browsetask.html'; seeAll.textContent = 'See all'; }
+    var openNearby = dashData.posted.filter(function(t){
+      return taskField(t, 'status') === 'open' && taskField(t, 'posted_by') !== userId;
+    }).slice(0, 5);
+    if (openNearby.length) {
+      html = openNearby.map(function(t){
+        var mode = taskField(t, 'mode') || 'standard';
+        var badge = mode === 'quick' ? 'badge-quick' : mode === 'recurring' ? 'badge-recurring' : 'badge-standard';
+        var badgeLabel = mode === 'quick' ? '⚡ Quick' : mode === 'recurring' ? '🔄 Recurring' : 'Standard';
+        return '<a class="task-row" href="browsetask.html" style="text-decoration:none">' +
+          '<div class="task-dot" style="background:rgba(74,222,128,0.15)">💼</div>' +
+          '<div class="task-info"><div class="task-name">'+String(taskField(t,'title')).replace(/</g,'&lt;')+'</div><div class="task-meta">📍 '+String(taskField(t,'location')||city)+'</div></div>' +
+          '<div class="task-right"><div class="task-price">$'+taskField(t,'budget')+'</div><span class="task-badge '+badge+'">'+badgeLabel+'</span></div>' +
+        '</a>';
+      }).join('');
+    } else {
+      html = '<div class="empty"><div class="empty-icon">🔍</div><div class="empty-txt">No gigs posted nearby yet — check back soon</div><a class="empty-btn" href="browsetask.html">Browse all tasks</a></div>';
+    }
+    if (myPosted.length) {
+      html += '<div style="margin-top:16px"></div><div class="section-hdr"><span class="section-title">Tasks you posted</span><a class="see-all" href="mytasks.html?tab=posted">See all</a></div>';
+      html += myOpenPosted.slice(0, 2).map(function(t){
+        return '<a class="task-row" href="mytasks.html?tab=posted" style="text-decoration:none">' +
+          '<div class="task-dot" style="background:rgba(107,63,160,0.2)">📋</div>' +
+          '<div class="task-info"><div class="task-name">'+String(taskField(t,'title')).replace(/</g,'&lt;')+'</div><div class="task-meta">You posted · $'+taskField(t,'budget')+'</div></div></a>';
+      }).join('');
+    }
+    html += '<p style="text-align:center;margin-top:16px;font-size:12px;color:var(--text-muted)">Need to hire someone? <a href="#" onclick="switchMode();return false;" style="color:var(--purple-light);text-decoration:none;font-weight:500">Switch to poster mode →</a></p>';
   }
 
   document.getElementById('tasksList').innerHTML = html;

@@ -135,15 +135,14 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <div class="toast" id="toast"></div>
 
-<nav class="tab-bar">
-  <a class="tab-item" href="dashboard.html"><span class="tab-icon">🏠</span><span class="tab-lbl">Home</span></a>
-  <a class="tab-item" href="browsetask.html"><span class="tab-icon">🔍</span><span class="tab-lbl">Browse</span></a>
-  <a class="tab-item" href="posttask.html"><span class="tab-icon">➕</span><span class="tab-lbl">Post</span></a>
-  <a class="tab-item active" href="mytasks.html"><span class="tab-icon">✅</span><span class="tab-lbl">My Tasks</span></a>
-  <a class="tab-item" href="messages.html"><span class="tab-icon">💬</span><span class="tab-lbl">Messages</span></a>
-</nav>
+<nav class="tab-bar" id="qgTabBar"></nav>
 
 <script src="supabase-db.js"></script>
+<script src="qg-nav.js"></script>
+<script>
+var navActive = (typeof isWorkerMode === 'function' && isWorkerMode()) ? 'jobs' : 'tasks';
+renderQuickGigsTabBar(navActive);
+</script>
 <script>
 var activeTab = 'posted';
 var allTasks = [], allApplications = [];
@@ -163,12 +162,26 @@ function pickDefaultTab() {
     activeTab = tabParam;
     return;
   }
+  if (typeof isWorkerMode === 'function' && isWorkerMode()) {
+    activeTab = 'applied';
+    return;
+  }
+  activeTab = 'posted';
+}
+
+function syncRoleTabs() {
   var userId = window._currentUser ? window._currentUser.uid : null;
-  if (!userId) return;
-  var hasPosted = allTasks.some(function(t){ return getField(t, 'POSTED_BY') === userId; });
-  var hasApps = allApplications.some(function(a){ return getField(a, 'WORKER_ID') === userId; });
-  if (!hasPosted && hasApps) activeTab = 'applied';
-  else if (!hasPosted && !hasApps && localStorage.getItem('qg-session-mode') === 'worker') activeTab = 'applied';
+  var hasPosted = userId && allTasks.some(function(t){ return getField(t, 'POSTED_BY') === userId; });
+  var hasApps = userId && allApplications.some(function(a){ return getField(a, 'WORKER_ID') === userId; });
+  if (typeof applyMyTasksTabsForMode === 'function') {
+    applyMyTasksTabsForMode({ hasPosted: hasPosted, hasApps: hasApps });
+  }
+  if (typeof isWorkerMode === 'function' && isWorkerMode() && activeTab === 'posted' && !hasPosted) {
+    activeTab = 'applied';
+  }
+  if (typeof isPosterMode === 'function' && isPosterMode() && activeTab === 'applied' && !hasApps) {
+    activeTab = 'posted';
+  }
 }
 
 function syncTabButtons() {
@@ -276,6 +289,7 @@ async function loadData(){
     if (cached && cached.length) {
       allTasks = cached;
       pickDefaultTab();
+      syncRoleTabs();
       syncTabButtons();
       renderTab();
     }
@@ -303,6 +317,7 @@ async function loadData(){
   }
 
   pickDefaultTab();
+  syncRoleTabs();
   syncTabButtons();
   renderTab();
 }
@@ -404,7 +419,7 @@ function renderTab(){
         content.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">You haven\'t posted any open tasks. Check the <strong>Applied</strong> tab for tasks you\'ve applied to.</div><button class="empty-btn" onclick="showTab(\'applied\',document.getElementById(\'tabApplied\'))">View applications</button></div>';
         return;
       }
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">Tasks you post appear here. Workers in your area can apply — whether you\'re in poster or worker mode.</div><a class="empty-btn" href="posttask.html">Post a task</a></div>';
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">Tasks you post appear here. Workers in your area can apply.</div><a class="empty-btn" href="posttask.html">Post a task</a></div>';
       return;
     }
     content.innerHTML = myTasks.map(function(t){

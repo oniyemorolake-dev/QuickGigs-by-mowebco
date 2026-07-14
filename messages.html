@@ -124,13 +124,9 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <div id="mainContent"></div>
 
-<nav class="tab-bar">
-  <a class="tab-item" href="dashboard.html"><span class="tab-icon">🏠</span><span class="tab-lbl">Home</span></a>
-  <a class="tab-item" href="browsetask.html"><span class="tab-icon">🔍</span><span class="tab-lbl">Browse</span></a>
-  <a class="tab-item" href="posttask.html"><span class="tab-icon">➕</span><span class="tab-lbl">Post</span></a>
-  <a class="tab-item" href="mytasks.html"><span class="tab-icon">✅</span><span class="tab-lbl">My Tasks</span></a>
-  <a class="tab-item active" href="messages.html"><span class="tab-icon">💬</span><span class="tab-lbl">Messages</span></a>
-</nav>
+<nav class="tab-bar" id="qgTabBar"></nav>
+<script src="qg-nav.js"></script>
+<script>renderQuickGigsTabBar('messages');</script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";

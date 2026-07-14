@@ -46,7 +46,8 @@ function attachPasswordToggle(inputId) {
 function getDashboardUrl(roleOverride) {
   var role = roleOverride || localStorage.getItem('qg-role') || localStorage.getItem('qg-session-mode') || 'poster';
   var mode = role === 'worker' ? 'worker' : 'poster';
-  localStorage.setItem('qg-session-mode', mode);
+  if (typeof setSessionMode === 'function') setSessionMode(mode);
+  else localStorage.setItem('qg-session-mode', mode);
   return 'dashboard.html?mode=' + mode;
 }
 

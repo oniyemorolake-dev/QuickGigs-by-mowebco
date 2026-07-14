@@ -121,6 +121,15 @@ body.light .submit-btn{color:#2d1b4e;}
 .light .success-sub{color:#9ca3af;}
 .success-btn{display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;border-radius:12px;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;border:none;font-family:'DM Sans',sans-serif;}
 body.light .success-btn{color:#2d1b4e;}
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:#0e021f;border-top:0.5px solid rgba(200,168,233,0.1);display:flex;padding:8px 0 14px;z-index:100;}
+body.light .tab-bar{background:#fff;border-top-color:#f0eeff;}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;}
+.tab-icon{font-size:22px;color:rgba(255,255,255,0.22);}
+body.light .tab-icon{color:#9ca3af;}
+.tab-lbl{font-size:10px;color:rgba(255,255,255,0.22);}
+body.light .tab-lbl{color:#9ca3af;}
+.tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:#9b6fc4;}
+body{padding-bottom:76px;}
 </style>
 </head>
 <body class="theme-posttask">
@@ -129,7 +138,7 @@ body.light .success-btn{color:#2d1b4e;}
 
 <!-- NAV -->
 <nav class="nav">
-  <a class="back-btn" href="dashboard.html">← Dashboard</a>
+  <a class="back-btn" href="dashboard.html?mode=poster">← Dashboard</a>
   <div class="nav-logo">QuickGigs</div>
   <button class="mode-toggle" onclick="toggleMode()" id="modeBtn">☀️ Light</button>
 </nav>
@@ -414,6 +423,13 @@ window.handleSubmit = async function() {
     window.scrollTo(0, 0);
   }
 };
+</script>
+
+<nav class="tab-bar" id="qgTabBar"></nav>
+<script src="qg-nav.js"></script>
+<script>
+if (typeof setSessionMode === 'function') setSessionMode('poster');
+renderQuickGigsTabBar('post');
 </script>
 </body>
 </html>
