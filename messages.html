@@ -6,12 +6,7 @@
 <title>QuickGigs — Messages</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-role-theme.css">
-<script>
-(function () {
-  var m = localStorage.getItem('qg-session-mode') || localStorage.getItem('qg-role') || 'poster';
-  document.documentElement.setAttribute('data-qg-mode', m === 'worker' ? 'worker' : 'poster');
-})();
-</script>
+<script src="qg-brand-init.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -120,7 +115,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <nav class="nav">
   <div class="nav-brand">
     <span class="nav-logo">QuickGigs</span>
-    <span class="nav-role" aria-hidden="true"></span>
+    <span class="nav-role">POSTER</span>
   </div>
   <div class="nav-title">Messages</div>
   <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>

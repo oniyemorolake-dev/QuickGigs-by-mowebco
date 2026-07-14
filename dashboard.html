@@ -7,13 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
 <link rel="stylesheet" href="qg-role-theme.css">
-<script>
-(function () {
-  var p = new URLSearchParams(window.location.search);
-  var m = p.get('mode') || localStorage.getItem('qg-session-mode') || localStorage.getItem('qg-role') || 'poster';
-  document.documentElement.setAttribute('data-qg-mode', m === 'worker' ? 'worker' : 'poster');
-})();
-</script>
+<script src="qg-brand-init.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -54,8 +48,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 
 /* NAV */
 .nav{position:relative;position:sticky;top:0;z-index:50;background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;transition:background 0.25s;}
-.nav-logo{font-family:'Playfair Display',serif;font-style:italic;font-size:1.3rem;color:var(--lavender);}
-body.light .nav-logo{color:var(--purple);}
+body.light .nav-brand .nav-logo,
+body.light .nav-brand .nav-role { color: #c8a8e9 !important; }
 .nav-right{display:flex;align-items:center;gap:10px;}
 .switch-btn{padding:6px 13px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:0.5px solid var(--border);background:var(--surface);color:var(--text-muted);font-family:'DM Sans',sans-serif;transition:all 0.2s;white-space:nowrap;}
 .switch-btn:hover{border-color:var(--purple-light);color:var(--purple-light);}
@@ -167,7 +161,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <nav class="nav">
   <div class="nav-brand">
     <span class="nav-logo">QuickGigs</span>
-    <span class="nav-role" aria-hidden="true"></span>
+    <span class="nav-role">POSTER</span>
   </div>
   <div class="nav-right">
     <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>

@@ -48,6 +48,7 @@
   }
 
   function getThemeMode() {
+    if (typeof window.QG_getBrandMode === 'function') return window.QG_getBrandMode();
     var path = (window.location.pathname || '').toLowerCase();
     var page = path.split('/').pop() || '';
     if (page === 'browsetask.html' || page === 'browsetask') return 'worker';
@@ -56,7 +57,6 @@
   }
 
   function applyNavBrand() {
-    /* Role text comes from CSS (html[data-qg-mode]) — ensure brand wrapper exists */
     document.querySelectorAll('.nav').forEach(function (nav) {
       var logo = nav.querySelector(':scope > .nav-logo');
       if (logo && !logo.closest('.nav-brand')) {
@@ -66,10 +66,14 @@
         wrap.appendChild(logo);
         var role = document.createElement('span');
         role.className = 'nav-role';
-        role.setAttribute('aria-label', getThemeMode() === 'worker' ? 'Tasker mode' : 'Poster mode');
         wrap.appendChild(role);
       }
     });
+    if (typeof window.QG_applyRoleLabels === 'function') window.QG_applyRoleLabels();
+    else {
+      var label = getThemeMode() === 'worker' ? 'TASKER' : 'POSTER';
+      document.querySelectorAll('.nav-role').forEach(function (el) { el.textContent = label; });
+    }
   }
 
   function applyRoleTheme() {
