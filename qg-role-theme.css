@@ -44,40 +44,13 @@ body.light.qg-mode-worker {
 }
 
 /* ══════════════════════════════════════════════════════
-   NAV — tasker: accent bar + "tasker" label
+   NAV — tasker layout tweaks (brand header is in qg-brand.css)
    ══════════════════════════════════════════════════════ */
 html[data-qg-mode="worker"] .nav,
 body.qg-mode-worker .nav {
-  background: var(--nav-bg);
-  border-bottom: none;
-  box-shadow: 0 3px 0 #6b3fa0, 0 1px 0 rgba(200, 168, 233, 0.25);
   padding-top: 14px;
   padding-bottom: 14px;
 }
-
-html[data-qg-mode="worker"] .nav-logo,
-body.qg-mode-worker .nav-logo {
-  color: var(--lavender);
-  font-style: normal;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-html[data-qg-mode="worker"] .nav-logo::after,
-body.qg-mode-worker .nav-logo::after {
-  content: ' tasker';
-  font-family: 'DM Sans', sans-serif;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--purple-light);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  margin-left: 4px;
-  vertical-align: middle;
-}
-
-body.light.qg-mode-worker .nav-logo { color: var(--purple); }
-body.light.qg-mode-worker .nav-logo::after { color: #9b6fc4; }
 
 html[data-qg-mode="worker"] .nav-title,
 body.qg-mode-worker .nav-title {

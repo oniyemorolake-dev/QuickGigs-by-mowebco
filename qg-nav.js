@@ -55,11 +55,34 @@
     return getSessionMode();
   }
 
+  function applyNavBrand() {
+    var mode = getThemeMode();
+    var roleLabel = mode === 'worker' ? 'Tasker' : 'Poster';
+    document.querySelectorAll('.nav').forEach(function (nav) {
+      var logo = nav.querySelector(':scope > .nav-logo');
+      if (logo && !logo.closest('.nav-brand')) {
+        var wrap = document.createElement('div');
+        wrap.className = 'nav-brand';
+        logo.parentNode.insertBefore(wrap, logo);
+        wrap.appendChild(logo);
+        var role = document.createElement('span');
+        role.className = 'nav-role';
+        role.textContent = roleLabel;
+        wrap.appendChild(role);
+      } else {
+        nav.querySelectorAll('.nav-role').forEach(function (el) {
+          el.textContent = roleLabel;
+        });
+      }
+    });
+  }
+
   function applyRoleTheme() {
     var mode = getThemeMode();
     document.body.classList.toggle('qg-mode-worker', mode === 'worker');
     document.body.classList.toggle('qg-mode-poster', mode === 'poster');
     document.documentElement.setAttribute('data-qg-mode', mode);
+    applyNavBrand();
   }
 
   function renderQuickGigsTabBar(activeId) {
@@ -103,6 +126,7 @@
   window.renderQuickGigsTabBar = renderQuickGigsTabBar;
   window.applyMyTasksTabsForMode = applyMyTasksTabsForMode;
   window.applyRoleTheme = applyRoleTheme;
+  window.applyNavBrand = applyNavBrand;
   window.getThemeMode = getThemeMode;
   initRoleThemeEarly();
 })();
