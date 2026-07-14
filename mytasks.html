@@ -129,35 +129,8 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   <a class="tab-item" href="messages.html"><span class="tab-icon">💬</span><span class="tab-lbl">Messages</span></a>
 </nav>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
-const firebaseConfig = {
-  apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
-  authDomain: "quickgigs-7b12d.firebaseapp.com",
-  projectId: "quickgigs-7b12d",
-  storageBucket: "quickgigs-7b12d.firebasestorage.app",
-  messagingSenderId: "698985399366",
-  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
-};
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-let authChecked = false;
-const redirectTimeout = setTimeout(() => {
-  if (!authChecked) window.location.href = 'login.html';
-}, 3000);
-onAuthStateChanged(auth, (user) => {
-  authChecked = true;
-  clearTimeout(redirectTimeout);
-  if (!user) { window.location.href = 'login.html'; return; }
-  window._currentUser = user;
-  loadData();
-});
-</script>
-
 <script src="supabase-db.js"></script>
 <script>
-var SUPABASE_HEADERS = window.SUPABASE_HEADERS;
 var activeTab = 'posted';
 var allTasks = [], allApplications = [];
 var userNames = {};
@@ -197,14 +170,10 @@ function displayName(uid, task) {
   return 'QuickGigs user';
 }
 
-var _tasksPrefetch = typeof fetchTasksWithCache === 'function'
-  ? fetchTasksWithCache()
-  : fetch(window.SUPABASE_URL + '/rest/v1/tasks?order=created_at.desc&limit=100', { headers: SUPABASE_HEADERS }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
-var _appsPrefetch = fetch(window.SUPABASE_URL + '/rest/v1/applications?order=created_at.desc&limit=200', { headers: SUPABASE_HEADERS }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
-
 async function loadData(){
   var userId = window._currentUser ? window._currentUser.uid : null;
-  if(!userId) return;
+  if (!userId) return;
+
   try {
     var cached = typeof readTasksCache === 'function' ? readTasksCache() : null;
     if (cached && cached.length) {
@@ -213,22 +182,34 @@ async function loadData(){
       syncTabButtons();
       renderTab();
     }
-    var namesPromise = typeof getUsersNameMap === 'function' ? getUsersNameMap() : Promise.resolve({});
-    var tasksData = await _tasksPrefetch;
-    var appsData = await _appsPrefetch;
-    userNames = await namesPromise;
-    allTasks = Array.isArray(tasksData) ? tasksData : [];
-    allApplications = Array.isArray(appsData) ? appsData : [];
+
+    var tasksPromise = typeof fetchTasksWithCache === 'function'
+      ? fetchTasksWithCache()
+      : (typeof getAllTasks === 'function' ? getAllTasks() : Promise.resolve([]));
+    var appsPromise = typeof getAllApplications === 'function'
+      ? getAllApplications()
+      : Promise.resolve([]);
+    var namesPromise = typeof getUsersNameMap === 'function'
+      ? getUsersNameMap().catch(function () { return {}; })
+      : Promise.resolve({});
+
+    var results = await Promise.all([tasksPromise, appsPromise, namesPromise]);
+    allTasks = Array.isArray(results[0]) ? results[0] : [];
+    allApplications = Array.isArray(results[1]) ? results[1] : [];
+    userNames = results[2] || {};
+
     if (typeof fetchAllTasksFresh === 'function') fetchAllTasksFresh();
-  } catch(err) {
-    console.warn('Supabase unreachable, using demo data:', err);
-    allTasks        = getDemoTasks();
-    allApplications = getDemoApps();
+  } catch (err) {
+    console.warn('My Tasks load failed:', err);
+    if (!allTasks.length) allTasks = [];
+    if (!allApplications.length) allApplications = [];
   }
+
   pickDefaultTab();
   syncTabButtons();
   renderTab();
 }
+window.loadData = loadData;
 
 function getDemoTasks(){
   return [
@@ -466,6 +447,35 @@ window.markComplete = async function(taskId){
   showToast('Task marked complete! Leave a review when ready.');
   loadData();
 };
+</script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
+  authDomain: "quickgigs-7b12d.firebaseapp.com",
+  projectId: "quickgigs-7b12d",
+  storageBucket: "quickgigs-7b12d.firebasestorage.app",
+  messagingSenderId: "698985399366",
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+let authChecked = false;
+const redirectTimeout = setTimeout(function () {
+  if (!authChecked) window.location.href = 'login.html';
+}, 3000);
+
+onAuthStateChanged(auth, function (user) {
+  authChecked = true;
+  clearTimeout(redirectTimeout);
+  if (!user) { window.location.href = 'login.html'; return; }
+  window._currentUser = user;
+  if (typeof window.loadData === 'function') window.loadData();
+});
 </script>
 </body>
 </html>

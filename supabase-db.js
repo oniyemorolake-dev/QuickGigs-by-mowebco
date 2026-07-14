@@ -279,6 +279,10 @@ async function getApplicationsByWorker(workerId) {
   return await sbGet('applications', 'worker_id=eq.' + workerId);
 }
 
+async function getAllApplications() {
+  return await sbGet('applications', null, 'created_at.desc', 200);
+}
+
 async function submitApplication(appData) {
   return await sbPost('applications', {
     task_id:   appData.task_id,
@@ -353,6 +357,7 @@ window.sendChatMessage = sendChatMessage;
 window.markConversationRead = markConversationRead;
 window.getApplicationsByTask = getApplicationsByTask;
 window.getApplicationsByWorker = getApplicationsByWorker;
+window.getAllApplications = getAllApplications;
 window.submitApplication = submitApplication;
 window.updateApplicationStatus = updateApplicationStatus;
 window.getReviewsForUser = getReviewsForUser;
