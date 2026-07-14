@@ -387,7 +387,7 @@ function renderAll(){
 
   var actions = isPoster
     ? [{icon:'➕',title:'Post a task',desc:'Need something done?',href:'posttask.html',cls:'primary'},{icon:'📂',title:'My tasks',desc:'See applicants & progress',href:'mytasks.html',cls:'secondary'}]
-    : [{icon:'🔍',title:'Browse tasks',desc:'Find work near you',href:'browsetask.html',cls:'primary'},{icon:'📨',title:'My applications',desc:'Track your bids',href:'mytasks.html',cls:'secondary'},{icon:'➕',title:'Post a task',desc:'Need help with something?',href:'posttask.html',cls:'secondary'}];
+    : [{icon:'🔍',title:'Browse tasks',desc:'Find work near you',href:'browsetask.html',cls:'primary'},{icon:'📨',title:'My applications',desc:'Track your bids',href:'mytasks.html?tab=applied',cls:'secondary'},{icon:'➕',title:'Post a task',desc:'Need help with something?',href:'posttask.html',cls:'secondary'}];
   document.getElementById('actionsGrid').innerHTML = actions.map(function(a){
     return '<a class="action-card '+a.cls+'" href="'+a.href+'"><div class="action-icon">'+a.icon+'</div><div class="action-title">'+a.title+'</div><div class="action-desc">'+a.desc+'</div></a>';
   }).join('') +

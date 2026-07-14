@@ -390,7 +390,8 @@ window.handleSubmit = async function() {
     task_mode:   selectedMode,
     budget:      budget,
     location:    location,
-    posted_by:   userId
+    posted_by:   userId,
+    poster_name: window._currentUser.displayName || window._currentUser.email.split('@')[0]
   };
 
   var result = await postTask(taskData);

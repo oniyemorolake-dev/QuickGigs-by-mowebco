@@ -137,7 +137,7 @@ async function getTasksByUser(userId) {
 }
 
 async function postTask(taskData) {
-  var result = await sbPost('tasks', {
+  var row = {
     title:       taskData.title,
     description: taskData.description || '',
     category:    taskData.category,
@@ -146,7 +146,9 @@ async function postTask(taskData) {
     location:    taskData.location || 'Calgary, AB',
     status:      'open',
     posted_by:   taskData.posted_by
-  });
+  };
+  if (taskData.poster_name) row.poster_name = taskData.poster_name;
+  var result = await sbPost('tasks', row);
   if (result.success) invalidateTasksCache();
   return result;
 }
@@ -174,6 +176,26 @@ async function saveUser(userData) {
 async function getUserByFirebaseUid(firebaseUid) {
   var results = await sbGet('users', 'firebase_uid=eq.' + encodeURIComponent(firebaseUid));
   return results[0] || null;
+}
+
+async function getUsersNameMap() {
+  var users = await getUsers();
+  var map = {};
+  if (!Array.isArray(users)) return map;
+  users.forEach(function (u) {
+    if (u.firebase_uid && u.name) map[u.firebase_uid] = u.name;
+  });
+  return map;
+}
+
+function resolveUserName(uid, taskRow, userNames) {
+  if (!uid) return 'User';
+  if (taskRow) {
+    var pn = taskRow.poster_name || taskRow.POSTER_NAME;
+    if (pn) return pn;
+  }
+  if (userNames && userNames[uid]) return userNames[uid];
+  return 'QuickGigs user';
 }
 
 async function getConversationsForUser(userId) {
@@ -312,6 +334,8 @@ window.updateTaskStatus = updateTaskStatus;
 window.getUsers = getUsers;
 window.saveUser = saveUser;
 window.getUserByFirebaseUid = getUserByFirebaseUid;
+window.getUsersNameMap = getUsersNameMap;
+window.resolveUserName = resolveUserName;
 window.getConversationsForUser = getConversationsForUser;
 window.getConversation = getConversation;
 window.getConversationForTask = getConversationForTask;
