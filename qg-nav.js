@@ -56,8 +56,7 @@
   }
 
   function applyNavBrand() {
-    var mode = getThemeMode();
-    var roleLabel = mode === 'worker' ? 'Tasker' : 'Poster';
+    /* Role text comes from CSS (html[data-qg-mode]) — ensure brand wrapper exists */
     document.querySelectorAll('.nav').forEach(function (nav) {
       var logo = nav.querySelector(':scope > .nav-logo');
       if (logo && !logo.closest('.nav-brand')) {
@@ -67,12 +66,8 @@
         wrap.appendChild(logo);
         var role = document.createElement('span');
         role.className = 'nav-role';
-        role.textContent = roleLabel;
+        role.setAttribute('aria-label', getThemeMode() === 'worker' ? 'Tasker mode' : 'Poster mode');
         wrap.appendChild(role);
-      } else {
-        nav.querySelectorAll('.nav-role').forEach(function (el) {
-          el.textContent = roleLabel;
-        });
       }
     });
   }
