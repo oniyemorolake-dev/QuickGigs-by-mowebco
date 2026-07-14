@@ -369,10 +369,14 @@ window.submitApplication=async function(){
   var btn=document.getElementById('applySubmitBtn');
   btn.textContent='Sending...';btn.disabled=true;
   var userId=window._currentUser?window._currentUser.uid:'anonymous';
+  var workerName = window._currentUser
+    ? (window._currentUser.displayName || window._currentUser.email.split('@')[0])
+    : '';
   try {
     var result = await dbSubmitApplication({
       task_id: activeTask.id,
       worker_id: userId,
+      worker_name: workerName,
       message: msg + (avail ? ' — Available: ' + avail : ''),
       price: parseFloat(price)
     });

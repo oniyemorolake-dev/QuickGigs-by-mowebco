@@ -53,8 +53,14 @@ body.light .badge-open{background:#ede9ff;color:var(--purple);}
 .tc-meta{font-size:11px;color:var(--text-faint);margin-bottom:10px;}
 .tc-bottom{display:flex;align-items:center;justify-content:space-between;}
 .tc-price{font-size:15px;font-weight:500;color:var(--text);}
-.tc-applicants{font-size:11px;color:var(--purple-light);}
+.tc-applicants{font-size:11px;color:var(--purple-light);margin-top:8px;}
 body.light .tc-applicants{color:var(--purple);}
+.tc-applicants-toggle{width:100%;text-align:left;background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--purple-light);font-size:12px;font-weight:500;transition:border-color 0.15s,background 0.15s;}
+body.light .tc-applicants-toggle{color:var(--purple);}
+.tc-applicants-toggle:hover{border-color:var(--purple-light);}
+.tc-applicants-toggle.open{border-color:var(--purple-light);background:rgba(107,63,160,0.12);}
+.applicants-panel{display:none;margin-top:8px;padding-top:4px;}
+.applicants-panel.open{display:block;}
 
 /* ACTION BUTTONS */
 .action-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
@@ -134,6 +140,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 var activeTab = 'posted';
 var allTasks = [], allApplications = [];
 var userNames = {};
+var expandedApplicantTasks = {};
 var isDark = localStorage.getItem('qg-mode') !== 'light';
 var TAB_IDS = { posted: 'tabPosted', applied: 'tabApplied', inprogress: 'tabInprogress', completed: 'tabCompleted' };
 
@@ -163,12 +170,46 @@ function syncTabButtons() {
   });
 }
 
-function displayName(uid, task) {
-  if (typeof resolveUserName === 'function') return resolveUserName(uid, task, userNames);
-  if (task && (task.poster_name || task.POSTER_NAME)) return task.poster_name || task.POSTER_NAME;
+function displayName(uid, taskOrApp) {
+  if (typeof resolveUserName === 'function') return resolveUserName(uid, taskOrApp, userNames);
+  if (taskOrApp && (taskOrApp.worker_name || taskOrApp.WORKER_NAME)) return taskOrApp.worker_name || taskOrApp.WORKER_NAME;
+  if (taskOrApp && (taskOrApp.poster_name || taskOrApp.POSTER_NAME)) return taskOrApp.poster_name || taskOrApp.POSTER_NAME;
   if (userNames[uid]) return userNames[uid];
   return 'QuickGigs user';
 }
+
+function taskDomId(taskId) {
+  return 'apps-' + String(taskId).replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+function escAttr(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;');
+}
+
+window.toggleApplicants = function(taskId) {
+  taskId = String(taskId);
+  expandedApplicantTasks[taskId] = !expandedApplicantTasks[taskId];
+  var panel = document.getElementById(taskDomId(taskId));
+  var toggles = document.querySelectorAll('.tc-applicants-toggle');
+  var btn = null;
+  for (var i = 0; i < toggles.length; i++) {
+    if (toggles[i].getAttribute('data-applicants-toggle') === taskId) {
+      btn = toggles[i];
+      break;
+    }
+  }
+  if (panel) panel.classList.toggle('open', !!expandedApplicantTasks[taskId]);
+  if (btn) {
+    btn.classList.toggle('open', !!expandedApplicantTasks[taskId]);
+    var count = btn.getAttribute('data-applicant-count') || '';
+    var names = btn.getAttribute('data-applicant-names') || '';
+    btn.innerHTML = '👥 ' + count + (names ? ' · ' + names : '') + ' — Tap to ' + (expandedApplicantTasks[taskId] ? 'hide' : 'view');
+  }
+};
 
 async function loadData(){
   var userId = window._currentUser ? window._currentUser.uid : null;
@@ -241,6 +282,7 @@ function getField(row,f){
     POSTED_BY:['POSTED_BY','posted_by'],
     POSTER_NAME:['POSTER_NAME','poster_name'],
     WORKER_ID:['WORKER_ID','worker_id'],
+    WORKER_NAME:['WORKER_NAME','worker_name'],
     MESSAGE:['MESSAGE','message'],
     PRICE:['PRICE','price']
   };
@@ -251,6 +293,19 @@ function getField(row,f){
   return '';
 }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.getElementById('tabContent').addEventListener('click', function(e) {
+  var acceptBtn = e.target.closest('.accept-btn');
+  if (acceptBtn) {
+    e.preventDefault();
+    acceptApplicant(acceptBtn.getAttribute('data-task-id'), acceptBtn.getAttribute('data-app-id'));
+    return;
+  }
+  var toggleBtn = e.target.closest('.tc-applicants-toggle');
+  if (toggleBtn) {
+    toggleApplicants(toggleBtn.getAttribute('data-applicants-toggle'));
+  }
+});
 
 function showToast(msg, color){
   var t = document.getElementById('toast');
@@ -292,22 +347,33 @@ function renderTab(){
     }
     content.innerHTML = myTasks.map(function(t){
       var cat = getCat(t);
-      var apps = allApplications.filter(function(a){ return getField(a,'TASK_ID') == getField(t,'TASK_ID'); });
-      var appHtml = apps.length ? apps.map(function(a){
+      var taskId = getField(t,'TASK_ID');
+      var apps = allApplications.filter(function(a){ return String(getField(a,'TASK_ID')) === String(taskId); });
+      var pendingApps = apps.filter(function(a){ return getField(a,'STATUS') === 'pending' || !getField(a,'STATUS'); });
+      var isOpen = !!expandedApplicantTasks[String(taskId)];
+      var namePreview = pendingApps.slice(0, 3).map(function(a){
+        return displayName(getField(a,'WORKER_ID'), a);
+      }).join(', ');
+      var appHtml = pendingApps.length ? pendingApps.map(function(a){
         var workerId = getField(a,'WORKER_ID');
-        var workerName = displayName(workerId, null);
+        var workerName = displayName(workerId, a);
+        var appId = getField(a,'APP_ID');
         return '<div class="applicant-row">'+
           '<div class="app-avatar">'+esc(workerName.charAt(0).toUpperCase())+'</div>'+
           '<div class="app-info"><div class="app-name">'+esc(workerName)+'</div><div class="app-msg">'+esc(getField(a,'MESSAGE'))+'</div></div>'+
           '<div class="app-price">$'+getField(a,'PRICE')+'</div>'+
-          '<button class="accept-btn" onclick="acceptApplicant('+getField(t,'TASK_ID')+','+getField(a,'APP_ID')+')">Accept</button>'+
+          '<button type="button" class="accept-btn" data-task-id="'+escAttr(taskId)+'" data-app-id="'+escAttr(appId)+'">Accept</button>'+
         '</div>';
-      }).join('') : '<div style="font-size:12px;color:var(--text-faint);padding:10px 0">No applicants yet — check back soon</div>';
+      }).join('') : '<div style="font-size:12px;color:var(--text-faint);padding:10px 0">No pending applicants</div>';
+      var toggleLabel = pendingApps.length
+        ? pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : '') + (namePreview ? ' · ' + namePreview + (pendingApps.length > 3 ? '…' : '') : '') + ' — Tap to ' + (isOpen ? 'hide' : 'view')
+        : 'No applicants yet';
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-open">Open</span></div>'+
         '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+' budget</div>'+
-        '<div class="tc-applicants">'+apps.length+' applicant'+(apps.length!==1?'s':'')+'</div>'+
-        appHtml+'</div>';
+        '<button type="button" class="tc-applicants-toggle'+(isOpen?' open':'')+'" data-applicants-toggle="'+escAttr(taskId)+'" data-applicant-count="'+escAttr(pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : ''))+'" data-applicant-names="'+escAttr(namePreview + (pendingApps.length > 3 ? '…' : ''))+'">👥 '+esc(toggleLabel)+'</button>'+
+        '<div class="applicants-panel'+(isOpen?' open':'')+'" id="'+taskDomId(taskId)+'">'+appHtml+'</div>'+
+      '</div>';
     }).join('');
   }
 
@@ -323,7 +389,8 @@ function renderTab(){
       var posterId = getField(task, 'POSTED_BY');
       var posterName = displayName(posterId, task);
       var statusLabel = getField(a,'STATUS') === 'accepted' ? '<span class="tc-badge badge-done">✓ Accepted</span>' : '<span class="tc-badge badge-open">Pending</span>';
-      var msgBtn = getField(a,'STATUS') === 'accepted' ? '<div class="action-row"><button class="act-btn btn-secondary" onclick="openChatForTask('+getField(a,'TASK_ID')+')">💬 Message poster</button></div>' : '';
+      var taskIdStr = JSON.stringify(String(getField(a,'TASK_ID')));
+      var msgBtn = getField(a,'STATUS') === 'accepted' ? '<div class="action-row"><button class="act-btn btn-secondary" onclick="openChatForTask('+taskIdStr+')">💬 Message poster</button></div>' : '';
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">Applied · Posted by '+esc(posterName)+'</div><div class="tc-title">'+esc(getField(task,'TITLE')||'Task #'+getField(a,'TASK_ID'))+'</div></div></div>'+statusLabel+'</div>'+
         '<div class="tc-meta">Your offer: $'+getField(a,'PRICE')+' · '+esc(getField(a,'MESSAGE')).substring(0,60)+'...</div>'+
@@ -342,11 +409,18 @@ function renderTab(){
       var cat = getCat(t);
       var userId = window._currentUser ? window._currentUser.uid : null;
       var isPoster = getField(t,'POSTED_BY') === userId;
-      var roleLabel = isPoster ? 'You posted' : 'Posted by '+esc(displayName(getField(t,'POSTED_BY'), t));
+      var taskId = getField(t,'TASK_ID');
+      var acceptedApp = allApplications.find(function(a){
+        return String(getField(a,'TASK_ID')) === String(taskId) && getField(a,'STATUS') === 'accepted';
+      });
+      var workerName = acceptedApp ? displayName(getField(acceptedApp,'WORKER_ID'), acceptedApp) : '';
+      var roleLabel = isPoster
+        ? (workerName ? 'Worker: ' + esc(workerName) : 'You posted')
+        : 'Posted by '+esc(displayName(getField(t,'POSTED_BY'), t));
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+roleLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-progress">⏳ In progress</span></div>'+
         '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+'</div>'+
-        '<div class="action-row"><button class="act-btn btn-success" onclick="markComplete('+getField(t,'TASK_ID')+')">✓ Mark complete</button><button class="act-btn btn-secondary" onclick="openChatForTask('+getField(t,'TASK_ID')+')">💬 Message</button></div>'+
+        '<div class="action-row"><button class="act-btn btn-success" onclick="markComplete('+JSON.stringify(String(taskId))+')">✓ Mark complete</button><button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')">💬 Message</button></div>'+
       '</div>';
     }).join('');
   }
@@ -372,25 +446,35 @@ window.acceptApplicant = async function(taskId, appId){
   var userId = window._currentUser ? window._currentUser.uid : null;
   if(!userId) return;
 
-  var task = allTasks.find(function(t){ return getField(t,'TASK_ID') == taskId; });
-  var app = allApplications.find(function(a){ return getField(a,'APP_ID') == appId; });
+  taskId = String(taskId);
+  appId = String(appId);
+
+  var task = allTasks.find(function(t){ return String(getField(t,'TASK_ID')) === taskId; });
+  var app = allApplications.find(function(a){ return String(getField(a,'APP_ID')) === appId; });
   if(!task || !app){
     showToast('Could not find task or application', '#ef4444');
     return;
   }
 
   var workerId = getField(app, 'WORKER_ID');
+  showToast('Accepting applicant…', '#9b6fc4');
+
   var appStatus = await updateApplicationStatus(appId, 'accepted');
   if(!appStatus.success){
-    showToast('Could not accept applicant', '#ef4444');
+    console.error('Accept failed:', appStatus.error);
+    showToast('Could not accept — run supabase/tasks-beta-fix.sql in Supabase', '#ef4444');
     return;
   }
 
-  await updateTaskStatus(taskId, 'in_progress');
+  var taskStatus = await updateTaskStatus(taskId, 'in_progress');
+  if(!taskStatus.success){
+    console.error('Task status update failed:', taskStatus.error);
+    showToast('Applicant accepted but task status did not update', '#f59e0b');
+  }
 
   var workerUser = await getUserByFirebaseUid(workerId);
   var posterName = window._currentUser.displayName || window._currentUser.email.split('@')[0];
-  var workerName = workerUser ? workerUser.name : 'Worker';
+  var workerName = workerUser ? workerUser.name : displayName(workerId, app);
 
   var convResult = await createConversation({
     task_id:       taskId,
@@ -404,12 +488,10 @@ window.acceptApplicant = async function(taskId, appId){
   });
 
   if(!convResult.success){
-    showToast('Accepted, but chat could not be created. Run supabase/messaging.sql first.', '#f59e0b');
-    loadData();
-    return;
+    showToast('Accepted ' + workerName + '! Chat setup pending.', '#f59e0b');
+  } else {
+    showToast('Accepted ' + workerName + '! Chat is open 💬');
   }
-
-  showToast('Applicant accepted! Chat is open 💬');
   loadData();
 };
 
@@ -417,12 +499,12 @@ window.openChatForTask = async function(taskId){
   var userId = window._currentUser ? window._currentUser.uid : null;
   if(!userId) return;
 
-  var task = allTasks.find(function(t){ return getField(t,'TASK_ID') == taskId; });
+  var task = allTasks.find(function(t){ return String(getField(t,'TASK_ID')) === String(taskId); });
   if(!task) return;
 
   var posterId = getField(task, 'POSTED_BY');
   var acceptedApp = allApplications.find(function(a){
-    return getField(a,'TASK_ID') == taskId && getField(a,'STATUS') === 'accepted';
+    return String(getField(a,'TASK_ID')) === String(taskId) && getField(a,'STATUS') === 'accepted';
   });
   if(!acceptedApp){
     window.location.href = 'messages.html';

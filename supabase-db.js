@@ -162,7 +162,7 @@ async function postTask(taskData) {
 }
 
 async function updateTaskStatus(taskId, status) {
-  var result = await sbUpdate('tasks', { status: status }, 'task_id=eq.' + taskId);
+  var result = await sbUpdate('tasks', { status: status }, 'task_id=eq.' + encodeURIComponent(taskId));
   if (result.success) invalidateTasksCache();
   return result;
 }
@@ -199,6 +199,8 @@ async function getUsersNameMap() {
 function resolveUserName(uid, taskRow, userNames) {
   if (!uid) return 'User';
   if (taskRow) {
+    var wn = taskRow.worker_name || taskRow.WORKER_NAME;
+    if (wn) return wn;
     var pn = taskRow.poster_name || taskRow.POSTER_NAME;
     if (pn) return pn;
   }
@@ -272,7 +274,7 @@ async function markConversationRead(convId, userId, posterId) {
 }
 
 async function getApplicationsByTask(taskId) {
-  return await sbGet('applications', 'task_id=eq.' + taskId);
+  return await sbGet('applications', 'task_id=eq.' + encodeURIComponent(taskId));
 }
 
 async function getApplicationsByWorker(workerId) {
@@ -284,17 +286,36 @@ async function getAllApplications() {
 }
 
 async function submitApplication(appData) {
-  return await sbPost('applications', {
+  var row = {
     task_id:   appData.task_id,
     worker_id: appData.worker_id,
     message:   appData.message,
     price:     appData.price,
     status:    'pending'
-  });
+  };
+  if (appData.worker_name) row.worker_name = appData.worker_name;
+
+  var result = await sbPost('applications', row);
+  if (!result.success && appData.worker_name) {
+    var fallback = {
+      task_id:   appData.task_id,
+      worker_id: appData.worker_id,
+      message:   appData.message,
+      price:     appData.price,
+      status:    'pending'
+    };
+    result = await sbPost('applications', fallback);
+  }
+  return result;
 }
 
 async function updateApplicationStatus(appId, status) {
-  return await sbUpdate('applications', { status: status }, 'app_id=eq.' + appId);
+  var id = encodeURIComponent(String(appId));
+  var result = await sbUpdate('applications', { status: status }, 'app_id=eq.' + id);
+  if (!result.success) {
+    result = await sbUpdate('applications', { status: status }, 'id=eq.' + id);
+  }
+  return result;
 }
 
 async function getReviewsForUser(userId) {

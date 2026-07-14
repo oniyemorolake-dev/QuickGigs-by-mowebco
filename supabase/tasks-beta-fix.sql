@@ -23,3 +23,6 @@ DROP POLICY IF EXISTS "anon_update_applications" ON applications;
 CREATE POLICY "anon_select_applications" ON applications FOR SELECT TO anon USING (true);
 CREATE POLICY "anon_insert_applications" ON applications FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon_update_applications" ON applications FOR UPDATE TO anon USING (true);
+
+-- Store applicant display name on applications (optional column)
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS worker_name TEXT;
