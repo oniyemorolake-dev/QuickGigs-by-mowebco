@@ -98,11 +98,18 @@ async function sbUpdate(table, data, filters) {
     var url = SUPABASE_URL + '/rest/v1/' + table + '?' + filters;
     var res = await fetch(url, {
       method: 'PATCH',
-      headers: Object.assign({}, SUPABASE_HEADERS, { 'Prefer': 'return=minimal' }),
+      headers: Object.assign({}, SUPABASE_HEADERS, { 'Prefer': 'return=representation' }),
       body: JSON.stringify(data)
     });
-    if (!res.ok) throw new Error('PATCH failed: ' + res.status);
-    return { success: true };
+    if (!res.ok) {
+      var errText = await res.text();
+      throw new Error('PATCH failed: ' + res.status + (errText ? ' ' + errText : ''));
+    }
+    var rows = await res.json();
+    if (!rows || !rows.length) {
+      return { success: false, error: 'No matching row updated', notFound: true };
+    }
+    return { success: true, data: rows };
   } catch (err) {
     console.error('Supabase PATCH error:', err);
     return { success: false, error: err.message };
@@ -260,9 +267,11 @@ function parsePhotoUrls(raw) {
 }
 
 async function updateTaskStatus(taskId, status) {
-  var id = encodeURIComponent(String(taskId));
-  var filters = ['task_id=eq.' + id, 'id=eq.' + id];
-  var result = { success: false, error: 'Could not update task' };
+  var raw = String(taskId);
+  var enc = encodeURIComponent(raw);
+  var filters = ['task_id=eq.' + enc, 'id=eq.' + enc];
+  if (raw !== enc) filters.push('task_id=eq.' + raw, 'id=eq.' + raw);
+  var result = { success: false, error: 'Could not update task — refresh and try again' };
   for (var i = 0; i < filters.length; i++) {
     result = await sbUpdate('tasks', { status: status }, filters[i]);
     if (result.success) break;

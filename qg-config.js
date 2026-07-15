@@ -1,7 +1,7 @@
 // QuickGigs — platform rules (single place to change launch behaviour)
 window.QG_CONFIG = {
-  // When chat unlocks: 'payment' (launch) | 'accept' | 'apply' (internal testing only)
-  chatUnlockAfter: 'payment',
+  // When chat unlocks: 'payment' (launch) | 'accept' (beta) | 'apply' (internal testing only)
+  chatUnlockAfter: 'accept',
   blockOffPlatformContact: true,
   posterOnlyChatImages: true,
   maxTaskPhotos: 3,

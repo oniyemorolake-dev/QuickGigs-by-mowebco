@@ -1,0 +1,60 @@
+/* QuickGigs — light mode nav + toggle contrast (readable on all pages) */
+
+body.light .nav {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e8e2ff !important;
+  box-shadow: 0 2px 12px rgba(107, 63, 160, 0.08) !important;
+}
+
+body.light .nav-brand .nav-logo,
+body.light .nav-brand .nav-role {
+  color: #6b3fa0 !important;
+}
+
+body.light .nav-title,
+body.light .nav .nav-title {
+  color: #2d1b4e !important;
+}
+
+body.light .back-btn {
+  color: #6b3fa0 !important;
+}
+
+body.light .mode-btn,
+body.light .mode-toggle {
+  background: #6b3fa0 !important;
+  color: #ffffff !important;
+  border: 1px solid #5a2d8a !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 4px rgba(107, 63, 160, 0.25);
+}
+
+body.light .tabs-wrap {
+  background: #ffffff;
+  border-bottom-color: #e8e2ff;
+}
+
+body.light .tab-btn {
+  color: #5a5a72;
+}
+
+body.light .tab-btn.active {
+  color: #6b3fa0 !important;
+  border-bottom-color: #6b3fa0 !important;
+}
+
+body.light .tab-bar {
+  background: #ffffff !important;
+  border-top-color: #e8e2ff !important;
+  box-shadow: 0 -2px 12px rgba(107, 63, 160, 0.06);
+}
+
+body.light .tab-item .tab-icon,
+body.light .tab-item .tab-lbl {
+  color: #9ca3af;
+}
+
+body.light .tab-item.active .tab-icon,
+body.light .tab-item.active .tab-lbl {
+  color: #6b3fa0 !important;
+}

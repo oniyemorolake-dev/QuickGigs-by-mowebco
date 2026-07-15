@@ -36,14 +36,16 @@
   box-shadow: 0 3px 0 #6b3fa0, 0 1px 0 rgba(200, 168, 233, 0.22);
 }
 
+/* Light mode: white nav + dark purple text (see qg-light-nav.css for full rules) */
 body.light .nav {
-  background: #120828 !important;
-  box-shadow: 0 3px 0 #6b3fa0, 0 1px 0 rgba(200, 168, 233, 0.22);
+  background: #ffffff !important;
+  border-bottom: 1px solid #e8e2ff !important;
+  box-shadow: 0 2px 12px rgba(107, 63, 160, 0.08) !important;
 }
 
 body.light .nav-brand .nav-logo,
 body.light .nav-brand .nav-role {
-  color: #c8a8e9 !important;
+  color: #6b3fa0 !important;
 }
 
 /* Never show logo without role label */

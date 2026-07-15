@@ -288,6 +288,25 @@ var userNames={};
 var dbSubmitApplication = window.submitApplication;
 var isDark=localStorage.getItem('qg-mode')!=='light';
 
+async function hydratePosterNames() {
+  var uids = {};
+  allTasks.forEach(function(t) {
+    if (!t.posterId) return;
+    if (!t.posterName || t.posterName === 'QuickGigs user') uids[String(t.posterId)] = true;
+  });
+  var keys = Object.keys(uids);
+  for (var i = 0; i < keys.length; i++) {
+    var uid = keys[i];
+    if (userNames[uid] && typeof isGenericDisplayName === 'function' && !isGenericDisplayName(userNames[uid])) continue;
+    if (typeof getUserNameByFirebaseUid !== 'function') continue;
+    var name = await getUserNameByFirebaseUid(uid);
+    if (name && typeof isGenericDisplayName === 'function' && !isGenericDisplayName(name)) userNames[uid] = name;
+  }
+  allTasks.forEach(function(t) {
+    if (t.posterId && userNames[t.posterId]) t.posterName = userNames[t.posterId];
+  });
+}
+
 async function loadTasks(){
   if (typeof getUsersNameMap === 'function') {
     getUsersNameMap().then(function(map){ userNames = map || {}; renderCards(); });
@@ -308,12 +327,13 @@ async function loadTasks(){
     console.warn('Supabase unreachable, using demo data:',err);
     if (!cached || !cached.length) allTasks = getDemoTasks();
   }
+  await hydratePosterNames();
   renderCards();
   if (typeof fetchAllTasksFresh === 'function') {
     fetchAllTasksFresh().then(function(fresh){
       if (!fresh || !fresh.length) return;
       allTasks = fresh.map(normaliseTask).filter(function(t){ return t.status === 'open'; });
-      renderCards();
+      hydratePosterNames().then(renderCards);
     });
   }
 }

@@ -382,6 +382,46 @@ function enrichRowsWithNames() {
   });
 }
 
+async function hydrateMissingNames() {
+  var uids = {};
+  allTasks.forEach(function(t) {
+    var pid = getField(t, 'POSTED_BY');
+    if (pid) uids[String(pid)] = true;
+  });
+  allApplications.forEach(function(a) {
+    var wid = getField(a, 'WORKER_ID');
+    if (wid) uids[String(wid)] = true;
+  });
+  var keys = Object.keys(uids);
+  for (var i = 0; i < keys.length; i++) {
+    var uid = keys[i];
+    if (userNames[uid] && typeof isGenericDisplayName === 'function' && !isGenericDisplayName(userNames[uid])) continue;
+    if (typeof getUserNameByFirebaseUid !== 'function') continue;
+    var name = await getUserNameByFirebaseUid(uid);
+    if (name && !isGenericDisplayName(name)) userNames[uid] = name;
+  }
+  enrichRowsWithNames();
+}
+
+function buildReviewHref(task, acceptedApp) {
+  var userId = window._currentUser ? window._currentUser.uid : '';
+  var taskId = getField(task, 'TASK_ID');
+  var posterId = getField(task, 'POSTED_BY');
+  var workerId = acceptedApp ? getField(acceptedApp, 'WORKER_ID') : '';
+  var isPoster = posterId === userId;
+  var revieweeId = isPoster ? workerId : posterId;
+  var revieweeName = isPoster
+    ? displayName(workerId, acceptedApp || {})
+    : displayName(posterId, task);
+  var role = isPoster ? 'poster' : 'worker';
+  return 'review.html?taskId=' + encodeURIComponent(String(taskId)) +
+    '&task=' + encodeURIComponent(getField(task, 'TITLE')) +
+    '&price=' + encodeURIComponent(getField(task, 'BUDGET')) +
+    '&revieweeId=' + encodeURIComponent(String(revieweeId)) +
+    '&reviewee=' + encodeURIComponent(revieweeName) +
+    '&role=' + role;
+}
+
 async function loadData(){
   var userId = window._currentUser ? window._currentUser.uid : null;
   if (!userId) return;
@@ -397,8 +437,8 @@ async function loadData(){
       renderTab();
     }
 
-    var tasksPromise = typeof fetchTasksWithCache === 'function'
-      ? fetchTasksWithCache()
+    var tasksPromise = typeof fetchAllTasksFresh === 'function'
+      ? fetchAllTasksFresh()
       : (typeof getAllTasks === 'function' ? getAllTasks() : Promise.resolve([]));
     var appsPromise = typeof getAllApplications === 'function'
       ? getAllApplications()
@@ -411,9 +451,9 @@ async function loadData(){
     allTasks = Array.isArray(results[0]) ? results[0] : [];
     allApplications = Array.isArray(results[1]) ? results[1] : [];
     userNames = results[2] || {};
-    enrichRowsWithNames();
+    await hydrateMissingNames();
 
-    if (typeof fetchAllTasksFresh === 'function') fetchAllTasksFresh();
+    if (typeof fetchAllTasksFresh === 'function') { /* already fresh */ }
   } catch (err) {
     console.warn('My Tasks load failed:', err);
     if (!allTasks.length) allTasks = [];
@@ -698,12 +738,21 @@ function renderTab(){
       content.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No completed tasks yet</div><div class="empty-sub">Completed tasks will appear here once both sides confirm the work is done.</div></div>';
       return;
     }
-    content.innerHTML = done.map(function(t){
+    content.innerHTML = '<div class="hint-box" style="background:rgba(107,63,160,0.12);border:1px solid rgba(200,168,233,0.2);border-radius:14px;padding:14px;margin-bottom:14px;font-size:13px;line-height:1.55;color:var(--text-muted);">⭐ <strong>Please leave a review</strong> — posters and taskers both rate each other. Honest feedback helps QuickGigs stay safe for everyone.</div>' +
+    done.map(function(t){
       var cat = getCat(t);
+      var acceptedApp = allApplications.find(function(a){
+        return String(getField(a,'TASK_ID')) === String(getField(t,'TASK_ID')) && getField(a,'STATUS') === 'accepted';
+      });
+      var isPoster = getField(t,'POSTED_BY') === userId;
+      var otherLabel = isPoster
+        ? ('Tasker: ' + esc(displayName(getField(acceptedApp,'WORKER_ID'), acceptedApp || {})))
+        : ('Poster: ' + esc(displayName(getField(t,'POSTED_BY'), t)));
+      var reviewHref = buildReviewHref(t, acceptedApp);
       return '<div class="task-card">'+
-        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-done">✓ Done</span></div>'+
+        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+otherLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-done">✓ Done</span></div>'+
         '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+'</div>'+
-        '<div class="action-row"><a class="act-btn btn-review" href="review.html?task='+esc(getField(t,'TITLE'))+'&price='+getField(t,'BUDGET')+'">⭐ Leave review</a></div>'+
+        '<div class="action-row"><a class="act-btn btn-review" href="'+reviewHref+'">⭐ Leave a review</a></div>'+
       '</div>';
     }).join('');
   }
@@ -828,7 +877,8 @@ window.openChatWithWorker = async function(taskId, workerId){
     return;
   }
 
-  showToast('No chat yet. Worker must apply first (or run supabase/messaging.sql).', '#f59e0b');
+  showToast('No chat thread yet — open Messages or run supabase/messaging.sql in Supabase.', '#f59e0b');
+  setTimeout(function(){ window.location.href = 'messages.html'; }, 1200);
 };
 
 window.openChatForTask = async function(taskId){
@@ -863,16 +913,19 @@ window.openChatForTask = async function(taskId){
 };
 
 window.markComplete = async function(taskId){
+  if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
   var result = await updateTaskStatus(taskId, 'completed');
   if (!result.success) {
-    showToast('Could not mark complete. Try again.', '#ef4444');
+    showToast(result.error || 'Could not mark complete — run supabase/tasks-beta-fix.sql', '#ef4444');
     return;
   }
   if (typeof lockConversationsForTask === 'function') {
     await lockConversationsForTask(taskId);
   }
-  showToast('Task complete! Chat locked. Leave a review when ready.');
-  loadData();
+  activeTab = 'completed';
+  syncTabButtons();
+  showToast('Task complete! Please leave a review.');
+  await loadData();
 };
 
 window.declineApplicant = async function(taskId, appId, declineBtn) {
@@ -927,9 +980,10 @@ window.confirmCancelPosting = function(taskId) {
     message: '“' + title + '” will be removed from browse and all pending applicants will be notified. This cannot be undone.',
     confirmLabel: 'Cancel posting',
     onConfirm: async function() {
+      if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
       var result = await cancelTask(String(taskId));
       if (!result.success) {
-        showToast('Could not cancel posting. Try again.', '#ef4444');
+        showToast(result.error || 'Could not cancel posting — run supabase/tasks-beta-fix.sql', '#ef4444');
         return;
       }
       if (typeof declinePendingApplicationsForTask === 'function') {
@@ -949,9 +1003,10 @@ window.confirmCancelInProgress = function(taskId) {
     message: '“' + title + '” will be marked cancelled. The assigned worker will see it in their history. Use this if the job is no longer happening.',
     confirmLabel: 'Cancel task',
     onConfirm: async function() {
+      if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
       var result = await cancelTask(String(taskId));
       if (!result.success) {
-        showToast('Could not cancel task. Try again.', '#ef4444');
+        showToast(result.error || 'Could not cancel task — run supabase/tasks-beta-fix.sql', '#ef4444');
         return;
       }
       showToast('Task cancelled');

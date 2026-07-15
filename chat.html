@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — Chat</title>
+<script src="qg-brand-init.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -297,6 +298,14 @@ async function initChat(){
     currentConv = await enrichConversationNames(currentConv);
   }
 
+  var convStatus = (currentConv.status || 'in_progress').toLowerCase();
+  if (!currentConv.is_unlocked && convStatus !== 'completed' &&
+      typeof resolveChatUnlockedOnCreate === 'function' &&
+      resolveChatUnlockedOnCreate(convStatus === 'application' ? 'application' : 'in_progress')) {
+    var unlockResult = await updateConversation(convId, { is_unlocked: true });
+    if (unlockResult.success) currentConv.is_unlocked = true;
+  }
+
   var isPoster = currentConv.poster_id === currentUserId;
   var otherUid = isPoster ? currentConv.worker_id : currentConv.poster_id;
   var otherName = isPoster ? (currentConv.worker_name || '') : (currentConv.poster_name || '');
@@ -472,12 +481,6 @@ window.handleInput = function(el){
     fraudInline.style.display = 'block';
     var warnEl = document.getElementById('fraudInlineText');
     if (warnEl && typeof getOffPlatformWarning === 'function') warnEl.textContent = getOffPlatformWarning();
-    sendBtn.disabled = true;
-  } else if (val.match(/^\d{2,6}$/)) {
-    fraudDetected = true;
-    fraudInline.style.display = 'block';
-    var w2 = document.getElementById('fraudInlineText');
-    if (w2) w2.textContent = 'Sending phone numbers in parts is not allowed. Keep all contact on QuickGigs.';
     sendBtn.disabled = true;
   } else {
     fraudDetected = false;

@@ -102,7 +102,7 @@ var FRAUD_PATTERNS = [
   /\b\d{10,11}\b/,
   /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/,
   /\+\d[\d\s\-]{8,}/,
-  /\b(?:call|text|whatsapp|wa\.me|telegram|tgm|tele|snapchat|snap|instagram|insta|facebook|fb\.com|discord|signal|viber)\b/i,
+  /\b(?:call me|text me|whatsapp|wa\.me|telegram|tgm|tele\.gram|snapchat|snap me|instagram|insta\.gram|facebook|fb\.com|discord|signal app|viber)\b/i,
   /\b(?:venmo|cash\s?app|e[\-\s]?transfer|interac|paypal|zelle|etransfer)\b/i,
   /\b(?:my\s+number|reach\s+me\s+at|contact\s+me\s+at|dm\s+me|message\s+me\s+on)\b/i,
   /\b(?:four|five|six|seven|eight|nine)\s+(?:zero|one|two|three|four|five|six|seven|eight|nine)\b/i,
@@ -114,22 +114,39 @@ function digitsOnly(str) {
   return String(str || '').replace(/\D/g, '');
 }
 
+/** Strip URLs / image bodies before digit-sequence checks (avoids false positives). */
+function stripForDigitCheck(text) {
+  return String(text || '')
+    .replace(/\[img\][^\s]*/gi, '')
+    .replace(/https?:\/\/\S+/gi, '')
+    .replace(/\$\d+(?:\.\d{1,2})?/g, '')
+    .trim();
+}
+
+function isPureDigitChunk(text) {
+  var val = stripForDigitCheck(text);
+  return /^\d{2,6}$/.test(val);
+}
+
 function containsOffPlatformContact(text, recentTexts) {
   if (!text) return false;
   if (window.QG_CONFIG && window.QG_CONFIG.blockOffPlatformContact === false) return false;
-  var val = String(text).trim();
+  var val = stripForDigitCheck(String(text).trim());
+  if (!val) return false;
 
   if (FRAUD_PATTERNS.some(function(p) { return p.test(val); })) return true;
 
-  // Split phone trick: "587", "990", "8645" sent as separate messages
-  if (/^\d{2,6}$/.test(val)) return true;
-
-  if (recentTexts && recentTexts.length) {
-    var parts = recentTexts.slice(-4).concat([val]);
-    var combined = parts.map(digitsOnly).join('');
-    if (combined.length >= 7) return true;
-    var withSpaces = parts.join(' ');
-    if (digitsOnly(withSpaces).length >= 10) return true;
+  // Split-phone trick: only pure digit chunks (e.g. "587", "990", "8645") in a row
+  if (isPureDigitChunk(val)) {
+    if (val.length >= 7) return true;
+    if (recentTexts && recentTexts.length) {
+      var digitParts = recentTexts
+        .map(stripForDigitCheck)
+        .filter(isPureDigitChunk)
+        .slice(-4)
+        .concat([val]);
+      if (digitParts.length >= 2 && digitParts.join('').length >= 10) return true;
+    }
   }
 
   return false;

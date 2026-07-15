@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QuickGigs — Leave a Review</title>
+<script src="qg-brand-init.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -161,7 +162,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   <!-- Who you're reviewing -->
   <div class="reviewer-section">
     <div class="rev-avatar" id="revieweeAvatar">S</div>
-    <div class="rev-label">How was your experience with</div>
+    <div class="rev-label" id="revLabel">How was your experience with</div>
     <div class="rev-name" id="revieweeName">Sarah K.</div>
   </div>
 
@@ -192,7 +193,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   </div>
 
   <button class="submit-btn" id="submitBtn" onclick="submitReview()" disabled>Submit review</button>
-  <div class="submit-note">Reviews are public and cannot be edited after submission.</div>
+  <div class="submit-note" id="submitNote">Your star rating and comment help other QuickGigs users. Both poster and tasker should review after every job.</div>
 
 </div>
 
@@ -284,6 +285,10 @@ document.getElementById('revieweeName').textContent = reviewee;
 document.getElementById('revieweeAvatar').textContent = reviewee.charAt(0).toUpperCase();
 document.getElementById('successName').textContent  = reviewee;
 document.getElementById('successCardName').textContent = reviewee;
+document.getElementById('revLabel').textContent = reviewerRole === 'worker'
+  ? 'You completed a task for — rate the poster'
+  : 'Your tasker was — rate their work';
+document.getElementById('backBtn').href = 'mytasks.html?tab=completed';
 
 // Tags differ slightly depending on who is reviewing whom
 var posterTags = ['On time','Great work','Friendly','Professional','Good value','Communicative','Detail-oriented','Would hire again'];
@@ -393,7 +398,7 @@ window.submitReview = async function(){
   document.getElementById('reviewForm').style.display    = 'none';
   document.getElementById('successScreen').classList.add('show');
   document.getElementById('navTitle').textContent        = 'Review submitted';
-  document.getElementById('backBtn').href                = 'dashboard.html';
+  document.getElementById('backBtn').href                = 'mytasks.html?tab=completed';
 
   window.scrollTo(0, 0);
 };
