@@ -230,7 +230,7 @@ function mapConversation(conv, userId){
     lastMessage: conv.last_message || 'No messages yet',
     time: formatRelativeTime(conv.last_message_at || conv.created_at),
     unread: countUnread(conv, userId),
-    status: conv.status === 'completed' ? 'completed' : 'in_progress',
+    status: conv.status === 'application' ? 'in_progress' : (conv.status === 'completed' ? 'completed' : 'in_progress'),
     paid: conv.is_unlocked,
     locked: !conv.is_unlocked
   };
@@ -262,7 +262,7 @@ function renderContent(){
       '<div class="empty-state">' +
         '<div class="empty-icon">💬</div>' +
         '<div class="empty-title">No messages yet</div>' +
-        '<div class="empty-sub">Your conversations will appear here once a poster accepts your application (or you accept an applicant).</div>' +
+        '<div class="empty-sub">Apply to a task to start a conversation, or accept an applicant from My Tasks.</div>' +
         '<a class="empty-btn" href="browsetask.html">Browse tasks</a>' +
       '</div>';
     return;
@@ -272,8 +272,8 @@ function renderContent(){
   var html = '<div class="locked-banner">' +
     '<div class="locked-icon">💬</div>' +
     '<div class="locked-text">' +
-      '<div class="locked-title">Beta — chat opens when you accept</div>' +
-      '<div class="locked-sub">For beta testing, messaging unlocks as soon as a poster accepts an applicant. Escrow payments will be required before launch.</div>' +
+      '<div class="locked-title">Beta — chat opens when you apply</div>' +
+      '<div class="locked-sub">For testing, messaging unlocks as soon as someone applies. Payment escrow will be required before launch.</div>' +
     '</div>' +
   '</div>';
 

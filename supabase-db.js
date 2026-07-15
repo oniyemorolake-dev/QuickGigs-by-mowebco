@@ -215,11 +215,28 @@ function resolveUserName(uid, taskRow, userNames) {
 }
 
 async function getConversationsForUser(userId) {
-  return await sbGet(
-    'conversations',
-    'or=(poster_id.eq.' + encodeURIComponent(userId) + ',worker_id.eq.' + encodeURIComponent(userId) + ')',
-    'last_message_at.desc.nullslast,created_at.desc'
-  );
+  var controller = new AbortController();
+  var timeoutId = setTimeout(function () { controller.abort(); }, 8000);
+  try {
+    var url = SUPABASE_URL + '/rest/v1/conversations?order=last_message_at.desc.nullslast,created_at.desc';
+    url += '&or=(poster_id.eq.' + encodeURIComponent(userId) + ',worker_id.eq.' + encodeURIComponent(userId) + ')';
+    var res = await fetch(url, { method: 'GET', headers: SUPABASE_HEADERS, signal: controller.signal });
+    if (!res.ok) {
+      var errText = await res.text();
+      throw new Error('GET conversations failed: ' + res.status + ' ' + errText);
+    }
+    return await res.json();
+  } catch (err) {
+    console.error('Supabase conversations GET error:', err);
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function normalizeTaskId(taskId) {
+  var n = parseInt(taskId, 10);
+  return isNaN(n) ? taskId : n;
 }
 
 async function getConversation(convId) {
@@ -228,19 +245,25 @@ async function getConversation(convId) {
 }
 
 async function getConversationForTask(taskId, posterId, workerId) {
+  var tid = normalizeTaskId(taskId);
   var results = await sbGet(
     'conversations',
-    'task_id=eq.' + taskId + '&poster_id=eq.' + encodeURIComponent(posterId) + '&worker_id=eq.' + encodeURIComponent(workerId)
+    'task_id=eq.' + encodeURIComponent(String(tid)) + '&poster_id=eq.' + encodeURIComponent(posterId) + '&worker_id=eq.' + encodeURIComponent(workerId)
   );
   return results[0] || null;
 }
 
+async function updateConversation(convId, patch) {
+  return await sbUpdate('conversations', patch, 'conv_id=eq.' + encodeURIComponent(convId));
+}
+
 async function createConversation(convData) {
-  var existing = await getConversationForTask(convData.task_id, convData.poster_id, convData.worker_id);
+  var taskId = normalizeTaskId(convData.task_id);
+  var existing = await getConversationForTask(taskId, convData.poster_id, convData.worker_id);
   if (existing) return { success: true, data: existing, existing: true };
 
   return await sbPostReturn('conversations', {
-    task_id:       convData.task_id,
+    task_id:       taskId,
     poster_id:     convData.poster_id,
     worker_id:     convData.worker_id,
     poster_name:   convData.poster_name || '',
@@ -248,7 +271,9 @@ async function createConversation(convData) {
     task_title:    convData.task_title || '',
     task_category: convData.task_category || '',
     status:        convData.status || 'in_progress',
-    is_unlocked:   convData.is_unlocked !== false
+    is_unlocked:   convData.is_unlocked !== false,
+    last_message:  convData.last_message || '',
+    last_message_at: convData.last_message_at || null
   });
 }
 
@@ -381,6 +406,7 @@ window.getConversationsForUser = getConversationsForUser;
 window.getConversation = getConversation;
 window.getConversationForTask = getConversationForTask;
 window.createConversation = createConversation;
+window.updateConversation = updateConversation;
 window.getMessagesForConversation = getMessagesForConversation;
 window.sendChatMessage = sendChatMessage;
 window.markConversationRead = markConversationRead;

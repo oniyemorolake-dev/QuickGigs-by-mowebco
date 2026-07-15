@@ -273,6 +273,7 @@ function normaliseTask(row){
     location:row.LOCATION||row.location||'Calgary, AB',
     posted:'Recently',applicants:0,
     status:(row.STATUS||row.status||'open').toLowerCase(),
+    posterId:posterUid,
     posterName:posterName||'QuickGigs user'
   };
 }
@@ -375,6 +376,7 @@ window.submitApplication=async function(){
   var workerName = window._currentUser
     ? (window._currentUser.displayName || window._currentUser.email.split('@')[0])
     : '';
+  var chatNote = '';
   try {
     var result = await dbSubmitApplication({
       task_id: activeTask.id,
@@ -384,13 +386,40 @@ window.submitApplication=async function(){
       price: parseFloat(price)
     });
     if (!result.success) throw new Error(result.error || 'save failed');
+
+    if (activeTask.posterId && userId !== 'anonymous') {
+      var convResult = await createConversation({
+        task_id: activeTask.id,
+        poster_id: activeTask.posterId,
+        worker_id: userId,
+        poster_name: activeTask.posterName || 'Poster',
+        worker_name: workerName,
+        task_title: activeTask.title,
+        task_category: activeTask.cat,
+        status: 'application',
+        is_unlocked: true
+      });
+      if (convResult.success && convResult.data && convResult.data.conv_id) {
+        var offerMsg = msg + (avail ? ' — Available: ' + avail : '') + ' — My offer: $' + price;
+        await sendChatMessage(convResult.data.conv_id, userId, offerMsg);
+        chatNote = ' Open Messages to chat with the poster.';
+      } else if (!convResult.success) {
+        console.warn('Chat setup failed:', convResult.error);
+        chatNote = ' (Chat pending — run supabase/messaging.sql in Supabase if messages are empty.)';
+      }
+    }
   } catch(err) {
     console.warn('Application save error:', err);
+    alert('Could not send application. Please try again.');
+    btn.textContent='Send application';btn.disabled=false;
+    return;
   }
   closeModal();
   btn.textContent='Send application';btn.disabled=false;
-  var toast=document.getElementById('toast');toast.style.display='block';
-  setTimeout(function(){toast.style.display='none';},3000);
+  var toast=document.getElementById('toast');
+  toast.innerHTML='Application sent!' + (chatNote || '') + ' <a href="messages.html" style="color:#fff;text-decoration:underline;margin-left:6px">Messages</a>';
+  toast.style.display='block';
+  setTimeout(function(){toast.style.display='none';},5000);
 };
 
 window.toggleMode=function(){isDark=!isDark;applyTheme();};

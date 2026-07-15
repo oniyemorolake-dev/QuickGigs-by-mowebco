@@ -231,10 +231,15 @@ function applyLocalAcceptState(taskId, appId) {
 
 function renderApplicantAction(a, taskId) {
   var appId = getField(a, 'APP_ID');
+  var workerId = getField(a, 'WORKER_ID');
   var status = (getField(a, 'STATUS') || 'pending').toLowerCase();
-  if (status === 'accepted') return '<span class="accept-status">✓ Accepted</span>';
+  if (status === 'accepted') {
+    return '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border)" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">💬 Chat</button>' +
+      '<span class="accept-status">✓ Accepted</span>';
+  }
   if (status === 'declined') return '<span class="accept-status declined">Not selected</span>';
-  return '<button type="button" class="accept-btn" data-task-id="'+escAttr(taskId)+'" data-app-id="'+escAttr(appId)+'">Accept</button>';
+  return '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border);margin-right:6px" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">💬 Chat</button>' +
+    '<button type="button" class="accept-btn" data-task-id="'+escAttr(taskId)+'" data-app-id="'+escAttr(appId)+'">Accept</button>';
 }
 
 function escAttr(s) {
@@ -512,7 +517,7 @@ function renderTab(){
       var posterName = displayName(posterId, task);
       var statusLabel = getField(a,'STATUS') === 'accepted' ? '<span class="tc-badge badge-done">✓ Accepted</span>' : '<span class="tc-badge badge-open">Pending</span>';
       var taskIdStr = JSON.stringify(String(getField(a,'TASK_ID')));
-      var msgBtn = getField(a,'STATUS') === 'accepted' ? '<div class="action-row"><button class="act-btn btn-secondary" onclick="openChatForTask('+taskIdStr+')">💬 Message poster</button></div>' : '';
+      var msgBtn = '<div class="action-row"><button class="act-btn btn-secondary" onclick="openChatForTask('+taskIdStr+')">💬 Message poster</button></div>';
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">Applied · Posted by '+esc(posterName)+'</div><div class="tc-title">'+esc(getField(task,'TITLE')||'Task #'+getField(a,'TASK_ID'))+'</div></div></div>'+statusLabel+'</div>'+
         '<div class="tc-meta">Your offer: $'+getField(a,'PRICE')+' · '+esc(getField(a,'MESSAGE')).substring(0,60)+'...</div>'+
@@ -627,15 +632,50 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
     worker_name:   workerName,
     task_title:    getField(task, 'TITLE'),
     task_category: getField(task, 'CATEGORY'),
+    status:        'in_progress',
     is_unlocked:   true
   });
 
   if(!convResult.success){
-    showToast('Accepted ' + workerName + '! Chat setup pending.', '#f59e0b');
+    setAcceptLoading(acceptBtn, false);
+    showToast('Accepted but chat failed — run supabase/messaging.sql', '#f59e0b');
+    loadData();
+    return;
+  }
+
+  if (convResult.data && convResult.data.conv_id) {
+    await updateConversation(convResult.data.conv_id, {
+      status: 'in_progress',
+      is_unlocked: true
+    });
+    showToast('Accepted ' + workerName + '! Opening chat…');
+    setTimeout(function(){
+      window.location.href = 'chat.html?conv=' + encodeURIComponent(convResult.data.conv_id);
+    }, 900);
   } else {
     showToast('Accepted ' + workerName + '! Moved to In Progress 💬');
   }
   loadData();
+};
+
+window.openChatWithWorker = async function(taskId, workerId){
+  var userId = window._currentUser ? window._currentUser.uid : null;
+  if(!userId || !taskId || !workerId) return;
+
+  var task = allTasks.find(function(t){ return String(getField(t,'TASK_ID')) === String(taskId); });
+  if(!task){
+    showToast('Task not found', '#ef4444');
+    return;
+  }
+
+  var posterId = getField(task, 'POSTED_BY');
+  var conv = await getConversationForTask(taskId, posterId, workerId);
+  if(conv && conv.conv_id){
+    window.location.href = 'chat.html?conv=' + encodeURIComponent(conv.conv_id);
+    return;
+  }
+
+  showToast('No chat yet. Worker must apply first (or run supabase/messaging.sql).', '#f59e0b');
 };
 
 window.openChatForTask = async function(taskId){
@@ -646,21 +686,27 @@ window.openChatForTask = async function(taskId){
   if(!task) return;
 
   var posterId = getField(task, 'POSTED_BY');
-  var acceptedApp = allApplications.find(function(a){
-    return String(getField(a,'TASK_ID')) === String(taskId) && getField(a,'STATUS') === 'accepted';
-  });
-  if(!acceptedApp){
-    window.location.href = 'messages.html';
+  if (posterId === userId) {
+    var acceptedApp = allApplications.find(function(a){
+      return String(getField(a,'TASK_ID')) === String(taskId) && getField(a,'STATUS') === 'accepted';
+    });
+    if (acceptedApp) {
+      openChatWithWorker(taskId, getField(acceptedApp, 'WORKER_ID'));
+      return;
+    }
+    var pendingApp = allApplications.find(function(a){
+      return String(getField(a,'TASK_ID')) === String(taskId);
+    });
+    if (pendingApp) {
+      openChatWithWorker(taskId, getField(pendingApp, 'WORKER_ID'));
+      return;
+    }
+  } else {
+    openChatWithWorker(taskId, userId);
     return;
   }
 
-  var workerId = getField(acceptedApp, 'WORKER_ID');
-  var conv = await getConversationForTask(taskId, posterId, workerId);
-  if(conv && conv.conv_id){
-    window.location.href = 'chat.html?conv=' + encodeURIComponent(conv.conv_id);
-  } else {
-    window.location.href = 'messages.html';
-  }
+  window.location.href = 'messages.html';
 };
 
 window.markComplete = async function(taskId){
