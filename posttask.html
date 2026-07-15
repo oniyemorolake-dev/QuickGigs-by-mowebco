@@ -228,6 +228,20 @@ body{padding-bottom:76px;}
     <textarea class="field-input" id="taskDesc" placeholder="Add details — location, timing, anything helpful..."></textarea>
   </div>
 
+  <!-- PHOTOS -->
+  <div class="section">
+    <span class="section-label">Photos <span style="font-weight:300;text-transform:none;letter-spacing:0">(required)</span></span>
+    <p style="font-size:12px;color:var(--text-muted);margin:6px 0 10px;line-height:1.5;">Add 1–3 photos of the job — the room, item, or area. <strong>No IDs, mail, or personal documents.</strong> Show only what needs doing.</p>
+    <input type="file" id="taskPhotos" accept="image/*" multiple style="display:none" onchange="handlePhotoPick(this)">
+    <button type="button" class="mode-card" style="width:100%;padding:14px;cursor:pointer;" onclick="document.getElementById('taskPhotos').click()">📷 Add photos (1–3 required)</button>
+    <div id="photoPreview" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;"></div>
+    <div class="field-error" id="photoError" style="display:none;margin-top:8px;">Please add at least one photo of the task</div>
+    <label style="display:flex;align-items:flex-start;gap:10px;margin-top:14px;font-size:13px;color:var(--text-muted);cursor:pointer;">
+      <input type="checkbox" id="requiresPhotos" style="margin-top:3px;">
+      <span>Ask the tasker to share before &amp; after photo updates when working</span>
+    </label>
+  </div>
+
   <!-- BUDGET + LOCATION -->
   <div class="field-row section">
     <div class="field">
@@ -247,12 +261,12 @@ body{padding-bottom:76px;}
   <!-- HINT -->
   <div class="hint-box" id="hintBox">
     <span style="font-size:16px;">💡</span>
-    <p class="hint-text" id="hintText">Similar tasks in Calgary go for <strong>$20 – $40</strong> · Minimum is $20</p>
+    <p class="hint-text" id="hintText">Similar tasks in Calgary go for <strong>$20 – $40</strong>. Minimum budget is $20.</p>
   </div>
 
   <!-- SUBMIT -->
   <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">Post task →</button>
-  <p class="footer-note">Payment is only collected when you accept a worker</p>
+  <p class="footer-note">Payment is held in escrow when you accept — released only after you confirm the job is done.</p>
 
 </div>
 
@@ -266,7 +280,42 @@ body{padding-bottom:76px;}
 </div>
 
 <script src="qg-utils.js"></script>
+<script src="qg-config.js"></script>
 <script src="supabase-db.js"></script>
+<script>
+var selectedPhotos = [];
+
+window.handlePhotoPick = function(input) {
+  var max = (window.QG_CONFIG && window.QG_CONFIG.maxTaskPhotos) || 3;
+  var files = Array.from(input.files || []);
+  files.forEach(function(file) {
+    if (selectedPhotos.length >= max) return;
+    if (!file.type || file.type.indexOf('image/') !== 0) return;
+    selectedPhotos.push(file);
+  });
+  input.value = '';
+  var photoErr = document.getElementById('photoError');
+  if (photoErr) photoErr.style.display = 'none';
+  renderPhotoPreview();
+};
+
+function renderPhotoPreview() {
+  var wrap = document.getElementById('photoPreview');
+  if (!selectedPhotos.length) {
+    wrap.innerHTML = '';
+    return;
+  }
+  wrap.innerHTML = selectedPhotos.map(function(file, i) {
+    var url = URL.createObjectURL(file);
+    return '<div style="position:relative"><img src="'+url+'" alt="Preview" style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:0.5px solid var(--border);"><button type="button" onclick="removePhoto('+i+')" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:#ef4444;color:#fff;font-size:11px;cursor:pointer;">×</button></div>';
+  }).join('');
+}
+
+window.removePhoto = function(index) {
+  selectedPhotos.splice(index, 1);
+  renderPhotoPreview();
+};
+</script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
@@ -357,7 +406,7 @@ function updateHint(city) {
     'standard':  'Standard tasks in ' + city + ' usually go for <strong>$40 – $150</strong>',
     'recurring': 'Recurring tasks — set a per-session rate, minimum <strong>$20</strong>'
   };
-  document.getElementById('hintText').innerHTML = (hints[selectedMode] || '') + ' · Minimum is $20';
+  document.getElementById('hintText').innerHTML = (hints[selectedMode] || '') + '. Minimum budget is $20.';
 }
 
 // ── SUBMIT ─────────────────────────────────────────────
@@ -388,6 +437,10 @@ window.handleSubmit = async function() {
     document.getElementById('taskBudget').classList.add('invalid');
     valid = false;
   }
+  if (!selectedPhotos.length) {
+    document.getElementById('photoError').style.display = 'block';
+    valid = false;
+  }
   if (!valid) return;
 
   if (!window._currentUser) {
@@ -400,6 +453,7 @@ window.handleSubmit = async function() {
 
   // Show loading state
   var btn = document.getElementById('submitBtn');
+  var banner = document.getElementById('errorBanner');
   btn.textContent = 'Posting...';
   btn.disabled = true;
 
@@ -412,8 +466,25 @@ window.handleSubmit = async function() {
     budget:      budget,
     location:    location,
     posted_by:   window._currentUser.uid,
-    poster_name: window._currentUser.displayName || window._currentUser.email.split('@')[0]
+    poster_name: window._currentUser.displayName || window._currentUser.email.split('@')[0],
+    requires_photos: !!document.getElementById('requiresPhotos').checked
   };
+
+  if (selectedPhotos.length) {
+    var photoUrls = [];
+    for (var i = 0; i < selectedPhotos.length; i++) {
+      var upload = await uploadTaskPhoto(selectedPhotos[i], window._currentUser.uid);
+      if (!upload.success) {
+        banner.textContent = upload.error || 'Could not upload photo. Run supabase/task-photos.sql in Supabase.';
+        banner.style.display = 'block';
+        btn.textContent = 'Post task →';
+        btn.disabled = false;
+        return;
+      }
+      photoUrls.push(upload.url);
+    }
+    taskData.photo_urls = JSON.stringify(photoUrls);
+  }
 
   var result = await postTask(taskData);
 

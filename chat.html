@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — Chat</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -92,7 +92,10 @@ body.light .bubble-row.mine .bubble{color:#2d1b4e;}
 body.light .blocked-msg{background:#fef2f2;border-color:#fecaca;color:#dc2626;}
 
 /* INPUT AREA */
-.input-area{background:var(--nav-bg);border-top:0.5px solid var(--border);padding:12px 18px;display:flex;align-items:flex-end;gap:10px;flex-shrink:0;transition:background 0.25s;}
+.input-area{background:var(--nav-bg);border-top:0.5px solid var(--border);padding:12px 18px calc(12px + env(safe-area-inset-bottom, 0px));display:flex;align-items:flex-end;gap:10px;flex-shrink:0;transition:background 0.25s;}
+.task-photo-strip{display:none;flex-wrap:wrap;gap:8px;padding:10px 18px;background:var(--nav-bg);border-bottom:0.5px solid var(--border);flex-shrink:0;}
+.task-photo-strip img{width:64px;height:64px;object-fit:cover;border-radius:10px;border:0.5px solid var(--border);}
+.task-photo-label{font-size:10px;color:var(--text-muted);width:100%;}
 .input-wrap{flex:1;background:var(--input-bg);border:0.5px solid var(--input-border);border-radius:20px;padding:10px 16px;transition:border-color 0.2s;}
 .input-wrap:focus-within{border-color:var(--purple-light);}
 .msg-input{width:100%;background:none;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);resize:none;max-height:100px;min-height:20px;line-height:1.4;}
@@ -102,6 +105,11 @@ body.light .msg-input::placeholder{color:var(--purple);opacity:0.3;}
 .send-btn:hover{opacity:0.85;}
 .send-btn:disabled{opacity:0.4;cursor:not-allowed;}
 body.light .send-btn{color:#2d1b4e;}
+.attach-btn{width:42px;height:42px;border-radius:50%;background:var(--input-bg);border:0.5px solid var(--input-border);cursor:pointer;display:none;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.attach-btn.visible{display:flex;}
+.attach-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.bubble-image{max-width:220px;border-radius:14px;display:block;cursor:pointer;}
+.bubble-image-caption{font-size:10px;color:var(--text-muted);margin-top:4px;}
 
 /* FRAUD WARNING INLINE */
 .fraud-inline{font-size:11px;padding:8px 12px;border-radius:10px;background:rgba(239,68,68,0.08);color:#ef4444;border:0.5px solid rgba(239,68,68,0.2);display:none;margin-top:6px;line-height:1.5;}
@@ -121,8 +129,9 @@ body.light .fraud-inline{background:#fef2f2;color:#dc2626;border-color:#fecaca;}
 .tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:var(--purple-light);}
 body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color:var(--purple);}
 </style>
+<link rel="stylesheet" href="qg-mobile.css">
 </head>
-<body>
+<body class="qg-page-chat">
 
 <!-- NAV -->
 <nav class="nav">
@@ -146,36 +155,32 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   <span class="tb-status status-progress" id="taskStatus">In progress</span>
 </div>
 
+<div class="task-photo-strip" id="taskPhotoStrip"></div>
+
 <!-- FRAUD WARNING BAR -->
 <div class="fraud-bar">
-  ⚠️ Keep all communication and payments on QuickGigs. Sharing contact details or taking payments off-platform violates our Terms of Service.
+  ⚠️ Keep all communication and payments on QuickGigs. Posters can share job photos only — no IDs or personal documents. Taskers: use text messages.
 </div>
 
 <!-- CHAT AREA -->
-<div class="chat-scroll" id="chatScroll"></div>
+<div class="chat-scroll" id="chatScroll" role="log" aria-live="polite"></div>
 
 <!-- INPUT -->
 <div class="input-area">
+  <input type="file" id="chatPhotoInput" accept="image/*" style="display:none" onchange="sendPosterImage(this)">
+  <button type="button" class="attach-btn" id="attachBtn" onclick="document.getElementById('chatPhotoInput').click()" aria-label="Send reference photo (posters only)" title="Posters only — share a photo of what needs doing">📷</button>
   <div style="flex:1">
     <div class="input-wrap">
-      <textarea class="msg-input" id="msgInput" placeholder="Type a message..." rows="1" oninput="handleInput(this)" onkeydown="handleKey(event)"></textarea>
+      <textarea class="msg-input" id="msgInput" placeholder="Type a message..." rows="1" enterkeyhint="send" autocomplete="off" autocorrect="on" oninput="handleInput(this)" onkeydown="handleKey(event)"></textarea>
     </div>
     <div class="fraud-inline" id="fraudInline">
-      🚫 You can't share phone numbers or email addresses on QuickGigs. Keep all communication here to stay protected.
+      🚫 <span id="fraudInlineText">You can't share phone numbers or email addresses on QuickGigs. Keep all communication here to stay protected.</span>
     </div>
   </div>
-  <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>➤</button>
+  <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled aria-label="Send message">➤</button>
 </div>
 
-<!-- TAB BAR -->
-<nav class="tab-bar">
-  <a class="tab-item" href="dashboard.html"><span class="tab-icon">🏠</span><span class="tab-lbl">Home</span></a>
-  <a class="tab-item" href="browsetask.html"><span class="tab-icon">🔍</span><span class="tab-lbl">Browse</span></a>
-  <a class="tab-item" href="posttask.html"><span class="tab-icon">➕</span><span class="tab-lbl">Post</span></a>
-  <a class="tab-item" href="mytasks.html"><span class="tab-icon">✅</span><span class="tab-lbl">My Tasks</span></a>
-  <a class="tab-item active" href="messages.html"><span class="tab-icon">💬</span><span class="tab-lbl">Messages</span></a>
-</nav>
-
+<script src="qg-mobile.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
@@ -203,8 +208,9 @@ onAuthStateChanged(auth, (user) => {
 });
 </script>
 
-<script src="supabase-db.js"></script>
 <script src="qg-utils.js"></script>
+<script src="qg-config.js"></script>
+<script src="supabase-db.js"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
 var isDark = localStorage.getItem('qg-mode') !== 'light';
@@ -227,18 +233,33 @@ var currentConv = null;
 var messages = [];
 var pollTimer = null;
 var currentUserId = null;
+var chatIsPoster = false;
 
-// ── FRAUD DETECTION ────────────────────────────────────
-var FRAUD_PATTERNS = [
-  /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/,
-  /\b\(\d{3}\)\s?\d{3}[-.\s]?\d{4}\b/,
-  /\b\d{10}\b/,
-  /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/,
-  /\+\d[\d\s\-]{8,}/,
-];
+// ── FRAUD DETECTION (shared rules in qg-utils.js) ────────
 
 function containsFraud(text){
-  return FRAUD_PATTERNS.some(function(p){ return p.test(text); });
+  var recent = getRecentMyTexts();
+  return typeof containsOffPlatformContact === 'function'
+    ? containsOffPlatformContact(text, recent)
+    : false;
+}
+
+function getRecentMyTexts(){
+  return messages.filter(function(m){ return m.from === 'me'; }).slice(-5).map(function(m){ return m.text; });
+}
+
+async function loadTaskPhotos(taskId){
+  if (!taskId || typeof getTaskById !== 'function') return;
+  var task = await getTaskById(taskId);
+  if (!task) return;
+  var urls = typeof parsePhotoUrls === 'function' ? parsePhotoUrls(task.photo_urls || task.PHOTO_URLS) : [];
+  var strip = document.getElementById('taskPhotoStrip');
+  if (!strip || !urls.length) return;
+  strip.style.display = 'flex';
+  strip.innerHTML = '<span class="task-photo-label">Reference photos (what needs doing)</span>' +
+    urls.map(function(url){
+      return '<img src="'+window.escapeHtml(url)+'" alt="Task reference photo">';
+    }).join('');
 }
 
 function formatMessageTime(iso){
@@ -262,42 +283,135 @@ async function initChat(){
     return;
   }
 
+  if (typeof syncCurrentUserProfile === 'function' && window._currentUser) {
+    await syncCurrentUserProfile(window._currentUser);
+  }
+
   currentConv = await getConversation(convId);
   if(!currentConv || (currentConv.poster_id !== currentUserId && currentConv.worker_id !== currentUserId)){
     window.location.href = 'messages.html';
     return;
   }
 
+  if (typeof enrichConversationNames === 'function') {
+    currentConv = await enrichConversationNames(currentConv);
+  }
+
   var isPoster = currentConv.poster_id === currentUserId;
-  var otherName = isPoster ? (currentConv.worker_name || 'Worker') : (currentConv.poster_name || 'Poster');
+  var otherUid = isPoster ? currentConv.worker_id : currentConv.poster_id;
+  var otherName = isPoster ? (currentConv.worker_name || '') : (currentConv.poster_name || '');
+  if ((!otherName || (typeof isGenericDisplayName === 'function' && isGenericDisplayName(otherName))) && typeof getUserNameByFirebaseUid === 'function') {
+    var fetchedName = await getUserNameByFirebaseUid(otherUid);
+    if (fetchedName) otherName = fetchedName;
+  }
+  if (!otherName || (typeof isGenericDisplayName === 'function' && isGenericDisplayName(otherName))) {
+    otherName = isPoster ? 'Tasker' : 'Poster';
+  }
   var cat = (currentConv.task_category || 'other').toLowerCase();
 
+  chatIsPoster = isPoster;
+  window._chatIsPoster = isPoster;
+
   document.getElementById('chatName').textContent = otherName;
-  document.getElementById('chatSub').textContent = isPoster ? 'Worker on your task' : 'Task poster';
+  document.getElementById('chatSub').textContent = isPoster
+    ? 'Tasker · ' + (currentConv.task_title || 'Your task')
+    : 'Poster · ' + (currentConv.task_title || 'Task');
   document.getElementById('taskTitle').textContent = currentConv.task_title || 'Task';
-  document.getElementById('taskMeta').textContent = currentConv.is_unlocked ? 'Beta · Chat open' : 'Payment pending · Chat locked';
+  document.getElementById('taskMeta').textContent = currentConv.is_unlocked ? 'Chat open · Escrow paid' : 'Payment required · Chat locked';
   document.getElementById('taskIcon').textContent = CAT_ICONS[cat] || '📦';
   document.getElementById('taskIcon').style.background = CAT_BG[cat] || 'rgba(107,63,160,0.2)';
-  document.getElementById('taskStatus').textContent = currentConv.status === 'completed' ? 'Completed' : 'In progress';
-  document.getElementById('taskStatus').className = 'tb-status ' + (currentConv.status === 'completed' ? 'status-done' : 'status-progress');
+  var isCompleted = currentConv.status === 'completed';
+  document.getElementById('taskStatus').textContent = isCompleted ? 'Completed' : 'In progress';
+  document.getElementById('taskStatus').className = 'tb-status ' + (isCompleted ? 'status-done' : 'status-progress');
+
+  await loadTaskPhotos(currentConv.task_id);
+
+  if(isCompleted) currentConv.is_unlocked = false;
 
   if(!currentConv.is_unlocked){
-    showLockedState();
+    showLockedState(isCompleted);
     return;
   }
 
   await refreshMessages();
   await markConversationRead(convId, currentUserId, currentConv.poster_id);
+  setupPosterImageAttach(isPoster);
   pollTimer = setInterval(refreshMessages, 4000);
 }
 
-function showLockedState(){
+function setupPosterImageAttach(isPoster) {
+  var attachBtn = document.getElementById('attachBtn');
+  var posterOnly = !window.QG_CONFIG || window.QG_CONFIG.posterOnlyChatImages !== false;
+  if (attachBtn) {
+    attachBtn.classList.toggle('visible', isPoster && posterOnly);
+    attachBtn.title = 'Share a reference photo of what needs doing (posters only). No IDs or personal documents.';
+  }
+}
+
+function renderMessageBubble(text) {
+  if (typeof isChatImageBody === 'function' && isChatImageBody(text)) {
+    var url = typeof parseChatImageUrl === 'function' ? parseChatImageUrl(text) : '';
+    if (url) {
+      return '<img class="bubble-image" src="'+window.escapeHtml(url)+'" alt="Reference photo from poster" onclick="window.open(this.src,\'_blank\')">' +
+        '<div class="bubble-image-caption">Reference photo</div>';
+    }
+  }
+  return window.escapeHtml(text);
+}
+
+window.sendPosterImage = async function(input) {
+  if (!chatIsPoster) {
+    alert('Only the poster can send photos in chat. Taskers can describe questions in text.');
+    input.value = '';
+    return;
+  }
+  if (!currentConv || !currentConv.is_unlocked || !convId || !currentUserId) return;
+  var file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+
+  var attachBtn = document.getElementById('attachBtn');
+  if (attachBtn) attachBtn.disabled = true;
+
+  var upload = await uploadChatPhoto(file, currentUserId, convId);
+  if (!upload.success) {
+    alert(upload.error || 'Could not upload photo. Run supabase/task-photos.sql in Supabase.');
+    if (attachBtn) attachBtn.disabled = false;
+    return;
+  }
+
+  var body = (window.CHAT_IMAGE_PREFIX || '[img]') + upload.url;
+  var result = await sendChatMessage(convId, currentUserId, body);
+  if (!result.success) {
+    alert('Photo uploaded but could not send. Try again.');
+    if (attachBtn) attachBtn.disabled = false;
+    return;
+  }
+
+  if (attachBtn) attachBtn.disabled = false;
+  await refreshMessages();
+  scrollToBottom();
+};
+
+function showLockedState(isCompleted){
+  var isPoster = currentConv && currentConv.poster_id === currentUserId;
+  var lockMsg;
+  if (isCompleted) {
+    lockMsg = 'This task is completed. Chat is now closed. You can still leave a review from My Tasks.';
+  } else {
+    lockMsg = typeof getChatLockMessage === 'function'
+      ? getChatLockMessage(isPoster)
+      : 'Messaging opens after payment is completed through QuickGigs.';
+  }
   document.querySelector('.input-area').style.display = 'none';
   document.getElementById('chatScroll').innerHTML =
     '<div class="locked-state">' +
-      '<div class="locked-icon">🔒</div>' +
-      '<div class="locked-title">Chat locked</div>' +
-      '<div class="locked-sub">Messaging opens once the task is accepted. For beta, chat should open when someone applies.</div>' +
+      '<div class="locked-icon">'+(isCompleted ? '✅' : '🔒')+'</div>' +
+      '<div class="locked-title">'+(isCompleted ? 'Chat closed' : 'Chat locked')+'</div>' +
+      '<div class="locked-sub">'+window.escapeHtml(lockMsg)+'</div>' +
+      (!isCompleted && isPoster && currentConv && currentConv.task_id
+        ? '<a href="payment.html?task='+encodeURIComponent(String(currentConv.task_id))+'" style="margin-top:16px;padding:12px 20px;border-radius:13px;background:var(--purple);color:#fff;text-decoration:none;font-size:13px;font-weight:500;">💳 Pay & unlock chat</a>'
+        : '') +
     '</div>';
 }
 
@@ -328,7 +442,7 @@ function renderMessages(){
     }
     var isMe = m.from === 'me';
     html += '<div class="bubble-row '+(isMe?'mine':'theirs')+'">' +
-      '<div class="bubble">'+window.escapeHtml(m.text)+'</div>' +
+      '<div class="bubble">'+renderMessageBubble(m.text)+'</div>' +
       '<div class="bubble-time">'+m.time+'</div>' +
     '</div>';
   });
@@ -356,6 +470,14 @@ window.handleInput = function(el){
   if(containsFraud(val)){
     fraudDetected = true;
     fraudInline.style.display = 'block';
+    var warnEl = document.getElementById('fraudInlineText');
+    if (warnEl && typeof getOffPlatformWarning === 'function') warnEl.textContent = getOffPlatformWarning();
+    sendBtn.disabled = true;
+  } else if (val.match(/^\d{2,6}$/)) {
+    fraudDetected = true;
+    fraudInline.style.display = 'block';
+    var w2 = document.getElementById('fraudInlineText');
+    if (w2) w2.textContent = 'Sending phone numbers in parts is not allowed. Keep all contact on QuickGigs.';
     sendBtn.disabled = true;
   } else {
     fraudDetected = false;
@@ -389,7 +511,13 @@ window.sendMessage = async function(){
 
   var result = await sendChatMessage(convId, currentUserId, text);
   if(!result.success){
-    alert('Could not send message. Please try again.');
+    if (result.blocked || result.error === 'off_platform_contact') {
+      document.getElementById('fraudInline').style.display = 'block';
+      var warnEl = document.getElementById('fraudInlineText');
+      if (warnEl && typeof getOffPlatformWarning === 'function') warnEl.textContent = getOffPlatformWarning();
+    } else {
+      alert('Could not send message. Please try again.');
+    }
     sendBtn.disabled = false;
     return;
   }

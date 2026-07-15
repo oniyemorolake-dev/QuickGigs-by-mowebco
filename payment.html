@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>QuickGigs — Payment</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="qg-brand.css">
+<link rel="stylesheet" href="qg-mobile.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:#0b0118;color:#fff;min-height:100vh;padding:24px 20px calc(40px + env(safe-area-inset-bottom, 0px));}
+body.light{background:#fafafe;color:#2d1b4e;}
+.card{max-width:420px;margin:40px auto 0;background:rgba(255,255,255,0.04);border:0.5px solid rgba(200,168,233,0.15);border-radius:20px;padding:28px 24px;}
+body.light .card{background:#fff;border-color:#e8e2ff;}
+.icon{font-size:48px;text-align:center;margin-bottom:16px;}
+h1{font-size:20px;font-weight:500;text-align:center;margin-bottom:10px;}
+p{font-size:14px;color:rgba(255,255,255,0.55);line-height:1.65;text-align:center;margin-bottom:18px;}
+body.light p{color:#5a5a72;}
+.steps{text-align:left;font-size:13px;line-height:1.7;color:rgba(255,255,255,0.7);margin:18px 0 22px;padding-left:18px;}
+body.light .steps{color:#5a5a72;}
+.escrow-box{background:rgba(107,63,160,0.15);border:0.5px solid rgba(200,168,233,0.2);border-radius:14px;padding:14px;margin-bottom:18px;font-size:12px;line-height:1.6;color:#c8a8e9;}
+body.light .escrow-box{background:#f0eeff;color:#6b3fa0;border-color:#e0d8ff;}
+.btn{display:block;width:100%;padding:14px;border-radius:13px;border:none;background:#6b3fa0;color:#fff;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;text-align:center;margin-top:8px;min-height:44px;}
+.btn-secondary{background:transparent;border:0.5px solid rgba(200,168,233,0.25);color:rgba(255,255,255,0.7);}
+body.light .btn-secondary{border-color:#e8e2ff;color:#6b3fa0;}
+.note{font-size:12px;text-align:center;margin-top:16px;color:rgba(255,255,255,0.35);}
+body.light .note{color:#9ca3af;}
+</style>
+</head>
+<body>
+<script src="qg-theme.js"></script>
+<script src="qg-brand-init.js"></script>
+<script src="qg-config.js"></script>
+<script src="qg-mobile.js"></script>
+<script src="supabase-db.js"></script>
+
+<div class="card">
+  <div class="icon">💳</div>
+  <h1>Pay to unlock chat</h1>
+  <p>Your payment is held safely until you confirm the job is done. The tasker is not paid until then.</p>
+  <div class="escrow-box">
+    <strong>How escrow works</strong><br>
+    1. You pay when you accept a worker<br>
+    2. QuickGigs holds the money (not the tasker yet)<br>
+    3. Chat unlocks so you can coordinate<br>
+    4. When you mark the task complete, payment is released<br>
+    5. Chat locks again after completion
+  </div>
+  <ol class="steps">
+    <li>Accept a worker in <strong>My Tasks</strong></li>
+    <li>Pay here via Stripe (coming at launch)</li>
+    <li>Chat opens — no phone numbers needed</li>
+    <li>Confirm completion to release payment</li>
+  </ol>
+  <button class="btn" id="payBtn" disabled>Stripe checkout — coming at launch</button>
+  <a class="btn btn-secondary" href="mytasks.html?tab=inprogress">Back to My Tasks</a>
+  <p class="note">Payment confirmation will show as “Escrow paid” in chat once Stripe is live.</p>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
+  authDomain: "quickgigs-7b12d.firebaseapp.com",
+  projectId: "quickgigs-7b12d",
+  storageBucket: "quickgigs-7b12d.firebasestorage.app",
+  messagingSenderId: "698985399366",
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+onAuthStateChanged(auth, function(user) {
+  if (!user) { window.location.href = 'login.html'; return; }
+  window._currentUser = user;
+});
+</script>
+</body>
+</html>

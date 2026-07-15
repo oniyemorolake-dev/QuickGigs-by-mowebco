@@ -108,6 +108,9 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
 
   try {
     var cred = await signInWithEmailAndPassword(auth, email, password);
+    if (typeof syncCurrentUserProfile === 'function') {
+      await syncCurrentUserProfile(cred.user);
+    }
     if (typeof getUserByFirebaseUid === 'function') {
       var dbUser = await getUserByFirebaseUid(cred.user.uid);
       if (dbUser && dbUser.role) localStorage.setItem('qg-role', dbUser.role);
@@ -142,8 +145,12 @@ document.getElementById('forgotLink').addEventListener('click', async function()
     return;
   }
   try {
-    await sendPasswordResetEmail(auth, email);
-    okMsg.textContent = 'Password reset email sent! Check your inbox.';
+    var resetUrl = window.location.origin + '/reset-password.html';
+    await sendPasswordResetEmail(auth, email, {
+      url: resetUrl,
+      handleCodeInApp: true
+    });
+    okMsg.textContent = 'Password reset email sent! Check your inbox (and spam). The link opens a QuickGigs page — if Yahoo blocks links, tap Show images / Not spam first.';
     okMsg.style.display = 'block';
   } catch (error) {
     errorMsg.textContent = 'Could not send reset email. Check the address and try again.';

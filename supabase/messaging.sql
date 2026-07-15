@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS conversations (
   task_title        TEXT,
   task_category     TEXT,
   status            TEXT NOT NULL DEFAULT 'in_progress',
-  is_unlocked       BOOLEAN NOT NULL DEFAULT TRUE,
+  is_unlocked       BOOLEAN NOT NULL DEFAULT FALSE,
   last_message      TEXT,
   last_message_at   TIMESTAMPTZ,
   poster_last_read_at TIMESTAMPTZ,

@@ -91,8 +91,8 @@
     var items = NAV[mode] || NAV.poster;
     bar.innerHTML = items.map(function (item) {
       var cls = item.id === activeId ? 'tab-item active' : 'tab-item';
-      return '<a class="' + cls + '" href="' + item.href + '">' +
-        '<span class="tab-icon">' + item.icon + '</span>' +
+      return '<a class="' + cls + '" href="' + item.href + '" aria-label="' + item.label + '">' +
+        '<span class="tab-icon" aria-hidden="true">' + item.icon + '</span>' +
         '<span class="tab-lbl">' + item.label + '</span></a>';
     }).join('');
     applyRoleTheme();
@@ -128,4 +128,9 @@
   window.applyNavBrand = applyNavBrand;
   window.getThemeMode = getThemeMode;
   initRoleThemeEarly();
+
+  var mobileScript = document.createElement('script');
+  mobileScript.src = 'qg-mobile.js';
+  mobileScript.defer = true;
+  document.head.appendChild(mobileScript);
 })();

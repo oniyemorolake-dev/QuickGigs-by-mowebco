@@ -72,6 +72,25 @@ body.light .tc-applicants-toggle{color:var(--purple);}
 .btn-secondary{background:var(--surface);border:0.5px solid var(--border);color:var(--text-muted);}
 .btn-success{background:#16a34a;color:#fff;}
 .btn-review{background:rgba(251,191,36,0.15);color:#d97706;border:0.5px solid rgba(251,191,36,0.3);}
+.btn-danger{background:rgba(239,68,68,0.12);color:#ef4444;border:0.5px solid rgba(239,68,68,0.35);}
+.btn-danger:hover{opacity:0.9;}
+.decline-btn{padding:6px 12px;border-radius:8px;background:var(--surface);color:var(--text-muted);border:1px solid var(--border);font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;margin-right:6px;}
+.decline-btn:hover:not(:disabled){opacity:0.85;}
+.decline-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.applicant-actions{display:flex;align-items:center;flex-shrink:0;gap:0;}
+.applicant-row.is-cancelled,.applicant-row.is-withdrawn{opacity:0.4;}
+.task-card.is-faded{opacity:0.55;}
+
+/* CONFIRM MODAL */
+.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;z-index:400;padding:20px;}
+.confirm-overlay.open{display:flex;}
+.confirm-box{background:var(--surface);border:0.5px solid var(--border);border-radius:18px;padding:22px;max-width:340px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,0.35);}
+.confirm-title{font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px;}
+.confirm-msg{font-size:13px;color:var(--text-muted);line-height:1.55;margin-bottom:18px;}
+.confirm-btns{display:flex;gap:10px;justify-content:flex-end;}
+.confirm-cancel{padding:10px 18px;border-radius:12px;border:0.5px solid var(--border);background:transparent;color:var(--text-muted);font-family:inherit;font-size:13px;cursor:pointer;}
+.confirm-ok{padding:10px 18px;border-radius:12px;border:none;background:#ef4444;color:#fff;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;}
+.confirm-ok.is-neutral{background:var(--purple);}
 
 /* APPLICANT ROW */
 .applicant-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:0.5px solid var(--border);transition:opacity 0.25s,background 0.25s;}
@@ -141,8 +160,21 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <div class="toast" id="toast"></div>
 
+<div class="confirm-overlay" id="confirmOverlay" onclick="if(event.target===this)closeConfirm()">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirmTitle">Are you sure?</div>
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="confirm-btns">
+      <button type="button" class="confirm-cancel" onclick="closeConfirm()">Keep</button>
+      <button type="button" class="confirm-ok" id="confirmOkBtn" onclick="runConfirm()">Confirm</button>
+    </div>
+  </div>
+</div>
+
 <nav class="tab-bar" id="qgTabBar"></nav>
 
+<script src="qg-utils.js"></script>
+<script src="qg-config.js"></script>
 <script src="supabase-db.js"></script>
 <script src="qg-nav.js"></script>
 <script>
@@ -229,17 +261,30 @@ function applyLocalAcceptState(taskId, appId) {
   if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
 }
 
+function isPaymentGatedChat() {
+  return !window.QG_CONFIG || window.QG_CONFIG.chatUnlockAfter === 'payment';
+}
+
 function renderApplicantAction(a, taskId) {
   var appId = getField(a, 'APP_ID');
   var workerId = getField(a, 'WORKER_ID');
   var status = (getField(a, 'STATUS') || 'pending').toLowerCase();
   if (status === 'accepted') {
+    if (isPaymentGatedChat()) {
+      return '<span class="accept-status">✓ Accepted · Pay to unlock chat</span>';
+    }
     return '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border)" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">💬 Chat</button>' +
       '<span class="accept-status">✓ Accepted</span>';
   }
   if (status === 'declined') return '<span class="accept-status declined">Not selected</span>';
-  return '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border);margin-right:6px" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">💬 Chat</button>' +
-    '<button type="button" class="accept-btn" data-task-id="'+escAttr(taskId)+'" data-app-id="'+escAttr(appId)+'">Accept</button>';
+  if (status === 'cancelled') return '<span class="accept-status declined">Withdrawn</span>';
+  var chatBtn = isPaymentGatedChat() ? '' :
+    '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border);margin-right:6px" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">💬 Chat</button>';
+  return '<div class="applicant-actions">' +
+    '<button type="button" class="decline-btn" data-decline-task-id="'+escAttr(taskId)+'" data-decline-app-id="'+escAttr(appId)+'">Decline</button>' +
+    chatBtn +
+    '<button type="button" class="accept-btn" data-task-id="'+escAttr(taskId)+'" data-app-id="'+escAttr(appId)+'">Accept</button>' +
+    '</div>';
 }
 
 function escAttr(s) {
@@ -315,6 +360,28 @@ function applyExpandFromUrl() {
   }
 }
 
+function enrichRowsWithNames() {
+  if (!userNames || !Object.keys(userNames).length) return;
+  allTasks.forEach(function(t) {
+    var pid = getField(t, 'POSTED_BY');
+    if (pid && userNames[pid]) {
+      if (!getField(t, 'POSTER_NAME') || (typeof isGenericDisplayName === 'function' && isGenericDisplayName(getField(t, 'POSTER_NAME')))) {
+        t.poster_name = userNames[pid];
+        t.POSTER_NAME = userNames[pid];
+      }
+    }
+  });
+  allApplications.forEach(function(a) {
+    var wid = getField(a, 'WORKER_ID');
+    if (wid && userNames[wid]) {
+      if (!getField(a, 'WORKER_NAME') || (typeof isGenericDisplayName === 'function' && isGenericDisplayName(getField(a, 'WORKER_NAME')))) {
+        a.worker_name = userNames[wid];
+        a.WORKER_NAME = userNames[wid];
+      }
+    }
+  });
+}
+
 async function loadData(){
   var userId = window._currentUser ? window._currentUser.uid : null;
   if (!userId) return;
@@ -344,6 +411,7 @@ async function loadData(){
     allTasks = Array.isArray(results[0]) ? results[0] : [];
     allApplications = Array.isArray(results[1]) ? results[1] : [];
     userNames = results[2] || {};
+    enrichRowsWithNames();
 
     if (typeof fetchAllTasksFresh === 'function') fetchAllTasksFresh();
   } catch (err) {
@@ -412,7 +480,7 @@ function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').rep
 
 document.getElementById('tabContent').addEventListener('click', function(e) {
   var acceptBtn = e.target.closest('.accept-btn');
-  if (acceptBtn) {
+  if (acceptBtn && acceptBtn.hasAttribute('data-app-id')) {
     e.preventDefault();
     if (acceptBtn.disabled) return;
     setAcceptLoading(acceptBtn, true);
@@ -420,6 +488,17 @@ document.getElementById('tabContent').addEventListener('click', function(e) {
       acceptBtn.getAttribute('data-task-id'),
       acceptBtn.getAttribute('data-app-id'),
       acceptBtn
+    );
+    return;
+  }
+  var declineBtn = e.target.closest('.decline-btn');
+  if (declineBtn) {
+    e.preventDefault();
+    if (declineBtn.disabled) return;
+    declineApplicant(
+      declineBtn.getAttribute('data-decline-task-id'),
+      declineBtn.getAttribute('data-decline-app-id'),
+      declineBtn
     );
     return;
   }
@@ -437,6 +516,29 @@ function showToast(msg, color){
   t.style.display = 'block';
   setTimeout(function(){ t.style.display='none'; }, 3000);
 }
+
+var pendingConfirm = null;
+
+window.showConfirm = function(opts) {
+  pendingConfirm = opts || null;
+  document.getElementById('confirmTitle').textContent = opts.title || 'Are you sure?';
+  document.getElementById('confirmMsg').textContent = opts.message || '';
+  var okBtn = document.getElementById('confirmOkBtn');
+  okBtn.textContent = opts.confirmLabel || 'Confirm';
+  okBtn.classList.toggle('is-neutral', !!opts.neutral);
+  document.getElementById('confirmOverlay').classList.add('open');
+};
+
+window.closeConfirm = function() {
+  pendingConfirm = null;
+  document.getElementById('confirmOverlay').classList.remove('open');
+};
+
+window.runConfirm = async function() {
+  var opts = pendingConfirm;
+  closeConfirm();
+  if (opts && typeof opts.onConfirm === 'function') await opts.onConfirm();
+};
 
 window.showTab = function(tab, btn){
   activeTab = tab;
@@ -485,6 +587,7 @@ function renderTab(){
         var rowClass = 'applicant-row';
         if (status === 'accepted') rowClass += ' is-accepted';
         else if (status === 'declined') rowClass += ' is-faded';
+        else if (status === 'cancelled') rowClass += ' is-withdrawn';
         return '<div class="'+rowClass+'">'+
           '<div class="app-avatar">'+esc(workerName.charAt(0).toUpperCase())+'</div>'+
           '<div class="app-info"><div class="app-name">'+esc(workerName)+'</div><div class="app-msg">'+esc(getField(a,'MESSAGE'))+'</div></div>'+
@@ -500,12 +603,19 @@ function renderTab(){
         '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+' budget</div>'+
         '<button type="button" class="tc-applicants-toggle'+(isOpen?' open':'')+'" data-applicants-toggle="'+escAttr(taskId)+'" data-applicant-count="'+escAttr(pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : ''))+'" data-applicant-names="'+escAttr(namePreview + (pendingApps.length > 3 ? '…' : ''))+'">👥 '+esc(toggleLabel)+'</button>'+
         '<div class="applicants-panel'+(isOpen?' open':'')+'" id="'+taskDomId(taskId)+'">'+appHtml+'</div>'+
+        '<div class="action-row"><button type="button" class="act-btn btn-danger" onclick="confirmCancelPosting('+JSON.stringify(String(taskId))+')">✕ Cancel posting</button></div>'+
       '</div>';
     }).join('');
   }
 
   else if(activeTab === 'applied'){
     var myApps = allApplications.filter(function(a){ return getField(a,'WORKER_ID') === userId; });
+    myApps.sort(function(a, b) {
+      var order = { pending: 0, accepted: 1, declined: 2, cancelled: 3 };
+      var sa = order[(getField(a,'STATUS') || 'pending').toLowerCase()] ?? 4;
+      var sb = order[(getField(b,'STATUS') || 'pending').toLowerCase()] ?? 4;
+      return sa - sb;
+    });
     if(!myApps.length){
       content.innerHTML = '<div class="empty-state"><div class="empty-icon">📨</div><div class="empty-title">No applications yet</div><div class="empty-sub">Browse tasks near you and apply to start earning.</div><a class="empty-btn" href="browsetask.html">Browse tasks</a></div>';
       return;
@@ -515,13 +625,38 @@ function renderTab(){
       var cat = getCat(task);
       var posterId = getField(task, 'POSTED_BY');
       var posterName = displayName(posterId, task);
-      var statusLabel = getField(a,'STATUS') === 'accepted' ? '<span class="tc-badge badge-done">✓ Accepted</span>' : '<span class="tc-badge badge-open">Pending</span>';
+      var appStatus = (getField(a,'STATUS') || 'pending').toLowerCase();
+      var taskStatus = (getField(task,'STATUS') || '').toLowerCase();
+      var statusLabel;
+      if (taskStatus === 'cancelled' && appStatus !== 'cancelled') {
+        statusLabel = '<span class="tc-badge badge-open" style="opacity:0.6">Post cancelled</span>';
+      } else if (appStatus === 'accepted') statusLabel = '<span class="tc-badge badge-done">✓ Accepted</span>';
+      else if (appStatus === 'cancelled') statusLabel = '<span class="tc-badge badge-open" style="opacity:0.6">Withdrawn</span>';
+      else if (appStatus === 'declined') statusLabel = '<span class="tc-badge badge-open" style="opacity:0.6">Not selected</span>';
+      else statusLabel = '<span class="tc-badge badge-open">Pending</span>';
       var taskIdStr = JSON.stringify(String(getField(a,'TASK_ID')));
-      var msgBtn = '<div class="action-row"><button class="act-btn btn-secondary" onclick="openChatForTask('+taskIdStr+')">💬 Message poster</button></div>';
-      return '<div class="task-card">'+
+      var appIdStr = JSON.stringify(String(getField(a,'APP_ID')));
+      var cardClass = 'task-card' + (appStatus === 'cancelled' || appStatus === 'declined' ? ' is-faded' : '');
+      var actions = '';
+      if (appStatus === 'pending' && taskStatus !== 'cancelled') {
+        actions = '<div class="action-row">';
+        if (!isPaymentGatedChat()) {
+          actions += '<button class="act-btn btn-secondary" onclick="openChatForTask('+taskIdStr+')">💬 Message poster</button>';
+        } else {
+          actions += '<span class="tc-meta" style="margin:0">Chat opens after the poster accepts you and pays</span>';
+        }
+        actions += '<button class="act-btn btn-danger" onclick="confirmWithdrawApplication('+appIdStr+')">Withdraw application</button></div>';
+      } else if (appStatus === 'accepted') {
+        if (!isPaymentGatedChat()) {
+          actions = '<div class="action-row"><button class="act-btn btn-secondary" onclick="openChatForTask('+taskIdStr+')">💬 Message poster</button></div>';
+        } else {
+          actions = '<div class="action-row"><span class="tc-meta" style="margin:0">Waiting for poster payment to unlock chat</span></div>';
+        }
+      }
+      return '<div class="'+cardClass+'">'+
         '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">Applied · Posted by '+esc(posterName)+'</div><div class="tc-title">'+esc(getField(task,'TITLE')||'Task #'+getField(a,'TASK_ID'))+'</div></div></div>'+statusLabel+'</div>'+
         '<div class="tc-meta">Your offer: $'+getField(a,'PRICE')+' · '+esc(getField(a,'MESSAGE')).substring(0,60)+'...</div>'+
-        msgBtn+
+        actions+
       '</div>';
     }).join('');
   }
@@ -547,7 +682,12 @@ function renderTab(){
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+roleLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-progress">⏳ In progress</span></div>'+
         '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+'</div>'+
-        '<div class="action-row"><button class="act-btn btn-success" onclick="markComplete('+JSON.stringify(String(taskId))+')">✓ Mark complete</button><button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')">💬 Message</button></div>'+
+        '<div class="action-row">' +
+        '<button class="act-btn btn-success" onclick="markComplete('+JSON.stringify(String(taskId))+')">✓ Mark complete</button>' +
+        '<button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')">💬 Message</button>' +
+        (isPoster ? '<button class="act-btn btn-danger" onclick="confirmCancelInProgress('+JSON.stringify(String(taskId))+')">✕ Cancel task</button>' : '') +
+        (!isPaymentGatedChat() ? '' : (isPoster ? '<button class="act-btn btn-primary" onclick="window.location.href=\'payment.html?task='+encodeURIComponent(String(taskId))+'\'">💳 Pay & unlock chat</button>' : '')) +
+        '</div>'+
       '</div>';
     }).join('');
   }
@@ -592,6 +732,17 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
   var workerId = getField(app, 'WORKER_ID');
   var workerName = displayName(workerId, app);
 
+  var workerUser = await getUserByFirebaseUid(workerId);
+  if (workerUser && workerUser.name && typeof isGenericDisplayName === 'function' && !isGenericDisplayName(workerUser.name)) {
+    workerName = workerUser.name;
+  } else if (typeof getUserNameByFirebaseUid === 'function') {
+    var fetchedWorker = await getUserNameByFirebaseUid(workerId);
+    if (fetchedWorker) workerName = fetchedWorker;
+  }
+
+  var posterName = window._currentUser.displayName || window._currentUser.email.split('@')[0];
+  if (typeof formatPersonName === 'function') posterName = formatPersonName(posterName);
+
   var appStatus = await updateApplicationStatus(appId, 'accepted');
   if(!appStatus.success){
     console.error('Accept failed:', appStatus.error);
@@ -602,6 +753,10 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
 
   var taskStatus = await updateTaskStatus(taskId, 'in_progress');
   if(!taskStatus.success) console.warn('Task status update failed:', taskStatus.error);
+
+  if (typeof declinePendingApplicationsForTask === 'function') {
+    await declinePendingApplicationsForTask(taskId, appId);
+  }
 
   applyLocalAcceptState(taskId, appId);
 
@@ -620,10 +775,6 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
   syncTabButtons();
   renderTab();
 
-  var workerUser = await getUserByFirebaseUid(workerId);
-  if (workerUser && workerUser.name) workerName = workerUser.name;
-  var posterName = window._currentUser.displayName || window._currentUser.email.split('@')[0];
-
   var convResult = await createConversation({
     task_id:       taskId,
     poster_id:     userId,
@@ -632,18 +783,18 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
     worker_name:   workerName,
     task_title:    getField(task, 'TITLE'),
     task_category: getField(task, 'CATEGORY'),
-    status:        'in_progress',
-    is_unlocked:   true
+    status:        'in_progress'
   });
 
   if(!convResult.success){
     setAcceptLoading(acceptBtn, false);
-    showToast('Accepted but chat failed — run supabase/messaging.sql', '#f59e0b');
+    showToast('Accepted but chat setup failed — run supabase/messaging.sql', '#f59e0b');
     loadData();
     return;
   }
 
-  if (convResult.data && convResult.data.conv_id) {
+  var chatUnlocked = convResult.data && convResult.data.is_unlocked;
+  if (convResult.data && convResult.data.conv_id && chatUnlocked) {
     await updateConversation(convResult.data.conv_id, {
       status: 'in_progress',
       is_unlocked: true
@@ -652,6 +803,8 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
     setTimeout(function(){
       window.location.href = 'chat.html?conv=' + encodeURIComponent(convResult.data.conv_id);
     }, 900);
+  } else if (isPaymentGatedChat()) {
+    showToast('Accepted ' + workerName + '! Complete payment to unlock chat.');
   } else {
     showToast('Accepted ' + workerName + '! Moved to In Progress 💬');
   }
@@ -715,8 +868,96 @@ window.markComplete = async function(taskId){
     showToast('Could not mark complete. Try again.', '#ef4444');
     return;
   }
-  showToast('Task marked complete! Leave a review when ready.');
+  if (typeof lockConversationsForTask === 'function') {
+    await lockConversationsForTask(taskId);
+  }
+  showToast('Task complete! Chat locked. Leave a review when ready.');
   loadData();
+};
+
+window.declineApplicant = async function(taskId, appId, declineBtn) {
+  taskId = String(taskId);
+  appId = String(appId);
+  if (!appId) {
+    showToast('Invalid application — refresh and try again', '#ef4444');
+    return;
+  }
+  if (declineBtn) {
+    declineBtn.disabled = true;
+    declineBtn.textContent = 'Declining…';
+  }
+  var result = await declineApplication(appId);
+  if (!result.success) {
+    if (declineBtn) {
+      declineBtn.disabled = false;
+      declineBtn.textContent = 'Decline';
+    }
+    showToast('Could not decline applicant. Try again.', '#ef4444');
+    return;
+  }
+  allApplications.forEach(function(a) {
+    if (String(getField(a, 'APP_ID')) === appId) setRowStatus(a, 'declined');
+  });
+  showToast('Applicant declined');
+  renderTab();
+};
+
+window.confirmWithdrawApplication = function(appId) {
+  showConfirm({
+    title: 'Withdraw application?',
+    message: 'Your offer will be removed and the poster will no longer see you as an applicant. You can apply again later if the task is still open.',
+    confirmLabel: 'Withdraw',
+    onConfirm: async function() {
+      var result = await cancelApplication(String(appId));
+      if (!result.success) {
+        showToast('Could not withdraw. Try again.', '#ef4444');
+        return;
+      }
+      showToast('Application withdrawn');
+      loadData();
+    }
+  });
+};
+
+window.confirmCancelPosting = function(taskId) {
+  var task = allTasks.find(function(t) { return String(getField(t, 'TASK_ID')) === String(taskId); });
+  var title = task ? getField(task, 'TITLE') : 'this task';
+  showConfirm({
+    title: 'Cancel posting?',
+    message: '“' + title + '” will be removed from browse and all pending applicants will be notified. This cannot be undone.',
+    confirmLabel: 'Cancel posting',
+    onConfirm: async function() {
+      var result = await cancelTask(String(taskId));
+      if (!result.success) {
+        showToast('Could not cancel posting. Try again.', '#ef4444');
+        return;
+      }
+      if (typeof declinePendingApplicationsForTask === 'function') {
+        await declinePendingApplicationsForTask(String(taskId));
+      }
+      showToast('Posting cancelled');
+      loadData();
+    }
+  });
+};
+
+window.confirmCancelInProgress = function(taskId) {
+  var task = allTasks.find(function(t) { return String(getField(t, 'TASK_ID')) === String(taskId); });
+  var title = task ? getField(task, 'TITLE') : 'this task';
+  showConfirm({
+    title: 'Cancel this task?',
+    message: '“' + title + '” will be marked cancelled. The assigned worker will see it in their history. Use this if the job is no longer happening.',
+    confirmLabel: 'Cancel task',
+    onConfirm: async function() {
+      var result = await cancelTask(String(taskId));
+      if (!result.success) {
+        showToast('Could not cancel task. Try again.', '#ef4444');
+        return;
+      }
+      showToast('Task cancelled');
+      loadData();
+    }
+  });
 };
 </script>
 
@@ -745,7 +986,13 @@ onAuthStateChanged(auth, function (user) {
   clearTimeout(redirectTimeout);
   if (!user) { window.location.href = 'login.html'; return; }
   window._currentUser = user;
-  if (typeof window.loadData === 'function') window.loadData();
+  if (typeof syncCurrentUserProfile === 'function') {
+    syncCurrentUserProfile(user).then(function () {
+      if (typeof window.loadData === 'function') window.loadData();
+    });
+  } else if (typeof window.loadData === 'function') {
+    window.loadData();
+  }
 });
 </script>
 </body>

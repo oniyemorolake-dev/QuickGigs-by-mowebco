@@ -161,6 +161,8 @@ onAuthStateChanged(auth, (user) => {
 });
 </script>
 
+<script src="qg-utils.js"></script>
+<script src="qg-config.js"></script>
 <script src="supabase-db.js"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
@@ -218,7 +220,10 @@ function countUnread(conv, userId){
 
 function mapConversation(conv, userId){
   var isPoster = conv.poster_id === userId;
-  var otherName = isPoster ? (conv.worker_name || 'Worker') : (conv.poster_name || 'Poster');
+  var otherName = isPoster ? (conv.worker_name || 'Tasker') : (conv.poster_name || 'Poster');
+  if (typeof isGenericDisplayName === 'function') {
+    if (isGenericDisplayName(otherName)) otherName = isPoster ? 'Tasker' : 'Poster';
+  }
   var cat = (conv.task_category || 'other').toLowerCase();
   return {
     id: conv.conv_id,
@@ -239,12 +244,18 @@ function mapConversation(conv, userId){
 async function loadConversations(){
   var userId = window._currentUser ? window._currentUser.uid : null;
   if(!userId) return;
+  if (typeof syncCurrentUserProfile === 'function' && window._currentUser) {
+    await syncCurrentUserProfile(window._currentUser);
+  }
   var content = document.getElementById('mainContent');
   content.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Loading messages...</div></div>';
 
   try {
     var rows = await getConversationsForUser(userId);
-    conversations = (rows || []).map(function(c){ return mapConversation(c, userId); });
+    var enriched = typeof enrichConversationNames === 'function'
+      ? await Promise.all((rows || []).map(function(c) { return enrichConversationNames(c); }))
+      : (rows || []);
+    conversations = enriched.map(function(c){ return mapConversation(c, userId); });
     filtered = conversations.slice();
     renderContent();
   } catch(err) {
@@ -269,11 +280,15 @@ function renderContent(){
   }
 
   // How it works banner
+  var bannerCopy = typeof getMessagesBannerCopy === 'function' ? getMessagesBannerCopy() : {
+    title: 'Chat locked until payment',
+    sub: 'Messaging opens after the poster pays through QuickGigs.'
+  };
   var html = '<div class="locked-banner">' +
-    '<div class="locked-icon">💬</div>' +
+    '<div class="locked-icon">🔒</div>' +
     '<div class="locked-text">' +
-      '<div class="locked-title">Beta — chat opens when you apply</div>' +
-      '<div class="locked-sub">For testing, messaging unlocks as soon as someone applies. Payment escrow will be required before launch.</div>' +
+      '<div class="locked-title">'+window.escapeHtml(bannerCopy.title)+'</div>' +
+      '<div class="locked-sub">'+window.escapeHtml(bannerCopy.sub)+'</div>' +
     '</div>' +
   '</div>';
 

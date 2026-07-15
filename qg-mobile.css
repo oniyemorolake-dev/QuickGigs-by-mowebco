@@ -1,0 +1,95 @@
+/* QuickGigs — mobile shell: fixed nav, keyboard, safe areas */
+
+.tab-bar {
+  position: fixed !important;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 200;
+  padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+body.qg-keyboard-open .tab-bar {
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
+}
+
+body {
+  padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+}
+
+body.qg-page-chat {
+  padding-bottom: 0;
+  height: 100dvh;
+  height: 100vh;
+  overflow: hidden;
+}
+
+@supports (height: 100dvh) {
+  body.qg-page-chat {
+    height: 100dvh;
+  }
+}
+
+.qg-page-wrap,
+.content {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Min tap targets (accessibility) */
+.tab-item,
+.act-btn,
+.accept-btn,
+.send-btn,
+.mode-btn,
+.submit-btn {
+  min-height: 44px;
+}
+
+.tab-item {
+  justify-content: center;
+}
+
+/* Focus visible for keyboard users */
+:focus-visible {
+  outline: 2px solid #c8a8e9;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .hint-box {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .hint-text {
+    line-height: 1.55;
+  }
+  .nav {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .chat-scroll {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .task-banner {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .bubble {
+    max-width: 85%;
+  }
+}

@@ -20,6 +20,35 @@ function escapeHtml(text) {
 window.sanitizeInput = sanitizeInput;
 window.escapeHtml = escapeHtml;
 
+/** Capitalize each word — e.g. "john smith" → "John Smith" */
+function formatPersonName(name) {
+  if (!name) return '';
+  return String(name).trim().split(/\s+/).filter(Boolean).map(function(part) {
+    if (part.length <= 2 && part.indexOf("'") === -1) {
+      return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+    }
+    return part.split(/(['-])/).map(function(chunk) {
+      if (chunk === "'" || chunk === '-') return chunk;
+      if (!chunk) return chunk;
+      return chunk.charAt(0).toUpperCase() + chunk.slice(1).toLowerCase();
+    }).join('');
+  }).join(' ');
+}
+
+window.formatPersonName = formatPersonName;
+
+function attachNameFormatter(inputId) {
+  var input = document.getElementById(inputId);
+  if (!input || input.dataset.nameFormatReady) return;
+  input.dataset.nameFormatReady = '1';
+  input.setAttribute('autocomplete', 'name');
+  input.addEventListener('blur', function() {
+    if (input.value.trim()) input.value = formatPersonName(input.value);
+  });
+}
+
+window.attachNameFormatter = attachNameFormatter;
+
 function attachPasswordToggle(inputId) {
   var input = document.getElementById(inputId);
   if (!input || input.dataset.toggleReady) return;
@@ -65,3 +94,51 @@ function getDashboardUrl(roleOverride) {
 
 window.attachPasswordToggle = attachPasswordToggle;
 window.getDashboardUrl = getDashboardUrl;
+
+// ── Off-platform contact blocking (chat + applications) ──
+var FRAUD_PATTERNS = [
+  /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/,
+  /\b\(\d{3}\)\s?\d{3}[-.\s]?\d{4}\b/,
+  /\b\d{10,11}\b/,
+  /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/,
+  /\+\d[\d\s\-]{8,}/,
+  /\b(?:call|text|whatsapp|wa\.me|telegram|tgm|tele|snapchat|snap|instagram|insta|facebook|fb\.com|discord|signal|viber)\b/i,
+  /\b(?:venmo|cash\s?app|e[\-\s]?transfer|interac|paypal|zelle|etransfer)\b/i,
+  /\b(?:my\s+number|reach\s+me\s+at|contact\s+me\s+at|dm\s+me|message\s+me\s+on)\b/i,
+  /\b(?:four|five|six|seven|eight|nine)\s+(?:zero|one|two|three|four|five|six|seven|eight|nine)\b/i,
+  /@[a-zA-Z0-9._]{3,}/,
+  /\b[a-z]{2,6}\.[a-z]{2,6}\b/i
+];
+
+function digitsOnly(str) {
+  return String(str || '').replace(/\D/g, '');
+}
+
+function containsOffPlatformContact(text, recentTexts) {
+  if (!text) return false;
+  if (window.QG_CONFIG && window.QG_CONFIG.blockOffPlatformContact === false) return false;
+  var val = String(text).trim();
+
+  if (FRAUD_PATTERNS.some(function(p) { return p.test(val); })) return true;
+
+  // Split phone trick: "587", "990", "8645" sent as separate messages
+  if (/^\d{2,6}$/.test(val)) return true;
+
+  if (recentTexts && recentTexts.length) {
+    var parts = recentTexts.slice(-4).concat([val]);
+    var combined = parts.map(digitsOnly).join('');
+    if (combined.length >= 7) return true;
+    var withSpaces = parts.join(' ');
+    if (digitsOnly(withSpaces).length >= 10) return true;
+  }
+
+  return false;
+}
+
+function getOffPlatformWarning() {
+  return 'You can\'t share phone numbers, emails, or off-platform payment details on QuickGigs. Keep everything here until payment is complete.';
+}
+
+window.containsOffPlatformContact = containsOffPlatformContact;
+window.containsFraud = containsOffPlatformContact;
+window.getOffPlatformWarning = getOffPlatformWarning;

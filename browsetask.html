@@ -196,6 +196,8 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
     </div>
     <span class="modal-label">Message to poster</span>
     <textarea class="modal-input" id="offerMsg" placeholder="Tell them why you're the right person..."></textarea>
+    <div class="field-error" id="offerFraudError" style="display:none;color:#ef4444;font-size:12px;margin-top:8px;"></div>
+    <div id="modalPhotoWrap" style="display:none;margin-top:12px;"></div>
     <div class="modal-btns">
       <button class="cancel-btn" onclick="closeModal()">Cancel</button>
       <button class="submit-btn" id="applySubmitBtn" onclick="submitApplication()">Send application</button>
@@ -231,10 +233,12 @@ onAuthStateChanged(auth, (user) => {
   const name = user.displayName || user.email.split('@')[0];
   document.getElementById('avatarEl').textContent = name.charAt(0).toUpperCase();
   window._currentUser = user;
+  if (typeof syncCurrentUserProfile === 'function') syncCurrentUserProfile(user);
 });
 </script>
 
 <script src="qg-utils.js"></script>
+<script src="qg-config.js"></script>
 <script src="supabase-db.js"></script>
 <script src="qg-location.js"></script>
 <script>
@@ -274,7 +278,9 @@ function normaliseTask(row){
     posted:'Recently',applicants:0,
     status:(row.STATUS||row.status||'open').toLowerCase(),
     posterId:posterUid,
-    posterName:posterName||'QuickGigs user'
+    posterName:posterName||'QuickGigs user',
+    photoUrls: typeof parsePhotoUrls === 'function' ? parsePhotoUrls(row.photo_urls || row.PHOTO_URLS) : [],
+    requiresPhotos: !!(row.requires_photos || row.REQUIRES_PHOTOS)
   };
 }
 var allTasks=[],activeMode='all',activeCat='all',activeTask=null;
@@ -355,10 +361,23 @@ window.openModal=function(id,e){
   activeTask=allTasks.find(function(t){return t.id==id;});
   if(!activeTask)return;
   document.getElementById('modalTitle').textContent=activeTask.catLabel+' — '+activeTask.title.substring(0,40)+(activeTask.title.length>40?'…':'');
-  document.getElementById('modalSub').textContent='Budget: '+activeTask.priceLabel+' · '+activeTask.location;
+  var sub = 'Budget: '+activeTask.priceLabel+' · '+activeTask.location;
+  if (activeTask.requiresPhotos) sub += ' · 📷 Photo updates requested';
+  document.getElementById('modalSub').textContent=sub;
   document.getElementById('offerPrice').value=activeTask.price;
   document.getElementById('offerMsg').value='';
   document.getElementById('offerAvail').value='';
+  document.getElementById('offerFraudError').style.display='none';
+  var photoWrap = document.getElementById('modalPhotoWrap');
+  if (activeTask.photoUrls && activeTask.photoUrls.length) {
+    photoWrap.style.display='block';
+    photoWrap.innerHTML = '<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Reference photos</div><div style="display:flex;gap:8px;overflow-x:auto;">' +
+      activeTask.photoUrls.map(function(url){ return '<img src="'+esc(url)+'" alt="Task photo" style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:0.5px solid var(--border);">'; }).join('') +
+      '</div>';
+  } else {
+    photoWrap.style.display='none';
+    photoWrap.innerHTML='';
+  }
   document.getElementById('modalOverlay').classList.add('open');
 };
 window.closeModal=function(){document.getElementById('modalOverlay').classList.remove('open');};
@@ -368,15 +387,27 @@ window.submitApplication=async function(){
   var price=document.getElementById('offerPrice').value;
   var msg=window.sanitizeInput(document.getElementById('offerMsg').value, 1000);
   var avail=window.sanitizeInput(document.getElementById('offerAvail').value, 120);
+  var fraudErr = document.getElementById('offerFraudError');
   if(!price||price<20){alert('Please enter an offer of at least $20');return;}
   if(!msg){alert('Please add a message to the poster');return;}
+  if (typeof containsOffPlatformContact === 'function' && containsOffPlatformContact(msg + ' ' + avail)) {
+    fraudErr.textContent = typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : 'Remove contact or payment details from your message.';
+    fraudErr.style.display = 'block';
+    return;
+  }
+  fraudErr.style.display = 'none';
   var btn=document.getElementById('applySubmitBtn');
   btn.textContent='Sending...';btn.disabled=true;
   var userId=window._currentUser?window._currentUser.uid:'anonymous';
   var workerName = window._currentUser
     ? (window._currentUser.displayName || window._currentUser.email.split('@')[0])
     : '';
+  if (typeof formatPersonName === 'function' && workerName) workerName = formatPersonName(workerName);
+  if (typeof syncCurrentUserProfile === 'function' && window._currentUser) {
+    await syncCurrentUserProfile(window._currentUser);
+  }
   var chatNote = '';
+  var chatUnlocked = typeof resolveChatUnlockedOnCreate === 'function' && resolveChatUnlockedOnCreate('application');
   try {
     var result = await dbSubmitApplication({
       task_id: activeTask.id,
@@ -388,24 +419,34 @@ window.submitApplication=async function(){
     if (!result.success) throw new Error(result.error || 'save failed');
 
     if (activeTask.posterId && userId !== 'anonymous') {
+      var posterName = activeTask.posterName || 'Poster';
+      if (typeof getUserNameByFirebaseUid === 'function') {
+        var fetchedPoster = await getUserNameByFirebaseUid(activeTask.posterId);
+        if (fetchedPoster) posterName = fetchedPoster;
+      }
       var convResult = await createConversation({
         task_id: activeTask.id,
         poster_id: activeTask.posterId,
         worker_id: userId,
-        poster_name: activeTask.posterName || 'Poster',
+        poster_name: posterName,
         worker_name: workerName,
         task_title: activeTask.title,
         task_category: activeTask.cat,
-        status: 'application',
-        is_unlocked: true
+        status: 'application'
       });
-      if (convResult.success && convResult.data && convResult.data.conv_id) {
+      if (convResult.success && convResult.data && convResult.data.conv_id && chatUnlocked) {
         var offerMsg = msg + (avail ? ' — Available: ' + avail : '') + ' — My offer: $' + price;
-        await sendChatMessage(convResult.data.conv_id, userId, offerMsg);
-        chatNote = ' Open Messages to chat with the poster.';
+        var msgResult = await sendChatMessage(convResult.data.conv_id, userId, offerMsg);
+        if (msgResult.blocked) {
+          chatNote = ' Application saved — chat stays locked until payment.';
+        } else {
+          chatNote = ' Open Messages to chat with the poster.';
+        }
+      } else if (convResult.success) {
+        chatNote = ' Application saved — chat opens after acceptance and payment.';
       } else if (!convResult.success) {
         console.warn('Chat setup failed:', convResult.error);
-        chatNote = ' (Chat pending — run supabase/messaging.sql in Supabase if messages are empty.)';
+        chatNote = ' (Run supabase/messaging.sql if messages are empty.)';
       }
     }
   } catch(err) {

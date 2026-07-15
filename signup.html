@@ -107,6 +107,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);font-s
 <script>
 attachPasswordToggle('password');
 attachPasswordToggle('confirmPassword');
+attachNameFormatter('name');
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
@@ -160,7 +161,9 @@ document.getElementById('signupForm').addEventListener('submit', async function(
   okMsg.style.display    = 'none';
   document.querySelectorAll('.error').forEach(function(el){ el.style.display = 'none'; });
 
-  var name    = window.sanitizeInput(document.getElementById('name').value, 80);
+  var name    = typeof formatPersonName === 'function'
+    ? formatPersonName(window.sanitizeInput(document.getElementById('name').value, 80))
+    : window.sanitizeInput(document.getElementById('name').value, 80);
   var email   = document.getElementById('email').value.trim();
   var phone   = window.sanitizeInput(document.getElementById('phone').value, 20);
   var password= document.getElementById('password').value;
