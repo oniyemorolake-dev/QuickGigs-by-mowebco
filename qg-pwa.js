@@ -5,7 +5,9 @@
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js').catch(function (err) {
+      navigator.serviceWorker.register('/sw.js?v=3').then(function (reg) {
+        reg.update();
+      }).catch(function (err) {
         console.warn('SW registration failed:', err);
       });
     });

@@ -1,23 +1,23 @@
-/* QuickGigs service worker — offline shell + installable PWA */
-var CACHE_NAME = 'quickgigs-v1';
-var SHELL = [
-  '/',
-  '/index.html',
-  '/dashboard.html',
-  '/browsetask.html',
-  '/manifest.json',
+/* QuickGigs service worker — offline fallback; app files always network-first */
+var CACHE_NAME = 'quickgigs-v3';
+var OFFLINE_FALLBACK = '/dashboard.html';
+
+var STATIC_ASSETS = [
   '/QuickGigsLogo.png',
-  '/qg-utils.js',
-  '/qg-config.js',
-  '/qg-brand.css',
-  '/qg-layout.css',
-  '/qg-features.css'
+  '/manifest.json'
 ];
+
+function isAppShellRequest(url) {
+  var path = url.pathname || '';
+  if (path === '/' || path.endsWith('.html')) return true;
+  if (path.endsWith('.js') || path.endsWith('.css')) return true;
+  return false;
+}
 
 self.addEventListener('install', function (event) {
   event.waitUntil(
     caches.open(CACHE_NAME).then(function (cache) {
-      return cache.addAll(SHELL).catch(function () { /* partial cache ok */ });
+      return cache.addAll(STATIC_ASSETS).catch(function () { /* partial ok */ });
     }).then(function () { return self.skipWaiting(); })
   );
 });
@@ -34,9 +34,30 @@ self.addEventListener('activate', function (event) {
 
 self.addEventListener('fetch', function (event) {
   if (event.request.method !== 'GET') return;
+
   var url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.indexOf('/rest/v1/') >= 0 || url.pathname.indexOf('/storage/') >= 0) return;
+
+  if (isAppShellRequest(url)) {
+    event.respondWith(
+      fetch(event.request).then(function (response) {
+        if (response && response.status === 200 && response.type === 'basic') {
+          var copy = response.clone();
+          caches.open(CACHE_NAME).then(function (cache) { cache.put(event.request, copy); });
+        }
+        return response;
+      }).catch(function () {
+        return caches.match(event.request).then(function (cached) {
+          if (cached) return cached;
+          if (event.request.mode === 'navigate') {
+            return caches.match(OFFLINE_FALLBACK);
+          }
+        });
+      })
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then(function (cached) {
@@ -46,10 +67,6 @@ self.addEventListener('fetch', function (event) {
         var copy = response.clone();
         caches.open(CACHE_NAME).then(function (cache) { cache.put(event.request, copy); });
         return response;
-      }).catch(function () {
-        if (event.request.mode === 'navigate') {
-          return caches.match('/dashboard.html');
-        }
       });
     })
   );

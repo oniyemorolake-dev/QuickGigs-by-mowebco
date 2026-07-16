@@ -1,6 +1,19 @@
-/* QuickGigs — report user / task / message (Profile Studio–style sheet) */
+/* QuickGigs — report user / task / message (Profile Studio–style sheet) v3 */
 (function () {
-  var SHEET_VER = '20260716b';
+  /* Remove any stale report/dispute DOM from cached old scripts */
+  function purgeStaleReportDom() {
+    try {
+      document.querySelectorAll('#qgReportOverlay, #qgDisputeOverlay, .qg-report-overlay').forEach(function (node) {
+        node.remove();
+      });
+    } catch (e) { /* ignore */ }
+  }
+  purgeStaleReportDom();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', purgeStaleReportDom);
+  }
+
+  var SHEET_VER = '20260716c';
 
   function ensureQgSheetStyles() {
     var head = document.head || document.documentElement;
@@ -225,10 +238,7 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
-    var stale = document.getElementById('qgReportOverlay');
-    if (stale && !stale.classList.contains('open')) stale.remove();
-  });
+  document.addEventListener('DOMContentLoaded', purgeStaleReportDom);
 
   function reportButtonHtml(targetType, targetId, targetLabel) {
     var safeLabel = (targetLabel || '').replace(/"/g, '&quot;');
