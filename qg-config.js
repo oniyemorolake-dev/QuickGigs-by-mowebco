@@ -2,6 +2,8 @@
 window.QG_CONFIG = {
   // When chat unlocks: 'payment' (launch) | 'accept' (beta) | 'apply' (internal testing only)
   chatUnlockAfter: 'accept',
+  // Set true ONLY after Supabase Auth → Firebase is enabled AND rls-secure.sql is applied
+  supabaseFirebaseAuth: false,
   blockOffPlatformContact: true,
   posterOnlyChatImages: true,
   maxTaskPhotos: 3,

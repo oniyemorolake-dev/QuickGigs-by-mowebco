@@ -157,7 +157,14 @@ onAuthStateChanged(auth, (user) => {
   clearTimeout(redirectTimeout);
   if (!user) { window.location.href = 'login.html'; return; }
   window._currentUser = user;
-  loadConversations();
+  function startMessages() {
+    if (typeof window.loadConversations === 'function') {
+      window.loadConversations();
+    } else {
+      setTimeout(startMessages, 50);
+    }
+  }
+  startMessages();
 });
 </script>
 
@@ -244,6 +251,10 @@ function mapConversation(conv, userId){
 async function loadConversations(){
   var userId = window._currentUser ? window._currentUser.uid : null;
   if(!userId) return;
+  if (typeof getConversationsForUser !== 'function') {
+    document.getElementById('mainContent').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Messages failed to load</div><div class="empty-sub">Refresh the page. If this keeps happening, check your connection.</div></div>';
+    return;
+  }
   if (typeof syncCurrentUserProfile === 'function' && window._currentUser) {
     await syncCurrentUserProfile(window._currentUser);
   }
@@ -260,9 +271,14 @@ async function loadConversations(){
     renderContent();
   } catch(err) {
     console.error('Failed to load conversations:', err);
-    content.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Could not load messages</div><div class="empty-sub">Make sure you ran supabase/messaging.sql in your Supabase project.</div></div>';
+    var hint = String(err && err.message || '').indexOf('401') >= 0
+      ? 'Session error — hard refresh and log in again.'
+      : 'Make sure you ran supabase/messaging.sql in your Supabase project.';
+    content.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Could not load messages</div><div class="empty-sub">'+window.escapeHtml(hint)+'</div></div>';
   }
 }
+
+window.loadConversations = loadConversations;
 
 function renderContent(){
   var content = document.getElementById('mainContent');
@@ -279,18 +295,22 @@ function renderContent(){
     return;
   }
 
-  // How it works banner
-  var bannerCopy = typeof getMessagesBannerCopy === 'function' ? getMessagesBannerCopy() : {
-    title: 'Chat locked until payment',
-    sub: 'Messaging opens after the poster pays through QuickGigs.'
-  };
-  var html = '<div class="locked-banner">' +
-    '<div class="locked-icon">🔒</div>' +
-    '<div class="locked-text">' +
-      '<div class="locked-title">'+window.escapeHtml(bannerCopy.title)+'</div>' +
-      '<div class="locked-sub">'+window.escapeHtml(bannerCopy.sub)+'</div>' +
-    '</div>' +
-  '</div>';
+  // Banner — only when chat is payment-gated
+  var html = '';
+  var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept';
+  if (rule === 'payment') {
+    var bannerCopy = typeof getMessagesBannerCopy === 'function' ? getMessagesBannerCopy() : {
+      title: 'Chat locked until payment',
+      sub: 'Messaging opens after the poster pays through QuickGigs.'
+    };
+    html += '<div class="locked-banner">' +
+      '<div class="locked-icon">🔒</div>' +
+      '<div class="locked-text">' +
+        '<div class="locked-title">'+window.escapeHtml(bannerCopy.title)+'</div>' +
+        '<div class="locked-sub">'+window.escapeHtml(bannerCopy.sub)+'</div>' +
+      '</div>' +
+    '</div>';
+  }
 
   // Active conversations
   var active = filtered.filter(function(c){ return c.status === 'in_progress'; });

@@ -13,19 +13,22 @@ const SUPABASE_HEADERS = {
   'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
 };
 
-/** Firebase ID token when logged in — required after running supabase/rls-secure.sql */
+/** Supabase REST auth — anon key by default; Firebase JWT only when configured. */
 async function getSupabaseHeaders(extra, opts) {
   opts = opts || {};
   var headers = { 'apikey': SUPABASE_ANON_KEY };
   if (!opts.noContentType) headers['Content-Type'] = 'application/json';
   var bearer = SUPABASE_ANON_KEY;
-  try {
-    var user = window._currentUser;
-    if (user && typeof user.getIdToken === 'function') {
-      bearer = await user.getIdToken(false);
+  var useFirebaseJwt = window.QG_CONFIG && window.QG_CONFIG.supabaseFirebaseAuth === true;
+  if (useFirebaseJwt) {
+    try {
+      var user = window._currentUser;
+      if (user && typeof user.getIdToken === 'function') {
+        bearer = await user.getIdToken(false);
+      }
+    } catch (err) {
+      console.warn('Supabase auth: Firebase JWT failed, using anon key', err);
     }
-  } catch (err) {
-    console.warn('Supabase auth: using anon key (log in or enable Firebase in Supabase)', err);
   }
   headers['Authorization'] = 'Bearer ' + bearer;
   if (extra) Object.assign(headers, extra);
