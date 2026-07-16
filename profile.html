@@ -68,7 +68,8 @@ body.light .mode-btn{background:rgba(0,0,0,0.2);color:#fff;}
 .avatar-camera{position:absolute;bottom:2px;right:2px;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);border:3px solid var(--bg);display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,0.25);}
 .avatar-edit-hint{font-size:11px;color:var(--text-faint);margin-bottom:8px;}
 .verified{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid var(--bg);}
-.profile-name{font-size:22px;font-weight:600;margin-bottom:6px;text-align:center;}
+.profile-name{font-size:22px;font-weight:600;margin-bottom:4px;text-align:center;}
+.profile-pronouns{font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:6px;font-weight:400;}
 .role-tags{display:flex;gap:6px;justify-content:center;margin-bottom:10px;flex-wrap:wrap;}
 .role-tag{font-size:11px;padding:4px 12px;border-radius:20px;background:rgba(107,63,160,0.25);color:var(--lavender);border:0.5px solid rgba(200,168,233,0.2);}
 body.light .role-tag{background:#ede9ff;border-color:#d8cfff;}
@@ -323,6 +324,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
   </div>
   <div class="avatar-edit-hint" id="avatarHint" style="display:none">Tap photo to change</div>
   <div class="profile-name" id="profileName">Loading...</div>
+  <div class="profile-pronouns" id="profilePronouns" style="display:none"></div>
   <div id="verifiedBadgeWrap"></div>
   <div class="role-tags" id="roleTags"></div>
   <div id="trustBadges"></div>
@@ -446,6 +448,8 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
         <div class="edit-name-wrap">
           <input class="edit-name-input" id="editName" type="text" placeholder="Your name" maxlength="40" autocomplete="name">
         </div>
+        <label class="edit-label" for="editPronouns" style="margin-top:12px">Pronouns</label>
+        <input class="edit-input" id="editPronouns" type="text" placeholder="e.g. she/her, they/them" maxlength="40" style="margin-bottom:0">
         <div class="edit-bio-wrap">
           <textarea class="edit-bio-input" id="editBio" placeholder=" " maxlength="160"></textarea>
           <div class="bio-prompt" id="bioPrompt">What makes you great at gigs?</div>
@@ -792,6 +796,12 @@ async function loadProfile(user) {
     if (dbUser.availability) dbProfile.availability = dbUser.availability;
     if (dbUser.service_area) dbProfile.service_area = String(dbUser.service_area).trim();
     if (dbUser.languages) dbProfile.languages = String(dbUser.languages).trim();
+    if (dbUser.pronouns) dbProfile.pronouns = String(dbUser.pronouns).trim();
+    if (dbUser.gender) dbProfile.gender = String(dbUser.gender).trim();
+    if (dbUser.date_of_birth) dbProfile.date_of_birth = dbUser.date_of_birth;
+    if (dbUser.identity_collected_at) dbProfile.identity_collected_at = dbUser.identity_collected_at;
+    if (dbUser.guardian_consent_status) dbProfile.guardian_consent_status = dbUser.guardian_consent_status;
+    if (dbUser.account_status) dbProfile.account_status = dbUser.account_status;
     if (typeof parseUserSkills === 'function') {
       var parsedSkills = parseUserSkills(dbUser);
       if (parsedSkills.length) dbProfile.skills = parsedSkills;
@@ -885,6 +895,16 @@ function renderProfile(user, isOwnProfile) {
     document.getElementById('photoOptionalBanner').style.display = 'none';
   }
   document.getElementById('profileName').textContent = name;
+  var pronounsEl = document.getElementById('profilePronouns');
+  if (pronounsEl) {
+    var pr = profileData.pronouns || '';
+    if (pr && pr.toLowerCase() !== 'prefer not to say') {
+      pronounsEl.textContent = pr;
+      pronounsEl.style.display = 'block';
+    } else {
+      pronounsEl.style.display = 'none';
+    }
+  }
 
   var memberEl = document.getElementById('memberSince');
   if (profileData.memberSince) {
@@ -980,6 +1000,7 @@ async function renderReviews(reviews) {
 
 window.openEditModal = function() {
   document.getElementById('editName').value = profileData.name || '';
+  document.getElementById('editPronouns').value = (profileData.pronouns && profileData.pronouns !== 'prefer not to say') ? profileData.pronouns : '';
   document.getElementById('editBio').value = profileData.bio || '';
   var wCard = document.getElementById('workerFieldsCard');
   if (wCard) {
@@ -1065,6 +1086,7 @@ window.saveProfile = async function() {
   var btn = document.getElementById('editSaveBtn');
   if (btn) { btn.disabled = true; btn.classList.add('is-saving'); btn.querySelector('.save-text').textContent = 'Saving…'; }
   var name = document.getElementById('editName').value.trim() || profileData.name;
+  var pronouns = document.getElementById('editPronouns') ? document.getElementById('editPronouns').value.trim() : '';
   if (typeof formatPersonName === 'function' && name) name = formatPersonName(name);
   var bio = document.getElementById('editBio').value.trim();
   var skills = Array.from(document.querySelectorAll('.skill-toggle.selected')).map(function(el) { return el.getAttribute('data-skill') || el.textContent; });
@@ -1072,7 +1094,7 @@ window.saveProfile = async function() {
   var service_area = document.getElementById('editServiceArea') ? document.getElementById('editServiceArea').value.trim() : '';
   var languages = document.getElementById('editLanguages') ? document.getElementById('editLanguages').value.trim() : '';
 
-  profileData = Object.assign({}, profileData, { name: name, bio: bio, skills: skills, availability: availability, service_area: service_area, languages: languages });
+  profileData = Object.assign({}, profileData, { name: name, pronouns: pronouns, bio: bio, skills: skills, availability: availability, service_area: service_area, languages: languages });
   localStorage.setItem('qg-profile-' + user.uid, JSON.stringify(profileData));
 
   if (typeof upsertUserProfile === 'function') {
@@ -1086,7 +1108,9 @@ window.saveProfile = async function() {
       skills: skills,
       availability: availability,
       service_area: service_area,
-      languages: languages
+      languages: languages,
+      pronouns: pronouns,
+      identity_collected_at: profileData.identity_collected_at || new Date().toISOString()
     });
   }
 

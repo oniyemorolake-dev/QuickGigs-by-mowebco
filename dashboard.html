@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="qg-features.css?v=20260716">
 <script src="qg-brand-init.js"></script>
 <script src="qg-pwa.js?v=4"></script>
+<link rel="stylesheet" href="qg-cookies.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -156,7 +157,10 @@ body.light .badge-standard{background:#ede9ff;color:var(--purple);}
 .tab-lbl{font-size:10px;color:var(--text-faint);transition:color 0.15s;}
 .tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:var(--purple-light);}
 body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color:var(--purple);}
-.legal-footer{text-align:center;padding:20px;font-size:11px;color:var(--text-faint);}
+.legal-footer{text-align:center;padding:20px 20px 120px;font-size:11px;color:var(--text-faint);}
+.guardian-banner{margin:12px 20px 0;padding:14px 16px;border-radius:14px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.28);font-size:13px;line-height:1.55;color:var(--text);}
+.guardian-banner strong{display:block;margin-bottom:4px;font-weight:600;}
+.guardian-banner a{color:var(--purple-light);font-weight:500;}
 .legal-footer a{color:var(--purple-light);text-decoration:none;}
 .legal-footer a:hover{text-decoration:underline;}
 </style>
@@ -185,6 +189,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 </nav>
 
 <!-- GREETING + SMART HERO -->
+<div id="guardianBanner" style="display:none"></div>
 <div class="greeting qg-page-wide">
   <div class="mode-tag tag-poster" id="modeTag">📋 Poster mode</div>
   <div class="greet-name" id="greetName">Good evening 👋</div>
@@ -255,6 +260,23 @@ onAuthStateChanged(auth, async (user) => {
   const firstName = name.split(' ')[0];
   window._userName = firstName;
   document.getElementById('avatarEl').textContent = firstName.charAt(0).toUpperCase();
+  if (typeof getUserByFirebaseUid === 'function') {
+    getUserByFirebaseUid(user.uid).then(function (dbUser) {
+      if (typeof isAccountPendingGuardian === 'function' && isAccountPendingGuardian(dbUser)) {
+        var banner = document.getElementById('guardianBanner');
+        if (banner) {
+          var pending = {};
+          try { pending = JSON.parse(localStorage.getItem('qg-guardian-pending') || '{}'); } catch (e) {}
+          var email = (dbUser && dbUser.guardian_email) || pending.guardianEmail || 'your parent';
+          var link = pending.consentUrl || ('https://quickgigs.ca/parent-consent.html?token=' + (dbUser.guardian_consent_token || ''));
+          banner.style.display = 'block';
+          banner.className = 'guardian-banner qg-page-wide';
+          banner.innerHTML = '<strong>⏳ Waiting for parent approval</strong>You can browse, but posting and applying are paused until ' +
+            String(email).replace(/</g, '') + ' approves. <a href="' + link.replace(/"/g, '') + '" target="_blank" rel="noopener">Open consent link</a>';
+        }
+      }
+    });
+  }
   loadDashboardData(user.uid);
 });
 </script>

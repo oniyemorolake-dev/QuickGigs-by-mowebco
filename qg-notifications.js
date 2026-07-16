@@ -32,6 +32,15 @@
           '“' + (p.preview || 'Open QuickGigs to read') + '”\n\n' +
           (p.link || 'https://quickgigs.ca/messages.html');
       }
+    },
+    guardian_consent: {
+      subject: function (p) { return 'Approve ' + (p.teenName || 'your teen') + '\'s QuickGigs account'; },
+      body: function (p) {
+        return 'Hi,\n\n' + (p.teenName || 'Your teen') + ' signed up for QuickGigs and listed you as their parent/guardian.\n\n' +
+          'Because they are 16 or 17, we need your approval before they can post or apply to tasks.\n\n' +
+          'Approve their account here:\n' + (p.consentUrl || 'https://quickgigs.ca/parent-consent.html') + '\n\n' +
+          'If you did not authorize this, ignore this email or contact support@quickgigs.ca.\n\n— QuickGigs';
+      }
     }
   };
 
@@ -143,7 +152,21 @@
     });
   }
 
+  async function queueGuardianConsentEmail(opts) {
+    if (!opts || !opts.guardianEmail) return { success: false };
+    return queueEmailNotification({
+      type: 'guardian_consent',
+      userId: opts.userId || 'guardian',
+      email: opts.guardianEmail,
+      payload: {
+        teenName: opts.teenName,
+        consentUrl: opts.consentUrl
+      }
+    });
+  }
+
   window.queueEmailNotification = queueEmailNotification;
+  window.queueGuardianConsentEmail = queueGuardianConsentEmail;
   window.notifyPosterNewApplication = notifyPosterNewApplication;
   window.notifyWorkerAccepted = notifyWorkerAccepted;
   window.notifyTaskCompleted = notifyTaskCompleted;

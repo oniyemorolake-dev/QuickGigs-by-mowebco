@@ -671,6 +671,17 @@ async function upsertUserProfile(userData) {
   if (userData.availability !== undefined) row.availability = userData.availability;
   if (userData.service_area !== undefined) row.service_area = String(userData.service_area || '').trim();
   if (userData.languages !== undefined) row.languages = String(userData.languages || '').trim();
+  if (userData.pronouns !== undefined) row.pronouns = String(userData.pronouns || '').trim();
+  if (userData.gender !== undefined) row.gender = String(userData.gender || '').trim();
+  if (userData.date_of_birth) row.date_of_birth = userData.date_of_birth;
+  if (userData.identity_collected_at) row.identity_collected_at = userData.identity_collected_at;
+  if (userData.guardian_name !== undefined) row.guardian_name = String(userData.guardian_name || '').trim();
+  if (userData.guardian_email !== undefined) row.guardian_email = String(userData.guardian_email || '').trim();
+  if (userData.guardian_phone !== undefined) row.guardian_phone = String(userData.guardian_phone || '').trim();
+  if (userData.guardian_consent_status) row.guardian_consent_status = userData.guardian_consent_status;
+  if (userData.guardian_consent_at) row.guardian_consent_at = userData.guardian_consent_at;
+  if (userData.guardian_consent_token) row.guardian_consent_token = userData.guardian_consent_token;
+  if (userData.account_status) row.account_status = userData.account_status;
   if (!row.email && !row.firebase_uid) {
     return { success: false, error: 'Missing email or firebase_uid' };
   }
@@ -697,6 +708,17 @@ async function upsertUserProfile(userData) {
     if (userData.availability !== undefined) patch.availability = userData.availability;
     if (userData.service_area !== undefined) patch.service_area = String(userData.service_area || '').trim();
     if (userData.languages !== undefined) patch.languages = String(userData.languages || '').trim();
+    if (userData.pronouns !== undefined) patch.pronouns = String(userData.pronouns || '').trim();
+    if (userData.gender !== undefined) patch.gender = String(userData.gender || '').trim();
+    if (userData.date_of_birth) patch.date_of_birth = userData.date_of_birth;
+    if (userData.identity_collected_at) patch.identity_collected_at = userData.identity_collected_at;
+    if (userData.guardian_name !== undefined) patch.guardian_name = String(userData.guardian_name || '').trim();
+    if (userData.guardian_email !== undefined) patch.guardian_email = String(userData.guardian_email || '').trim();
+    if (userData.guardian_phone !== undefined) patch.guardian_phone = String(userData.guardian_phone || '').trim();
+    if (userData.guardian_consent_status) patch.guardian_consent_status = userData.guardian_consent_status;
+    if (userData.guardian_consent_at) patch.guardian_consent_at = userData.guardian_consent_at;
+    if (userData.guardian_consent_token) patch.guardian_consent_token = userData.guardian_consent_token;
+    if (userData.account_status) patch.account_status = userData.account_status;
     var filters = [];
     if (id != null) {
       filters.push('user_id=eq.' + encodeURIComponent(String(id)));
@@ -832,7 +854,47 @@ function applyDbUserToProfileData(dbUser, target) {
   if (dbUser.availability) target.availability = dbUser.availability;
   if (dbUser.service_area) target.service_area = String(dbUser.service_area).trim();
   if (dbUser.languages) target.languages = String(dbUser.languages).trim();
+  if (dbUser.pronouns) target.pronouns = String(dbUser.pronouns).trim();
+  if (dbUser.gender) target.gender = String(dbUser.gender).trim();
+  if (dbUser.date_of_birth) target.date_of_birth = dbUser.date_of_birth;
+  if (dbUser.identity_collected_at) target.identity_collected_at = dbUser.identity_collected_at;
+  if (dbUser.guardian_consent_status) target.guardian_consent_status = dbUser.guardian_consent_status;
+  if (dbUser.account_status) target.account_status = dbUser.account_status;
   return target;
+}
+
+async function getUserByGuardianToken(token) {
+  if (!token) return null;
+  var results = await sbGet('users', 'guardian_consent_token=eq.' + encodeURIComponent(token));
+  return results && results[0] ? results[0] : null;
+}
+
+async function approveGuardianConsent(token) {
+  if (!token) return { success: false, error: 'missing_token' };
+  var user = await getUserByGuardianToken(token);
+  if (!user) return { success: false, error: 'not_found' };
+  if (user.guardian_consent_status === 'approved') return { success: true, already: true };
+  var id = getUserRowId(user);
+  var patch = {
+    guardian_consent_status: 'approved',
+    guardian_consent_at: new Date().toISOString(),
+    account_status: 'active'
+  };
+  var filters = [];
+  if (id != null) {
+    filters.push('user_id=eq.' + encodeURIComponent(String(id)));
+    filters.push('id=eq.' + encodeURIComponent(String(id)));
+  }
+  for (var i = 0; i < filters.length; i++) {
+    var result = await sbUpdate('users', patch, filters[i]);
+    if (result.success) return { success: true, name: user.name };
+  }
+  return { success: false, error: 'update_failed' };
+}
+
+function isAccountPendingGuardian(user) {
+  if (!user) return false;
+  return user.account_status === 'pending_guardian' || user.guardian_consent_status === 'pending';
 }
 
 async function resolveUserAvatarUrl(firebaseUid) {
@@ -1656,6 +1718,9 @@ window.readLocalProfileAvatar = readLocalProfileAvatar;
 window.readLocalProfileExtras = readLocalProfileExtras;
 window.parseUserSkills = parseUserSkills;
 window.applyDbUserToProfileData = applyDbUserToProfileData;
+window.getUserByGuardianToken = getUserByGuardianToken;
+window.approveGuardianConsent = approveGuardianConsent;
+window.isAccountPendingGuardian = isAccountPendingGuardian;
 window.syncProfilePhotoToDb = syncProfilePhotoToDb;
 window.resolveUserName = resolveUserName;
 window.isGenericDisplayName = isGenericDisplayName;

@@ -242,12 +242,23 @@ function getProfileUrl(uid, returnTo) {
 
 function profileNameLink(name, uid, opts) {
   opts = opts || {};
-  var label = name || 'User';
+  var label = opts.pronouns && opts.pronouns !== 'prefer not to say'
+    ? formatNameWithPronouns(name, opts.pronouns)
+    : (name || 'User');
   if (!uid) return escapeHtml(label);
   var cls = opts.className || 'profile-link';
   var style = opts.style || 'color:inherit;text-decoration:underline;text-underline-offset:2px';
   return '<a href="' + getProfileUrl(uid) + '" class="' + cls + '" style="' + style + '">' + escapeHtml(label) + '</a>';
 }
+
+function formatNameWithPronouns(name, pronouns) {
+  var n = (name || '').trim();
+  var p = (pronouns || '').trim();
+  if (!p || p.toLowerCase() === 'prefer not to say') return n || 'User';
+  return n ? n + ' · ' + p : p;
+}
+
+window.formatNameWithPronouns = formatNameWithPronouns;
 
 window.avatarGradientForName = avatarGradientForName;
 window.hasProfilePhotoUrl = hasProfilePhotoUrl;

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parent consent — QuickGigs</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="qg-trust.css">
+<style>
+.consent-card{max-width:440px;margin:40px auto;padding:28px 24px;border-radius:18px;border:0.5px solid var(--border);background:rgba(255,255,255,0.03);text-align:center;}
+.consent-card h2{font-family:'Playfair Display',serif;font-size:1.5rem;margin-bottom:10px;color:var(--text);}
+.consent-teen{font-size:15px;color:var(--lavender);margin-bottom:16px;}
+.consent-btn{display:inline-block;margin-top:16px;padding:14px 28px;border-radius:12px;border:none;background:linear-gradient(135deg,#9b6fc4,#6b3fa0);color:#fff;font-weight:600;font-size:15px;cursor:pointer;font-family:inherit;}
+.consent-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.consent-ok{color:#4ade80;font-size:15px;line-height:1.6;}
+.consent-err{color:#ff6b6b;font-size:14px;}
+</style>
+</head>
+<body class="trust-page">
+<nav class="nav">
+  <a class="nav-logo" href="index.html">QuickGigs</a>
+  <div class="nav-right"><a class="back-btn" href="index.html">← Home</a></div>
+</nav>
+<main class="content">
+  <span class="page-label">Family</span>
+  <h1 class="page-title">Parent or guardian consent</h1>
+  <p class="page-date">Required for members aged 16–17</p>
+
+  <div class="consent-card" id="consentCard">
+    <p id="consentLoading">Loading…</p>
+  </div>
+
+  <div class="info-box" style="margin-top:24px">
+    <p>By approving, you confirm you are the parent/legal guardian, agree to our <a href="terms.html">Terms</a>, and will receive all payments for tasks your teen completes.</p>
+  </div>
+</main>
+<footer class="site-footer" id="siteFooter"></footer>
+<script src="supabase-db.js"></script>
+<script src="qg-cookies.js"></script>
+<script src="qg-site.js"></script>
+<script>
+(function () {
+  var token = new URLSearchParams(window.location.search).get('token');
+  var card = document.getElementById('consentCard');
+
+  if (!token) {
+    card.innerHTML = '<p class="consent-err">Missing consent link. Ask your teen to resend from their QuickGigs dashboard.</p>';
+    return;
+  }
+
+  getUserByGuardianToken(token).then(function (user) {
+    if (!user) {
+      card.innerHTML = '<p class="consent-err">This link is invalid or expired. Contact <a href="mailto:support@quickgigs.ca">support@quickgigs.ca</a>.</p>';
+      return;
+    }
+    if (user.guardian_consent_status === 'approved') {
+      card.innerHTML = '<p class="consent-ok">✓ <strong>' + (user.name || 'Account') + '</strong> is already approved. They can post and apply to tasks.</p>' +
+        '<a class="consent-btn" href="login.html" style="text-decoration:none;display:inline-block">Go to QuickGigs</a>';
+      return;
+    }
+    var teen = user.name || 'Your teen';
+    card.innerHTML =
+      '<h2>Approve account</h2>' +
+      '<p class="consent-teen"><strong>' + teen + '</strong> wants to use QuickGigs</p>' +
+      '<p style="font-size:14px;color:var(--text-muted);line-height:1.6">They can browse while waiting. After you approve, they can post tasks and apply to gigs.</p>' +
+      '<button type="button" class="consent-btn" id="approveBtn">I approve this account</button>' +
+      '<p id="consentMsg" style="margin-top:12px"></p>';
+
+    document.getElementById('approveBtn').onclick = async function () {
+      var btn = document.getElementById('approveBtn');
+      btn.disabled = true;
+      btn.textContent = 'Approving…';
+      var result = await approveGuardianConsent(token);
+      var msg = document.getElementById('consentMsg');
+      if (result.success) {
+        card.innerHTML = '<p class="consent-ok">✓ Approved! <strong>' + teen + '</strong> can now use QuickGigs fully.</p>';
+      } else {
+        msg.className = 'consent-err';
+        msg.textContent = 'Could not approve — try again or email support@quickgigs.ca';
+        btn.disabled = false;
+        btn.textContent = 'I approve this account';
+      }
+    };
+  });
+})();
+</script>
+</body>
+</html>

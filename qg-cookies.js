@@ -1,9 +1,20 @@
 /* QuickGigs — PIPEDA cookie / storage consent banner */
 (function () {
   var KEY = 'qg-cookie-consent';
+  var CSS_HREF = 'qg-cookies.css';
+
+  function injectStyles() {
+    if (document.getElementById('qgCookieStyles')) return;
+    var link = document.createElement('link');
+    link.id = 'qgCookieStyles';
+    link.rel = 'stylesheet';
+    link.href = CSS_HREF;
+    document.head.appendChild(link);
+  }
 
   function showBanner() {
     if (localStorage.getItem(KEY) === '1') return;
+    injectStyles();
     var el = document.getElementById('qgCookieBanner');
     if (!el) {
       el = document.createElement('div');
@@ -20,6 +31,7 @@
         el.classList.remove('show');
       };
     }
+    if (document.querySelector('.tab-bar')) el.classList.add('qg-above-tabbar');
     el.classList.add('show');
   }
 
