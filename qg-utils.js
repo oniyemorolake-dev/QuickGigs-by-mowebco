@@ -216,9 +216,28 @@ function renderUserAvatarHtml(name, avatarUrl, opts) {
   return '<div class="' + cls + '" style="background:' + bg + '" title="' + label + '" aria-label="' + label + '">' + escapeHtml(initial) + '</div>';
 }
 
-function getProfileUrl(uid) {
+function getCurrentPageReturnUrl() {
+  if (typeof window === 'undefined' || !window.location) return '';
+  var page = window.location.pathname.split('/').pop() || '';
+  if (!page || page === 'profile.html') return '';
+  return page + (window.location.search || '');
+}
+
+function sanitizeReturnUrl(url) {
+  if (!url || typeof url !== 'string') return '';
+  var u = url.trim();
+  if (/^javascript:/i.test(u) || u.indexOf('://') !== -1) return '';
+  if (u.indexOf('..') !== -1) return '';
+  if (!/^[\w.-]+\.html([\?#][\w\W]*)?$/i.test(u)) return '';
+  return u;
+}
+
+function getProfileUrl(uid, returnTo) {
   if (!uid) return 'profile.html';
-  return 'profile.html?user=' + encodeURIComponent(String(uid));
+  var url = 'profile.html?user=' + encodeURIComponent(String(uid));
+  var from = sanitizeReturnUrl(returnTo) || getCurrentPageReturnUrl();
+  if (from) url += '&from=' + encodeURIComponent(from);
+  return url;
 }
 
 function profileNameLink(name, uid, opts) {
@@ -233,5 +252,7 @@ function profileNameLink(name, uid, opts) {
 window.avatarGradientForName = avatarGradientForName;
 window.hasProfilePhotoUrl = hasProfilePhotoUrl;
 window.renderUserAvatarHtml = renderUserAvatarHtml;
+window.getCurrentPageReturnUrl = getCurrentPageReturnUrl;
+window.sanitizeReturnUrl = sanitizeReturnUrl;
 window.getProfileUrl = getProfileUrl;
 window.profileNameLink = profileNameLink;

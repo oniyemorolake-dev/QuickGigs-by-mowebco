@@ -1,38 +1,98 @@
-/* QuickGigs — report user / task / message (modal UI) */
+/* QuickGigs — report user / task / message (Profile Studio–style sheet) */
 (function () {
+  var SHEET_VER = '20260716b';
+
+  function ensureQgSheetStyles() {
+    var head = document.head || document.documentElement;
+    if (!document.getElementById('qg-sheet-critical')) {
+      var critical = document.createElement('style');
+      critical.id = 'qg-sheet-critical';
+      critical.textContent =
+        '#qgReportOverlay,#qgDisputeOverlay{position:fixed!important;inset:0!important;z-index:9999!important;' +
+        'display:none!important;align-items:flex-end!important;justify-content:center!important;' +
+        'background:rgba(5,0,15,.85)!important;backdrop-filter:blur(10px)!important;-webkit-backdrop-filter:blur(10px)!important}' +
+        '#qgReportOverlay.open,#qgDisputeOverlay.open{display:flex!important}';
+      head.appendChild(critical);
+    }
+    if (!document.getElementById('qg-sheet-css')) {
+      var link = document.createElement('link');
+      link.id = 'qg-sheet-css';
+      link.rel = 'stylesheet';
+      link.href = 'qg-sheet.css?v=' + SHEET_VER;
+      head.appendChild(link);
+    }
+  }
+
+  ensureQgSheetStyles();
+  window.ensureQgSheetStyles = ensureQgSheetStyles;
   var REASONS = [
-    { value: 'spam', label: 'Spam or misleading listing' },
-    { value: 'harassment', label: 'Harassment or abusive behaviour' },
-    { value: 'scam', label: 'Suspected scam or fraud' },
-    { value: 'inappropriate', label: 'Inappropriate content' },
-    { value: 'no_show', label: 'No-show or unreliable' },
-    { value: 'other', label: 'Other' }
+    { value: 'spam', label: 'Spam or misleading', icon: '📢' },
+    { value: 'harassment', label: 'Harassment or abuse', icon: '🚫' },
+    { value: 'scam', label: 'Scam or fraud', icon: '⚠️' },
+    { value: 'inappropriate', label: 'Inappropriate content', icon: '🔞' },
+    { value: 'no_show', label: 'No-show or unreliable', icon: '👻' },
+    { value: 'other', label: 'Other', icon: '💬' }
   ];
 
   var overlay = null;
+  var selectedReason = REASONS[0].value;
+
+  function reasonPillsHtml() {
+    return REASONS.map(function (r, i) {
+      return '<button type="button" class="qg-report-reason' + (i === 0 ? ' is-selected' : '') + '" ' +
+        'data-value="' + r.value + '" role="radio" aria-checked="' + (i === 0 ? 'true' : 'false') + '">' +
+        '<span class="qg-report-reason-icon" aria-hidden="true">' + r.icon + '</span>' +
+        '<span class="qg-report-reason-label">' + r.label + '</span>' +
+      '</button>';
+    }).join('');
+  }
 
   function ensureOverlay() {
     if (overlay) return overlay;
+
     overlay = document.createElement('div');
     overlay.className = 'qg-report-overlay';
     overlay.id = 'qgReportOverlay';
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
     overlay.setAttribute('aria-labelledby', 'qgReportTitle');
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.style.display = 'none';
+
     overlay.innerHTML =
-      '<div class="qg-report-sheet">' +
+      '<div class="qg-report-sheet" role="document">' +
         '<div class="qg-report-handle" aria-hidden="true"></div>' +
-        '<h2 class="qg-report-title" id="qgReportTitle">Report</h2>' +
-        '<p class="qg-report-sub" id="qgReportSub">Help keep QuickGigs safe. Reports are reviewed by our team.</p>' +
-        '<label class="qg-report-label" for="qgReportReason">Reason</label>' +
-        '<select class="qg-report-select" id="qgReportReason" aria-required="true">' +
-          REASONS.map(function (r) {
-            return '<option value="' + r.value + '">' + r.label + '</option>';
-          }).join('') +
-        '</select>' +
-        '<label class="qg-report-label" for="qgReportDetails">Details (optional)</label>' +
-        '<textarea class="qg-report-textarea" id="qgReportDetails" maxlength="1000" placeholder="What happened? Include dates or message context if helpful."></textarea>' +
-        '<div class="qg-report-actions">' +
+        '<div class="qg-report-header">' +
+          '<div class="qg-report-header-glow" aria-hidden="true"></div>' +
+          '<button type="button" class="qg-report-close" id="qgReportClose" aria-label="Close report">✕</button>' +
+          '<div class="qg-report-kicker">Safety</div>' +
+          '<h2 class="qg-report-title" id="qgReportTitle">Report</h2>' +
+          '<p class="qg-report-sub" id="qgReportSub">Help keep QuickGigs safe. Reports are reviewed by our team.</p>' +
+        '</div>' +
+        '<div class="qg-report-body">' +
+          '<div class="qg-report-target" id="qgReportTarget" aria-live="polite">' +
+            '<span class="qg-report-target-icon" aria-hidden="true">🚩</span>' +
+            '<div class="qg-report-target-text">' +
+              '<span class="qg-report-target-label">Reporting</span>' +
+              '<strong id="qgReportTargetName">content</strong>' +
+            '</div>' +
+          '</div>' +
+          '<div class="qg-report-field">' +
+            '<span class="qg-report-label" id="qgReportReasonLabel">What&apos;s the issue?</span>' +
+            '<div class="qg-report-reasons" id="qgReportReasons" role="radiogroup" aria-labelledby="qgReportReasonLabel">' +
+              reasonPillsHtml() +
+            '</div>' +
+          '</div>' +
+          '<div class="qg-report-field">' +
+            '<label class="qg-report-label" for="qgReportDetails">Details <span class="qg-report-optional">(optional)</span></label>' +
+            '<div class="qg-report-textarea-wrap">' +
+              '<textarea class="qg-report-textarea" id="qgReportDetails" maxlength="1000" ' +
+                'placeholder="What happened? Include dates or message context if helpful." rows="4"></textarea>' +
+              '<span class="qg-report-char" id="qgReportCharCount">0 / 1000</span>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="qg-report-footer">' +
           '<button type="button" class="qg-report-cancel" id="qgReportCancel">Cancel</button>' +
           '<button type="button" class="qg-report-submit" id="qgReportSubmit">Submit report</button>' +
         '</div>' +
@@ -43,12 +103,47 @@
     overlay.addEventListener('click', function (e) {
       if (e.target === overlay) closeReportModal();
     });
+
+    document.getElementById('qgReportClose').onclick = closeReportModal;
     document.getElementById('qgReportCancel').onclick = closeReportModal;
+
+    document.getElementById('qgReportReasons').addEventListener('click', function (e) {
+      var btn = e.target.closest('.qg-report-reason');
+      if (!btn) return;
+      selectReason(btn.getAttribute('data-value'));
+    });
+
+    var detailsEl = document.getElementById('qgReportDetails');
+    detailsEl.addEventListener('input', updateCharCount);
+
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && overlay.classList.contains('open')) closeReportModal();
     });
 
+    document.getElementById('qgReportSubmit').onclick = submitReport;
+
     return overlay;
+  }
+
+  function selectReason(value) {
+    selectedReason = value || REASONS[0].value;
+    var wrap = document.getElementById('qgReportReasons');
+    if (!wrap) return;
+    wrap.querySelectorAll('.qg-report-reason').forEach(function (btn) {
+      var on = btn.getAttribute('data-value') === selectedReason;
+      btn.classList.toggle('is-selected', on);
+      btn.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+  }
+
+  function updateCharCount() {
+    var detailsEl = document.getElementById('qgReportDetails');
+    var countEl = document.getElementById('qgReportCharCount');
+    if (!detailsEl || !countEl) return;
+    var len = (detailsEl.value || '').length;
+    countEl.textContent = len + ' / 1000';
+    countEl.classList.toggle('is-near', len > 850);
+    countEl.classList.toggle('is-over', len >= 1000);
   }
 
   var currentContext = null;
@@ -56,16 +151,32 @@
   function openReportModal(ctx) {
     currentContext = ctx || {};
     var el = ensureOverlay();
+
+    var targetName = ctx.targetLabel || ctx.targetType || 'content';
+    document.getElementById('qgReportTargetName').textContent = targetName;
     document.getElementById('qgReportSub').textContent =
-      'Reporting: ' + (ctx.targetLabel || ctx.targetType || 'content') + '. Our team reviews every report.';
-    document.getElementById('qgReportDetails').value = '';
-    document.getElementById('qgReportReason').selectedIndex = 0;
+      'Our team reviews every report. You will not be visible to the person you report.';
+
+    var detailsEl = document.getElementById('qgReportDetails');
+    detailsEl.value = '';
+    selectReason(REASONS[0].value);
+    updateCharCount();
+
     el.classList.add('open');
-    document.getElementById('qgReportReason').focus();
+    el.setAttribute('aria-hidden', 'false');
+    el.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    var firstReason = document.querySelector('#qgReportReasons .qg-report-reason');
+    if (firstReason) firstReason.focus();
   }
 
   function closeReportModal() {
-    if (overlay) overlay.classList.remove('open');
+    if (!overlay) return;
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.style.display = 'none';
+    document.body.style.overflow = '';
     currentContext = null;
   }
 
@@ -78,7 +189,6 @@
     }
     if (!currentContext) return;
 
-    var reasonEl = document.getElementById('qgReportReason');
     var detailsEl = document.getElementById('qgReportDetails');
     var submitBtn = document.getElementById('qgReportSubmit');
     submitBtn.disabled = true;
@@ -90,7 +200,7 @@
       target_type: currentContext.targetType || 'unknown',
       target_id: String(currentContext.targetId || ''),
       target_label: currentContext.targetLabel || '',
-      reason: reasonEl.value,
+      reason: selectedReason,
       details: (detailsEl.value || '').trim(),
       status: 'open'
     };
@@ -116,8 +226,8 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    ensureOverlay();
-    document.getElementById('qgReportSubmit').onclick = submitReport;
+    var stale = document.getElementById('qgReportOverlay');
+    if (stale && !stale.classList.contains('open')) stale.remove();
   });
 
   function reportButtonHtml(targetType, targetId, targetLabel) {

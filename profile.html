@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QuickGigs — Profile</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="qg-features.css">
+<link rel="stylesheet" href="qg-sheet.css?v=20260716b">
+<link rel="stylesheet" href="qg-features.css?v=20260716b">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -30,7 +31,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 /* NAV */
 .nav{position:sticky;top:0;z-index:50;background:transparent;padding:13px 20px;display:flex;align-items:center;justify-content:space-between;}
-.back-btn{font-size:20px;color:#fff;text-decoration:none;opacity:0.9;}
+.back-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 14px 8px 12px;border-radius:999px;
+  background:rgba(11,1,24,0.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:0.5px solid rgba(255,255,255,0.22);
+  color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;
+  text-decoration:none;opacity:1;min-height:40px;
+  transition:transform 0.18s,background 0.18s,border-color 0.18s;
+  position:relative;z-index:60;-webkit-tap-highlight-color:transparent;
+}
+.back-btn:hover{transform:translateX(-2px);background:rgba(11,1,24,0.68);}
+.back-arrow{font-size:18px;line-height:1;}
+.back-label{line-height:1;}
+body.light .back-btn{background:rgba(255,255,255,0.88);color:#2d1b4e;border-color:rgba(255,255,255,0.65);}
+body.light .back-btn:hover{background:#fff;}
 .nav-right{display:flex;align-items:center;gap:10px;}
 .mode-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(0,0,0,0.3);color:rgba(255,255,255,0.8);}
 body.light .mode-btn{background:rgba(0,0,0,0.2);color:#fff;}
@@ -245,7 +260,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <!-- NAV overlaid on banner -->
 <nav class="nav">
-  <a class="back-btn" href="dashboard.html">←</a>
+  <a class="back-btn" href="dashboard.html" id="profileBackBtn" aria-label="Back"><span class="back-arrow" aria-hidden="true">←</span><span class="back-label">Back</span></a>
   <div class="nav-right">
     <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
   </div>
@@ -453,7 +468,7 @@ onAuthStateChanged(auth, (user) => {
 <script src="supabase-db.js"></script>
 <script src="qg-pwa.js"></script>
 <script src="qg-share.js"></script>
-<script src="qg-report.js"></script>
+<script src="qg-report.js?v=20260716b"></script>
 <script src="qg-stats.js"></script>
 <script src="qg-nav.js"></script>
 <script src="qg-role-switch.js"></script>
@@ -582,8 +597,52 @@ function updateEditProgress() {
 
 var params = new URLSearchParams(window.location.search);
 var viewUserId = params.get('user');
+var returnTo = params.get('from') || params.get('return');
 var photoSetupMode = params.get('setup') === 'photo';
 var photoRequired = params.get('required') === '1';
+
+function setupProfileBackButton(isOwnProfile) {
+  var backBtn = document.getElementById('profileBackBtn');
+  if (!backBtn) return;
+
+  var safeReturn = typeof sanitizeReturnUrl === 'function'
+    ? sanitizeReturnUrl(returnTo)
+    : (returnTo || '');
+
+  backBtn.onclick = null;
+
+  if (!isOwnProfile && viewUserId) {
+    if (safeReturn) {
+      backBtn.href = safeReturn;
+      backBtn.setAttribute('aria-label', 'Back to previous page');
+    } else {
+      backBtn.href = '#';
+      backBtn.setAttribute('aria-label', 'Go back');
+      backBtn.onclick = function (e) {
+        e.preventDefault();
+        if (window.history.length > 1) {
+          history.back();
+        } else {
+          window.location.href = 'browsetask.html';
+        }
+      };
+    }
+    return;
+  }
+
+  if (photoSetupMode && safeReturn) {
+    backBtn.href = safeReturn;
+    backBtn.setAttribute('aria-label', 'Back');
+    return;
+  }
+
+  backBtn.href = 'dashboard.html';
+  backBtn.setAttribute('aria-label', 'Back to dashboard');
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  if (viewUserId) setupProfileBackButton(false);
+});
 
 async function loadReviewsForProfile(targetId) {
   var reviews = [];
@@ -629,11 +688,7 @@ async function loadProfile(user) {
     if (roleWrapHide) roleWrapHide.style.display = 'none';
     var earnedStat = document.getElementById('earnedStat');
     if (earnedStat) earnedStat.style.display = 'none';
-    var backBtn = document.querySelector('.back-btn');
-    if (backBtn) {
-      backBtn.href = 'javascript:history.back()';
-      backBtn.title = 'Go back';
-    }
+    setupProfileBackButton(false);
     var emptyRev = document.getElementById('reviewsEmpty');
     if (emptyRev) emptyRev.querySelector('p').textContent = 'No reviews yet.';
   } else {
@@ -652,6 +707,7 @@ async function loadProfile(user) {
     wrap.classList.add('can-edit');
     wrap.onclick = function() { document.getElementById('avatarInput').click(); };
     document.getElementById('avatarInput').onchange = function() { uploadAvatar(this); };
+    setupProfileBackButton(true);
   }
 
   if (typeof getUserByFirebaseUid === 'function' && targetId) {
