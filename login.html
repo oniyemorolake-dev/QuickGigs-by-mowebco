@@ -6,6 +6,9 @@
 <title>QuickGigs — Log In · Canada</title>
 <meta name="description" content="Log in to QuickGigs — Canada's marketplace for everyday tasks and gigs, available nationwide.">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://quickgigs-7b12d.firebaseapp.com">
+<link rel="dns-prefetch" href="https://www.gstatic.com">
 <link rel="stylesheet" href="qg-signup.css?v=4">
 <link rel="stylesheet" href="qg-cookies.css">
 <style>
@@ -75,9 +78,6 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 </div>
 
 <script src="qg-utils.js"></script>
-<script src="qg-config.js"></script>
-<script src="supabase-db.js"></script>
-<script src="qg-stats.js"></script>
 <script src="qg-cookies.js"></script>
 <script>
 attachPasswordToggle('password');
@@ -96,7 +96,8 @@ window.toggleAuthTheme = function() {
 applyAuthTheme();
 
 var stars = document.getElementById('stars');
-for (var i = 0; i < 100; i++) {
+var starCount = window.matchMedia('(max-width:768px)').matches ? 30 : 60;
+for (var i = 0; i < starCount; i++) {
   var s = document.createElement('div');
   s.className = 'star';
   var size = Math.random() * 2 + 0.5;
@@ -136,26 +137,12 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
   submitBtn.disabled = true;
 
   try {
-    var cred = await signInWithEmailAndPassword(auth, email, password);
-    if (typeof syncCurrentUserProfile === 'function') {
-      await syncCurrentUserProfile(cred.user);
-    }
-    if (typeof getUserByFirebaseUid === 'function') {
-      var dbUser = await getUserByFirebaseUid(cred.user.uid);
-      if (dbUser && dbUser.role) localStorage.setItem('qg-role', dbUser.role);
-    }
-    if (typeof enforceBanOnLogin === 'function') {
-      var banCheck = await enforceBanOnLogin(cred.user);
-      if (!banCheck.ok) {
-        submitBtn.textContent = 'Log in →';
-        submitBtn.disabled = false;
-        return;
-      }
-    }
-    okMsg.textContent = 'Welcome back! Redirecting…';
-    okMsg.style.display = 'block';
-    var dest = typeof getDashboardUrl === 'function' ? getDashboardUrl() : 'dashboard.html';
-    setTimeout(function(){ window.location.href = dest; }, 1200);
+    await signInWithEmailAndPassword(auth, email, password);
+    submitBtn.textContent = 'Opening dashboard…';
+    var dest = typeof getDashboardUrl === 'function'
+      ? getDashboardUrl()
+      : ('dashboard.html?mode=' + (localStorage.getItem('qg-session-mode') || localStorage.getItem('qg-role') || 'poster'));
+    window.location.replace(dest);
   } catch (error) {
     var message = 'Invalid email or password. Please try again.';
     if (error.code === 'auth/invalid-email') message = 'Please enter a valid email address.';

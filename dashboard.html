@@ -254,32 +254,47 @@ onAuthStateChanged(auth, async (user) => {
   authChecked = true;
   clearTimeout(redirectTimeout);
   if (!user) { window.location.href = 'login.html'; return; }
-  if (typeof enforceBanOnLogin === 'function') {
-    var banCheck = await enforceBanOnLogin(user);
-    if (!banCheck.ok) return;
-  }
   const name = user.displayName || user.email.split('@')[0];
   const firstName = name.split(' ')[0];
   window._userName = firstName;
+  window._currentUser = user;
   document.getElementById('avatarEl').textContent = firstName.charAt(0).toUpperCase();
-  if (typeof getUserByFirebaseUid === 'function') {
-    getUserByFirebaseUid(user.uid).then(function (dbUser) {
-      if (typeof isAccountPendingGuardian === 'function' && isAccountPendingGuardian(dbUser)) {
-        var banner = document.getElementById('guardianBanner');
-        if (banner) {
-          var pending = {};
-          try { pending = JSON.parse(localStorage.getItem('qg-guardian-pending') || '{}'); } catch (e) {}
-          var email = (dbUser && dbUser.guardian_email) || pending.guardianEmail || 'your parent';
-          var link = pending.consentUrl || ('https://quickgigs.ca/parent-consent.html?token=' + (dbUser.guardian_consent_token || ''));
-          banner.style.display = 'block';
-          banner.className = 'guardian-banner qg-page-wide';
-          banner.innerHTML = '<strong>⏳ Waiting for parent approval</strong>You can browse, but posting and applying are paused until ' +
-            String(email).replace(/</g, '') + ' approves. <a href="' + link.replace(/"/g, '') + '" target="_blank" rel="noopener">Open consent link</a>';
-        }
+  loadDashboardData(user.uid);
+
+  function applyDbUserAfterLogin(dbUser) {
+    if (dbUser && dbUser.role) {
+      localStorage.setItem('qg-role', dbUser.role);
+      if (typeof setSessionMode === 'function') setSessionMode(dbUser.role);
+      if (typeof applyRoleTheme === 'function') applyRoleTheme();
+    }
+    if (typeof isAccountPendingGuardian === 'function' && isAccountPendingGuardian(dbUser)) {
+      var banner = document.getElementById('guardianBanner');
+      if (banner) {
+        var pending = {};
+        try { pending = JSON.parse(localStorage.getItem('qg-guardian-pending') || '{}'); } catch (e) {}
+        var email = (dbUser && dbUser.guardian_email) || pending.guardianEmail || 'your parent';
+        var link = pending.consentUrl || ('https://quickgigs.ca/parent-consent.html?token=' + (dbUser.guardian_consent_token || ''));
+        banner.style.display = 'block';
+        banner.className = 'guardian-banner qg-page-wide';
+        banner.innerHTML = '<strong>⏳ Waiting for parent approval</strong>You can browse, but posting and applying are paused until ' +
+          String(email).replace(/</g, '') + ' approves. <a href="' + link.replace(/"/g, '') + '" target="_blank" rel="noopener">Open consent link</a>';
       }
+    }
+  }
+
+  if (typeof syncCurrentUserProfile === 'function') {
+    syncCurrentUserProfile(user).then(function () {
+      if (typeof getUserByFirebaseUid === 'function') return getUserByFirebaseUid(user.uid);
+    }).then(applyDbUserAfterLogin);
+  } else if (typeof getUserByFirebaseUid === 'function') {
+    getUserByFirebaseUid(user.uid).then(applyDbUserAfterLogin);
+  }
+
+  if (typeof enforceBanOnLogin === 'function') {
+    enforceBanOnLogin(user).then(function (banCheck) {
+      if (!banCheck.ok) return;
     });
   }
-  loadDashboardData(user.uid);
 });
 </script>
 
