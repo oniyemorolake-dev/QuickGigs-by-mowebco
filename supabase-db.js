@@ -1176,18 +1176,63 @@ async function declinePendingApplicationsForTask(taskId, exceptAppId) {
   return results.every(function (r) { return r.success; });
 }
 
+var REVIEWS_CACHE_PREFIX = 'qg-reviews-cache-v1-';
+
+function readReviewsCache(userId) {
+  try {
+    var raw = localStorage.getItem(REVIEWS_CACHE_PREFIX + String(userId));
+    if (!raw) return [];
+    var parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+function writeReviewsCache(userId, reviews) {
+  try {
+    localStorage.setItem(REVIEWS_CACHE_PREFIX + String(userId), JSON.stringify(reviews || []));
+  } catch (err) {}
+}
+
+function mergeReviewInCache(review) {
+  if (!review || !review.reviewee_id) return;
+  var list = readReviewsCache(review.reviewee_id);
+  var key = String(review.task_id || '') + '|' + String(review.reviewer_id || '') + '|' + String(review.created_at || '');
+  var next = [review].concat(list.filter(function(r) {
+    var k = String(r.task_id || '') + '|' + String(r.reviewer_id || '') + '|' + String(r.created_at || '');
+    return k !== key;
+  }));
+  writeReviewsCache(review.reviewee_id, next.slice(0, 100));
+}
+
 async function getReviewsForUser(userId) {
-  return await sbGet('reviews', 'reviewee_id=eq.' + userId);
+  var uid = encodeURIComponent(String(userId));
+  var rows = await sbGet('reviews', 'reviewee_id=eq.' + uid, 'created_at.desc', 100);
+  if (rows && rows.length) {
+    writeReviewsCache(userId, rows);
+    return rows;
+  }
+  return readReviewsCache(userId);
 }
 
 async function submitReview(reviewData) {
-  return await sbPost('reviews', {
+  var row = {
     task_id:        reviewData.task_id,
     reviewer_id:    reviewData.reviewer_id,
     reviewee_id:    reviewData.reviewee_id,
     rating:         reviewData.rating,
-    review_comment: reviewData.review_comment
-  });
+    review_comment: reviewData.review_comment || ''
+  };
+  var result = await sbPost('reviews', row);
+  if (result.success) {
+    mergeReviewInCache(Object.assign({}, row, {
+      created_at: new Date().toISOString(),
+      reviewer_name: reviewData.reviewer_name || '',
+      task_title: reviewData.task_title || ''
+    }));
+  }
+  return result;
 }
 
 async function getPaymentByTask(taskId) {
@@ -1291,6 +1336,8 @@ window.releaseAcceptedTasker = releaseAcceptedTasker;
 window.declinePendingApplicationsForTask = declinePendingApplicationsForTask;
 window.getReviewsForUser = getReviewsForUser;
 window.submitReview = submitReview;
+window.readReviewsCache = readReviewsCache;
+window.mergeReviewInCache = mergeReviewInCache;
 window.getPaymentByTask = getPaymentByTask;
 window.savePayment = savePayment;
 window.unlockChatForTask = unlockChatForTask;

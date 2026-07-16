@@ -18,7 +18,14 @@ body.light{
   --text-muted:#5a5a72;--text-faint:#9ca3af;--nav-bg:#fff;--tab-bg:#fff;
   --card-bg:#fff;--lavender:#6b3fa0;
 }
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:76px;transition:background 0.25s,color 0.25s;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:76px;transition:background 0.3s,color 0.3s;}
+.profile-page{animation:pageIn 0.5s cubic-bezier(0.22,1,0.36,1);}
+@keyframes pageIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+@keyframes ringGlow{0%,100%{background-position:0% 50%;}50%{background-position:100% 50%;}}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes sectionIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+@keyframes reviewIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(20px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
 
 /* NAV */
 .nav{position:sticky;top:0;z-index:50;background:transparent;padding:13px 20px;display:flex;align-items:center;justify-content:space-between;}
@@ -28,18 +35,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 body.light .mode-btn{background:rgba(0,0,0,0.2);color:#fff;}
 
 /* BANNER */
-.banner{height:140px;background:linear-gradient(135deg,#6b3fa0 0%,#9b6fc4 60%,#c8a8e9 100%);position:relative;margin-top:-56px;}
+.banner{height:160px;background:linear-gradient(135deg,#4a1d8a 0%,#6b3fa0 40%,#9b6fc4 75%,#c8a8e9 100%);position:relative;margin-top:-56px;overflow:hidden;}
+.banner::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 80% 20%,rgba(255,255,255,0.18),transparent 45%);}
 .banner-overlay{position:absolute;inset:0;background:rgba(11,1,24,0.25);}
 
 /* AVATAR SECTION */
-.avatar-section{display:flex;flex-direction:column;align-items:center;margin-top:-36px;padding:0 20px 16px;position:relative;z-index:1;}
-.avatar-wrap{position:relative;margin-bottom:12px;}
-.avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#4a1d8a,#9b6fc4);background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:500;color:#fff;border:3px solid var(--bg);transition:border-color 0.25s;}
-.avatar.has-photo{color:transparent;}
+.avatar-section{display:flex;flex-direction:column;align-items:center;margin-top:-52px;padding:0 20px 20px;position:relative;z-index:2;}
+.avatar-wrap{position:relative;margin-bottom:14px;}
+.avatar-ring{width:108px;height:108px;border-radius:50%;padding:3px;background:linear-gradient(135deg,#c8a8e9,#6b3fa0,#9b6fc4,#c8a8e9);background-size:200% 200%;animation:ringGlow 4s ease infinite;transition:transform 0.28s,box-shadow 0.28s;}
 .avatar-wrap.can-edit{cursor:pointer;}
-.avatar-edit-hint{font-size:11px;color:var(--text-faint);margin-top:6px;text-align:center;}
-.verified{position:absolute;bottom:2px;right:2px;width:20px;height:20px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid var(--bg);transition:border-color 0.25s;}
-.profile-name{font-size:20px;font-weight:500;color:var(--text);margin-bottom:5px;text-align:center;}
+.avatar-wrap.can-edit:hover .avatar-ring{transform:scale(1.03);box-shadow:0 12px 40px rgba(107,63,160,0.45);}
+.avatar-wrap.is-uploading .avatar-ring::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:3px solid transparent;border-top-color:#fff;animation:spin 0.8s linear infinite;}
+.avatar-ring-inner{background:var(--bg);border-radius:50%;padding:4px;}
+.avatar{width:94px;height:94px;border-radius:50%;background:linear-gradient(135deg,#4a1d8a,#9b6fc4);background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:600;color:#fff;transition:transform 0.25s;}
+.avatar.has-photo{color:transparent;}
+.avatar-camera{position:absolute;bottom:2px;right:2px;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);border:3px solid var(--bg);display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,0.25);}
+.verified{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid var(--bg);}
+.profile-name{font-size:22px;font-weight:600;margin-bottom:6px;text-align:center;}
 .role-tags{display:flex;gap:6px;justify-content:center;margin-bottom:10px;flex-wrap:wrap;}
 .role-tag{font-size:11px;padding:4px 12px;border-radius:20px;background:rgba(107,63,160,0.25);color:var(--lavender);border:0.5px solid rgba(200,168,233,0.2);}
 body.light .role-tag{background:#ede9ff;border-color:#d8cfff;}
@@ -50,9 +62,11 @@ body.light .role-tag{background:#ede9ff;border-color:#d8cfff;}
 .member-since{font-size:12px;color:var(--text-faint);}
 
 /* EDIT BUTTON */
-.edit-btn{margin:0 20px 16px;width:calc(100% - 40px);padding:12px;border-radius:14px;border:0.5px solid rgba(200,168,233,0.25);background:rgba(107,63,160,0.12);color:var(--lavender);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;}
-.edit-btn:hover{background:rgba(107,63,160,0.2);}
+.edit-btn{flex:1;padding:13px 16px;border-radius:14px;border:0.5px solid rgba(200,168,233,0.3);background:rgba(107,63,160,0.15);color:var(--lavender);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.22s;}
+.photo-btn{flex:1;padding:13px 16px;border-radius:14px;border:none;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;box-shadow:0 6px 20px rgba(107,63,160,0.35);transition:all 0.22s;}
+.action-row-profile{display:flex;gap:10px;margin:0 20px 18px;}
 body.light .edit-btn{background:#ede9ff;border-color:#d8cfff;color:var(--purple);}
+body.light .photo-btn{color:#2d1b4e;}
 
 /* DIVIDER */
 .divider{height:0.5px;background:var(--border);margin:0 20px 16px;}
@@ -88,8 +102,23 @@ body.light .rev-task{color:var(--purple);}
 .rev-text{font-size:13px;line-height:1.6;color:var(--text-muted);}
 
 /* EDIT PROFILE MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:flex-end;justify-content:center;}
-.modal-overlay.open{display:flex;}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.sec-content{padding:14px 16px;border-radius:16px;background:var(--card-bg);border:0.5px solid var(--border);}
+.reviews-list{display:flex;flex-direction:column;gap:10px;}
+.review-card{animation:reviewIn 0.4s ease backwards;transition:transform 0.2s,border-color 0.2s;}
+.review-card:hover{transform:translateY(-2px);border-color:rgba(200,168,233,0.35);}
+.rev-meta{font-size:10px;color:var(--text-faint);margin-top:2px;}
+.reviews-empty{text-align:center;padding:28px 16px;border-radius:16px;background:var(--card-bg);border:0.5px dashed var(--border);}
+.reviews-empty-icon{font-size:28px;margin-bottom:8px;opacity:0.7;}
+.modal-overlay{position:fixed;inset:0;background:rgba(5,0,15,0.72);z-index:200;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px);opacity:0;transition:opacity 0.28s;}
+.modal-overlay.open{display:flex;opacity:1;}
+.modal{transform:translateY(100%);transition:transform 0.38s cubic-bezier(0.22,1,0.36,1);}
+.modal-overlay.open .modal{transform:translateY(0);}
+.modal-avatar-row{display:flex;align-items:center;gap:14px;margin-bottom:20px;padding:14px;border-radius:16px;background:rgba(107,63,160,0.12);border:0.5px solid rgba(200,168,233,0.2);}
+.modal-avatar-preview{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;color:#fff;flex-shrink:0;}
+.modal-avatar-preview.has-photo{color:transparent;}
+.modal-change-photo{padding:8px 14px;border-radius:10px;border:none;background:var(--purple);color:#fff;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.toast.show{display:block;animation:toastIn 0.35s cubic-bezier(0.22,1,0.36,1);}
 .modal{width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:20px 22px 40px;background:#150830;border:0.5px solid var(--border);}
 body.light .modal{background:#fff;}
 .modal-handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 18px;}
@@ -125,6 +154,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 </style>
 </head>
 <body>
+<div class="profile-page">
 
 <!-- NAV overlaid on banner -->
 <nav class="nav">
@@ -146,7 +176,12 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <div class="avatar-section">
   <input type="file" id="avatarInput" accept="image/*" hidden>
   <div class="avatar-wrap" id="avatarWrap">
-    <div class="avatar" id="avatarEl">M</div>
+    <div class="avatar-ring">
+      <div class="avatar-ring-inner">
+        <div class="avatar" id="avatarEl">M</div>
+      </div>
+    </div>
+    <div class="avatar-camera" id="avatarCamera" style="display:none">📷</div>
     <div class="verified" title="Verified user">✓</div>
   </div>
   <div class="avatar-edit-hint" id="avatarHint" style="display:none">Tap photo to change</div>
@@ -160,8 +195,11 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   <div class="member-since" id="memberSince"></div>
 </div>
 
-<!-- EDIT BUTTON (own profile only) -->
-<button class="edit-btn" id="editBtn" onclick="openEditModal()" style="display:none">✏️ Edit profile</button>
+<!-- EDIT BUTTONS (own profile only) -->
+<div class="action-row-profile" id="profileActions" style="display:none">
+  <button class="edit-btn" id="editBtn" onclick="openEditModal()">✏️ Edit profile</button>
+  <button class="photo-btn" id="photoBtn" onclick="document.getElementById('avatarInput').click()">📷 Change photo</button>
+</div>
 
 <div class="divider"></div>
 
@@ -186,10 +224,18 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <!-- REVIEWS -->
 <div class="section" id="reviewsSection">
-  <div class="sec-title">Reviews</div>
-  <div id="reviewsList">
-    <div style="font-size:13px;color:var(--text-faint);padding:8px 0;">No reviews yet.</div>
+  <div class="sec-head">
+    <span class="sec-title">Reviews</span>
+    <span class="sec-count" id="reviewsCount"></span>
   </div>
+  <div class="reviews-list" id="reviewsList">
+    <div class="reviews-empty" id="reviewsEmpty">
+      <div class="reviews-empty-icon">⭐</div>
+      <p>No reviews yet — complete a task to get your first one.</p>
+    </div>
+  </div>
+</div>
+
 </div>
 
 <!-- TOAST -->
@@ -197,9 +243,17 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <!-- EDIT MODAL -->
 <div class="modal-overlay" id="modalOverlay" onclick="handleOverlay(event)">
-  <div class="modal">
+  <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
     <div class="modal-title">Edit profile</div>
+    <div class="modal-avatar-row" id="modalAvatarRow">
+      <div class="modal-avatar-preview" id="modalAvatarPreview">M</div>
+      <div style="flex:1">
+        <strong>Profile photo</strong>
+        <span style="display:block;font-size:12px;color:var(--text-faint);margin-top:4px;line-height:1.45">Taskers need a clear photo so posters know who they're hiring.</span>
+      </div>
+      <button type="button" class="modal-change-photo" onclick="document.getElementById('avatarInput').click()">Change</button>
+    </div>
     <span class="modal-label">Display name</span>
     <input class="modal-input" id="editName" type="text" placeholder="Your name">
     <span class="modal-label">Bio</span>
@@ -249,32 +303,86 @@ onAuthStateChanged(auth, (user) => {
 });
 </script>
 
+<script src="qg-utils.js"></script>
 <script src="supabase-db.js"></script>
 <script>
 var HEADERS = window.HEADERS;
 
 var ALL_SKILLS = ['💻 Tech','🎓 Tutoring','🚗 Errands','🏠 Home','🚚 Moving','🍳 Cooking','👶 Care','🌿 Gardening','🎉 Events','🔧 Trades','💇 Beauty','📋 Admin'];
 var profileData = {};
+var cachedReviews = [];
 var isDark = localStorage.getItem('qg-mode') !== 'light';
 
 function applyTheme(){ document.body.className = isDark ? '' : 'light'; document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark'; }
 window.toggleTheme = function(){ isDark = !isDark; localStorage.setItem('qg-mode', isDark?'dark':'light'); applyTheme(); };
 applyTheme();
 
-// Check URL for viewing another user's profile
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg || 'Profile saved! 🎉';
+  t.classList.add('show');
+  t.style.display = 'block';
+  setTimeout(function(){ t.classList.remove('show'); t.style.display = 'none'; }, 2800);
+}
+
+function esc(s) {
+  return typeof escapeHtml === 'function' ? escapeHtml(s) : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+}
+
+function updateAvatarDisplay(name, url) {
+  var initial = (name || 'U').charAt(0).toUpperCase();
+  var els = [document.getElementById('avatarEl'), document.getElementById('modalAvatarPreview')];
+  els.forEach(function(el) {
+    if (!el) return;
+    if (url) {
+      el.style.backgroundImage = 'url(' + url + ')';
+      el.classList.add('has-photo');
+      el.textContent = '';
+    } else {
+      el.style.backgroundImage = '';
+      el.classList.remove('has-photo');
+      el.textContent = initial;
+    }
+  });
+}
+
 var params = new URLSearchParams(window.location.search);
 var viewUserId = params.get('user');
 var photoSetupMode = params.get('setup') === 'photo';
 var photoRequired = params.get('required') === '1';
 
+async function loadReviewsForProfile(targetId) {
+  var reviews = [];
+  if (typeof getReviewsForUser === 'function') {
+    reviews = await getReviewsForUser(targetId);
+  } else if (typeof readReviewsCache === 'function') {
+    reviews = readReviewsCache(targetId);
+  }
+  if (!Array.isArray(reviews)) reviews = [];
+  cachedReviews = reviews;
+  if (reviews.length) {
+    var avg = reviews.reduce(function(s, r) { return s + (Number(r.rating) || 0); }, 0) / reviews.length;
+    document.getElementById('ratingScore').textContent = avg.toFixed(1);
+    document.getElementById('starsEl').textContent = '⭐'.repeat(Math.round(avg));
+    document.getElementById('ratingCount').textContent = '· ' + reviews.length + ' review' + (reviews.length !== 1 ? 's' : '');
+    document.getElementById('reviewsCount').textContent = reviews.length + ' total';
+  } else {
+    document.getElementById('ratingScore').textContent = 'New';
+    document.getElementById('starsEl').textContent = '☆☆☆☆☆';
+    document.getElementById('ratingCount').textContent = '· No reviews yet';
+    document.getElementById('reviewsCount').textContent = '';
+  }
+  await renderReviews(reviews);
+}
+
 async function loadProfile(user) {
   var isOwnProfile = !viewUserId || viewUserId === user.uid;
   var targetId = viewUserId || user.uid;
 
-  // Show edit button only for own profile
   if (isOwnProfile) {
-    document.getElementById('editBtn').style.display = 'block';
+    document.getElementById('profileActions').style.display = 'flex';
     document.getElementById('avatarHint').style.display = 'block';
+    document.getElementById('avatarCamera').style.display = 'flex';
     var wrap = document.getElementById('avatarWrap');
     wrap.classList.add('can-edit');
     wrap.onclick = function() { document.getElementById('avatarInput').click(); };
@@ -300,129 +408,114 @@ async function loadProfile(user) {
     skills: [],
     role: localStorage.getItem('qg-role') || 'poster'
   }, localProfile, profileData);
-  if (profileData.avatar_url) {
-    window._currentUserAvatarUrl = profileData.avatar_url;
-  }
+  if (profileData.avatar_url) window._currentUserAvatarUrl = profileData.avatar_url;
 
-  // Load tasks from Supabase to calculate real stats
   try {
-    var headers = typeof getSupabaseHeaders === 'function'
-      ? await getSupabaseHeaders()
-      : HEADERS;
-    var tasksRes = await fetch(window.SUPABASE_URL + '/rest/v1/tasks?posted_by=eq.' + targetId, { headers: headers });
+    var headers = typeof getSupabaseHeaders === 'function' ? await getSupabaseHeaders() : HEADERS;
+    var tasksRes = await fetch(window.SUPABASE_URL + '/rest/v1/tasks?posted_by=eq.' + encodeURIComponent(targetId), { headers: headers });
     var tasks = await tasksRes.json();
-    var posted = Array.isArray(tasks) ? tasks.length : 0;
-    var completed = Array.isArray(tasks) ? tasks.filter(function(t){ return t.status === 'completed'; }).length : 0;
-    document.getElementById('statPosted').textContent = posted;
-    document.getElementById('statDone').textContent = completed;
-
-    // Load reviews
-    var revRes = await fetch(window.SUPABASE_URL + '/rest/v1/reviews?reviewee_id=eq.' + targetId + '&order=created_at.desc', { headers: headers });
-    var reviews = await revRes.json();
-    if (Array.isArray(reviews) && reviews.length) {
-      var avg = reviews.reduce(function(s,r){ return s + (r.rating||0); }, 0) / reviews.length;
-      document.getElementById('ratingScore').textContent = avg.toFixed(1);
-      document.getElementById('ratingCount').textContent = '· ' + reviews.length + ' review' + (reviews.length!==1?'s':'');
-      renderReviews(reviews);
-    } else {
-      document.getElementById('ratingScore').textContent = 'New';
-      document.getElementById('ratingCount').textContent = '· No reviews yet';
+    if (Array.isArray(tasks)) {
+      document.getElementById('statPosted').textContent = tasks.length;
+      document.getElementById('statDone').textContent = tasks.filter(function(t) { return (t.status || '').toLowerCase() === 'completed'; }).length;
     }
-  } catch(err) {
+  } catch (err) {
     console.warn('Could not load stats:', err);
-    document.getElementById('ratingScore').textContent = 'New';
   }
 
+  await loadReviewsForProfile(targetId);
   renderProfile(user);
 
-  if (isOwnProfile && photoSetupMode && !profileData.avatar_url) {
-    var banner = document.getElementById('photoRequiredBanner');
-    if (banner) banner.style.display = 'block';
-    var hint = document.getElementById('avatarHint');
-    if (hint) hint.textContent = 'Tap to add your photo (required for taskers)';
-  } else if (isOwnProfile && photoRequired && !profileData.avatar_url) {
-    var reqBanner = document.getElementById('photoRequiredBanner');
-    if (reqBanner) reqBanner.style.display = 'block';
+  if (isOwnProfile && (photoSetupMode || photoRequired) && !profileData.avatar_url) {
+    document.getElementById('photoRequiredBanner').style.display = 'block';
+    if (photoSetupMode) document.getElementById('avatarHint').textContent = 'Tap to add your photo (required for taskers)';
   }
 }
 
 function renderProfile(user) {
   var name = profileData.name || user.displayName || user.email.split('@')[0];
-  var initial = name.charAt(0).toUpperCase();
-  var avatarEl = document.getElementById('avatarEl');
-  if (profileData.avatar_url) {
-    avatarEl.style.backgroundImage = 'url(' + profileData.avatar_url + ')';
-    avatarEl.classList.add('has-photo');
-    avatarEl.textContent = '';
-    var photoBanner = document.getElementById('photoRequiredBanner');
-    if (photoBanner) photoBanner.style.display = 'none';
-  } else {
-    avatarEl.style.backgroundImage = '';
-    avatarEl.classList.remove('has-photo');
-    avatarEl.textContent = initial;
-  }
+  updateAvatarDisplay(name, profileData.avatar_url);
+  if (profileData.avatar_url) document.getElementById('photoRequiredBanner').style.display = 'none';
   document.getElementById('profileName').textContent = name;
-  document.getElementById('memberSince').textContent = 'Member since ' + new Date(user.metadata.creationTime).toLocaleDateString('en-CA', {month:'long', year:'numeric'});
+  var memberUser = viewUserId && viewUserId !== user.uid ? user : user;
+  document.getElementById('memberSince').textContent = 'Member since ' + new Date(memberUser.metadata.creationTime).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-  // Role tags
   var role = profileData.role || localStorage.getItem('qg-role') || 'poster';
   var roleHtml = '';
-  if(role === 'poster' || role === 'both') roleHtml += '<span class="role-tag">📋 Poster</span>';
-  if(role === 'worker' || role === 'both') roleHtml += '<span class="role-tag">💼 Worker</span>';
+  if (role === 'poster' || role === 'both') roleHtml += '<span class="role-tag">📋 Poster</span>';
+  if (role === 'worker' || role === 'both') roleHtml += '<span class="role-tag">💼 Tasker</span>';
   document.getElementById('roleTags').innerHTML = roleHtml;
 
-  // Bio
   document.getElementById('bioText').textContent = profileData.bio || 'No bio yet — tap Edit profile to add one.';
-
-  // Skills
   var skills = profileData.skills || [];
   document.getElementById('skillsList').innerHTML = skills.length
-    ? skills.map(function(s){ return '<span class="skill">'+s+'</span>'; }).join('')
+    ? skills.map(function(s) { return '<span class="skill">' + esc(s) + '</span>'; }).join('')
     : '<span style="font-size:13px;color:var(--text-faint)">No skills added yet.</span>';
 }
 
-function renderReviews(reviews) {
+async function renderReviews(reviews) {
+  var listEl = document.getElementById('reviewsList');
+  var emptyEl = document.getElementById('reviewsEmpty');
+  listEl.querySelectorAll('.review-card').forEach(function(c) { c.remove(); });
+
+  if (!reviews || !reviews.length) {
+    if (emptyEl) emptyEl.style.display = 'block';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  var nameMap = typeof getUsersNameMap === 'function' ? await getUsersNameMap() : {};
   var colors = ['linear-gradient(135deg,#6b3fa0,#c8a8e9)','linear-gradient(135deg,#16a34a,#4ade80)','linear-gradient(135deg,#d97706,#fbbf24)','linear-gradient(135deg,#0ea5e9,#7dd3fc)'];
-  document.getElementById('reviewsList').innerHTML = reviews.slice(0,5).map(function(r, i){
-    var stars = '⭐'.repeat(r.rating || 5);
-    return '<div class="review-card">' +
+
+  reviews.forEach(function(r, i) {
+    var reviewerId = r.reviewer_id || r.REVIEWER_ID || '';
+    var reviewerName = r.reviewer_name || r.REVIEWER_NAME || nameMap[String(reviewerId)] || 'QuickGigs user';
+    if (typeof isGenericDisplayName === 'function' && isGenericDisplayName(reviewerName)) reviewerName = 'QuickGigs user';
+    var taskTitle = r.task_title || r.TASK_TITLE || ('Task #' + (r.task_id || ''));
+    var comment = r.review_comment || r.comment || '';
+    var rating = Math.max(1, Math.min(5, Number(r.rating) || 5));
+    var when = typeof formatRelativeTime === 'function' ? formatRelativeTime(r.created_at) : '';
+    var card = document.createElement('div');
+    card.className = 'review-card';
+    card.style.animationDelay = (i * 0.05) + 's';
+    card.innerHTML =
       '<div class="rev-top">' +
-        '<div class="rev-avatar" style="background:'+colors[i%colors.length]+'">'+r.reviewer_id.charAt(0).toUpperCase()+'</div>' +
-        '<div class="rev-info"><div class="rev-name">User</div><div class="rev-task">Verified task</div></div>' +
-        '<div class="rev-stars">'+stars+'</div>' +
+        '<div class="rev-avatar" style="background:' + colors[i % colors.length] + '">' + esc(reviewerName.charAt(0).toUpperCase()) + '</div>' +
+        '<div class="rev-info"><div class="rev-name">' + esc(reviewerName) + '</div><div class="rev-task">' + esc(String(taskTitle)) + '</div>' +
+        (when ? '<div class="rev-meta">' + esc(when) + '</div>' : '') + '</div>' +
+        '<div class="rev-stars">' + '⭐'.repeat(rating) + '</div>' +
       '</div>' +
-      '<div class="rev-text">'+(r.review_comment||'Great experience!')+'</div>' +
-    '</div>';
-  }).join('');
+      (comment ? '<div class="rev-text">' + esc(comment) + '</div>' : '');
+    listEl.insertBefore(card, emptyEl || null);
+  });
 }
 
-// ── EDIT MODAL ──────────────────────────────────────────
 window.openEditModal = function() {
   document.getElementById('editName').value = profileData.name || '';
   document.getElementById('editBio').value = profileData.bio || '';
+  updateAvatarDisplay(profileData.name, profileData.avatar_url);
   var selectedSkills = profileData.skills || [];
-  document.getElementById('skillsEdit').innerHTML = ALL_SKILLS.map(function(s){
-    var sel = selectedSkills.includes(s) ? ' selected' : '';
-    return '<span class="skill-toggle'+sel+'" onclick="toggleSkill(this)">'+s+'</span>';
+  document.getElementById('skillsEdit').innerHTML = ALL_SKILLS.map(function(s) {
+    var sel = selectedSkills.indexOf(s) >= 0 ? ' selected' : '';
+    return '<span class="skill-toggle' + sel + '" onclick="toggleSkill(this)">' + s + '</span>';
   }).join('');
   document.getElementById('modalOverlay').classList.add('open');
 };
 
-window.toggleSkill = function(el){
-  el.classList.toggle('selected');
-};
+window.toggleSkill = function(el) { el.classList.toggle('selected'); };
 
-window.handleOverlay = function(e){
-  if(e.target === document.getElementById('modalOverlay')) document.getElementById('modalOverlay').classList.remove('open');
+window.handleOverlay = function(e) {
+  if (e.target === document.getElementById('modalOverlay')) document.getElementById('modalOverlay').classList.remove('open');
 };
 
 window.saveProfile = async function() {
   var user = window._currentUser;
-  if(!user) return;
+  if (!user) return;
+  var btn = document.querySelector('.save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
   var name = document.getElementById('editName').value.trim() || profileData.name;
   if (typeof formatPersonName === 'function' && name) name = formatPersonName(name);
-  var bio  = document.getElementById('editBio').value.trim();
-  var skills = Array.from(document.querySelectorAll('.skill-toggle.selected')).map(function(el){ return el.textContent; });
+  var bio = document.getElementById('editBio').value.trim();
+  var skills = Array.from(document.querySelectorAll('.skill-toggle.selected')).map(function(el) { return el.textContent; });
 
   profileData = Object.assign({}, profileData, { name: name, bio: bio, skills: skills });
   localStorage.setItem('qg-profile-' + user.uid, JSON.stringify(profileData));
@@ -439,10 +532,8 @@ window.saveProfile = async function() {
 
   document.getElementById('modalOverlay').classList.remove('open');
   renderProfile(user);
-
-  var t = document.getElementById('toast');
-  t.style.display = 'block';
-  setTimeout(function(){ t.style.display='none'; }, 3000);
+  if (btn) { btn.disabled = false; btn.textContent = 'Save profile'; }
+  showToast('Profile saved! 🎉');
 };
 
 window.uploadAvatar = async function(input) {
@@ -451,15 +542,18 @@ window.uploadAvatar = async function(input) {
   input.value = '';
   if (!user || !file) return;
   if (typeof uploadProfilePhoto !== 'function') {
-    alert('Photo upload not ready — run supabase/profile-photos.sql in Supabase.');
+    alert('Photo upload not ready — run supabase/storage-beta-fix.sql in Supabase.');
     return;
   }
+  var wrap = document.getElementById('avatarWrap');
   var hint = document.getElementById('avatarHint');
+  if (wrap) wrap.classList.add('is-uploading');
   if (hint) hint.textContent = 'Uploading…';
   var upload = await uploadProfilePhoto(file, user.uid);
+  if (wrap) wrap.classList.remove('is-uploading');
   if (!upload.success) {
     if (hint) hint.textContent = 'Tap photo to change';
-    alert(upload.error || 'Could not upload photo.');
+    alert(typeof formatUploadError === 'function' ? formatUploadError(upload.error) : (upload.error || 'Could not upload photo.'));
     return;
   }
   profileData.avatar_url = upload.url;
@@ -476,15 +570,11 @@ window.uploadAvatar = async function(input) {
   }
   renderProfile(user);
   if (hint) hint.textContent = 'Tap photo to change';
-  var t = document.getElementById('toast');
-  t.textContent = 'Profile photo updated!';
-  t.style.display = 'block';
-  setTimeout(function(){ t.style.display='none'; t.textContent='Profile saved! 🎉'; }, 2500);
+  showToast('Profile photo updated! 📷');
 
   if (photoSetupMode || photoRequired) {
-    var returnTo = params.get('return') || 'browsetask.html';
     setTimeout(function() {
-      window.location.href = returnTo;
+      window.location.href = params.get('return') || 'browsetask.html';
     }, 1200);
   }
 };

@@ -378,7 +378,11 @@ window.submitReview = async function(){
       reviewer_id:    window._currentUser ? window._currentUser.uid : null,
       reviewee_id:    params.get('revieweeId') || reviewee,
       rating:         currentRating,
-      review_comment: comment
+      review_comment: comment,
+      reviewer_name:  window._currentUser
+        ? (window._currentUser.displayName || (window._currentUser.email || '').split('@')[0])
+        : '',
+      task_title:     taskTitle
     });
     if (!result.success) throw new Error(result.error || 'save failed');
   } catch (err) {

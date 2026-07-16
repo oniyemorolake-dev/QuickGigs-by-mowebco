@@ -117,3 +117,14 @@ CREATE POLICY "chat_photos_insert" ON storage.objects
 CREATE POLICY "chat_photos_select" ON storage.objects
   FOR SELECT TO anon, authenticated
   USING (bucket_id = 'chat-photos');
+
+-- ── REVIEWS (show on profiles after completed tasks) ─────────────
+GRANT SELECT, INSERT ON reviews TO anon, authenticated;
+
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "anon_select_reviews" ON reviews;
+DROP POLICY IF EXISTS "anon_insert_reviews" ON reviews;
+
+CREATE POLICY "anon_select_reviews" ON reviews FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_insert_reviews" ON reviews FOR INSERT TO anon WITH CHECK (true);
