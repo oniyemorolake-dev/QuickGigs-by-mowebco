@@ -140,7 +140,10 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 | Categories page | ✅ `categories.html` | Grid with live open-task counts |
 | Share task / profile | ✅ Web Share API + clipboard | `qg-share.js` |
 
-### Priority 2 — pre-launch
+### Dashboard & role switch (latest)
+- **Role switch moved to Profile** — animated “I need help / I’m available” flip toggle
+- **Dashboard hero** — contextual next action (applicants waiting, browse gigs, post task, etc.)
+- **Avatar menu** — quick “Switch to Tasker/Poster” shortcut
 
 | Feature | Status | Where |
 |---------|--------|--------|

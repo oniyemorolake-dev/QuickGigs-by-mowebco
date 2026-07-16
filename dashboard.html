@@ -168,31 +168,21 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   <div class="nav-right">
     <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
     <div class="avatar" id="avatarEl" onclick="toggleAvatarMenu()" style="cursor:pointer">M</div>
-    <div id="avatarMenu" style="display:none;position:absolute;top:56px;right:20px;background:#150830;border:0.5px solid rgba(200,168,233,0.2);border-radius:14px;padding:6px;min-width:160px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+    <div id="avatarMenu" style="display:none;position:absolute;top:56px;right:20px;background:#150830;border:0.5px solid rgba(200,168,233,0.2);border-radius:14px;padding:6px;min-width:180px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
       <a href="profile.html" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;text-decoration:none;color:rgba(255,255,255,0.8);font-size:13px;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='rgba(107,63,160,0.2)'" onmouseout="this.style.background='transparent'">👤 View profile</a>
+      <div id="avatarMenuSwitch" onclick="quickSwitchFromMenu()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:rgba(255,255,255,0.8);font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='rgba(107,63,160,0.2)'" onmouseout="this.style.background='transparent'">🔄 Switch mode</div>
       <a href="feedback.html" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;text-decoration:none;color:rgba(255,255,255,0.8);font-size:13px;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='rgba(107,63,160,0.2)'" onmouseout="this.style.background='transparent'">🐛 Beta feedback</a>
       <div onclick="doLogout()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:#ef4444;font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.background='transparent'">🚪 Log out</div>
     </div>
   </div>
 </nav>
 
-<!-- GREETING + MODE SWITCH -->
+<!-- GREETING + SMART HERO -->
 <div class="greeting qg-page-wide">
+  <div class="mode-tag tag-poster" id="modeTag">📋 Poster mode</div>
   <div class="greet-name" id="greetName">Good evening 👋</div>
   <div class="greet-sub" id="greetSub">Welcome back to QuickGigs</div>
-  <div class="mode-switcher" id="modeSwitcher">
-    <button type="button" class="mode-switch-opt" data-mode="poster" onclick="setDashboardMode('poster')">
-      <span class="mode-switch-icon">📋</span>
-      <span class="mode-switch-label">Switch to poster</span>
-      <span class="mode-switch-desc">Post tasks & hire</span>
-    </button>
-    <button type="button" class="mode-switch-opt" data-mode="worker" onclick="setDashboardMode('worker')">
-      <span class="mode-switch-icon">💼</span>
-      <span class="mode-switch-label">Switch to tasker</span>
-      <span class="mode-switch-desc">Browse gigs & apply</span>
-    </button>
-  </div>
-  <p class="mode-switch-note">Same account — tap to switch between poster and tasker. No need to sign out.</p>
+  <div id="dashHero"></div>
 </div>
 
 <!-- STATS -->
@@ -266,6 +256,7 @@ onAuthStateChanged(auth, async (user) => {
 <script src="qg-location.js"></script>
 <script src="qg-config.js"></script>
 <script src="qg-stats.js"></script>
+<script src="qg-role-switch.js"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
 var isDark = localStorage.getItem('qg-mode') !== 'light';
@@ -296,20 +287,34 @@ window.switchMode = function(){
 };
 
 window.setDashboardMode = function(mode) {
-  mode = mode === 'worker' ? 'worker' : 'poster';
-  var current = isPoster ? 'poster' : 'worker';
-  if (mode === current) return;
-  if (typeof setSessionMode === 'function') setSessionMode(mode);
-  window.location.href = 'dashboard.html?mode=' + mode;
+  if (typeof setQuickGigsMode === 'function') {
+    setQuickGigsMode(mode === 'worker' ? 'worker' : 'poster', { redirect: 'dashboard', toast: true });
+  } else {
+    window.location.href = 'dashboard.html?mode=' + (mode === 'worker' ? 'worker' : 'poster');
+  }
 };
 
-function updateModeSwitcherUI() {
-  document.querySelectorAll('.mode-switch-opt').forEach(function(btn) {
-    var isPosterBtn = btn.getAttribute('data-mode') === 'poster';
-    var active = isPosterBtn ? isPoster : !isPoster;
-    btn.classList.toggle('active', isPosterBtn && active);
-    btn.classList.toggle('active-worker', !isPosterBtn && active);
-  });
+window.quickSwitchFromMenu = function() {
+  var next = isPoster ? 'worker' : 'poster';
+  document.getElementById('avatarMenu').style.display = 'none';
+  if (typeof setQuickGigsMode === 'function') {
+    setQuickGigsMode(next, { redirect: 'dashboard', toast: true });
+  } else {
+    window.location.href = 'dashboard.html?mode=' + next;
+  }
+};
+
+function updateAvatarMenuSwitchLabel() {
+  var el = document.getElementById('avatarMenuSwitch');
+  if (!el) return;
+  el.textContent = isPoster ? '💼 Switch to Tasker' : '📋 Switch to Poster';
+}
+
+function updateModeTag() {
+  var tag = document.getElementById('modeTag');
+  if (!tag) return;
+  tag.textContent = isPoster ? '📋 Poster mode' : '💼 Tasker mode';
+  tag.className = 'mode-tag ' + (isPoster ? 'tag-poster' : 'tag-worker');
 }
 
 function taskField(row, key) {
@@ -355,9 +360,11 @@ function renderGreeting(){
   var city = window.getUserCityLabel ? window.getUserCityLabel() : 'Calgary';
   document.getElementById('greetName').textContent = getTimeGreeting() + (name ? ', ' + name : '') + ' 👋';
   var sub = isPoster
-    ? 'Post tasks and review applicants · ' + city
-    : 'Browse gigs and track your applications · ' + city;
+    ? 'Your hiring hub · ' + city
+    : 'Your gig board · ' + city;
   document.getElementById('greetSub').textContent = sub;
+  updateModeTag();
+  updateAvatarMenuSwitchLabel();
 }
 
 async function loadDashboardData(userId) {
@@ -394,12 +401,51 @@ function applyDashboardRoleTheme() {
 
 function initDashboardRoleShell() {
   applyDashboardRoleTheme();
-  updateModeSwitcherUI();
   renderGreeting();
 }
 initDashboardRoleShell();
 
+function renderDashboardHero(userId) {
+  var heroEl = document.getElementById('dashHero');
+  if (!heroEl || typeof buildDashboardHero !== 'function') return;
+  var city = window.getUserCityLabel ? window.getUserCityLabel() : 'Calgary';
+  var myPosted = userId ? dashData.posted.filter(function(t){ return taskField(t, 'posted_by') === userId; }) : [];
+  var myOpenPosted = myPosted.filter(function(t){ return taskField(t, 'status') === 'open'; });
+  var myApps = userId ? dashData.apps.filter(function(a){ return appField(a, 'worker_id') === userId; }) : [];
+  var pendingApplicants = 0;
+  myOpenPosted.forEach(function(t) {
+    pendingApplicants += dashData.apps.filter(function(a) {
+      return String(appField(a, 'task_id')) === String(taskField(t, 'id')) &&
+        String(appField(a, 'status') || 'pending').toLowerCase() === 'pending';
+    }).length;
+  });
+  var inProgressPosted = myPosted.filter(function(t){ return taskField(t, 'status') === 'in_progress'; }).length;
+  var workerInProgress = dashData.posted.filter(function(t) {
+    if (taskField(t, 'status') !== 'in_progress') return false;
+    return myApps.some(function(a) {
+      return String(appField(a, 'task_id')) === String(taskField(t, 'id')) &&
+        String(appField(a, 'status') || '').toLowerCase() === 'accepted';
+    });
+  }).length;
+  var openNearby = dashData.posted.filter(function(t) {
+    return taskField(t, 'status') === 'open' && taskField(t, 'posted_by') !== userId;
+  }).length;
+
+  heroEl.innerHTML = buildDashboardHero({
+    isPoster: isPoster,
+    city: city,
+    pendingApplicants: pendingApplicants,
+    inProgressPosted: inProgressPosted,
+    workerInProgress: workerInProgress,
+    openNearby: openNearby
+  });
+}
+
 function renderAll(){
+  if (typeof getSessionMode === 'function') {
+    sessionMode = getSessionMode();
+    isPoster = sessionMode !== 'worker';
+  }
   renderGreeting();
   var userId = dashData.userId;
   var myPosted = userId ? dashData.posted.filter(function(t){ return taskField(t, 'posted_by') === userId; }) : [];
@@ -441,7 +487,9 @@ function renderAll(){
   }).join('');
 
   applyDashboardRoleTheme();
-  updateModeSwitcherUI();
+  updateModeTag();
+  updateAvatarMenuSwitchLabel();
+  renderDashboardHero(userId);
 
   var actions = isPoster
     ? [

@@ -288,6 +288,10 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   <div class="member-since" id="memberSince"></div>
 </div>
 
+<div id="roleSwitchWrap" style="display:none">
+  <div id="roleFlipMount"></div>
+</div>
+
 <!-- EDIT BUTTONS (own profile only) -->
 <div class="action-row-profile" id="profileActions" style="display:none">
   <button class="edit-btn" id="editBtn" onclick="openEditModal()">✨ Customize profile</button>
@@ -451,6 +455,8 @@ onAuthStateChanged(auth, (user) => {
 <script src="qg-share.js"></script>
 <script src="qg-report.js"></script>
 <script src="qg-stats.js"></script>
+<script src="qg-nav.js"></script>
+<script src="qg-role-switch.js"></script>
 <script>
 var HEADERS = window.HEADERS;
 
@@ -619,6 +625,8 @@ async function loadProfile(user) {
     document.getElementById('avatarCamera').style.display = 'none';
     document.getElementById('photoRequiredBanner').style.display = 'none';
     document.getElementById('photoOptionalBanner').style.display = 'none';
+    var roleWrapHide = document.getElementById('roleSwitchWrap');
+    if (roleWrapHide) roleWrapHide.style.display = 'none';
     var earnedStat = document.getElementById('earnedStat');
     if (earnedStat) earnedStat.style.display = 'none';
     var backBtn = document.querySelector('.back-btn');
@@ -632,6 +640,14 @@ async function loadProfile(user) {
     document.getElementById('profileActions').style.display = 'flex';
     document.getElementById('avatarHint').style.display = 'block';
     document.getElementById('avatarCamera').style.display = 'flex';
+    var roleWrap = document.getElementById('roleSwitchWrap');
+    if (roleWrap) {
+      roleWrap.style.display = 'block';
+      if (typeof renderRoleFlip === 'function') renderRoleFlip('roleFlipMount');
+      if (window.location.hash === '#roleSwitch') {
+        setTimeout(function() { roleWrap.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 400);
+      }
+    }
     var wrap = document.getElementById('avatarWrap');
     wrap.classList.add('can-edit');
     wrap.onclick = function() { document.getElementById('avatarInput').click(); };
@@ -761,6 +777,10 @@ function renderProfile(user, isOwnProfile) {
   }
 
   var role = profileData.role || 'poster';
+  if (typeof getSessionMode === 'function' && isOwnProfile) {
+    role = getSessionMode() === 'worker' ? 'worker' : 'poster';
+    profileData.role = role;
+  }
   var roleHtml = '';
   if (role === 'poster' || role === 'both') roleHtml += '<span class="role-tag">📋 Poster</span>';
   if (role === 'worker' || role === 'both') roleHtml += '<span class="role-tag">💼 Tasker</span>';
@@ -985,6 +1005,13 @@ window.uploadAvatar = async function(input) {
     }, 1200);
   }
 };
+</script>
+<script>
+document.addEventListener('qg-mode-changed', function(e) {
+  if (!e.detail || !e.detail.mode || !window._currentUser) return;
+  profileData.role = e.detail.mode === 'worker' ? 'worker' : 'poster';
+  renderProfile(window._currentUser, true);
+});
 </script>
 </body>
 </html>

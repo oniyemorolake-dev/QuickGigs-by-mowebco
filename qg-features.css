@@ -577,3 +577,200 @@ body.light .qg-verified-badge {
 }
 
 body.light .qg-dispute-step strong { color: #2d1b4e; }
+
+/* Dashboard contextual hero */
+.dash-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  text-decoration: none;
+  color: inherit;
+  border: 0.5px solid var(--border, rgba(200, 168, 233, 0.2));
+  background: var(--card-bg, rgba(255, 255, 255, 0.04));
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.dash-hero:hover {
+  transform: translateY(-2px);
+  border-color: var(--purple-light, #9b6fc4);
+  box-shadow: 0 12px 32px rgba(107, 63, 160, 0.15);
+}
+
+.dash-hero-primary {
+  background: linear-gradient(135deg, rgba(107, 63, 160, 0.35), rgba(155, 111, 196, 0.18));
+  border-color: rgba(200, 168, 233, 0.35);
+}
+
+body.light .dash-hero-primary {
+  background: linear-gradient(135deg, #ede9ff, #faf8ff);
+}
+
+.dash-hero-pulse {
+  animation: dashHeroPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes dashHeroPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(107, 63, 160, 0); }
+  50% { box-shadow: 0 0 0 4px rgba(107, 63, 160, 0.12); }
+}
+
+.dash-hero-emoji {
+  font-size: 28px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.dash-hero-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-hero-body strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text, #fff);
+  margin-bottom: 3px;
+}
+
+.dash-hero-body span {
+  display: block;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted, rgba(255, 255, 255, 0.5));
+}
+
+.dash-hero-cta {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--lavender, #c8a8e9);
+}
+
+.dash-hero-switch {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--text-faint, rgba(255, 255, 255, 0.35));
+  line-height: 1.5;
+}
+
+.dash-hero-switch a {
+  color: var(--purple-light, #9b6fc4);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.dash-hero-switch a:hover {
+  text-decoration: underline;
+}
+
+/* Profile role flip */
+.qg-role-flip {
+  margin: 0 20px 16px;
+  padding: 18px 16px;
+  border-radius: 20px;
+  border: 0.5px solid var(--border, rgba(200, 168, 233, 0.18));
+  background: var(--card-bg, rgba(255, 255, 255, 0.04));
+}
+
+body.light .qg-role-flip {
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(107, 63, 160, 0.06);
+}
+
+.qg-role-flip-kicker {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--lavender, #c8a8e9);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.qg-role-flip-track {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 0.5px solid rgba(200, 168, 233, 0.12);
+}
+
+body.light .qg-role-flip-track {
+  background: #f0eeff;
+  border-color: #e8e2ff;
+}
+
+.qg-role-flip-opt {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 14px 8px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text-muted, rgba(255, 255, 255, 0.45));
+  transition: color 0.25s, transform 0.2s;
+}
+
+.qg-role-flip-opt:hover {
+  transform: translateY(-1px);
+}
+
+.qg-role-flip-opt.active {
+  color: var(--text, #fff);
+}
+
+body.light .qg-role-flip-opt.active {
+  color: #2d1b4e;
+}
+
+.qg-role-flip-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.qg-role-flip-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.qg-role-flip-desc {
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+.qg-role-flip-slider {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  height: calc(100% - 8px);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6b3fa0, #9b6fc4);
+  box-shadow: 0 4px 16px rgba(107, 63, 160, 0.35);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.qg-role-flip-track.is-worker .qg-role-flip-slider {
+  transform: translateX(100%);
+}
+
+.qg-role-flip-note {
+  margin-top: 12px;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--text-faint, rgba(255, 255, 255, 0.35));
+}
