@@ -2,14 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — Dashboard</title>
+<link rel="manifest" href="/manifest.json?v=4">
+<link rel="apple-touch-icon" href="/QuickGigsLogo.png" sizes="180x180">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="QuickGigs">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#6b3fa0">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
 <link rel="stylesheet" href="qg-role-theme.css">
 <link rel="stylesheet" href="qg-features.css?v=20260716">
 <script src="qg-brand-init.js"></script>
-<script src="qg-pwa.js"></script>
+<script src="qg-pwa.js?v=4"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -171,6 +177,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
     <div id="avatarMenu" style="display:none;position:absolute;top:56px;right:20px;background:#150830;border:0.5px solid rgba(200,168,233,0.2);border-radius:14px;padding:6px;min-width:180px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
       <a href="profile.html" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;text-decoration:none;color:rgba(255,255,255,0.8);font-size:13px;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='rgba(107,63,160,0.2)'" onmouseout="this.style.background='transparent'">👤 View profile</a>
       <div id="avatarMenuSwitch" onclick="quickSwitchFromMenu()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:rgba(255,255,255,0.8);font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='rgba(107,63,160,0.2)'" onmouseout="this.style.background='transparent'">🔄 Switch mode</div>
+      <div id="avatarMenuInstall" onclick="typeof promptQuickGigsInstall===\'function\'&&promptQuickGigsInstall()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:rgba(255,255,255,0.8);font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='rgba(107,63,160,0.2)'" onmouseout="this.style.background='transparent'">📲 Add to Home Screen</div>
       <a href="feedback.html" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;text-decoration:none;color:rgba(255,255,255,0.8);font-size:13px;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='rgba(107,63,160,0.2)'" onmouseout="this.style.background='transparent'">🐛 Beta feedback</a>
       <div onclick="doLogout()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:#ef4444;font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.background='transparent'">🚪 Log out</div>
     </div>
@@ -508,6 +515,7 @@ function renderAll(){
     (window.QG_CONFIG && !window.QG_CONFIG.paymentsEnabled
       ? '<div class="action-card secondary" style="grid-column:1/-1;cursor:default;opacity:0.92"><div class="action-icon">💳</div><div class="action-title">Payments coming at launch</div><div class="action-desc">Escrow and Stripe checkout ship with public launch — beta uses accept-to-chat flow.</div></div>'
       : '') +
+    '<button type="button" class="action-card secondary" style="grid-column:1/-1;margin-top:2px;border:none;width:100%;text-align:left;font:inherit;color:inherit" onclick="typeof promptQuickGigsInstall===\'function\'&&promptQuickGigsInstall()"><div class="action-icon">📲</div><div class="action-title">Add to Home Screen</div><div class="action-desc">Install QuickGigs on iPhone (Safari Share menu) or Android</div></button>' +
     '<a class="action-card secondary" href="feedback.html" style="grid-column:1/-1;margin-top:2px"><div class="action-icon">🐛</div><div class="action-title">Beta feedback</div><div class="action-desc">Report a bug or share an idea — we read every message</div></a>';
 
   var sectionTitle = document.getElementById('sectionTitle');
