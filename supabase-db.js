@@ -13,6 +13,32 @@ const SUPABASE_HEADERS = {
   'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
 };
 
+/** Firebase ID token when logged in — required after running supabase/rls-secure.sql */
+async function getSupabaseHeaders(extra, opts) {
+  opts = opts || {};
+  var headers = { 'apikey': SUPABASE_ANON_KEY };
+  if (!opts.noContentType) headers['Content-Type'] = 'application/json';
+  var bearer = SUPABASE_ANON_KEY;
+  try {
+    var user = window._currentUser;
+    if (user && typeof user.getIdToken === 'function') {
+      bearer = await user.getIdToken(false);
+    }
+  } catch (err) {
+    console.warn('Supabase auth: using anon key (log in or enable Firebase in Supabase)', err);
+  }
+  headers['Authorization'] = 'Bearer ' + bearer;
+  if (extra) Object.assign(headers, extra);
+  window.SUPABASE_HEADERS = headers;
+  window.SB_HEADERS = headers;
+  window.HEADERS = headers;
+  return headers;
+}
+
+async function refreshSupabaseAuth() {
+  return await getSupabaseHeaders();
+}
+
 var TASKS_CACHE_KEY = 'qg-tasks-cache-v1';
 var TASKS_CACHE_MS = 60000;
 
@@ -45,7 +71,8 @@ async function sbGet(table, filters, order, limit) {
     var url = SUPABASE_URL + '/rest/v1/' + table + '?order=' + (order || 'created_at.desc');
     if (filters) url += '&' + filters;
     if (limit) url += '&limit=' + limit;
-    var res = await fetch(url, { method: 'GET', headers: SUPABASE_HEADERS, signal: controller.signal });
+    var headers = await getSupabaseHeaders();
+    var res = await fetch(url, { method: 'GET', headers: headers, signal: controller.signal });
     if (!res.ok) throw new Error('GET failed: ' + res.status);
     return await res.json();
   } catch (err) {
@@ -58,9 +85,10 @@ async function sbGet(table, filters, order, limit) {
 
 async function sbPostReturn(table, data) {
   try {
+    var headers = await getSupabaseHeaders({ 'Prefer': 'return=representation' });
     var res = await fetch(SUPABASE_URL + '/rest/v1/' + table, {
       method: 'POST',
-      headers: Object.assign({}, SUPABASE_HEADERS, { 'Prefer': 'return=representation' }),
+      headers: headers,
       body: JSON.stringify(data)
     });
     if (!res.ok) {
@@ -77,9 +105,10 @@ async function sbPostReturn(table, data) {
 
 async function sbPost(table, data) {
   try {
+    var headers = await getSupabaseHeaders({ 'Prefer': 'return=minimal' });
     var res = await fetch(SUPABASE_URL + '/rest/v1/' + table, {
       method: 'POST',
-      headers: Object.assign({}, SUPABASE_HEADERS, { 'Prefer': 'return=minimal' }),
+      headers: headers,
       body: JSON.stringify(data)
     });
     if (!res.ok) {
@@ -96,9 +125,10 @@ async function sbPost(table, data) {
 async function sbUpdate(table, data, filters) {
   try {
     var url = SUPABASE_URL + '/rest/v1/' + table + '?' + filters;
+    var headers = await getSupabaseHeaders({ 'Prefer': 'return=representation' });
     var res = await fetch(url, {
       method: 'PATCH',
-      headers: Object.assign({}, SUPABASE_HEADERS, { 'Prefer': 'return=representation' }),
+      headers: headers,
       body: JSON.stringify(data)
     });
     if (!res.ok) {
@@ -194,6 +224,10 @@ async function uploadTaskPhoto(file, userId) {
   return await uploadStoragePhoto(file, userId, 'task-photos', String(userId));
 }
 
+async function uploadProfilePhoto(file, userId) {
+  return await uploadStoragePhoto(file, userId, 'profile-photos', String(userId));
+}
+
 async function uploadChatPhoto(file, userId, convId) {
   if (!convId) return { success: false, error: 'Missing conversation' };
   return await uploadStoragePhoto(file, userId, 'chat-photos', String(convId) + '/' + String(userId));
@@ -214,14 +248,12 @@ async function uploadStoragePhoto(file, userId, bucket, folder) {
   }).join('/');
   var path = folderPath + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
   try {
+    var headers = await getSupabaseHeaders(null, { noContentType: true });
+    headers['Content-Type'] = file.type || 'image/jpeg';
+    headers['x-upsert'] = 'false';
     var res = await fetch(SUPABASE_URL + '/storage/v1/object/' + bucket + '/' + path, {
       method: 'POST',
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-        'Content-Type': file.type || 'image/jpeg',
-        'x-upsert': 'false'
-      },
+      headers: headers,
       body: file
     });
     if (!res.ok) {
@@ -307,6 +339,7 @@ async function upsertUserProfile(userData) {
     role:         userData.role  || 'poster',
     firebase_uid: userData.firebase_uid || ''
   };
+  if (userData.avatar_url) row.avatar_url = userData.avatar_url;
   if (!row.email && !row.firebase_uid) {
     return { success: false, error: 'Missing email or firebase_uid' };
   }
@@ -327,6 +360,7 @@ async function upsertUserProfile(userData) {
     if (row.phone) patch.phone = row.phone;
     if (row.role) patch.role = row.role;
     if (row.firebase_uid) patch.firebase_uid = row.firebase_uid;
+    if (userData.avatar_url) patch.avatar_url = userData.avatar_url;
     var filters = [];
     if (id != null) {
       filters.push('user_id=eq.' + encodeURIComponent(String(id)));
@@ -452,7 +486,8 @@ async function getConversationsForUser(userId) {
   try {
     var url = SUPABASE_URL + '/rest/v1/conversations?order=last_message_at.desc.nullslast,created_at.desc';
     url += '&or=(poster_id.eq.' + encodeURIComponent(userId) + ',worker_id.eq.' + encodeURIComponent(userId) + ')';
-    var res = await fetch(url, { method: 'GET', headers: SUPABASE_HEADERS, signal: controller.signal });
+    var headers = await getSupabaseHeaders();
+    var res = await fetch(url, { method: 'GET', headers: headers, signal: controller.signal });
     if (!res.ok) {
       var errText = await res.text();
       throw new Error('GET conversations failed: ' + res.status + ' ' + errText);
@@ -562,6 +597,14 @@ async function getAllApplications() {
 }
 
 async function submitApplication(appData) {
+  if (appData.task_id && appData.worker_id) {
+    var task = await getTaskById(appData.task_id);
+    var posterId = task && (task.posted_by || task.POSTED_BY);
+    if (posterId && String(posterId) === String(appData.worker_id)) {
+      return { success: false, error: 'cannot_apply_own_task' };
+    }
+  }
+
   var row = {
     task_id:   appData.task_id,
     worker_id: appData.worker_id,
@@ -606,6 +649,32 @@ async function declineApplication(appId) {
 
 async function cancelTask(taskId) {
   return await updateTaskStatus(taskId, 'cancelled');
+}
+
+/** Poster releases current tasker — task reopens for other applicants. */
+async function releaseAcceptedTasker(taskId, appId) {
+  taskId = String(taskId);
+  appId = String(appId);
+  if (!taskId || !appId) {
+    return { success: false, error: 'Missing task or application' };
+  }
+
+  var appResult = await updateApplicationStatus(appId, 'declined');
+  if (!appResult.success) return appResult;
+
+  var taskResult = await updateTaskStatus(taskId, 'open');
+  if (!taskResult.success) return taskResult;
+
+  var tid = encodeURIComponent(taskId);
+  var convs = await sbGet('conversations', 'task_id=eq.' + tid);
+  if (convs && convs.length) {
+    await Promise.all(convs.map(function (c) {
+      return updateConversation(c.conv_id, { is_unlocked: false, status: 'application' });
+    }));
+  }
+
+  invalidateTasksCache();
+  return { success: true };
 }
 
 async function declinePendingApplicationsForTask(taskId, exceptAppId) {
@@ -666,6 +735,8 @@ async function unlockChatForTask(taskId, posterId, workerId) {
 
 window.SUPABASE_URL = SUPABASE_URL;
 window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
+window.getSupabaseHeaders = getSupabaseHeaders;
+window.refreshSupabaseAuth = refreshSupabaseAuth;
 window.SUPABASE_HEADERS = SUPABASE_HEADERS;
 window.SB_HEADERS = SUPABASE_HEADERS;
 window.HEADERS = SUPABASE_HEADERS;
@@ -680,6 +751,7 @@ window.getTaskById = getTaskById;
 window.lockConversationsForTask = lockConversationsForTask;
 window.postTask = postTask;
 window.uploadTaskPhoto = uploadTaskPhoto;
+window.uploadProfilePhoto = uploadProfilePhoto;
 window.uploadChatPhoto = uploadChatPhoto;
 window.isChatImageBody = isChatImageBody;
 window.parseChatImageUrl = parseChatImageUrl;
@@ -712,6 +784,7 @@ window.updateApplicationStatus = updateApplicationStatus;
 window.cancelApplication = cancelApplication;
 window.declineApplication = declineApplication;
 window.cancelTask = cancelTask;
+window.releaseAcceptedTasker = releaseAcceptedTasker;
 window.declinePendingApplicationsForTask = declinePendingApplicationsForTask;
 window.getReviewsForUser = getReviewsForUser;
 window.submitReview = submitReview;

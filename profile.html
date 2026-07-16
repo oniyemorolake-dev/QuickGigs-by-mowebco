@@ -34,7 +34,10 @@ body.light .mode-btn{background:rgba(0,0,0,0.2);color:#fff;}
 /* AVATAR SECTION */
 .avatar-section{display:flex;flex-direction:column;align-items:center;margin-top:-36px;padding:0 20px 16px;position:relative;z-index:1;}
 .avatar-wrap{position:relative;margin-bottom:12px;}
-.avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#4a1d8a,#9b6fc4);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:500;color:#fff;border:3px solid var(--bg);transition:border-color 0.25s;}
+.avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#4a1d8a,#9b6fc4);background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:500;color:#fff;border:3px solid var(--bg);transition:border-color 0.25s;}
+.avatar.has-photo{color:transparent;}
+.avatar-wrap.can-edit{cursor:pointer;}
+.avatar-edit-hint{font-size:11px;color:var(--text-faint);margin-top:6px;text-align:center;}
 .verified{position:absolute;bottom:2px;right:2px;width:20px;height:20px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid var(--bg);transition:border-color 0.25s;}
 .profile-name{font-size:20px;font-weight:500;color:var(--text);margin-bottom:5px;text-align:center;}
 .role-tags{display:flex;gap:6px;justify-content:center;margin-bottom:10px;flex-wrap:wrap;}
@@ -130,10 +133,12 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <!-- AVATAR + INFO -->
 <div class="avatar-section">
-  <div class="avatar-wrap">
+  <input type="file" id="avatarInput" accept="image/*" hidden>
+  <div class="avatar-wrap" id="avatarWrap">
     <div class="avatar" id="avatarEl">M</div>
     <div class="verified" title="Verified user">✓</div>
   </div>
+  <div class="avatar-edit-hint" id="avatarHint" style="display:none">Tap photo to change</div>
   <div class="profile-name" id="profileName">Loading...</div>
   <div class="role-tags" id="roleTags"></div>
   <div class="rating-row">
@@ -254,7 +259,22 @@ async function loadProfile(user) {
   var targetId = viewUserId || user.uid;
 
   // Show edit button only for own profile
-  if (isOwnProfile) document.getElementById('editBtn').style.display = 'block';
+  if (isOwnProfile) {
+    document.getElementById('editBtn').style.display = 'block';
+    document.getElementById('avatarHint').style.display = 'block';
+    var wrap = document.getElementById('avatarWrap');
+    wrap.classList.add('can-edit');
+    wrap.onclick = function() { document.getElementById('avatarInput').click(); };
+    document.getElementById('avatarInput').onchange = function() { uploadAvatar(this); };
+  }
+
+  if (typeof getUserByFirebaseUid === 'function' && targetId) {
+    var dbUser = await getUserByFirebaseUid(targetId);
+    if (dbUser) {
+      if (dbUser.name) profileData.name = dbUser.name;
+      if (dbUser.avatar_url) profileData.avatar_url = dbUser.avatar_url;
+    }
+  }
 
   // Load from localStorage first for instant display
   var saved = localStorage.getItem('qg-profile-' + targetId);
@@ -271,7 +291,10 @@ async function loadProfile(user) {
 
   // Load tasks from Supabase to calculate real stats
   try {
-    var tasksRes = await fetch(window.SUPABASE_URL + '/rest/v1/tasks?posted_by=eq.' + targetId, { headers: HEADERS });
+    var headers = typeof getSupabaseHeaders === 'function'
+      ? await getSupabaseHeaders()
+      : HEADERS;
+    var tasksRes = await fetch(window.SUPABASE_URL + '/rest/v1/tasks?posted_by=eq.' + targetId, { headers: headers });
     var tasks = await tasksRes.json();
     var posted = Array.isArray(tasks) ? tasks.length : 0;
     var completed = Array.isArray(tasks) ? tasks.filter(function(t){ return t.status === 'completed'; }).length : 0;
@@ -279,7 +302,7 @@ async function loadProfile(user) {
     document.getElementById('statDone').textContent = completed;
 
     // Load reviews
-    var revRes = await fetch(window.SUPABASE_URL + '/rest/v1/reviews?reviewee_id=eq.' + targetId + '&order=created_at.desc', { headers: HEADERS });
+    var revRes = await fetch(window.SUPABASE_URL + '/rest/v1/reviews?reviewee_id=eq.' + targetId + '&order=created_at.desc', { headers: headers });
     var reviews = await revRes.json();
     if (Array.isArray(reviews) && reviews.length) {
       var avg = reviews.reduce(function(s,r){ return s + (r.rating||0); }, 0) / reviews.length;
@@ -301,7 +324,16 @@ async function loadProfile(user) {
 function renderProfile(user) {
   var name = profileData.name || user.displayName || user.email.split('@')[0];
   var initial = name.charAt(0).toUpperCase();
-  document.getElementById('avatarEl').textContent = initial;
+  var avatarEl = document.getElementById('avatarEl');
+  if (profileData.avatar_url) {
+    avatarEl.style.backgroundImage = 'url(' + profileData.avatar_url + ')';
+    avatarEl.classList.add('has-photo');
+    avatarEl.textContent = '';
+  } else {
+    avatarEl.style.backgroundImage = '';
+    avatarEl.classList.remove('has-photo');
+    avatarEl.textContent = initial;
+  }
   document.getElementById('profileName').textContent = name;
   document.getElementById('memberSince').textContent = 'Member since ' + new Date(user.metadata.creationTime).toLocaleDateString('en-CA', {month:'long', year:'numeric'});
 
@@ -357,15 +389,26 @@ window.handleOverlay = function(e){
   if(e.target === document.getElementById('modalOverlay')) document.getElementById('modalOverlay').classList.remove('open');
 };
 
-window.saveProfile = function() {
+window.saveProfile = async function() {
   var user = window._currentUser;
   if(!user) return;
   var name = document.getElementById('editName').value.trim() || profileData.name;
+  if (typeof formatPersonName === 'function' && name) name = formatPersonName(name);
   var bio  = document.getElementById('editBio').value.trim();
   var skills = Array.from(document.querySelectorAll('.skill-toggle.selected')).map(function(el){ return el.textContent; });
 
-  profileData = { ...profileData, name, bio, skills };
+  profileData = Object.assign({}, profileData, { name: name, bio: bio, skills: skills });
   localStorage.setItem('qg-profile-' + user.uid, JSON.stringify(profileData));
+
+  if (typeof upsertUserProfile === 'function') {
+    await upsertUserProfile({
+      name: name,
+      email: user.email || '',
+      firebase_uid: user.uid,
+      role: profileData.role || localStorage.getItem('qg-role') || 'poster',
+      avatar_url: profileData.avatar_url || ''
+    });
+  }
 
   document.getElementById('modalOverlay').classList.remove('open');
   renderProfile(user);
@@ -373,6 +416,42 @@ window.saveProfile = function() {
   var t = document.getElementById('toast');
   t.style.display = 'block';
   setTimeout(function(){ t.style.display='none'; }, 3000);
+};
+
+window.uploadAvatar = async function(input) {
+  var user = window._currentUser;
+  var file = input.files && input.files[0];
+  input.value = '';
+  if (!user || !file) return;
+  if (typeof uploadProfilePhoto !== 'function') {
+    alert('Photo upload not ready — run supabase/profile-photos.sql in Supabase.');
+    return;
+  }
+  var hint = document.getElementById('avatarHint');
+  if (hint) hint.textContent = 'Uploading…';
+  var upload = await uploadProfilePhoto(file, user.uid);
+  if (!upload.success) {
+    if (hint) hint.textContent = 'Tap photo to change';
+    alert(upload.error || 'Could not upload photo.');
+    return;
+  }
+  profileData.avatar_url = upload.url;
+  localStorage.setItem('qg-profile-' + user.uid, JSON.stringify(profileData));
+  if (typeof upsertUserProfile === 'function') {
+    await upsertUserProfile({
+      name: profileData.name || user.displayName || '',
+      email: user.email || '',
+      firebase_uid: user.uid,
+      role: profileData.role || localStorage.getItem('qg-role') || 'poster',
+      avatar_url: upload.url
+    });
+  }
+  renderProfile(user);
+  if (hint) hint.textContent = 'Tap photo to change';
+  var t = document.getElementById('toast');
+  t.textContent = 'Profile photo updated!';
+  t.style.display = 'block';
+  setTimeout(function(){ t.style.display='none'; t.textContent='Profile saved! 🎉'; }, 2500);
 };
 </script>
 </body>

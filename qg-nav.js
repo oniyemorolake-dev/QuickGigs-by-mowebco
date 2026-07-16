@@ -105,16 +105,38 @@
   function applyMyTasksTabsForMode(options) {
     options = options || {};
     var isWorker = isWorkerMode();
-    var hasPosted = !!options.hasPosted;
-    var hasApps = !!options.hasApps;
 
     var postedEl = document.getElementById('tabPosted');
     var appliedEl = document.getElementById('tabApplied');
-    if (postedEl) postedEl.style.display = (!isWorker || hasPosted) ? '' : 'none';
-    if (appliedEl) appliedEl.style.display = (isWorker || hasApps) ? '' : 'none';
+    // Poster = post & hire only. Tasker = apply & work only.
+    if (postedEl) postedEl.style.display = isWorker ? 'none' : '';
+    if (appliedEl) appliedEl.style.display = isWorker ? '' : 'none';
 
     var titleEl = document.querySelector('.nav-title');
     if (titleEl) titleEl.textContent = isWorker ? 'My Jobs' : 'My Tasks';
+  }
+
+  function defaultMyTasksTab() {
+    return isWorkerMode() ? 'applied' : 'posted';
+  }
+
+  function normalizeMyTasksTab(tab) {
+    var allowed = isWorkerMode()
+      ? { applied: 1, inprogress: 1, completed: 1 }
+      : { posted: 1, inprogress: 1, completed: 1 };
+    return allowed[tab] ? tab : defaultMyTasksTab();
+  }
+
+  function roleGateHtml(opts) {
+    opts = opts || {};
+    var targetMode = opts.targetMode === 'poster' ? 'poster' : 'worker';
+    var label = targetMode === 'worker' ? 'Tasker' : 'Poster';
+    return '<div class="empty-state" style="text-align:center;padding:48px 20px">' +
+      '<div class="empty-icon">' + (opts.icon || '🔄') + '</div>' +
+      '<div class="empty-title">' + (opts.title || ('Switch to ' + label + ' mode')) + '</div>' +
+      '<div class="empty-sub">' + (opts.sub || '') + '</div>' +
+      '<button type="button" class="empty-btn" onclick="typeof switchRoleMode===\'function\'&&switchRoleMode()">Switch to ' + label + ' mode</button>' +
+      '</div>';
   }
 
   window.getSessionMode = getSessionMode;
@@ -124,6 +146,9 @@
   window.switchRoleMode = switchRoleMode;
   window.renderQuickGigsTabBar = renderQuickGigsTabBar;
   window.applyMyTasksTabsForMode = applyMyTasksTabsForMode;
+  window.defaultMyTasksTab = defaultMyTasksTab;
+  window.normalizeMyTasksTab = normalizeMyTasksTab;
+  window.roleGateHtml = roleGateHtml;
   window.applyRoleTheme = applyRoleTheme;
   window.applyNavBrand = applyNavBrand;
   window.getThemeMode = getThemeMode;

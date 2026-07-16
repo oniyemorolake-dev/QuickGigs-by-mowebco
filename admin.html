@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
 <title>QuickGigs — Admin Console</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -406,7 +407,10 @@ async function initAdmin(){
 
 async function loadData(){
   try{
-    var[ur,tr]=await Promise.all([fetch(window.SUPABASE_URL+'/rest/v1/users?order=created_at.desc',{headers:SB_HEADERS}),fetch(window.SUPABASE_URL+'/rest/v1/tasks?order=created_at.desc',{headers:SB_HEADERS})]);
+    var headers = typeof getSupabaseHeaders === 'function'
+      ? await getSupabaseHeaders()
+      : SB_HEADERS;
+    var[ur,tr]=await Promise.all([fetch(window.SUPABASE_URL+'/rest/v1/users?order=created_at.desc',{headers:headers}),fetch(window.SUPABASE_URL+'/rest/v1/tasks?order=created_at.desc',{headers:headers})]);
     var ud=await ur.json(),td=await tr.json();
     if(Array.isArray(ud)) users=ud;
     if(Array.isArray(td)) tasks=td;

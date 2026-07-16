@@ -196,6 +196,10 @@ applyTheme();
 function pickDefaultTab() {
   var params = new URLSearchParams(window.location.search);
   var tabParam = params.get('tab');
+  if (typeof normalizeMyTasksTab === 'function') {
+    activeTab = normalizeMyTasksTab(tabParam || defaultMyTasksTab());
+    return;
+  }
   if (tabParam && TAB_IDS[tabParam]) {
     activeTab = tabParam;
     return;
@@ -207,6 +211,16 @@ function pickDefaultTab() {
   activeTab = 'posted';
 }
 
+function enforceModeTab() {
+  if (typeof normalizeMyTasksTab === 'function') {
+    activeTab = normalizeMyTasksTab(activeTab);
+  } else if (typeof isWorkerMode === 'function' && isWorkerMode() && activeTab === 'posted') {
+    activeTab = 'applied';
+  } else if (typeof isPosterMode === 'function' && isPosterMode() && activeTab === 'applied') {
+    activeTab = 'posted';
+  }
+}
+
 function syncRoleTabs() {
   var userId = window._currentUser ? window._currentUser.uid : null;
   var hasPosted = userId && allTasks.some(function(t){ return getField(t, 'POSTED_BY') === userId; });
@@ -214,12 +228,7 @@ function syncRoleTabs() {
   if (typeof applyMyTasksTabsForMode === 'function') {
     applyMyTasksTabsForMode({ hasPosted: hasPosted, hasApps: hasApps });
   }
-  if (typeof isWorkerMode === 'function' && isWorkerMode() && activeTab === 'posted' && !hasPosted) {
-    activeTab = 'applied';
-  }
-  if (typeof isPosterMode === 'function' && isPosterMode() && activeTab === 'applied' && !hasApps) {
-    activeTab = 'posted';
-  }
+  enforceModeTab();
 }
 
 function syncTabButtons() {
@@ -581,7 +590,7 @@ window.runConfirm = async function() {
 };
 
 window.showTab = function(tab, btn){
-  activeTab = tab;
+  activeTab = typeof normalizeMyTasksTab === 'function' ? normalizeMyTasksTab(tab) : tab;
   document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
   else syncTabButtons();
@@ -594,25 +603,34 @@ window.showTab = function(tab, btn){
 };
 
 function renderTab(){
+  enforceModeTab();
+  syncTabButtons();
   var userId = window._currentUser ? window._currentUser.uid : null;
   var content = document.getElementById('tabContent');
+  var isWorker = typeof isWorkerMode === 'function' && isWorkerMode();
+  var isPoster = typeof isPosterMode === 'function' && isPosterMode();
 
   if(activeTab === 'posted'){
+    if (isWorker) {
+      content.innerHTML = typeof roleGateHtml === 'function' ? roleGateHtml({
+        targetMode: 'poster',
+        icon: '📋',
+        title: 'Posting is in Poster mode',
+        sub: 'Switch to Poster mode to manage your listings and review applicants. Use Tasker mode to browse and apply to jobs.'
+      }) : '';
+      return;
+    }
     var myTasks = allTasks.filter(function(t){ return getField(t,'POSTED_BY') === userId && getField(t,'STATUS') === 'open'; });
     if(!myTasks.length){
-      var userId = window._currentUser ? window._currentUser.uid : null;
-      var hasApps = allApplications.some(function(a){ return getField(a,'WORKER_ID') === userId; });
-      if (hasApps) {
-        content.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">You haven\'t posted any open tasks. Check the <strong>Applied</strong> tab for tasks you\'ve applied to.</div><button class="empty-btn" onclick="showTab(\'applied\',document.getElementById(\'tabApplied\'))">View applications</button></div>';
-        return;
-      }
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">Tasks you post appear here. Workers in your area can apply.</div><a class="empty-btn" href="posttask.html">Post a task</a></div>';
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">Post a task here in Poster mode. Review applicants and accept a tasker — work happens on their Tasker side.</div><a class="empty-btn" href="posttask.html">Post a task</a></div>';
       return;
     }
     content.innerHTML = myTasks.map(function(t){
       var cat = getCat(t);
       var taskId = getField(t,'TASK_ID');
-      var apps = allApplications.filter(function(a){ return String(getField(a,'TASK_ID')) === String(taskId); });
+      var apps = allApplications.filter(function(a){
+        return String(getField(a,'TASK_ID')) === String(taskId) && String(getField(a,'WORKER_ID')) !== String(userId);
+      });
       var pendingApps = apps.filter(function(a){ var s = (getField(a,'STATUS') || 'pending').toLowerCase(); return s === 'pending'; });
       var hasAccepted = apps.some(function(a){ return (getField(a,'STATUS') || '').toLowerCase() === 'accepted'; });
       var listApps = hasAccepted ? apps : pendingApps;
@@ -649,6 +667,15 @@ function renderTab(){
   }
 
   else if(activeTab === 'applied'){
+    if (isPoster) {
+      content.innerHTML = typeof roleGateHtml === 'function' ? roleGateHtml({
+        targetMode: 'worker',
+        icon: '💼',
+        title: 'Applications are in Tasker mode',
+        sub: 'Switch to Tasker mode to browse tasks, apply, and track your jobs. Poster mode is for posting and hiring only.'
+      }) : '';
+      return;
+    }
     var myApps = allApplications.filter(function(a){ return getField(a,'WORKER_ID') === userId; });
     myApps.sort(function(a, b) {
       var order = { pending: 0, accepted: 1, declined: 2, cancelled: 3 };
@@ -702,38 +729,67 @@ function renderTab(){
   }
 
   else if(activeTab === 'inprogress'){
-    var inProg = allTasks.filter(function(t){ return (getField(t,'POSTED_BY')===userId || allApplications.some(function(a){ return getField(a,'TASK_ID')==getField(t,'TASK_ID')&&getField(a,'WORKER_ID')===userId&&getField(a,'STATUS')==='accepted'; })) && getField(t,'STATUS')==='in_progress'; });
+    var inProg;
+    if (isPoster) {
+      inProg = allTasks.filter(function(t){ return getField(t,'POSTED_BY') === userId && getField(t,'STATUS') === 'in_progress'; });
+    } else {
+      inProg = allTasks.filter(function(t){
+        return getField(t,'STATUS') === 'in_progress' && allApplications.some(function(a){
+          return String(getField(a,'TASK_ID')) === String(getField(t,'TASK_ID')) &&
+            getField(a,'WORKER_ID') === userId && getField(a,'STATUS') === 'accepted';
+        });
+      });
+    }
     if(!inProg.length){
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Nothing in progress</div><div class="empty-sub">Tasks move here once you accept a worker (beta — no payment required yet).</div></div>';
+      var emptySub = isPoster
+        ? 'After you accept a tasker from the Posted tab, the job appears here. You can message them or change tasker if needed.'
+        : 'When a poster accepts your application, the job moves here. Switch to Tasker mode if you were browsing as a poster.';
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Nothing in progress</div><div class="empty-sub">' + emptySub + '</div>' +
+        (isPoster ? '<a class="empty-btn" href="mytasks.html?tab=posted">Review applicants</a>' : '<a class="empty-btn" href="browsetask.html">Browse tasks</a>') +
+        '</div>';
       return;
     }
     content.innerHTML = inProg.map(function(t){
       var cat = getCat(t);
       var userId = window._currentUser ? window._currentUser.uid : null;
-      var isPoster = getField(t,'POSTED_BY') === userId;
+      var isPosterTask = getField(t,'POSTED_BY') === userId;
       var taskId = getField(t,'TASK_ID');
       var acceptedApp = allApplications.find(function(a){
         return String(getField(a,'TASK_ID')) === String(taskId) && getField(a,'STATUS') === 'accepted';
       });
       var workerName = acceptedApp ? displayName(getField(acceptedApp,'WORKER_ID'), acceptedApp) : '';
-      var roleLabel = isPoster
-        ? (workerName ? 'Worker: ' + esc(workerName) : 'You posted')
+      var roleLabel = isPosterTask
+        ? (workerName ? 'Tasker: ' + esc(workerName) : 'Awaiting tasker')
         : 'Posted by '+esc(displayName(getField(t,'POSTED_BY'), t));
+      var posterActions = isPosterTask
+        ? '<button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')">💬 Message</button>' +
+          '<button class="act-btn btn-success" onclick="markComplete('+JSON.stringify(String(taskId))+')">✓ Mark complete</button>' +
+          '<button class="act-btn btn-primary" onclick="confirmChangeTasker('+JSON.stringify(String(taskId))+')">↩ Change tasker</button>' +
+          '<button class="act-btn btn-danger" onclick="confirmCancelInProgress('+JSON.stringify(String(taskId))+')">✕ Cancel task</button>'
+        : '';
+      var workerActions = !isPosterTask
+        ? '<button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')">💬 Message poster</button>' +
+          '<button class="act-btn btn-success" onclick="markComplete('+JSON.stringify(String(taskId))+')">✓ Mark complete</button>'
+        : '';
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+roleLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-progress">⏳ In progress</span></div>'+
         '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+'</div>'+
-        '<div class="action-row">' +
-        '<button class="act-btn btn-success" onclick="markComplete('+JSON.stringify(String(taskId))+')">✓ Mark complete</button>' +
-        '<button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')">💬 Message</button>' +
-        (isPoster ? '<button class="act-btn btn-danger" onclick="confirmCancelInProgress('+JSON.stringify(String(taskId))+')">✕ Cancel task</button>' : '') +
-        (!isPaymentGatedChat() ? '' : (isPoster ? '<button class="act-btn btn-primary" onclick="window.location.href=\'payment.html?task='+encodeURIComponent(String(taskId))+'\'">💳 Pay & unlock chat</button>' : '')) +
-        '</div>'+
+        '<div class="action-row">' + posterActions + workerActions + '</div>'+
       '</div>';
     }).join('');
   }
 
   else if(activeTab === 'completed'){
-    var done = allTasks.filter(function(t){ return getField(t,'STATUS')==='completed' && (getField(t,'POSTED_BY')===userId || allApplications.some(function(a){ return getField(a,'TASK_ID')==getField(t,'TASK_ID')&&getField(a,'WORKER_ID')===userId; })); });
+    var done;
+    if (isPoster) {
+      done = allTasks.filter(function(t){ return getField(t,'STATUS') === 'completed' && getField(t,'POSTED_BY') === userId; });
+    } else {
+      done = allTasks.filter(function(t){
+        return getField(t,'STATUS') === 'completed' && allApplications.some(function(a){
+          return String(getField(a,'TASK_ID')) === String(getField(t,'TASK_ID')) && getField(a,'WORKER_ID') === userId;
+        });
+      });
+    }
     if(!done.length){
       content.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No completed tasks yet</div><div class="empty-sub">Completed tasks will appear here once both sides confirm the work is done.</div></div>';
       return;
@@ -779,6 +835,12 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
   }
 
   var workerId = getField(app, 'WORKER_ID');
+  if (String(workerId) === String(userId)) {
+    setAcceptLoading(acceptBtn, false);
+    showToast('You cannot accept yourself on your own task', '#ef4444');
+    return;
+  }
+
   var workerName = displayName(workerId, app);
 
   var workerUser = await getUserByFirebaseUid(workerId);
@@ -991,6 +1053,41 @@ window.confirmCancelPosting = function(taskId) {
       }
       showToast('Posting cancelled');
       loadData();
+    }
+  });
+};
+
+window.confirmChangeTasker = function(taskId) {
+  var task = allTasks.find(function(t) { return String(getField(t, 'TASK_ID')) === String(taskId); });
+  var acceptedApp = allApplications.find(function(a) {
+    return String(getField(a, 'TASK_ID')) === String(taskId) && getField(a, 'STATUS') === 'accepted';
+  });
+  var title = task ? getField(task, 'TITLE') : 'this task';
+  var workerName = acceptedApp ? displayName(getField(acceptedApp, 'WORKER_ID'), acceptedApp) : 'this tasker';
+  var appId = acceptedApp ? getField(acceptedApp, 'APP_ID') : '';
+  if (!appId) {
+    showToast('No assigned tasker found — refresh and try again', '#ef4444');
+    return;
+  }
+  showConfirm({
+    title: 'Change tasker?',
+    message: '“' + title + '” will go back to Open and ' + workerName + ' will be notified they were not selected. You can review and accept another applicant from Posted.',
+    confirmLabel: 'Change tasker',
+    neutral: true,
+    onConfirm: async function() {
+      if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
+      var result = typeof releaseAcceptedTasker === 'function'
+        ? await releaseAcceptedTasker(String(taskId), String(appId))
+        : { success: false };
+      if (!result.success) {
+        showToast(result.error || 'Could not change tasker — try again', '#ef4444');
+        return;
+      }
+      expandedApplicantTasks[String(taskId)] = true;
+      activeTab = 'posted';
+      syncTabButtons();
+      showToast('Task reopened — pick another applicant');
+      await loadData();
     }
   });
 };

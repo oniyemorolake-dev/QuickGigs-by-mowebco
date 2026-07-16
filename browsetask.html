@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — Browse Tasks</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
@@ -102,9 +102,11 @@ body.light .badge-standard{background:#ede9ff;color:var(--purple);}
 .empty-state{text-align:center;padding:48px 0 32px;}
 .empty-emoji{font-size:40px;margin-bottom:10px;}
 .empty-txt{font-size:13px;color:var(--empty-color);}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:200;display:none;align-items:flex-end;justify-content:center;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:300;display:none;align-items:flex-end;justify-content:center;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:0;}
 .modal-overlay.open{display:flex;}
-.modal{width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:20px 22px 32px;background:var(--modal-bg);border:0.5px solid var(--border);}
+.modal{width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:16px 22px calc(14px + env(safe-area-inset-bottom, 0px));background:var(--modal-bg);border:0.5px solid var(--border);max-height:min(92dvh,92vh);display:flex;flex-direction:column;margin-top:auto;}
+.modal-scroll{flex:1 1 auto;overflow-y:auto;min-height:0;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:4px;}
+.modal-footer{flex-shrink:0;padding-top:12px;margin-top:8px;border-top:0.5px solid var(--border);background:var(--modal-bg);}
 .modal-handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 18px;}
 .modal-title{font-size:15px;font-weight:500;color:var(--text);margin-bottom:3px;}
 .modal-sub{font-size:12px;color:var(--text-muted);margin-bottom:18px;}
@@ -113,7 +115,7 @@ body.light .badge-standard{background:#ede9ff;color:var(--purple);}
 .modal-input:focus{border-color:var(--purple-light);}
 .modal-input::placeholder{color:var(--lavender);opacity:0.35;}
 body.light .modal-input::placeholder{color:var(--purple);opacity:0.3;}
-textarea.modal-input{resize:none;min-height:80px;}
+textarea.modal-input{resize:vertical;min-height:100px;max-height:160px;}
 .price-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:13px;}
 .price-wrap{position:relative;}
 .price-pre{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--purple-light);font-weight:500;font-size:13px;}
@@ -131,6 +133,7 @@ textarea.modal-input{resize:none;min-height:80px;}
 body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color:var(--purple);}
 </style>
 <link rel="stylesheet" href="qg-brand.css">
+<link rel="stylesheet" href="qg-mobile.css">
 </head>
 <body>
 <script src="qg-theme.js"></script>
@@ -186,28 +189,35 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   <div class="loading-state"><div class="loading-spinner">⏳</div><div class="loading-txt">Loading tasks near you...</div></div>
 </div>
 <div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
-  <div class="modal">
+  <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
-    <p class="modal-title" id="modalTitle">Apply for task</p>
-    <p class="modal-sub" id="modalSub">Submit your offer to the poster</p>
-    <div class="price-grid">
-      <div><span class="modal-label">Your offer</span><div class="price-wrap"><span class="price-pre">$</span><input class="modal-input" id="offerPrice" type="number" min="20" placeholder="40"></div></div>
-      <div><span class="modal-label">Availability</span><input class="modal-input" id="offerAvail" type="text" placeholder="e.g. This Saturday"></div>
+    <div class="modal-scroll">
+      <p class="modal-title" id="modalTitle">Apply for task</p>
+      <p class="modal-sub" id="modalSub">Submit your offer to the poster</p>
+      <div class="price-grid">
+        <div><span class="modal-label">Your offer</span><div class="price-wrap"><span class="price-pre">$</span><input class="modal-input" id="offerPrice" type="number" min="20" placeholder="40" inputmode="decimal"></div></div>
+        <div><span class="modal-label">Availability</span><input class="modal-input" id="offerAvail" type="text" placeholder="e.g. This Saturday, mornings"></div>
+      </div>
+      <span class="modal-label">Message to poster</span>
+      <textarea class="modal-input" id="offerMsg" placeholder="Tell them why you're the right person..." rows="4"></textarea>
+      <div class="field-error" id="offerFraudError" style="display:none;color:#ef4444;font-size:12px;margin-top:8px;"></div>
+      <div id="modalPhotoWrap" style="display:none;margin-top:12px;"></div>
     </div>
-    <span class="modal-label">Message to poster</span>
-    <textarea class="modal-input" id="offerMsg" placeholder="Tell them why you're the right person..."></textarea>
-    <div class="field-error" id="offerFraudError" style="display:none;color:#ef4444;font-size:12px;margin-top:8px;"></div>
-    <div id="modalPhotoWrap" style="display:none;margin-top:12px;"></div>
-    <div class="modal-btns">
-      <button class="cancel-btn" onclick="closeModal()">Cancel</button>
-      <button class="submit-btn" id="applySubmitBtn" onclick="submitApplication()">Send application</button>
+    <div class="modal-footer">
+      <div class="modal-btns">
+        <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>
+        <button type="button" class="submit-btn" id="applySubmitBtn" onclick="submitApplication()">Send application</button>
+      </div>
     </div>
   </div>
 </div>
 <div class="toast" id="toast">Application sent! You'll hear back soon 🎉</div>
 <nav class="tab-bar" id="qgTabBar"></nav>
 <script src="qg-nav.js"></script>
-<script>renderQuickGigsTabBar('browse');</script>
+<script>
+if (typeof setSessionMode === 'function') setSessionMode('worker');
+renderQuickGigsTabBar('browse');
+</script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
@@ -234,6 +244,7 @@ onAuthStateChanged(auth, (user) => {
   document.getElementById('avatarEl').textContent = name.charAt(0).toUpperCase();
   window._currentUser = user;
   if (typeof syncCurrentUserProfile === 'function') syncCurrentUserProfile(user);
+  if (typeof window.reloadBrowseTasks === 'function') window.reloadBrowseTasks();
 });
 </script>
 
@@ -307,19 +318,31 @@ async function hydratePosterNames() {
   });
 }
 
+function getCurrentUserId(){
+  return window._currentUser ? String(window._currentUser.uid) : '';
+}
+function isOwnPostedTask(t){
+  return !!(t && t.posterId && getCurrentUserId() && String(t.posterId) === getCurrentUserId());
+}
+function filterBrowseTasks(list){
+  return (list || []).filter(function(t){
+    return t.status === 'open' && !isOwnPostedTask(t);
+  });
+}
+
 async function loadTasks(){
   if (typeof getUsersNameMap === 'function') {
     getUsersNameMap().then(function(map){ userNames = map || {}; renderCards(); });
   }
   var cached = typeof readTasksCache === 'function' ? readTasksCache() : null;
   if (cached && cached.length) {
-    allTasks = cached.map(normaliseTask).filter(function(t){ return t.status === 'open'; });
+    allTasks = filterBrowseTasks(cached.map(normaliseTask));
     renderCards();
   }
   try{
     var items = await getTasks();
     if (items && items.length) {
-      allTasks = items.map(normaliseTask);
+      allTasks = filterBrowseTasks(items.map(normaliseTask));
     } else if (!cached || !cached.length) {
       allTasks = getDemoTasks();
     }
@@ -332,7 +355,7 @@ async function loadTasks(){
   if (typeof fetchAllTasksFresh === 'function') {
     fetchAllTasksFresh().then(function(fresh){
       if (!fresh || !fresh.length) return;
-      allTasks = fresh.map(normaliseTask).filter(function(t){ return t.status === 'open'; });
+      allTasks = filterBrowseTasks(fresh.map(normaliseTask));
       hydratePosterNames().then(renderCards);
     });
   }
@@ -378,8 +401,12 @@ window.applyFilters=renderCards;
 
 window.openModal=function(id,e){
   e.stopPropagation();
-  activeTask=allTasks.find(function(t){return t.id==id;});
+  activeTask=allTasks.find(function(t){return String(t.id)===String(id);});
   if(!activeTask)return;
+  if(isOwnPostedTask(activeTask)){
+    alert('This is your own posting. Switch to Poster mode → My Tasks to manage applicants.');
+    return;
+  }
   document.getElementById('modalTitle').textContent=activeTask.catLabel+' — '+activeTask.title.substring(0,40)+(activeTask.title.length>40?'…':'');
   var sub = 'Budget: '+activeTask.priceLabel+' · '+activeTask.location;
   if (activeTask.requiresPhotos) sub += ' · 📷 Photo updates requested';
@@ -399,8 +426,16 @@ window.openModal=function(id,e){
     photoWrap.innerHTML='';
   }
   document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  setTimeout(function(){
+    var scroll = document.querySelector('#modalOverlay .modal-scroll');
+    if (scroll) scroll.scrollTop = 0;
+  }, 50);
 };
-window.closeModal=function(){document.getElementById('modalOverlay').classList.remove('open');};
+window.closeModal=function(){
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow='';
+};
 window.handleOverlayClick=function(e){if(e.target===document.getElementById('modalOverlay'))closeModal();};
 
 window.submitApplication=async function(){
@@ -419,6 +454,11 @@ window.submitApplication=async function(){
   var btn=document.getElementById('applySubmitBtn');
   btn.textContent='Sending...';btn.disabled=true;
   var userId=window._currentUser?window._currentUser.uid:'anonymous';
+  if (activeTask && isOwnPostedTask(activeTask)) {
+    alert('You cannot apply to your own task.');
+    btn.textContent='Send application';btn.disabled=false;
+    return;
+  }
   var workerName = window._currentUser
     ? (window._currentUser.displayName || window._currentUser.email.split('@')[0])
     : '';
@@ -436,7 +476,10 @@ window.submitApplication=async function(){
       message: msg + (avail ? ' — Available: ' + avail : ''),
       price: parseFloat(price)
     });
-    if (!result.success) throw new Error(result.error || 'save failed');
+    if (!result.success) {
+      if (result.error === 'cannot_apply_own_task') throw new Error('own_task');
+      throw new Error(result.error || 'save failed');
+    }
 
     if (activeTask.posterId && userId !== 'anonymous') {
       var posterName = activeTask.posterName || 'Poster';
@@ -471,7 +514,7 @@ window.submitApplication=async function(){
     }
   } catch(err) {
     console.warn('Application save error:', err);
-    alert('Could not send application. Please try again.');
+    alert(err.message === 'own_task' ? 'You cannot apply to your own task.' : 'Could not send application. Please try again.');
     btn.textContent='Send application';btn.disabled=false;
     return;
   }
@@ -483,6 +526,7 @@ window.submitApplication=async function(){
   setTimeout(function(){toast.style.display='none';},5000);
 };
 
+window.reloadBrowseTasks = loadTasks;
 window.toggleMode=function(){isDark=!isDark;applyTheme();};
 function applyTheme(){window.QG_applyTheme(isDark,'modeBtn',false);localStorage.setItem('qg-mode',isDark?'dark':'light');}
 applyTheme();

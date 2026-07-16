@@ -68,6 +68,15 @@ body.qg-page-chat {
   }
 }
 
+.qg-keyboard-open .modal-overlay.open {
+  align-items: flex-start;
+  padding-bottom: 12px;
+}
+.qg-keyboard-open .modal-overlay.open .modal {
+  max-height: none;
+  margin-top: 8px;
+}
+
 @media (max-width: 480px) {
   .hint-box {
     flex-direction: column;

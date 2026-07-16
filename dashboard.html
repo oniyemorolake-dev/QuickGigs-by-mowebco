@@ -360,7 +360,9 @@ async function loadDashboardData(userId) {
     renderAll();
   }
   try {
-    var headers = window.SUPABASE_HEADERS;
+    var headers = typeof getSupabaseHeaders === 'function'
+      ? await getSupabaseHeaders()
+      : window.SUPABASE_HEADERS;
     var res = await Promise.all([
       typeof fetchAllTasksFresh === 'function' ? fetchAllTasksFresh() : fetch(window.SUPABASE_URL + '/rest/v1/tasks?order=created_at.desc&limit=100', { headers: headers }).then(function (r) { return r.ok ? r.json() : []; }),
       fetch(window.SUPABASE_URL + '/rest/v1/applications?order=created_at.desc&limit=200', { headers: headers }).then(function (r) { return r.ok ? r.json() : []; })
