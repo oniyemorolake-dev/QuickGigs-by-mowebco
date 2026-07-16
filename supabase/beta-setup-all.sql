@@ -53,3 +53,25 @@ CREATE POLICY "profile_photos_upload" ON storage.objects
     bucket_id = 'profile-photos'
     AND (storage.foldername(name))[1] IS NOT NULL
   );
+
+-- ── CONVERSATIONS + MESSAGES (keep chat history visible in beta) ─
+-- Do NOT run rls-secure.sql until Firebase auth is enabled in Supabase.
+
+GRANT SELECT, INSERT, UPDATE ON conversations TO anon, authenticated;
+GRANT SELECT, INSERT ON messages TO anon, authenticated;
+
+ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "anon_select_conversations" ON conversations;
+DROP POLICY IF EXISTS "anon_insert_conversations" ON conversations;
+DROP POLICY IF EXISTS "anon_update_conversations" ON conversations;
+DROP POLICY IF EXISTS "anon_select_messages" ON messages;
+DROP POLICY IF EXISTS "anon_insert_messages" ON messages;
+
+CREATE POLICY "anon_select_conversations" ON conversations FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_insert_conversations" ON conversations FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_update_conversations" ON conversations FOR UPDATE TO anon USING (true) WITH CHECK (true);
+
+CREATE POLICY "anon_select_messages" ON messages FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_insert_messages" ON messages FOR INSERT TO anon WITH CHECK (true);

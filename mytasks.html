@@ -271,7 +271,17 @@ function applyLocalAcceptState(taskId, appId) {
     if (String(getField(a, 'APP_ID')) === appId) setRowStatus(a, 'accepted');
     else if (getField(a, 'STATUS') === 'pending' || !getField(a, 'STATUS')) setRowStatus(a, 'declined');
   });
-  if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
+  if (typeof mergeTaskInCache === 'function') mergeTaskInCache(taskId, { status: 'in_progress', STATUS: 'in_progress' });
+  if (typeof mergeApplicationInCache === 'function') {
+    allApplications.forEach(function(a) {
+      if (String(getField(a, 'TASK_ID')) !== taskId) return;
+      var wid = getField(a, 'WORKER_ID');
+      var aid = getField(a, 'APP_ID');
+      var st = (getField(a, 'STATUS') || 'pending').toLowerCase();
+      if (String(aid) === appId) mergeApplicationInCache(aid, taskId, wid, { status: 'accepted', STATUS: 'accepted' });
+      else if (st === 'pending') mergeApplicationInCache(aid, taskId, wid, { status: 'declined', STATUS: 'declined' });
+    });
+  }
 }
 
 function isPaymentGatedChat() {
@@ -455,7 +465,7 @@ async function loadData(){
   if (!userId) return;
 
   try {
-    var cached = typeof readTasksCache === 'function' ? readTasksCache() : null;
+    var cached = typeof readTasksCache === 'function' ? readTasksCache(true) : null;
     if (cached && cached.length) {
       allTasks = cached;
       pickDefaultTab();
@@ -468,9 +478,9 @@ async function loadData(){
     var tasksPromise = typeof fetchAllTasksFresh === 'function'
       ? fetchAllTasksFresh()
       : (typeof getAllTasks === 'function' ? getAllTasks() : Promise.resolve([]));
-    var appsPromise = typeof getAllApplications === 'function'
-      ? getAllApplications()
-      : Promise.resolve([]);
+    var appsPromise = typeof fetchAllApplicationsFresh === 'function'
+      ? fetchAllApplicationsFresh()
+      : (typeof getAllApplications === 'function' ? getAllApplications() : Promise.resolve([]));
     var namesPromise = typeof getUsersNameMap === 'function'
       ? getUsersNameMap().catch(function () { return {}; })
       : Promise.resolve({});
@@ -479,8 +489,10 @@ async function loadData(){
       : Promise.resolve({});
 
     var results = await Promise.all([tasksPromise, appsPromise, namesPromise, avatarsPromise]);
-    allTasks = Array.isArray(results[0]) ? results[0] : [];
-    allApplications = Array.isArray(results[1]) ? results[1] : [];
+    var freshTasks = Array.isArray(results[0]) ? results[0] : [];
+    var freshApps = Array.isArray(results[1]) ? results[1] : [];
+    if (freshTasks.length || !allTasks.length) allTasks = freshTasks;
+    if (freshApps.length || !allApplications.length) allApplications = freshApps;
     userNames = results[2] || {};
     userAvatars = results[3] || {};
     await hydrateApplicantAvatars();
@@ -489,8 +501,12 @@ async function loadData(){
     if (typeof fetchAllTasksFresh === 'function') { /* already fresh */ }
   } catch (err) {
     console.warn('My Tasks load failed:', err);
-    if (!allTasks.length) allTasks = [];
-    if (!allApplications.length) allApplications = [];
+    var fallbackTasks = typeof readTasksCache === 'function' ? readTasksCache(true) : null;
+    if (fallbackTasks && fallbackTasks.length && !allTasks.length) allTasks = fallbackTasks;
+  }
+
+  if (typeof isSupabaseUsingStaleCache === 'function' && isSupabaseUsingStaleCache()) {
+    showToast('Showing saved tasks — reconnect or run beta-setup-all.sql if this persists', '#f59e0b');
   }
 
   pickDefaultTab();

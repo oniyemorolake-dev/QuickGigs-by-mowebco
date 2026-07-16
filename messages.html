@@ -277,6 +277,9 @@ async function loadConversations(){
     conversations = enriched.map(function(c){ return mapConversation(c, userId); });
     filtered = conversations.slice();
     renderContent();
+    if (typeof isSupabaseUsingStaleCache === 'function' && isSupabaseUsingStaleCache()) {
+      showStaleDataBanner();
+    }
   } catch(err) {
     console.error('Failed to load conversations:', err);
     var hint = String(err && err.message || '').indexOf('401') >= 0
@@ -371,6 +374,16 @@ window.filterConvs = function(){
   });
   renderContent();
 };
+
+function showStaleDataBanner() {
+  var content = document.getElementById('mainContent');
+  if (!content || content.querySelector('.stale-data-banner')) return;
+  var banner = document.createElement('div');
+  banner.className = 'stale-data-banner locked-banner';
+  banner.style.margin = '12px 20px 0';
+  banner.innerHTML = '<div class="locked-icon">⚠️</div><div><div class="locked-title">Showing saved messages</div><div class="locked-sub">Could not reach Supabase. Run supabase/beta-setup-all.sql if tasks and chats keep disappearing after updates.</div></div>';
+  content.insertBefore(banner, content.firstChild);
+}
 </script>
 </body>
 </html>

@@ -355,7 +355,7 @@ async function loadTasks(){
   if (typeof getUsersNameMap === 'function') {
     getUsersNameMap().then(function(map){ userNames = map || {}; renderCards(); });
   }
-  var cached = typeof readTasksCache === 'function' ? readTasksCache() : null;
+  var cached = typeof readTasksCache === 'function' ? readTasksCache(true) : null;
   if (cached && cached.length) {
     allTasks = filterBrowseTasks(cached.map(normaliseTask));
     renderCards();
@@ -364,12 +364,12 @@ async function loadTasks(){
     var items = await getTasks();
     if (items && items.length) {
       allTasks = filterBrowseTasks(items.map(normaliseTask));
-    } else if (!cached || !cached.length) {
+    } else if ((!cached || !cached.length) && !window._currentUser) {
       allTasks = getDemoTasks();
     }
   }catch(err){
-    console.warn('Supabase unreachable, using demo data:',err);
-    if (!cached || !cached.length) allTasks = getDemoTasks();
+    console.warn('Supabase unreachable:', err);
+    if ((!cached || !cached.length) && !window._currentUser) allTasks = getDemoTasks();
   }
   await hydratePosterNames();
   renderCards();
@@ -378,6 +378,8 @@ async function loadTasks(){
       if (!fresh || !fresh.length) return;
       allTasks = filterBrowseTasks(fresh.map(normaliseTask));
       hydratePosterNames().then(renderCards);
+    }).catch(function(err) {
+      console.warn('Background task refresh failed:', err);
     });
   }
 }

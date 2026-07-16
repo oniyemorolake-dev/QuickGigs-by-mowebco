@@ -43,31 +43,102 @@ async function refreshSupabaseAuth() {
 }
 
 var TASKS_CACHE_KEY = 'qg-tasks-cache-v1';
+var APPS_CACHE_KEY = 'qg-apps-cache-v1';
+var CONVS_CACHE_PREFIX = 'qg-convs-cache-v1-';
 var TASKS_CACHE_MS = 60000;
+var STALE_CACHE_MS = 1000 * 60 * 60 * 24; // keep up to 24h as offline fallback
 
-function readTasksCache() {
+function readJsonCache(key, allowStale) {
   try {
-    var raw = sessionStorage.getItem(TASKS_CACHE_KEY);
+    var raw = sessionStorage.getItem(key);
     if (!raw) return null;
     var parsed = JSON.parse(raw);
-    if (!parsed || !parsed.at || (Date.now() - parsed.at) > TASKS_CACHE_MS) return null;
+    if (!parsed || !parsed.at) return null;
+    var maxAge = allowStale ? STALE_CACHE_MS : TASKS_CACHE_MS;
+    if ((Date.now() - parsed.at) > maxAge) return null;
     return parsed.items || null;
   } catch (err) {
     return null;
   }
 }
 
-function writeTasksCache(items) {
+function writeJsonCache(key, items) {
   try {
-    sessionStorage.setItem(TASKS_CACHE_KEY, JSON.stringify({ at: Date.now(), items: items || [] }));
+    sessionStorage.setItem(key, JSON.stringify({ at: Date.now(), items: items || [] }));
   } catch (err) {}
+}
+
+function readTasksCache(allowStale) {
+  return readJsonCache(TASKS_CACHE_KEY, allowStale);
+}
+
+function writeTasksCache(items) {
+  writeJsonCache(TASKS_CACHE_KEY, items);
+}
+
+function readAppsCache(allowStale) {
+  return readJsonCache(APPS_CACHE_KEY, allowStale);
+}
+
+function writeAppsCache(items) {
+  writeJsonCache(APPS_CACHE_KEY, items);
+}
+
+function readConversationsCache(userId, allowStale) {
+  if (!userId) return null;
+  return readJsonCache(CONVS_CACHE_PREFIX + userId, allowStale);
+}
+
+function writeConversationsCache(userId, items) {
+  if (!userId) return;
+  writeJsonCache(CONVS_CACHE_PREFIX + userId, items);
 }
 
 function invalidateTasksCache() {
   try { sessionStorage.removeItem(TASKS_CACHE_KEY); } catch (err) {}
 }
 
-async function sbGet(table, filters, order, limit) {
+function invalidateAppsCache() {
+  try { sessionStorage.removeItem(APPS_CACHE_KEY); } catch (err) {}
+}
+
+function getTaskRowId(row) {
+  if (!row) return null;
+  return row.task_id != null ? row.task_id : (row.TASK_ID != null ? row.TASK_ID : row.id);
+}
+
+function mergeTaskInCache(taskId, patch) {
+  var cached = readTasksCache(true);
+  if (!cached || !cached.length) return;
+  var tid = String(taskId);
+  var changed = false;
+  var next = cached.map(function (t) {
+    if (String(getTaskRowId(t)) !== tid) return t;
+    changed = true;
+    return Object.assign({}, t, patch);
+  });
+  if (changed) writeTasksCache(next);
+}
+
+function mergeApplicationInCache(appId, taskId, workerId, patch) {
+  var cached = readAppsCache(true);
+  if (!cached || !cached.length) return;
+  var aid = appId != null ? String(appId) : '';
+  var changed = false;
+  var next = cached.map(function (a) {
+    var rowId = String(a.app_id || a.APP_ID || a.id || '');
+    var match = (aid && rowId === aid) ||
+      (taskId && workerId &&
+        String(a.task_id || a.TASK_ID) === String(taskId) &&
+        String(a.worker_id || a.WORKER_ID) === String(workerId));
+    if (!match) return a;
+    changed = true;
+    return Object.assign({}, a, patch);
+  });
+  if (changed) writeAppsCache(next);
+}
+
+async function sbGetOrThrow(table, filters, order, limit) {
   var controller = new AbortController();
   var timeoutId = setTimeout(function () { controller.abort(); }, 8000);
   try {
@@ -76,13 +147,22 @@ async function sbGet(table, filters, order, limit) {
     if (limit) url += '&limit=' + limit;
     var headers = await getSupabaseHeaders();
     var res = await fetch(url, { method: 'GET', headers: headers, signal: controller.signal });
-    if (!res.ok) throw new Error('GET failed: ' + res.status);
+    if (!res.ok) {
+      var errText = await res.text();
+      throw new Error('GET ' + table + ' failed: ' + res.status + (errText ? ' ' + errText : ''));
+    }
     return await res.json();
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function sbGet(table, filters, order, limit) {
+  try {
+    return await sbGetOrThrow(table, filters, order, limit);
   } catch (err) {
     console.error('Supabase GET error:', err);
     return [];
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 
@@ -182,9 +262,40 @@ async function fetchTasksWithCache() {
 }
 
 async function fetchAllTasksFresh() {
-  var items = await getAllTasks();
-  if (Array.isArray(items) && items.length) writeTasksCache(items);
-  return items;
+  var stale = readTasksCache(true);
+  try {
+    var items = await sbGetOrThrow('tasks', null, 'created_at.desc', 200);
+    var list = Array.isArray(items) ? items : [];
+    writeTasksCache(list);
+    window._supabaseUsingStaleCache = false;
+    return list;
+  } catch (err) {
+    console.error('fetchAllTasksFresh failed:', err);
+    if (stale && stale.length) {
+      window._supabaseUsingStaleCache = true;
+      window._supabaseLastFetchError = err.message || String(err);
+      return stale;
+    }
+    throw err;
+  }
+}
+
+async function fetchAllApplicationsFresh() {
+  var stale = readAppsCache(true);
+  try {
+    var rows = await sbGetOrThrow('applications', null, 'created_at.desc', 200);
+    var list = (rows || []).map(normalizeApplicationRow);
+    writeAppsCache(list);
+    return list;
+  } catch (err) {
+    console.error('fetchAllApplicationsFresh failed:', err);
+    if (stale && stale.length) {
+      window._supabaseUsingStaleCache = true;
+      window._supabaseLastFetchError = err.message || String(err);
+      return stale.map(normalizeApplicationRow);
+    }
+    return [];
+  }
 }
 
 async function getTaskById(taskId) {
@@ -326,7 +437,9 @@ async function updateTaskStatus(taskId, status) {
     result = await sbUpdate('tasks', { status: status }, filters[i]);
     if (result.success) break;
   }
-  if (result.success) invalidateTasksCache();
+  if (result.success) {
+    mergeTaskInCache(taskId, { status: status, STATUS: status });
+  }
   return result;
 }
 
@@ -538,6 +651,7 @@ async function enrichConversationNames(conv) {
 }
 
 async function getConversationsForUser(userId) {
+  var stale = readConversationsCache(userId, true);
   var controller = new AbortController();
   var timeoutId = setTimeout(function () { controller.abort(); }, 8000);
   try {
@@ -549,9 +663,17 @@ async function getConversationsForUser(userId) {
       var errText = await res.text();
       throw new Error('GET conversations failed: ' + res.status + ' ' + errText);
     }
-    return await res.json();
+    var rows = await res.json();
+    writeConversationsCache(userId, rows || []);
+    window._supabaseUsingStaleCache = false;
+    return rows;
   } catch (err) {
     console.error('Supabase conversations GET error:', err);
+    if (stale && stale.length) {
+      window._supabaseUsingStaleCache = true;
+      window._supabaseLastFetchError = err.message || String(err);
+      return stale;
+    }
     throw err;
   } finally {
     clearTimeout(timeoutId);
@@ -731,7 +853,12 @@ async function updateApplicationStatus(appId, status, opts) {
     result = await sbUpdate('applications', { status: status }, filters[i]);
     if (result.success) break;
   }
-  if (result.success || !opts.taskId || !opts.workerId) return result;
+  if (result.success || !opts.taskId || !opts.workerId) {
+    if (result.success) {
+      mergeApplicationInCache(appId, opts.taskId, opts.workerId, { status: status, STATUS: status });
+    }
+    return result;
+  }
 
   var lookup = await sbGet(
     'applications',
@@ -752,6 +879,9 @@ async function updateApplicationStatus(appId, status, opts) {
   for (var j = 0; j < retryFilters.length; j++) {
     result = await sbUpdate('applications', { status: status }, retryFilters[j]);
     if (result.success) break;
+  }
+  if (result.success) {
+    mergeApplicationInCache(appId, opts.taskId, opts.workerId, { status: status, STATUS: status });
   }
   return result;
 }
@@ -803,7 +933,6 @@ async function releaseAcceptedTasker(taskId, appId) {
     }));
   }
 
-  invalidateTasksCache();
   return { success: true };
 }
 
@@ -877,8 +1006,12 @@ window.getTasks = getTasks;
 window.getAllTasks = getAllTasks;
 window.fetchTasksWithCache = fetchTasksWithCache;
 window.fetchAllTasksFresh = fetchAllTasksFresh;
+window.fetchAllApplicationsFresh = fetchAllApplicationsFresh;
 window.readTasksCache = readTasksCache;
+window.mergeTaskInCache = mergeTaskInCache;
+window.mergeApplicationInCache = mergeApplicationInCache;
 window.invalidateTasksCache = invalidateTasksCache;
+window.isSupabaseUsingStaleCache = function() { return !!window._supabaseUsingStaleCache; };
 window.getTasksByUser = getTasksByUser;
 window.getTaskById = getTaskById;
 window.lockConversationsForTask = lockConversationsForTask;
