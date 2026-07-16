@@ -937,6 +937,11 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
   }
 
   activeTab = 'inprogress';
+  if (window.history && window.history.replaceState) {
+    var progUrl = new URL(window.location.href);
+    progUrl.searchParams.set('tab', 'inprogress');
+    window.history.replaceState({}, '', progUrl.pathname + progUrl.search);
+  }
   syncTabButtons();
   renderTab();
 
@@ -1066,7 +1071,13 @@ window.markComplete = async function(taskId){
     await lockConversationsForTask(taskId);
   }
   activeTab = 'completed';
+  if (window.history && window.history.replaceState) {
+    var doneUrl = new URL(window.location.href);
+    doneUrl.searchParams.set('tab', 'completed');
+    window.history.replaceState({}, '', doneUrl.pathname + doneUrl.search);
+  }
   syncTabButtons();
+  renderTab();
   showToast('Task complete! Please leave a review.');
   await loadData();
 };
