@@ -6,8 +6,8 @@
 <title>QuickGigs — Sign Up · Canada</title>
 <meta name="description" content="Join QuickGigs — Canada's task marketplace. Post gigs or earn as a tasker anywhere in Canada, coast to coast.">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="qg-signup.css">
-<link rel="stylesheet" href="qg-onboarding.css">
+<link rel="stylesheet" href="qg-signup.css?v=2">
+<link rel="stylesheet" href="qg-onboarding.css?v=2">
 <link rel="stylesheet" href="qg-cookies.css">
 <style>
 body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
@@ -25,7 +25,10 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 <div class="signup-page">
   <div class="signup-card-wrap">
     <div class="signup-card">
-      <div class="signup-logo">QuickGigs</div>
+      <div class="signup-top-row">
+        <div class="signup-logo">QuickGigs</div>
+        <button type="button" class="signup-theme-btn" id="signupThemeBtn" onclick="toggleSignupTheme()">☀️ Light</button>
+      </div>
       <h1 class="signup-title" id="cardTitle">Join QuickGigs</h1>
       <p class="signup-subtitle" id="cardSubtitle">Canada's marketplace for everyday tasks — post a gig or earn helping others</p>
 
@@ -34,7 +37,7 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 
       <div id="signupWizard" class="qg-wizard">
         <div class="signup-step-meta">
-          <span class="signup-step-counter" id="stepCounter">Step 1 of 6</span>
+          <span class="signup-step-counter" id="stepCounter">Step 1 of 7</span>
           <span id="stepLabel">Account</span>
         </div>
         <div class="signup-step-icon" id="stepIcon" aria-hidden="true">✨</div>
@@ -42,9 +45,10 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
         <div class="qg-wizard-progress" aria-hidden="true">
           <span class="qg-wizard-dot active"></span><span class="qg-wizard-dot"></span><span class="qg-wizard-dot"></span>
           <span class="qg-wizard-dot"></span><span class="qg-wizard-dot"></span><span class="qg-wizard-dot"></span>
+          <span class="qg-wizard-dot"></span>
         </div>
 
-        <!-- Step 0: Account -->
+        <!-- Step 0: Role + basics -->
         <div class="qg-wizard-step active" data-step="account">
           <div class="signup-perks" id="signupPerks">
             <div class="signup-perk"><span>🇨🇦</span> Available across Canada</div>
@@ -63,12 +67,22 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
               <span class="signup-role-desc">Browse gigs &amp; get paid</span>
             </button>
           </div>
-          <div class="signup-field"><label>Full name</label><input type="text" id="name" placeholder="Your full name" autocomplete="name"><div class="signup-error" id="nameError">Please enter your full name</div></div>
-          <div class="signup-field"><label>Email address</label><input type="email" id="email" placeholder="you@example.com" autocomplete="email"><div class="signup-error" id="emailError">Please enter a valid email</div></div>
-          <div class="signup-field"><label>Phone number</label><input type="tel" id="phone" placeholder="+1 (403) 000-0000" autocomplete="tel"></div>
-          <div class="signup-field"><label>Password</label><input type="password" id="password" placeholder="At least 8 characters" autocomplete="new-password"><div class="signup-error" id="passwordError">Password must be at least 8 characters</div></div>
-          <div class="signup-field"><label>Confirm password</label><input type="password" id="confirmPassword" placeholder="Repeat your password" autocomplete="new-password"><div class="signup-error" id="confirmError">Passwords do not match</div></div>
+          <div class="signup-field"><label>Full name <span class="req">*</span></label><input type="text" id="name" placeholder="Your full name" autocomplete="name" required><div class="signup-error" id="nameError">Please enter your full name</div></div>
+          <div class="signup-field"><label>Email address <span class="req">*</span></label><input type="email" id="email" placeholder="you@example.com" autocomplete="email" required><div class="signup-error" id="emailError">Please enter a valid email</div></div>
           <div class="qg-wizard-nav"><button type="button" class="signup-btn" data-qg-next>Continue →</button></div>
+        </div>
+
+        <!-- Step 1: Phone + password -->
+        <div class="qg-wizard-step" data-step="security">
+          <div class="qg-step-title">Secure your account</div>
+          <p class="qg-step-sub">Phone and password are required for all QuickGigs members.</p>
+          <div class="signup-field"><label>Phone number <span class="req">*</span></label><input type="tel" id="phone" placeholder="+1 (403) 000-0000" autocomplete="tel" required><div class="signup-error" id="phoneError">Please enter a valid phone number</div></div>
+          <div class="signup-field"><label>Password <span class="req">*</span></label><input type="password" id="password" placeholder="At least 8 characters" autocomplete="new-password" required><div class="signup-error" id="passwordError">Password must be at least 8 characters</div></div>
+          <div class="signup-field"><label>Confirm password <span class="req">*</span></label><input type="password" id="confirmPassword" placeholder="Repeat your password" autocomplete="new-password" required><div class="signup-error" id="confirmError">Passwords do not match</div></div>
+          <div class="qg-wizard-nav">
+            <button type="button" class="signup-btn signup-btn-secondary" data-qg-back>← Back</button>
+            <button type="button" class="signup-btn" data-qg-next>Continue →</button>
+          </div>
         </div>
 
         <!-- Step 1: Pronouns -->
@@ -91,8 +105,8 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 
         <!-- Step 2: Gender -->
         <div class="qg-wizard-step" data-step="gender">
-          <div class="qg-step-title">Gender identity</div>
-          <p class="qg-step-sub">Optional — helps us improve matching. You can skip or choose "Prefer not to say".</p>
+          <div class="qg-step-title">Gender identity <span class="req-inline">*</span></div>
+          <p class="qg-step-sub">Pick one option below — choose "Prefer not to say" if you'd rather not share.</p>
           <div id="qgGenderChips" class="qg-chip-grid">
             <button type="button" class="qg-chip" data-value="woman">Woman</button>
             <button type="button" class="qg-chip" data-value="man">Man</button>
@@ -136,8 +150,8 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
           <div class="qg-step-title">Parent or guardian</div>
           <p class="qg-step-sub">You're 16 or 17 — Canadian law requires a parent/guardian to approve your account.</p>
           <div class="qg-guardian-note">📧 We'll email them a one-click consent link. Until approved, you can browse but not post or apply.</div>
-          <div class="signup-field"><label>Guardian full name</label><input type="text" id="guardianName" placeholder="Parent or guardian name"></div>
-          <div class="signup-field"><label>Guardian email</label><input type="email" id="guardianEmail" placeholder="parent@example.com"></div>
+          <div class="signup-field"><label>Guardian full name <span class="req">*</span></label><input type="text" id="guardianName" placeholder="Parent or guardian name" required></div>
+          <div class="signup-field"><label>Guardian email <span class="req">*</span></label><input type="email" id="guardianEmail" placeholder="parent@example.com" required></div>
           <div class="signup-field"><label>Guardian phone (optional)</label><input type="tel" id="guardianPhone" placeholder="+1 (403) 000-0000"></div>
           <div class="qg-wizard-nav">
             <button type="button" class="signup-btn signup-btn-secondary" data-qg-back>← Back</button>
@@ -177,7 +191,7 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 </div>
 
 <script src="qg-utils.js"></script>
-<script src="qg-onboarding.js"></script>
+<script src="qg-onboarding.js?v=2"></script>
 <script src="qg-cookies.js"></script>
 <script src="supabase-db.js"></script>
 <script src="qg-notifications.js"></script>
@@ -204,12 +218,27 @@ const auth = getAuth(app);
 
 var STEP_META = [
   { title: 'Join QuickGigs', sub: 'Canada\'s marketplace for everyday tasks — post a gig or earn helping others', icon: '✨', label: 'Account' },
+  { title: 'Secure your account', sub: 'Phone and password keep your account safe', icon: '🔐', label: 'Security' },
   { title: 'Your pronouns', sub: 'So people can address you respectfully', icon: '💬', label: 'Pronouns' },
-  { title: 'About you', sub: 'Optional — helps us personalize your experience', icon: '🌈', label: 'Identity' },
+  { title: 'About you', sub: 'Pick the option that fits you best', icon: '🌈', label: 'Identity' },
   { title: 'Date of birth', sub: 'We verify your age to keep QuickGigs safe', icon: '🎂', label: 'Birthday' },
   { title: 'Parent consent', sub: 'Required for members aged 16–17', icon: '👨‍👩‍👧', label: 'Guardian' },
   { title: 'Almost there!', sub: 'Create your QuickGigs account', icon: '🚀', label: 'Finish' }
 ];
+var STEP_TOTAL = STEP_META.length;
+
+var signupDark = localStorage.getItem('qg-mode') !== 'light';
+function applySignupTheme() {
+  document.body.classList.toggle('light', !signupDark);
+  var btn = document.getElementById('signupThemeBtn');
+  if (btn) btn.textContent = signupDark ? '☀️ Light' : '🌙 Dark';
+}
+window.toggleSignupTheme = function() {
+  signupDark = !signupDark;
+  localStorage.setItem('qg-mode', signupDark ? 'dark' : 'light');
+  applySignupTheme();
+};
+applySignupTheme();
 
 var stars = document.getElementById('stars');
 for (var i = 0; i < 100; i++) {
@@ -240,7 +269,7 @@ function updateSignupStepUI(idx) {
   var sub = document.getElementById('cardSubtitle');
   sub.textContent = meta.sub;
   sub.style.display = idx <= 1 ? 'block' : 'none';
-  document.getElementById('stepCounter').textContent = 'Step ' + (idx + 1) + ' of 6';
+  document.getElementById('stepCounter').textContent = 'Step ' + (idx + 1) + ' of ' + STEP_TOTAL;
   document.getElementById('stepLabel').textContent = meta.label;
   var icon = document.getElementById('stepIcon');
   icon.textContent = meta.icon;
@@ -259,24 +288,59 @@ var wizard = window.QGSignupWizard.create({
 });
 updateSignupStepUI(0);
 
-function validateAccountStep() {
+function clearSignupErrors() {
   document.querySelectorAll('.signup-error').forEach(function(el){ el.style.display = 'none'; });
+}
+
+function validatePhone(phone) {
+  var digits = String(phone || '').replace(/\D/g, '');
+  return digits.length >= 10;
+}
+
+function validateAccountBasic() {
+  clearSignupErrors();
   var name = typeof formatPersonName === 'function'
     ? formatPersonName(window.sanitizeInput(document.getElementById('name').value, 80))
     : window.sanitizeInput(document.getElementById('name').value, 80);
   var email = document.getElementById('email').value.trim();
-  var password = document.getElementById('password').value;
-  var confirm = document.getElementById('confirmPassword').value;
   var valid = true;
   if (name.length < 2) { document.getElementById('nameError').style.display = 'block'; valid = false; }
   if (!email || email.indexOf('@') < 1) { document.getElementById('emailError').style.display = 'block'; valid = false; }
+  if (!valid) return null;
+  document.getElementById('name').value = name;
+  return { name: name, email: email };
+}
+
+function validateAccountSecurity() {
+  clearSignupErrors();
+  var phone = window.sanitizeInput(document.getElementById('phone').value, 20);
+  var password = document.getElementById('password').value;
+  var confirm = document.getElementById('confirmPassword').value;
+  var valid = true;
+  if (!validatePhone(phone)) { document.getElementById('phoneError').style.display = 'block'; valid = false; }
   if (password.length < 8) { document.getElementById('passwordError').style.display = 'block'; valid = false; }
   if (password !== confirm) { document.getElementById('confirmError').style.display = 'block'; valid = false; }
-  return valid ? { name: name, email: email, password: password, phone: window.sanitizeInput(document.getElementById('phone').value, 20), role: document.getElementById('roleInput').value } : null;
+  return valid;
+}
+
+function validateAccountStep() {
+  var basic = validateAccountBasic();
+  if (!basic) return null;
+  if (!validateAccountSecurity()) return null;
+  return Object.assign({}, basic, {
+    password: document.getElementById('password').value,
+    phone: window.sanitizeInput(document.getElementById('phone').value, 20),
+    role: document.getElementById('roleInput').value
+  });
 }
 
 document.querySelector('[data-step="account"] [data-qg-next]').onclick = function() {
-  if (!validateAccountStep()) return;
+  if (!validateAccountBasic()) return;
+  wizard.next();
+};
+
+document.querySelector('[data-step="security"] [data-qg-next]').onclick = function() {
+  if (!validateAccountSecurity()) return;
   wizard.next();
 };
 
@@ -288,7 +352,11 @@ document.getElementById('submitBtn').onclick = async function() {
   okMsg.style.display = 'none';
 
   var account = validateAccountStep();
-  if (!account) { wizard.showStep(0); updateSignupStepUI(0); return; }
+  if (!account) {
+    if (!validateAccountBasic()) { wizard.showStep(0); updateSignupStepUI(0); return; }
+    if (!validateAccountSecurity()) { wizard.showStep(1); updateSignupStepUI(1); return; }
+    return;
+  }
   if (!document.getElementById('termsAgree').checked) {
     errorMsg.textContent = 'Please agree to the Terms of Service and Privacy Policy.';
     errorMsg.style.display = 'block';

@@ -2,6 +2,7 @@
 (function () {
   var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   var MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var DOB_ITEM_H = 40;
 
   function daysInMonth(month, year) {
     return new Date(year, month, 0).getDate();
@@ -24,6 +25,7 @@
   }
 
   function bindChips(container, key, state, onChange) {
+    if (!container) return;
     container.querySelectorAll('.qg-chip').forEach(function (chip) {
       chip.onclick = function () {
         container.querySelectorAll('.qg-chip').forEach(function (c) { c.classList.remove('selected'); });
@@ -48,26 +50,11 @@
     var now = new Date();
     var startYear = now.getFullYear() - 100;
     var endYear = now.getFullYear() - 10;
+    var cols = {};
 
     state.dobMonth = state.dobMonth || 1;
     state.dobDay = state.dobDay || 1;
     state.dobYear = state.dobYear || (now.getFullYear() - 20);
-
-    function renderCol(type, items, selected) {
-      var col = document.createElement('div');
-      col.className = 'qg-dob-col';
-      col.setAttribute('data-dob-col', type);
-      items.forEach(function (item) {
-        var el = document.createElement('div');
-        el.className = 'qg-dob-item' + (item.value === selected ? ' selected' : '');
-        el.textContent = item.label;
-        el.setAttribute('data-value', item.value);
-        el.onclick = function () { scrollToItem(col, el); snapCol(col, type); };
-        col.appendChild(el);
-      });
-      col.onscroll = function () { debounceSnap(col, type); };
-      return col;
-    }
 
     function monthItems() {
       return MONTHS.map(function (m, i) { return { label: m, value: i + 1 }; });
@@ -85,62 +72,122 @@
       return arr;
     }
 
-    var debounceTimer;
-    function debounceSnap(col, type) {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(function () { snapCol(col, type); }, 80);
+    function indexForValue(items, val) {
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].value === val) return i;
+      }
+      return 0;
     }
 
-    function scrollToItem(col, el) {
-      col.scrollTop = el.offsetTop - col.clientHeight / 2 + el.clientHeight / 2;
-    }
-
-    function snapCol(col, type) {
-      var items = col.querySelectorAll('.qg-dob-item');
-      if (!items.length) return;
-      var mid = col.scrollTop + col.clientHeight / 2;
-      var closest = items[0];
-      var minDist = Infinity;
+    function renderCol(type, items) {
+      var col = document.createElement('div');
+      col.className = 'qg-dob-col';
+      col.setAttribute('data-dob-col', type);
       items.forEach(function (item) {
-        var dist = Math.abs(item.offsetTop + item.clientHeight / 2 - mid);
-        if (dist < minDist) { minDist = dist; closest = item; }
+        var el = document.createElement('div');
+        el.className = 'qg-dob-item';
+        el.textContent = item.label;
+        el.setAttribute('data-value', String(item.value));
+        col.appendChild(el);
       });
-      scrollToItem(col, closest);
-      items.forEach(function (i) { i.classList.remove('selected'); });
-      closest.classList.add('selected');
-      var val = parseInt(closest.getAttribute('data-value'), 10);
-      if (type === 'month') state.dobMonth = val;
-      if (type === 'day') state.dobDay = val;
-      if (type === 'year') state.dobYear = val;
-      if (type === 'month' || type === 'year') refreshDays();
+      col.addEventListener('scroll', function () {
+        clearTimeout(col._snapT);
+        col._snapT = setTimeout(function () { finishSnap(type); }, 120);
+      }, { passive: true });
+      return col;
+    }
+
+    function colIndex(type) {
+      var col = cols[type];
+      if (!col) return 0;
+      return Math.max(0, Math.round(col.scrollTop / DOB_ITEM_H));
+    }
+
+    function scrollColTo(type, index, smooth) {
+      var col = cols[type];
+      if (!col) return;
+      var top = index * DOB_ITEM_H;
+      if (smooth && col.scrollTo) col.scrollTo({ top: top, behavior: 'smooth' });
+      else col.scrollTop = top;
+    }
+
+    function highlightCols() {
+      ['month', 'day', 'year'].forEach(function (type) {
+        var col = cols[type];
+        if (!col) return;
+        var idx = colIndex(type);
+        col.querySelectorAll('.qg-dob-item').forEach(function (el, i) {
+          el.classList.toggle('selected', i === idx);
+        });
+      });
+    }
+
+    function readStateFromCols() {
+      var mItems = monthItems();
+      var yItems = yearItems();
+      var mi = Math.min(colIndex('month'), mItems.length - 1);
+      var yi = Math.min(colIndex('year'), yItems.length - 1);
+      state.dobMonth = mItems[mi].value;
+      state.dobYear = yItems[yi].value;
+      var dItems = dayItems();
+      var di = Math.min(colIndex('day'), dItems.length - 1);
+      state.dobDay = dItems[di].value;
+    }
+
+    function rebuildDayCol() {
+      var items = dayItems();
+      var idx = indexForValue(items, state.dobDay);
+      var newCol = renderCol('day', items);
+      if (cols.day) cols.day.replaceWith(newCol);
+      cols.day = newCol;
+      scrollColTo('day', idx, false);
+    }
+
+    function finishSnap(type) {
+      scrollColTo(type, colIndex(type), false);
+      var prevM = state.dobMonth;
+      var prevY = state.dobYear;
+      readStateFromCols();
+      if (type === 'month' || type === 'year' || prevM !== state.dobMonth || prevY !== state.dobYear) {
+        rebuildDayCol();
+        readStateFromCols();
+      }
+      highlightCols();
       if (onChange) onChange();
     }
 
-    function refreshDays() {
-      var dayCol = mount.querySelector('[data-dob-col="day"]');
-      if (!dayCol) return;
-      var scroll = dayCol.scrollTop;
-      var newCol = renderCol('day', dayItems(), state.dobDay);
-      dayCol.replaceWith(newCol);
-      newCol.scrollTop = scroll;
-      setTimeout(function () { snapCol(newCol, 'day'); }, 50);
+    function mountCols() {
+      mount.innerHTML = '';
+      cols.month = renderCol('month', monthItems());
+      cols.day = renderCol('day', dayItems());
+      cols.year = renderCol('year', yearItems());
+      mount.appendChild(cols.month);
+      mount.appendChild(cols.day);
+      mount.appendChild(cols.year);
     }
 
-    mount.innerHTML = '';
-    var mCol = renderCol('month', monthItems(), state.dobMonth);
-    var dCol = renderCol('day', dayItems(), state.dobDay);
-    var yCol = renderCol('year', yearItems(), state.dobYear);
-    mount.appendChild(mCol);
-    mount.appendChild(dCol);
-    mount.appendChild(yCol);
+    function syncToState() {
+      scrollColTo('month', indexForValue(monthItems(), state.dobMonth), false);
+      scrollColTo('year', indexForValue(yearItems(), state.dobYear), false);
+      rebuildDayCol();
+      readStateFromCols();
+      highlightCols();
+      if (onChange) onChange();
+    }
 
-    setTimeout(function () {
-      [mCol, dCol, yCol].forEach(function (col) {
-        var type = col.getAttribute('data-dob-col');
-        var sel = col.querySelector('.selected');
-        if (sel) scrollToItem(col, sel);
-      });
-    }, 60);
+    mountCols();
+    requestAnimationFrame(function () {
+      requestAnimationFrame(syncToState);
+    });
+
+    return {
+      sync: function () {
+        readStateFromCols();
+        highlightCols();
+        if (onChange) onChange();
+      },
+      refresh: syncToState
+    };
   }
 
   function formatDobLong(state) {
@@ -185,6 +232,7 @@
       var state = opts.state || {};
       var steps = [];
       var current = 0;
+      var dobApi = null;
 
       state.pronouns = state.pronouns || '';
       state.gender = state.gender || '';
@@ -194,7 +242,7 @@
 
       function el(id) { return root.querySelector('#' + id); }
 
-      function showStep(idx, dir) {
+      function showStep(idx) {
         steps.forEach(function (s, i) {
           s.classList.toggle('active', i === idx);
         });
@@ -203,6 +251,9 @@
           dot.classList.toggle('done', i < idx);
         });
         current = idx;
+        if (steps[idx] && steps[idx].getAttribute('data-step') === 'dob') {
+          if (dobApi && dobApi.refresh) setTimeout(function () { dobApi.refresh(); }, 50);
+        }
         if (opts.onStepChange) opts.onStepChange(idx);
       }
 
@@ -222,15 +273,22 @@
 
       function validateStep(idx) {
         var stepEl = steps[idx];
+        if (!stepEl) return true;
         var type = stepEl.getAttribute('data-step');
+
+        if (type === 'account' || type === 'security') {
+          return true;
+        }
         if (type === 'pronouns' && !resolveChipValue(state, 'pronouns')) {
           alert('Please choose or enter your pronouns.');
           return false;
         }
-        if (type === 'gender') {
-          /* optional — prefer not to say is fine */
+        if (type === 'gender' && !resolveChipValue(state, 'gender')) {
+          alert('Please choose a gender option or select "Prefer not to say".');
+          return false;
         }
         if (type === 'dob') {
+          if (dobApi && dobApi.sync) dobApi.sync();
           var age = getAgeFromState(state);
           if (age < 16) {
             alert('QuickGigs is for ages 16 and up. If you\'re under 16, a parent can create an account for you when you\'re old enough.');
@@ -256,7 +314,6 @@
         var dateVal = el('qgDobDateVal');
         var ageNum = el('qgAgeNumber');
         var status = el('qgAgeStatus');
-        var legacyBadge = el('qgAgeBadge');
 
         if (dateVal) dateVal.textContent = formatDobLong(state);
         if (ageNum) ageNum.innerHTML = age + ' <span>years old</span>';
@@ -274,21 +331,20 @@
             status.innerHTML = 'You\'re <strong>' + age + '</strong> — you meet the age requirement for QuickGigs.';
           }
         }
-        if (legacyBadge) {
-          legacyBadge.style.display = 'block';
-          legacyBadge.className = 'qg-age-badge' + (age < 16 ? ' blocked' : age < 18 ? ' minor' : '');
-          legacyBadge.textContent = formatAgeSpecific(age) + (age < 16 ? ' — must be 16+' : age < 18 ? ' — parent consent' : ' ✓');
-        }
         var guardianStep = root.querySelector('[data-step="guardian"]');
         if (guardianStep) guardianStep.setAttribute('data-skip', age >= 16 && age < 18 ? '0' : '1');
       }
 
-      root.querySelectorAll('[data-qg-next]').forEach(function (btn) { btn.onclick = next; });
+      root.querySelectorAll('[data-qg-next]').forEach(function (btn) {
+        var step = btn.closest('.qg-wizard-step');
+        if (step && (step.getAttribute('data-step') === 'account' || step.getAttribute('data-step') === 'security')) return;
+        btn.onclick = next;
+      });
       root.querySelectorAll('[data-qg-back]').forEach(function (btn) { btn.onclick = back; });
 
       steps = Array.prototype.slice.call(root.querySelectorAll('.qg-wizard-step'));
       var dobMount = root.querySelector('#qgDobPicker');
-      if (dobMount) buildDobPicker(dobMount, state, updateAgeBadge);
+      if (dobMount) dobApi = buildDobPicker(dobMount, state, updateAgeBadge);
 
       bindChips(root.querySelector('#qgPronounChips'), 'pronouns', state);
       bindChips(root.querySelector('#qgGenderChips'), 'gender', state);
@@ -309,6 +365,7 @@
         back: back,
         showStep: showStep,
         getIdentityPayload: function () {
+          if (dobApi && dobApi.sync) dobApi.sync();
           var age = getAgeFromState(state);
           var isMinor = age >= 16 && age < 18;
           var now = new Date().toISOString();

@@ -32,8 +32,15 @@
 .signup-logo{
   font-family:'Playfair Display',serif;font-size:1.35rem;font-style:italic;
   background:linear-gradient(135deg,#e8d5ff,#c8a8e9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;text-align:center;margin-bottom:0.35rem;
+  background-clip:text;text-align:left;margin-bottom:0;flex:1;
 }
+.signup-top-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:0.35rem;}
+.signup-theme-btn{
+  flex-shrink:0;padding:7px 12px;border-radius:999px;border:1px solid rgba(200,168,233,0.25);
+  background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.75);font-family:inherit;font-size:11px;cursor:pointer;
+}
+.signup-theme-btn:hover{background:rgba(255,255,255,0.1);}
+.signup-field label .req,.req-inline{color:#f0abfc;font-weight:700;}
 .signup-title{font-family:'Playfair Display',serif;font-size:1.65rem;font-weight:700;text-align:center;margin-bottom:0.35rem;line-height:1.2;}
 .signup-subtitle{font-size:0.88rem;color:rgba(255,255,255,0.62);text-align:center;margin-bottom:1.35rem;font-weight:300;line-height:1.5;}
 
@@ -118,3 +125,36 @@
   .signup-card{padding:1.5rem 1.25rem;}
   .signup-title{font-size:1.45rem;}
 }
+
+/* ── Light mode ── */
+body.light .signup-bg-mesh{
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%,rgba(107,63,160,0.12),transparent 55%),
+    radial-gradient(ellipse 60% 40% at 85% 80%,rgba(155,111,196,0.08),transparent 50%),
+    linear-gradient(165deg,#faf8ff 0%,#f5f2ff 45%,#fff 100%);
+}
+body.light{color:#1a0a3d;}
+body.light .signup-orb{opacity:0.35;}
+body.light .signup-card{background:rgba(255,255,255,0.92);border-color:#e8e2ff;box-shadow:0 20px 50px rgba(107,63,160,0.12);}
+body.light .signup-card-wrap::before{opacity:0.35;}
+body.light .signup-logo{background:linear-gradient(135deg,#6b3fa0,#9b6fc4);-webkit-background-clip:text;background-clip:text;}
+body.light .signup-title{color:#1a0a3d;}
+body.light .signup-subtitle{color:#6b7280;}
+body.light .signup-step-meta{color:#9ca3af;}
+body.light .signup-step-counter{color:#6b3fa0;}
+body.light .signup-theme-btn{background:#f0eeff;border-color:#e0d8ff;color:#6b3fa0;}
+body.light .signup-role{background:#faf8ff;border-color:#e8e2ff;}
+body.light .signup-role-label{color:#1a0a3d;}
+body.light .signup-role-desc{color:#6b7280;}
+body.light .signup-role.active{background:linear-gradient(145deg,#ede9ff,#f5f2ff);border-color:#c8a8e9;}
+body.light .signup-field label{color:#6b7280;}
+body.light .signup-field input{background:#fff;border-color:#e0d8ff;color:#1a0a3d;}
+body.light .signup-field input::placeholder{color:#9ca3af;}
+body.light .signup-perk{color:#6b7280;}
+body.light .signup-trust span{color:#9ca3af;border-color:#e8e2ff;}
+body.light .signup-login{color:#6b7280;}
+body.light .signup-login a{color:#6b3fa0;}
+body.light .signup-terms-check{background:#faf8ff;border-color:#e8e2ff;}
+body.light .signup-terms-check label{color:#4b5563;}
+body.light .star{opacity:0.15!important;}
+
