@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QuickGigs — Get everyday tasks done in Calgary & Edmonton</title>
+<title>QuickGigs — Get everyday tasks done near you</title>
+<meta name="description" content="QuickGigs connects people who need help with skilled taskers nearby. Post a task in 30 seconds or earn money helping others across Canada.">
 <link rel="icon" type="image/png" sizes="32x32" href="QuickGigsLogo.png">
 <link rel="icon" type="image/png" sizes="192x192" href="QuickGigsLogo.png">
 <link rel="apple-touch-icon" href="QuickGigsLogo.png">
@@ -90,9 +91,9 @@ h1 em{font-style:italic;font-weight:400;}
     <div class="logo-text">QuickGigs</div>
   </div>
   <div class="hero">
-    <div class="beta-badge">🚀 Beta live · Calgary & Edmonton</div>
+    <div class="beta-badge">🚀 Beta live · Canada</div>
     <div class="eyebrow">Canadian-built · CAD only · Canada-wide</div>
-    <h1 id="heroTitle">Get everyday tasks done<br><em>in Calgary & Edmonton.</em></h1>
+    <h1 id="heroTitle">Get everyday tasks done<br><em>near you.</em></h1>
     <p class="subtitle" id="heroSubtitle">QuickGigs connects people who need help with people who have skills — post a task in 30 seconds or earn money helping others nearby.</p>
   </div>
   <div class="cta-wrap" id="ctaWrap">
@@ -114,7 +115,7 @@ h1 em{font-style:italic;font-weight:400;}
     <div class="step">
       <span class="step-icon">📝</span>
       <div class="step-title">1. Post or browse</div>
-      <p class="step-desc">Need help? Post your task with a budget. Want work? Browse tasks near you in Calgary & Edmonton.</p>
+      <p class="step-desc">Need help? Post your task with a budget. Want work? Browse tasks near you across Canada.</p>
       <span class="step-mode quick">30 seconds</span>
     </div>
     <div class="step">
@@ -162,7 +163,7 @@ for(var i=0;i<120;i++){
   var role = new URLSearchParams(window.location.search).get('role') || localStorage.getItem('qg-role');
   if (role !== 'worker') return;
 
-  document.getElementById('heroTitle').innerHTML = 'Earn money helping others<br><em>in Calgary & Edmonton.</em>';
+  document.getElementById('heroTitle').innerHTML = 'Earn money helping others<br><em>near you.</em>';
   document.getElementById('heroSubtitle').textContent =
     'Sign up as a service provider, browse tasks near you, apply in seconds, and get hired for gigs like braiding, errands, tutoring, and more.';
 
