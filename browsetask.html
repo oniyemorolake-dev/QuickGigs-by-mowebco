@@ -107,8 +107,18 @@ body.light .mpill.active-standard{background:#ede9ff;color:#5a2d8a;}
 .task-card.has-photo .tc-body{padding:0 15px 15px;}
 .light .task-card{box-shadow:0 1px 3px rgba(107,63,160,0.08);}
 .task-card:hover{border-color:var(--border-hover);background:var(--surface-hover);}
-.task-card.has-photo:hover .tc-photo-hero{opacity:0.92;}
-.tc-photo-hero{height:128px;background-size:cover;background-position:center;position:relative;margin-bottom:12px;}
+.task-card.has-photo:hover .tc-photo-hero .tc-photo-img{opacity:0.92;}
+.tc-photo-hero{
+  min-height:140px;max-height:220px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,0.04);
+  position:relative;margin-bottom:12px;overflow:hidden;
+}
+body.light .tc-photo-hero{background:#f5f2ff;}
+.tc-photo-hero .tc-photo-img{
+  width:100%;max-height:220px;object-fit:contain;display:block;
+  vertical-align:middle;
+}
 .tc-photo-hero::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,0.45));pointer-events:none;}
 .tc-photo-cat-badge{position:absolute;bottom:10px;left:12px;z-index:1;display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);font-size:10px;font-weight:600;color:#fff;letter-spacing:0.04em;text-transform:uppercase;}
 .tc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;}
@@ -177,6 +187,8 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 </style>
 <link rel="stylesheet" href="qg-brand.css">
 <link rel="stylesheet" href="qg-mobile.css">
+<link rel="stylesheet" href="qg-menu.css?v=2">
+<link rel="stylesheet" href="qg-lightbox.css?v=1">
 </head>
 <body>
 <script src="qg-theme.js"></script>
@@ -300,6 +312,8 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <div class="toast" id="toast">Application sent! You'll hear back soon 🎉</div>
 <nav class="tab-bar" id="qgTabBar"></nav>
 <script src="qg-nav.js"></script>
+<script src="qg-menu.js?v=2"></script>
+<script src="qg-lightbox.js?v=1"></script>
 <script>
 if (typeof setSessionMode === 'function') setSessionMode('worker');
 renderQuickGigsTabBar('browse');
@@ -557,7 +571,9 @@ function renderCardIcon(t) {
 
 function renderCardPhotoHero(t) {
   if (!t.photoUrls || !t.photoUrls[0]) return '';
-  return '<div class="tc-photo-hero" style="background-image:url('+esc(t.photoUrls[0])+')" role="img" aria-label="'+esc(t.title)+' photo">' +
+  var photosJson = esc(JSON.stringify(t.photoUrls));
+  return '<div class="tc-photo-hero tc-photo-tappable" role="button" tabindex="0" aria-label="View task photos — tap to enlarge" data-photos="'+photosJson+'" data-photo-caption="'+esc(t.title)+'">' +
+    '<img class="tc-photo-img" src="'+esc(t.photoUrls[0])+'" alt="'+esc(t.title)+' photo" loading="lazy">' +
     '<span class="tc-photo-cat-badge"><span aria-hidden="true">'+t.icon+'</span> '+esc(t.catLabel)+'</span></div>';
 }
 
@@ -624,6 +640,7 @@ function renderCards(){
     bindShareTriggers(area, function(id){ return allTasks.find(function(t){ return String(t.id)===String(id); }); });
   }
   if (typeof bindReportTriggers === 'function') bindReportTriggers(area);
+  if (typeof bindQgPhotoLightbox === 'function') bindQgPhotoLightbox(document.body);
 }
 
 window.setMode=function(el,mode){document.querySelectorAll('.mpill').forEach(function(p){p.className='mpill';});activeMode=mode;el.className='mpill active-'+mode;renderCards();};
@@ -659,8 +676,8 @@ window.openModal=async function(id,e){
   var photoWrap = document.getElementById('modalPhotoWrap');
   if (activeTask.photoUrls && activeTask.photoUrls.length) {
     photoWrap.style.display='block';
-    photoWrap.innerHTML = '<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Reference photos</div><div style="display:flex;gap:8px;overflow-x:auto;">' +
-      activeTask.photoUrls.map(function(url){ return '<img src="'+esc(url)+'" alt="Task photo" style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:0.5px solid var(--border);">'; }).join('') +
+    photoWrap.innerHTML = '<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Reference photos — tap to enlarge</div><div style="display:flex;gap:8px;overflow-x:auto;align-items:center;">' +
+      activeTask.photoUrls.map(function(url, i){ return '<img class="qg-modal-photo-tap" src="'+esc(url)+'" alt="Task photo" data-photos="'+esc(JSON.stringify(activeTask.photoUrls))+'" data-photo-index="'+i+'" data-photo-caption="'+esc(activeTask.title)+'" style="width:auto;max-width:100%;height:auto;max-height:160px;object-fit:contain;border-radius:10px;border:0.5px solid var(--border);flex-shrink:0;cursor:zoom-in;">'; }).join('') +
       '</div>';
   } else {
     photoWrap.style.display='none';

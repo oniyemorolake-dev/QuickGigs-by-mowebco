@@ -160,20 +160,108 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 
 ---
 
-## Not built yet (backlog)
+## Not built yet (backlog — prioritized July 2026)
 
-| Feature | Notes |
-|---------|--------|
-| Notification bell (in-app) | Email queue exists; no in-app bell UI yet |
-| Google Analytics | Not installed |
-| Resume analyser thank you page | Not in this repo |
-| Stripe / payments live | Hooks + config flag; checkout not wired |
-| Real admin backend | Admin demo UI; wire `addUserWarning` for live warns |
-| `rls-secure.sql` | Production lockdown — after Firebase JWT in Supabase |
+### ✅ Already shipped (from your list)
+
+| Item | Where |
+|------|--------|
+| FAQ page | `faq.html` |
+| Safety tips | `safety.html` |
+| How it works | `how-it-works.html` |
+| Dispute resolution | `dispute-resolution.html` |
+| PWA installable | `manifest.json`, `sw.js`, `qg-pwa.js` |
+| Hamburger menu | `qg-menu.js` |
+| Profile progress ring | Profile Studio edit modal |
+| Report button | `qg-report.js` |
+| Share task / profile | `qg-share.js` |
+| Cookie consent | `qg-cookies.js` |
+| Tap-to-enlarge task photos | `qg-lightbox.js`, browse cards |
+| Thank-you / conversion page | `thank-you.html` (poster signup) |
+| Google Analytics hook | `qg-analytics.js` — paste `G-XXXXXXXXXX` in `qg-config.js` |
 
 ---
 
-## Email notifications — expected vs today
+### 🔴 P0 — Do next (beta trust + growth)
+
+| Feature | Why | Effort |
+|---------|-----|--------|
+| **Push all pending changes live** | Menu, lightbox, login fix not on quickgigs.ca yet | 10 min |
+| **Google Analytics ID** | Ads conversion tracking — set `ga4MeasurementId` in `qg-config.js` | 10 min |
+| **Stripe / payments** | Core launch blocker; chat rule switches to `payment` | Large |
+| **In-app notification bell** | Email queue exists; users need visible alerts | 2–4 hrs |
+| **Photo sharing in chat** | Posters/taskers share task progress photos | 2–4 hrs |
+| **Saved tasks (bookmarks)** | Workers return to tasks later | 2–3 hrs |
+| **Repost expired task** | Posters one-click repost after 30 days | 1–2 hrs |
+| **Social login (Google)** | Faster signup, fewer drop-offs | 4–8 hrs |
+| **Sentry error tracking** | Know when prod breaks | 1–2 hrs |
+
+---
+
+### 🟡 P1 — Strong beta polish (weeks 2–4)
+
+| Feature | Notes |
+|---------|--------|
+| Read receipts in chat | `read_at` column + UI ticks |
+| Typing indicator | Supabase realtime or polling |
+| Confetti on task complete | Small delight moment |
+| Pull to refresh (browse) | Mobile-native feel |
+| Infinite scroll (browse) | Replace load-all |
+| Task card load animations | Subtle fade/slide |
+| Recommended tasks | Match worker skills |
+| Recently viewed tasks | localStorage or DB |
+| Task alerts by category | Push/email when new match |
+| Favourite workers | Poster saves go-to taskers |
+| Task templates | Repost same format |
+| Task analytics (views/apps) | Poster dashboard stats |
+| Online / last active dot | Green dot on profiles |
+| Haptic feedback (mobile) | `navigator.vibrate` on key taps |
+| SMS notifications | Twilio for urgent tasks |
+| Weekly digest email | Monday summary |
+
+---
+
+### 🟢 P2 — Post-launch / nice-to-have
+
+| Feature | Notes |
+|---------|--------|
+| Map view of tasks | Calgary first, then Canada-wide |
+| Earnings dashboard | After Stripe live |
+| Schedule / calendar view | Upcoming tasks |
+| Invoice generator | Worker tax helpers |
+| Mileage tracker | Niche — defer |
+| Voice messages in chat | Storage + moderation |
+| Message reactions | Emoji on messages |
+| Two-factor auth | All users |
+| Photo ID verification | Verified badge |
+| Video intro (30s) | Worker profiles |
+| Background checks | Partner integration |
+| Skills assessment tests | Trust layer |
+| Corporate accounts | B2B lane |
+| Gift cards | Revenue feature |
+| API / white label | Platform play |
+| Hotjar heatmaps | UX research |
+| Mixpanel funnels | Product analytics |
+| WhatsApp notifications | Business API cost |
+| Price drop alerts | Worker retention |
+| Bulk task posting | Power posters |
+| Task history PDF export | Worker admin |
+| Smooth page transitions | SPA or View Transitions API |
+| Resume analyser thank-you | **Not QuickGigs** — ignore |
+
+---
+
+## Suggested next quick wins
+
+1. **Deploy** — commit + push menu, lightbox, login fix, analytics hook
+2. **Paste GA4 ID** in `qg-config.js` + set Google Ads conversion on `thank-you.html`
+3. **Notification bell** + unread table (~2–4 hrs)
+4. **Saved tasks** bookmark button on browse cards (~2 hrs)
+5. **Repost task** on expired My Tasks rows (~1 hr)
+6. **Photo sharing in chat** (~2–4 hrs)
+7. **Social login (Google)** (~4–8 hrs)
+
+---
 
 | Event | Today |
 |-------|--------|
@@ -183,22 +271,7 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 | New chat message | ❌ No email |
 | Password reset | ✅ Firebase |
 
----
-
-## Suggested next quick wins
-
-1. Footer terms/privacy on all app pages (~30 min)
-2. Google Analytics (~30 min)
-3. Update index / launch announcement copy (~1 hr)
-4. Light mode fixes from tester feedback (~1–2 hrs)
-5. Notification bell + DB table (~2–4 hrs)
-6. Report button (~1 hr)
-7. Categories landing page (~1 hr)
-8. Email notifications (separate sprint — 4–8 hrs)
-
----
-
-## Beta product rules (reminder)
+## Email notifications — expected vs today
 
 - **Poster:** post tasks, review applicants, accept, message after accept
 - **Tasker:** browse, apply (photo required), work in progress, message after accept

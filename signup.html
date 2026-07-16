@@ -6,7 +6,7 @@
 <title>QuickGigs — Sign Up · Canada</title>
 <meta name="description" content="Join QuickGigs — Canada's task marketplace. Post gigs or earn as a tasker anywhere in Canada, coast to coast.">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="qg-signup.css?v=3">
+<link rel="stylesheet" href="qg-signup.css?v=4">
 <link rel="stylesheet" href="qg-onboarding.css?v=2">
 <link rel="stylesheet" href="qg-cookies.css">
 <style>
@@ -401,7 +401,7 @@ document.getElementById('submitBtn').onclick = async function() {
 
     var dest = account.role === 'worker'
       ? 'profile.html?setup=photo&required=1'
-      : (typeof getDashboardUrl === 'function' ? getDashboardUrl(account.role) : ('dashboard.html?mode=' + (account.role === 'worker' ? 'worker' : 'poster')));
+      : 'thank-you.html?mode=poster';
     setTimeout(function(){ window.location.href = dest; }, identity.account_status === 'pending_guardian' ? 2500 : 1500);
 
   } catch (error) {

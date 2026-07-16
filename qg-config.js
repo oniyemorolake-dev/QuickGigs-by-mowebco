@@ -12,6 +12,9 @@ window.QG_CONFIG = {
   emailNotificationsEnabled: true,
   notificationFunctionUrl: '',
   shareBaseUrl: 'https://quickgigs.ca',
+  // Google Analytics 4 — paste your Measurement ID (G-XXXXXXXXXX) to enable
+  ga4MeasurementId: '',
+  ga4ConversionLabel: '',
   // P2 — trust & moderation
   autoBanAfterWarnings: 3,
   paymentsEnabled: false

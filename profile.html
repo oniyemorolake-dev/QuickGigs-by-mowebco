@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
 <link rel="stylesheet" href="qg-features.css?v=20260716c">
+<link rel="stylesheet" href="qg-menu.css?v=2">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -285,6 +286,13 @@ body.light .qg-role-flip-opt.active{color:#2d1b4e;}
 .profile-help-link{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:999px;border:0.5px solid var(--border);background:rgba(107,63,160,0.12);color:var(--lavender);font-size:12px;font-weight:500;text-decoration:none;transition:transform 0.18s,border-color 0.18s;}
 .profile-help-link:hover{transform:translateY(-1px);border-color:var(--purple-light);}
 body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
+.profile-account{margin:0 20px 16px;padding:16px;border-radius:16px;border:0.5px solid var(--border);background:var(--card-bg);}
+.profile-account .sec-title{margin-bottom:10px;}
+.account-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px;}
+.account-row:last-of-type{border-bottom:none;}
+.account-lbl{color:var(--text-muted);flex-shrink:0;}
+.account-val{color:var(--text);text-align:right;word-break:break-all;}
+.account-privacy-note{font-size:11px;color:var(--text-faint);margin-top:10px;line-height:1.45;}
 </style>
 </head>
 <body>
@@ -334,6 +342,12 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
     <span class="rating-count" id="ratingCount"></span>
   </div>
   <div class="member-since" id="memberSince"></div>
+</div>
+
+<div class="profile-account section" id="profileAccountSection" style="display:none">
+  <div class="sec-title">Account</div>
+  <div id="profileAccountRows"></div>
+  <p class="account-privacy-note">Only you can see this — email and phone are never shown on your public profile.</p>
 </div>
 
 <!-- EDIT BUTTONS (own profile only) -->
@@ -533,6 +547,7 @@ onAuthStateChanged(auth, (user) => {
 <script src="qg-report.js?v=20260716d"></script>
 <script src="qg-stats.js"></script>
 <script src="qg-nav.js"></script>
+<script src="qg-menu.js?v=2"></script>
 <script src="qg-role-switch.js"></script>
 <script>
 var HEADERS = window.HEADERS;
@@ -822,8 +837,17 @@ async function loadProfile(user) {
     bio: '',
     skills: [],
     role: localStorage.getItem('qg-role') || 'poster',
-    memberSince: ''
+    memberSince: '',
+    phone: ''
   }, localProfile, dbProfile, profileData);
+
+  if (isOwnProfile) {
+    if (user.email) profileData.email = user.email;
+    if (dbUser && dbUser.phone) profileData.phone = String(dbUser.phone).trim();
+  } else {
+    delete profileData.email;
+    delete profileData.phone;
+  }
 
   if (isOwnProfile && typeof upsertUserProfile === 'function') {
     var localBio = localProfile.bio ? String(localProfile.bio).trim() : '';
@@ -944,6 +968,30 @@ function renderProfile(user, isOwnProfile) {
     trustTxt.innerHTML = [avail, area, langs].filter(Boolean).join('<br>') || 'Add service area and availability in Customize profile.';
   } else if (trustSec) {
     trustSec.style.display = 'none';
+  }
+
+  var accSec = document.getElementById('profileAccountSection');
+  var accRows = document.getElementById('profileAccountRows');
+  if (accSec && accRows) {
+    if (isOwnProfile) {
+      var rows = [];
+      if (profileData.email) {
+        rows.push('<div class="account-row"><span class="account-lbl">Email</span><span class="account-val">' + esc(profileData.email) + '</span></div>');
+      }
+      if (profileData.phone) {
+        rows.push('<div class="account-row"><span class="account-lbl">Phone</span><span class="account-val">' + esc(profileData.phone) + '</span></div>');
+      }
+      if (rows.length) {
+        accSec.style.display = 'block';
+        accRows.innerHTML = rows.join('');
+      } else {
+        accSec.style.display = 'none';
+        accRows.innerHTML = '';
+      }
+    } else {
+      accSec.style.display = 'none';
+      accRows.innerHTML = '';
+    }
   }
 }
 

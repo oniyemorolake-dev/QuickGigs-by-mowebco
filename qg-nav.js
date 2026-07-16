@@ -158,4 +158,9 @@
   mobileScript.src = 'qg-mobile.js';
   mobileScript.defer = true;
   document.head.appendChild(mobileScript);
+
+  var menuScript = document.createElement('script');
+  menuScript.src = 'qg-menu.js?v=2';
+  menuScript.defer = true;
+  document.head.appendChild(menuScript);
 })();

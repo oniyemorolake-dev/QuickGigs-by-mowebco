@@ -83,8 +83,8 @@ function attachPasswordToggle(inputId) {
     var style = document.createElement('style');
     style.id = 'qg-password-toggle-styles';
     style.textContent =
-      '.qg-password-wrap{position:relative;width:100%;}' +
-      '.qg-password-wrap input{padding-right:7.5rem!important;}' +
+      '.qg-password-wrap{position:relative;width:100%;max-width:100%;box-sizing:border-box;}' +
+      '.qg-password-wrap input{width:100%;max-width:100%;box-sizing:border-box;padding-right:7.5rem!important;}' +
       '.qg-password-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-family:DM Sans,sans-serif;font-size:0.75rem;font-weight:500;color:#c8a8e9;padding:4px 0;line-height:1;white-space:nowrap;}' +
       '.qg-password-toggle:hover{color:#fff;text-decoration:underline;}';
     document.head.appendChild(style);

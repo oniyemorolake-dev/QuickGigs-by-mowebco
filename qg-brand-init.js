@@ -42,4 +42,22 @@
     link.href = 'qg-light-nav.css';
     document.head.appendChild(link);
   }
+
+  if (!document.getElementById('qg-analytics-loader') && !document.querySelector('script[src*="qg-analytics"]')) {
+    var cfgScript = document.querySelector('script[src*="qg-config.js"]');
+    function loadGa() {
+      var ga = document.createElement('script');
+      ga.id = 'qg-analytics-loader';
+      ga.src = 'qg-analytics.js?v=1';
+      ga.async = true;
+      document.head.appendChild(ga);
+    }
+    if (cfgScript) loadGa();
+    else {
+      var cfg = document.createElement('script');
+      cfg.src = 'qg-config.js';
+      cfg.onload = loadGa;
+      document.head.appendChild(cfg);
+    }
+  }
 })();

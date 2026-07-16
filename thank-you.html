@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>QuickGigs — Welcome!</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="qg-signup.css?v=4">
+<style>
+body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
+.signup-card{text-align:center;}
+.signup-title{font-size:1.5rem;}
+.signup-subtitle{margin-bottom:1.5rem;}
+</style>
+<script src="qg-config.js"></script>
+<script src="qg-analytics.js"></script>
+</head>
+<body>
+<div class="signup-bg-mesh"></div>
+<div class="signup-page">
+  <div class="signup-card-wrap">
+    <div class="signup-card">
+      <div class="signup-step-icon" aria-hidden="true">🎉</div>
+      <h1 class="signup-title">You're in!</h1>
+      <p class="signup-subtitle">Your QuickGigs account is ready. Head to your dashboard to post a task or browse gigs across Canada.</p>
+      <a class="signup-btn" id="dashLink" href="dashboard.html" style="display:inline-block;text-decoration:none;margin-bottom:12px;">Go to dashboard →</a>
+      <p class="signup-login" style="margin-top:8px"><a href="how-it-works.html">How it works</a> · <a href="faq.html">FAQ</a></p>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var mode = params.get('mode') === 'worker' ? 'worker' : 'poster';
+  var link = document.getElementById('dashLink');
+  if (link) link.href = 'dashboard.html?mode=' + mode;
+
+  if (typeof qgTrackEvent === 'function') {
+    qgTrackEvent('sign_up_complete', { method: 'email', role: mode });
+  }
+  if (typeof qgTrackConversion === 'function' && window.QG_CONFIG && window.QG_CONFIG.ga4ConversionLabel) {
+    qgTrackConversion(window.QG_CONFIG.ga4ConversionLabel);
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+/* QuickGigs — tap-to-expand image lightbox */
+.qg-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.22s, visibility 0.22s;
+}
+
+.qg-lightbox.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.qg-lightbox-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 8px;
+  flex-shrink: 0;
+}
+
+.qg-lightbox-caption {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+  flex: 1;
+  min-width: 0;
+  padding-right: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qg-lightbox-close {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.qg-lightbox-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 8px 12px calc(16px + env(safe-area-inset-bottom, 0px));
+  position: relative;
+}
+
+.qg-lightbox-img {
+  max-width: 100%;
+  max-height: min(78vh, 720px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.qg-lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qg-lightbox-nav:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.qg-lightbox-prev { left: 8px; }
+.qg-lightbox-next { right: 8px; }
+
+.qg-lightbox-dots {
+  text-align: center;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  flex-shrink: 0;
+}
+
+.tc-photo-tappable {
+  cursor: zoom-in;
+}
+
+.tc-photo-tappable::before {
+  content: '🔍 Tap to enlarge';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.tc-photo-tappable:hover::before,
+.tc-photo-tappable:focus-within::before {
+  opacity: 1;
+}
+
+.qg-modal-photo-tap {
+  cursor: zoom-in;
+}
+
+body.qg-lightbox-open {
+  overflow: hidden;
+}

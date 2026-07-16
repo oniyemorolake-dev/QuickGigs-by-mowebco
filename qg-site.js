@@ -63,6 +63,29 @@
     };
   };
 
+  (function loadAnalytics() {
+    if (document.getElementById('qg-analytics-loader')) return;
+    if (!document.querySelector('script[src*="qg-config.js"]')) {
+      var cfg = document.createElement('script');
+      cfg.src = 'qg-config.js';
+      document.head.appendChild(cfg);
+    }
+    var s = document.createElement('script');
+    s.id = 'qg-analytics-loader';
+    s.src = 'qg-analytics.js?v=1';
+    s.defer = true;
+    document.head.appendChild(s);
+  })();
+
+  (function loadMenu() {
+    if (document.getElementById('qg-menu-loader')) return;
+    var s = document.createElement('script');
+    s.id = 'qg-menu-loader';
+    s.src = 'qg-menu.js?v=2';
+    s.defer = true;
+    document.head.appendChild(s);
+  })();
+
   document.addEventListener('DOMContentLoaded', function () {
     if (document.getElementById('siteFooter')) renderQuickGigsFooter('siteFooter');
     document.querySelectorAll('.faq-q').forEach(function (q) {
