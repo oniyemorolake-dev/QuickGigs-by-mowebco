@@ -5,7 +5,7 @@
     var body = document.body;
     if (!body) return;
     if (document.body.classList.contains('theme-posttask')) {
-      body.className = light ? 'light' : 'dark';
+      body.className = (light ? 'light' : 'dark') + ' theme-posttask';
     } else {
       body.className = light ? 'light' : '';
     }
@@ -15,7 +15,7 @@
 window.QG_applyTheme = function (isDark, modeBtnId, posttaskStyle) {
   var body = document.body;
   if (posttaskStyle) {
-    body.className = isDark ? 'dark' : 'light';
+    body.className = (isDark ? 'dark' : 'light') + ' theme-posttask';
   } else {
     body.className = isDark ? '' : 'light';
   }

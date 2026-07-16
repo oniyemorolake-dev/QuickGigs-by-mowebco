@@ -18,6 +18,21 @@ window.resolveChatUnlockedOnCreate = function(stage) {
   return false;
 };
 
+/** Beta: unlock chat when task is accepted even if conv row still says "application". */
+window.shouldUnlockChatNow = function(convStatus, taskStatus) {
+  var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'payment';
+  if (rule === 'apply') return (convStatus || '').toLowerCase() !== 'completed';
+  if (rule === 'accept') {
+    var cs = (convStatus || '').toLowerCase();
+    var ts = (taskStatus || '').toLowerCase();
+    if (cs === 'completed') return false;
+    if (cs === 'in_progress' || cs === 'accepted') return true;
+    if (ts === 'in_progress') return true;
+    return false;
+  }
+  return false;
+};
+
 window.getChatLockMessage = function(isPoster) {
   var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'payment';
   if (rule === 'payment') {

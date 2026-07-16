@@ -307,6 +307,7 @@ function normaliseTask(row){
     price:budget,
     priceLabel:'$'+budget+(mode==='recurring'?'/hr':''),
     location:row.LOCATION||row.location||'Calgary, AB',
+    when: row.scheduled_label || row.SCHEDULED_LABEL || '',
     posted:'Recently',applicants:0,
     status:(row.STATUS||row.status||'open').toLowerCase(),
     posterId:posterUid,
@@ -430,10 +431,11 @@ function renderCards(){
     var desc = (t.desc || '').trim();
     var descHtml = desc ? '<p class="tc-desc">'+esc(desc)+'</p>' : '<p class="tc-desc is-empty"></p>';
     var loc = formatLocationDisplay(t.location);
+    var whenPart = t.when ? ' · 🕐 '+esc(t.when) : '';
     return '<div class="task-card">'+
       '<div class="tc-top"><div class="tc-left">'+renderCardIcon(t)+'<div class="tc-meta"><p class="tc-cat">'+esc(t.catLabel)+'</p><p class="tc-title">'+esc(t.title)+'</p></div></div>'+getBadge(t.mode)+'</div>'+
       descHtml+
-      '<div class="tc-bottom"><div><div class="tc-price">'+esc(t.priceLabel)+'</div><div class="tc-info">👤 '+esc(t.posterName)+' · 📍 '+esc(loc)+' · '+esc(t.posted)+(t.applicants>0?' · '+t.applicants+' applied':'')+'</div></div>'+
+      '<div class="tc-bottom"><div><div class="tc-price">'+esc(t.priceLabel)+'</div><div class="tc-info">👤 '+esc(t.posterName)+' · 📍 '+esc(loc)+whenPart+' · '+esc(t.posted)+(t.applicants>0?' · '+t.applicants+' applied':'')+'</div></div>'+
       '<button class="apply-btn '+getBtnClass(t.mode)+'" onclick="openModal(\''+t.id+'\',event)">'+getBtnLabel(t.mode)+'</button></div></div>';
   }).join('');
 }
@@ -461,6 +463,7 @@ window.openModal=async function(id,e){
   }
   document.getElementById('modalTitle').textContent=activeTask.catLabel+' — '+activeTask.title.substring(0,40)+(activeTask.title.length>40?'…':'');
   var sub = 'Budget: '+activeTask.priceLabel+' · '+activeTask.location;
+  if (activeTask.when) sub += ' · 🕐 ' + activeTask.when;
   if (activeTask.requiresPhotos) sub += ' · 📷 Photo updates requested';
   document.getElementById('modalSub').textContent=sub;
   document.getElementById('offerPrice').value=activeTask.price;

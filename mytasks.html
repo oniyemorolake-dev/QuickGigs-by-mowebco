@@ -567,6 +567,10 @@ function getField(row,f){
 }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+function taskStatus(row) {
+  return String(getField(row, 'STATUS') || 'open').toLowerCase();
+}
+
 document.getElementById('tabContent').addEventListener('click', function(e) {
   var acceptBtn = e.target.closest('.accept-btn');
   if (acceptBtn && acceptBtn.hasAttribute('data-app-id')) {
@@ -775,12 +779,12 @@ function renderTab(){
   else if(activeTab === 'inprogress'){
     var inProg;
     if (isPoster) {
-      inProg = allTasks.filter(function(t){ return getField(t,'POSTED_BY') === userId && getField(t,'STATUS') === 'in_progress'; });
+      inProg = allTasks.filter(function(t){ return getField(t,'POSTED_BY') === userId && taskStatus(t) === 'in_progress'; });
     } else {
       inProg = allTasks.filter(function(t){
-        return getField(t,'STATUS') === 'in_progress' && allApplications.some(function(a){
+        return taskStatus(t) === 'in_progress' && allApplications.some(function(a){
           return String(getField(a,'TASK_ID')) === String(getField(t,'TASK_ID')) &&
-            getField(a,'WORKER_ID') === userId && getField(a,'STATUS') === 'accepted';
+            getField(a,'WORKER_ID') === userId && String(getField(a,'STATUS') || 'pending').toLowerCase() === 'accepted';
         });
       });
     }
@@ -826,10 +830,10 @@ function renderTab(){
   else if(activeTab === 'completed'){
     var done;
     if (isPoster) {
-      done = allTasks.filter(function(t){ return getField(t,'STATUS') === 'completed' && getField(t,'POSTED_BY') === userId; });
+      done = allTasks.filter(function(t){ return taskStatus(t) === 'completed' && getField(t,'POSTED_BY') === userId; });
     } else {
       done = allTasks.filter(function(t){
-        return getField(t,'STATUS') === 'completed' && allApplications.some(function(a){
+        return taskStatus(t) === 'completed' && allApplications.some(function(a){
           return String(getField(a,'TASK_ID')) === String(getField(t,'TASK_ID')) && getField(a,'WORKER_ID') === userId;
         });
       });
@@ -944,7 +948,8 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
     worker_name:   workerName,
     task_title:    getField(task, 'TITLE'),
     task_category: getField(task, 'CATEGORY'),
-    status:        'in_progress'
+    status:        'in_progress',
+    is_unlocked:   !isPaymentGatedChat()
   });
 
   if(!convResult.success){
@@ -954,12 +959,8 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
     return;
   }
 
-  var chatUnlocked = convResult.data && convResult.data.is_unlocked;
-  if (convResult.data && convResult.data.conv_id && chatUnlocked) {
-    await updateConversation(convResult.data.conv_id, {
-      status: 'in_progress',
-      is_unlocked: true
-    });
+  if (convResult.data && convResult.data.conv_id && !isPaymentGatedChat()) {
+    await unlockConversationIfAllowed(convResult.data.conv_id, convResult.data.status, 'in_progress');
     showToast('Accepted ' + workerName + '! Opening chat…');
     setTimeout(function(){
       window.location.href = 'chat.html?conv=' + encodeURIComponent(convResult.data.conv_id);
@@ -985,8 +986,32 @@ window.openChatWithWorker = async function(taskId, workerId){
   var posterId = getField(task, 'POSTED_BY');
   var conv = await getConversationForTask(taskId, posterId, workerId);
   if(conv && conv.conv_id){
+    if (!isPaymentGatedChat() && typeof unlockConversationIfAllowed === 'function') {
+      await unlockConversationIfAllowed(conv.conv_id, conv.status, getField(task, 'STATUS'));
+    }
     window.location.href = 'chat.html?conv=' + encodeURIComponent(conv.conv_id);
     return;
+  }
+
+  if (!isPaymentGatedChat() && typeof createConversation === 'function') {
+    var workerName = displayName(workerId);
+    var posterName = window._currentUser.displayName || window._currentUser.email.split('@')[0];
+    if (typeof formatPersonName === 'function') posterName = formatPersonName(posterName);
+    var created = await createConversation({
+      task_id: taskId,
+      poster_id: posterId,
+      worker_id: workerId,
+      poster_name: posterName,
+      worker_name: workerName,
+      task_title: getField(task, 'TITLE'),
+      task_category: getField(task, 'CATEGORY'),
+      status: 'in_progress',
+      is_unlocked: true
+    });
+    if (created.success && created.data && created.data.conv_id) {
+      window.location.href = 'chat.html?conv=' + encodeURIComponent(created.data.conv_id);
+      return;
+    }
   }
 
   showToast('No chat thread yet — open Messages or run supabase/messaging.sql in Supabase.', '#f59e0b');
@@ -1025,12 +1050,18 @@ window.openChatForTask = async function(taskId){
 };
 
 window.markComplete = async function(taskId){
-  if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
+  taskId = String(taskId);
   var result = await updateTaskStatus(taskId, 'completed');
   if (!result.success) {
-    showToast(result.error || 'Could not mark complete — run supabase/tasks-beta-fix.sql', '#ef4444');
+    var msg = typeof formatSupabaseActionError === 'function'
+      ? formatSupabaseActionError('mark complete', result.error)
+      : (result.error || 'Could not mark complete — run supabase/beta-setup-all.sql in Supabase');
+    showToast(msg, '#ef4444');
     return;
   }
+  allTasks.forEach(function(t) {
+    if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, 'completed');
+  });
   if (typeof lockConversationsForTask === 'function') {
     await lockConversationsForTask(taskId);
   }

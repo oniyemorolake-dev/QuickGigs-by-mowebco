@@ -4,6 +4,8 @@
 -- ── TASKS ────────────────────────────────────────────────────────
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS poster_name TEXT;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'open';
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMPTZ;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS scheduled_label TEXT;
 
 GRANT SELECT, INSERT, UPDATE ON tasks TO anon, authenticated;
 

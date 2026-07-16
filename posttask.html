@@ -12,8 +12,8 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'DM Sans',sans-serif;font-size:15px;min-height:100vh;transition:background 0.3s,color 0.3s;}
-body.dark{background:#0b0118;color:#fff;}
-body.light{background:#fafafe;color:#2d1b4e;}
+body.dark{background:#0b0118;color:#fff;--text-muted:rgba(255,255,255,0.62);--text-faint:rgba(255,255,255,0.45);--border:rgba(200,168,233,0.28);--surface:rgba(255,255,255,0.07);}
+body.light{background:#fafafe;color:#2d1b4e;--text-muted:#5a5a72;--text-faint:#6b7280;--border:#e8e2ff;--surface:#f8f7ff;}
 
 /* NAV */
 .nav{padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
@@ -42,8 +42,32 @@ body.light{background:#fafafe;color:#2d1b4e;}
 /* SECTIONS */
 .section{margin-bottom:24px;}
 .section-label{font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;display:block;margin-bottom:10px;}
-.dark .section-label{color:rgba(255,255,255,0.35);}
-.light .section-label{color:#9ca3af;}
+.section-label.sub-label{font-size:10px;letter-spacing:0.1em;margin-bottom:6px;}
+.dark .section-label{color:rgba(255,255,255,0.72);}
+.light .section-label{color:#4b5563;}
+.field-hint{font-size:12px;line-height:1.55;margin:6px 0 10px;color:var(--text-muted);}
+.field-check{display:flex;align-items:flex-start;gap:10px;margin-top:14px;font-size:13px;color:var(--text-muted);cursor:pointer;}
+.field-check input{margin-top:3px;accent-color:#9b6fc4;}
+.photo-upload-btn{width:100%;padding:14px 16px;border-radius:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;transition:all 0.2s;border:1px dashed rgba(200,168,233,0.35);}
+.dark .photo-upload-btn{background:rgba(107,63,160,0.28)!important;color:#f3e8ff!important;border:2px dashed #c8a8e9!important;font-weight:600!important;}
+.light .photo-upload-btn{background:#fff!important;color:#5b21b6!important;border:2px dashed #9b6fc4!important;font-weight:600!important;}
+.dark .photo-upload-btn:hover{background:rgba(107,63,160,0.42)!important;border-color:#e9d5ff!important;}
+.light .photo-upload-btn:hover{background:#f5f2ff!important;}
+.dark .field-input{background:rgba(255,255,255,0.09)!important;color:#ffffff!important;border-color:rgba(200,168,233,0.45)!important;-webkit-text-fill-color:#ffffff;}
+.light .field-input{background:#ffffff!important;color:#1f1235!important;border-color:#d8cfff!important;}
+.dark .field-input::placeholder{color:rgba(233,213,255,0.75)!important;-webkit-text-fill-color:rgba(233,213,255,0.75);}
+.light .field-input::placeholder{color:#6b7280!important;}
+.dark .section-label{color:#e9d5ff!important;}
+.light .section-label{color:#374151!important;}
+.dark .field-hint{color:rgba(255,255,255,0.78)!important;}
+.light .field-hint{color:#4b5563!important;}
+.dark .price-pre{color:#e9d5ff!important;}
+.time-slots{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+.time-slot{padding:9px 14px;border-radius:20px;font-size:12px;cursor:pointer;transition:all 0.2s;}
+.dark .time-slot{background:rgba(255,255,255,0.08);border:0.5px solid rgba(200,168,233,0.35);color:rgba(255,255,255,0.88);}
+.light .time-slot{background:#fff;border:0.5px solid #e8e2ff;color:#4b5563;}
+.dark .time-slot.selected{background:rgba(107,63,160,0.4);border:1px solid #c8a8e9;color:#fff;}
+.light .time-slot.selected{background:#ede9ff;border:1px solid #9b6fc4;color:#6b3fa0;}
 
 /* MODE SELECTOR */
 .mode-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
@@ -73,11 +97,12 @@ body.light{background:#fafafe;color:#2d1b4e;}
 /* INPUTS */
 .field{margin-bottom:16px;}
 .field-input{width:100%;border-radius:12px;padding:14px 16px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:all 0.2s;border:0.5px solid transparent;}
-.dark .field-input{background:rgba(255,255,255,0.05);color:#fff;border-color:rgba(200,168,233,0.15);}
-.light .field-input{background:#f8f7ff;color:#2d1b4e;border-color:#e8e2ff;}
-.dark .field-input:focus{border-color:#9b6fc4;background:rgba(107,63,160,0.1);}
-.light .field-input:focus{border-color:#9b6fc4;background:#ede9ff;}
-.field-input::placeholder{color:rgba(155,111,196,0.4);}
+.dark .field-input{background:rgba(255,255,255,0.07);color:#fff;border-color:rgba(200,168,233,0.28);}
+.light .field-input{background:#fff;color:#2d1b4e;border-color:#e8e2ff;}
+.dark .field-input:focus{border-color:#c8a8e9;background:rgba(107,63,160,0.14);}
+.light .field-input:focus{border-color:#9b6fc4;background:#fff;}
+.field-input::placeholder{color:rgba(200,168,233,0.55);}
+.light .field-input::placeholder{color:#9ca3af;}
 textarea.field-input{resize:none;min-height:100px;}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .price-wrap{position:relative;}
@@ -230,15 +255,40 @@ body{padding-bottom:76px;}
 
   <!-- PHOTOS -->
   <div class="section">
-    <span class="section-label">Photos <span style="font-weight:300;text-transform:none;letter-spacing:0">(optional but recommended)</span></span>
-    <p style="font-size:12px;color:var(--text-muted);margin:6px 0 10px;line-height:1.5;">Add photos here so taskers see the job before they apply — room, item, or area. <strong>No IDs, mail, or personal documents.</strong> You can also send more in chat after payment.</p>
+    <span class="section-label">Photos <span style="font-weight:400;text-transform:none;letter-spacing:0;opacity:0.85">(optional but recommended)</span></span>
+    <p class="field-hint">Add photos here so taskers see the job before they apply — room, item, or area. <strong>No IDs, mail, or personal documents.</strong> You can also send more in chat after payment.</p>
     <input type="file" id="taskPhotos" accept="image/*" multiple style="display:none" onchange="handlePhotoPick(this)">
-    <button type="button" class="mode-card" style="width:100%;padding:14px;cursor:pointer;" onclick="document.getElementById('taskPhotos').click()">📷 Add photos (up to 3)</button>
+    <button type="button" class="photo-upload-btn" onclick="document.getElementById('taskPhotos').click()">📷 Add photos (up to 3)</button>
     <div id="photoPreview" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;"></div>
-    <label style="display:flex;align-items:flex-start;gap:10px;margin-top:14px;font-size:13px;color:var(--text-muted);cursor:pointer;">
-      <input type="checkbox" id="requiresPhotos" style="margin-top:3px;">
+    <label class="field-check">
+      <input type="checkbox" id="requiresPhotos">
       <span>Ask the tasker to share before &amp; after photo updates when working</span>
     </label>
+  </div>
+
+  <!-- SCHEDULE -->
+  <div class="section" id="scheduleSection">
+    <span class="section-label">When do you need this?</span>
+    <p class="field-hint" id="scheduleHint">Pick a date and time so taskers know when to show up.</p>
+    <div class="field-row" id="scheduleDateRow">
+      <div class="field">
+        <span class="section-label sub-label">Date</span>
+        <input class="field-input" id="taskDate" type="date">
+        <div class="field-error" id="dateError">Please choose a date</div>
+      </div>
+      <div class="field" id="exactTimeField">
+        <span class="section-label sub-label">Time</span>
+        <input class="field-input" id="taskTime" type="time">
+        <div class="field-error" id="timeError">Please choose a time</div>
+      </div>
+    </div>
+    <div class="time-slots" id="timeSlots">
+      <div class="time-slot selected" data-slot="exact" onclick="selectTimeSlot(this)">Exact time</div>
+      <div class="time-slot" data-slot="morning" onclick="selectTimeSlot(this)">Morning</div>
+      <div class="time-slot" data-slot="afternoon" onclick="selectTimeSlot(this)">Afternoon</div>
+      <div class="time-slot" data-slot="evening" onclick="selectTimeSlot(this)">Evening</div>
+      <div class="time-slot" data-slot="flexible" onclick="selectTimeSlot(this)">Flexible</div>
+    </div>
   </div>
 
   <!-- BUDGET + LOCATION -->
@@ -356,6 +406,14 @@ applyTheme();
 var selectedMode = 'quick';
 var selectedCat  = '';
 var selectedRec  = 'Daily';
+var selectedTimeSlot = 'exact';
+var TIME_SLOT_LABELS = {
+  exact: 'Exact time',
+  morning: 'Morning (8am – 12pm)',
+  afternoon: 'Afternoon (12pm – 5pm)',
+  evening: 'Evening (5pm – 9pm)',
+  flexible: 'Flexible — tasker can suggest'
+};
 var CAT_SLUGS = {
   'Errands': 'errands', 'Home': 'home', 'Tutoring': 'tutoring', 'Beauty': 'beauty',
   'Moving': 'moving', 'Cooking': 'cooking', 'Tech': 'tech', 'Care': 'care',
@@ -366,11 +424,86 @@ function applyLocationDefaults() {
   var loc = window.getUserLocation ? window.getUserLocation() : 'Calgary, AB';
   var city = window.getUserCityLabel ? window.getUserCityLabel() : 'Calgary';
   var locInput = document.getElementById('taskLocation');
-  if (locInput && !locInput.value) locInput.placeholder = loc;
+  if (locInput && !locInput.value) {
+    locInput.placeholder = loc;
+    locInput.value = loc;
+  }
   updateHint(city);
 }
 initUserLocation().then(applyLocationDefaults);
 applyLocationDefaults();
+initScheduleDefaults();
+
+function initScheduleDefaults() {
+  var dateInput = document.getElementById('taskDate');
+  var timeInput = document.getElementById('taskTime');
+  if (!dateInput) return;
+  var now = new Date();
+  var yyyy = now.getFullYear();
+  var mm = String(now.getMonth() + 1).padStart(2, '0');
+  var dd = String(now.getDate()).padStart(2, '0');
+  dateInput.min = yyyy + '-' + mm + '-' + dd;
+  if (!dateInput.value) dateInput.value = yyyy + '-' + mm + '-' + dd;
+  if (timeInput && !timeInput.value) {
+    now.setHours(now.getHours() + 2);
+    timeInput.value = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  }
+  syncScheduleUI();
+}
+
+window.selectTimeSlot = function(el) {
+  document.querySelectorAll('.time-slot').forEach(function(t){ t.classList.remove('selected'); });
+  el.classList.add('selected');
+  selectedTimeSlot = el.getAttribute('data-slot') || 'exact';
+  syncScheduleUI();
+};
+
+function syncScheduleUI() {
+  var exactField = document.getElementById('exactTimeField');
+  var dateRow = document.getElementById('scheduleDateRow');
+  var hint = document.getElementById('scheduleHint');
+  var isRecurring = selectedMode === 'recurring';
+  if (dateRow) dateRow.style.display = isRecurring ? 'none' : 'grid';
+  if (exactField) exactField.style.display = (selectedTimeSlot === 'exact' && !isRecurring) ? 'block' : 'none';
+  if (hint) {
+    hint.textContent = isRecurring
+      ? 'Choose a preferred time window for each session.'
+      : (selectedTimeSlot === 'flexible'
+        ? 'Pick a date — taskers can propose a time that works.'
+        : 'Pick a date and time so taskers know when to show up.');
+  }
+}
+
+function buildSchedulePayload() {
+  var dateVal = document.getElementById('taskDate') ? document.getElementById('taskDate').value : '';
+  var timeVal = document.getElementById('taskTime') ? document.getElementById('taskTime').value : '';
+  var slotLabel = TIME_SLOT_LABELS[selectedTimeSlot] || 'Flexible';
+  var scheduledAt = null;
+  var scheduledLabel = '';
+
+  if (selectedMode === 'recurring') {
+    scheduledLabel = selectedRec + ' · ' + slotLabel;
+    return { scheduled_at: null, scheduled_label: scheduledLabel };
+  }
+
+  if (!dateVal) return { error: 'date' };
+
+  if (selectedTimeSlot === 'exact') {
+    if (!timeVal) return { error: 'time' };
+    scheduledAt = dateVal + 'T' + timeVal + ':00';
+    var dt = new Date(scheduledAt);
+    scheduledLabel = dt.toLocaleString('en-CA', {
+      weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true
+    });
+  } else {
+    var datePretty = new Date(dateVal + 'T12:00:00').toLocaleDateString('en-CA', {
+      weekday: 'short', month: 'short', day: 'numeric'
+    });
+    scheduledLabel = datePretty + ' · ' + slotLabel;
+  }
+
+  return { scheduled_at: scheduledAt, scheduled_label: scheduledLabel };
+}
 
 // ── MODE / CAT / REC ───────────────────────────────────
 window.selectMode = function(el) {
@@ -378,6 +511,7 @@ window.selectMode = function(el) {
   el.classList.add('selected');
   selectedMode = el.dataset.mode;
   document.getElementById('recurringSection').style.display = selectedMode === 'recurring' ? 'block' : 'none';
+  syncScheduleUI();
   updateHint();
 };
 
@@ -434,6 +568,17 @@ window.handleSubmit = async function() {
     document.getElementById('taskBudget').classList.add('invalid');
     valid = false;
   }
+  var schedule = buildSchedulePayload();
+  if (schedule.error === 'date') {
+    document.getElementById('dateError').style.display = 'block';
+    if (document.getElementById('taskDate')) document.getElementById('taskDate').classList.add('invalid');
+    valid = false;
+  }
+  if (schedule.error === 'time') {
+    document.getElementById('timeError').style.display = 'block';
+    if (document.getElementById('taskTime')) document.getElementById('taskTime').classList.add('invalid');
+    valid = false;
+  }
   if (!valid) return;
 
   if (!window._currentUser) {
@@ -466,8 +611,13 @@ window.handleSubmit = async function() {
     location:    location,
     posted_by:   window._currentUser.uid,
     poster_name: posterName,
-    requires_photos: !!document.getElementById('requiresPhotos').checked
+    requires_photos: !!document.getElementById('requiresPhotos').checked,
+    scheduled_at: schedule.scheduled_at,
+    scheduled_label: schedule.scheduled_label
   };
+  if (schedule.scheduled_label && taskData.description.indexOf('When:') === -1) {
+    taskData.description = ('When: ' + schedule.scheduled_label + (taskData.description ? '\n\n' + taskData.description : '')).trim();
+  }
 
   if (selectedPhotos.length) {
     var photoUrls = [];

@@ -305,11 +305,26 @@ async function initChat(){
   }
 
   var convStatus = (currentConv.status || 'in_progress').toLowerCase();
-  if (!currentConv.is_unlocked && convStatus !== 'completed' &&
-      typeof resolveChatUnlockedOnCreate === 'function' &&
-      resolveChatUnlockedOnCreate(convStatus === 'application' ? 'application' : 'in_progress')) {
-    var unlockResult = await updateConversation(convId, { is_unlocked: true });
-    if (unlockResult.success) currentConv.is_unlocked = true;
+  var taskStatus = '';
+  if (currentConv.task_id && typeof getTaskById === 'function') {
+    var taskRow = await getTaskById(currentConv.task_id);
+    if (taskRow) taskStatus = (taskRow.status || taskRow.STATUS || '').toLowerCase();
+  }
+  if (!currentConv.is_unlocked && convStatus !== 'completed') {
+    var shouldUnlock = typeof shouldUnlockChatNow === 'function'
+      ? shouldUnlockChatNow(convStatus, taskStatus)
+      : (typeof resolveChatUnlockedOnCreate === 'function' &&
+        resolveChatUnlockedOnCreate(convStatus === 'application' ? 'application' : 'in_progress'));
+    if (shouldUnlock) {
+      var unlockResult = typeof unlockConversationIfAllowed === 'function'
+        ? await unlockConversationIfAllowed(convId, convStatus, taskStatus)
+        : await updateConversation(convId, { is_unlocked: true, status: 'in_progress' });
+      if (unlockResult.success) {
+        currentConv.is_unlocked = true;
+        if (unlockResult.data && unlockResult.data[0]) currentConv = unlockResult.data[0];
+        else currentConv.status = 'in_progress';
+      }
+    }
   }
 
   var isPoster = currentConv.poster_id === currentUserId;
@@ -341,7 +356,9 @@ async function initChat(){
     ? 'Tasker · ' + (currentConv.task_title || 'Your task')
     : 'Poster · ' + (currentConv.task_title || 'Task');
   document.getElementById('taskTitle').textContent = currentConv.task_title || 'Task';
-  document.getElementById('taskMeta').textContent = currentConv.is_unlocked ? 'Chat open · Escrow paid' : 'Payment required · Chat locked';
+  document.getElementById('taskMeta').textContent = currentConv.is_unlocked
+    ? ((window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter === 'payment') ? 'Chat open · Escrow paid' : 'Chat open')
+    : 'Payment required · Chat locked';
   document.getElementById('taskIcon').textContent = CAT_ICONS[cat] || '📦';
   document.getElementById('taskIcon').style.background = CAT_BG[cat] || 'rgba(107,63,160,0.2)';
   var isCompleted = currentConv.status === 'completed';
