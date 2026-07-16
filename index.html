@@ -4,19 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — Get everyday tasks done in Canada</title>
-<meta name="description" content="QuickGigs is Canada's task marketplace — post a gig or earn as a tasker anywhere in Canada. Post a task in 30 seconds, review applicants, and get help nearby.">
-<meta name="keywords" content="QuickGigs, gigs, tasks, Canada, task marketplace, hire help, earn money">
+<meta name="description" content="QuickGigs is Canada's task marketplace — post a gig or earn as a tasker anywhere in Canada, coast to coast. Live nationwide now; expanding to more countries soon.">
+<meta name="keywords" content="QuickGigs, gigs, tasks, Canada, task marketplace, hire help, earn money, nationwide">
 <link rel="canonical" href="https://quickgigs.ca/">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://quickgigs.ca/">
 <meta property="og:title" content="QuickGigs — Get everyday tasks done in Canada">
-<meta property="og:description" content="Canada's marketplace for everyday tasks. Post a gig or earn as a tasker — Calgary, Edmonton, Toronto, Vancouver, and nationwide.">
+<meta property="og:description" content="Canada's marketplace for everyday tasks — post a gig or earn as a tasker anywhere in Canada. Live coast to coast; expanding internationally soon.">
 <meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <meta property="og:locale" content="en_CA">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="QuickGigs — Get everyday tasks done in Canada">
-<meta name="twitter:description" content="Post tasks or earn as a tasker anywhere in Canada. Beta live now.">
-<link rel="manifest" href="/manifest.json?v=4">
+<meta name="twitter:description" content="Post tasks or earn as a tasker anywhere in Canada. Live nationwide — expanding to more countries soon.">
+<link rel="manifest" href="/manifest.json?v=5">
 <link rel="icon" type="image/png" sizes="32x32" href="QuickGigsLogo.png">
 <link rel="icon" type="image/png" sizes="192x192" href="QuickGigsLogo.png">
 <link rel="apple-touch-icon" href="/QuickGigsLogo.png" sizes="180x180">
@@ -95,6 +95,7 @@ h1 em{font-style:italic;font-weight:400;}
 .legal-footer{position:relative;z-index:1;text-align:center;padding:20px;font-size:11px;color:var(--text-faint);}
 .legal-footer a{color:var(--purple-light);text-decoration:none;}
 .legal-footer a:hover{text-decoration:underline;}
+.scope-note{font-size:0.82rem;color:var(--ws);line-height:1.65;font-weight:300;text-align:center;max-width:520px;margin:0 auto 2rem;padding:0 1rem;}
 @media(max-width:500px){.form-row{flex-direction:column;}.modes{grid-template-columns:1fr;}.steps{grid-template-columns:1fr;}.cta-grid{grid-template-columns:1fr;}}
 </style>
 </head>
@@ -107,10 +108,10 @@ h1 em{font-style:italic;font-weight:400;}
     <div class="logo-text">QuickGigs</div>
   </div>
   <div class="hero">
-    <div class="beta-badge">🚀 Beta live · Canada</div>
+    <div class="beta-badge">🚀 Beta live · Canada · expanding globally</div>
     <div class="eyebrow">Canadian-built · CAD only · Canada-wide</div>
     <h1 id="heroTitle">Get everyday tasks done<br><em>in Canada.</em></h1>
-    <p class="subtitle" id="heroSubtitle">QuickGigs is Canada's task marketplace — post a gig in 30 seconds or earn money helping people in your city, from Calgary to Toronto and everywhere in between.</p>
+    <p class="subtitle" id="heroSubtitle">QuickGigs is Canada's task marketplace — post a gig in 30 seconds or earn money helping people in your city, coast to coast. Live across Canada now, with more countries coming soon.</p>
   </div>
   <div class="cta-wrap" id="ctaWrap">
     <div class="cta-grid" id="ctaGrid">
@@ -160,6 +161,7 @@ h1 em{font-style:italic;font-weight:400;}
       <p class="mode-desc">Plan ahead. Post your task, review applicants, pick the best person, and schedule it when it suits you.</p>
     </div>
   </div>
+  <p class="scope-note">QuickGigs connects people who need help with skilled taskers across Canada — not limited to one city or region. We're live nationwide and expanding beyond Canada soon.</p>
 </main>
 <footer class="legal-footer">
   <a href="terms.html">Terms of Service</a> · <a href="privacy.html">Privacy Policy</a>
@@ -167,15 +169,25 @@ h1 em{font-style:italic;font-weight:400;}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "QuickGigs",
-  "url": "https://quickgigs.ca/",
-  "description": "Get everyday tasks done in Canada — post gigs or earn as a tasker nationwide.",
-  "inLanguage": "en-CA",
-  "areaServed": {
-    "@type": "Country",
-    "name": "Canada"
-  }
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "name": "QuickGigs",
+      "url": "https://quickgigs.ca/",
+      "description": "Get everyday tasks done in Canada — post gigs or earn as a tasker nationwide. Expanding to more countries soon.",
+      "inLanguage": "en-CA"
+    },
+    {
+      "@type": "Organization",
+      "name": "QuickGigs",
+      "url": "https://quickgigs.ca/",
+      "description": "Canada-wide marketplace for everyday tasks and gigs. Available across all of Canada; international expansion coming soon.",
+      "areaServed": {
+        "@type": "Country",
+        "name": "Canada"
+      }
+    }
+  ]
 }
 </script>
 <script src="qg-utils.js"></script>
