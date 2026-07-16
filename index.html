@@ -3,8 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>QuickGigs — Get everyday tasks done near you</title>
-<meta name="description" content="QuickGigs connects people who need help with skilled taskers nearby. Post a task in 30 seconds or earn money helping others across Canada.">
+<title>QuickGigs — Get everyday tasks done in Canada</title>
+<meta name="description" content="QuickGigs is Canada's task marketplace — post a gig or earn as a tasker anywhere in Canada. Post a task in 30 seconds, review applicants, and get help nearby.">
+<meta name="keywords" content="QuickGigs, gigs, tasks, Canada, task marketplace, hire help, earn money">
+<link rel="canonical" href="https://quickgigs.ca/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://quickgigs.ca/">
+<meta property="og:title" content="QuickGigs — Get everyday tasks done in Canada">
+<meta property="og:description" content="Canada's marketplace for everyday tasks. Post a gig or earn as a tasker — Calgary, Edmonton, Toronto, Vancouver, and nationwide.">
+<meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
+<meta property="og:locale" content="en_CA">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="QuickGigs — Get everyday tasks done in Canada">
+<meta name="twitter:description" content="Post tasks or earn as a tasker anywhere in Canada. Beta live now.">
 <link rel="manifest" href="/manifest.json?v=4">
 <link rel="icon" type="image/png" sizes="32x32" href="QuickGigsLogo.png">
 <link rel="icon" type="image/png" sizes="192x192" href="QuickGigsLogo.png">
@@ -98,8 +109,8 @@ h1 em{font-style:italic;font-weight:400;}
   <div class="hero">
     <div class="beta-badge">🚀 Beta live · Canada</div>
     <div class="eyebrow">Canadian-built · CAD only · Canada-wide</div>
-    <h1 id="heroTitle">Get everyday tasks done<br><em>near you.</em></h1>
-    <p class="subtitle" id="heroSubtitle">QuickGigs connects people who need help with people who have skills — post a task in 30 seconds or earn money helping others nearby.</p>
+    <h1 id="heroTitle">Get everyday tasks done<br><em>in Canada.</em></h1>
+    <p class="subtitle" id="heroSubtitle">QuickGigs is Canada's task marketplace — post a gig in 30 seconds or earn money helping people in your city, from Calgary to Toronto and everywhere in between.</p>
   </div>
   <div class="cta-wrap" id="ctaWrap">
     <div class="cta-grid" id="ctaGrid">
@@ -153,6 +164,20 @@ h1 em{font-style:italic;font-weight:400;}
 <footer class="legal-footer">
   <a href="terms.html">Terms of Service</a> · <a href="privacy.html">Privacy Policy</a>
 </footer>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "QuickGigs",
+  "url": "https://quickgigs.ca/",
+  "description": "Get everyday tasks done in Canada — post gigs or earn as a tasker nationwide.",
+  "inLanguage": "en-CA",
+  "areaServed": {
+    "@type": "Country",
+    "name": "Canada"
+  }
+}
+</script>
 <script src="qg-utils.js"></script>
 <script>
 var stars = document.getElementById('stars');
@@ -168,9 +193,9 @@ for(var i=0;i<120;i++){
   var role = new URLSearchParams(window.location.search).get('role') || localStorage.getItem('qg-role');
   if (role !== 'worker') return;
 
-  document.getElementById('heroTitle').innerHTML = 'Earn money helping others<br><em>near you.</em>';
+  document.getElementById('heroTitle').innerHTML = 'Earn money helping others<br><em>across Canada.</em>';
   document.getElementById('heroSubtitle').textContent =
-    'Sign up as a service provider, browse tasks near you, apply in seconds, and get hired for gigs like braiding, errands, tutoring, and more.';
+    'Sign up as a tasker, browse gigs near you anywhere in Canada, apply in seconds, and get hired for errands, tutoring, beauty, tech, and more.';
 
   var poster = document.getElementById('ctaPoster');
   var worker = document.getElementById('ctaWorker');
