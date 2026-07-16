@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>QuickGigs — Find Taskers</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="qg-layout.css">
+<link rel="stylesheet" href="qg-role-theme.css">
+<link rel="stylesheet" href="qg-features.css">
+<script src="qg-brand-init.js"></script>
+<style>
+body{font-family:'DM Sans',sans-serif;background:var(--bg,#0b0118);color:var(--text,#fff);min-height:100vh;padding-bottom:76px;}
+.nav{position:sticky;top:0;z-index:50;background:var(--nav-bg,#0b0118);border-bottom:0.5px solid var(--border,rgba(200,168,233,0.1));padding:12px 18px;display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{font-family:'Playfair Display',serif;font-style:italic;font-size:1.25rem;color:var(--lavender,#c8a8e9);}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.mode-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.65);}
+body.light .mode-btn{background:#f0eeff;color:#6b3fa0;}
+.back-link{color:var(--lavender,#c8a8e9);text-decoration:none;font-size:14px;}
+.filter-pills{display:flex;gap:8px;padding:0 20px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.filter-pill{flex-shrink:0;padding:8px 14px;border-radius:999px;border:0.5px solid var(--border,rgba(200,168,233,0.15));background:var(--card-bg,rgba(255,255,255,0.04));font-size:12px;cursor:pointer;color:var(--text-muted,rgba(255,255,255,0.5));}
+.filter-pill.active{border-color:var(--purple-light,#9b6fc4);color:var(--lavender,#c8a8e9);background:rgba(107,63,160,0.2);}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="back-link" href="dashboard.html?mode=poster" aria-label="Back to dashboard">← Home</a>
+  <div class="nav-brand"><span class="nav-logo">QuickGigs</span></div>
+  <div class="nav-right">
+    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
+  </div>
+</nav>
+
+<div class="qg-page-hero">
+  <p class="qg-page-kicker">Discovery</p>
+  <h1 class="qg-page-title">Find taskers near you</h1>
+  <p class="qg-page-sub" id="heroSub">Browse verified taskers by skill, completion rate, and reviews.</p>
+</div>
+
+<div class="qg-search-hero">
+  <label class="sr-only" for="workerSearch">Search taskers</label>
+  <div class="qg-search-box">
+    <span aria-hidden="true">🔍</span>
+    <input type="search" id="workerSearch" placeholder="Search by name or skill…" autocomplete="off" oninput="renderWorkers()">
+  </div>
+</div>
+
+<div class="filter-pills" id="skillFilters" role="tablist" aria-label="Filter by skill"></div>
+
+<div class="qg-worker-list" id="workerList" aria-live="polite">
+  <div class="qg-empty-discovery"><span>⏳</span>Loading taskers…</div>
+</div>
+
+<nav class="tab-bar" id="qgTabBar"></nav>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
+  authDomain: "quickgigs-7b12d.firebaseapp.com",
+  projectId: "quickgigs-7b12d",
+  storageBucket: "quickgigs-7b12d.firebasestorage.app",
+  messagingSenderId: "698985399366",
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+onAuthStateChanged(auth, function (user) {
+  if (!user) { window.location.href = 'login.html'; return; }
+  window._currentUser = user;
+  if (typeof syncCurrentUserProfile === 'function') syncCurrentUserProfile(user);
+  loadWorkers();
+});
+</script>
+
+<script src="qg-nav.js"></script>
+<script src="qg-config.js"></script>
+<script src="qg-utils.js"></script>
+<script src="qg-categories.js"></script>
+<script src="qg-location.js"></script>
+<script src="qg-pwa.js"></script>
+<script src="qg-stats.js"></script>
+<script src="qg-share.js"></script>
+<script src="qg-report.js"></script>
+<script src="supabase-db.js"></script>
+<script>
+if (typeof setSessionMode === 'function') setSessionMode('poster');
+renderQuickGigsTabBar('home');
+
+var isDark = localStorage.getItem('qg-mode') !== 'light';
+function applyTheme() {
+  if (typeof window.QG_applyTheme === 'function') window.QG_applyTheme(isDark, 'modeBtn', false);
+  else document.body.className = isDark ? '' : 'light';
+}
+window.toggleTheme = function () {
+  isDark = !isDark;
+  localStorage.setItem('qg-mode', isDark ? 'dark' : 'light');
+  applyTheme();
+};
+applyTheme();
+
+var allWorkers = [];
+var activeSkill = 'all';
+
+function esc(s) {
+  return typeof escapeHtml === 'function' ? escapeHtml(s) : String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+}
+
+function buildSkillFilters() {
+  var skills = ['all'];
+  allWorkers.forEach(function (w) {
+    (w.skills || []).forEach(function (s) {
+      var key = String(s).replace(/^[^\s]+\s/, '').trim();
+      if (key && skills.indexOf(key) === -1) skills.push(key);
+    });
+  });
+  var wrap = document.getElementById('skillFilters');
+  wrap.innerHTML = skills.slice(0, 10).map(function (s) {
+    var label = s === 'all' ? 'All skills' : s;
+    var cls = s === activeSkill ? 'filter-pill active' : 'filter-pill';
+    return '<button type="button" class="' + cls + '" data-skill="' + esc(s) + '">' + esc(label) + '</button>';
+  }).join('');
+  wrap.querySelectorAll('.filter-pill').forEach(function (btn) {
+    btn.onclick = function () { setSkillFilter(btn.getAttribute('data-skill'), btn); };
+  });
+}
+
+window.setSkillFilter = function (skill, el) {
+  activeSkill = skill;
+  document.querySelectorAll('.filter-pill').forEach(function (p) { p.classList.remove('active'); });
+  if (el) el.classList.add('active');
+  renderWorkers();
+};
+
+async function loadWorkers() {
+  var city = typeof getUserCityLabel === 'function' ? getUserCityLabel() : 'Calgary';
+  document.getElementById('heroSub').textContent = 'Taskers with photos and skills — near ' + city + '.';
+
+  var users = typeof getUsers === 'function' ? await getUsers() : [];
+  var rows = (users || []).filter(function (u) {
+    var role = String(u.role || '').toLowerCase();
+    if (role !== 'worker' && role !== 'both') return false;
+    var uid = u.firebase_uid || u.user_id || u.id;
+    if (!uid) return false;
+    if (u.status === 'banned') return false;
+    return true;
+  });
+
+  allWorkers = [];
+  for (var i = 0; i < rows.length; i++) {
+    var u = rows[i];
+    var uid = String(u.firebase_uid || u.user_id || u.id);
+    var avatar = typeof resolveUserAvatarUrl === 'function' ? await resolveUserAvatarUrl(uid) : (u.avatar_url || '');
+    if (typeof hasProfilePhotoUrl === 'function' && !hasProfilePhotoUrl(avatar)) continue;
+
+    var skills = typeof parseUserSkills === 'function' ? parseUserSkills(u) : [];
+    var stats = typeof fetchUserTrustStats === 'function' ? await fetchUserTrustStats(uid) : {};
+    allWorkers.push({
+      id: uid,
+      name: u.name || 'QuickGigs tasker',
+      bio: (u.bio || '').trim(),
+      skills: skills,
+      avatar: avatar,
+      stats: stats
+    });
+  }
+
+  allWorkers.sort(function (a, b) {
+    var ar = (a.stats && a.stats.avgRating) || 0;
+    var br = (b.stats && b.stats.avgRating) || 0;
+    if (br !== ar) return br - ar;
+    return (b.stats && b.stats.completedCount || 0) - (a.stats && a.stats.completedCount || 0);
+  });
+
+  buildSkillFilters();
+  renderWorkers();
+}
+
+window.renderWorkers = function () {
+  var q = (document.getElementById('workerSearch').value || '').toLowerCase().trim();
+  var list = allWorkers.filter(function (w) {
+    if (activeSkill !== 'all') {
+      var matchSkill = (w.skills || []).some(function (s) {
+        return String(s).toLowerCase().indexOf(activeSkill.toLowerCase()) >= 0;
+      });
+      if (!matchSkill) return false;
+    }
+    if (!q) return true;
+    var hay = (w.name + ' ' + (w.bio || '') + ' ' + (w.skills || []).join(' ')).toLowerCase();
+    return hay.indexOf(q) >= 0;
+  });
+
+  var el = document.getElementById('workerList');
+  if (!list.length) {
+    el.innerHTML = '<div class="qg-empty-discovery"><span>👥</span>No taskers match — try another skill or check back soon.</div>';
+    return;
+  }
+
+  el.innerHTML = list.map(function (w) {
+    var initial = esc((w.name || 'T').charAt(0).toUpperCase());
+    var avatarCls = w.avatar ? 'qg-worker-avatar has-photo' : 'qg-worker-avatar';
+    var avatarStyle = w.avatar ? ' style="background-image:url(' + esc(w.avatar) + ')"' : '';
+    var trust = typeof renderTrustBadges === 'function' ? renderTrustBadges(w.stats) : '';
+    var skillHtml = (w.skills || []).slice(0, 4).map(function (s) {
+      return '<span class="qg-worker-skill">' + esc(s) + '</span>';
+    }).join('');
+    var meta = w.bio ? esc(w.bio.substring(0, 90)) + (w.bio.length > 90 ? '…' : '') : 'Available for gigs on QuickGigs';
+    return '<a class="qg-worker-card" href="profile.html?user=' + encodeURIComponent(w.id) + '">' +
+      '<div class="' + avatarCls + '"' + avatarStyle + ' aria-hidden="true">' + (w.avatar ? '' : initial) + '</div>' +
+      '<div class="qg-worker-body">' +
+        '<div class="qg-worker-name">' + esc(w.name) + '</div>' +
+        '<div class="qg-worker-meta">' + meta + '</div>' +
+        trust +
+        '<div class="qg-worker-skills">' + skillHtml + '</div>' +
+      '</div>' +
+    '</a>';
+  }).join('');
+};
+</script>
+</body>
+</html>

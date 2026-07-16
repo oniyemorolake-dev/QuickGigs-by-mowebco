@@ -341,16 +341,21 @@ function renderContent(){
 }
 
 function renderConvItem(c){
+  var profileHref = typeof getProfileUrl === 'function'
+    ? getProfileUrl(c.otherUid)
+    : ('profile.html?user=' + encodeURIComponent(c.otherUid));
   var avatarInner = typeof renderUserAvatarHtml === 'function'
     ? renderUserAvatarHtml(c.name, c.avatarUrl, { className: 'conv-avatar', gradient: c.avatarBg })
     : ('<div class="conv-avatar" style="background:'+c.avatarBg+'">'+esc(c.initials)+'</div>');
   if (c.unread > 0 && avatarInner.indexOf('unread-dot') < 0) {
     avatarInner = avatarInner.replace('</div>', '<div class="unread-dot"></div></div>');
   }
-  return '<a class="conv-item" href="chat.html?conv='+encodeURIComponent(c.id)+'" style="text-decoration:none">' +
+  return '<div class="conv-item" onclick="window.location.href=\'chat.html?conv='+encodeURIComponent(c.id)+'\'">' +
+    '<a href="'+profileHref+'" class="conv-avatar-link" onclick="event.stopPropagation()" style="flex-shrink:0;text-decoration:none">' +
     avatarInner +
+    '</a>' +
     '<div class="conv-info">' +
-      '<div class="conv-name">'+esc(c.name)+'</div>' +
+      '<div class="conv-name"><a href="'+profileHref+'" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none">'+esc(c.name)+'</a></div>' +
       '<div class="conv-task">'+c.taskIcon+' '+esc(c.taskName)+'</div>' +
       '<div class="conv-preview'+(c.unread>0?' unread':'')+'">'+esc(c.lastMessage)+'</div>' +
     '</div>' +
@@ -358,7 +363,7 @@ function renderConvItem(c){
       '<div class="conv-time">'+esc(c.time)+'</div>' +
       (c.unread > 0 ? '<div class="conv-badge">'+c.unread+'</div>' : getStatusLabel(c.status)) +
     '</div>' +
-  '</a>';
+  '</div>';
 }
 
 function getStatusLabel(status){

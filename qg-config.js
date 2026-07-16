@@ -7,7 +7,14 @@ window.QG_CONFIG = {
   blockOffPlatformContact: true,
   posterOnlyChatImages: true,
   maxTaskPhotos: 3,
-  maxPhotoSizeMb: 5
+  maxPhotoSizeMb: 5,
+  // P1 — email queue (requires notification_queue table + optional Edge Function)
+  emailNotificationsEnabled: true,
+  notificationFunctionUrl: '',
+  shareBaseUrl: 'https://quickgigs.ca',
+  // P2 — trust & moderation
+  autoBanAfterWarnings: 3,
+  paymentsEnabled: false
 };
 
 // Returns whether a new conversation should start unlocked.

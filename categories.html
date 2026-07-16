@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>QuickGigs — Browse Categories</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="qg-layout.css">
+<link rel="stylesheet" href="qg-role-theme.css">
+<link rel="stylesheet" href="qg-features.css">
+<script src="qg-brand-init.js"></script>
+<script>document.documentElement.setAttribute('data-qg-mode','worker');</script>
+<style>
+body{font-family:'DM Sans',sans-serif;background:var(--bg,#0b0118);color:var(--text,#fff);min-height:100vh;padding-bottom:76px;}
+.nav{position:sticky;top:0;z-index:50;background:var(--nav-bg,#0b0118);border-bottom:0.5px solid var(--border,rgba(200,168,233,0.1));padding:12px 18px;display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{font-family:'Playfair Display',serif;font-style:italic;font-size:1.25rem;color:var(--lavender,#c8a8e9);}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.mode-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.65);}
+body.light .mode-btn{background:#f0eeff;color:#6b3fa0;}
+.back-link{color:var(--lavender,#c8a8e9);text-decoration:none;font-size:14px;}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="back-link" href="dashboard.html?mode=worker" aria-label="Back to dashboard">← Home</a>
+  <div class="nav-brand"><span class="nav-logo">QuickGigs</span></div>
+  <div class="nav-right">
+    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
+  </div>
+</nav>
+
+<div class="qg-page-hero">
+  <p class="qg-page-kicker">Discover</p>
+  <h1 class="qg-page-title">Browse by category</h1>
+  <p class="qg-page-sub">Find gigs that match your skills — or post a task in any category as a poster.</p>
+</div>
+
+<div class="qg-cat-grid" id="catGrid" aria-live="polite">
+  <div class="qg-empty-discovery"><span>⏳</span>Loading categories…</div>
+</div>
+
+<nav class="tab-bar" id="qgTabBar"></nav>
+
+<script src="qg-nav.js"></script>
+<script src="qg-config.js"></script>
+<script src="qg-categories.js"></script>
+<script src="qg-pwa.js"></script>
+<script src="supabase-db.js"></script>
+<script>
+if (typeof setSessionMode === 'function') setSessionMode('worker');
+renderQuickGigsTabBar('browse');
+
+var isDark = localStorage.getItem('qg-mode') !== 'light';
+function applyTheme() {
+  if (typeof window.QG_applyTheme === 'function') window.QG_applyTheme(isDark, 'modeBtn', false);
+  else document.body.className = isDark ? '' : 'light';
+}
+window.toggleTheme = function () {
+  isDark = !isDark;
+  localStorage.setItem('qg-mode', isDark ? 'dark' : 'light');
+  applyTheme();
+};
+applyTheme();
+
+async function loadCategoryCounts() {
+  var counts = {};
+  try {
+    var tasks = typeof getTasks === 'function' ? await getTasks() : [];
+    (tasks || []).forEach(function (t) {
+      var st = String(t.status || t.STATUS || '').toLowerCase();
+      if (st && st !== 'open') return;
+      var cat = String(t.category || t.CATEGORY || 'other').toLowerCase();
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+  } catch (e) {
+    console.warn('Category counts:', e);
+  }
+
+  var grid = document.getElementById('catGrid');
+  var cats = window.QG_CATEGORIES || [];
+  grid.innerHTML = cats.map(function (c) {
+    var n = counts[c.id] || 0;
+    var countTxt = n ? n + ' open task' + (n !== 1 ? 's' : '') : 'No open tasks yet';
+    return '<a class="qg-cat-card" href="browsetask.html?cat=' + encodeURIComponent(c.id) + '">' +
+      '<span class="qg-cat-icon" aria-hidden="true">' + c.icon + '</span>' +
+      '<span class="qg-cat-name">' + c.label + '</span>' +
+      '<span class="qg-cat-count">' + countTxt + '</span>' +
+      '<span class="qg-cat-count">' + (c.desc || '') + '</span>' +
+    '</a>';
+  }).join('');
+}
+
+loadCategoryCounts();
+</script>
+</body>
+</html>

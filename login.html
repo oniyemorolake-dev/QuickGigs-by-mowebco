@@ -68,7 +68,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);font-s
 </div>
 
 <script src="qg-utils.js"></script>
+<script src="qg-config.js"></script>
 <script src="supabase-db.js"></script>
+<script src="qg-stats.js"></script>
 <script>
 attachPasswordToggle('password');
 </script>
@@ -114,6 +116,14 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     if (typeof getUserByFirebaseUid === 'function') {
       var dbUser = await getUserByFirebaseUid(cred.user.uid);
       if (dbUser && dbUser.role) localStorage.setItem('qg-role', dbUser.role);
+    }
+    if (typeof enforceBanOnLogin === 'function') {
+      var banCheck = await enforceBanOnLogin(cred.user);
+      if (!banCheck.ok) {
+        submitBtn.textContent = 'Log in';
+        submitBtn.disabled = false;
+        return;
+      }
     }
     okMsg.textContent = 'Welcome back! Redirecting...';
     okMsg.style.display = 'block';

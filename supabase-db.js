@@ -227,21 +227,31 @@ async function sbUpdate(table, data, filters) {
     if (rows && rows.length) {
       return { success: true, data: rows };
     }
-    var minimalHeaders = await getSupabaseHeaders({ 'Prefer': 'return=minimal' });
-    var res2 = await fetch(url, {
-      method: 'PATCH',
-      headers: minimalHeaders,
-      body: JSON.stringify(data)
-    });
-    if (res2.ok) {
-      return { success: true };
-    }
-    var err2 = await res2.text();
-    return { success: false, error: 'No matching row updated' + (err2 ? ': ' + err2 : ''), notFound: true };
+    return { success: false, error: 'No matching row updated', notFound: true };
   } catch (err) {
     console.error('Supabase PATCH error:', err);
     return { success: false, error: err.message };
   }
+}
+
+async function tryPatchRow(table, patch, filters, verifyFn) {
+  var result = await sbUpdate(table, patch, filters);
+  if (result.success) return result;
+  try {
+    var url = SUPABASE_URL + '/rest/v1/' + table + '?' + filters;
+    var headers = await getSupabaseHeaders({ 'Prefer': 'return=minimal' });
+    var res = await fetch(url, {
+      method: 'PATCH',
+      headers: headers,
+      body: JSON.stringify(patch)
+    });
+    if (res.ok && typeof verifyFn === 'function' && (await verifyFn())) {
+      return { success: true };
+    }
+  } catch (err) {
+    console.warn('PATCH verify fallback failed:', err);
+  }
+  return result;
 }
 
 async function getTasks() {
@@ -265,7 +275,7 @@ async function fetchAllTasksFresh() {
   var stale = readTasksCache(true);
   try {
     var items = await sbGetOrThrow('tasks', null, 'created_at.desc', 200);
-    var list = Array.isArray(items) ? items : [];
+    var list = Array.isArray(items) ? items.map(normalizeTaskRow) : [];
     writeTasksCache(list);
     window._supabaseUsingStaleCache = false;
     return list;
@@ -274,7 +284,7 @@ async function fetchAllTasksFresh() {
     if (stale && stale.length) {
       window._supabaseUsingStaleCache = true;
       window._supabaseLastFetchError = err.message || String(err);
-      return stale;
+      return stale.map(normalizeTaskRow);
     }
     throw err;
   }
@@ -298,19 +308,41 @@ async function fetchAllApplicationsFresh() {
   }
 }
 
+function normalizeTaskRow(row) {
+  if (!row) return row;
+  var id = row.task_id != null ? row.task_id : (row.TASK_ID != null ? row.TASK_ID : row.id);
+  if (id != null && id !== '') {
+    row.task_id = id;
+    row.TASK_ID = id;
+  }
+  if (row.status == null && row.STATUS != null) row.status = row.STATUS;
+  if (row.posted_by == null && row.POSTED_BY != null) row.posted_by = row.POSTED_BY;
+  if (row.title == null && row.TITLE != null) row.title = row.TITLE;
+  return row;
+}
+
 async function getTaskById(taskId) {
-  var id = encodeURIComponent(String(taskId));
-  var filters = ['task_id=eq.' + id, 'id=eq.' + id];
+  var filters = buildTaskIdFilters(taskId, null);
   for (var i = 0; i < filters.length; i++) {
     var results = await sbGet('tasks', filters[i]);
-    if (results && results[0]) return results[0];
+    if (results && results[0]) return normalizeTaskRow(results[0]);
   }
   return null;
 }
 
+async function getConversationsForTask(taskId) {
+  var filters = buildTaskIdFilters(taskId, null).filter(function (f) {
+    return f.indexOf('task_id=eq.') === 0;
+  });
+  for (var i = 0; i < filters.length; i++) {
+    var convs = await sbGet('conversations', filters[i]);
+    if (convs && convs.length) return convs;
+  }
+  return [];
+}
+
 async function lockConversationsForTask(taskId) {
-  var tid = encodeURIComponent(String(taskId));
-  var convs = await sbGet('conversations', 'task_id=eq.' + tid);
+  var convs = await getConversationsForTask(taskId);
   if (!convs || !convs.length) return { success: true };
   var results = await Promise.all(convs.map(function(c) {
     return updateConversation(c.conv_id, { is_unlocked: false, status: 'completed' });
@@ -480,26 +512,60 @@ function parsePhotoUrls(raw) {
   }
 }
 
-async function updateTaskStatus(taskId, status) {
-  var ids = [String(taskId)];
-  var task = await getTaskById(taskId);
-  if (task) {
-    [task.task_id, task.id, task.TASK_ID].forEach(function (v) {
-      if (v != null && ids.indexOf(String(v)) === -1) ids.push(String(v));
-    });
+function buildTaskIdFilters(taskId, taskRow) {
+  var ids = [];
+  function addId(v) {
+    if (v == null || v === '') return;
+    var s = String(v);
+    if (ids.indexOf(s) === -1) ids.push(s);
+    var n = parseInt(v, 10);
+    if (!isNaN(n) && ids.indexOf(String(n)) === -1) ids.push(String(n));
   }
-  var patch = { status: status, STATUS: status };
-  var result = { success: false, error: 'Could not update task — refresh and try again' };
-  for (var i = 0; i < ids.length; i++) {
-    var raw = ids[i];
+  addId(taskId);
+  if (taskRow) {
+    addId(taskRow.task_id);
+    addId(taskRow.TASK_ID);
+    addId(taskRow.id);
+    addId(taskRow.ID);
+  }
+  var filters = [];
+  var seen = {};
+  ids.forEach(function (raw) {
     var enc = encodeURIComponent(raw);
-    var filters = ['task_id=eq.' + enc, 'id=eq.' + enc];
-    if (raw !== enc) filters.push('task_id=eq.' + raw, 'id=eq.' + raw);
-    for (var j = 0; j < filters.length; j++) {
-      result = await sbUpdate('tasks', patch, filters[j]);
-      if (result.success) break;
+    ['task_id=eq.' + enc, 'id=eq.' + enc].forEach(function (f) {
+      if (!seen[f]) { seen[f] = true; filters.push(f); }
+    });
+    if (raw !== enc) {
+      ['task_id=eq.' + raw, 'id=eq.' + raw].forEach(function (f) {
+        if (!seen[f]) { seen[f] = true; filters.push(f); }
+      });
     }
+  });
+  return filters;
+}
+
+async function updateTaskStatus(taskId, status) {
+  var statusVal = String(status || '').toLowerCase();
+  var patch = { status: statusVal };
+  var task = await getTaskById(taskId);
+  var filters = buildTaskIdFilters(taskId, task);
+  var result = { success: false, error: 'Could not update task — refresh and try again' };
+  for (var i = 0; i < filters.length; i++) {
+    result = await tryPatchRow('tasks', patch, filters[i], async function () {
+      var fresh = await getTaskById(taskId);
+      return !!(fresh && String(fresh.status || fresh.STATUS || '').toLowerCase() === statusVal);
+    });
     if (result.success) break;
+  }
+  if (!result.success && task) {
+    var current = String(task.status || task.STATUS || '').toLowerCase();
+    if (current === statusVal) result = { success: true };
+  }
+  if (!result.success) {
+    var fresh = await getTaskById(taskId);
+    if (fresh && String(fresh.status || fresh.STATUS || '').toLowerCase() === statusVal) {
+      result = { success: true };
+    }
   }
   if (result.success) {
     mergeTaskInCache(taskId, patch);
@@ -535,6 +601,8 @@ async function upsertUserProfile(userData) {
     firebase_uid: userData.firebase_uid || ''
   };
   if (userData.avatar_url) row.avatar_url = userData.avatar_url;
+  if (userData.bio !== undefined) row.bio = String(userData.bio || '').trim();
+  if (userData.skills !== undefined) row.skills = serializeUserSkills(userData.skills);
   if (!row.email && !row.firebase_uid) {
     return { success: false, error: 'Missing email or firebase_uid' };
   }
@@ -556,6 +624,8 @@ async function upsertUserProfile(userData) {
     if (row.role) patch.role = row.role;
     if (row.firebase_uid) patch.firebase_uid = row.firebase_uid;
     if (userData.avatar_url) patch.avatar_url = userData.avatar_url;
+    if (userData.bio !== undefined) patch.bio = String(userData.bio || '').trim();
+    if (userData.skills !== undefined) patch.skills = serializeUserSkills(userData.skills);
     var filters = [];
     if (id != null) {
       filters.push('user_id=eq.' + encodeURIComponent(String(id)));
@@ -586,6 +656,14 @@ async function syncCurrentUserProfile(firebaseUser) {
   };
   var localAvatar = readLocalProfileAvatar(firebaseUser.uid);
   if (hasProfilePhotoUrl(localAvatar)) payload.avatar_url = localAvatar;
+  var localExtras = readLocalProfileExtras(firebaseUser.uid);
+  var existing = await getUserByFirebaseUid(firebaseUser.uid);
+  if (localExtras.bio && !(existing && existing.bio && String(existing.bio).trim())) {
+    payload.bio = localExtras.bio;
+  }
+  if (localExtras.skills.length && !parseUserSkills(existing || {}).length) {
+    payload.skills = localExtras.skills;
+  }
   return await upsertUserProfile(payload);
 }
 
@@ -629,6 +707,58 @@ function readLocalProfileAvatar(firebaseUid) {
   } catch (err) {
     return '';
   }
+}
+
+function readLocalProfileExtras(firebaseUid) {
+  if (!firebaseUid) return { bio: '', skills: [] };
+  try {
+    var raw = localStorage.getItem('qg-profile-' + firebaseUid);
+    if (!raw) return { bio: '', skills: [] };
+    var parsed = JSON.parse(raw) || {};
+    return {
+      bio: parsed.bio ? String(parsed.bio).trim() : '',
+      skills: parseUserSkills(parsed)
+    };
+  } catch (err) {
+    return { bio: '', skills: [] };
+  }
+}
+
+function parseUserSkills(source) {
+  if (!source) return [];
+  var raw = source.skills != null ? source.skills : source.SKILLS;
+  if (Array.isArray(raw)) {
+    return raw.map(function (s) { return String(s).trim(); }).filter(Boolean);
+  }
+  if (typeof raw === 'string' && raw.trim()) {
+    try {
+      var parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.map(function (s) { return String(s).trim(); }).filter(Boolean);
+      }
+    } catch (err) { /* plain text fallback below */ }
+    return raw.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+  }
+  return [];
+}
+
+function serializeUserSkills(skills) {
+  var list = Array.isArray(skills)
+    ? skills.map(function (s) { return String(s).trim(); }).filter(Boolean)
+    : [];
+  return list.length ? JSON.stringify(list) : '';
+}
+
+function applyDbUserToProfileData(dbUser, target) {
+  if (!dbUser || !target) return target;
+  if (dbUser.name) target.name = dbUser.name;
+  if (dbUser.avatar_url) target.avatar_url = dbUser.avatar_url;
+  if (dbUser.role) target.role = dbUser.role;
+  if (dbUser.bio != null && String(dbUser.bio).trim()) target.bio = String(dbUser.bio).trim();
+  var skills = parseUserSkills(dbUser);
+  if (skills.length) target.skills = skills;
+  if (dbUser.created_at) target.memberSince = dbUser.created_at;
+  return target;
 }
 
 async function resolveUserAvatarUrl(firebaseUid) {
@@ -976,8 +1106,38 @@ async function markConversationRead(convId, userId, posterId) {
 }
 
 async function getApplicationsByTask(taskId) {
-  var rows = await sbGet('applications', 'task_id=eq.' + encodeURIComponent(taskId));
-  return (rows || []).map(normalizeApplicationRow);
+  var filters = buildTaskIdFilters(taskId, null).filter(function (f) {
+    return f.indexOf('task_id=eq.') === 0;
+  });
+  for (var i = 0; i < filters.length; i++) {
+    var rows = await sbGet('applications', filters[i]);
+    if (rows && rows.length) return rows.map(normalizeApplicationRow);
+  }
+  return [];
+}
+
+async function getApplicationById(appId, opts) {
+  opts = opts || {};
+  var appRow = null;
+  var idFilters = buildApplicationIdFilters(appId, null);
+  for (var i = 0; i < idFilters.length; i++) {
+    var rows = await sbGet('applications', idFilters[i]);
+    if (rows && rows[0]) {
+      appRow = normalizeApplicationRow(rows[0]);
+      break;
+    }
+  }
+  if (!appRow && opts.taskId && opts.workerId) {
+    var composite = buildApplicationCompositeFilters(opts.taskId, opts.workerId);
+    for (var j = 0; j < composite.length; j++) {
+      var byPair = await sbGet('applications', composite[j]);
+      if (byPair && byPair[0]) {
+        appRow = normalizeApplicationRow(byPair[0]);
+        break;
+      }
+    }
+  }
+  return appRow;
 }
 
 async function getApplicationsByWorker(workerId) {
@@ -1042,64 +1202,98 @@ async function submitApplication(appData) {
     };
     result = await sbPost('applications', fallback);
   }
+
+  if (result.success && appData.task_id && typeof notifyPosterNewApplication === 'function') {
+    try {
+      var notifyTask = await getTaskById(appData.task_id);
+      var posterId = notifyTask && (notifyTask.posted_by || notifyTask.POSTED_BY);
+      var posterUser = posterId ? await getUserByFirebaseUid(posterId) : null;
+      await notifyPosterNewApplication(
+        posterId,
+        posterUser && posterUser.email,
+        notifyTask,
+        { worker_name: appData.worker_name, price: appData.price }
+      );
+    } catch (notifyErr) {
+      console.warn('Application notification skipped:', notifyErr);
+    }
+  }
+
   return result;
 }
 
-function buildApplicationUpdateFilters(appId, opts) {
-  opts = opts || {};
+function buildApplicationIdFilters(appId, appRow) {
+  var ids = [];
+  function addId(v) {
+    if (v == null || v === '') return;
+    var s = String(v);
+    if (ids.indexOf(s) === -1) ids.push(s);
+    var n = parseInt(v, 10);
+    if (!isNaN(n) && ids.indexOf(String(n)) === -1) ids.push(String(n));
+  }
+  addId(appId);
+  if (appRow) {
+    addId(appRow.app_id);
+    addId(appRow.APP_ID);
+    addId(appRow.application_id);
+    addId(appRow.id);
+  }
   var filters = [];
-  if (appId != null && String(appId) !== '') {
-    var id = encodeURIComponent(String(appId));
-    filters.push('app_id=eq.' + id);
-    filters.push('id=eq.' + id);
-    filters.push('application_id=eq.' + id);
+  var seen = {};
+  ids.forEach(function (raw) {
+    var enc = encodeURIComponent(raw);
+    ['app_id=eq.' + enc, 'id=eq.' + enc, 'application_id=eq.' + enc].forEach(function (f) {
+      if (!seen[f]) { seen[f] = true; filters.push(f); }
+    });
+    if (raw !== enc) {
+      ['app_id=eq.' + raw, 'id=eq.' + raw, 'application_id=eq.' + raw].forEach(function (f) {
+        if (!seen[f]) { seen[f] = true; filters.push(f); }
+      });
+    }
+  });
+  return filters;
+}
+
+function buildApplicationCompositeFilters(taskId, workerId) {
+  if (taskId == null || taskId === '' || !workerId) return [];
+  var filters = [];
+  var seen = {};
+  function addPair(tVal, wVal) {
+    var f = 'task_id=eq.' + encodeURIComponent(String(tVal)) +
+      '&worker_id=eq.' + encodeURIComponent(String(wVal));
+    if (!seen[f]) { seen[f] = true; filters.push(f); }
   }
-  if (opts.taskId && opts.workerId) {
-    filters.push(
-      'task_id=eq.' + encodeURIComponent(String(opts.taskId)) +
-      '&worker_id=eq.' + encodeURIComponent(String(opts.workerId))
-    );
-  }
+  addPair(taskId, workerId);
+  var tn = parseInt(taskId, 10);
+  if (!isNaN(tn)) addPair(tn, workerId);
+  return filters;
+}
+
+function buildApplicationUpdateFilters(appId, opts, appRow) {
+  opts = opts || {};
+  var filters = buildApplicationIdFilters(appId, appRow);
+  buildApplicationCompositeFilters(opts.taskId, opts.workerId).forEach(function (f) {
+    if (filters.indexOf(f) === -1) filters.push(f);
+  });
   return filters;
 }
 
 async function updateApplicationStatus(appId, status, opts) {
   opts = opts || {};
-  var filters = buildApplicationUpdateFilters(appId, opts);
+  var statusVal = String(status || '').toLowerCase();
+  var patch = { status: statusVal };
+  var appRow = await getApplicationById(appId, opts);
+  var filters = buildApplicationUpdateFilters(appId, opts, appRow);
   var result = { success: false, error: 'Could not update application' };
   for (var i = 0; i < filters.length; i++) {
-    result = await sbUpdate('applications', { status: status }, filters[i]);
-    if (result.success) break;
-  }
-  if (result.success || !opts.taskId || !opts.workerId) {
-    if (result.success) {
-      mergeApplicationInCache(appId, opts.taskId, opts.workerId, { status: status, STATUS: status });
-    }
-    return result;
-  }
-
-  var lookup = await sbGet(
-    'applications',
-    'task_id=eq.' + encodeURIComponent(String(opts.taskId)) +
-      '&worker_id=eq.' + encodeURIComponent(String(opts.workerId)) +
-      '&limit=1'
-  );
-  if (!lookup || !lookup[0]) return result;
-
-  var row = normalizeApplicationRow(lookup[0]);
-  var resolvedId = row.app_id || row.id || row.application_id;
-  if (!resolvedId) return result;
-
-  var retryFilters = buildApplicationUpdateFilters(resolvedId, {
-    taskId: opts.taskId,
-    workerId: opts.workerId
-  });
-  for (var j = 0; j < retryFilters.length; j++) {
-    result = await sbUpdate('applications', { status: status }, retryFilters[j]);
+    result = await tryPatchRow('applications', patch, filters[i], async function () {
+      var fresh = await getApplicationById(appId, opts);
+      return !!(fresh && String(fresh.status || fresh.STATUS || '').toLowerCase() === statusVal);
+    });
     if (result.success) break;
   }
   if (result.success) {
-    mergeApplicationInCache(appId, opts.taskId, opts.workerId, { status: status, STATUS: status });
+    mergeApplicationInCache(appId, opts.taskId, opts.workerId, { status: statusVal, STATUS: statusVal });
   }
   return result;
 }
@@ -1131,7 +1325,16 @@ async function declineApplication(appId, opts) {
 }
 
 async function cancelTask(taskId) {
-  return await updateTaskStatus(taskId, 'cancelled');
+  var result = await updateTaskStatus(taskId, 'cancelled');
+  if (result.success) {
+    if (typeof declinePendingApplicationsForTask === 'function') {
+      await declinePendingApplicationsForTask(taskId);
+    }
+    if (typeof lockConversationsForTask === 'function') {
+      await lockConversationsForTask(taskId);
+    }
+  }
+  return result;
 }
 
 /** Poster releases current tasker — task reopens for other applicants. */
@@ -1142,14 +1345,24 @@ async function releaseAcceptedTasker(taskId, appId) {
     return { success: false, error: 'Missing task or application' };
   }
 
-  var appResult = await updateApplicationStatus(appId, 'declined');
+  var apps = await getApplicationsByTask(taskId);
+  var accepted = (apps || []).find(function (a) {
+    var id = String(a.app_id || a.APP_ID || a.id || '');
+    var st = String(a.status || a.STATUS || '').toLowerCase();
+    return id === appId || st === 'accepted';
+  });
+  var workerId = accepted ? String(accepted.worker_id || accepted.WORKER_ID || '') : '';
+
+  var appResult = await updateApplicationStatus(appId, 'declined', {
+    taskId: taskId,
+    workerId: workerId
+  });
   if (!appResult.success) return appResult;
 
   var taskResult = await updateTaskStatus(taskId, 'open');
   if (!taskResult.success) return taskResult;
 
-  var tid = encodeURIComponent(taskId);
-  var convs = await sbGet('conversations', 'task_id=eq.' + tid);
+  var convs = await getConversationsForTask(taskId);
   if (convs && convs.length) {
     await Promise.all(convs.map(function (c) {
       return updateConversation(c.conv_id, { is_unlocked: false, status: 'application' });
@@ -1307,6 +1520,9 @@ window.currentUserHasProfilePhoto = currentUserHasProfilePhoto;
 window.ensureTaskerProfilePhoto = ensureTaskerProfilePhoto;
 window.resolveUserAvatarUrl = resolveUserAvatarUrl;
 window.readLocalProfileAvatar = readLocalProfileAvatar;
+window.readLocalProfileExtras = readLocalProfileExtras;
+window.parseUserSkills = parseUserSkills;
+window.applyDbUserToProfileData = applyDbUserToProfileData;
 window.syncProfilePhotoToDb = syncProfilePhotoToDb;
 window.resolveUserName = resolveUserName;
 window.isGenericDisplayName = isGenericDisplayName;
@@ -1341,3 +1557,7 @@ window.mergeReviewInCache = mergeReviewInCache;
 window.getPaymentByTask = getPaymentByTask;
 window.savePayment = savePayment;
 window.unlockChatForTask = unlockChatForTask;
+window.sbGet = sbGet;
+window.sbPost = sbPost;
+window.sbPostReturn = sbPostReturn;
+window.sbUpdate = sbUpdate;

@@ -7,7 +7,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
 <link rel="stylesheet" href="qg-role-theme.css">
+<link rel="stylesheet" href="qg-features.css">
 <script src="qg-brand-init.js"></script>
+<script src="qg-pwa.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -244,10 +246,14 @@ const redirectTimeout = setTimeout(() => {
   if (!authChecked) window.location.href = 'login.html';
 }, 3000);
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   authChecked = true;
   clearTimeout(redirectTimeout);
   if (!user) { window.location.href = 'login.html'; return; }
+  if (typeof enforceBanOnLogin === 'function') {
+    var banCheck = await enforceBanOnLogin(user);
+    if (!banCheck.ok) return;
+  }
   const name = user.displayName || user.email.split('@')[0];
   const firstName = name.split(' ')[0];
   window._userName = firstName;
@@ -258,6 +264,8 @@ onAuthStateChanged(auth, (user) => {
 
 <script src="supabase-db.js"></script>
 <script src="qg-location.js"></script>
+<script src="qg-config.js"></script>
+<script src="qg-stats.js"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
 var isDark = localStorage.getItem('qg-mode') !== 'light';
@@ -438,15 +446,20 @@ function renderAll(){
   var actions = isPoster
     ? [
         {icon:'➕',title:'Post a task',desc:'Need something done?',href:'posttask.html',cls:'primary'},
+        {icon:'👥',title:'Find taskers',desc:'Browse skilled workers near you',href:'workers.html',cls:'secondary'},
         {icon:'📂',title:'Review applicants',desc:'See who applied to your tasks',href:'mytasks.html?tab=posted',cls:'secondary'}
       ]
     : [
         {icon:'🔍',title:'Browse gigs',desc:'Find work near you',href:'browsetask.html',cls:'primary'},
+        {icon:'📂',title:'Categories',desc:'Explore gigs by skill type',href:'categories.html',cls:'secondary'},
         {icon:'💼',title:'My jobs',desc:'Applications & active work',href:'mytasks.html?tab=applied',cls:'secondary'}
       ];
   document.getElementById('actionsGrid').innerHTML = actions.map(function(a){
     return '<a class="action-card '+a.cls+'" href="'+a.href+'"><div class="action-icon">'+a.icon+'</div><div class="action-title">'+a.title+'</div><div class="action-desc">'+a.desc+'</div></a>';
   }).join('') +
+    (window.QG_CONFIG && !window.QG_CONFIG.paymentsEnabled
+      ? '<div class="action-card secondary" style="grid-column:1/-1;cursor:default;opacity:0.92"><div class="action-icon">💳</div><div class="action-title">Payments coming at launch</div><div class="action-desc">Escrow and Stripe checkout ship with public launch — beta uses accept-to-chat flow.</div></div>'
+      : '') +
     '<a class="action-card secondary" href="feedback.html" style="grid-column:1/-1;margin-top:2px"><div class="action-icon">🐛</div><div class="action-title">Beta feedback</div><div class="action-desc">Report a bug or share an idea — we read every message</div></a>';
 
   var sectionTitle = document.getElementById('sectionTitle');

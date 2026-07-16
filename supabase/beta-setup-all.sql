@@ -37,8 +37,26 @@ CREATE POLICY "anon_select_applications" ON applications FOR SELECT TO anon USIN
 CREATE POLICY "anon_insert_applications" ON applications FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon_update_applications" ON applications FOR UPDATE TO anon USING (true) WITH CHECK (true);
 
--- ── PROFILE PHOTOS ───────────────────────────────────────────────
+-- ── USERS (names + avatars readable by everyone in beta) ─────────
+ALTER TABLE users ADD COLUMN IF NOT EXISTS firebase_uid TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS skills TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS users_firebase_uid_idx ON users (firebase_uid) WHERE firebase_uid IS NOT NULL;
+
+GRANT SELECT, INSERT, UPDATE ON users TO anon, authenticated;
+
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "anon_select_users" ON users;
+DROP POLICY IF EXISTS "anon_insert_users" ON users;
+DROP POLICY IF EXISTS "anon_update_users" ON users;
+
+CREATE POLICY "anon_select_users" ON users FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_insert_users" ON users FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_update_users" ON users FOR UPDATE TO anon USING (true) WITH CHECK (true);
+
+-- ── PROFILE PHOTOS ───────────────────────────────────────────────
 
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('profile-photos', 'profile-photos', true)
@@ -128,3 +146,67 @@ DROP POLICY IF EXISTS "anon_insert_reviews" ON reviews;
 
 CREATE POLICY "anon_select_reviews" ON reviews FOR SELECT TO anon USING (true);
 CREATE POLICY "anon_insert_reviews" ON reviews FOR INSERT TO anon WITH CHECK (true);
+
+-- ── P1/P2: reports, email queue, warnings, user status ───────────
+ALTER TABLE users ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
+
+CREATE TABLE IF NOT EXISTS reports (
+  report_id       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  reporter_id     TEXT NOT NULL,
+  reporter_email  TEXT,
+  target_type     TEXT NOT NULL,
+  target_id       TEXT NOT NULL,
+  target_label    TEXT,
+  reason          TEXT NOT NULL,
+  details         TEXT,
+  status          TEXT NOT NULL DEFAULT 'open',
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS reports_target_idx ON reports (target_type, target_id);
+GRANT SELECT, INSERT, UPDATE ON reports TO anon, authenticated;
+ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_select_reports" ON reports;
+DROP POLICY IF EXISTS "anon_insert_reports" ON reports;
+DROP POLICY IF EXISTS "anon_update_reports" ON reports;
+CREATE POLICY "anon_select_reports" ON reports FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_insert_reports" ON reports FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_update_reports" ON reports FOR UPDATE TO anon USING (true) WITH CHECK (true);
+
+CREATE TABLE IF NOT EXISTS notification_queue (
+  notification_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id           TEXT NOT NULL,
+  email             TEXT,
+  type              TEXT NOT NULL,
+  subject           TEXT,
+  body_text         TEXT,
+  payload           JSONB,
+  sent_at           TIMESTAMPTZ,
+  error_message     TEXT,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS notification_queue_pending_idx
+  ON notification_queue (created_at ASC) WHERE sent_at IS NULL;
+GRANT SELECT, INSERT, UPDATE ON notification_queue TO anon, authenticated;
+ALTER TABLE notification_queue ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_select_notifications" ON notification_queue;
+DROP POLICY IF EXISTS "anon_insert_notifications" ON notification_queue;
+DROP POLICY IF EXISTS "anon_update_notifications" ON notification_queue;
+CREATE POLICY "anon_select_notifications" ON notification_queue FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_insert_notifications" ON notification_queue FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_update_notifications" ON notification_queue FOR UPDATE TO anon USING (true) WITH CHECK (true);
+
+CREATE TABLE IF NOT EXISTS user_warnings (
+  warning_id   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id      TEXT NOT NULL,
+  reason       TEXT,
+  source       TEXT DEFAULT 'admin',
+  report_id    UUID,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS user_warnings_user_idx ON user_warnings (user_id, created_at DESC);
+GRANT SELECT, INSERT ON user_warnings TO anon, authenticated;
+ALTER TABLE user_warnings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_select_warnings" ON user_warnings;
+DROP POLICY IF EXISTS "anon_insert_warnings" ON user_warnings;
+CREATE POLICY "anon_select_warnings" ON user_warnings FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_insert_warnings" ON user_warnings FOR INSERT TO anon WITH CHECK (true);

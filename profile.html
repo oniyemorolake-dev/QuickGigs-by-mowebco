@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QuickGigs — Profile</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="qg-features.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -50,6 +51,7 @@ body.light .mode-btn{background:rgba(0,0,0,0.2);color:#fff;}
 .avatar{width:94px;height:94px;border-radius:50%;background:linear-gradient(135deg,#4a1d8a,#9b6fc4);background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:600;color:#fff;transition:transform 0.25s;}
 .avatar.has-photo{color:transparent;}
 .avatar-camera{position:absolute;bottom:2px;right:2px;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);border:3px solid var(--bg);display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,0.25);}
+.avatar-edit-hint{font-size:11px;color:var(--text-faint);margin-bottom:8px;}
 .verified{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid var(--bg);}
 .profile-name{font-size:22px;font-weight:600;margin-bottom:6px;text-align:center;}
 .role-tags{display:flex;gap:6px;justify-content:center;margin-bottom:10px;flex-wrap:wrap;}
@@ -81,7 +83,10 @@ body.light .stat-num.green{color:#16a34a;}
 .stat-lbl{font-size:10px;color:var(--text-faint);}
 
 /* SECTION */
-.section{margin:0 20px 16px;}
+.section{margin:0 20px 16px;animation:sectionIn 0.5s cubic-bezier(0.22,1,0.36,1) backwards;}
+#bioSection{animation-delay:0.06s;}
+#skillsSection{animation-delay:0.1s;}
+#reviewsSection{animation-delay:0.14s;}
 .sec-title{font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);margin-bottom:10px;}
 .sec-content{font-size:14px;line-height:1.7;color:var(--text-muted);}
 
@@ -101,7 +106,7 @@ body.light .rev-task{color:var(--purple);}
 .rev-stars{font-size:12px;flex-shrink:0;}
 .rev-text{font-size:13px;line-height:1.6;color:var(--text-muted);}
 
-/* EDIT PROFILE MODAL */
+/* EDIT PROFILE — profile studio (not task form) */
 .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
 .sec-content{padding:14px 16px;border-radius:16px;background:var(--card-bg);border:0.5px solid var(--border);}
 .reviews-list{display:flex;flex-direction:column;gap:10px;}
@@ -110,30 +115,108 @@ body.light .rev-task{color:var(--purple);}
 .rev-meta{font-size:10px;color:var(--text-faint);margin-top:2px;}
 .reviews-empty{text-align:center;padding:28px 16px;border-radius:16px;background:var(--card-bg);border:0.5px dashed var(--border);}
 .reviews-empty-icon{font-size:28px;margin-bottom:8px;opacity:0.7;}
-.modal-overlay{position:fixed;inset:0;background:rgba(5,0,15,0.72);z-index:200;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px);opacity:0;transition:opacity 0.28s;}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(5,0,15,0.78);z-index:200;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(10px);opacity:0;transition:opacity 0.32s;}
 .modal-overlay.open{display:flex;opacity:1;}
-.modal{transform:translateY(100%);transition:transform 0.38s cubic-bezier(0.22,1,0.36,1);}
-.modal-overlay.open .modal{transform:translateY(0);}
-.modal-avatar-row{display:flex;align-items:center;gap:14px;margin-bottom:20px;padding:14px;border-radius:16px;background:rgba(107,63,160,0.12);border:0.5px solid rgba(200,168,233,0.2);}
-.modal-avatar-preview{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;color:#fff;flex-shrink:0;}
-.modal-avatar-preview.has-photo{color:transparent;}
-.modal-change-photo{padding:8px 14px;border-radius:10px;border:none;background:var(--purple);color:#fff;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;}
+@keyframes editSheetUp{from{opacity:0;transform:translateY(100%);}to{opacity:1;transform:translateY(0);}}
+@keyframes editCardIn{from{opacity:0;transform:translateY(16px) scale(0.98);}to{opacity:1;transform:translateY(0) scale(1);}}
+@keyframes skillPop{0%{transform:scale(1);}40%{transform:scale(1.12);}100%{transform:scale(1);}}
+@keyframes savePulse{0%,100%{box-shadow:0 8px 28px rgba(107,63,160,0.45);}50%{box-shadow:0 12px 36px rgba(155,111,196,0.55);}}
+@keyframes promptFade{0%,100%{opacity:0.55;transform:translateY(0);}50%{opacity:1;transform:translateY(-2px);}}
+@keyframes floatSpark{0%,100%{transform:translateY(0) rotate(0deg);opacity:0.7;}50%{transform:translateY(-6px) rotate(8deg);opacity:1;}}
+@keyframes progressFill{from{stroke-dashoffset:var(--prog-start);}to{stroke-dashoffset:var(--prog-end);}}
+
+.edit-sheet{width:100%;max-width:520px;max-height:92vh;display:flex;flex-direction:column;border-radius:26px 26px 0 0;background:linear-gradient(180deg,#1a0a38 0%,#120628 38%,#0e021f 100%);border:0.5px solid rgba(200,168,233,0.18);border-bottom:none;transform:translateY(100%);transition:transform 0.42s cubic-bezier(0.22,1,0.36,1);overflow:hidden;box-shadow:0 -20px 60px rgba(0,0,0,0.45);}
+body.light .edit-sheet{background:linear-gradient(180deg,#fff 0%,#faf8ff 45%,#f5f0ff 100%);border-color:#e8e2ff;}
+.modal-overlay.open .edit-sheet{animation:editSheetUp 0.42s cubic-bezier(0.22,1,0.36,1) forwards;}
+
+.edit-handle{width:40px;height:4px;border-radius:2px;background:rgba(200,168,233,0.35);margin:10px auto 0;flex-shrink:0;}
+.edit-header{position:relative;padding:8px 22px 18px;text-align:center;flex-shrink:0;}
+.edit-header-glow{position:absolute;inset:-40px 20% auto;height:120px;background:radial-gradient(circle,rgba(155,111,196,0.35),transparent 70%);pointer-events:none;}
+.edit-close{position:absolute;top:8px;right:16px;width:34px;height:34px;border-radius:50%;border:0.5px solid rgba(200,168,233,0.25);background:rgba(255,255,255,0.06);color:var(--text-muted);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.2s,background 0.2s;}
+.edit-close:hover{transform:scale(1.06);background:rgba(255,255,255,0.12);}
+.edit-kicker{font-size:11px;text-transform:uppercase;letter-spacing:0.14em;color:var(--lavender);margin-bottom:4px;opacity:0.9;}
+.edit-headline{font-family:'Playfair Display',serif;font-style:italic;font-size:26px;font-weight:400;color:var(--text);line-height:1.2;}
+.edit-spark{position:absolute;font-size:16px;animation:floatSpark 3s ease-in-out infinite;pointer-events:none;}
+.edit-spark.s1{top:18px;left:18%;animation-delay:0s;}
+.edit-spark.s2{top:28px;right:16%;animation-delay:0.8s;font-size:13px;}
+.edit-spark.s3{bottom:6px;left:42%;animation-delay:1.4s;font-size:12px;}
+
+.edit-scroll{flex:1;overflow-y:auto;padding:0 18px 12px;-webkit-overflow-scrolling:touch;}
+.edit-scroll::-webkit-scrollbar{width:4px;}
+.edit-scroll::-webkit-scrollbar-thumb{background:rgba(200,168,233,0.25);border-radius:4px;}
+
+.edit-photo-hero{display:flex;flex-direction:column;align-items:center;padding:8px 0 20px;animation:editCardIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.05s backwards;}
+.edit-photo-ring{width:96px;height:96px;border-radius:50%;padding:3px;background:linear-gradient(135deg,#c8a8e9,#6b3fa0,#9b6fc4,#e879f9);background-size:220% 220%;animation:ringGlow 3.5s ease infinite;cursor:pointer;transition:transform 0.28s,box-shadow 0.28s;margin-bottom:12px;}
+.edit-photo-ring:hover{transform:scale(1.05);box-shadow:0 14px 40px rgba(107,63,160,0.5);}
+.edit-photo-ring:active{transform:scale(0.97);}
+.edit-photo-inner{width:100%;height:100%;border-radius:50%;background:linear-gradient(135deg,#4a1d8a,#9b6fc4);background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:600;color:#fff;border:3px solid #120628;}
+body.light .edit-photo-inner{border-color:#fff;}
+.edit-photo-inner.has-photo{color:transparent;}
+.edit-photo-btn{padding:9px 18px;border-radius:999px;border:none;background:rgba(107,63,160,0.35);color:var(--lavender);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:transform 0.2s,background 0.2s;margin-bottom:6px;}
+body.light .edit-photo-btn{background:#ede9ff;color:var(--purple);}
+.edit-photo-btn:hover{transform:translateY(-1px);background:rgba(107,63,160,0.5);}
+.edit-photo-hint{font-size:11px;color:var(--text-faint);text-align:center;line-height:1.45;max-width:260px;}
+
+.edit-progress-card{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:18px;background:rgba(107,63,160,0.14);border:0.5px solid rgba(200,168,233,0.22);margin-bottom:14px;animation:editCardIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.1s backwards;}
+body.light .edit-progress-card{background:#f5f0ff;border-color:#ddd6fe;}
+.edit-progress-ring{position:relative;width:52px;height:52px;flex-shrink:0;}
+.edit-progress-ring svg{width:52px;height:52px;transform:rotate(-90deg);}
+.edit-progress-ring circle{fill:none;stroke-width:4;stroke-linecap:round;}
+.edit-progress-ring .prog-bg{stroke:rgba(255,255,255,0.12);}
+body.light .edit-progress-ring .prog-bg{stroke:#e8e2ff;}
+.edit-progress-ring .prog-fill{stroke:url(#progGradient);stroke-dasharray:138;stroke-dashoffset:138;transition:stroke-dashoffset 0.6s cubic-bezier(0.22,1,0.36,1);}
+.edit-progress-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--lavender);}
+body.light .edit-progress-pct{color:var(--purple);}
+.edit-progress-text strong{display:block;font-size:14px;color:var(--text);margin-bottom:3px;}
+.edit-progress-text p{font-size:12px;color:var(--text-muted);line-height:1.4;margin:0;}
+
+.edit-card{border-radius:20px;padding:16px;margin-bottom:14px;background:rgba(255,255,255,0.04);border:0.5px solid rgba(200,168,233,0.14);animation:editCardIn 0.45s cubic-bezier(0.22,1,0.36,1) backwards;}
+.edit-card:nth-of-type(1){animation-delay:0.14s;}
+.edit-card:nth-of-type(2){animation-delay:0.2s;}
+body.light .edit-card{background:#fff;border-color:#ece8ff;box-shadow:0 4px 20px rgba(107,63,160,0.06);}
+.edit-card-head{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:500;color:var(--text);margin-bottom:14px;}
+.edit-card-icon{font-size:18px;line-height:1;}
+
+.edit-name-wrap{position:relative;margin-bottom:14px;}
+.edit-name-input{width:100%;background:transparent;border:none;border-bottom:2px solid rgba(200,168,233,0.25);padding:8px 0 10px;font-family:'Playfair Display',serif;font-style:italic;font-size:22px;color:var(--text);outline:none;transition:border-color 0.25s;}
+.edit-name-input:focus{border-bottom-color:var(--purple-light);}
+.edit-name-input::placeholder{color:var(--text-faint);font-style:italic;font-size:18px;}
+
+.edit-bio-wrap{position:relative;}
+.edit-bio-input{width:100%;min-height:96px;background:rgba(0,0,0,0.2);border:0.5px solid rgba(200,168,233,0.18);border-radius:16px;padding:14px 14px 32px;font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.65;color:var(--text);outline:none;resize:none;transition:border-color 0.25s,box-shadow 0.25s;}
+body.light .edit-bio-input{background:#f8f7ff;border-color:#e8e2ff;color:var(--text);}
+.edit-bio-input:focus{border-color:var(--purple-light);box-shadow:0 0 0 3px rgba(107,63,160,0.15);}
+.bio-prompt{position:absolute;bottom:10px;left:14px;font-size:11px;color:var(--lavender);opacity:0.65;pointer-events:none;animation:promptFade 4s ease-in-out infinite;}
+body.light .bio-prompt{color:var(--purple);}
+.bio-count{position:absolute;bottom:10px;right:14px;font-size:10px;color:var(--text-faint);}
+.bio-count.is-near-limit{color:#fbbf24;}
+.bio-count.is-over{color:#f87171;}
+
+.edit-skills-sub{font-size:12px;color:var(--text-muted);margin:-6px 0 12px;line-height:1.45;}
+.skills-edit{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+.skill-toggle{font-size:12px;padding:8px 14px;border-radius:999px;cursor:pointer;border:0.5px solid rgba(200,168,233,0.2);background:rgba(255,255,255,0.03);color:var(--text-muted);transition:transform 0.2s,background 0.2s,border-color 0.2s,box-shadow 0.2s;user-select:none;-webkit-tap-highlight-color:transparent;}
+body.light .skill-toggle{background:#faf8ff;border-color:#e8e2ff;}
+.skill-toggle:hover{transform:translateY(-2px);border-color:rgba(200,168,233,0.45);}
+.skill-toggle.selected{background:linear-gradient(135deg,rgba(107,63,160,0.55),rgba(155,111,196,0.35));border-color:var(--purple-light);color:#fff;box-shadow:0 6px 18px rgba(107,63,160,0.35);transform:translateY(-2px);}
+body.light .skill-toggle.selected{color:#2d1b4e;}
+.skill-toggle.pop{animation:skillPop 0.35s cubic-bezier(0.22,1,0.36,1);}
+.skills-selected-count{font-size:11px;color:var(--text-faint);text-align:center;padding:6px 0 2px;transition:color 0.2s;}
+.skills-selected-count.has-skills{color:var(--lavender);}
+body.light .skills-selected-count.has-skills{color:var(--purple);}
+
+.edit-footer{flex-shrink:0;padding:12px 18px 28px;background:linear-gradient(180deg,transparent,rgba(14,2,31,0.95) 28%);border-top:0.5px solid rgba(200,168,233,0.1);}
+body.light .edit-footer{background:linear-gradient(180deg,transparent,#faf8ff 30%);}
+.edit-save-btn{position:relative;width:100%;padding:15px;border-radius:16px;border:none;background:linear-gradient(135deg,#6b3fa0,#9b6fc4,#c8a8e9);background-size:200% 200%;color:#fff;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;overflow:hidden;animation:savePulse 2.8s ease-in-out infinite;transition:transform 0.2s,opacity 0.2s;}
+.edit-save-btn:hover{transform:translateY(-2px);}
+.edit-save-btn:active{transform:scale(0.98);}
+.edit-save-btn:disabled{opacity:0.65;cursor:not-allowed;animation:none;}
+.edit-save-btn .save-shine{position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.25),transparent);animation:saveShine 3s ease-in-out infinite;}
+@keyframes saveShine{0%{left:-100%;}40%,100%{left:140%;}}
+.edit-save-btn.is-saving .save-text{opacity:0.7;}
+.edit-save-btn.is-success{background:linear-gradient(135deg,#16a34a,#4ade80);animation:none;}
+
 .toast.show{display:block;animation:toastIn 0.35s cubic-bezier(0.22,1,0.36,1);}
-.modal{width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:20px 22px 40px;background:#150830;border:0.5px solid var(--border);}
-body.light .modal{background:#fff;}
-.modal-handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 18px;}
-.modal-title{font-size:17px;font-weight:500;color:var(--text);margin-bottom:18px;}
-.modal-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);display:block;margin-bottom:6px;}
-.modal-input{width:100%;background:rgba(255,255,255,0.05);border:0.5px solid var(--border);border-radius:12px;padding:12px 15px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;margin-bottom:14px;transition:border-color 0.2s;}
-body.light .modal-input{background:#f8f7ff;border-color:#e8e2ff;}
-.modal-input:focus{border-color:var(--purple-light);}
-.modal-input::placeholder{color:var(--lavender);opacity:0.35;}
-textarea.modal-input{resize:none;min-height:80px;}
-.skills-edit{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
-.skill-toggle{font-size:12px;padding:6px 13px;border-radius:20px;cursor:pointer;border:0.5px solid var(--border);background:var(--card-bg);color:var(--text-muted);transition:all 0.15s;}
-.skill-toggle.selected{background:rgba(107,63,160,0.3);border-color:var(--purple-light);color:var(--lavender);}
-body.light .skill-toggle.selected{background:#ede9ff;color:var(--purple);}
-.save-btn{width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;}
 
 /* TOAST */
 .toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:#4ade80;color:#0b0118;padding:11px 24px;border-radius:20px;font-size:13px;font-weight:500;display:none;z-index:300;white-space:nowrap;}
@@ -143,6 +226,10 @@ body.light .skill-toggle.selected{background:#ede9ff;color:var(--purple);}
 .photo-required-banner p{font-size:12px;color:var(--text-muted);line-height:1.55;margin-bottom:10px;}
 .photo-required-banner a{display:inline-block;padding:8px 16px;border-radius:10px;background:var(--purple);color:#fff;text-decoration:none;font-size:13px;font-weight:500;}
 body.light .photo-required-banner{background:#fffbeb;border-color:#fde68a;}
+.photo-optional-banner{margin:0 20px 16px;padding:14px 16px;border-radius:14px;background:rgba(107,63,160,0.12);border:0.5px solid rgba(200,168,233,0.25);text-align:center;}
+.photo-optional-banner strong{display:block;font-size:14px;color:var(--text);margin-bottom:6px;}
+.photo-optional-banner p{font-size:12px;color:var(--text-muted);line-height:1.55;margin:0;}
+body.light .photo-optional-banner{background:#f5f0ff;border-color:#ddd6fe;}
 
 /* TAB BAR */
 .tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--tab-bg);border-top:0.5px solid var(--border);display:flex;padding:8px 0 14px;z-index:100;transition:background 0.25s;}
@@ -171,6 +258,10 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   <strong>📷 Add your profile photo</strong>
   <p>Taskers need a clear photo so posters know who they're hiring. Tap your avatar below to upload one.</p>
 </div>
+<div class="photo-optional-banner" id="photoOptionalBanner" style="display:none">
+  <strong>📷 Add a profile photo (optional)</strong>
+  <p>Posters don't need a photo, but adding one helps taskers recognize you.</p>
+</div>
 
 <!-- AVATAR + INFO -->
 <div class="avatar-section">
@@ -187,6 +278,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   <div class="avatar-edit-hint" id="avatarHint" style="display:none">Tap photo to change</div>
   <div class="profile-name" id="profileName">Loading...</div>
   <div class="role-tags" id="roleTags"></div>
+  <div id="trustBadges"></div>
   <div class="rating-row">
     <span class="stars" id="starsEl">⭐⭐⭐⭐⭐</span>
     <span class="rating-score" id="ratingScore">—</span>
@@ -197,9 +289,10 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <!-- EDIT BUTTONS (own profile only) -->
 <div class="action-row-profile" id="profileActions" style="display:none">
-  <button class="edit-btn" id="editBtn" onclick="openEditModal()">✏️ Edit profile</button>
+  <button class="edit-btn" id="editBtn" onclick="openEditModal()">✨ Customize profile</button>
   <button class="photo-btn" id="photoBtn" onclick="document.getElementById('avatarInput').click()">📷 Change photo</button>
 </div>
+<div class="qg-action-row" id="profileShareReport" style="justify-content:center;padding:0 20px 8px;display:none"></div>
 
 <div class="divider"></div>
 
@@ -207,10 +300,8 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <div class="stats">
   <div class="stat"><div class="stat-num" id="statPosted">0</div><div class="stat-lbl">Posted</div></div>
   <div class="stat"><div class="stat-num" id="statDone">0</div><div class="stat-lbl">Completed</div></div>
-  <div class="stat"><div class="stat-num green" id="statEarned">$0</div><div class="stat-lbl">Earned</div></div>
+  <div class="stat" id="earnedStat"><div class="stat-num green" id="statEarned">$0</div><div class="stat-lbl">Earned</div></div>
 </div>
-
-<!-- BIO -->
 <div class="section" id="bioSection">
   <div class="sec-title">About</div>
   <div class="sec-content" id="bioText">No bio yet.</div>
@@ -241,26 +332,75 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <!-- TOAST -->
 <div class="toast" id="toast">Profile saved! 🎉</div>
 
-<!-- EDIT MODAL -->
+<!-- EDIT PROFILE — profile studio -->
 <div class="modal-overlay" id="modalOverlay" onclick="handleOverlay(event)">
-  <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Edit profile</div>
-    <div class="modal-avatar-row" id="modalAvatarRow">
-      <div class="modal-avatar-preview" id="modalAvatarPreview">M</div>
-      <div style="flex:1">
-        <strong>Profile photo</strong>
-        <span style="display:block;font-size:12px;color:var(--text-faint);margin-top:4px;line-height:1.45">Taskers need a clear photo so posters know who they're hiring.</span>
-      </div>
-      <button type="button" class="modal-change-photo" onclick="document.getElementById('avatarInput').click()">Change</button>
+  <div class="edit-sheet" onclick="event.stopPropagation()">
+    <div class="edit-handle"></div>
+    <div class="edit-header">
+      <div class="edit-header-glow"></div>
+      <span class="edit-spark s1">✨</span>
+      <span class="edit-spark s2">💫</span>
+      <span class="edit-spark s3">⭐</span>
+      <button type="button" class="edit-close" onclick="closeEditModal()" aria-label="Close">✕</button>
+      <p class="edit-kicker">Profile studio</p>
+      <h2 class="edit-headline">Make it you</h2>
     </div>
-    <span class="modal-label">Display name</span>
-    <input class="modal-input" id="editName" type="text" placeholder="Your name">
-    <span class="modal-label">Bio</span>
-    <textarea class="modal-input" id="editBio" placeholder="Tell people a bit about yourself..."></textarea>
-    <span class="modal-label">Skills (select all that apply)</span>
-    <div class="skills-edit" id="skillsEdit"></div>
-    <button class="save-btn" onclick="saveProfile()">Save profile</button>
+
+    <div class="edit-scroll">
+      <div class="edit-photo-hero">
+        <div class="edit-photo-ring" id="editPhotoRing" onclick="document.getElementById('avatarInput').click()" role="button" tabindex="0" aria-label="Change profile photo">
+          <div class="edit-photo-inner" id="modalAvatarPreview">M</div>
+        </div>
+        <button type="button" class="edit-photo-btn" onclick="document.getElementById('avatarInput').click()">📷 Change photo</button>
+        <p class="edit-photo-hint" id="editPhotoHint">Optional for posters · required for taskers</p>
+      </div>
+
+      <div class="edit-progress-card">
+        <div class="edit-progress-ring">
+          <svg viewBox="0 0 52 52" aria-hidden="true">
+            <defs>
+              <linearGradient id="progGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#c8a8e9"/>
+                <stop offset="100%" stop-color="#6b3fa0"/>
+              </linearGradient>
+            </defs>
+            <circle class="prog-bg" cx="26" cy="26" r="22"/>
+            <circle class="prog-fill" id="editProgFill" cx="26" cy="26" r="22"/>
+          </svg>
+          <div class="edit-progress-pct" id="editProgPct">0%</div>
+        </div>
+        <div class="edit-progress-text">
+          <strong id="editProgressLabel">Let's build your profile</strong>
+          <p id="editProgressHint">Add a photo and bio to stand out</p>
+        </div>
+      </div>
+
+      <div class="edit-card edit-card-about">
+        <div class="edit-card-head"><span class="edit-card-icon">👋</span><span>About you</span></div>
+        <div class="edit-name-wrap">
+          <input class="edit-name-input" id="editName" type="text" placeholder="Your name" maxlength="40" autocomplete="name">
+        </div>
+        <div class="edit-bio-wrap">
+          <textarea class="edit-bio-input" id="editBio" placeholder=" " maxlength="160"></textarea>
+          <div class="bio-prompt" id="bioPrompt">What makes you great at gigs?</div>
+          <div class="bio-count" id="bioCountWrap"><span id="bioCount">0</span>/160</div>
+        </div>
+      </div>
+
+      <div class="edit-card edit-card-skills">
+        <div class="edit-card-head"><span class="edit-card-icon">⚡</span><span>Your superpowers</span></div>
+        <p class="edit-skills-sub">Tap the skills that fit you — they pop up on your profile</p>
+        <div class="skills-edit" id="skillsEdit"></div>
+        <div class="skills-selected-count" id="skillsCount">0 selected</div>
+      </div>
+    </div>
+
+    <div class="edit-footer">
+      <button type="button" class="edit-save-btn" id="editSaveBtn" onclick="saveProfile()">
+        <span class="save-shine"></span>
+        <span class="save-text">Save profile ✨</span>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -304,7 +444,12 @@ onAuthStateChanged(auth, (user) => {
 </script>
 
 <script src="qg-utils.js"></script>
+<script src="qg-config.js"></script>
 <script src="supabase-db.js"></script>
+<script src="qg-pwa.js"></script>
+<script src="qg-share.js"></script>
+<script src="qg-report.js"></script>
+<script src="qg-stats.js"></script>
 <script>
 var HEADERS = window.HEADERS;
 
@@ -346,6 +491,88 @@ function updateAvatarDisplay(name, url) {
   });
 }
 
+var BIO_PROMPTS = [
+  'What makes you great at gigs?',
+  'Friendly, reliable, and on time…',
+  'Calgary local who loves helping out',
+  'Tell people why they should pick you'
+];
+var bioPromptIndex = 0;
+var bioPromptTimer = null;
+
+function cycleBioPrompt() {
+  var el = document.getElementById('bioPrompt');
+  var bio = document.getElementById('editBio');
+  if (!el || !bio || bio.value.trim()) return;
+  bioPromptIndex = (bioPromptIndex + 1) % BIO_PROMPTS.length;
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.textContent = BIO_PROMPTS[bioPromptIndex];
+  el.style.animation = 'promptFade 4s ease-in-out infinite';
+}
+
+function updateBioCount() {
+  var bio = document.getElementById('editBio');
+  var countEl = document.getElementById('bioCount');
+  var wrap = document.getElementById('bioCountWrap');
+  var prompt = document.getElementById('bioPrompt');
+  if (!bio || !countEl) return;
+  var len = bio.value.length;
+  countEl.textContent = String(len);
+  if (wrap) {
+    wrap.classList.toggle('is-near-limit', len >= 130 && len < 160);
+    wrap.classList.toggle('is-over', len >= 160);
+  }
+  if (prompt) prompt.style.opacity = bio.value.trim() ? '0' : '';
+  updateEditProgress();
+}
+
+function updateSkillsCount() {
+  var selected = document.querySelectorAll('.skill-toggle.selected').length;
+  var el = document.getElementById('skillsCount');
+  if (!el) return;
+  el.textContent = selected === 0 ? 'Tap a skill to get started' : selected + ' superpower' + (selected !== 1 ? 's' : '') + ' selected';
+  el.classList.toggle('has-skills', selected > 0);
+  updateEditProgress();
+}
+
+function calcProfileProgress() {
+  var score = 0;
+  if (hasProfilePhotoUrl(profileData.avatar_url)) score += 30;
+  var name = (document.getElementById('editName') && document.getElementById('editName').value.trim()) || profileData.name || '';
+  if (name.length >= 2) score += 20;
+  var bio = document.getElementById('editBio') ? document.getElementById('editBio').value.trim() : (profileData.bio || '');
+  if (bio.length >= 10) score += 25;
+  var skills = document.querySelectorAll('.skill-toggle.selected').length;
+  if (skills >= 1) score += 25;
+  return Math.min(100, score);
+}
+
+function updateEditProgress() {
+  var pct = calcProfileProgress();
+  var fill = document.getElementById('editProgFill');
+  var pctEl = document.getElementById('editProgPct');
+  var label = document.getElementById('editProgressLabel');
+  var hint = document.getElementById('editProgressHint');
+  var circumference = 138;
+  if (fill) fill.style.strokeDashoffset = String(circumference * (1 - pct / 100));
+  if (pctEl) pctEl.textContent = pct + '%';
+  if (!label || !hint) return;
+  if (pct >= 100) {
+    label.textContent = 'Profile looking fire 🔥';
+    hint.textContent = 'You\'re ready to impress posters and taskers';
+  } else if (pct >= 75) {
+    label.textContent = 'Almost there!';
+    hint.textContent = 'One more touch and you\'re golden';
+  } else if (pct >= 40) {
+    label.textContent = 'Nice start — keep going';
+    hint.textContent = 'Add skills so people know what you\'re great at';
+  } else {
+    label.textContent = 'Let\'s build your profile';
+    hint.textContent = 'Photo + bio help you get picked faster';
+  }
+}
+
 var params = new URLSearchParams(window.location.search);
 var viewUserId = params.get('user');
 var photoSetupMode = params.get('setup') === 'photo';
@@ -375,11 +602,32 @@ async function loadReviewsForProfile(targetId) {
   await renderReviews(reviews);
 }
 
+function userIsTasker(role) {
+  role = role || profileData.role || localStorage.getItem('qg-role') || '';
+  return role === 'worker' || role === 'both';
+}
+
 async function loadProfile(user) {
   var isOwnProfile = !viewUserId || viewUserId === user.uid;
   var targetId = viewUserId || user.uid;
+  var dbUser = null;
 
-  if (isOwnProfile) {
+  if (!isOwnProfile) {
+    document.getElementById('profileActions').style.display = 'none';
+    document.getElementById('avatarHint').style.display = 'none';
+    document.getElementById('avatarCamera').style.display = 'none';
+    document.getElementById('photoRequiredBanner').style.display = 'none';
+    document.getElementById('photoOptionalBanner').style.display = 'none';
+    var earnedStat = document.getElementById('earnedStat');
+    if (earnedStat) earnedStat.style.display = 'none';
+    var backBtn = document.querySelector('.back-btn');
+    if (backBtn) {
+      backBtn.href = 'javascript:history.back()';
+      backBtn.title = 'Go back';
+    }
+    var emptyRev = document.getElementById('reviewsEmpty');
+    if (emptyRev) emptyRev.querySelector('p').textContent = 'No reviews yet.';
+  } else {
     document.getElementById('profileActions').style.display = 'flex';
     document.getElementById('avatarHint').style.display = 'block';
     document.getElementById('avatarCamera').style.display = 'flex';
@@ -390,25 +638,67 @@ async function loadProfile(user) {
   }
 
   if (typeof getUserByFirebaseUid === 'function' && targetId) {
-    var dbUser = await getUserByFirebaseUid(targetId);
-    if (dbUser) {
-      if (dbUser.name) profileData.name = dbUser.name;
-      if (dbUser.avatar_url) profileData.avatar_url = dbUser.avatar_url;
+    dbUser = await getUserByFirebaseUid(targetId);
+  }
+
+  if (typeof resolveUserAvatarUrl === 'function' && targetId) {
+    var resolvedAvatar = await resolveUserAvatarUrl(targetId);
+    if (hasProfilePhotoUrl(resolvedAvatar)) {
+      profileData.avatar_url = resolvedAvatar;
     }
   }
 
-  var saved = localStorage.getItem('qg-profile-' + targetId);
-  var localProfile = {};
-  if (saved) {
-    try { localProfile = JSON.parse(saved) || {}; } catch (e) { localProfile = {}; }
+  var dbProfile = {};
+  if (dbUser && typeof applyDbUserToProfileData === 'function') {
+    applyDbUserToProfileData(dbUser, dbProfile);
+  } else if (dbUser) {
+    if (dbUser.name) dbProfile.name = dbUser.name;
+    if (dbUser.avatar_url) dbProfile.avatar_url = dbUser.avatar_url;
+    if (dbUser.role) dbProfile.role = dbUser.role;
+    if (dbUser.bio) dbProfile.bio = String(dbUser.bio).trim();
+    if (typeof parseUserSkills === 'function') {
+      var parsedSkills = parseUserSkills(dbUser);
+      if (parsedSkills.length) dbProfile.skills = parsedSkills;
+    }
+    if (dbUser.created_at) dbProfile.memberSince = dbUser.created_at;
   }
+
+  var localProfile = {};
+  if (isOwnProfile) {
+    var saved = localStorage.getItem('qg-profile-' + targetId);
+    if (saved) {
+      try { localProfile = JSON.parse(saved) || {}; } catch (e) { localProfile = {}; }
+    }
+  }
+
   profileData = Object.assign({
-    name: user.displayName || user.email.split('@')[0],
+    name: isOwnProfile ? (user.displayName || user.email.split('@')[0]) : 'QuickGigs user',
     bio: '',
     skills: [],
-    role: localStorage.getItem('qg-role') || 'poster'
-  }, localProfile, profileData);
-  if (profileData.avatar_url) window._currentUserAvatarUrl = profileData.avatar_url;
+    role: localStorage.getItem('qg-role') || 'poster',
+    memberSince: ''
+  }, localProfile, dbProfile, profileData);
+
+  if (isOwnProfile && typeof upsertUserProfile === 'function') {
+    var localBio = localProfile.bio ? String(localProfile.bio).trim() : '';
+    var localSkills = typeof parseUserSkills === 'function' ? parseUserSkills(localProfile) : [];
+    var dbBio = dbProfile.bio ? String(dbProfile.bio).trim() : '';
+    var dbSkills = dbProfile.skills || [];
+    var shouldMigrate = (localBio && !dbBio) || (localSkills.length && !dbSkills.length);
+    if (shouldMigrate) {
+      await upsertUserProfile({
+        name: profileData.name || user.displayName || '',
+        email: user.email || '',
+        firebase_uid: user.uid,
+        role: profileData.role || localStorage.getItem('qg-role') || 'poster',
+        avatar_url: profileData.avatar_url || '',
+        bio: profileData.bio || '',
+        skills: profileData.skills || []
+      });
+    }
+  }
+
+  if (isOwnProfile && profileData.avatar_url) window._currentUserAvatarUrl = profileData.avatar_url;
 
   try {
     var headers = typeof getSupabaseHeaders === 'function' ? await getSupabaseHeaders() : HEADERS;
@@ -423,33 +713,71 @@ async function loadProfile(user) {
   }
 
   await loadReviewsForProfile(targetId);
-  renderProfile(user);
 
-  if (isOwnProfile && (photoSetupMode || photoRequired) && !profileData.avatar_url) {
-    document.getElementById('photoRequiredBanner').style.display = 'block';
-    if (photoSetupMode) document.getElementById('avatarHint').textContent = 'Tap to add your photo (required for taskers)';
+  if (typeof fetchUserTrustStats === 'function') {
+    var trustStats = await fetchUserTrustStats(targetId);
+    var trustEl = document.getElementById('trustBadges');
+    if (trustEl && typeof renderTrustBadges === 'function') {
+      trustEl.innerHTML = renderTrustBadges(trustStats);
+    }
+  }
+
+  renderProfile(user, isOwnProfile);
+  renderProfileActions(targetId, profileData.name, isOwnProfile);
+
+  if (isOwnProfile && !profileData.avatar_url) {
+    if (userIsTasker(profileData.role) && (photoSetupMode || photoRequired)) {
+      document.getElementById('photoRequiredBanner').style.display = 'block';
+      if (photoSetupMode) document.getElementById('avatarHint').textContent = 'Tap to add your photo (required for taskers)';
+    } else if (!userIsTasker(profileData.role) && photoSetupMode) {
+      document.getElementById('photoOptionalBanner').style.display = 'block';
+    }
   }
 }
 
-function renderProfile(user) {
-  var name = profileData.name || user.displayName || user.email.split('@')[0];
+function renderProfile(user, isOwnProfile) {
+  isOwnProfile = isOwnProfile !== false;
+  var name = profileData.name || (isOwnProfile ? (user.displayName || user.email.split('@')[0]) : 'QuickGigs user');
   updateAvatarDisplay(name, profileData.avatar_url);
-  if (profileData.avatar_url) document.getElementById('photoRequiredBanner').style.display = 'none';
+  if (profileData.avatar_url) {
+    document.getElementById('photoRequiredBanner').style.display = 'none';
+    document.getElementById('photoOptionalBanner').style.display = 'none';
+  }
   document.getElementById('profileName').textContent = name;
-  var memberUser = viewUserId && viewUserId !== user.uid ? user : user;
-  document.getElementById('memberSince').textContent = 'Member since ' + new Date(memberUser.metadata.creationTime).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-  var role = profileData.role || localStorage.getItem('qg-role') || 'poster';
+  var memberEl = document.getElementById('memberSince');
+  if (profileData.memberSince) {
+    memberEl.textContent = 'Member since ' + new Date(profileData.memberSince).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  } else if (isOwnProfile && user.metadata && user.metadata.creationTime) {
+    memberEl.textContent = 'Member since ' + new Date(user.metadata.creationTime).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  } else {
+    memberEl.textContent = '';
+  }
+
+  var role = profileData.role || 'poster';
   var roleHtml = '';
   if (role === 'poster' || role === 'both') roleHtml += '<span class="role-tag">📋 Poster</span>';
   if (role === 'worker' || role === 'both') roleHtml += '<span class="role-tag">💼 Tasker</span>';
+  if (!roleHtml) roleHtml = '<span class="role-tag">👤 QuickGigs member</span>';
   document.getElementById('roleTags').innerHTML = roleHtml;
 
-  document.getElementById('bioText').textContent = profileData.bio || 'No bio yet — tap Edit profile to add one.';
+  var bioDefault = isOwnProfile ? 'No bio yet — tap Customize profile to add one.' : 'No bio yet.';
+  document.getElementById('bioText').textContent = profileData.bio || bioDefault;
   var skills = profileData.skills || [];
   document.getElementById('skillsList').innerHTML = skills.length
     ? skills.map(function(s) { return '<span class="skill">' + esc(s) + '</span>'; }).join('')
-    : '<span style="font-size:13px;color:var(--text-faint)">No skills added yet.</span>';
+    : '<span style="font-size:13px;color:var(--text-faint)">' + (isOwnProfile ? 'No skills added yet.' : 'No skills listed.') + '</span>';
+}
+
+function renderProfileActions(targetId, displayName, isOwnProfile) {
+  var row = document.getElementById('profileShareReport');
+  if (!row || !targetId) return;
+  row.style.display = 'flex';
+  var shareBtn = typeof shareButtonHtml === 'function' ? shareButtonHtml('profile', targetId, displayName || 'Profile') : '';
+  var reportBtn = isOwnProfile ? '' : (typeof reportButtonHtml === 'function' ? reportButtonHtml('user', targetId, displayName || 'User') : '');
+  row.innerHTML = shareBtn + reportBtn;
+  if (typeof bindShareTriggers === 'function') bindShareTriggers(row);
+  if (typeof bindReportTriggers === 'function') bindReportTriggers(row);
 }
 
 async function renderReviews(reviews) {
@@ -477,10 +805,13 @@ async function renderReviews(reviews) {
     var card = document.createElement('div');
     card.className = 'review-card';
     card.style.animationDelay = (i * 0.05) + 's';
+    var reviewerLink = reviewerId && typeof profileNameLink === 'function'
+      ? profileNameLink(reviewerName, reviewerId, { style: 'color:inherit;text-decoration:none;font-weight:500' })
+      : esc(reviewerName);
     card.innerHTML =
       '<div class="rev-top">' +
         '<div class="rev-avatar" style="background:' + colors[i % colors.length] + '">' + esc(reviewerName.charAt(0).toUpperCase()) + '</div>' +
-        '<div class="rev-info"><div class="rev-name">' + esc(reviewerName) + '</div><div class="rev-task">' + esc(String(taskTitle)) + '</div>' +
+        '<div class="rev-info"><div class="rev-name">' + reviewerLink + '</div><div class="rev-task">' + esc(String(taskTitle)) + '</div>' +
         (when ? '<div class="rev-meta">' + esc(when) + '</div>' : '') + '</div>' +
         '<div class="rev-stars">' + '⭐'.repeat(rating) + '</div>' +
       '</div>' +
@@ -493,29 +824,82 @@ window.openEditModal = function() {
   document.getElementById('editName').value = profileData.name || '';
   document.getElementById('editBio').value = profileData.bio || '';
   updateAvatarDisplay(profileData.name, profileData.avatar_url);
+
+  var photoHint = document.getElementById('editPhotoHint');
+  if (photoHint) {
+    photoHint.textContent = userIsTasker(profileData.role)
+      ? 'Taskers need a clear photo so posters know who they\'re hiring'
+      : 'Optional for posters — helps taskers recognize you';
+  }
+
   var selectedSkills = profileData.skills || [];
-  document.getElementById('skillsEdit').innerHTML = ALL_SKILLS.map(function(s) {
+  document.getElementById('skillsEdit').innerHTML = ALL_SKILLS.map(function(s, i) {
     var sel = selectedSkills.indexOf(s) >= 0 ? ' selected' : '';
-    return '<span class="skill-toggle' + sel + '" onclick="toggleSkill(this)">' + s + '</span>';
+    return '<span class="skill-toggle' + sel + '" style="animation-delay:' + (i * 0.02) + 's" onclick="toggleSkill(this)" data-skill="' + esc(s) + '">' + esc(s) + '</span>';
   }).join('');
+
+  updateBioCount();
+  updateSkillsCount();
+  updateEditProgress();
+
+  if (bioPromptTimer) clearInterval(bioPromptTimer);
+  bioPromptTimer = setInterval(cycleBioPrompt, 4200);
+
+  var nameInput = document.getElementById('editName');
+  var bioInput = document.getElementById('editBio');
+  if (nameInput && !nameInput._editBound) {
+    nameInput._editBound = true;
+    nameInput.addEventListener('input', function() {
+      updateAvatarDisplay(nameInput.value.trim() || profileData.name, profileData.avatar_url);
+      updateEditProgress();
+    });
+  }
+  if (bioInput && !bioInput._editBound) {
+    bioInput._editBound = true;
+    bioInput.addEventListener('input', updateBioCount);
+  }
+
   document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  if (!window._editEscBound) {
+    window._editEscBound = true;
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && document.getElementById('modalOverlay').classList.contains('open')) closeEditModal();
+    });
+  }
+  setTimeout(function() {
+    var scroll = document.querySelector('.edit-scroll');
+    if (scroll) scroll.scrollTop = 0;
+  }, 50);
 };
 
-window.toggleSkill = function(el) { el.classList.toggle('selected'); };
+window.closeEditModal = function() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  if (bioPromptTimer) { clearInterval(bioPromptTimer); bioPromptTimer = null; }
+};
+
+window.toggleSkill = function(el) {
+  el.classList.toggle('selected');
+  el.classList.remove('pop');
+  void el.offsetWidth;
+  el.classList.add('pop');
+  updateSkillsCount();
+};
 
 window.handleOverlay = function(e) {
-  if (e.target === document.getElementById('modalOverlay')) document.getElementById('modalOverlay').classList.remove('open');
+  if (e.target === document.getElementById('modalOverlay')) closeEditModal();
 };
 
 window.saveProfile = async function() {
   var user = window._currentUser;
   if (!user) return;
-  var btn = document.querySelector('.save-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  var btn = document.getElementById('editSaveBtn');
+  if (btn) { btn.disabled = true; btn.classList.add('is-saving'); btn.querySelector('.save-text').textContent = 'Saving…'; }
   var name = document.getElementById('editName').value.trim() || profileData.name;
   if (typeof formatPersonName === 'function' && name) name = formatPersonName(name);
   var bio = document.getElementById('editBio').value.trim();
-  var skills = Array.from(document.querySelectorAll('.skill-toggle.selected')).map(function(el) { return el.textContent; });
+  var skills = Array.from(document.querySelectorAll('.skill-toggle.selected')).map(function(el) { return el.getAttribute('data-skill') || el.textContent; });
 
   profileData = Object.assign({}, profileData, { name: name, bio: bio, skills: skills });
   localStorage.setItem('qg-profile-' + user.uid, JSON.stringify(profileData));
@@ -526,14 +910,28 @@ window.saveProfile = async function() {
       email: user.email || '',
       firebase_uid: user.uid,
       role: profileData.role || localStorage.getItem('qg-role') || 'poster',
-      avatar_url: profileData.avatar_url || ''
+      avatar_url: profileData.avatar_url || '',
+      bio: bio,
+      skills: skills
     });
   }
 
-  document.getElementById('modalOverlay').classList.remove('open');
-  renderProfile(user);
-  if (btn) { btn.disabled = false; btn.textContent = 'Save profile'; }
-  showToast('Profile saved! 🎉');
+  if (btn) {
+    btn.classList.remove('is-saving');
+    btn.classList.add('is-success');
+    btn.querySelector('.save-text').textContent = 'Saved! 🎉';
+  }
+
+  setTimeout(function() {
+    closeEditModal();
+    renderProfile(user);
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('is-success');
+      btn.querySelector('.save-text').textContent = 'Save profile ✨';
+    }
+    showToast('Profile saved! 🎉');
+  }, 650);
 };
 
 window.uploadAvatar = async function(input) {
@@ -565,10 +963,13 @@ window.uploadAvatar = async function(input) {
       email: user.email || '',
       firebase_uid: user.uid,
       role: profileData.role || localStorage.getItem('qg-role') || 'poster',
-      avatar_url: upload.url
+      avatar_url: upload.url,
+      bio: profileData.bio || '',
+      skills: profileData.skills || []
     });
   }
   renderProfile(user);
+  updateEditProgress();
   if (hint) hint.textContent = 'Tap photo to change';
   showToast('Profile photo updated! 📷');
 

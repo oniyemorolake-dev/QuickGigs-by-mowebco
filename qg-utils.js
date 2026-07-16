@@ -216,6 +216,22 @@ function renderUserAvatarHtml(name, avatarUrl, opts) {
   return '<div class="' + cls + '" style="background:' + bg + '" title="' + label + '" aria-label="' + label + '">' + escapeHtml(initial) + '</div>';
 }
 
+function getProfileUrl(uid) {
+  if (!uid) return 'profile.html';
+  return 'profile.html?user=' + encodeURIComponent(String(uid));
+}
+
+function profileNameLink(name, uid, opts) {
+  opts = opts || {};
+  var label = name || 'User';
+  if (!uid) return escapeHtml(label);
+  var cls = opts.className || 'profile-link';
+  var style = opts.style || 'color:inherit;text-decoration:underline;text-underline-offset:2px';
+  return '<a href="' + getProfileUrl(uid) + '" class="' + cls + '" style="' + style + '">' + escapeHtml(label) + '</a>';
+}
+
 window.avatarGradientForName = avatarGradientForName;
 window.hasProfilePhotoUrl = hasProfilePhotoUrl;
 window.renderUserAvatarHtml = renderUserAvatarHtml;
+window.getProfileUrl = getProfileUrl;
+window.profileNameLink = profileNameLink;

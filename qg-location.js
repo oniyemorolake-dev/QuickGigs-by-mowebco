@@ -50,4 +50,35 @@
   window.setUserLocation = function (city) {
     saveLocation(city);
   };
+
+  function parseLocationParts(loc) {
+    var raw = String(loc || '').trim();
+    if (!raw) return { city: '', region: '' };
+    var parts = raw.split(',').map(function (p) { return p.trim(); }).filter(Boolean);
+    return {
+      city: (parts[0] || '').toLowerCase(),
+      region: (parts[1] || parts[0] || '').toLowerCase()
+    };
+  }
+
+  /** Lower score = closer match (same city → 0, same region → 1, else → 2). */
+  window.getLocationProximityScore = function (taskLocation, userLocation) {
+    var task = parseLocationParts(taskLocation);
+    var user = parseLocationParts(userLocation || getUserLocation());
+    if (task.city && user.city && task.city === user.city) return 0;
+    if (task.region && user.region && task.region === user.region) return 1;
+    if (task.city && user.city && task.city.indexOf(user.city) >= 0) return 0;
+    if (user.city && task.city && user.city.indexOf(task.city) >= 0) return 0;
+    return 2;
+  };
+
+  window.sortTasksByProximity = function (tasks, userLocation) {
+    var loc = userLocation || getUserLocation();
+    return (tasks || []).slice().sort(function (a, b) {
+      var sa = getLocationProximityScore(a.location || a.LOCATION, loc);
+      var sb = getLocationProximityScore(b.location || b.LOCATION, loc);
+      if (sa !== sb) return sa - sb;
+      return 0;
+    });
+  };
 })();

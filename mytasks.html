@@ -180,6 +180,9 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <script src="qg-config.js"></script>
 <script src="supabase-db.js"></script>
 <script src="qg-nav.js"></script>
+<script src="qg-notifications.js"></script>
+<script src="qg-share.js"></script>
+<script src="qg-report.js"></script>
 <script>
 var navActive = (typeof isWorkerMode === 'function' && isWorkerMode()) ? 'jobs' : 'tasks';
 renderQuickGigsTabBar(navActive);
@@ -372,7 +375,7 @@ function applyExpandFromUrl() {
     var userId = window._currentUser ? window._currentUser.uid : null;
     if (!userId) return;
     allTasks.forEach(function(t) {
-      if (getField(t, 'POSTED_BY') !== userId || getField(t, 'STATUS') !== 'open') return;
+      if (getField(t, 'POSTED_BY') !== userId || taskStatus(t) !== 'open') return;
       var taskId = String(getField(t, 'TASK_ID'));
       var hasPending = allApplications.some(function(a) {
         return String(getField(a, 'TASK_ID')) === taskId &&
@@ -567,6 +570,10 @@ function getField(row,f){
   return '';
 }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function personLink(name, uid) {
+  if (uid && typeof profileNameLink === 'function') return profileNameLink(name, uid);
+  return esc(name || 'User');
+}
 
 function taskStatus(row) {
   return String(getField(row, 'STATUS') || 'open').toLowerCase();
@@ -665,7 +672,7 @@ function renderTab(){
       }) : '';
       return;
     }
-    var myTasks = allTasks.filter(function(t){ return getField(t,'POSTED_BY') === userId && getField(t,'STATUS') === 'open'; });
+    var myTasks = allTasks.filter(function(t){ return getField(t,'POSTED_BY') === userId && taskStatus(t) === 'open'; });
     if(!myTasks.length){
       content.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">Post a task here in Poster mode. Review applicants and accept a tasker — work happens on their Tasker side.</div><a class="empty-btn" href="posttask.html">Post a task</a></div>';
       return;
@@ -697,7 +704,7 @@ function renderTab(){
         else if (status === 'cancelled') rowClass += ' is-withdrawn';
         return '<div class="'+rowClass+'">'+
           '<a href="profile.html?user='+encodeURIComponent(String(workerId))+'" style="flex-shrink:0">'+avatarHtml+'</a>'+
-          '<div class="app-info"><div class="app-name">'+esc(workerName)+'</div><div class="app-msg">'+esc(getField(a,'MESSAGE'))+'</div></div>'+
+          '<div class="app-info"><div class="app-name">'+personLink(workerName, workerId)+'</div><div class="app-msg">'+esc(getField(a,'MESSAGE'))+'</div></div>'+
           '<div class="app-price">$'+getField(a,'PRICE')+'</div>'+
           renderApplicantAction(a, taskId)+
         '</div>';
@@ -773,7 +780,7 @@ function renderTab(){
         }
       }
       return '<div class="'+cardClass+'">'+
-        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">Applied · Posted by '+esc(posterName)+'</div><div class="tc-title">'+esc(getField(task,'TITLE')||'Task #'+getField(a,'TASK_ID'))+'</div></div></div>'+statusLabel+'</div>'+
+        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">Applied · Posted by '+personLink(posterName, posterId)+'</div><div class="tc-title">'+esc(getField(task,'TITLE')||'Task #'+getField(a,'TASK_ID'))+'</div></div></div>'+statusLabel+'</div>'+
         '<div class="tc-meta">Your offer: $'+getField(a,'PRICE')+' · '+esc(getField(a,'MESSAGE')).substring(0,60)+'...'+(getField(task,'CREATED_AT') && typeof formatRelativeTime === 'function' ? ' · Task posted '+esc(formatRelativeTime(getField(task,'CREATED_AT'))) : '')+'</div>'+
         actions+
       '</div>';
@@ -807,10 +814,12 @@ function renderTab(){
       var isPosterTask = getField(t,'POSTED_BY') === userId;
       var taskId = getField(t,'TASK_ID');
       var acceptedApp = findAcceptedApplication(taskId);
-      var workerName = acceptedApp ? displayName(getField(acceptedApp,'WORKER_ID'), acceptedApp) : '';
+      var workerId = acceptedApp ? getField(acceptedApp,'WORKER_ID') : '';
+      var workerName = acceptedApp ? displayName(workerId, acceptedApp) : '';
+      var posterId = getField(t,'POSTED_BY');
       var roleLabel = isPosterTask
-        ? (workerName ? 'Tasker: ' + esc(workerName) : 'Awaiting tasker')
-        : 'Posted by '+esc(displayName(getField(t,'POSTED_BY'), t));
+        ? (workerName ? 'Tasker: ' + personLink(workerName, workerId) : 'Awaiting tasker')
+        : 'Posted by '+personLink(displayName(posterId, t), posterId);
       var posterActions = isPosterTask
         ? '<button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')">💬 Message</button>' +
           '<button class="act-btn btn-success" onclick="markComplete('+JSON.stringify(String(taskId))+')">✓ Mark complete</button>' +
@@ -849,9 +858,11 @@ function renderTab(){
       var cat = getCat(t);
       var acceptedApp = findAcceptedApplication(getField(t,'TASK_ID'));
       var isPoster = getField(t,'POSTED_BY') === userId;
+      var workerId = acceptedApp ? getField(acceptedApp, 'WORKER_ID') : '';
+      var posterId = getField(t, 'POSTED_BY');
       var otherLabel = isPoster
-        ? ('Tasker: ' + esc(displayName(getField(acceptedApp,'WORKER_ID'), acceptedApp || {})))
-        : ('Poster: ' + esc(displayName(getField(t,'POSTED_BY'), t)));
+        ? ('Tasker: ' + personLink(displayName(workerId, acceptedApp || {}), workerId))
+        : ('Poster: ' + personLink(displayName(posterId, t), posterId));
       var reviewHref = buildReviewHref(t, acceptedApp);
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+otherLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-done">✓ Done</span></div>'+
@@ -917,7 +928,26 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
   }
 
   var taskStatus = await updateTaskStatus(taskId, 'in_progress');
-  if(!taskStatus.success) console.warn('Task status update failed:', taskStatus.error);
+  if (!taskStatus.success) {
+    console.error('Task status update failed:', taskStatus.error);
+    setAcceptLoading(acceptBtn, false);
+    var progMsg = typeof formatSupabaseActionError === 'function'
+      ? formatSupabaseActionError('start this task', taskStatus.error)
+      : 'Accepted applicant but could not move task to In Progress — refresh and try again.';
+    showToast(progMsg, '#ef4444');
+    return;
+  }
+
+  if (typeof notifyWorkerAccepted === 'function') {
+    try {
+      await notifyWorkerAccepted(workerId, workerUser && workerUser.email, {
+        title: getField(task, 'TITLE'),
+        TASK_ID: taskId
+      }, posterName);
+    } catch (notifyErr) {
+      console.warn('Accept notification skipped:', notifyErr);
+    }
+  }
 
   if (typeof declinePendingApplicationsForTask === 'function') {
     await declinePendingApplicationsForTask(taskId, appId);
@@ -1074,6 +1104,7 @@ window.openChatForTask = async function(taskId){
 
 window.markComplete = async function(taskId){
   taskId = String(taskId);
+  if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
   var result = await updateTaskStatus(taskId, 'completed');
   if (!result.success) {
     var msg = typeof formatSupabaseActionError === 'function'
@@ -1085,6 +1116,7 @@ window.markComplete = async function(taskId){
   allTasks.forEach(function(t) {
     if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, 'completed');
   });
+  if (typeof mergeTaskInCache === 'function') mergeTaskInCache(taskId, { status: 'completed' });
   if (typeof lockConversationsForTask === 'function') {
     await lockConversationsForTask(taskId);
   }
@@ -1097,6 +1129,28 @@ window.markComplete = async function(taskId){
   syncTabButtons();
   renderTab();
   showToast('Task complete! Please leave a review.');
+
+  if (typeof notifyTaskCompleted === 'function') {
+    try {
+      var doneTask = allTasks.find(function(t){ return String(getField(t,'TASK_ID')) === taskId; });
+      var posterId = doneTask ? getField(doneTask, 'POSTED_BY') : '';
+      var workerApp = allApplications.find(function(a){
+        return String(getField(a,'TASK_ID')) === taskId && String(getField(a,'STATUS')).toLowerCase() === 'accepted';
+      });
+      var workerId = workerApp ? getField(workerApp, 'WORKER_ID') : '';
+      if (posterId) {
+        var posterUser = await getUserByFirebaseUid(posterId);
+        await notifyTaskCompleted(posterId, posterUser && posterUser.email, { title: getField(doneTask, 'TITLE') }, 'poster');
+      }
+      if (workerId) {
+        var wUser = await getUserByFirebaseUid(workerId);
+        await notifyTaskCompleted(workerId, wUser && wUser.email, { title: getField(doneTask, 'TITLE') }, 'worker');
+      }
+    } catch (notifyErr) {
+      console.warn('Complete notification skipped:', notifyErr);
+    }
+  }
+
   await loadData();
 };
 
@@ -1159,7 +1213,8 @@ window.confirmWithdrawApplication = function(appId) {
 };
 
 window.confirmCancelPosting = function(taskId) {
-  var task = allTasks.find(function(t) { return String(getField(t, 'TASK_ID')) === String(taskId); });
+  taskId = String(taskId);
+  var task = allTasks.find(function(t) { return String(getField(t, 'TASK_ID')) === taskId; });
   var title = task ? getField(task, 'TITLE') : 'this task';
   showConfirm({
     title: 'Cancel posting?',
@@ -1167,25 +1222,34 @@ window.confirmCancelPosting = function(taskId) {
     confirmLabel: 'Cancel posting',
     onConfirm: async function() {
       if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
-      var result = await cancelTask(String(taskId));
+      var result = await cancelTask(taskId);
       if (!result.success) {
-        showToast(result.error || 'Could not cancel posting — run supabase/tasks-beta-fix.sql', '#ef4444');
+        var cancelMsg = typeof formatSupabaseActionError === 'function'
+          ? formatSupabaseActionError('cancel posting', result.error)
+          : (result.error || 'Could not cancel posting — run supabase/beta-setup-all.sql in Supabase, then refresh.');
+        showToast(cancelMsg, '#ef4444');
         return;
       }
-      if (typeof declinePendingApplicationsForTask === 'function') {
-        await declinePendingApplicationsForTask(String(taskId));
-      }
+      allTasks.forEach(function(t) {
+        if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, 'cancelled');
+      });
+      if (typeof mergeTaskInCache === 'function') mergeTaskInCache(taskId, { status: 'cancelled' });
+      activeTab = 'posted';
+      syncTabButtons();
+      renderTab();
       showToast('Posting cancelled');
-      loadData();
+      await loadData();
     }
   });
 };
 
 window.confirmChangeTasker = function(taskId) {
-  var task = allTasks.find(function(t) { return String(getField(t, 'TASK_ID')) === String(taskId); });
+  taskId = String(taskId);
+  var task = allTasks.find(function(t) { return String(getField(t, 'TASK_ID')) === taskId; });
   var acceptedApp = findAcceptedApplication(taskId);
   var title = task ? getField(task, 'TITLE') : 'this task';
-  var workerName = acceptedApp ? displayName(getField(acceptedApp, 'WORKER_ID'), acceptedApp) : 'this tasker';
+  var workerId = acceptedApp ? getField(acceptedApp, 'WORKER_ID') : '';
+  var workerName = acceptedApp ? displayName(workerId, acceptedApp) : 'this tasker';
   var appId = acceptedApp ? getField(acceptedApp, 'APP_ID') : '';
   if (!appId) {
     showToast('No assigned tasker found — refresh and try again', '#ef4444');
@@ -1199,15 +1263,29 @@ window.confirmChangeTasker = function(taskId) {
     onConfirm: async function() {
       if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
       var result = typeof releaseAcceptedTasker === 'function'
-        ? await releaseAcceptedTasker(String(taskId), String(appId))
+        ? await releaseAcceptedTasker(taskId, String(appId))
         : { success: false };
       if (!result.success) {
-        showToast(result.error || 'Could not change tasker — try again', '#ef4444');
+        var changeMsg = typeof formatSupabaseActionError === 'function'
+          ? formatSupabaseActionError('change tasker', result.error)
+          : (result.error || 'Could not change tasker — refresh and try again');
+        showToast(changeMsg, '#ef4444');
         return;
       }
-      expandedApplicantTasks[String(taskId)] = true;
+      allTasks.forEach(function(t) {
+        if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, 'open');
+      });
+      allApplications.forEach(function(a) {
+        if (String(getField(a, 'TASK_ID')) !== taskId) return;
+        if (String(getField(a, 'APP_ID')) === String(appId) || String(getField(a, 'WORKER_ID')) === String(workerId)) {
+          setRowStatus(a, 'declined');
+        }
+      });
+      if (typeof mergeTaskInCache === 'function') mergeTaskInCache(taskId, { status: 'open' });
+      expandedApplicantTasks[taskId] = true;
       activeTab = 'posted';
       syncTabButtons();
+      renderTab();
       showToast('Task reopened — pick another applicant');
       await loadData();
     }
@@ -1215,7 +1293,8 @@ window.confirmChangeTasker = function(taskId) {
 };
 
 window.confirmCancelInProgress = function(taskId) {
-  var task = allTasks.find(function(t) { return String(getField(t, 'TASK_ID')) === String(taskId); });
+  taskId = String(taskId);
+  var task = allTasks.find(function(t) { return String(getField(t, 'TASK_ID')) === taskId; });
   var title = task ? getField(task, 'TITLE') : 'this task';
   showConfirm({
     title: 'Cancel this task?',
@@ -1223,13 +1302,23 @@ window.confirmCancelInProgress = function(taskId) {
     confirmLabel: 'Cancel task',
     onConfirm: async function() {
       if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
-      var result = await cancelTask(String(taskId));
+      var result = await cancelTask(taskId);
       if (!result.success) {
-        showToast(result.error || 'Could not cancel task — run supabase/tasks-beta-fix.sql', '#ef4444');
+        var cancelMsg = typeof formatSupabaseActionError === 'function'
+          ? formatSupabaseActionError('cancel task', result.error)
+          : (result.error || 'Could not cancel task — run supabase/beta-setup-all.sql in Supabase, then refresh.');
+        showToast(cancelMsg, '#ef4444');
         return;
       }
+      allTasks.forEach(function(t) {
+        if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, 'cancelled');
+      });
+      if (typeof mergeTaskInCache === 'function') mergeTaskInCache(taskId, { status: 'cancelled' });
+      activeTab = 'posted';
+      syncTabButtons();
+      renderTab();
       showToast('Task cancelled');
-      loadData();
+      await loadData();
     }
   });
 };

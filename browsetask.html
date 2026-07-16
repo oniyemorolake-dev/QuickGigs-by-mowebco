@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
 <link rel="stylesheet" href="qg-role-theme.css">
+<link rel="stylesheet" href="qg-features.css">
 <script src="qg-brand-init.js"></script>
 <script>document.documentElement.setAttribute('data-qg-mode','worker');</script>
 <style>
@@ -44,11 +45,35 @@ body.light .mode-btn{background:#f0eeff;color:var(--purple);}
 .avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#c8a8e9);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:#fff;}
 body.light .avatar{color:#2d1b4e;}
 .search-wrap{padding:14px 18px 0;background:var(--nav-bg);transition:background 0.25s;}
-.search-box{display:flex;align-items:center;gap:8px;background:var(--input-bg);border:0.5px solid var(--border);border-radius:14px;padding:11px 15px;}
-.search-box:focus-within{border-color:var(--purple-light);}
-.search-icon{color:var(--purple-light);opacity:0.5;font-size:16px;flex-shrink:0;}
-.search-input{flex:1;background:none;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);}
+.search-form{margin:0;}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--input-bg);border:0.5px solid var(--border);border-radius:14px;padding:11px 15px;transition:border-color 0.2s,box-shadow 0.2s;}
+.search-box:focus-within{border-color:var(--purple-light);box-shadow:0 0 0 3px rgba(107,63,160,0.12);}
+.search-icon{color:var(--purple-light);opacity:0.5;font-size:16px;flex-shrink:0;pointer-events:none;}
+.search-input{
+  flex:1;min-width:0;background:transparent!important;border:none!important;outline:none!important;
+  box-shadow:none!important;-webkit-appearance:none;appearance:none;
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);
+}
+.search-input:focus,.search-input:focus-visible{outline:none!important;border:none!important;box-shadow:none!important;}
 .search-input::placeholder{color:var(--lavender);opacity:0.35;}
+.location-filter-row{margin-top:10px;}
+.loc-filter-label{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);display:block;margin-bottom:6px;}
+.location-filter-box{display:flex;align-items:center;gap:8px;background:var(--input-bg);border:0.5px solid var(--border);border-radius:14px;padding:9px 12px;}
+.location-filter-box:focus-within{border-color:var(--purple-light);box-shadow:0 0 0 3px rgba(107,63,160,0.12);}
+.location-filter-input{
+  flex:1;min-width:0;background:transparent!important;border:none!important;outline:none!important;
+  box-shadow:none!important;-webkit-appearance:none;appearance:none;
+  font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);
+}
+.location-filter-input:focus,.location-filter-input:focus-visible{outline:none!important;border:none!important;box-shadow:none!important;}
+.location-filter-input::placeholder{color:var(--text-faint);opacity:0.8;}
+.loc-near-btn{
+  flex-shrink:0;padding:6px 12px;border-radius:999px;border:0.5px solid var(--border);
+  background:rgba(107,63,160,0.18);color:var(--lavender);font-family:'DM Sans',sans-serif;
+  font-size:11px;font-weight:500;cursor:pointer;white-space:nowrap;transition:all 0.18s;
+}
+.loc-near-btn.active{background:var(--purple);color:#fff;border-color:var(--purple-light);}
+body.light .loc-near-btn.active{color:#fff;}
 .mode-row{padding:12px 18px 0;background:var(--nav-bg);display:flex;gap:7px;overflow-x:auto;}
 .light .mode-row{background:#f0eeff;border-radius:12px;margin:8px 18px 0;padding:10px;}
 .mode-row::-webkit-scrollbar{display:none;}
@@ -157,9 +182,35 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   </div>
 </nav>
 <div class="search-wrap">
-  <div class="search-box">
-    <span class="search-icon">🔍</span>
-    <input class="search-input" id="searchInput" placeholder="Search tasks near you..." oninput="applyFilters()">
+  <form class="search-form" autocomplete="off" onsubmit="return false" role="search">
+    <div class="search-box">
+      <span class="search-icon" aria-hidden="true">🔍</span>
+      <label class="sr-only" for="searchInput">Search tasks</label>
+      <input class="search-input" id="searchInput" type="text" name="qg-browse-q"
+        placeholder="Search tasks…"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        data-lpignore="true" data-1p-ignore="true" data-form-type="other"
+        readonly onfocus="this.removeAttribute('readonly')"
+        oninput="applyFilters()">
+    </div>
+  </form>
+  <div class="location-filter-row">
+    <span class="loc-filter-label" id="locationFilterLabel">Filter by location</span>
+    <div class="location-filter-box">
+      <span aria-hidden="true">📍</span>
+      <label class="sr-only" for="locationFilter">Filter by location</label>
+      <input class="location-filter-input" id="locationFilter" type="text" name="qg-browse-loc"
+        placeholder="City, Province"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        data-lpignore="true" data-1p-ignore="true" data-form-type="other"
+        readonly onfocus="this.removeAttribute('readonly')"
+        oninput="applyFilters()"
+        onchange="if(typeof setUserLocation==='function') setUserLocation(this.value.trim())">
+      <button type="button" class="loc-near-btn" id="nearMeBtn" onclick="toggleNearMe()" aria-pressed="false">Near me</button>
+    </div>
+  </div>
+  <div style="padding:10px 0 0;display:flex;justify-content:flex-end">
+    <a href="categories.html" style="font-size:12px;color:var(--lavender,#c8a8e9);text-decoration:none">Browse categories →</a>
   </div>
 </div>
 <div class="mode-row" id="modeRow">
@@ -195,9 +246,10 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 </div>
 <div class="results-bar">
   <span class="results-txt" id="resultsCount">Loading tasks...</span>
-  <select class="sort-sel" onchange="applyFilters()">
-    <option>Newest first</option>
-    <option>Highest pay</option>
+  <select class="sort-sel" id="sortSel" onchange="applyFilters()" aria-label="Sort tasks">
+    <option value="newest">Newest first</option>
+    <option value="nearest">Nearest first</option>
+    <option value="pay">Highest pay</option>
   </select>
 </div>
 <div class="cards-area" id="cardsArea">
@@ -255,6 +307,9 @@ onAuthStateChanged(auth, (user) => {
   authChecked = true;
   clearTimeout(redirectTimeout);
   if (!user) { window.location.href = 'login.html'; return; }
+  if (typeof enforceBanOnLogin === 'function') {
+    enforceBanOnLogin(user).then(function (check) { if (!check.ok) return; });
+  }
   const name = user.displayName || user.email.split('@')[0];
   document.getElementById('avatarEl').textContent = name.charAt(0).toUpperCase();
   window._currentUser = user;
@@ -262,7 +317,9 @@ onAuthStateChanged(auth, (user) => {
   if (typeof ensureTaskerProfilePhoto === 'function') {
     ensureTaskerProfilePhoto().then(function(check) {
       var banner = document.getElementById('photoRequiredBanner');
-      if (banner) banner.style.display = check.ok ? 'none' : 'flex';
+      if (!banner) return;
+      var isTasker = typeof isWorkerMode === 'function' && isWorkerMode();
+      banner.style.display = (isTasker && !check.ok) ? 'flex' : 'none';
     });
   }
   if (typeof window.reloadBrowseTasks === 'function') window.reloadBrowseTasks();
@@ -271,25 +328,17 @@ onAuthStateChanged(auth, (user) => {
 
 <script src="qg-utils.js"></script>
 <script src="qg-config.js"></script>
+<script src="qg-categories.js"></script>
 <script src="supabase-db.js"></script>
 <script src="qg-location.js"></script>
+<script src="qg-pwa.js"></script>
+<script src="qg-notifications.js"></script>
+<script src="qg-share.js"></script>
+<script src="qg-report.js"></script>
+<script src="qg-stats.js"></script>
 <script>
 function esc(s){return window.escapeHtml(s);}
-var CAT_MAP = {
-  'errands':{label:'Errands',icon:'🚗',bg:'rgba(251,191,36,0.15)'},
-  'home':{label:'Home',icon:'🏠',bg:'rgba(107,63,160,0.2)'},
-  'tutoring':{label:'Tutoring',icon:'🎓',bg:'rgba(74,222,128,0.1)'},
-  'beauty':{label:'Beauty',icon:'💇',bg:'rgba(200,168,233,0.15)'},
-  'moving':{label:'Moving',icon:'🚚',bg:'rgba(107,63,160,0.2)'},
-  'cooking':{label:'Cooking',icon:'🍳',bg:'rgba(251,191,36,0.12)'},
-  'tech':{label:'Tech',icon:'💻',bg:'rgba(107,63,160,0.2)'},
-  'care':{label:'Care',icon:'👶',bg:'rgba(74,222,128,0.1)'},
-  'gardening':{label:'Gardening',icon:'🌿',bg:'rgba(74,222,128,0.08)'},
-  'events':{label:'Events',icon:'🎉',bg:'rgba(200,168,233,0.15)'},
-  'trades':{label:'Trades',icon:'🔧',bg:'rgba(107,63,160,0.2)'},
-  'other':{label:'Other',icon:'📦',bg:'rgba(255,255,255,0.06)'},
-};
-function getCatInfo(cat){ var k=(cat||'').toLowerCase().trim(); return CAT_MAP[k]||{label:cat||'Other',icon:'📦',bg:'rgba(255,255,255,0.06)'}; }
+var CAT_MAP = window.QG_CAT_MAP || {};
 function normaliseTask(row){
   var catInfo=getCatInfo(row.CATEGORY||row.category);
   var mode=(row.TASK_MODE||row.task_mode||'standard').toLowerCase();
@@ -324,6 +373,39 @@ var allTasks=[],activeMode='all',activeCat='all',activeTask=null;
 var userNames={};
 var dbSubmitApplication = window.submitApplication;
 var isDark=localStorage.getItem('qg-mode')!=='light';
+window._nearMeOnly=false;
+
+function taskMatchesLocation(task, filterLoc, nearMeOnly) {
+  if (!filterLoc && !nearMeOnly) return true;
+  var ref = nearMeOnly && typeof getUserLocation === 'function' ? getUserLocation() : filterLoc;
+  if (!ref) return true;
+  if (typeof getLocationProximityScore !== 'function') {
+    return String(task.location || '').toLowerCase().indexOf(String(ref).split(',')[0].trim().toLowerCase()) >= 0;
+  }
+  var score = getLocationProximityScore(task.location, ref);
+  if (nearMeOnly) return score === 0;
+  return score <= 1;
+}
+
+window.toggleNearMe=function(){
+  window._nearMeOnly=!window._nearMeOnly;
+  var btn=document.getElementById('nearMeBtn');
+  if(btn){
+    btn.classList.toggle('active',window._nearMeOnly);
+    btn.setAttribute('aria-pressed',window._nearMeOnly?'true':'false');
+  }
+  if(window._nearMeOnly&&typeof getUserLocation==='function'){
+    var locEl=document.getElementById('locationFilter');
+    if(locEl) locEl.value=getUserLocation();
+  }
+  renderCards();
+};
+
+function syncLocationFilterDefault(){
+  var locEl=document.getElementById('locationFilter');
+  if(!locEl||locEl.value.trim()) return;
+  if(typeof getUserLocation==='function') locEl.value=getUserLocation();
+}
 
 async function hydratePosterNames() {
   var uids = {};
@@ -424,24 +506,50 @@ function renderCardIcon(t) {
 
 function renderCards(){
   var search=(document.getElementById('searchInput').value||'').toLowerCase().trim();
+  var locFilter=(document.getElementById('locationFilter').value||'').trim();
+  var sortVal = (document.getElementById('sortSel') && document.getElementById('sortSel').value) || 'newest';
   var filtered=allTasks.filter(function(t){
-    return (activeMode==='all'||t.mode===activeMode)&&(activeCat==='all'||t.cat===activeCat)&&(!search||t.title.toLowerCase().includes(search)||t.catLabel.toLowerCase().includes(search)||t.desc.toLowerCase().includes(search));
+    if (activeMode!=='all'&&t.mode!==activeMode) return false;
+    if (activeCat!=='all'&&t.cat!==activeCat) return false;
+    if (!taskMatchesLocation(t, locFilter, window._nearMeOnly)) return false;
+    if (!search) return true;
+    var hay = (t.title+' '+t.catLabel+' '+t.desc+' '+(t.posterName||'')).toLowerCase();
+    return hay.indexOf(search) >= 0;
   });
-  var city = window.getUserCityLabel ? window.getUserCityLabel() : 'Calgary';
-  document.getElementById('resultsCount').textContent=filtered.length+' task'+(filtered.length!==1?'s':'')+' near '+city;
+  if (sortVal === 'nearest' && typeof sortTasksByProximity === 'function') {
+    filtered = sortTasksByProximity(filtered, locFilter || (typeof getUserLocation==='function'?getUserLocation():''));
+  } else if (sortVal === 'pay') {
+    filtered = filtered.slice().sort(function(a,b){ return (b.price||0)-(a.price||0); });
+  }
+  var cityLabel = locFilter ? locFilter.split(',')[0].trim() : (window.getUserCityLabel ? window.getUserCityLabel() : 'Calgary');
+  document.getElementById('resultsCount').textContent=filtered.length+' task'+(filtered.length!==1?'s':'')+' near '+cityLabel;
   var area=document.getElementById('cardsArea');
+  if (!filtered.length && (locFilter || window._nearMeOnly) && allTasks.length) {
+    area.innerHTML='<div class="empty-state"><div class="empty-emoji">📍</div><p class="empty-txt">No tasks in this location — try a nearby city or turn off Near me</p></div>';
+    return;
+  }
   if(!filtered.length){area.innerHTML='<div class="empty-state"><div class="empty-emoji">🔍</div><p class="empty-txt">'+(allTasks.length===0?'No tasks posted yet — be the first!':'No tasks match this filter')+'</p></div>';return;}
   area.innerHTML=filtered.map(function(t){
     var desc = (t.desc || '').trim();
     var descHtml = desc ? '<p class="tc-desc">'+esc(desc)+'</p>' : '<p class="tc-desc is-empty"></p>';
     var loc = formatLocationDisplay(t.location);
     var whenPart = t.when ? ' · 🕐 '+esc(t.when) : '';
-    return '<div class="task-card">'+
+    var posterLabel = (t.posterId && typeof profileNameLink === 'function')
+      ? profileNameLink(t.posterName, t.posterId)
+      : esc(t.posterName);
+    var shareBtn = typeof shareButtonHtml === 'function' ? shareButtonHtml('task', t.id, t.title) : '';
+    var reportBtn = typeof reportButtonHtml === 'function' ? reportButtonHtml('task', t.id, t.title) : '';
+    return '<div class="task-card" data-task-id="'+esc(String(t.id))+'">'+
       '<div class="tc-top"><div class="tc-left">'+renderCardIcon(t)+'<div class="tc-meta"><p class="tc-cat">'+esc(t.catLabel)+'</p><p class="tc-title">'+esc(t.title)+'</p></div></div>'+getBadge(t.mode)+'</div>'+
       descHtml+
-      '<div class="tc-bottom"><div><div class="tc-price">'+esc(t.priceLabel)+'</div><div class="tc-info">👤 '+esc(t.posterName)+' · 📍 '+esc(loc)+whenPart+' · '+esc(t.posted)+(t.applicants>0?' · '+t.applicants+' applied':'')+'</div></div>'+
+      '<div class="tc-bottom"><div><div class="tc-price">'+esc(t.priceLabel)+'</div><div class="tc-info">👤 '+posterLabel+' · 📍 '+esc(loc)+whenPart+' · '+esc(t.posted)+(t.applicants>0?' · '+t.applicants+' applied':'')+'</div>'+
+      '<div class="qg-action-row">'+shareBtn+reportBtn+'</div></div>'+
       '<button class="apply-btn '+getBtnClass(t.mode)+'" onclick="openModal(\''+t.id+'\',event)">'+getBtnLabel(t.mode)+'</button></div></div>';
   }).join('');
+  if (typeof bindShareTriggers === 'function') {
+    bindShareTriggers(area, function(id){ return allTasks.find(function(t){ return String(t.id)===String(id); }); });
+  }
+  if (typeof bindReportTriggers === 'function') bindReportTriggers(area);
 }
 
 window.setMode=function(el,mode){document.querySelectorAll('.mpill').forEach(function(p){p.className='mpill';});activeMode=mode;el.className='mpill active-'+mode;renderCards();};
@@ -603,7 +711,31 @@ window.reloadBrowseTasks = loadTasks;
 window.toggleMode=function(){isDark=!isDark;applyTheme();};
 function applyTheme(){window.QG_applyTheme(isDark,'modeBtn',false);localStorage.setItem('qg-mode',isDark?'dark':'light');}
 applyTheme();
-initUserLocation().then(function(){ renderCards(); });
+initUserLocation().then(function(loc){
+  syncLocationFilterDefault();
+  renderCards();
+});
+
+(function applyBrowseUrlParams(){
+  var params = new URLSearchParams(window.location.search);
+  var cat = params.get('cat');
+  if (cat) {
+    activeCat = cat.toLowerCase();
+    document.querySelectorAll('.cpill').forEach(function(p){
+      p.classList.remove('cat-active');
+      if ((p.getAttribute('onclick')||'').indexOf("'"+activeCat+"'")>=0) p.classList.add('cat-active');
+    });
+  }
+  var taskId = params.get('task');
+  if (taskId) {
+    var tryOpen = function(){
+      var t = allTasks.find(function(x){ return String(x.id)===String(taskId); });
+      if (t) openModal(t.id, { stopPropagation: function(){} });
+    };
+    setTimeout(tryOpen, 800);
+  }
+})();
+
 loadTasks();
 </script>
 </body>

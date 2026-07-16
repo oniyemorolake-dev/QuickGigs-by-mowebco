@@ -49,7 +49,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 /* NAV */
 .nav{background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:12px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0;transition:background 0.25s;}
 .back-btn{font-size:20px;color:var(--purple-light);cursor:pointer;text-decoration:none;flex-shrink:0;}
-.nav-center{flex:1;min-width:0;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.nav-center{flex:1;min-width:0;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none;color:inherit;}
+.nav-center:hover .nav-name{text-decoration:underline;text-underline-offset:3px;}
 .nav-avatar-row{display:flex;align-items:center;justify-content:center;gap:8px;max-width:100%;}
 .nav-chat-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#fff;flex-shrink:0;background-size:cover;background-position:center;}
 .nav-chat-avatar.has-photo{color:transparent;}
@@ -140,13 +141,13 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <!-- NAV -->
 <nav class="nav">
   <a class="back-btn" href="messages.html">←</a>
-  <div class="nav-center">
+  <a class="nav-center" id="chatProfileLink" href="profile.html">
     <div class="nav-avatar-row">
       <div id="chatAvatar"></div>
       <div class="nav-name" id="chatName">Sarah K.</div>
     </div>
     <div class="nav-sub" id="chatSub">Applied to your task</div>
-  </div>
+  </a>
   <div class="nav-right">
     <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
   </div>
@@ -362,6 +363,13 @@ async function initChat(){
   window._chatIsPoster = isPoster;
 
   document.getElementById('chatName').textContent = otherName;
+  var profileLink = document.getElementById('chatProfileLink');
+  if (profileLink && otherUid) {
+    profileLink.href = typeof getProfileUrl === 'function'
+      ? getProfileUrl(otherUid)
+      : ('profile.html?user=' + encodeURIComponent(otherUid));
+    profileLink.title = 'View ' + otherName + '\'s profile';
+  }
   document.getElementById('chatSub').textContent = isPoster
     ? 'Tasker · ' + (currentConv.task_title || 'Your task')
     : 'Poster · ' + (currentConv.task_title || 'Task');
