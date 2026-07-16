@@ -277,6 +277,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   </div>
   <div class="avatar-edit-hint" id="avatarHint" style="display:none">Tap photo to change</div>
   <div class="profile-name" id="profileName">Loading...</div>
+  <div id="verifiedBadgeWrap"></div>
   <div class="role-tags" id="roleTags"></div>
   <div id="trustBadges"></div>
   <div class="rating-row">
@@ -719,6 +720,11 @@ async function loadProfile(user) {
     var trustEl = document.getElementById('trustBadges');
     if (trustEl && typeof renderTrustBadges === 'function') {
       trustEl.innerHTML = renderTrustBadges(trustStats);
+    }
+    if (typeof isWorkerVerified === 'function' && typeof renderVerifiedBadge === 'function') {
+      var verified = await isWorkerVerified(targetId, dbUser, trustStats);
+      var vWrap = document.getElementById('verifiedBadgeWrap');
+      if (vWrap) vWrap.innerHTML = verified ? renderVerifiedBadge(true) : '';
     }
   }
 

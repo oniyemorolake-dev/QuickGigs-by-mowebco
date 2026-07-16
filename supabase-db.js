@@ -219,13 +219,18 @@ async function sbUpdate(table, data, filters) {
       throw new Error('PATCH failed: ' + res.status + (errText ? ' ' + errText : ''));
     }
     var rows = [];
+    var bodyText = '';
     try {
-      rows = await res.json();
+      bodyText = await res.text();
+      if (bodyText) rows = JSON.parse(bodyText);
     } catch (parseErr) {
       rows = [];
     }
-    if (rows && rows.length) {
+    if (Array.isArray(rows) && rows.length) {
       return { success: true, data: rows };
+    }
+    if (res.status === 204) {
+      return { success: true, data: [], minimal: true };
     }
     return { success: false, error: 'No matching row updated', notFound: true };
   } catch (err) {
@@ -236,7 +241,13 @@ async function sbUpdate(table, data, filters) {
 
 async function tryPatchRow(table, patch, filters, verifyFn) {
   var result = await sbUpdate(table, patch, filters);
-  if (result.success) return result;
+  if (result.success) {
+    if (result.minimal && typeof verifyFn === 'function') {
+      if (await verifyFn()) return result;
+      return { success: false, error: 'Update could not be verified — refresh and try again' };
+    }
+    return result;
+  }
   try {
     var url = SUPABASE_URL + '/rest/v1/' + table + '?' + filters;
     var headers = await getSupabaseHeaders({ 'Prefer': 'return=minimal' });
@@ -544,11 +555,27 @@ function buildTaskIdFilters(taskId, taskRow) {
   return filters;
 }
 
+function buildTaskIdOrFilter(taskId, taskRow) {
+  var singles = buildTaskIdFilters(taskId, taskRow);
+  var parts = [];
+  var seen = {};
+  singles.forEach(function (f) {
+    var m = f.match(/^(task_id|id)=eq\.(.+)$/);
+    if (!m) return;
+    var piece = m[1] + '.eq.' + m[2];
+    if (!seen[piece]) { seen[piece] = true; parts.push(piece); }
+  });
+  if (!parts.length) return null;
+  return 'or=(' + parts.join(',') + ')';
+}
+
 async function updateTaskStatus(taskId, status) {
   var statusVal = String(status || '').toLowerCase();
   var patch = { status: statusVal };
   var task = await getTaskById(taskId);
   var filters = buildTaskIdFilters(taskId, task);
+  var orFilter = buildTaskIdOrFilter(taskId, task);
+  if (orFilter && filters.indexOf(orFilter) === -1) filters.unshift(orFilter);
   var result = { success: false, error: 'Could not update task — refresh and try again' };
   for (var i = 0; i < filters.length; i++) {
     result = await tryPatchRow('tasks', patch, filters[i], async function () {
@@ -1333,8 +1360,38 @@ async function cancelTask(taskId) {
     if (typeof lockConversationsForTask === 'function') {
       await lockConversationsForTask(taskId);
     }
+    invalidateTasksCache();
   }
   return result;
+}
+
+/** Mark task + accepted application completed — used by both poster and tasker. */
+async function completeTask(taskId) {
+  taskId = String(taskId);
+  if (!taskId) return { success: false, error: 'Missing task id' };
+
+  var taskResult = await updateTaskStatus(taskId, 'completed');
+  if (!taskResult.success) return taskResult;
+
+  var apps = await getApplicationsByTask(taskId);
+  var accepted = (apps || []).find(function (a) {
+    return String(a.status || a.STATUS || '').toLowerCase() === 'accepted';
+  });
+  if (accepted) {
+    var appId = accepted.app_id || accepted.APP_ID || accepted.id;
+    var workerId = accepted.worker_id || accepted.WORKER_ID;
+    await updateApplicationStatus(appId, 'completed', {
+      taskId: taskId,
+      workerId: workerId
+    });
+  }
+
+  if (typeof lockConversationsForTask === 'function') {
+    await lockConversationsForTask(taskId);
+  }
+  invalidateTasksCache();
+  mergeTaskInCache(taskId, { status: 'completed', STATUS: 'completed' });
+  return { success: true };
 }
 
 /** Poster releases current tasker — task reopens for other applicants. */
@@ -1548,6 +1605,7 @@ window.formatUploadError = formatUploadError;
 window.cancelApplication = cancelApplication;
 window.declineApplication = declineApplication;
 window.cancelTask = cancelTask;
+window.completeTask = completeTask;
 window.releaseAcceptedTasker = releaseAcceptedTasker;
 window.declinePendingApplicationsForTask = declinePendingApplicationsForTask;
 window.getReviewsForUser = getReviewsForUser;

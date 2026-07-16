@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
 <link rel="stylesheet" href="qg-role-theme.css">
+<link rel="stylesheet" href="qg-features.css">
 <script src="qg-brand-init.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -46,6 +47,10 @@ body.light .task-card{box-shadow:0 1px 3px rgba(107,63,160,0.08);}
 .tc-left{display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0;}
 .tc-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
 .tc-cat{font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);margin-bottom:3px;}
+.tc-cat a.profile-link,.tc-cat .profile-link{color:var(--purple-light,#9b6fc4)!important;text-decoration:underline;text-underline-offset:2px;font-weight:500;}
+body.light .tc-cat a.profile-link,body.light .tc-cat .profile-link{color:var(--purple,#6b3fa0)!important;}
+.tc-profile-tap{text-decoration:none;flex-shrink:0;border-radius:12px;transition:transform 0.15s;}
+.tc-profile-tap:hover{transform:scale(1.04);}
 .tc-title{font-size:15px;font-weight:500;color:var(--text);line-height:1.4;}
 .tc-badge{padding:3px 9px;border-radius:20px;font-size:9px;font-weight:500;white-space:nowrap;flex-shrink:0;}
 .badge-open{background:rgba(107,63,160,0.2);color:#9b6fc4;}
@@ -183,6 +188,8 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <script src="qg-notifications.js"></script>
 <script src="qg-share.js"></script>
 <script src="qg-report.js"></script>
+<script src="qg-stats.js"></script>
+<script src="qg-disputes.js"></script>
 <script>
 var navActive = (typeof isWorkerMode === 'function' && isWorkerMode()) ? 'jobs' : 'tasks';
 renderQuickGigsTabBar(navActive);
@@ -192,6 +199,7 @@ var activeTab = 'posted';
 var allTasks = [], allApplications = [];
 var userNames = {};
 var userAvatars = {};
+var workerVerifiedMap = {};
 var expandedApplicantTasks = {};
 var isDark = localStorage.getItem('qg-mode') !== 'light';
 var TAB_IDS = { posted: 'tabPosted', applied: 'tabApplied', inprogress: 'tabInprogress', completed: 'tabCompleted' };
@@ -412,14 +420,21 @@ async function hydrateApplicantAvatars() {
   var uids = {};
   allApplications.forEach(function(a) {
     var wid = getField(a, 'WORKER_ID');
-    if (!wid || userAvatars[String(wid)]) return;
+    if (!wid) return;
     uids[String(wid)] = true;
   });
   var keys = Object.keys(uids);
-  if (!keys.length || typeof getUserAvatarUrl !== 'function') return;
+  if (!keys.length) return;
   for (var i = 0; i < keys.length; i++) {
-    var url = await getUserAvatarUrl(keys[i]);
-    if (url) userAvatars[keys[i]] = url;
+    var uid = keys[i];
+    if (!userAvatars[uid] && typeof getUserAvatarUrl === 'function') {
+      var url = await getUserAvatarUrl(uid);
+      if (url) userAvatars[uid] = url;
+    }
+    if (typeof isWorkerVerified === 'function') {
+      var dbUser = typeof getUserByFirebaseUid === 'function' ? await getUserByFirebaseUid(uid) : null;
+      workerVerifiedMap[uid] = await isWorkerVerified(uid, dbUser, null);
+    }
   }
 }
 
@@ -571,8 +586,21 @@ function getField(row,f){
 }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function personLink(name, uid) {
-  if (uid && typeof profileNameLink === 'function') return profileNameLink(name, uid);
+  if (uid && typeof profileNameLink === 'function') return profileNameLink(name, uid, { className: 'profile-link' });
   return esc(name || 'User');
+}
+
+function personLinkWithBadge(name, uid) {
+  var link = personLink(name, uid);
+  if (uid && workerVerifiedMap[String(uid)] && typeof renderVerifiedBadge === 'function') {
+    return link + ' ' + renderVerifiedBadge(true);
+  }
+  return link;
+}
+
+function profileTapIcon(uid, fallbackHtml) {
+  if (!uid || typeof getProfileUrl !== 'function') return fallbackHtml;
+  return '<a class="tc-profile-tap" href="' + getProfileUrl(uid) + '" aria-label="View profile">' + fallbackHtml + '</a>';
 }
 
 function taskStatus(row) {
@@ -704,7 +732,7 @@ function renderTab(){
         else if (status === 'cancelled') rowClass += ' is-withdrawn';
         return '<div class="'+rowClass+'">'+
           '<a href="profile.html?user='+encodeURIComponent(String(workerId))+'" style="flex-shrink:0">'+avatarHtml+'</a>'+
-          '<div class="app-info"><div class="app-name">'+personLink(workerName, workerId)+'</div><div class="app-msg">'+esc(getField(a,'MESSAGE'))+'</div></div>'+
+          '<div class="app-info"><div class="app-name">'+personLinkWithBadge(workerName, workerId)+'</div><div class="app-msg">'+esc(getField(a,'MESSAGE'))+'</div></div>'+
           '<div class="app-price">$'+getField(a,'PRICE')+'</div>'+
           renderApplicantAction(a, taskId)+
         '</div>';
@@ -779,8 +807,8 @@ function renderTab(){
           actions = '<div class="action-row"><span class="tc-meta" style="margin:0">Waiting for poster payment to unlock chat</span></div>';
         }
       }
-      return '<div class="'+cardClass+'">'+
-        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">Applied · Posted by '+personLink(posterName, posterId)+'</div><div class="tc-title">'+esc(getField(task,'TITLE')||'Task #'+getField(a,'TASK_ID'))+'</div></div></div>'+statusLabel+'</div>'+
+        return '<div class="'+cardClass+'">'+
+        '<div class="tc-top"><div class="tc-left">'+profileTapIcon(posterId, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">Applied · Posted by '+personLink(posterName, posterId)+'</div><div class="tc-title">'+esc(getField(task,'TITLE')||'Task #'+getField(a,'TASK_ID'))+'</div></div></div>'+statusLabel+'</div>'+
         '<div class="tc-meta">Your offer: $'+getField(a,'PRICE')+' · '+esc(getField(a,'MESSAGE')).substring(0,60)+'...'+(getField(task,'CREATED_AT') && typeof formatRelativeTime === 'function' ? ' · Task posted '+esc(formatRelativeTime(getField(task,'CREATED_AT'))) : '')+'</div>'+
         actions+
       '</div>';
@@ -818,21 +846,28 @@ function renderTab(){
       var workerName = acceptedApp ? displayName(workerId, acceptedApp) : '';
       var posterId = getField(t,'POSTED_BY');
       var roleLabel = isPosterTask
-        ? (workerName ? 'Tasker: ' + personLink(workerName, workerId) : 'Awaiting tasker')
+        ? (workerName ? 'Tasker: ' + personLinkWithBadge(workerName, workerId) : 'Awaiting tasker')
         : 'Posted by '+personLink(displayName(posterId, t), posterId);
+      var otherUserId = isPosterTask ? workerId : posterId;
+      var otherName = isPosterTask ? workerName : displayName(posterId, t);
+      var iconHtml = profileTapIcon(otherUserId, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>');
+      var disputeBtn = typeof disputeButtonHtml === 'function'
+        ? disputeButtonHtml(taskId, getField(t,'TITLE'), otherUserId, otherName)
+        : '';
       var posterActions = isPosterTask
         ? '<button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')">💬 Message</button>' +
-          '<button class="act-btn btn-success" onclick="markComplete('+JSON.stringify(String(taskId))+')">✓ Mark complete</button>' +
+          '<button class="act-btn btn-success" onclick="markComplete('+JSON.stringify(String(taskId))+', this)">✓ Mark complete</button>' +
           '<button class="act-btn btn-primary" onclick="confirmChangeTasker('+JSON.stringify(String(taskId))+')">↩ Change tasker</button>' +
           '<button class="act-btn btn-danger" onclick="confirmCancelInProgress('+JSON.stringify(String(taskId))+')">✕ Cancel task</button>'
         : '';
       var workerActions = !isPosterTask
         ? '<button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')">💬 Message poster</button>' +
-          '<button class="act-btn btn-success" onclick="markComplete('+JSON.stringify(String(taskId))+')">✓ Mark complete</button>'
+          '<button class="act-btn btn-success" onclick="markComplete('+JSON.stringify(String(taskId))+', this)">✓ Mark complete</button>'
         : '';
       return '<div class="task-card">'+
-        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+roleLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-progress">⏳ In progress</span></div>'+
+        '<div class="tc-top"><div class="tc-left">'+iconHtml+'<div><div class="tc-cat">'+roleLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-progress">⏳ In progress</span></div>'+
         '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+'</div>'+
+        '<div class="qg-action-row">'+disputeBtn+'</div>'+
         '<div class="action-row">' + posterActions + workerActions + '</div>'+
       '</div>';
     }).join('');
@@ -861,16 +896,24 @@ function renderTab(){
       var workerId = acceptedApp ? getField(acceptedApp, 'WORKER_ID') : '';
       var posterId = getField(t, 'POSTED_BY');
       var otherLabel = isPoster
-        ? ('Tasker: ' + personLink(displayName(workerId, acceptedApp || {}), workerId))
+        ? ('Tasker: ' + personLinkWithBadge(displayName(workerId, acceptedApp || {}), workerId))
         : ('Poster: ' + personLink(displayName(posterId, t), posterId));
       var reviewHref = buildReviewHref(t, acceptedApp);
+      var otherUid = isPoster ? workerId : posterId;
+      var otherNm = isPoster ? displayName(workerId, acceptedApp || {}) : displayName(posterId, t);
+      var disputeBtn = typeof disputeButtonHtml === 'function'
+        ? disputeButtonHtml(getField(t,'TASK_ID'), getField(t,'TITLE'), otherUid, otherNm)
+        : '';
       return '<div class="task-card">'+
-        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+otherLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-done">✓ Done</span></div>'+
+        '<div class="tc-top"><div class="tc-left">'+profileTapIcon(otherUid, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">'+otherLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-done">✓ Done</span></div>'+
         '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+'</div>'+
+        '<div class="qg-action-row">'+disputeBtn+'</div>'+
         '<div class="action-row"><a class="act-btn btn-review" href="'+reviewHref+'">⭐ Leave a review</a></div>'+
       '</div>';
     }).join('');
   }
+
+  if (typeof bindDisputeTriggers === 'function') bindDisputeTriggers(content);
 }
 
 window.acceptApplicant = async function(taskId, appId, acceptBtn){
@@ -1102,11 +1145,13 @@ window.openChatForTask = async function(taskId){
   setTimeout(function(){ window.location.href = 'messages.html'; }, 1200);
 };
 
-window.markComplete = async function(taskId){
+window.markComplete = async function(taskId, btn){
   taskId = String(taskId);
-  if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
-  var result = await updateTaskStatus(taskId, 'completed');
+  if (btn) { btn.disabled = true; btn.textContent = 'Completing…'; }
+  var completeFn = typeof completeTask === 'function' ? completeTask : function(id) { return updateTaskStatus(id, 'completed'); };
+  var result = await completeFn(taskId);
   if (!result.success) {
+    if (btn) { btn.disabled = false; btn.textContent = '✓ Mark complete'; }
     var msg = typeof formatSupabaseActionError === 'function'
       ? formatSupabaseActionError('mark complete', result.error)
       : (result.error || 'Could not mark complete — run supabase/beta-setup-all.sql in Supabase');
@@ -1116,10 +1161,13 @@ window.markComplete = async function(taskId){
   allTasks.forEach(function(t) {
     if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, 'completed');
   });
+  allApplications.forEach(function(a) {
+    if (String(getField(a, 'TASK_ID')) === taskId) {
+      var st = String(getField(a, 'STATUS')).toLowerCase();
+      if (st === 'accepted' || st === 'completed') setRowStatus(a, 'completed');
+    }
+  });
   if (typeof mergeTaskInCache === 'function') mergeTaskInCache(taskId, { status: 'completed' });
-  if (typeof lockConversationsForTask === 'function') {
-    await lockConversationsForTask(taskId);
-  }
   activeTab = 'completed';
   if (window.history && window.history.replaceState) {
     var doneUrl = new URL(window.location.href);
@@ -1135,7 +1183,7 @@ window.markComplete = async function(taskId){
       var doneTask = allTasks.find(function(t){ return String(getField(t,'TASK_ID')) === taskId; });
       var posterId = doneTask ? getField(doneTask, 'POSTED_BY') : '';
       var workerApp = allApplications.find(function(a){
-        return String(getField(a,'TASK_ID')) === taskId && String(getField(a,'STATUS')).toLowerCase() === 'accepted';
+        return String(getField(a,'TASK_ID')) === taskId && ['accepted','completed'].indexOf(String(getField(a,'STATUS')).toLowerCase()) >= 0;
       });
       var workerId = workerApp ? getField(workerApp, 'WORKER_ID') : '';
       if (posterId) {

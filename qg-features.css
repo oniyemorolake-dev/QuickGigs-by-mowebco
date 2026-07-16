@@ -505,3 +505,75 @@ body.light .qg-worker-skill {
   white-space: nowrap;
   border: 0;
 }
+
+/* Verified tasker badge */
+.qg-verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(74, 222, 128, 0.14);
+  border: 0.5px solid rgba(74, 222, 128, 0.35);
+  color: var(--qg-trust-green, #4ade80);
+  vertical-align: middle;
+}
+
+body.light .qg-verified-badge {
+  color: #16a34a;
+  background: #ecfdf5;
+  border-color: #bbf7d0;
+}
+
+/* Dispute modal steps */
+.qg-dispute-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.qg-dispute-step {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted, rgba(255, 255, 255, 0.55));
+}
+
+.qg-dispute-step strong {
+  display: block;
+  color: var(--text, #fff);
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.qg-dispute-step p {
+  margin: 0;
+}
+
+.qg-dispute-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(107, 63, 160, 0.25);
+  color: var(--lavender, #c8a8e9);
+}
+
+.qg-dispute-note {
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--text-faint, rgba(255, 255, 255, 0.35));
+  margin: 0 0 12px;
+}
+
+body.light .qg-dispute-step strong { color: #2d1b4e; }
