@@ -46,14 +46,37 @@
 
   async function queueEmailNotification(opts) {
     if (!opts || !opts.type || !opts.userId) return { success: false };
+    var payload = opts.payload || {};
+
+    var inAppTypes = {
+      application_received: 1,
+      application_accepted: 1,
+      task_completed: 1,
+      new_message: 1
+    };
+    if (inAppTypes[opts.type] && typeof pushInAppNotification === 'function') {
+      try {
+        await pushInAppNotification({
+          userId: opts.userId,
+          type: opts.type,
+          payload: payload,
+          link: payload.link
+        });
+        if (typeof window.QG_refreshNotifications === 'function') {
+          window.QG_refreshNotifications();
+        }
+      } catch (err) {
+        console.warn('In-app notification failed:', err);
+      }
+    }
+
     if (window.QG_CONFIG && window.QG_CONFIG.emailNotificationsEnabled === false) {
-      return { success: false, skipped: true };
+      return { success: true, skipped: true };
     }
 
     var tmpl = TEMPLATES[opts.type];
     if (!tmpl) return { success: false, error: 'unknown_type' };
 
-    var payload = opts.payload || {};
     var subject = tmpl.subject(payload);
     var bodyText = tmpl.body(payload);
     var email = opts.email || '';
@@ -67,6 +90,7 @@
       payload: payload
     };
 
+    var result;
     if (typeof sbPostReturn === 'function') {
       result = await sbPostReturn('notification_queue', row);
     } else if (typeof sbPost === 'function') {
@@ -94,16 +118,17 @@
 
   async function notifyPosterNewApplication(posterId, posterEmail, task, application) {
     if (!posterId) return;
+    var taskId = task && (task.task_id || task.TASK_ID);
     return queueEmailNotification({
       type: 'application_received',
       userId: posterId,
       email: posterEmail,
       payload: {
         taskTitle: task && (task.title || task.TITLE),
-        taskId: task && (task.task_id || task.TASK_ID),
+        taskId: taskId,
         workerName: application && (application.worker_name || application.WORKER_NAME),
         offer: application && (application.price || application.PRICE),
-        link: 'https://quickgigs.ca/mytasks.html?tab=posted'
+        link: 'https://quickgigs.ca/mytasks.html?tab=posted' + (taskId ? '&expand=' + encodeURIComponent(taskId) : '')
       }
     });
   }

@@ -1,0 +1,211 @@
+/* QuickGigs — notification bell in top nav */
+
+.qg-bell-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.qg-bell-btn:hover {
+  background: rgba(107, 63, 160, 0.15);
+}
+
+.qg-bell-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 8px;
+  height: 8px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: #ef4444;
+  border: 2px solid var(--nav-bg, #0b0118);
+  font-size: 0;
+}
+
+.qg-bell-dot.has-count {
+  min-width: 16px;
+  height: 16px;
+  top: 4px;
+  right: 2px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+body.light .qg-bell-dot {
+  border-color: var(--nav-bg, #fff);
+}
+
+.qg-bell-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9400;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.22s, visibility 0.22s;
+}
+
+.qg-bell-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.qg-bell-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: min(360px, 92vw);
+  height: 100%;
+  background: var(--nav-bg, #0b0118);
+  border-left: 0.5px solid var(--border, rgba(200, 168, 233, 0.12));
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.35);
+}
+
+body.light .qg-bell-panel {
+  background: #fff;
+  border-left-color: #f0eeff;
+}
+
+.qg-bell-overlay.open .qg-bell-panel {
+  transform: translateX(0);
+}
+
+.qg-bell-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(16px + env(safe-area-inset-top, 0px)) 16px 12px;
+  border-bottom: 0.5px solid var(--border, rgba(200, 168, 233, 0.1));
+  flex-shrink: 0;
+}
+
+.qg-bell-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 17px;
+  font-style: italic;
+  color: var(--lavender, #c8a8e9);
+}
+
+body.light .qg-bell-title {
+  color: var(--purple, #6b3fa0);
+}
+
+.qg-bell-mark-all {
+  border: none;
+  background: transparent;
+  color: var(--purple-light, #9b6fc4);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+
+.qg-bell-mark-all:hover {
+  background: rgba(107, 63, 160, 0.12);
+}
+
+.qg-bell-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: var(--surface, rgba(255, 255, 255, 0.06));
+  color: var(--text, #fff);
+  font-size: 22px;
+  cursor: pointer;
+  margin-left: 6px;
+}
+
+.qg-bell-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px calc(20px + env(safe-area-inset-bottom, 0px));
+}
+
+.qg-bell-empty {
+  text-align: center;
+  padding: 48px 16px;
+  color: var(--text-muted, rgba(255, 255, 255, 0.45));
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.qg-bell-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border-radius: 14px;
+  border: 0.5px solid var(--border, rgba(200, 168, 233, 0.12));
+  background: var(--surface, rgba(255, 255, 255, 0.04));
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  color: inherit;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.qg-bell-item:hover {
+  border-color: var(--purple-light, #9b6fc4);
+}
+
+.qg-bell-item.unread {
+  border-color: rgba(155, 111, 196, 0.35);
+  background: rgba(107, 63, 160, 0.14);
+}
+
+.qg-bell-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text, #fff);
+  margin-bottom: 4px;
+}
+
+body.light .qg-bell-item-title {
+  color: #2d1b4e;
+}
+
+.qg-bell-item-body {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted, rgba(255, 255, 255, 0.55));
+}
+
+.qg-bell-item-time {
+  font-size: 10px;
+  color: var(--text-faint, rgba(255, 255, 255, 0.35));
+  margin-top: 6px;
+}
+
+body.qg-bell-open {
+  overflow: hidden;
+}
+
+.nav .nav-icon.qg-bell-hidden {
+  display: none !important;
+}

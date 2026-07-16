@@ -1682,6 +1682,90 @@ async function unlockChatForTask(taskId, posterId, workerId) {
   return await forceUnlockConversationForTask(conv, taskStatus);
 }
 
+var INAPP_BODY = {
+  application_received: function (p) {
+    return (p.workerName || 'A tasker') + ' applied' + (p.offer ? ' · $' + p.offer : '') + '. Tap to review.';
+  },
+  application_accepted: function (p) {
+    return (p.posterName || 'The poster') + ' accepted you for “' + (p.taskTitle || 'a task') + '”.';
+  },
+  task_completed: function (p) {
+    return '“' + (p.taskTitle || 'Your task') + '” is done — leave a review when you can.';
+  },
+  new_message: function (p) {
+    return (p.senderName || 'Someone') + ': “' + (p.preview || 'New message') + '”';
+  }
+};
+
+var INAPP_TITLE = {
+  application_received: function (p) { return '👤 New applicant'; },
+  application_accepted: function (p) { return '🎉 You were hired!'; },
+  task_completed: function (p) { return '✅ Task complete'; },
+  new_message: function (p) { return '💬 New message'; }
+};
+
+async function pushInAppNotification(opts) {
+  if (!opts || !opts.userId || !opts.type) return { success: false };
+  var payload = opts.payload || {};
+  var titleFn = INAPP_TITLE[opts.type];
+  var bodyFn = INAPP_BODY[opts.type];
+  var row = {
+    user_id: opts.userId,
+    type: opts.type,
+    title: opts.title || (titleFn ? titleFn(payload) : opts.type),
+    body: opts.body || (bodyFn ? bodyFn(payload) : ''),
+    link: opts.link || payload.link || '',
+    payload: payload
+  };
+  if (typeof sbPostReturn === 'function') {
+    return await sbPostReturn('user_notifications', row);
+  }
+  if (typeof sbPost === 'function') {
+    return await sbPost('user_notifications', row);
+  }
+  return { success: false, error: 'no_db' };
+}
+
+async function fetchUserNotifications(userId, limit) {
+  if (!userId) return [];
+  var rows = await sbGet(
+    'user_notifications',
+    'user_id=eq.' + encodeURIComponent(userId),
+    'created_at.desc',
+    limit || 40
+  );
+  return Array.isArray(rows) ? rows : [];
+}
+
+async function getUnreadNotificationCount(userId) {
+  if (!userId) return 0;
+  var rows = await sbGet(
+    'user_notifications',
+    'user_id=eq.' + encodeURIComponent(userId) + '&read_at=is.null',
+    'created_at.desc',
+    99
+  );
+  return Array.isArray(rows) ? rows.length : 0;
+}
+
+async function markNotificationRead(notificationId) {
+  if (!notificationId) return { success: false };
+  return await sbUpdate(
+    'user_notifications',
+    { read_at: new Date().toISOString() },
+    'notification_id=eq.' + encodeURIComponent(String(notificationId))
+  );
+}
+
+async function markAllNotificationsRead(userId) {
+  if (!userId) return { success: false };
+  return await sbUpdate(
+    'user_notifications',
+    { read_at: new Date().toISOString() },
+    'user_id=eq.' + encodeURIComponent(userId) + '&read_at=is.null'
+  );
+}
+
 window.SUPABASE_URL = SUPABASE_URL;
 window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
 window.getSupabaseHeaders = getSupabaseHeaders;
@@ -1765,6 +1849,11 @@ window.mergeReviewInCache = mergeReviewInCache;
 window.getPaymentByTask = getPaymentByTask;
 window.savePayment = savePayment;
 window.unlockChatForTask = unlockChatForTask;
+window.pushInAppNotification = pushInAppNotification;
+window.fetchUserNotifications = fetchUserNotifications;
+window.getUnreadNotificationCount = getUnreadNotificationCount;
+window.markNotificationRead = markNotificationRead;
+window.markAllNotificationsRead = markAllNotificationsRead;
 window.sbGet = sbGet;
 window.sbPost = sbPost;
 window.sbPostReturn = sbPostReturn;

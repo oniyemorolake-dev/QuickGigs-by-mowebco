@@ -163,4 +163,9 @@
   menuScript.src = 'qg-menu.js?v=2';
   menuScript.defer = true;
   document.head.appendChild(menuScript);
+
+  var bellScript = document.createElement('script');
+  bellScript.src = 'qg-bell.js?v=1';
+  bellScript.defer = true;
+  document.head.appendChild(bellScript);
 })();

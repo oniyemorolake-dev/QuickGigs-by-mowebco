@@ -134,6 +134,7 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 | Feature | Status | Where |
 |---------|--------|--------|
 | Email notifications (queue) | ✅ Queued in `notification_queue` on apply / accept / complete | `qg-notifications.js`, `supabase/priority-features.sql`, Edge Function template |
+| In-app notification bell | ✅ 🔔 in nav, unread badge, slide-out panel | `qg-bell.js`, `qg-bell.css`, `supabase/user-notifications.sql` |
 | PWA installable app | ✅ `manifest.json`, `sw.js`, install banner | `qg-pwa.js` |
 | Report button | ✅ Modal on tasks & profiles | `qg-report.js`, browse + profile |
 | Search polish | ✅ Title, category, location, poster + nearest sort | `browsetask.html` |
@@ -189,7 +190,6 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 | **Push all pending changes live** | Menu, lightbox, login fix not on quickgigs.ca yet | 10 min |
 | **Google Analytics ID** | Ads conversion tracking — set `ga4MeasurementId` in `qg-config.js` | 10 min |
 | **Stripe / payments** | Core launch blocker; chat rule switches to `payment` | Large |
-| **In-app notification bell** | Email queue exists; users need visible alerts | 2–4 hrs |
 | **Photo sharing in chat** | Posters/taskers share task progress photos | 2–4 hrs |
 | **Saved tasks (bookmarks)** | Workers return to tasks later | 2–3 hrs |
 | **Repost expired task** | Posters one-click repost after 30 days | 1–2 hrs |
@@ -253,9 +253,9 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 
 ## Suggested next quick wins
 
-1. **Deploy** — commit + push menu, lightbox, login fix, analytics hook
-2. **Paste GA4 ID** in `qg-config.js` + set Google Ads conversion on `thank-you.html`
-3. **Notification bell** + unread table (~2–4 hrs)
+1. **Deploy** — commit + push notification bell + latest fixes
+2. **Run SQL** — `supabase/user-notifications.sql` in Supabase (if not already)
+3. **Paste GA4 ID** in `qg-config.js` + set Google Ads conversion on `thank-you.html`
 4. **Saved tasks** bookmark button on browse cards (~2 hrs)
 5. **Repost task** on expired My Tasks rows (~1 hr)
 6. **Photo sharing in chat** (~2–4 hrs)
@@ -265,10 +265,10 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 
 | Event | Today |
 |-------|--------|
-| Someone applies to your task | ✅ Queued (`application_received`) — sends if Edge Function + Resend configured |
-| Application accepted | ✅ Queued (`application_accepted`) |
-| Task marked complete | ✅ Queued (`task_completed`) |
-| New chat message | ❌ No email |
+| Someone applies to your task | ✅ In-app bell + email queue (`application_received`) |
+| Application accepted | ✅ In-app bell + email queue (`application_accepted`) |
+| Task marked complete | ✅ In-app bell + email queue (`task_completed`) |
+| New chat message | ✅ In-app bell (`new_message`); email if Edge Function configured |
 | Password reset | ✅ Firebase |
 
 ## Email notifications — expected vs today
