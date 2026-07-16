@@ -93,6 +93,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);font-s
       <div class="error" id="confirmError">Passwords do not match</div>
     </div>
     <div class="terms-check">
+      <input type="checkbox" id="ageConfirm" required>
+      <label for="ageConfirm">I confirm I am <strong>18 years of age or older</strong></label>
+    </div>
+    <div class="terms-check">
       <input type="checkbox" id="termsAgree" required>
       <label for="termsAgree">I agree to the <a href="terms.html" target="_blank">Terms of Service</a> and <a href="privacy.html" target="_blank">Privacy Policy</a></label>
     </div>
@@ -104,6 +108,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--p1);color:var(--w);font-s
 </div>
 
 <script src="qg-utils.js"></script>
+<script src="qg-cookies.js"></script>
 <script src="supabase-db.js"></script>
 <script>
 attachPasswordToggle('password');
@@ -176,6 +181,11 @@ document.getElementById('signupForm').addEventListener('submit', async function(
   if (name.length < 2)        { document.getElementById('nameError').style.display     = 'block'; valid = false; }
   if (password.length < 8)    { document.getElementById('passwordError').style.display = 'block'; valid = false; }
   if (password !== confirm)   { document.getElementById('confirmError').style.display  = 'block'; valid = false; }
+  if (!document.getElementById('ageConfirm').checked) {
+    errorMsg.textContent = 'You must be 18 or older to use QuickGigs.';
+    errorMsg.style.display = 'block';
+    valid = false;
+  }
   if (!document.getElementById('termsAgree').checked) {
     errorMsg.textContent = 'Please agree to the Terms of Service and Privacy Policy.';
     errorMsg.style.display = 'block';

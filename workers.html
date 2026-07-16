@@ -167,7 +167,10 @@ async function loadWorkers() {
       bio: (u.bio || '').trim(),
       skills: skills,
       avatar: avatar,
-      stats: stats
+      stats: stats,
+      availability: u.availability || 'available',
+      service_area: u.service_area || '',
+      languages: u.languages || ''
     });
   }
 
@@ -211,10 +214,12 @@ window.renderWorkers = function () {
       return '<span class="qg-worker-skill">' + esc(s) + '</span>';
     }).join('');
     var meta = w.bio ? esc(w.bio.substring(0, 90)) + (w.bio.length > 90 ? '…' : '') : 'Available for gigs on QuickGigs';
+    if (w.service_area) meta = '📍 ' + esc(w.service_area) + ' · ' + meta;
+    var availBadge = w.availability === 'busy' ? '<span class="qg-worker-skill" style="opacity:0.7">Busy</span>' : '';
     return '<a class="qg-worker-card" href="' + (typeof getProfileUrl === 'function' ? getProfileUrl(w.id) : ('profile.html?user=' + encodeURIComponent(w.id))) + '">' +
       '<div class="' + avatarCls + '"' + avatarStyle + ' aria-hidden="true">' + (w.avatar ? '' : initial) + '</div>' +
       '<div class="qg-worker-body">' +
-        '<div class="qg-worker-name">' + esc(w.name) + '</div>' +
+        '<div class="qg-worker-name">' + esc(w.name) + availBadge + '</div>' +
         '<div class="qg-worker-meta">' + meta + '</div>' +
         trust +
         '<div class="qg-worker-skills">' + skillHtml + '</div>' +

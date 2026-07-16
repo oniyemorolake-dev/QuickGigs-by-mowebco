@@ -265,8 +265,46 @@ async function tryPatchRow(table, patch, filters, verifyFn) {
   return result;
 }
 
+var TASK_EXPIRY_DAYS = 30;
+var _expiryRunKey = 'qg-expiry-run';
+
+function isTaskExpiredByAge(row) {
+  var created = row.created_at || row.CREATED_AT;
+  if (!created) return false;
+  var age = Date.now() - new Date(created).getTime();
+  return age > TASK_EXPIRY_DAYS * 86400000;
+}
+
+function filterBrowseableTasks(rows) {
+  return (rows || []).filter(function (row) {
+    var st = String(row.status || row.STATUS || 'open').toLowerCase();
+    if (st !== 'open') return false;
+    if (isTaskExpiredByAge(row)) return false;
+    return true;
+  });
+}
+
+async function expireStaleOpenTasksOnce() {
+  if (sessionStorage.getItem(_expiryRunKey)) return;
+  sessionStorage.setItem(_expiryRunKey, '1');
+  try {
+    var cutoff = new Date(Date.now() - TASK_EXPIRY_DAYS * 86400000).toISOString();
+    var stale = await sbGet('tasks', 'status=eq.open&created_at=lt.' + encodeURIComponent(cutoff), 'created_at.asc', 50);
+    if (!stale || !stale.length) return;
+    for (var i = 0; i < stale.length; i++) {
+      var id = stale[i].task_id || stale[i].TASK_ID || stale[i].id;
+      if (!id) continue;
+      await sbUpdate('tasks', { status: 'expired' }, 'task_id=eq.' + encodeURIComponent(String(id)));
+    }
+  } catch (e) {
+    console.warn('Task expiry sweep skipped:', e);
+  }
+}
+
 async function getTasks() {
-  return await sbGet('tasks', 'status=eq.open', 'created_at.desc', 100);
+  await expireStaleOpenTasksOnce();
+  var rows = await sbGet('tasks', 'status=eq.open', 'created_at.desc', 100);
+  return filterBrowseableTasks(rows);
 }
 
 async function getAllTasks() {
@@ -630,6 +668,9 @@ async function upsertUserProfile(userData) {
   if (userData.avatar_url) row.avatar_url = userData.avatar_url;
   if (userData.bio !== undefined) row.bio = String(userData.bio || '').trim();
   if (userData.skills !== undefined) row.skills = serializeUserSkills(userData.skills);
+  if (userData.availability !== undefined) row.availability = userData.availability;
+  if (userData.service_area !== undefined) row.service_area = String(userData.service_area || '').trim();
+  if (userData.languages !== undefined) row.languages = String(userData.languages || '').trim();
   if (!row.email && !row.firebase_uid) {
     return { success: false, error: 'Missing email or firebase_uid' };
   }
@@ -653,6 +694,9 @@ async function upsertUserProfile(userData) {
     if (userData.avatar_url) patch.avatar_url = userData.avatar_url;
     if (userData.bio !== undefined) patch.bio = String(userData.bio || '').trim();
     if (userData.skills !== undefined) patch.skills = serializeUserSkills(userData.skills);
+    if (userData.availability !== undefined) patch.availability = userData.availability;
+    if (userData.service_area !== undefined) patch.service_area = String(userData.service_area || '').trim();
+    if (userData.languages !== undefined) patch.languages = String(userData.languages || '').trim();
     var filters = [];
     if (id != null) {
       filters.push('user_id=eq.' + encodeURIComponent(String(id)));
@@ -784,7 +828,10 @@ function applyDbUserToProfileData(dbUser, target) {
   if (dbUser.bio != null && String(dbUser.bio).trim()) target.bio = String(dbUser.bio).trim();
   var skills = parseUserSkills(dbUser);
   if (skills.length) target.skills = skills;
-  if (dbUser.created_at) target.memberSince = dbUser.created_at;
+    if (dbUser.created_at) target.memberSince = dbUser.created_at;
+  if (dbUser.availability) target.availability = dbUser.availability;
+  if (dbUser.service_area) target.service_area = String(dbUser.service_area).trim();
+  if (dbUser.languages) target.languages = String(dbUser.languages).trim();
   return target;
 }
 

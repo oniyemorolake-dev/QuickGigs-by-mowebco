@@ -200,7 +200,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="nav-section">Management</div>
     <button class="nav-item" onclick="showSection('users',this)"><span class="nav-icon">👥</span>Users</button>
     <button class="nav-item" onclick="showSection('tasks',this)"><span class="nav-icon">📋</span>Tasks</button>
-    <button class="nav-item" onclick="showSection('disputes',this)"><span class="nav-icon">🚨</span>Disputes <span class="nav-badge" id="disputeBadge">2</span></button>
+    <button class="nav-item" onclick="showSection('disputes',this)"><span class="nav-icon">🚨</span>Disputes <span class="nav-badge" id="disputeBadge">0</span></button>
+    <button class="nav-item" onclick="showSection('reports',this)"><span class="nav-icon">🚩</span>Reports <span class="nav-badge" id="reportBadge">0</span></button>
     <button class="nav-item" onclick="showSection('revenue',this)"><span class="nav-icon">💰</span>Revenue</button>
     <div class="nav-section">Security</div>
     <button class="nav-item" onclick="showSection('security',this)"><span class="nav-icon">🔒</span>Security Log</button>
@@ -279,9 +280,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <!-- DISPUTES -->
   <div id="section-disputes" style="display:none">
     <div class="table-card">
-      <div class="table-header"><div><span class="table-title">Disputes</span><span class="table-count" id="disputesCount"></span></div><div class="table-actions"><input class="search-bar" placeholder="🔍 Search disputes..."></div></div>
-      <div class="col-row g-disputes"><div class="col-h">Task</div><div class="col-h">Poster</div><div class="col-h">Worker</div><div class="col-h">Status</div><div class="col-h">Opened</div><div class="col-h" style="text-align:right">Actions</div></div>
+      <div class="table-header"><div><span class="table-title">Disputes</span><span class="table-count" id="disputesCount"></span></div><div class="table-actions"><input class="search-bar" placeholder="🔍 Search disputes..." oninput="filterDisputes(this.value)"></div></div>
+      <div class="col-row g-disputes"><div class="col-h">Task</div><div class="col-h">Reason</div><div class="col-h">Opened by</div><div class="col-h">Status</div><div class="col-h">Opened</div><div class="col-h" style="text-align:right">Actions</div></div>
       <div id="disputesBody"></div>
+    </div>
+  </div>
+
+  <!-- REPORTS -->
+  <div id="section-reports" style="display:none">
+    <div class="table-card">
+      <div class="table-header"><div><span class="table-title">User reports</span><span class="table-count" id="reportsCount"></span></div></div>
+      <div class="col-row g-disputes"><div class="col-h">Target</div><div class="col-h">Reason</div><div class="col-h">Reporter</div><div class="col-h">Status</div><div class="col-h">Date</div></div>
+      <div id="reportsBody"></div>
     </div>
   </div>
 
@@ -382,7 +392,7 @@ window.doLogout = function() { signOut(auth).then(function(){ window.location.hr
 <script src="supabase-db.js"></script>
 <script>
 var SB_HEADERS = window.SB_HEADERS;
-var users=[],tasks=[],disputes=[],selectedUsers=[],pendingFn=null,currentSection='overview';
+var users=[],tasks=[],disputes=[],reports=[],selectedUsers=[],pendingFn=null,currentSection='overview';
 var sessionSeconds=30*60;
 
 function updateTimer(){
@@ -410,14 +420,21 @@ async function loadData(){
     var headers = typeof getSupabaseHeaders === 'function'
       ? await getSupabaseHeaders()
       : SB_HEADERS;
-    var[ur,tr]=await Promise.all([fetch(window.SUPABASE_URL+'/rest/v1/users?order=created_at.desc',{headers:headers}),fetch(window.SUPABASE_URL+'/rest/v1/tasks?order=created_at.desc',{headers:headers})]);
-    var ud=await ur.json(),td=await tr.json();
+    var base = window.SUPABASE_URL + '/rest/v1/';
+    var[ur,tr,dr,rr]=await Promise.all([
+      fetch(base+'users?order=created_at.desc',{headers:headers}),
+      fetch(base+'tasks?order=created_at.desc',{headers:headers}),
+      fetch(base+'disputes?order=created_at.desc',{headers:headers}).catch(function(){return {json:function(){return Promise.resolve([]);}};}),
+      fetch(base+'reports?order=created_at.desc',{headers:headers}).catch(function(){return {json:function(){return Promise.resolve([]);}};})
+    ]);
+    var ud=await ur.json(),td=await tr.json(),dd=await dr.json(),rd=await rr.json();
     if(Array.isArray(ud)) users=ud;
     if(Array.isArray(td)) tasks=td;
-    if(!users.length) users=getDemoUsers();
-    if(!tasks.length) tasks=getDemoTasks();
-  }catch(e){users=getDemoUsers();tasks=getDemoTasks();}
-  disputes=getDemoDisputes();
+    if(Array.isArray(dd)) disputes=dd;
+    if(Array.isArray(rd)) reports=rd;
+  }catch(e){
+    console.warn('Admin load failed',e);
+  }
 }
 
 function getDemoUsers(){return [{user_id:'1',name:'Sarah K.',email:'sarah@gmail.com',role:'worker',created_at:'2026-06-10',status:'active'},{user_id:'2',name:'James O.',email:'james@gmail.com',role:'both',created_at:'2026-06-12',status:'active'},{user_id:'3',name:'Aisha M.',email:'aisha@gmail.com',role:'poster',created_at:'2026-06-15',status:'warned'},{user_id:'4',name:'David T.',email:'david@gmail.com',role:'worker',created_at:'2026-06-08',status:'banned'},{user_id:'5',name:'Priya N.',email:'priya@gmail.com',role:'both',created_at:'2026-06-18',status:'active'},{user_id:'6',name:'Marcus L.',email:'marcus@gmail.com',role:'worker',created_at:'2026-06-20',status:'active'}];}
@@ -428,7 +445,8 @@ function renderOverview(){
   var active=users.filter(function(u){return u.status==='active';}).length;
   var warned=users.filter(function(u){return u.status==='warned';}).length;
   var banned=users.filter(function(u){return u.status==='banned';}).length;
-  var openD=disputes.filter(function(d){return d.status==='open';}).length;
+  var openD=disputes.filter(function(d){return (d.status||'open')==='open';}).length;
+  var openR=reports.filter(function(r){return (r.status||'open')==='open';}).length;
   var doneT=tasks.filter(function(t){return t.status==='completed';}).length;
   document.getElementById('statUsers').textContent=users.length;
   document.getElementById('statUsersSub').textContent=active+' active · '+warned+' warned · '+banned+' banned';
@@ -438,7 +456,9 @@ function renderOverview(){
   document.getElementById('statDisputes').textContent=openD;
   document.getElementById('statDisputesSub').textContent=openD+' open · '+(disputes.length-openD)+' resolved';
   document.getElementById('disputeBadge').textContent=openD;
+  document.getElementById('reportBadge').textContent=openR;
   if(openD===0){document.getElementById('alertBanner').style.display='none';document.getElementById('disputeTrend').textContent='All clear ✓';document.getElementById('disputeTrend').className='trend trend-up';}
+  else{document.getElementById('alertBanner').style.display='flex';document.getElementById('alertBanner').querySelector('.alert-text').textContent=openD+' open dispute(s) and '+openR+' open report(s) need review.';}
   renderMiniChart('chartUsers',[5,8,12,18,22,30,users.length],'#9b6fc4');
   renderMiniChart('chartTasks',[1,2,3,5,7,10,tasks.length],'#16a34a');
   renderMiniChart('chartRevenue',[0,0,0,0,0,0,0],'#d97706');
@@ -471,16 +491,20 @@ function renderRecentSignups(){
 }
 
 function renderUsers(data){
-  document.getElementById('usersCount').textContent='· '+data.length+' total';
+  document.getElementById('usersCount').textContent='· '+data.length+' total (beta waitlist)';
   var colors=['linear-gradient(135deg,#6b3fa0,#c8a8e9)','linear-gradient(135deg,#16a34a,#4ade80)','linear-gradient(135deg,#d97706,#fbbf24)','linear-gradient(135deg,#ef4444,#f87171)','linear-gradient(135deg,#9b6fc4,#c8a8e9)','linear-gradient(135deg,#0ea5e9,#7dd3fc)'];
-  if(!data.length){document.getElementById('usersBody').innerHTML='<div style="padding:40px;text-align:center;color:var(--text-faint);font-size:13px">No users found</div>';return;}
+  if(!data.length){document.getElementById('usersBody').innerHTML='<div style="padding:40px;text-align:center;color:var(--text-faint);font-size:13px">No users in Supabase yet — run beta-setup-all.sql</div>';return;}
   document.getElementById('usersBody').innerHTML=data.map(function(u,i){
-    var rc=u.role==='both'?'r-both':u.role==='poster'?'r-poster':'r-worker';
-    var sc=u.status==='active'?'s-active':u.status==='warned'?'s-warned':'s-banned';
-    var sl=u.status==='active'?'● Active':u.status==='warned'?'⚠ Warned':'✕ Banned';
-    var tc=tasks.filter(function(t){return t.posted_by===u.name||t.posted_by===u.user_id;}).length;
-    var actions=u.status==='banned'?'<button class="act-btn btn-view" onclick="viewUser(\''+u.user_id+'\')">View</button><button class="act-btn btn-unban" onclick="actionUser(\''+u.user_id+'\',\'unban\')">Unban</button>':'<button class="act-btn btn-view" onclick="viewUser(\''+u.user_id+'\')">View</button><button class="act-btn btn-warn" onclick="actionUser(\''+u.user_id+'\',\'warn\')">Warn</button><button class="act-btn btn-ban" onclick="actionUser(\''+u.user_id+'\',\'ban\')">Ban</button>';
-    return '<div class="data-row g-users"><input type="checkbox" class="checkbox" value="'+u.user_id+'" onchange="updateBulk()"><div class="user-cell"><div class="u-av" style="background:'+colors[i%colors.length]+'">'+u.name.charAt(0)+'</div><div><div class="u-name">'+u.name+'</div><div class="u-meta">'+u.email+'</div></div></div><div class="cell">'+u.email+'</div><div class="cell"><span class="role-pill '+rc+'">'+u.role+'</span></div><div class="cell">'+tc+'</div><div class="cell"><span class="status-pill '+sc+'">'+sl+'</span></div><div class="act-btns">'+actions+'</div></div>';
+    var uid=u.user_id||u.id||u.firebase_uid||i;
+    var name=u.name||'User';
+    var email=u.email||'—';
+    var role=(u.role||'poster').toLowerCase();
+    var rc=role==='both'?'r-both':role==='poster'?'r-poster':'r-worker';
+    var st=(u.status||'active').toLowerCase();
+    var sc=st==='active'?'s-active':st==='warned'?'s-warned':'s-banned';
+    var sl=st==='active'?'● Active':st==='warned'?'⚠ Warned':'✕ Banned';
+    var joined=u.created_at?new Date(u.created_at).toLocaleDateString('en-CA'):'—';
+    return '<div class="data-row g-users"><input type="checkbox" class="checkbox" value="'+uid+'" onchange="updateBulk()"><div class="user-cell"><div class="u-av" style="background:'+colors[i%colors.length]+'">'+name.charAt(0)+'</div><div><div class="u-name">'+name+'</div><div class="u-meta">Joined '+joined+'</div></div></div><div class="cell">'+email+'</div><div class="cell"><span class="role-pill '+rc+'">'+role+'</span></div><div class="cell">—</div><div class="cell"><span class="status-pill '+sc+'">'+sl+'</span></div><div class="act-btns"><a class="act-btn btn-view" href="profile.html?user='+(u.firebase_uid||'')+'">View</a></div></div>';
   }).join('');
 }
 
@@ -498,14 +522,33 @@ function renderTasks(data){
 
 window.filterTasks=function(q){renderTasks(!q?tasks:tasks.filter(function(t){return t.title.toLowerCase().includes(q.toLowerCase())||t.posted_by.toLowerCase().includes(q.toLowerCase());}));};
 
-function renderDisputes(){
-  var open=disputes.filter(function(d){return d.status==='open';}).length;
-  document.getElementById('disputesCount').textContent='· '+open+' open, '+(disputes.length-open)+' resolved';
-  document.getElementById('disputesBody').innerHTML=disputes.map(function(d){
-    var sc=d.status==='open'?'s-open':'s-resolved';
-    var sl=d.status==='open'?'⚠ Open':'✓ Resolved';
-    var actions=d.status==='open'?'<button class="act-btn btn-view" onclick="viewDispute(\''+d.id+'\')">Review</button><button class="act-btn btn-resolve" onclick="resolveDispute(\''+d.id+'\')">Resolve</button>':'<button class="act-btn btn-view" onclick="viewDispute(\''+d.id+'\')">View</button>';
-    return '<div class="data-row g-disputes"><div class="user-cell"><div><div class="u-name">'+d.task+'</div><div class="u-meta">'+d.reason.substring(0,45)+'...</div></div></div><div class="cell">'+d.poster+'</div><div class="cell">'+d.worker+'</div><div class="cell"><span class="status-pill '+sc+'">'+sl+'</span></div><div class="cell">'+d.opened+'</div><div class="act-btns">'+actions+'</div></div>';
+function renderDisputes(data){
+  data=data||disputes;
+  var open=data.filter(function(d){return (d.status||'open')==='open';}).length;
+  document.getElementById('disputesCount').textContent='· '+open+' open, '+(data.length-open)+' resolved';
+  if(!data.length){document.getElementById('disputesBody').innerHTML='<div style="padding:40px;text-align:center;color:var(--text-faint);font-size:13px">No disputes yet</div>';return;}
+  document.getElementById('disputesBody').innerHTML=data.map(function(d){
+    var sc=(d.status||'open')==='open'?'s-open':'s-resolved';
+    var sl=(d.status||'open')==='open'?'⚠ Open':'✓ Resolved';
+    var title=d.task_title||d.task_id||'Task';
+    var reason=(d.reason||d.details||'—').substring(0,60);
+    var who=d.opened_by_email||d.opened_by_id||'—';
+    var when=d.created_at?new Date(d.created_at).toLocaleDateString('en-CA'):'—';
+    return '<div class="data-row g-disputes"><div class="user-cell"><div><div class="u-name">'+title+'</div></div></div><div class="cell">'+reason+'</div><div class="cell">'+who+'</div><div class="cell"><span class="status-pill '+sc+'">'+sl+'</span></div><div class="cell">'+when+'</div><div class="act-btns"><button class="act-btn btn-view" onclick="alert(\'Review in Supabase or email support\')">Review</button></div></div>';
+  }).join('');
+}
+
+window.filterDisputes=function(q){var list=!q?disputes:disputes.filter(function(d){var h=(d.task_title||'')+(d.reason||'')+(d.details||'');return h.toLowerCase().indexOf(q.toLowerCase())>=0;});renderDisputes(list);};
+
+function renderReports(){
+  var open=reports.filter(function(r){return (r.status||'open')==='open';}).length;
+  document.getElementById('reportsCount').textContent='· '+reports.length+' total · '+open+' open';
+  document.getElementById('reportBadge').textContent=open;
+  if(!reports.length){document.getElementById('reportsBody').innerHTML='<div style="padding:40px;text-align:center;color:var(--text-faint);font-size:13px">No reports yet</div>';return;}
+  document.getElementById('reportsBody').innerHTML=reports.map(function(r){
+    var target=(r.target_type||'?')+': '+(r.target_label||r.target_id||'—');
+    var when=r.created_at?new Date(r.created_at).toLocaleDateString('en-CA'):'—';
+    return '<div class="data-row g-disputes"><div class="cell">'+target+'</div><div class="cell">'+(r.reason||'—')+'</div><div class="cell">'+(r.reporter_email||r.reporter_id||'—')+'</div><div class="cell">'+(r.status||'open')+'</div><div class="cell">'+when+'</div></div>';
   }).join('');
 }
 
@@ -534,11 +577,12 @@ window.showSection=function(section,btn){
   document.querySelectorAll('.nav-item').forEach(function(el){el.classList.remove('active');});
   if(btn) btn.classList.add('active');
   currentSection=section;
-  var titles={overview:'Dashboard Overview',users:'User Management',tasks:'Task Management',disputes:'Dispute Center',security:'Security Log',fraud:'Fraud Alerts',analytics:'Analytics',revenue:'Revenue',settings:'Platform Settings'};
+  var titles={overview:'Dashboard Overview',users:'Beta users / waitlist',tasks:'Task Management',disputes:'Dispute Center',reports:'User reports',security:'Security Log',fraud:'Fraud Alerts',analytics:'Analytics',revenue:'Revenue',settings:'Platform Settings'};
   document.getElementById('pageTitle').textContent=titles[section]||section;
   if(section==='users') renderUsers(users);
   if(section==='tasks') renderTasks(tasks);
   if(section==='disputes') renderDisputes();
+  if(section==='reports') renderReports();
   if(section==='security') renderSecurityLog();
   if(section==='fraud') renderFraudLog();
   if(section==='analytics') renderAnalytics();

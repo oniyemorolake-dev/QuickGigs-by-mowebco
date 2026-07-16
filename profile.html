@@ -191,6 +191,9 @@ body.light .edit-progress-pct{color:var(--purple);}
 .edit-card:nth-of-type(2){animation-delay:0.2s;}
 body.light .edit-card{background:#fff;border-color:#ece8ff;box-shadow:0 4px 20px rgba(107,63,160,0.06);}
 .edit-card-head{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:500;color:var(--text);margin-bottom:14px;}
+.edit-label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);margin-bottom:6px;}
+.edit-input{width:100%;padding:12px 14px;background:rgba(0,0,0,0.2);border:0.5px solid rgba(200,168,233,0.18);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;}
+body.light .edit-input{background:#f8f7ff;border-color:#e8e2ff;}
 .edit-card-icon{font-size:18px;line-height:1;}
 
 .edit-name-wrap{position:relative;margin-bottom:14px;}
@@ -362,6 +365,11 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
   <div class="skills" id="skillsList"></div>
 </div>
 
+<div class="section" id="workerTrustSection" style="display:none">
+  <div class="sec-title">Tasker info</div>
+  <div class="sec-content" id="workerTrustText" style="font-size:13px;line-height:1.7;color:var(--text-muted)"></div>
+</div>
+
 <!-- REVIEWS -->
 <div class="section" id="reviewsSection">
   <div class="sec-head">
@@ -450,6 +458,18 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
         <p class="edit-skills-sub">Tap the skills that fit you — they pop up on your profile</p>
         <div class="skills-edit" id="skillsEdit"></div>
         <div class="skills-selected-count" id="skillsCount">0 selected</div>
+      </div>
+      <div class="edit-card" id="workerFieldsCard" style="display:none">
+        <div class="edit-card-head"><span class="edit-card-icon">📍</span><span>Tasker details</span></div>
+        <label class="edit-label" for="editAvailability">Availability</label>
+        <select class="edit-input" id="editAvailability" style="margin-bottom:12px">
+          <option value="available">Available for gigs</option>
+          <option value="busy">Busy — not taking new tasks</option>
+        </select>
+        <label class="edit-label" for="editServiceArea">Service area</label>
+        <input class="edit-input" id="editServiceArea" type="text" placeholder="e.g. Calgary NW, Airdrie, Cochrane" maxlength="120" style="margin-bottom:12px">
+        <label class="edit-label" for="editLanguages">Languages spoken</label>
+        <input class="edit-input" id="editLanguages" type="text" placeholder="e.g. English, French, Yoruba" maxlength="120">
       </div>
     </div>
 
@@ -769,6 +789,9 @@ async function loadProfile(user) {
     if (dbUser.avatar_url) dbProfile.avatar_url = dbUser.avatar_url;
     if (dbUser.role) dbProfile.role = dbUser.role;
     if (dbUser.bio) dbProfile.bio = String(dbUser.bio).trim();
+    if (dbUser.availability) dbProfile.availability = dbUser.availability;
+    if (dbUser.service_area) dbProfile.service_area = String(dbUser.service_area).trim();
+    if (dbUser.languages) dbProfile.languages = String(dbUser.languages).trim();
     if (typeof parseUserSkills === 'function') {
       var parsedSkills = parseUserSkills(dbUser);
       if (parsedSkills.length) dbProfile.skills = parsedSkills;
@@ -889,6 +912,19 @@ function renderProfile(user, isOwnProfile) {
   document.getElementById('skillsList').innerHTML = skills.length
     ? skills.map(function(s) { return '<span class="skill">' + esc(s) + '</span>'; }).join('')
     : '<span style="font-size:13px;color:var(--text-faint)">' + (isOwnProfile ? 'No skills added yet.' : 'No skills listed.') + '</span>';
+
+  var trustSec = document.getElementById('workerTrustSection');
+  var trustTxt = document.getElementById('workerTrustText');
+  var showWorker = userIsTasker(role);
+  if (trustSec && trustTxt && showWorker) {
+    trustSec.style.display = 'block';
+    var avail = profileData.availability === 'busy' ? '🔴 Busy — not taking new tasks' : '🟢 Available for gigs';
+    var area = profileData.service_area ? '📍 ' + profileData.service_area : '';
+    var langs = profileData.languages ? '🗣 ' + profileData.languages : '';
+    trustTxt.innerHTML = [avail, area, langs].filter(Boolean).join('<br>') || 'Add service area and availability in Customize profile.';
+  } else if (trustSec) {
+    trustSec.style.display = 'none';
+  }
 }
 
 function renderProfileActions(targetId, displayName, isOwnProfile) {
@@ -945,6 +981,14 @@ async function renderReviews(reviews) {
 window.openEditModal = function() {
   document.getElementById('editName').value = profileData.name || '';
   document.getElementById('editBio').value = profileData.bio || '';
+  var wCard = document.getElementById('workerFieldsCard');
+  if (wCard) {
+    var isTasker = userIsTasker(profileData.role);
+    wCard.style.display = isTasker ? 'block' : 'none';
+    document.getElementById('editAvailability').value = profileData.availability || 'available';
+    document.getElementById('editServiceArea').value = profileData.service_area || '';
+    document.getElementById('editLanguages').value = profileData.languages || '';
+  }
   updateAvatarDisplay(profileData.name, profileData.avatar_url);
 
   var photoHint = document.getElementById('editPhotoHint');
@@ -1024,8 +1068,11 @@ window.saveProfile = async function() {
   if (typeof formatPersonName === 'function' && name) name = formatPersonName(name);
   var bio = document.getElementById('editBio').value.trim();
   var skills = Array.from(document.querySelectorAll('.skill-toggle.selected')).map(function(el) { return el.getAttribute('data-skill') || el.textContent; });
+  var availability = document.getElementById('editAvailability') ? document.getElementById('editAvailability').value : 'available';
+  var service_area = document.getElementById('editServiceArea') ? document.getElementById('editServiceArea').value.trim() : '';
+  var languages = document.getElementById('editLanguages') ? document.getElementById('editLanguages').value.trim() : '';
 
-  profileData = Object.assign({}, profileData, { name: name, bio: bio, skills: skills });
+  profileData = Object.assign({}, profileData, { name: name, bio: bio, skills: skills, availability: availability, service_area: service_area, languages: languages });
   localStorage.setItem('qg-profile-' + user.uid, JSON.stringify(profileData));
 
   if (typeof upsertUserProfile === 'function') {
@@ -1036,7 +1083,10 @@ window.saveProfile = async function() {
       role: profileData.role || localStorage.getItem('qg-role') || 'poster',
       avatar_url: profileData.avatar_url || '',
       bio: bio,
-      skills: skills
+      skills: skills,
+      availability: availability,
+      service_area: service_area,
+      languages: languages
     });
   }
 
