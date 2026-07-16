@@ -102,12 +102,19 @@ body.light .mpill.active-standard{background:#ede9ff;color:#5a2d8a;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .loading-txt{font-size:13px;color:var(--results-color);}
 .cards-area{padding:10px 18px 0;}
-.task-card{border-radius:16px;padding:15px;margin-bottom:10px;border:0.5px solid var(--border);background:var(--card-bg);cursor:pointer;transition:border-color 0.18s,background 0.18s;}
+.task-card{border-radius:16px;padding:15px;margin-bottom:10px;border:0.5px solid var(--border);background:var(--card-bg);cursor:pointer;transition:border-color 0.18s,background 0.18s;overflow:hidden;}
+.task-card.has-photo{padding-top:0;padding-left:0;padding-right:0;}
+.task-card.has-photo .tc-body{padding:0 15px 15px;}
 .light .task-card{box-shadow:0 1px 3px rgba(107,63,160,0.08);}
 .task-card:hover{border-color:var(--border-hover);background:var(--surface-hover);}
+.task-card.has-photo:hover .tc-photo-hero{opacity:0.92;}
+.tc-photo-hero{height:128px;background-size:cover;background-position:center;position:relative;margin-bottom:12px;}
+.tc-photo-hero::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,0.45));pointer-events:none;}
+.tc-photo-cat-badge{position:absolute;bottom:10px;left:12px;z-index:1;display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);font-size:10px;font-weight:600;color:#fff;letter-spacing:0.04em;text-transform:uppercase;}
 .tc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;}
-.tc-left{display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0;}
-.tc-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.tc-left{display:flex;align-items:flex-start;gap:12px;flex:1;min-width:0;}
+.tc-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.tc-icon-photo{width:72px;height:72px;border-radius:14px;}
 .tc-meta{flex:1;min-width:0;}
 .tc-cat{font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);margin-bottom:3px;}
 .tc-title{font-size:15px;font-weight:500;color:var(--text);line-height:1.4;}
@@ -122,7 +129,7 @@ body.light .badge-standard{background:#ede9ff;color:var(--purple);}
 .tc-desc{font-size:12px;line-height:1.6;color:var(--desc-color);margin-bottom:11px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .tc-desc.is-empty{display:none;}
 .tc-icon-photo{background-size:cover;background-position:center;position:relative;overflow:visible;}
-.tc-icon-badge{position:absolute;bottom:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:var(--card-bg);border:0.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+.tc-icon-badge{position:absolute;bottom:-4px;right:-4px;width:22px;height:22px;border-radius:50%;background:var(--card-bg);border:0.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;box-shadow:0 2px 6px rgba(0,0,0,0.25);}
 .tc-bottom{display:flex;align-items:center;justify-content:space-between;}
 .tc-price{font-size:16px;font-weight:500;color:var(--text);}
 .tc-info{font-size:10px;color:var(--info-color);margin-top:1px;}
@@ -548,6 +555,12 @@ function renderCardIcon(t) {
   return '<div class="tc-icon" style="background:'+t.iconBg+'" aria-hidden="true">'+t.icon+'</div>';
 }
 
+function renderCardPhotoHero(t) {
+  if (!t.photoUrls || !t.photoUrls[0]) return '';
+  return '<div class="tc-photo-hero" style="background-image:url('+esc(t.photoUrls[0])+')" role="img" aria-label="'+esc(t.title)+' photo">' +
+    '<span class="tc-photo-cat-badge"><span aria-hidden="true">'+t.icon+'</span> '+esc(t.catLabel)+'</span></div>';
+}
+
 function renderCards(){
   var search=(document.getElementById('searchInput').value||'').toLowerCase().trim();
   var locFilter=(document.getElementById('locationFilter').value||'').trim();
@@ -594,12 +607,18 @@ function renderCards(){
       : esc(t.posterName);
     var shareBtn = typeof shareButtonHtml === 'function' ? shareButtonHtml('task', t.id, t.title) : '';
     var reportBtn = typeof reportButtonHtml === 'function' ? reportButtonHtml('task', t.id, t.title) : '';
-    return '<div class="task-card" data-task-id="'+esc(String(t.id))+'">'+
-      '<div class="tc-top"><div class="tc-left">'+renderCardIcon(t)+'<div class="tc-meta"><p class="tc-cat">'+esc(t.catLabel)+'</p><p class="tc-title">'+esc(t.title)+'</p></div></div>'+getBadge(t.mode)+'</div>'+
+    var hasPhoto = t.photoUrls && t.photoUrls[0];
+    var photoHero = renderCardPhotoHero(t);
+    var cardClass = 'task-card' + (hasPhoto ? ' has-photo' : '');
+    var iconHtml = hasPhoto ? '' : renderCardIcon(t);
+    return '<div class="'+cardClass+'" data-task-id="'+esc(String(t.id))+'">'+
+      photoHero+
+      '<div class="tc-body">'+
+      '<div class="tc-top"><div class="tc-left">'+iconHtml+'<div class="tc-meta"><p class="tc-cat">'+esc(t.catLabel)+'</p><p class="tc-title">'+esc(t.title)+'</p></div></div>'+getBadge(t.mode)+'</div>'+
       descHtml+
       '<div class="tc-bottom"><div><div class="tc-price">'+esc(t.priceLabel)+'</div><div class="tc-info">👤 '+posterLabel+' · 📍 '+esc(loc)+whenPart+' · '+esc(t.posted)+(t.applicants>0?' · '+t.applicants+' applied':'')+'</div>'+
       '<div class="qg-action-row">'+shareBtn+reportBtn+'</div></div>'+
-      '<button class="apply-btn '+getBtnClass(t.mode)+'" onclick="openModal(\''+t.id+'\',event)">'+getBtnLabel(t.mode)+'</button></div></div>';
+      '<button class="apply-btn '+getBtnClass(t.mode)+'" onclick="openModal(\''+t.id+'\',event)">'+getBtnLabel(t.mode)+'</button></div></div></div>';
   }).join('');
   if (typeof bindShareTriggers === 'function') {
     bindShareTriggers(area, function(id){ return allTasks.find(function(t){ return String(t.id)===String(id); }); });
