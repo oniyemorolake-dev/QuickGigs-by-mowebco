@@ -1097,7 +1097,7 @@ body.light .qg-role-flip-opt.active {
 }
 
 .qg-role-flip-track.is-worker .qg-role-flip-slider {
-  transform: translateX(100%);
+  transform: translateX(calc(100% + 6px));
 }
 
 .qg-role-flip-note {
