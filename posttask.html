@@ -62,6 +62,42 @@ body.theme-posttask .photo-upload-btn{background:rgba(107,63,160,0.35);color:#f3
 .dark .time-slot.selected{background:rgba(107,63,160,0.4);border:1px solid #c8a8e9;color:#fff;}
 .light .time-slot.selected{background:#ede9ff;border:1px solid #9b6fc4;color:#6b3fa0;}
 
+/* SCHEDULE — animated date picker */
+.schedule-preview{display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:16px;margin-bottom:14px;overflow:hidden;position:relative;}
+.dark .schedule-preview{background:linear-gradient(135deg,rgba(107,63,160,0.35),rgba(155,111,196,0.18));border:1px solid rgba(200,168,233,0.35);}
+.light .schedule-preview{background:linear-gradient(135deg,#f0eeff,#faf5ff);border:1px solid #e0d8ff;}
+.schedule-preview-icon{font-size:28px;line-height:1;flex-shrink:0;animation:schedulePulse 2.4s ease-in-out infinite;}
+@keyframes schedulePulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
+.schedule-preview-main{display:block;font-size:17px;font-weight:600;line-height:1.25;}
+.dark .schedule-preview-main{color:#fff;}
+.light .schedule-preview-main{color:#4c1d95;}
+.schedule-preview-sub{display:block;font-size:12px;margin-top:4px;opacity:0.85;}
+.dark .schedule-preview-sub{color:rgba(233,213,255,0.9);}
+.light .schedule-preview-sub{color:#6b7280;}
+.schedule-preview-text{min-width:0;animation:scheduleTextIn 0.4s cubic-bezier(0.22,1,0.36,1);}
+@keyframes scheduleTextIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.date-strip-wrap{margin-bottom:12px;overflow:hidden;}
+.date-strip{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 10px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.date-strip::-webkit-scrollbar{display:none;}
+.date-chip{flex:0 0 auto;min-width:68px;padding:12px 10px;border-radius:14px;text-align:center;cursor:pointer;scroll-snap-align:start;transition:transform 0.25s cubic-bezier(0.22,1,0.36,1),background 0.25s,border-color 0.25s,box-shadow 0.25s;border:1px solid transparent;}
+.date-chip:active{transform:scale(0.94);}
+.dark .date-chip{background:rgba(255,255,255,0.06);border-color:rgba(200,168,233,0.2);color:rgba(255,255,255,0.75);}
+.light .date-chip{background:#fff;border-color:#e8e2ff;color:#5a5a72;}
+.dark .date-chip.selected{background:rgba(107,63,160,0.55);border-color:#c8a8e9;color:#fff;box-shadow:0 4px 16px rgba(107,63,160,0.35);transform:scale(1.04);}
+.light .date-chip.selected{background:#ede9ff;border-color:#9b6fc4;color:#6b3fa0;box-shadow:0 4px 14px rgba(107,63,160,0.15);transform:scale(1.04);}
+.date-chip-day{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;opacity:0.8;display:block;margin-bottom:4px;}
+.date-chip-num{font-size:18px;font-weight:600;display:block;line-height:1;}
+.date-chip-label{font-size:9px;margin-top:4px;opacity:0.75;display:block;}
+.date-more-chip{min-width:72px;font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;}
+.time-pick-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.time-pick{padding:9px 12px;border-radius:20px;font-size:12px;cursor:pointer;transition:all 0.22s cubic-bezier(0.22,1,0.36,1);}
+.dark .time-pick{background:rgba(255,255,255,0.08);border:0.5px solid rgba(200,168,233,0.35);color:rgba(255,255,255,0.88);}
+.light .time-pick{background:#fff;border:0.5px solid #e8e2ff;color:#4b5563;}
+.dark .time-pick.selected{background:rgba(107,63,160,0.4);border:1px solid #c8a8e9;color:#fff;transform:scale(1.03);}
+.light .time-pick.selected{background:#ede9ff;border:1px solid #9b6fc4;color:#6b3fa0;transform:scale(1.03);}
+.time-custom-wrap{margin-top:8px;}
+.date-native-fallback{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden;clip:rect(0,0,0,0);}
+
 /* MODE SELECTOR */
 .mode-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
 .light .mode-grid{background:#f0eeff;border-radius:12px;padding:10px;}
@@ -268,18 +304,31 @@ body{padding-bottom:76px;}
   <div class="section" id="scheduleSection">
     <span class="section-label">When do you need this?</span>
     <p class="field-hint" id="scheduleHint">Pick a date and time so taskers know when to show up.</p>
-    <div class="field-row" id="scheduleDateRow">
-      <div class="field">
-        <span class="section-label sub-label">Date</span>
-        <input class="field-input" id="taskDate" type="date">
-        <div class="field-error" id="dateError">Please choose a date</div>
+
+    <div class="schedule-preview" id="schedulePreview" aria-live="polite">
+      <span class="schedule-preview-icon" aria-hidden="true">🗓</span>
+      <div class="schedule-preview-text" id="schedulePreviewText">
+        <span class="schedule-preview-main" id="schedulePreviewMain">Select a date</span>
+        <span class="schedule-preview-sub" id="schedulePreviewSub">Tap a day below</span>
       </div>
-      <div class="field" id="exactTimeField">
+    </div>
+
+    <div class="date-strip-wrap">
+      <div class="date-strip" id="dateStrip"></div>
+    </div>
+    <input type="date" id="taskDate" class="date-native-fallback" aria-hidden="true" tabindex="-1">
+
+    <div class="field-row" id="scheduleDateRow">
+      <div class="field" id="exactTimeField" style="grid-column:1/-1;">
         <span class="section-label sub-label">Time</span>
-        <input class="field-input" id="taskTime" type="time">
+        <div class="time-pick-row" id="timePickRow"></div>
+        <div class="time-custom-wrap" id="timeCustomWrap" style="display:none;">
+          <input class="field-input" id="taskTime" type="time">
+        </div>
         <div class="field-error" id="timeError">Please choose a time</div>
       </div>
     </div>
+    <div class="field-error" id="dateError">Please choose a date</div>
     <div class="time-slots" id="timeSlots">
       <div class="time-slot selected" data-slot="exact" onclick="selectTimeSlot(this)">Exact time</div>
       <div class="time-slot" data-slot="morning" onclick="selectTimeSlot(this)">Morning</div>
@@ -412,6 +461,9 @@ var TIME_SLOT_LABELS = {
   evening: 'Evening (5pm – 9pm)',
   flexible: 'Flexible — tasker can suggest'
 };
+var DATE_STRIP_DAYS = 14;
+var QUICK_TIMES = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'];
+var selectedQuickTime = '';
 var CAT_SLUGS = {
   'Errands': 'errands', 'Home': 'home', 'Tutoring': 'tutoring', 'Beauty': 'beauty',
   'Moving': 'moving', 'Cooking': 'cooking', 'Tech': 'tech', 'Care': 'care',
@@ -432,21 +484,223 @@ initUserLocation().then(applyLocationDefaults);
 applyLocationDefaults();
 initScheduleDefaults();
 
+function isoDateLocal(d) {
+  var yyyy = d.getFullYear();
+  var mm = String(d.getMonth() + 1).padStart(2, '0');
+  var dd = String(d.getDate()).padStart(2, '0');
+  return yyyy + '-' + mm + '-' + dd;
+}
+
+function startOfDay(d) {
+  var x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function formatFriendlyDate(isoDate) {
+  if (!isoDate) return 'Select a date';
+  var d = new Date(isoDate + 'T12:00:00');
+  var today = startOfDay(new Date());
+  var tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  var target = startOfDay(d);
+  if (target.getTime() === today.getTime()) {
+    return 'Today · ' + d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  }
+  if (target.getTime() === tomorrow.getTime()) {
+    return 'Tomorrow · ' + d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  }
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+function formatFriendlyTime(timeVal) {
+  if (!timeVal) return '';
+  var parts = String(timeVal).split(':');
+  var h = parseInt(parts[0], 10);
+  var m = parts[1] || '00';
+  var ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return h + ':' + m + ' ' + ampm;
+}
+
+function animateSchedulePreview() {
+  var wrap = document.getElementById('schedulePreviewText');
+  if (!wrap) return;
+  wrap.style.animation = 'none';
+  void wrap.offsetWidth;
+  wrap.style.animation = 'scheduleTextIn 0.4s cubic-bezier(0.22,1,0.36,1)';
+}
+
+function updateSchedulePreview() {
+  var main = document.getElementById('schedulePreviewMain');
+  var sub = document.getElementById('schedulePreviewSub');
+  if (!main || !sub) return;
+  var dateVal = document.getElementById('taskDate') ? document.getElementById('taskDate').value : '';
+  var timeVal = document.getElementById('taskTime') ? document.getElementById('taskTime').value : '';
+  var slotLabel = TIME_SLOT_LABELS[selectedTimeSlot] || 'Flexible';
+
+  if (selectedMode === 'recurring') {
+    main.textContent = selectedRec + ' sessions';
+    sub.textContent = slotLabel;
+    animateSchedulePreview();
+    return;
+  }
+
+  if (!dateVal) {
+    main.textContent = 'Select a date';
+    sub.textContent = 'Tap a day below';
+    return;
+  }
+
+  main.textContent = formatFriendlyDate(dateVal);
+  if (selectedTimeSlot === 'exact') {
+    sub.textContent = timeVal ? formatFriendlyTime(timeVal) + ' · Exact time' : 'Pick a time below';
+  } else {
+    sub.textContent = slotLabel;
+  }
+  animateSchedulePreview();
+}
+
+function renderDateStrip() {
+  var strip = document.getElementById('dateStrip');
+  var dateInput = document.getElementById('taskDate');
+  if (!strip || !dateInput) return;
+
+  var today = startOfDay(new Date());
+  var selected = dateInput.value;
+  var html = '';
+
+  for (var i = 0; i < DATE_STRIP_DAYS; i++) {
+    var d = new Date(today);
+    d.setDate(d.getDate() + i);
+    var iso = isoDateLocal(d);
+    var isSelected = iso === selected;
+    var dayLabel = i === 0 ? 'Today' : (i === 1 ? 'Tomorrow' : d.toLocaleDateString('en-US', { weekday: 'short' }));
+    var monthLabel = d.toLocaleDateString('en-US', { month: 'short' });
+    html += '<div class="date-chip' + (isSelected ? ' selected' : '') + '" data-date="' + iso + '" onclick="selectDateChip(this)">' +
+      '<span class="date-chip-day">' + dayLabel + '</span>' +
+      '<span class="date-chip-num">' + d.getDate() + '</span>' +
+      '<span class="date-chip-label">' + monthLabel + '</span></div>';
+  }
+
+  html += '<div class="date-chip date-more-chip" onclick="openMoreDates()">📅<br><span style="font-size:10px;margin-top:4px;display:block">More</span></div>';
+  strip.innerHTML = html;
+
+  var active = strip.querySelector('.date-chip.selected');
+  if (active) active.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+}
+
+window.selectDateChip = function(el) {
+  var iso = el.getAttribute('data-date');
+  if (!iso) return;
+  var dateInput = document.getElementById('taskDate');
+  dateInput.value = iso;
+  document.getElementById('dateError').style.display = 'none';
+  renderDateStrip();
+  updateSchedulePreview();
+};
+
+window.openMoreDates = function() {
+  var dateInput = document.getElementById('taskDate');
+  dateInput.style.pointerEvents = 'auto';
+  dateInput.style.position = 'fixed';
+  dateInput.style.opacity = '0';
+  dateInput.style.width = '100%';
+  dateInput.style.height = '100%';
+  dateInput.style.top = '0';
+  dateInput.style.left = '0';
+  dateInput.style.clip = 'auto';
+  if (typeof dateInput.showPicker === 'function') {
+    dateInput.showPicker();
+  } else {
+    dateInput.click();
+  }
+  setTimeout(function() {
+    dateInput.style.pointerEvents = '';
+    dateInput.style.position = '';
+    dateInput.style.opacity = '';
+    dateInput.style.width = '';
+    dateInput.style.height = '';
+    dateInput.style.top = '';
+    dateInput.style.left = '';
+    dateInput.style.clip = '';
+  }, 500);
+};
+
+function renderTimePicks() {
+  var row = document.getElementById('timePickRow');
+  var customWrap = document.getElementById('timeCustomWrap');
+  var timeInput = document.getElementById('taskTime');
+  if (!row || !timeInput) return;
+
+  if (selectedTimeSlot !== 'exact' || selectedMode === 'recurring') {
+    row.innerHTML = '';
+    if (customWrap) customWrap.style.display = 'none';
+    return;
+  }
+
+  var current = timeInput.value;
+  var html = QUICK_TIMES.map(function(t) {
+    var label = formatFriendlyTime(t);
+    var sel = (selectedQuickTime === t || (!selectedQuickTime && current === t)) ? ' selected' : '';
+    return '<div class="time-pick' + sel + '" data-time="' + t + '" onclick="selectQuickTime(this)">' + label + '</div>';
+  }).join('');
+  html += '<div class="time-pick' + (selectedQuickTime === 'custom' ? ' selected' : '') + '" data-time="custom" onclick="selectQuickTime(this)">Custom</div>';
+  row.innerHTML = html;
+
+  if (customWrap) {
+    customWrap.style.display = selectedQuickTime === 'custom' ? 'block' : 'none';
+  }
+}
+
+window.selectQuickTime = function(el) {
+  var t = el.getAttribute('data-time');
+  var timeInput = document.getElementById('taskTime');
+  selectedQuickTime = t;
+  if (t === 'custom') {
+    renderTimePicks();
+    if (timeInput) timeInput.focus();
+    updateSchedulePreview();
+    return;
+  }
+  if (timeInput) timeInput.value = t;
+  document.getElementById('timeError').style.display = 'none';
+  renderTimePicks();
+  updateSchedulePreview();
+};
+
 function initScheduleDefaults() {
   var dateInput = document.getElementById('taskDate');
   var timeInput = document.getElementById('taskTime');
   if (!dateInput) return;
   var now = new Date();
-  var yyyy = now.getFullYear();
-  var mm = String(now.getMonth() + 1).padStart(2, '0');
-  var dd = String(now.getDate()).padStart(2, '0');
-  dateInput.min = yyyy + '-' + mm + '-' + dd;
-  if (!dateInput.value) dateInput.value = yyyy + '-' + mm + '-' + dd;
+  var todayIso = isoDateLocal(now);
+  dateInput.min = todayIso;
+  if (!dateInput.value) dateInput.value = todayIso;
   if (timeInput && !timeInput.value) {
     now.setHours(now.getHours() + 2);
     timeInput.value = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
   }
+  if (timeInput && timeInput.value) {
+    selectedQuickTime = QUICK_TIMES.indexOf(timeInput.value) >= 0 ? timeInput.value : 'custom';
+  }
+  dateInput.addEventListener('change', function() {
+    document.getElementById('dateError').style.display = 'none';
+    renderDateStrip();
+    updateSchedulePreview();
+  });
+  if (timeInput) {
+    timeInput.addEventListener('change', function() {
+      selectedQuickTime = 'custom';
+      document.getElementById('timeError').style.display = 'none';
+      renderTimePicks();
+      updateSchedulePreview();
+    });
+  }
+  renderDateStrip();
+  renderTimePicks();
   syncScheduleUI();
+  updateSchedulePreview();
 }
 
 window.selectTimeSlot = function(el) {
@@ -454,14 +708,20 @@ window.selectTimeSlot = function(el) {
   el.classList.add('selected');
   selectedTimeSlot = el.getAttribute('data-slot') || 'exact';
   syncScheduleUI();
+  renderTimePicks();
+  updateSchedulePreview();
 };
 
 function syncScheduleUI() {
   var exactField = document.getElementById('exactTimeField');
   var dateRow = document.getElementById('scheduleDateRow');
+  var dateStripWrap = document.querySelector('.date-strip-wrap');
+  var preview = document.getElementById('schedulePreview');
   var hint = document.getElementById('scheduleHint');
   var isRecurring = selectedMode === 'recurring';
-  if (dateRow) dateRow.style.display = isRecurring ? 'none' : 'grid';
+  if (dateStripWrap) dateStripWrap.style.display = isRecurring ? 'none' : 'block';
+  if (preview) preview.style.display = isRecurring ? 'flex' : 'flex';
+  if (dateRow) dateRow.style.display = isRecurring ? 'none' : 'block';
   if (exactField) exactField.style.display = (selectedTimeSlot === 'exact' && !isRecurring) ? 'block' : 'none';
   if (hint) {
     hint.textContent = isRecurring
@@ -470,6 +730,7 @@ function syncScheduleUI() {
         ? 'Pick a date — taskers can propose a time that works.'
         : 'Pick a date and time so taskers know when to show up.');
   }
+  if (!isRecurring) renderTimePicks();
 }
 
 function buildSchedulePayload() {
@@ -490,14 +751,9 @@ function buildSchedulePayload() {
     if (!timeVal) return { error: 'time' };
     scheduledAt = dateVal + 'T' + timeVal + ':00';
     var dt = new Date(scheduledAt);
-    scheduledLabel = dt.toLocaleString('en-CA', {
-      weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true
-    });
+    scheduledLabel = formatFriendlyDate(dateVal) + ' · ' + formatFriendlyTime(timeVal);
   } else {
-    var datePretty = new Date(dateVal + 'T12:00:00').toLocaleDateString('en-CA', {
-      weekday: 'short', month: 'short', day: 'numeric'
-    });
-    scheduledLabel = datePretty + ' · ' + slotLabel;
+    scheduledLabel = formatFriendlyDate(dateVal) + ' · ' + slotLabel;
   }
 
   return { scheduled_at: scheduledAt, scheduled_label: scheduledLabel };
@@ -511,6 +767,7 @@ window.selectMode = function(el) {
   document.getElementById('recurringSection').style.display = selectedMode === 'recurring' ? 'block' : 'none';
   syncScheduleUI();
   updateHint();
+  updateSchedulePreview();
 };
 
 window.selectCat = function(el) {
@@ -545,6 +802,7 @@ window.selectRec = function(el) {
   document.querySelectorAll('.rec-opt').forEach(function(c){ c.classList.remove('selected'); });
   el.classList.add('selected');
   selectedRec = el.textContent;
+  updateSchedulePreview();
 };
 
 function updateHint(city) {
