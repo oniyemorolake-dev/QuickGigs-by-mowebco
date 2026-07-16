@@ -138,11 +138,26 @@ async function sbUpdate(table, data, filters) {
       var errText = await res.text();
       throw new Error('PATCH failed: ' + res.status + (errText ? ' ' + errText : ''));
     }
-    var rows = await res.json();
-    if (!rows || !rows.length) {
-      return { success: false, error: 'No matching row updated', notFound: true };
+    var rows = [];
+    try {
+      rows = await res.json();
+    } catch (parseErr) {
+      rows = [];
     }
-    return { success: true, data: rows };
+    if (rows && rows.length) {
+      return { success: true, data: rows };
+    }
+    var minimalHeaders = await getSupabaseHeaders({ 'Prefer': 'return=minimal' });
+    var res2 = await fetch(url, {
+      method: 'PATCH',
+      headers: minimalHeaders,
+      body: JSON.stringify(data)
+    });
+    if (res2.ok) {
+      return { success: true };
+    }
+    var err2 = await res2.text();
+    return { success: false, error: 'No matching row updated' + (err2 ? ': ' + err2 : ''), notFound: true };
   } catch (err) {
     console.error('Supabase PATCH error:', err);
     return { success: false, error: err.message };
@@ -420,6 +435,45 @@ async function getUsersNameMap() {
   return map;
 }
 
+function hasProfilePhotoUrl(url) {
+  return !!(url && String(url).trim());
+}
+
+async function getUserAvatarUrl(firebaseUid) {
+  if (!firebaseUid) return '';
+  var user = await getUserByFirebaseUid(firebaseUid);
+  return user && user.avatar_url ? String(user.avatar_url).trim() : '';
+}
+
+async function getUsersAvatarMap() {
+  var users = await getUsers();
+  var map = {};
+  if (!Array.isArray(users)) return map;
+  users.forEach(function (u) {
+    if (!u.firebase_uid || !hasProfilePhotoUrl(u.avatar_url)) return;
+    map[String(u.firebase_uid)] = String(u.avatar_url).trim();
+  });
+  return map;
+}
+
+async function currentUserHasProfilePhoto() {
+  if (!window._currentUser) return false;
+  if (hasProfilePhotoUrl(window._currentUserAvatarUrl)) return true;
+  var url = await getUserAvatarUrl(window._currentUser.uid);
+  if (url) window._currentUserAvatarUrl = url;
+  return hasProfilePhotoUrl(url);
+}
+
+async function ensureTaskerProfilePhoto() {
+  var isTasker = (typeof isWorkerMode === 'function' && isWorkerMode()) ||
+    localStorage.getItem('qg-role') === 'worker' ||
+    localStorage.getItem('qg-session-mode') === 'worker';
+  if (!isTasker) return { ok: true, avatar_url: window._currentUserAvatarUrl || '' };
+  var has = await currentUserHasProfilePhoto();
+  if (has) return { ok: true, avatar_url: window._currentUserAvatarUrl || '' };
+  return { ok: false, error: 'profile_photo_required' };
+}
+
 function resolveUserName(uid, taskRow, userNames) {
   if (!uid) return 'User';
   var uidStr = String(uid);
@@ -588,15 +642,31 @@ async function markConversationRead(convId, userId, posterId) {
 }
 
 async function getApplicationsByTask(taskId) {
-  return await sbGet('applications', 'task_id=eq.' + encodeURIComponent(taskId));
+  var rows = await sbGet('applications', 'task_id=eq.' + encodeURIComponent(taskId));
+  return (rows || []).map(normalizeApplicationRow);
 }
 
 async function getApplicationsByWorker(workerId) {
-  return await sbGet('applications', 'worker_id=eq.' + workerId);
+  var rows = await sbGet('applications', 'worker_id=eq.' + workerId);
+  return (rows || []).map(normalizeApplicationRow);
+}
+
+function normalizeApplicationRow(row) {
+  if (!row) return row;
+  var id = row.app_id || row.APP_ID || row.application_id || row.APPLICATION_ID || row.id;
+  if (id != null && id !== '') {
+    row.app_id = id;
+    row.APP_ID = id;
+  }
+  if (row.worker_id == null && row.WORKER_ID != null) row.worker_id = row.WORKER_ID;
+  if (row.task_id == null && row.TASK_ID != null) row.task_id = row.TASK_ID;
+  if (row.status == null && row.STATUS != null) row.status = row.STATUS;
+  return row;
 }
 
 async function getAllApplications() {
-  return await sbGet('applications', null, 'created_at.desc', 200);
+  var rows = await sbGet('applications', null, 'created_at.desc', 200);
+  return (rows || []).map(normalizeApplicationRow);
 }
 
 async function submitApplication(appData) {
@@ -605,6 +675,10 @@ async function submitApplication(appData) {
     var posterId = task && (task.posted_by || task.POSTED_BY);
     if (posterId && String(posterId) === String(appData.worker_id)) {
       return { success: false, error: 'cannot_apply_own_task' };
+    }
+    var workerPhoto = await getUserAvatarUrl(appData.worker_id);
+    if (!hasProfilePhotoUrl(workerPhoto)) {
+      return { success: false, error: 'profile_photo_required' };
     }
   }
 
@@ -631,23 +705,76 @@ async function submitApplication(appData) {
   return result;
 }
 
-async function updateApplicationStatus(appId, status) {
-  var id = encodeURIComponent(String(appId));
-  var filters = ['app_id=eq.' + id, 'id=eq.' + id, 'application_id=eq.' + id];
+function buildApplicationUpdateFilters(appId, opts) {
+  opts = opts || {};
+  var filters = [];
+  if (appId != null && String(appId) !== '') {
+    var id = encodeURIComponent(String(appId));
+    filters.push('app_id=eq.' + id);
+    filters.push('id=eq.' + id);
+    filters.push('application_id=eq.' + id);
+  }
+  if (opts.taskId && opts.workerId) {
+    filters.push(
+      'task_id=eq.' + encodeURIComponent(String(opts.taskId)) +
+      '&worker_id=eq.' + encodeURIComponent(String(opts.workerId))
+    );
+  }
+  return filters;
+}
+
+async function updateApplicationStatus(appId, status, opts) {
+  opts = opts || {};
+  var filters = buildApplicationUpdateFilters(appId, opts);
   var result = { success: false, error: 'Could not update application' };
   for (var i = 0; i < filters.length; i++) {
     result = await sbUpdate('applications', { status: status }, filters[i]);
     if (result.success) break;
   }
+  if (result.success || !opts.taskId || !opts.workerId) return result;
+
+  var lookup = await sbGet(
+    'applications',
+    'task_id=eq.' + encodeURIComponent(String(opts.taskId)) +
+      '&worker_id=eq.' + encodeURIComponent(String(opts.workerId)) +
+      '&limit=1'
+  );
+  if (!lookup || !lookup[0]) return result;
+
+  var row = normalizeApplicationRow(lookup[0]);
+  var resolvedId = row.app_id || row.id || row.application_id;
+  if (!resolvedId) return result;
+
+  var retryFilters = buildApplicationUpdateFilters(resolvedId, {
+    taskId: opts.taskId,
+    workerId: opts.workerId
+  });
+  for (var j = 0; j < retryFilters.length; j++) {
+    result = await sbUpdate('applications', { status: status }, retryFilters[j]);
+    if (result.success) break;
+  }
   return result;
 }
 
-async function cancelApplication(appId) {
-  return await updateApplicationStatus(appId, 'cancelled');
+function formatSupabaseActionError(action, err) {
+  var msg = String(err || '');
+  var lower = msg.toLowerCase();
+  if (lower.indexOf('401') >= 0 || lower.indexOf('403') >= 0 || lower.indexOf('42501') >= 0 || lower.indexOf('row-level') >= 0) {
+    return 'Could not ' + action + ' — run supabase/tasks-beta-fix.sql in Supabase SQL Editor, then refresh.';
+  }
+  if (lower.indexOf('no matching row') >= 0) {
+    return 'Could not ' + action + ' — refresh the page and try again.';
+  }
+  if (msg && msg.length < 100) return 'Could not ' + action + ' — ' + msg;
+  return 'Could not ' + action + ' — run supabase/tasks-beta-fix.sql in Supabase SQL Editor, then refresh.';
 }
 
-async function declineApplication(appId) {
-  return await updateApplicationStatus(appId, 'declined');
+async function cancelApplication(appId, opts) {
+  return await updateApplicationStatus(appId, 'cancelled', opts);
+}
+
+async function declineApplication(appId, opts) {
+  return await updateApplicationStatus(appId, 'declined', opts);
 }
 
 async function cancelTask(taskId) {
@@ -689,7 +816,10 @@ async function declinePendingApplicationsForTask(taskId, exceptAppId) {
     return status === 'pending';
   });
   var results = await Promise.all(pending.map(function (a) {
-    return declineApplication(a.app_id || a.APP_ID || a.id);
+    return declineApplication(a.app_id || a.APP_ID || a.id, {
+      taskId: taskId,
+      workerId: a.worker_id || a.WORKER_ID
+    });
   }));
   return results.every(function (r) { return r.success; });
 }
@@ -768,6 +898,10 @@ window.syncCurrentUserProfile = syncCurrentUserProfile;
 window.getUserByFirebaseUid = getUserByFirebaseUid;
 window.getUserNameByFirebaseUid = getUserNameByFirebaseUid;
 window.getUsersNameMap = getUsersNameMap;
+window.getUserAvatarUrl = getUserAvatarUrl;
+window.getUsersAvatarMap = getUsersAvatarMap;
+window.currentUserHasProfilePhoto = currentUserHasProfilePhoto;
+window.ensureTaskerProfilePhoto = ensureTaskerProfilePhoto;
 window.resolveUserName = resolveUserName;
 window.isGenericDisplayName = isGenericDisplayName;
 window.enrichConversationNames = enrichConversationNames;
@@ -784,6 +918,7 @@ window.getApplicationsByWorker = getApplicationsByWorker;
 window.getAllApplications = getAllApplications;
 window.submitApplication = submitApplication;
 window.updateApplicationStatus = updateApplicationStatus;
+window.formatSupabaseActionError = formatSupabaseActionError;
 window.cancelApplication = cancelApplication;
 window.declineApplication = declineApplication;
 window.cancelTask = cancelTask;

@@ -77,7 +77,7 @@ body.light .tc-applicants-toggle{color:var(--purple);}
 .decline-btn{padding:6px 12px;border-radius:8px;background:var(--surface);color:var(--text-muted);border:1px solid var(--border);font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;margin-right:6px;}
 .decline-btn:hover:not(:disabled){opacity:0.85;}
 .decline-btn:disabled{opacity:0.5;cursor:not-allowed;}
-.applicant-actions{display:flex;align-items:center;flex-shrink:0;gap:0;}
+.applicant-actions{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:6px;flex-shrink:0;}
 .applicant-row.is-cancelled,.applicant-row.is-withdrawn{opacity:0.4;}
 .task-card.is-faded{opacity:0.55;}
 
@@ -93,11 +93,14 @@ body.light .tc-applicants-toggle{color:var(--purple);}
 .confirm-ok.is-neutral{background:var(--purple);}
 
 /* APPLICANT ROW */
-.applicant-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:0.5px solid var(--border);transition:opacity 0.25s,background 0.25s;}
+.applicant-row{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:10px 0;border-top:0.5px solid var(--border);transition:opacity 0.25s,background 0.25s;}
+.applicant-row .app-price{margin-left:auto;}
+.applicant-row .applicant-actions{width:100%;padding-top:4px;}
 .applicant-row.is-faded{opacity:0.35;}
 .applicant-row.is-accepted{background:rgba(74,222,128,0.1);border-radius:10px;padding:10px 8px;}
 .applicant-row.is-accepting{background:rgba(107,63,160,0.12);border-radius:10px;}
-.app-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#c8a8e9);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#fff;flex-shrink:0;}
+.app-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#c8a8e9);background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#fff;flex-shrink:0;text-decoration:none;}
+.app-avatar.has-photo{color:transparent;}
 body.light .app-avatar{color:#2d1b4e;}
 .app-info{flex:1;min-width:0;}
 .app-name{font-size:15px;font-weight:500;color:var(--text);}
@@ -185,6 +188,7 @@ renderQuickGigsTabBar(navActive);
 var activeTab = 'posted';
 var allTasks = [], allApplications = [];
 var userNames = {};
+var userAvatars = {};
 var expandedApplicantTasks = {};
 var isDark = localStorage.getItem('qg-mode') !== 'light';
 var TAB_IDS = { posted: 'tabPosted', applied: 'tabApplied', inprogress: 'tabInprogress', completed: 'tabCompleted' };
@@ -391,6 +395,21 @@ function enrichRowsWithNames() {
   });
 }
 
+async function hydrateApplicantAvatars() {
+  var uids = {};
+  allApplications.forEach(function(a) {
+    var wid = getField(a, 'WORKER_ID');
+    if (!wid || userAvatars[String(wid)]) return;
+    uids[String(wid)] = true;
+  });
+  var keys = Object.keys(uids);
+  if (!keys.length || typeof getUserAvatarUrl !== 'function') return;
+  for (var i = 0; i < keys.length; i++) {
+    var url = await getUserAvatarUrl(keys[i]);
+    if (url) userAvatars[keys[i]] = url;
+  }
+}
+
 async function hydrateMissingNames() {
   var uids = {};
   allTasks.forEach(function(t) {
@@ -455,11 +474,16 @@ async function loadData(){
     var namesPromise = typeof getUsersNameMap === 'function'
       ? getUsersNameMap().catch(function () { return {}; })
       : Promise.resolve({});
+    var avatarsPromise = typeof getUsersAvatarMap === 'function'
+      ? getUsersAvatarMap().catch(function () { return {}; })
+      : Promise.resolve({});
 
-    var results = await Promise.all([tasksPromise, appsPromise, namesPromise]);
+    var results = await Promise.all([tasksPromise, appsPromise, namesPromise, avatarsPromise]);
     allTasks = Array.isArray(results[0]) ? results[0] : [];
     allApplications = Array.isArray(results[1]) ? results[1] : [];
     userNames = results[2] || {};
+    userAvatars = results[3] || {};
+    await hydrateApplicantAvatars();
     await hydrateMissingNames();
 
     if (typeof fetchAllTasksFresh === 'function') { /* already fresh */ }
@@ -641,13 +665,17 @@ function renderTab(){
       var appHtml = listApps.length ? listApps.map(function(a){
         var workerId = getField(a,'WORKER_ID');
         var workerName = displayName(workerId, a);
+        var workerAvatar = userAvatars[String(workerId)] || '';
+        var avatarHtml = typeof renderUserAvatarHtml === 'function'
+          ? renderUserAvatarHtml(workerName, workerAvatar, { className: 'app-avatar' })
+          : ('<div class="app-avatar">'+esc(workerName.charAt(0).toUpperCase())+'</div>');
         var status = (getField(a,'STATUS') || 'pending').toLowerCase();
         var rowClass = 'applicant-row';
         if (status === 'accepted') rowClass += ' is-accepted';
         else if (status === 'declined') rowClass += ' is-faded';
         else if (status === 'cancelled') rowClass += ' is-withdrawn';
         return '<div class="'+rowClass+'">'+
-          '<div class="app-avatar">'+esc(workerName.charAt(0).toUpperCase())+'</div>'+
+          '<a href="profile.html?user='+encodeURIComponent(String(workerId))+'" style="flex-shrink:0">'+avatarHtml+'</a>'+
           '<div class="app-info"><div class="app-name">'+esc(workerName)+'</div><div class="app-msg">'+esc(getField(a,'MESSAGE'))+'</div></div>'+
           '<div class="app-price">$'+getField(a,'PRICE')+'</div>'+
           renderApplicantAction(a, taskId)+
@@ -854,11 +882,17 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
   var posterName = window._currentUser.displayName || window._currentUser.email.split('@')[0];
   if (typeof formatPersonName === 'function') posterName = formatPersonName(posterName);
 
-  var appStatus = await updateApplicationStatus(appId, 'accepted');
+  var appStatus = await updateApplicationStatus(appId, 'accepted', {
+    taskId: taskId,
+    workerId: workerId
+  });
   if(!appStatus.success){
     console.error('Accept failed:', appStatus.error);
     setAcceptLoading(acceptBtn, false);
-    showToast('Could not accept — run supabase/tasks-beta-fix.sql in Supabase', '#ef4444');
+    var acceptMsg = typeof formatSupabaseActionError === 'function'
+      ? formatSupabaseActionError('accept', appStatus.error)
+      : 'Could not accept — run supabase/tasks-beta-fix.sql in Supabase SQL Editor, then refresh.';
+    showToast(acceptMsg, '#ef4444');
     return;
   }
 
@@ -997,21 +1031,29 @@ window.declineApplicant = async function(taskId, appId, declineBtn) {
     showToast('Invalid application — refresh and try again', '#ef4444');
     return;
   }
+  var app = allApplications.find(function(a){ return String(getField(a, 'APP_ID')) === appId; });
+  var workerId = app ? getField(app, 'WORKER_ID') : '';
   if (declineBtn) {
     declineBtn.disabled = true;
     declineBtn.textContent = 'Declining…';
   }
-  var result = await declineApplication(appId);
+  var result = await declineApplication(appId, { taskId: taskId, workerId: workerId });
   if (!result.success) {
     if (declineBtn) {
       declineBtn.disabled = false;
       declineBtn.textContent = 'Decline';
     }
-    showToast('Could not decline applicant. Try again.', '#ef4444');
+    var declineMsg = typeof formatSupabaseActionError === 'function'
+      ? formatSupabaseActionError('decline applicant', result.error)
+      : 'Could not decline applicant — run supabase/tasks-beta-fix.sql in Supabase, then refresh.';
+    showToast(declineMsg, '#ef4444');
     return;
   }
   allApplications.forEach(function(a) {
-    if (String(getField(a, 'APP_ID')) === appId) setRowStatus(a, 'declined');
+    if (String(getField(a, 'APP_ID')) === appId ||
+        (String(getField(a, 'TASK_ID')) === taskId && String(getField(a, 'WORKER_ID')) === String(workerId))) {
+      setRowStatus(a, 'declined');
+    }
   });
   showToast('Applicant declined');
   renderTab();
@@ -1023,9 +1065,15 @@ window.confirmWithdrawApplication = function(appId) {
     message: 'Your offer will be removed and the poster will no longer see you as an applicant. You can apply again later if the task is still open.',
     confirmLabel: 'Withdraw',
     onConfirm: async function() {
-      var result = await cancelApplication(String(appId));
+      var app = allApplications.find(function(a){ return String(getField(a, 'APP_ID')) === String(appId); });
+      var taskId = app ? getField(app, 'TASK_ID') : '';
+      var workerId = window._currentUser ? window._currentUser.uid : (app ? getField(app, 'WORKER_ID') : '');
+      var result = await cancelApplication(String(appId), { taskId: taskId, workerId: workerId });
       if (!result.success) {
-        showToast('Could not withdraw. Try again.', '#ef4444');
+        var withdrawMsg = typeof formatSupabaseActionError === 'function'
+          ? formatSupabaseActionError('withdraw application', result.error)
+          : 'Could not withdraw — run supabase/tasks-beta-fix.sql in Supabase, then refresh.';
+        showToast(withdrawMsg, '#ef4444');
         return;
       }
       showToast('Application withdrawn');

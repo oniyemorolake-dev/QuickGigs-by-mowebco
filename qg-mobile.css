@@ -102,3 +102,18 @@ body.qg-page-chat {
     max-width: 85%;
   }
 }
+
+.app-avatar,
+.conv-avatar,
+.nav-chat-avatar,
+.user-avatar {
+  background-size: cover;
+  background-position: center;
+}
+
+.app-avatar.has-photo,
+.conv-avatar.has-photo,
+.nav-chat-avatar.has-photo,
+.user-avatar.has-photo {
+  color: transparent;
+}

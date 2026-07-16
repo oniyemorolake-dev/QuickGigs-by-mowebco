@@ -109,6 +109,12 @@ body.light .skill-toggle.selected{background:#ede9ff;color:var(--purple);}
 /* TOAST */
 .toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:#4ade80;color:#0b0118;padding:11px 24px;border-radius:20px;font-size:13px;font-weight:500;display:none;z-index:300;white-space:nowrap;}
 
+.photo-required-banner{margin:0 20px 16px;padding:14px 16px;border-radius:14px;background:rgba(251,191,36,0.1);border:0.5px solid rgba(251,191,36,0.25);text-align:center;}
+.photo-required-banner strong{display:block;font-size:14px;color:var(--text);margin-bottom:6px;}
+.photo-required-banner p{font-size:12px;color:var(--text-muted);line-height:1.55;margin-bottom:10px;}
+.photo-required-banner a{display:inline-block;padding:8px 16px;border-radius:10px;background:var(--purple);color:#fff;text-decoration:none;font-size:13px;font-weight:500;}
+body.light .photo-required-banner{background:#fffbeb;border-color:#fde68a;}
+
 /* TAB BAR */
 .tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--tab-bg);border-top:0.5px solid var(--border);display:flex;padding:8px 0 14px;z-index:100;transition:background 0.25s;}
 .tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;}
@@ -130,6 +136,11 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <!-- BANNER -->
 <div class="banner"><div class="banner-overlay"></div></div>
+
+<div class="photo-required-banner" id="photoRequiredBanner" style="display:none">
+  <strong>📷 Add your profile photo</strong>
+  <p>Taskers need a clear photo so posters know who they're hiring. Tap your avatar below to upload one.</p>
+</div>
 
 <!-- AVATAR + INFO -->
 <div class="avatar-section">
@@ -253,6 +264,8 @@ applyTheme();
 // Check URL for viewing another user's profile
 var params = new URLSearchParams(window.location.search);
 var viewUserId = params.get('user');
+var photoSetupMode = params.get('setup') === 'photo';
+var photoRequired = params.get('required') === '1';
 
 async function loadProfile(user) {
   var isOwnProfile = !viewUserId || viewUserId === user.uid;
@@ -319,6 +332,16 @@ async function loadProfile(user) {
   }
 
   renderProfile(user);
+
+  if (isOwnProfile && photoSetupMode && !profileData.avatar_url) {
+    var banner = document.getElementById('photoRequiredBanner');
+    if (banner) banner.style.display = 'block';
+    var hint = document.getElementById('avatarHint');
+    if (hint) hint.textContent = 'Tap to add your photo (required for taskers)';
+  } else if (isOwnProfile && photoRequired && !profileData.avatar_url) {
+    var reqBanner = document.getElementById('photoRequiredBanner');
+    if (reqBanner) reqBanner.style.display = 'block';
+  }
 }
 
 function renderProfile(user) {
@@ -329,6 +352,8 @@ function renderProfile(user) {
     avatarEl.style.backgroundImage = 'url(' + profileData.avatar_url + ')';
     avatarEl.classList.add('has-photo');
     avatarEl.textContent = '';
+    var photoBanner = document.getElementById('photoRequiredBanner');
+    if (photoBanner) photoBanner.style.display = 'none';
   } else {
     avatarEl.style.backgroundImage = '';
     avatarEl.classList.remove('has-photo');
@@ -452,6 +477,13 @@ window.uploadAvatar = async function(input) {
   t.textContent = 'Profile photo updated!';
   t.style.display = 'block';
   setTimeout(function(){ t.style.display='none'; t.textContent='Profile saved! 🎉'; }, 2500);
+
+  if (photoSetupMode || photoRequired) {
+    var returnTo = params.get('return') || 'browsetask.html';
+    setTimeout(function() {
+      window.location.href = returnTo;
+    }, 1200);
+  }
 };
 </script>
 </body>

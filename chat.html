@@ -49,7 +49,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 /* NAV */
 .nav{background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:12px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0;transition:background 0.25s;}
 .back-btn{font-size:20px;color:var(--purple-light);cursor:pointer;text-decoration:none;flex-shrink:0;}
-.nav-center{flex:1;min-width:0;text-align:center;}
+.nav-center{flex:1;min-width:0;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.nav-avatar-row{display:flex;align-items:center;justify-content:center;gap:8px;max-width:100%;}
+.nav-chat-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#fff;flex-shrink:0;background-size:cover;background-position:center;}
+.nav-chat-avatar.has-photo{color:transparent;}
 .nav-name{font-size:15px;font-weight:500;color:var(--text);}
 .nav-sub{font-size:11px;color:var(--text-muted);}
 .nav-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
@@ -138,7 +141,10 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <nav class="nav">
   <a class="back-btn" href="messages.html">←</a>
   <div class="nav-center">
-    <div class="nav-name" id="chatName">Sarah K.</div>
+    <div class="nav-avatar-row">
+      <div id="chatAvatar"></div>
+      <div class="nav-name" id="chatName">Sarah K.</div>
+    </div>
     <div class="nav-sub" id="chatSub">Applied to your task</div>
   </div>
   <div class="nav-right">
@@ -315,6 +321,15 @@ async function initChat(){
   }
   if (!otherName || (typeof isGenericDisplayName === 'function' && isGenericDisplayName(otherName))) {
     otherName = isPoster ? 'Tasker' : 'Poster';
+  }
+  var otherAvatar = '';
+  if (typeof getUserAvatarUrl === 'function') {
+    otherAvatar = await getUserAvatarUrl(otherUid);
+  }
+  var chatAvatarEl = document.getElementById('chatAvatar');
+  if (chatAvatarEl && typeof renderUserAvatarHtml === 'function') {
+    var avatarHtml = renderUserAvatarHtml(otherName, otherAvatar, { className: 'nav-chat-avatar' });
+    chatAvatarEl.outerHTML = avatarHtml.replace('class="nav-chat-avatar"', 'class="nav-chat-avatar" id="chatAvatar"');
   }
   var cat = (currentConv.task_category || 'other').toLowerCase();
 

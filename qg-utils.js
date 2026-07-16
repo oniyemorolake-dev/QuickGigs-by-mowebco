@@ -159,3 +159,38 @@ function getOffPlatformWarning() {
 window.containsOffPlatformContact = containsOffPlatformContact;
 window.containsFraud = containsOffPlatformContact;
 window.getOffPlatformWarning = getOffPlatformWarning;
+
+var AVATAR_GRADIENTS = [
+  'linear-gradient(135deg,#6b3fa0,#c8a8e9)',
+  'linear-gradient(135deg,#16a34a,#4ade80)',
+  'linear-gradient(135deg,#d97706,#fbbf24)',
+  'linear-gradient(135deg,#2563eb,#60a5fa)',
+  'linear-gradient(135deg,#9b6fc4,#c8a8e9)'
+];
+
+function avatarGradientForName(name) {
+  var n = 0;
+  for (var i = 0; i < (name || '').length; i++) n += name.charCodeAt(i);
+  return AVATAR_GRADIENTS[n % AVATAR_GRADIENTS.length];
+}
+
+function hasProfilePhotoUrl(url) {
+  return !!(url && String(url).trim());
+}
+
+function renderUserAvatarHtml(name, avatarUrl, opts) {
+  opts = opts || {};
+  var cls = opts.className || 'user-avatar';
+  var initial = (name || 'U').charAt(0).toUpperCase();
+  var label = escapeHtml(name || 'User');
+  if (hasProfilePhotoUrl(avatarUrl)) {
+    var safeUrl = String(avatarUrl).replace(/'/g, '%27').replace(/"/g, '&quot;');
+    return '<div class="' + cls + ' has-photo" style="background-image:url(\'' + safeUrl + '\')" title="' + label + '" aria-label="' + label + '"></div>';
+  }
+  var bg = opts.gradient || avatarGradientForName(name);
+  return '<div class="' + cls + '" style="background:' + bg + '" title="' + label + '" aria-label="' + label + '">' + escapeHtml(initial) + '</div>';
+}
+
+window.avatarGradientForName = avatarGradientForName;
+window.hasProfilePhotoUrl = hasProfilePhotoUrl;
+window.renderUserAvatarHtml = renderUserAvatarHtml;

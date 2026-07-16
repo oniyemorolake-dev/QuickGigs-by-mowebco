@@ -197,7 +197,9 @@ document.getElementById('signupForm').addEventListener('submit', async function(
 
     okMsg.textContent = 'Account created! Welcome to QuickGigs 🎉 Redirecting...';
     okMsg.style.display = 'block';
-    var dest = typeof getDashboardUrl === 'function' ? getDashboardUrl(role) : ('dashboard.html?mode=' + (role === 'worker' ? 'worker' : 'poster'));
+    var dest = role === 'worker'
+      ? 'profile.html?setup=photo&required=1'
+      : (typeof getDashboardUrl === 'function' ? getDashboardUrl(role) : ('dashboard.html?mode=' + (role === 'worker' ? 'worker' : 'poster')));
     setTimeout(function(){ window.location.href = dest; }, 1500);
 
   } catch (error) {

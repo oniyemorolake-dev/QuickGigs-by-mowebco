@@ -91,7 +91,10 @@ body.light .submit-btn{color:#2d1b4e;}
 .badge-standard{background:rgba(107,63,160,0.2);color:#9b6fc4;}
 body.light .badge-standard{background:#ede9ff;color:var(--purple);}
 .badge-recurring{background:rgba(74,222,128,0.1);color:#16a34a;}
-.tc-desc{font-size:12px;line-height:1.6;color:var(--desc-color);margin-bottom:11px;}
+.tc-desc{font-size:12px;line-height:1.6;color:var(--desc-color);margin-bottom:11px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.tc-desc.is-empty{display:none;}
+.tc-icon-photo{background-size:cover;background-position:center;position:relative;overflow:visible;}
+.tc-icon-badge{position:absolute;bottom:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:var(--card-bg);border:0.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
 .tc-bottom{display:flex;align-items:center;justify-content:space-between;}
 .tc-price{font-size:16px;font-weight:500;color:var(--text);}
 .tc-info{font-size:10px;color:var(--info-color);margin-top:1px;}
@@ -125,6 +128,11 @@ textarea.modal-input{resize:vertical;min-height:100px;max-height:160px;}
 .submit-btn{padding:13px;border-radius:13px;border:none;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;}
 .submit-btn:disabled{opacity:0.5;cursor:not-allowed;}
 .toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:#4ade80;color:#0b0118;padding:11px 24px;border-radius:20px;font-size:13px;font-weight:500;display:none;z-index:300;white-space:nowrap;}
+.photo-required-banner{margin:12px 18px 0;padding:12px 14px;border-radius:12px;background:rgba(251,191,36,0.1);border:0.5px solid rgba(251,191,36,0.25);display:flex;align-items:center;gap:12px;}
+.photo-required-banner strong{display:block;font-size:13px;color:var(--text);margin-bottom:2px;}
+.photo-required-banner p{font-size:11px;color:var(--text-muted);line-height:1.45;margin:0;}
+.photo-required-banner a{flex-shrink:0;padding:8px 12px;border-radius:10px;background:var(--purple);color:#fff;text-decoration:none;font-size:12px;font-weight:500;white-space:nowrap;}
+body.light .photo-required-banner{background:#fffbeb;border-color:#fde68a;}
 .tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--tab-bg);border-top:0.5px solid var(--border);display:flex;padding:8px 0 12px;z-index:100;}
 .tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;text-decoration:none;}
 .tab-icon{font-size:20px;color:var(--text-faint);}
@@ -177,6 +185,13 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
     <span class="cpill" onclick="setCat(this,'trades')">🔧 Trades</span>
     <span class="cpill" onclick="setCat(this,'other')">📦 Other</span>
   </div>
+</div>
+<div class="photo-required-banner" id="photoRequiredBanner" style="display:none">
+  <div>
+    <strong>Profile photo required</strong>
+    <p>Add a clear photo before you apply — posters need to see who they're hiring.</p>
+  </div>
+  <a href="profile.html?setup=photo&required=1&return=browsetask.html">Add photo</a>
 </div>
 <div class="results-bar">
   <span class="results-txt" id="resultsCount">Loading tasks...</span>
@@ -244,6 +259,12 @@ onAuthStateChanged(auth, (user) => {
   document.getElementById('avatarEl').textContent = name.charAt(0).toUpperCase();
   window._currentUser = user;
   if (typeof syncCurrentUserProfile === 'function') syncCurrentUserProfile(user);
+  if (typeof ensureTaskerProfilePhoto === 'function') {
+    ensureTaskerProfilePhoto().then(function(check) {
+      var banner = document.getElementById('photoRequiredBanner');
+      if (banner) banner.style.display = check.ok ? 'none' : 'flex';
+    });
+  }
   if (typeof window.reloadBrowseTasks === 'function') window.reloadBrowseTasks();
 });
 </script>
@@ -377,6 +398,23 @@ function getBadge(m){if(m==='quick')return '<span class="tc-badge badge-quick">�
 function getBtnClass(m){return 'btn-'+m;}
 function getBtnLabel(m){return m==='quick'?'Apply ⚡':'Apply';}
 
+function formatLocationDisplay(loc) {
+  if (!loc) return '';
+  return String(loc).trim().split(',').map(function(part) {
+    part = part.trim();
+    if (!part) return part;
+    return part.replace(/\b([a-z])/g, function(m) { return m.toUpperCase(); });
+  }).filter(Boolean).join(', ');
+}
+
+function renderCardIcon(t) {
+  if (t.photoUrls && t.photoUrls[0]) {
+    return '<div class="tc-icon tc-icon-photo" style="background-image:url('+esc(t.photoUrls[0])+')" role="img" aria-label="'+esc(t.catLabel)+' task photo">' +
+      '<span class="tc-icon-badge" aria-hidden="true">'+t.icon+'</span></div>';
+  }
+  return '<div class="tc-icon" style="background:'+t.iconBg+'" aria-hidden="true">'+t.icon+'</div>';
+}
+
 function renderCards(){
   var search=(document.getElementById('searchInput').value||'').toLowerCase().trim();
   var filtered=allTasks.filter(function(t){
@@ -387,10 +425,13 @@ function renderCards(){
   var area=document.getElementById('cardsArea');
   if(!filtered.length){area.innerHTML='<div class="empty-state"><div class="empty-emoji">🔍</div><p class="empty-txt">'+(allTasks.length===0?'No tasks posted yet — be the first!':'No tasks match this filter')+'</p></div>';return;}
   area.innerHTML=filtered.map(function(t){
+    var desc = (t.desc || '').trim();
+    var descHtml = desc ? '<p class="tc-desc">'+esc(desc)+'</p>' : '<p class="tc-desc is-empty"></p>';
+    var loc = formatLocationDisplay(t.location);
     return '<div class="task-card">'+
-      '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+t.iconBg+'">'+t.icon+'</div><div class="tc-meta"><p class="tc-cat">'+esc(t.catLabel)+'</p><p class="tc-title">'+esc(t.title)+'</p></div></div>'+getBadge(t.mode)+'</div>'+
-      '<p class="tc-desc">'+esc(t.desc)+'</p>'+
-      '<div class="tc-bottom"><div><div class="tc-price">'+esc(t.priceLabel)+'</div><div class="tc-info">👤 '+esc(t.posterName)+' · 📍 '+esc(t.location)+' · '+esc(t.posted)+(t.applicants>0?' · '+t.applicants+' applied':'')+'</div></div>'+
+      '<div class="tc-top"><div class="tc-left">'+renderCardIcon(t)+'<div class="tc-meta"><p class="tc-cat">'+esc(t.catLabel)+'</p><p class="tc-title">'+esc(t.title)+'</p></div></div>'+getBadge(t.mode)+'</div>'+
+      descHtml+
+      '<div class="tc-bottom"><div><div class="tc-price">'+esc(t.priceLabel)+'</div><div class="tc-info">👤 '+esc(t.posterName)+' · 📍 '+esc(loc)+' · '+esc(t.posted)+(t.applicants>0?' · '+t.applicants+' applied':'')+'</div></div>'+
       '<button class="apply-btn '+getBtnClass(t.mode)+'" onclick="openModal(\''+t.id+'\',event)">'+getBtnLabel(t.mode)+'</button></div></div>';
   }).join('');
 }
@@ -399,13 +440,22 @@ window.setMode=function(el,mode){document.querySelectorAll('.mpill').forEach(fun
 window.setCat=function(el,cat){document.querySelectorAll('.cpill').forEach(function(p){p.classList.remove('cat-active');});el.classList.add('cat-active');activeCat=cat;renderCards();};
 window.applyFilters=renderCards;
 
-window.openModal=function(id,e){
+window.openModal=async function(id,e){
   e.stopPropagation();
   activeTask=allTasks.find(function(t){return String(t.id)===String(id);});
   if(!activeTask)return;
   if(isOwnPostedTask(activeTask)){
     alert('This is your own posting. Switch to Poster mode → My Tasks to manage applicants.');
     return;
+  }
+  if (typeof ensureTaskerProfilePhoto === 'function') {
+    var photoCheck = await ensureTaskerProfilePhoto();
+    if (!photoCheck.ok) {
+      if (confirm('Taskers need a profile photo before applying. Add your photo now?')) {
+        window.location.href = 'profile.html?setup=photo&required=1&return=browsetask.html';
+      }
+      return;
+    }
   }
   document.getElementById('modalTitle').textContent=activeTask.catLabel+' — '+activeTask.title.substring(0,40)+(activeTask.title.length>40?'…':'');
   var sub = 'Budget: '+activeTask.priceLabel+' · '+activeTask.location;
@@ -466,6 +516,15 @@ window.submitApplication=async function(){
   if (typeof syncCurrentUserProfile === 'function' && window._currentUser) {
     await syncCurrentUserProfile(window._currentUser);
   }
+  if (typeof ensureTaskerProfilePhoto === 'function') {
+    var photoGate = await ensureTaskerProfilePhoto();
+    if (!photoGate.ok) {
+      alert('Add a profile photo before applying. Posters need to see who they\'re hiring.');
+      window.location.href = 'profile.html?setup=photo&required=1&return=browsetask.html';
+      btn.textContent='Send application';btn.disabled=false;
+      return;
+    }
+  }
   var chatNote = '';
   var chatUnlocked = typeof resolveChatUnlockedOnCreate === 'function' && resolveChatUnlockedOnCreate('application');
   try {
@@ -478,6 +537,7 @@ window.submitApplication=async function(){
     });
     if (!result.success) {
       if (result.error === 'cannot_apply_own_task') throw new Error('own_task');
+      if (result.error === 'profile_photo_required') throw new Error('photo_required');
       throw new Error(result.error || 'save failed');
     }
 
@@ -514,7 +574,11 @@ window.submitApplication=async function(){
     }
   } catch(err) {
     console.warn('Application save error:', err);
-    alert(err.message === 'own_task' ? 'You cannot apply to your own task.' : 'Could not send application. Please try again.');
+    if (err.message === 'photo_required') {
+      window.location.href = 'profile.html?setup=photo&required=1&return=browsetask.html';
+    } else {
+      alert(err.message === 'own_task' ? 'You cannot apply to your own task.' : 'Could not send application. Please try again.');
+    }
     btn.textContent='Send application';btn.disabled=false;
     return;
   }
