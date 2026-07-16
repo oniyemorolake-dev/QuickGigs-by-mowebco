@@ -640,6 +640,18 @@ document.getElementById('tabContent').addEventListener('click', function(e) {
   var toggleBtn = e.target.closest('.tc-applicants-toggle');
   if (toggleBtn) {
     toggleApplicants(toggleBtn.getAttribute('data-applicants-toggle'));
+    return;
+  }
+  var cancelPostingBtn = e.target.closest('[data-cancel-posting]');
+  if (cancelPostingBtn) {
+    e.preventDefault();
+    confirmCancelPosting(cancelPostingBtn.getAttribute('data-cancel-posting'));
+    return;
+  }
+  var cancelProgBtn = e.target.closest('[data-cancel-inprogress]');
+  if (cancelProgBtn) {
+    e.preventDefault();
+    confirmCancelInProgress(cancelProgBtn.getAttribute('data-cancel-inprogress'));
   }
 });
 
@@ -757,7 +769,7 @@ function renderTab(){
         '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+' budget'+(postedLabel ? ' · Posted '+esc(postedLabel) : '')+'</div>'+
         '<button type="button" class="tc-applicants-toggle'+(isOpen?' open':'')+'" data-applicants-toggle="'+escAttr(taskId)+'" data-applicant-count="'+escAttr(pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : ''))+'" data-applicant-names="'+escAttr(namePreview + (pendingApps.length > 3 ? '…' : ''))+'">👥 '+esc(toggleLabel)+'</button>'+
         '<div class="applicants-panel'+(isOpen?' open':'')+'" id="'+taskDomId(taskId)+'">'+appHtml+'</div>'+
-        '<div class="action-row"><button type="button" class="act-btn btn-danger" onclick="confirmCancelPosting('+JSON.stringify(String(taskId))+')">✕ Cancel posting</button></div>'+
+        '<div class="action-row"><button type="button" class="act-btn btn-danger" data-cancel-posting="'+escAttr(taskId)+'">✕ Cancel posting</button></div>'+
       '</div>';
     }).join('');
   }
@@ -877,7 +889,7 @@ function renderTab(){
         ? '<button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')">💬 Message</button>' +
           '<button class="act-btn btn-success" onclick="markComplete('+JSON.stringify(String(taskId))+', this)">✓ Mark complete</button>' +
           '<button class="act-btn btn-primary" onclick="confirmChangeTasker('+JSON.stringify(String(taskId))+')">↩ Change tasker</button>' +
-          '<button class="act-btn btn-danger" onclick="confirmCancelInProgress('+JSON.stringify(String(taskId))+')">✕ Cancel task</button>'
+          '<button class="act-btn btn-danger" data-cancel-inprogress="'+escAttr(taskId)+'">✕ Cancel task</button>'
         : '';
       var workerActions = !isPosterTask
         ? '<button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')">💬 Message poster</button>' +
@@ -895,21 +907,28 @@ function renderTab(){
   else if(activeTab === 'completed'){
     var done;
     if (isPoster) {
-      done = allTasks.filter(function(t){ return taskStatus(t) === 'completed' && getField(t,'POSTED_BY') === userId; });
+      done = allTasks.filter(function(t){
+        var st = taskStatus(t);
+        return (st === 'completed' || st === 'cancelled') && getField(t,'POSTED_BY') === userId;
+      });
     } else {
       done = allTasks.filter(function(t){
-        return taskStatus(t) === 'completed' && allApplications.some(function(a){
+        var st = taskStatus(t);
+        if (st !== 'completed' && st !== 'cancelled') return false;
+        return allApplications.some(function(a){
           return String(getField(a,'TASK_ID')) === String(getField(t,'TASK_ID')) && getField(a,'WORKER_ID') === userId;
         });
       });
     }
     if(!done.length){
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No completed tasks yet</div><div class="empty-sub">Completed tasks will appear here once both sides confirm the work is done.</div></div>';
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No completed tasks yet</div><div class="empty-sub">Completed or cancelled tasks will appear here.</div></div>';
       return;
     }
-    content.innerHTML = '<div class="hint-box" style="background:rgba(107,63,160,0.12);border:1px solid rgba(200,168,233,0.2);border-radius:14px;padding:14px;margin-bottom:14px;font-size:13px;line-height:1.55;color:var(--text-muted);">⭐ <strong>Please leave a review</strong> — posters and taskers both rate each other. Honest feedback helps QuickGigs stay safe for everyone.</div>' +
+    content.innerHTML = '<div class="hint-box" style="background:rgba(107,63,160,0.12);border:1px solid rgba(200,168,233,0.2);border-radius:14px;padding:14px;margin-bottom:14px;font-size:13px;line-height:1.55;color:var(--text-muted);">⭐ <strong>Please leave a review</strong> on completed jobs — honest feedback helps QuickGigs stay safe for everyone.</div>' +
     done.map(function(t){
       var cat = getCat(t);
+      var st = taskStatus(t);
+      var isCancelled = st === 'cancelled';
       var acceptedApp = findAcceptedApplication(getField(t,'TASK_ID'));
       var isPoster = getField(t,'POSTED_BY') === userId;
       var workerId = acceptedApp ? getField(acceptedApp, 'WORKER_ID') : '';
@@ -927,11 +946,17 @@ function renderTab(){
         ? reportButtonHtml('task', getField(t,'TASK_ID'), getField(t,'TITLE')) +
           (otherUid ? reportButtonHtml('user', otherUid, otherNm) : '')
         : '';
-      return '<div class="task-card">'+
-        '<div class="tc-top"><div class="tc-left">'+profileTapIcon(otherUid, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">'+otherLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-done">✓ Done</span></div>'+
+      var badge = isCancelled
+        ? '<span class="tc-badge badge-open" style="opacity:0.75">✕ Cancelled</span>'
+        : '<span class="tc-badge badge-done">✓ Done</span>';
+      var actions = isCancelled
+        ? ''
+        : '<div class="action-row"><a class="act-btn btn-review" href="'+reviewHref+'">⭐ Leave a review</a></div>';
+      return '<div class="task-card'+(isCancelled?' is-faded':'')+'">'+
+        '<div class="tc-top"><div class="tc-left">'+profileTapIcon(otherUid, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">'+otherLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div>'+badge+'</div>'+
         '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+'</div>'+
         '<div class="qg-action-row">'+disputeBtn+reportBtns+'</div>'+
-        '<div class="action-row"><a class="act-btn btn-review" href="'+reviewHref+'">⭐ Leave a review</a></div>'+
+        actions+
       '</div>';
     }).join('');
   }
@@ -1306,7 +1331,7 @@ window.confirmCancelPosting = function(taskId) {
         if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, 'cancelled');
       });
       if (typeof mergeTaskInCache === 'function') mergeTaskInCache(taskId, { status: 'cancelled' });
-      activeTab = 'posted';
+      activeTab = 'completed';
       syncTabButtons();
       renderTab();
       showToast('Posting cancelled');
@@ -1386,7 +1411,7 @@ window.confirmCancelInProgress = function(taskId) {
         if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, 'cancelled');
       });
       if (typeof mergeTaskInCache === 'function') mergeTaskInCache(taskId, { status: 'cancelled' });
-      activeTab = 'posted';
+      activeTab = 'completed';
       syncTabButtons();
       renderTab();
       showToast('Task cancelled');

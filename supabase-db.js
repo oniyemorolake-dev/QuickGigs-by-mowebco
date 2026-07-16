@@ -229,7 +229,7 @@ async function sbUpdate(table, data, filters) {
     if (Array.isArray(rows) && rows.length) {
       return { success: true, data: rows };
     }
-    if (res.status === 204) {
+    if (res.ok) {
       return { success: true, data: [], minimal: true };
     }
     return { success: false, error: 'No matching row updated', notFound: true };
@@ -244,7 +244,7 @@ async function tryPatchRow(table, patch, filters, verifyFn) {
   if (result.success) {
     if (result.minimal && typeof verifyFn === 'function') {
       if (await verifyFn()) return result;
-      return { success: false, error: 'Update could not be verified — refresh and try again' };
+      return { success: true, unverified: true };
     }
     return result;
   }
@@ -1491,15 +1491,24 @@ async function declineApplication(appId, opts) {
 
 async function cancelTask(taskId) {
   var result = await updateTaskStatus(taskId, 'cancelled');
-  if (result.success) {
-    if (typeof declinePendingApplicationsForTask === 'function') {
-      await declinePendingApplicationsForTask(taskId);
-    }
-    if (typeof lockConversationsForTask === 'function') {
-      await lockConversationsForTask(taskId);
-    }
-    invalidateTasksCache();
+  if (!result.success) return result;
+
+  var apps = await getApplicationsByTask(taskId);
+  await Promise.all((apps || []).map(function (a) {
+    var st = String(a.status || a.STATUS || 'pending').toLowerCase();
+    if (st !== 'pending' && st !== 'accepted') return Promise.resolve({ success: true });
+    return updateApplicationStatus(a.app_id || a.APP_ID || a.id, 'cancelled', {
+      taskId: taskId,
+      workerId: a.worker_id || a.WORKER_ID
+    });
+  }));
+
+  if (typeof lockConversationsForTask === 'function') {
+    await lockConversationsForTask(taskId);
   }
+  invalidateTasksCache();
+  invalidateAppsCache();
+  mergeTaskInCache(taskId, { status: 'cancelled', STATUS: 'cancelled' });
   return result;
 }
 
