@@ -173,6 +173,9 @@ body.light .submit-btn{color:#2d1b4e;}
 
 /* ERROR BANNER */
 .error-banner{border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:13px;display:none;background:rgba(239,68,68,0.1);border:0.5px solid rgba(239,68,68,0.3);color:#ef4444;}
+.error-banner-actions{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;}
+.error-skip-btn{padding:8px 14px;border-radius:10px;border:none;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.12);color:#fff;}
+.light .error-skip-btn{background:#f0eeff;color:#6b3fa0;}
 
 /* SUCCESS */
 .success-screen{display:none;text-align:center;padding:60px 20px;}
@@ -217,7 +220,12 @@ body{padding-bottom:76px;}
   <p class="page-sub">Takes less than 60 seconds to post</p>
 
   <!-- ERROR BANNER -->
-  <div class="error-banner" id="errorBanner"></div>
+  <div class="error-banner" id="errorBanner">
+    <span id="errorBannerText"></span>
+    <div class="error-banner-actions" id="errorBannerActions" style="display:none;">
+      <button type="button" class="error-skip-btn" id="skipPhotosBtn" onclick="postWithoutPhotos()">Post without photos</button>
+    </div>
+  </div>
 
   <!-- TASK MODE -->
   <div class="section">
@@ -791,12 +799,25 @@ function scrollToFirstFormError() {
   return '';
 }
 
-function showFormBanner(message) {
+function showFormBanner(message, opts) {
+  opts = opts || {};
   var banner = document.getElementById('errorBanner');
-  banner.textContent = message;
+  var text = document.getElementById('errorBannerText');
+  var actions = document.getElementById('errorBannerActions');
+  if (text) text.textContent = message;
+  else banner.textContent = message;
   banner.style.display = 'block';
+  if (actions) actions.style.display = opts.showSkipPhotos ? 'flex' : 'none';
   banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
+
+window.postWithoutPhotos = function() {
+  selectedPhotos = [];
+  renderPhotoPreview();
+  var actions = document.getElementById('errorBannerActions');
+  if (actions) actions.style.display = 'none';
+  handleSubmit(true);
+};
 
 window.selectRec = function(el) {
   document.querySelectorAll('.rec-opt').forEach(function(c){ c.classList.remove('selected'); });
@@ -816,7 +837,7 @@ function updateHint(city) {
 }
 
 // ── SUBMIT ─────────────────────────────────────────────
-window.handleSubmit = async function() {
+window.handleSubmit = async function(skipPhotos) {
   var title    = window.sanitizeInput(document.getElementById('taskTitle').value, 120);
   var desc     = window.sanitizeInput(document.getElementById('taskDesc').value, 2000);
   var budget   = parseFloat(document.getElementById('taskBudget').value);
@@ -827,6 +848,8 @@ window.handleSubmit = async function() {
   document.querySelectorAll('.field-error').forEach(function(e){ e.style.display='none'; });
   document.querySelectorAll('.field-input').forEach(function(i){ i.classList.remove('invalid'); });
   document.getElementById('errorBanner').style.display = 'none';
+  var errorActions = document.getElementById('errorBannerActions');
+  if (errorActions) errorActions.style.display = 'none';
 
   // Validate
   if (!selectedCat) {
@@ -899,18 +922,15 @@ window.handleSubmit = async function() {
     taskData.description = ('When: ' + schedule.scheduled_label + (taskData.description ? '\n\n' + taskData.description : '')).trim();
   }
 
-  if (selectedPhotos.length) {
+  if (selectedPhotos.length && !skipPhotos) {
     var photoUrls = [];
     for (var i = 0; i < selectedPhotos.length; i++) {
       var upload = await uploadTaskPhoto(selectedPhotos[i], window._currentUser.uid);
       if (!upload.success) {
-        var photoMsg = upload.error || 'Could not upload photo.';
-        if (String(photoMsg).toLowerCase().indexOf('bucket') >= 0 || String(photoMsg).toLowerCase().indexOf('storage') >= 0) {
-          photoMsg += ' Run supabase/beta-setup-all.sql in Supabase, or remove the photo and post again.';
-        } else {
-          photoMsg += ' Remove the photo and try again, or run supabase/beta-setup-all.sql in Supabase.';
-        }
-        showFormBanner(photoMsg);
+        var photoMsg = typeof formatUploadError === 'function'
+          ? formatUploadError(upload.error)
+          : 'Photo upload failed.';
+        showFormBanner(photoMsg, { showSkipPhotos: true });
         btn.textContent = 'Post task →';
         btn.disabled = false;
         return;

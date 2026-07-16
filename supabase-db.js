@@ -388,6 +388,33 @@ async function uploadChatPhoto(file, userId, convId) {
   return await uploadStoragePhoto(file, userId, 'chat-photos', String(convId) + '/' + String(userId));
 }
 
+function formatUploadError(err) {
+  var msg = String(err || '');
+  try {
+    var parsed = JSON.parse(msg);
+    if (parsed && parsed.message) msg = String(parsed.message);
+    else if (parsed && parsed.error) msg = String(parsed.error);
+  } catch (parseErr) {
+    var jsonMatch = msg.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        var inner = JSON.parse(jsonMatch[0]);
+        if (inner.message) msg = String(inner.message);
+      } catch (innerErr) {}
+    }
+  }
+  var lower = msg.toLowerCase();
+  if (lower.indexOf('row-level') >= 0 || lower.indexOf('403') >= 0 ||
+      lower.indexOf('unauthorized') >= 0 || lower.indexOf('42501') >= 0) {
+    return 'Photo upload is blocked in Supabase. Open SQL Editor → run supabase/storage-beta-fix.sql (or beta-setup-all.sql).';
+  }
+  if (lower.indexOf('bucket') >= 0 || lower.indexOf('not found') >= 0) {
+    return 'Photo storage is not set up yet. Run supabase/storage-beta-fix.sql in Supabase SQL Editor.';
+  }
+  if (msg.length > 120) return 'Photo upload failed. Remove the photo or run supabase/storage-beta-fix.sql in Supabase.';
+  return msg || 'Photo upload failed.';
+}
+
 async function uploadStoragePhoto(file, userId, bucket, folder) {
   if (!file || !userId) return { success: false, error: 'Missing file or user' };
   var maxMb = (window.QG_CONFIG && window.QG_CONFIG.maxPhotoSizeMb) || 5;
@@ -421,7 +448,7 @@ async function uploadStoragePhoto(file, userId, bucket, folder) {
     };
   } catch (err) {
     console.error('Photo upload error:', err);
-    return { success: false, error: err.message };
+    return { success: false, error: formatUploadError(err.message) };
   }
 }
 
@@ -1127,6 +1154,7 @@ window.getAllApplications = getAllApplications;
 window.submitApplication = submitApplication;
 window.updateApplicationStatus = updateApplicationStatus;
 window.formatSupabaseActionError = formatSupabaseActionError;
+window.formatUploadError = formatUploadError;
 window.cancelApplication = cancelApplication;
 window.declineApplication = declineApplication;
 window.cancelTask = cancelTask;

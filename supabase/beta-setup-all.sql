@@ -53,10 +53,7 @@ CREATE POLICY "profile_photos_read" ON storage.objects
 
 CREATE POLICY "profile_photos_upload" ON storage.objects
   FOR INSERT TO anon, authenticated
-  WITH CHECK (
-    bucket_id = 'profile-photos'
-    AND (storage.foldername(name))[1] IS NOT NULL
-  );
+  WITH CHECK (bucket_id = 'profile-photos');
 
 -- ── CONVERSATIONS + MESSAGES (keep chat history visible in beta) ─
 -- Do NOT run rls-secure.sql until Firebase auth is enabled in Supabase.
@@ -81,19 +78,25 @@ CREATE POLICY "anon_select_messages" ON messages FOR SELECT TO anon USING (true)
 CREATE POLICY "anon_insert_messages" ON messages FOR INSERT TO anon WITH CHECK (true);
 
 -- ── TASK + CHAT PHOTOS (post task uploads + chat images) ─────────
+-- If uploads still fail, run supabase/storage-beta-fix.sql alone.
+
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('task-photos', 'task-photos', true)
 ON CONFLICT (id) DO UPDATE SET public = EXCLUDED.public;
 
 DROP POLICY IF EXISTS "anon_upload_task_photos" ON storage.objects;
 DROP POLICY IF EXISTS "anon_read_task_photos" ON storage.objects;
+DROP POLICY IF EXISTS "auth_upload_task_photos" ON storage.objects;
+DROP POLICY IF EXISTS "auth_read_task_photos" ON storage.objects;
+DROP POLICY IF EXISTS "task_photos_insert" ON storage.objects;
+DROP POLICY IF EXISTS "task_photos_select" ON storage.objects;
 
-CREATE POLICY "anon_upload_task_photos" ON storage.objects
-  FOR INSERT TO anon
+CREATE POLICY "task_photos_insert" ON storage.objects
+  FOR INSERT TO anon, authenticated
   WITH CHECK (bucket_id = 'task-photos');
 
-CREATE POLICY "anon_read_task_photos" ON storage.objects
-  FOR SELECT TO anon
+CREATE POLICY "task_photos_select" ON storage.objects
+  FOR SELECT TO anon, authenticated
   USING (bucket_id = 'task-photos');
 
 INSERT INTO storage.buckets (id, name, public)
@@ -102,11 +105,15 @@ ON CONFLICT (id) DO UPDATE SET public = EXCLUDED.public;
 
 DROP POLICY IF EXISTS "anon_upload_chat_photos" ON storage.objects;
 DROP POLICY IF EXISTS "anon_read_chat_photos" ON storage.objects;
+DROP POLICY IF EXISTS "auth_upload_chat_photos" ON storage.objects;
+DROP POLICY IF EXISTS "auth_read_chat_photos" ON storage.objects;
+DROP POLICY IF EXISTS "chat_photos_insert" ON storage.objects;
+DROP POLICY IF EXISTS "chat_photos_select" ON storage.objects;
 
-CREATE POLICY "anon_upload_chat_photos" ON storage.objects
-  FOR INSERT TO anon
+CREATE POLICY "chat_photos_insert" ON storage.objects
+  FOR INSERT TO anon, authenticated
   WITH CHECK (bucket_id = 'chat-photos');
 
-CREATE POLICY "anon_read_chat_photos" ON storage.objects
-  FOR SELECT TO anon
+CREATE POLICY "chat_photos_select" ON storage.objects
+  FOR SELECT TO anon, authenticated
   USING (bucket_id = 'chat-photos');
