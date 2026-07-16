@@ -755,12 +755,72 @@ async function getConversation(convId) {
 }
 
 async function getConversationForTask(taskId, posterId, workerId) {
-  var tid = normalizeTaskId(taskId);
-  var results = await sbGet(
+  var ids = [];
+  if (taskId != null && taskId !== '') ids.push(String(taskId));
+  var n = parseInt(taskId, 10);
+  if (!isNaN(n)) ids.push(String(n));
+  var seen = {};
+  for (var i = 0; i < ids.length; i++) {
+    if (seen[ids[i]]) continue;
+    seen[ids[i]] = true;
+    var results = await sbGet(
+      'conversations',
+      'task_id=eq.' + encodeURIComponent(ids[i]) +
+        '&poster_id=eq.' + encodeURIComponent(posterId) +
+        '&worker_id=eq.' + encodeURIComponent(workerId)
+    );
+    if (results && results[0]) return results[0];
+  }
+  var byPosterWorker = await sbGet(
     'conversations',
-    'task_id=eq.' + encodeURIComponent(String(tid)) + '&poster_id=eq.' + encodeURIComponent(posterId) + '&worker_id=eq.' + encodeURIComponent(workerId)
+    'poster_id=eq.' + encodeURIComponent(posterId) +
+      '&worker_id=eq.' + encodeURIComponent(workerId),
+    'created_at.desc',
+    20
   );
-  return results[0] || null;
+  if (byPosterWorker && byPosterWorker.length) {
+    var tid = String(taskId);
+    var match = byPosterWorker.find(function(c) {
+      return String(c.task_id) === tid || String(c.task_id) === String(n);
+    });
+    if (match) return match;
+  }
+  return null;
+}
+
+function parseConversationUnlocked(conv) {
+  if (!conv) return false;
+  var v = conv.is_unlocked;
+  return v === true || v === 1 || v === '1' || v === 'true';
+}
+
+async function forceUnlockConversationForTask(conv, taskStatus) {
+  if (!conv || !conv.conv_id) return { success: false, error: 'No conversation' };
+  var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'payment';
+  if (rule === 'payment') return { success: parseConversationUnlocked(conv), conv: conv };
+
+  var convStatus = String(conv.status || '').toLowerCase();
+  var ts = String(taskStatus || '').toLowerCase();
+  if (parseConversationUnlocked(conv) && convStatus !== 'application') {
+    return { success: true, conv: conv };
+  }
+  if (typeof window.shouldUnlockChatNow === 'function' &&
+      !window.shouldUnlockChatNow(convStatus, ts)) {
+    return { success: false, conv: conv, skipped: true };
+  }
+
+  var patch = { is_unlocked: true };
+  if (convStatus === 'application' || ts === 'in_progress') patch.status = 'in_progress';
+
+  var result = await updateConversation(conv.conv_id, patch);
+  if (result.success) {
+    return { success: true, conv: Object.assign({}, conv, patch) };
+  }
+  result = await updateConversation(conv.conv_id, { is_unlocked: true });
+  if (result.success) {
+    return { success: true, conv: Object.assign({}, conv, { is_unlocked: true }) };
+  }
+  return { success: false, error: result.error, conv: conv };
 }
 
 async function updateConversation(convId, patch) {
@@ -769,13 +829,9 @@ async function updateConversation(convId, patch) {
 
 async function unlockConversationIfAllowed(convId, convStatus, taskStatus) {
   if (!convId) return { success: false };
-  if (typeof window.shouldUnlockChatNow === 'function' &&
-      !window.shouldUnlockChatNow(convStatus, taskStatus)) {
-    return { success: false, skipped: true };
-  }
-  var patch = { is_unlocked: true };
-  if ((convStatus || '').toLowerCase() === 'application') patch.status = 'in_progress';
-  return await updateConversation(convId, patch);
+  var conv = await getConversation(convId);
+  if (!conv) return { success: false, error: 'Conversation not found' };
+  return await forceUnlockConversationForTask(conv, taskStatus);
 }
 
 async function createConversation(convData) {
@@ -1093,7 +1149,9 @@ async function savePayment(paymentData) {
 async function unlockChatForTask(taskId, posterId, workerId) {
   var conv = await getConversationForTask(taskId, posterId, workerId);
   if (!conv || !conv.conv_id) return { success: false, error: 'No conversation' };
-  return await updateConversation(conv.conv_id, { is_unlocked: true, status: 'in_progress' });
+  var taskRow = typeof getTaskById === 'function' ? await getTaskById(taskId) : null;
+  var taskStatus = taskRow ? (taskRow.status || taskRow.STATUS || '') : 'in_progress';
+  return await forceUnlockConversationForTask(conv, taskStatus);
 }
 
 window.SUPABASE_URL = SUPABASE_URL;
@@ -1144,6 +1202,8 @@ window.getConversation = getConversation;
 window.getConversationForTask = getConversationForTask;
 window.createConversation = createConversation;
 window.unlockConversationIfAllowed = unlockConversationIfAllowed;
+window.forceUnlockConversationForTask = forceUnlockConversationForTask;
+window.parseConversationUnlocked = parseConversationUnlocked;
 window.updateConversation = updateConversation;
 window.getMessagesForConversation = getMessagesForConversation;
 window.sendChatMessage = sendChatMessage;

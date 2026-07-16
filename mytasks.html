@@ -802,9 +802,7 @@ function renderTab(){
       var userId = window._currentUser ? window._currentUser.uid : null;
       var isPosterTask = getField(t,'POSTED_BY') === userId;
       var taskId = getField(t,'TASK_ID');
-      var acceptedApp = allApplications.find(function(a){
-        return String(getField(a,'TASK_ID')) === String(taskId) && getField(a,'STATUS') === 'accepted';
-      });
+      var acceptedApp = findAcceptedApplication(taskId);
       var workerName = acceptedApp ? displayName(getField(acceptedApp,'WORKER_ID'), acceptedApp) : '';
       var roleLabel = isPosterTask
         ? (workerName ? 'Tasker: ' + esc(workerName) : 'Awaiting tasker')
@@ -845,9 +843,7 @@ function renderTab(){
     content.innerHTML = '<div class="hint-box" style="background:rgba(107,63,160,0.12);border:1px solid rgba(200,168,233,0.2);border-radius:14px;padding:14px;margin-bottom:14px;font-size:13px;line-height:1.55;color:var(--text-muted);">⭐ <strong>Please leave a review</strong> — posters and taskers both rate each other. Honest feedback helps QuickGigs stay safe for everyone.</div>' +
     done.map(function(t){
       var cat = getCat(t);
-      var acceptedApp = allApplications.find(function(a){
-        return String(getField(a,'TASK_ID')) === String(getField(t,'TASK_ID')) && getField(a,'STATUS') === 'accepted';
-      });
+      var acceptedApp = findAcceptedApplication(getField(t,'TASK_ID'));
       var isPoster = getField(t,'POSTED_BY') === userId;
       var otherLabel = isPoster
         ? ('Tasker: ' + esc(displayName(getField(acceptedApp,'WORKER_ID'), acceptedApp || {})))
@@ -978,9 +974,19 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
   loadData();
 };
 
+function findAcceptedApplication(taskId) {
+  return allApplications.find(function(a) {
+    return String(getField(a, 'TASK_ID')) === String(taskId) &&
+      String(getField(a, 'STATUS') || '').toLowerCase() === 'accepted';
+  });
+}
+
 window.openChatWithWorker = async function(taskId, workerId){
   var userId = window._currentUser ? window._currentUser.uid : null;
-  if(!userId || !taskId || !workerId) return;
+  if(!userId || !taskId || !workerId) {
+    showToast('Could not open chat — refresh and try again', '#ef4444');
+    return;
+  }
 
   var task = allTasks.find(function(t){ return String(getField(t,'TASK_ID')) === String(taskId); });
   if(!task){
@@ -989,10 +995,16 @@ window.openChatWithWorker = async function(taskId, workerId){
   }
 
   var posterId = getField(task, 'POSTED_BY');
+  var statusForChat = taskStatus(task);
   var conv = await getConversationForTask(taskId, posterId, workerId);
-  if(conv && conv.conv_id){
-    if (!isPaymentGatedChat() && typeof unlockConversationIfAllowed === 'function') {
-      await unlockConversationIfAllowed(conv.conv_id, conv.status, getField(task, 'STATUS'));
+  if (conv && conv.conv_id) {
+    if (!isPaymentGatedChat()) {
+      var unlockResult = typeof forceUnlockConversationForTask === 'function'
+        ? await forceUnlockConversationForTask(conv, statusForChat)
+        : await unlockConversationIfAllowed(conv.conv_id, conv.status, statusForChat);
+      if (!unlockResult.success && !unlockResult.skipped) {
+        showToast('Chat still locked — run supabase/beta-setup-all.sql in Supabase, then try again.', '#f59e0b');
+      }
     }
     window.location.href = 'chat.html?conv=' + encodeURIComponent(conv.conv_id);
     return;
@@ -1028,30 +1040,32 @@ window.openChatForTask = async function(taskId){
   if(!userId) return;
 
   var task = allTasks.find(function(t){ return String(getField(t,'TASK_ID')) === String(taskId); });
-  if(!task) return;
+  if(!task) {
+    showToast('Task not found — refresh and try again', '#ef4444');
+    return;
+  }
 
   var posterId = getField(task, 'POSTED_BY');
   if (posterId === userId) {
-    var acceptedApp = allApplications.find(function(a){
-      return String(getField(a,'TASK_ID')) === String(taskId) && getField(a,'STATUS') === 'accepted';
-    });
+    var acceptedApp = findAcceptedApplication(taskId);
     if (acceptedApp) {
-      openChatWithWorker(taskId, getField(acceptedApp, 'WORKER_ID'));
+      await openChatWithWorker(taskId, getField(acceptedApp, 'WORKER_ID'));
       return;
     }
     var pendingApp = allApplications.find(function(a){
       return String(getField(a,'TASK_ID')) === String(taskId);
     });
     if (pendingApp) {
-      openChatWithWorker(taskId, getField(pendingApp, 'WORKER_ID'));
+      await openChatWithWorker(taskId, getField(pendingApp, 'WORKER_ID'));
       return;
     }
   } else {
-    openChatWithWorker(taskId, userId);
+    await openChatWithWorker(taskId, userId);
     return;
   }
 
-  window.location.href = 'messages.html';
+  showToast('No chat yet — try Messages or run supabase/messaging.sql', '#f59e0b');
+  setTimeout(function(){ window.location.href = 'messages.html'; }, 1200);
 };
 
 window.markComplete = async function(taskId){
@@ -1165,9 +1179,7 @@ window.confirmCancelPosting = function(taskId) {
 
 window.confirmChangeTasker = function(taskId) {
   var task = allTasks.find(function(t) { return String(getField(t, 'TASK_ID')) === String(taskId); });
-  var acceptedApp = allApplications.find(function(a) {
-    return String(getField(a, 'TASK_ID')) === String(taskId) && getField(a, 'STATUS') === 'accepted';
-  });
+  var acceptedApp = findAcceptedApplication(taskId);
   var title = task ? getField(task, 'TITLE') : 'this task';
   var workerName = acceptedApp ? displayName(getField(acceptedApp, 'WORKER_ID'), acceptedApp) : 'this tasker';
   var appId = acceptedApp ? getField(acceptedApp, 'APP_ID') : '';

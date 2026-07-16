@@ -316,15 +316,25 @@ async function initChat(){
       : (typeof resolveChatUnlockedOnCreate === 'function' &&
         resolveChatUnlockedOnCreate(convStatus === 'application' ? 'application' : 'in_progress'));
     if (shouldUnlock) {
-      var unlockResult = typeof unlockConversationIfAllowed === 'function'
-        ? await unlockConversationIfAllowed(convId, convStatus, taskStatus)
-        : await updateConversation(convId, { is_unlocked: true, status: 'in_progress' });
+      var unlockResult = typeof unlockChatForTask === 'function'
+        ? await unlockChatForTask(currentConv.task_id, currentConv.poster_id, currentConv.worker_id)
+        : (typeof forceUnlockConversationForTask === 'function'
+          ? await forceUnlockConversationForTask(currentConv, taskStatus)
+          : await updateConversation(convId, { is_unlocked: true, status: 'in_progress' }));
       if (unlockResult.success) {
         currentConv.is_unlocked = true;
-        if (unlockResult.data && unlockResult.data[0]) currentConv = unlockResult.data[0];
-        else currentConv.status = 'in_progress';
+        currentConv.status = 'in_progress';
+        if (unlockResult.conv) currentConv = Object.assign({}, currentConv, unlockResult.conv);
+        else {
+          var freshConv = await getConversation(convId);
+          if (freshConv) currentConv = freshConv;
+        }
       }
     }
+  }
+
+  if (typeof parseConversationUnlocked === 'function' && parseConversationUnlocked(currentConv)) {
+    currentConv.is_unlocked = true;
   }
 
   var isPoster = currentConv.poster_id === currentUserId;
@@ -356,7 +366,9 @@ async function initChat(){
     ? 'Tasker · ' + (currentConv.task_title || 'Your task')
     : 'Poster · ' + (currentConv.task_title || 'Task');
   document.getElementById('taskTitle').textContent = currentConv.task_title || 'Task';
-  document.getElementById('taskMeta').textContent = currentConv.is_unlocked
+  document.getElementById('taskMeta').textContent = (typeof parseConversationUnlocked === 'function'
+      ? parseConversationUnlocked(currentConv)
+      : currentConv.is_unlocked)
     ? ((window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter === 'payment') ? 'Chat open · Escrow paid' : 'Chat open')
     : 'Payment required · Chat locked';
   document.getElementById('taskIcon').textContent = CAT_ICONS[cat] || '📦';
@@ -369,7 +381,11 @@ async function initChat(){
 
   if(isCompleted) currentConv.is_unlocked = false;
 
-  if(!currentConv.is_unlocked){
+  var chatOpen = typeof parseConversationUnlocked === 'function'
+    ? parseConversationUnlocked(currentConv)
+    : !!currentConv.is_unlocked;
+
+  if(!chatOpen){
     showLockedState(isCompleted);
     return;
   }
