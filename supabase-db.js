@@ -333,22 +333,45 @@ async function postTask(taskData) {
     status:      'open',
     posted_by:   taskData.posted_by
   };
-  if (taskData.photo_urls) row.photo_urls = taskData.photo_urls;
-  if (taskData.requires_photos) row.requires_photos = true;
-  if (taskData.scheduled_at) row.scheduled_at = taskData.scheduled_at;
-  if (taskData.scheduled_label) row.scheduled_label = taskData.scheduled_label;
 
-  var result;
-  if (taskData.poster_name || taskData.scheduled_at || taskData.scheduled_label) {
-    var withExtras = Object.assign({}, row);
-    if (taskData.poster_name) withExtras.poster_name = taskData.poster_name;
-    result = await sbPost('tasks', withExtras);
-    if (!result.success) result = await sbPost('tasks', row);
-  } else {
-    result = await sbPost('tasks', row);
+  var extras = {};
+  if (taskData.poster_name) extras.poster_name = taskData.poster_name;
+  if (taskData.scheduled_at) extras.scheduled_at = taskData.scheduled_at;
+  if (taskData.scheduled_label) extras.scheduled_label = taskData.scheduled_label;
+  if (taskData.photo_urls) extras.photo_urls = taskData.photo_urls;
+  if (taskData.requires_photos) extras.requires_photos = true;
+
+  var withoutPhotos = Object.assign({}, row, extras);
+  delete withoutPhotos.photo_urls;
+  delete withoutPhotos.requires_photos;
+
+  var withSchedule = Object.assign({}, row);
+  if (taskData.poster_name) withSchedule.poster_name = taskData.poster_name;
+  if (taskData.scheduled_at) withSchedule.scheduled_at = taskData.scheduled_at;
+  if (taskData.scheduled_label) withSchedule.scheduled_label = taskData.scheduled_label;
+
+  var withPoster = Object.assign({}, row);
+  if (taskData.poster_name) withPoster.poster_name = taskData.poster_name;
+
+  var attempts = [
+    Object.assign({}, row, extras),
+    withoutPhotos,
+    withSchedule,
+    withPoster,
+    row
+  ];
+  var seen = {};
+  var result = { success: false, error: 'Could not save task — refresh and try again' };
+  for (var i = 0; i < attempts.length; i++) {
+    var key = JSON.stringify(attempts[i]);
+    if (seen[key]) continue;
+    seen[key] = true;
+    result = await sbPost('tasks', attempts[i]);
+    if (result.success) {
+      invalidateTasksCache();
+      return result;
+    }
   }
-
-  if (result.success) invalidateTasksCache();
   return result;
 }
 
@@ -936,7 +959,12 @@ function formatSupabaseActionError(action, err) {
   var msg = String(err || '');
   var lower = msg.toLowerCase();
   if (lower.indexOf('401') >= 0 || lower.indexOf('403') >= 0 || lower.indexOf('42501') >= 0 || lower.indexOf('row-level') >= 0) {
-    return 'Could not ' + action + ' — run supabase/tasks-beta-fix.sql in Supabase SQL Editor, then refresh.';
+    return 'Could not ' + action + ' — run supabase/beta-setup-all.sql in Supabase SQL Editor, then refresh.';
+  }
+  if (lower.indexOf('photo_urls') >= 0 || lower.indexOf('requires_photos') >= 0 ||
+      lower.indexOf('scheduled_at') >= 0 || lower.indexOf('scheduled_label') >= 0 ||
+      lower.indexOf('poster_name') >= 0 || lower.indexOf('column') >= 0) {
+    return 'Could not ' + action + ' — run supabase/beta-setup-all.sql in Supabase SQL Editor, then refresh.';
   }
   if (lower.indexOf('no matching row') >= 0) {
     return 'Could not ' + action + ' — refresh the page and try again.';

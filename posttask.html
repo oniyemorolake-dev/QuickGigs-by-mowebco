@@ -124,6 +124,7 @@ textarea.field-input{resize:none;min-height:100px;}
 
 /* ERROR */
 .field-error{font-size:12px;color:#ff6b6b;margin-top:4px;display:none;}
+.cat-wrap.needs-selection{outline:2px solid #ff6b6b;border-radius:12px;padding:6px;}
 .field-input.invalid{border-color:#ff6b6b !important;}
 
 /* SUBMIT */
@@ -518,8 +519,27 @@ window.selectCat = function(el) {
   var label = el.textContent.replace(/[^\w\s]/g, '').trim();
   selectedCat = CAT_SLUGS[label] || label.toLowerCase();
   document.getElementById('catError').style.display = 'none';
+  document.getElementById('catWrap').classList.remove('needs-selection');
   updateHint();
 };
+
+function scrollToFirstFormError() {
+  var errors = document.querySelectorAll('.field-error');
+  for (var i = 0; i < errors.length; i++) {
+    if (errors[i].style.display === 'block') {
+      errors[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return errors[i].textContent;
+    }
+  }
+  return '';
+}
+
+function showFormBanner(message) {
+  var banner = document.getElementById('errorBanner');
+  banner.textContent = message;
+  banner.style.display = 'block';
+  banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
 
 window.selectRec = function(el) {
   document.querySelectorAll('.rec-opt').forEach(function(c){ c.classList.remove('selected'); });
@@ -553,7 +573,10 @@ window.handleSubmit = async function() {
   // Validate
   if (!selectedCat) {
     document.getElementById('catError').style.display = 'block';
+    document.getElementById('catWrap').classList.add('needs-selection');
     valid = false;
+  } else {
+    document.getElementById('catWrap').classList.remove('needs-selection');
   }
   if (!title) {
     document.getElementById('titleError').style.display = 'block';
@@ -576,12 +599,14 @@ window.handleSubmit = async function() {
     if (document.getElementById('taskTime')) document.getElementById('taskTime').classList.add('invalid');
     valid = false;
   }
-  if (!valid) return;
+  if (!valid) {
+    var errMsg = scrollToFirstFormError() || 'Please fix the highlighted fields above.';
+    showFormBanner(errMsg);
+    return;
+  }
 
   if (!window._currentUser) {
-    var banner = document.getElementById('errorBanner');
-    banner.textContent = 'Please log in again to post a task.';
-    banner.style.display = 'block';
+    showFormBanner('Please log in again to post a task.');
     setTimeout(function(){ window.location.href = 'login.html'; }, 2000);
     return;
   }
@@ -621,8 +646,13 @@ window.handleSubmit = async function() {
     for (var i = 0; i < selectedPhotos.length; i++) {
       var upload = await uploadTaskPhoto(selectedPhotos[i], window._currentUser.uid);
       if (!upload.success) {
-        banner.textContent = upload.error || 'Could not upload photo. Run supabase/task-photos.sql in Supabase.';
-        banner.style.display = 'block';
+        var photoMsg = upload.error || 'Could not upload photo.';
+        if (String(photoMsg).toLowerCase().indexOf('bucket') >= 0 || String(photoMsg).toLowerCase().indexOf('storage') >= 0) {
+          photoMsg += ' Run supabase/beta-setup-all.sql in Supabase, or remove the photo and post again.';
+        } else {
+          photoMsg += ' Remove the photo and try again, or run supabase/beta-setup-all.sql in Supabase.';
+        }
+        showFormBanner(photoMsg);
         btn.textContent = 'Post task →';
         btn.disabled = false;
         return;
@@ -638,13 +668,13 @@ window.handleSubmit = async function() {
     document.getElementById('formContent').style.display = 'none';
     document.getElementById('successScreen').style.display = 'block';
   } else {
-    var banner = document.getElementById('errorBanner');
-    banner.textContent = 'Could not save your task. Check your connection and try again. If this keeps happening, tell us via Beta feedback.';
+    var failMsg = typeof formatSupabaseActionError === 'function'
+      ? formatSupabaseActionError('post task', result.error)
+      : 'Could not save your task. Run supabase/beta-setup-all.sql in Supabase, then refresh and try again.';
+    showFormBanner(failMsg);
     console.error('postTask failed:', result.error);
-    banner.style.display = 'block';
     btn.textContent = 'Post task →';
     btn.disabled = false;
-    window.scrollTo(0, 0);
   }
 };
 </script>

@@ -6,6 +6,8 @@ ALTER TABLE tasks ADD COLUMN IF NOT EXISTS poster_name TEXT;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'open';
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMPTZ;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS scheduled_label TEXT;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS photo_urls TEXT;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS requires_photos BOOLEAN NOT NULL DEFAULT FALSE;
 
 GRANT SELECT, INSERT, UPDATE ON tasks TO anon, authenticated;
 
@@ -77,3 +79,34 @@ CREATE POLICY "anon_update_conversations" ON conversations FOR UPDATE TO anon US
 
 CREATE POLICY "anon_select_messages" ON messages FOR SELECT TO anon USING (true);
 CREATE POLICY "anon_insert_messages" ON messages FOR INSERT TO anon WITH CHECK (true);
+
+-- ── TASK + CHAT PHOTOS (post task uploads + chat images) ─────────
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('task-photos', 'task-photos', true)
+ON CONFLICT (id) DO UPDATE SET public = EXCLUDED.public;
+
+DROP POLICY IF EXISTS "anon_upload_task_photos" ON storage.objects;
+DROP POLICY IF EXISTS "anon_read_task_photos" ON storage.objects;
+
+CREATE POLICY "anon_upload_task_photos" ON storage.objects
+  FOR INSERT TO anon
+  WITH CHECK (bucket_id = 'task-photos');
+
+CREATE POLICY "anon_read_task_photos" ON storage.objects
+  FOR SELECT TO anon
+  USING (bucket_id = 'task-photos');
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('chat-photos', 'chat-photos', true)
+ON CONFLICT (id) DO UPDATE SET public = EXCLUDED.public;
+
+DROP POLICY IF EXISTS "anon_upload_chat_photos" ON storage.objects;
+DROP POLICY IF EXISTS "anon_read_chat_photos" ON storage.objects;
+
+CREATE POLICY "anon_upload_chat_photos" ON storage.objects
+  FOR INSERT TO anon
+  WITH CHECK (bucket_id = 'chat-photos');
+
+CREATE POLICY "anon_read_chat_photos" ON storage.objects
+  FOR SELECT TO anon
+  USING (bucket_id = 'chat-photos');
