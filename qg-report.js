@@ -13,7 +13,7 @@
     document.addEventListener('DOMContentLoaded', purgeStaleReportDom);
   }
 
-  var SHEET_VER = '20260716c';
+  var SHEET_VER = '20260716d';
 
   function ensureQgSheetStyles() {
     var head = document.head || document.documentElement;
@@ -234,7 +234,20 @@
         alert('Report submitted. Thank you.');
       }
     } else {
-      alert('Could not submit report. Please try again or email support@quickgigs.ca');
+      var details = (detailsEl.value || '').trim();
+      var mailSubject = encodeURIComponent('QuickGigs report: ' + (currentContext.targetType || 'item'));
+      var mailBody = encodeURIComponent(
+        'Reason: ' + selectedReason + '\n' +
+        'Target: ' + (currentContext.targetLabel || '') + ' (' + (currentContext.targetType || '') + ' #' + (currentContext.targetId || '') + ')\n\n' +
+        'Details:\n' + (details || '(none)') + '\n\n' +
+        'Reporter: ' + (user.email || user.uid)
+      );
+      if (confirm('Could not save your report online (database may not be set up yet). Send it by email instead?')) {
+        closeReportModal();
+        window.location.href = 'mailto:support@quickgigs.ca?subject=' + mailSubject + '&body=' + mailBody;
+      } else {
+        alert('Could not submit report. Please email support@quickgigs.ca with what happened.');
+      }
     }
   }
 

@@ -192,9 +192,9 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <script>
 (function(){document.querySelectorAll('#qgReportOverlay,#qgDisputeOverlay,.qg-report-overlay').forEach(function(n){n.remove()});})();
 </script>
-<script src="qg-report.js?v=20260716c"></script>
+<script src="qg-report.js?v=20260716d"></script>
 <script src="qg-stats.js"></script>
-<script src="qg-disputes.js?v=20260716c"></script>
+<script src="qg-disputes.js?v=20260716d"></script>
 <script>
 var navActive = (typeof isWorkerMode === 'function' && isWorkerMode()) ? 'jobs' : 'tasks';
 renderQuickGigsTabBar(navActive);
@@ -735,9 +735,12 @@ function renderTab(){
         if (status === 'accepted') rowClass += ' is-accepted';
         else if (status === 'declined') rowClass += ' is-faded';
         else if (status === 'cancelled') rowClass += ' is-withdrawn';
+        var workerReport = typeof reportButtonHtml === 'function'
+          ? '<div class="qg-action-row" style="width:100%;margin-top:6px">' + reportButtonHtml('user', workerId, workerName) + '</div>'
+          : '';
         return '<div class="'+rowClass+'">'+
           '<a href="' + (typeof getProfileUrl === 'function' ? getProfileUrl(workerId) : ('profile.html?user=' + encodeURIComponent(String(workerId)))) + '" style="flex-shrink:0">' + avatarHtml + '</a>' +
-          '<div class="app-info"><div class="app-name">'+personLinkWithBadge(workerName, workerId)+'</div><div class="app-msg">'+esc(getField(a,'MESSAGE'))+'</div></div>'+
+          '<div class="app-info"><div class="app-name">'+personLinkWithBadge(workerName, workerId)+'</div><div class="app-msg">'+esc(getField(a,'MESSAGE'))+'</div>'+workerReport+'</div>'+
           '<div class="app-price">$'+getField(a,'PRICE')+'</div>'+
           renderApplicantAction(a, taskId)+
         '</div>';
@@ -805,6 +808,12 @@ function renderTab(){
           actions += '<span class="tc-meta" style="margin:0">Chat opens after the poster accepts you and pays</span>';
         }
         actions += '<button class="act-btn btn-danger" onclick="confirmWithdrawApplication('+appIdStr+')">Withdraw application</button></div>';
+        if (typeof reportButtonHtml === 'function') {
+          actions += '<div class="qg-action-row">' +
+            reportButtonHtml('task', getField(a,'TASK_ID'), getField(task,'TITLE')||'Task') +
+            reportButtonHtml('user', posterId, posterName) +
+            '</div>';
+        }
       } else if (appStatus === 'accepted') {
         if (!isPaymentGatedChat()) {
           actions = '<div class="action-row"><button class="act-btn btn-secondary" onclick="openChatForTask('+taskIdStr+')">💬 Message poster</button></div>';
@@ -859,6 +868,10 @@ function renderTab(){
       var disputeBtn = typeof disputeButtonHtml === 'function'
         ? disputeButtonHtml(taskId, getField(t,'TITLE'), otherUserId, otherName)
         : '';
+      var reportBtns = typeof reportButtonHtml === 'function'
+        ? reportButtonHtml('task', taskId, getField(t,'TITLE')) +
+          (otherUserId ? reportButtonHtml('user', otherUserId, otherName) : '')
+        : '';
       var posterActions = isPosterTask
         ? '<button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')">💬 Message</button>' +
           '<button class="act-btn btn-success" onclick="markComplete('+JSON.stringify(String(taskId))+', this)">✓ Mark complete</button>' +
@@ -872,7 +885,7 @@ function renderTab(){
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left">'+iconHtml+'<div><div class="tc-cat">'+roleLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-progress">⏳ In progress</span></div>'+
         '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+'</div>'+
-        '<div class="qg-action-row">'+disputeBtn+'</div>'+
+        '<div class="qg-action-row">'+disputeBtn+reportBtns+'</div>'+
         '<div class="action-row">' + posterActions + workerActions + '</div>'+
       '</div>';
     }).join('');
@@ -909,16 +922,21 @@ function renderTab(){
       var disputeBtn = typeof disputeButtonHtml === 'function'
         ? disputeButtonHtml(getField(t,'TASK_ID'), getField(t,'TITLE'), otherUid, otherNm)
         : '';
+      var reportBtns = typeof reportButtonHtml === 'function'
+        ? reportButtonHtml('task', getField(t,'TASK_ID'), getField(t,'TITLE')) +
+          (otherUid ? reportButtonHtml('user', otherUid, otherNm) : '')
+        : '';
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left">'+profileTapIcon(otherUid, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">'+otherLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-done">✓ Done</span></div>'+
         '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+'</div>'+
-        '<div class="qg-action-row">'+disputeBtn+'</div>'+
+        '<div class="qg-action-row">'+disputeBtn+reportBtns+'</div>'+
         '<div class="action-row"><a class="act-btn btn-review" href="'+reviewHref+'">⭐ Leave a review</a></div>'+
       '</div>';
     }).join('');
   }
 
   if (typeof bindDisputeTriggers === 'function') bindDisputeTriggers(content);
+  if (typeof bindReportTriggers === 'function') bindReportTriggers(content);
 }
 
 window.acceptApplicant = async function(taskId, appId, acceptBtn){
