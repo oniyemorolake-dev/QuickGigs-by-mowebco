@@ -37,6 +37,31 @@ function formatPersonName(name) {
 
 window.formatPersonName = formatPersonName;
 
+function formatRelativeTime(iso) {
+  if (!iso) return 'Recently';
+  var then = new Date(iso);
+  if (isNaN(then.getTime())) return 'Recently';
+  var diff = Date.now() - then.getTime();
+  if (diff < 0) diff = 0;
+  var mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return mins + ' min' + (mins === 1 ? '' : 's') + ' ago';
+  var hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + ' hr' + (hrs === 1 ? '' : 's') + ' ago';
+  var days = Math.floor(hrs / 24);
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return days + ' days ago';
+  return then.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+window.formatRelativeTime = formatRelativeTime;
+
+function formatPostedTime(iso) {
+  return formatRelativeTime(iso);
+}
+
+window.formatPostedTime = formatPostedTime;
+
 function attachNameFormatter(inputId) {
   var input = document.getElementById(inputId);
   if (!input || input.dataset.nameFormatReady) return;

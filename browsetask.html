@@ -308,7 +308,11 @@ function normaliseTask(row){
     priceLabel:'$'+budget+(mode==='recurring'?'/hr':''),
     location:row.LOCATION||row.location||'Calgary, AB',
     when: row.scheduled_label || row.SCHEDULED_LABEL || '',
-    posted:'Recently',applicants:0,
+    createdAt: row.created_at || row.CREATED_AT || '',
+    posted: typeof formatRelativeTime === 'function'
+      ? formatRelativeTime(row.created_at || row.CREATED_AT)
+      : 'Recently',
+    applicants:0,
     status:(row.STATUS||row.status||'open').toLowerCase(),
     posterId:posterUid,
     posterName:posterName||'QuickGigs user',

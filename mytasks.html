@@ -552,6 +552,7 @@ function getField(row,f){
     BUDGET:['BUDGET','budget'],
     LOCATION:['LOCATION','location'],
     STATUS:['STATUS','status'],
+    CREATED_AT:['CREATED_AT','created_at'],
     POSTED_BY:['POSTED_BY','posted_by'],
     POSTER_NAME:['POSTER_NAME','poster_name'],
     WORKER_ID:['WORKER_ID','worker_id'],
@@ -704,9 +705,12 @@ function renderTab(){
       var toggleLabel = pendingApps.length
         ? pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : '') + (namePreview ? ' · ' + namePreview + (pendingApps.length > 3 ? '…' : '') : '') + ' — Tap to ' + (isOpen ? 'hide' : 'view')
         : (hasAccepted ? 'Worker accepted — Tap to view' : 'No applicants yet');
+      var postedLabel = typeof formatRelativeTime === 'function'
+        ? formatRelativeTime(getField(t, 'CREATED_AT'))
+        : '';
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-open">Open</span></div>'+
-        '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+' budget</div>'+
+        '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+' budget'+(postedLabel ? ' · Posted '+esc(postedLabel) : '')+'</div>'+
         '<button type="button" class="tc-applicants-toggle'+(isOpen?' open':'')+'" data-applicants-toggle="'+escAttr(taskId)+'" data-applicant-count="'+escAttr(pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : ''))+'" data-applicant-names="'+escAttr(namePreview + (pendingApps.length > 3 ? '…' : ''))+'">👥 '+esc(toggleLabel)+'</button>'+
         '<div class="applicants-panel'+(isOpen?' open':'')+'" id="'+taskDomId(taskId)+'">'+appHtml+'</div>'+
         '<div class="action-row"><button type="button" class="act-btn btn-danger" onclick="confirmCancelPosting('+JSON.stringify(String(taskId))+')">✕ Cancel posting</button></div>'+
@@ -770,7 +774,7 @@ function renderTab(){
       }
       return '<div class="'+cardClass+'">'+
         '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">Applied · Posted by '+esc(posterName)+'</div><div class="tc-title">'+esc(getField(task,'TITLE')||'Task #'+getField(a,'TASK_ID'))+'</div></div></div>'+statusLabel+'</div>'+
-        '<div class="tc-meta">Your offer: $'+getField(a,'PRICE')+' · '+esc(getField(a,'MESSAGE')).substring(0,60)+'...</div>'+
+        '<div class="tc-meta">Your offer: $'+getField(a,'PRICE')+' · '+esc(getField(a,'MESSAGE')).substring(0,60)+'...'+(getField(task,'CREATED_AT') && typeof formatRelativeTime === 'function' ? ' · Task posted '+esc(formatRelativeTime(getField(task,'CREATED_AT'))) : '')+'</div>'+
         actions+
       '</div>';
     }).join('');

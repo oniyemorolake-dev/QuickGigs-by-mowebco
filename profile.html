@@ -289,17 +289,19 @@ async function loadProfile(user) {
     }
   }
 
-  // Load from localStorage first for instant display
   var saved = localStorage.getItem('qg-profile-' + targetId);
+  var localProfile = {};
   if (saved) {
-    profileData = JSON.parse(saved);
-  } else {
-    profileData = {
-      name: user.displayName || user.email.split('@')[0],
-      bio: '',
-      skills: [],
-      role: localStorage.getItem('qg-role') || 'poster'
-    };
+    try { localProfile = JSON.parse(saved) || {}; } catch (e) { localProfile = {}; }
+  }
+  profileData = Object.assign({
+    name: user.displayName || user.email.split('@')[0],
+    bio: '',
+    skills: [],
+    role: localStorage.getItem('qg-role') || 'poster'
+  }, localProfile, profileData);
+  if (profileData.avatar_url) {
+    window._currentUserAvatarUrl = profileData.avatar_url;
   }
 
   // Load tasks from Supabase to calculate real stats
@@ -461,6 +463,7 @@ window.uploadAvatar = async function(input) {
     return;
   }
   profileData.avatar_url = upload.url;
+  window._currentUserAvatarUrl = upload.url;
   localStorage.setItem('qg-profile-' + user.uid, JSON.stringify(profileData));
   if (typeof upsertUserProfile === 'function') {
     await upsertUserProfile({

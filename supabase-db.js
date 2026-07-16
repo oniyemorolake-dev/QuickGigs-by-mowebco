@@ -578,12 +578,15 @@ async function syncCurrentUserProfile(firebaseUser) {
   var name = firebaseUser.displayName || (firebaseUser.email ? firebaseUser.email.split('@')[0] : '');
   if (typeof formatPersonName === 'function' && name) name = formatPersonName(name);
   var role = localStorage.getItem('qg-role') || localStorage.getItem('qg-session-mode') || 'poster';
-  return await upsertUserProfile({
+  var payload = {
     name: name,
     email: firebaseUser.email || '',
     firebase_uid: firebaseUser.uid,
     role: role === 'worker' ? 'worker' : 'poster'
-  });
+  };
+  var localAvatar = readLocalProfileAvatar(firebaseUser.uid);
+  if (hasProfilePhotoUrl(localAvatar)) payload.avatar_url = localAvatar;
+  return await upsertUserProfile(payload);
 }
 
 async function getUserByFirebaseUid(firebaseUid) {
@@ -616,6 +619,57 @@ function hasProfilePhotoUrl(url) {
   return !!(url && String(url).trim());
 }
 
+function readLocalProfileAvatar(firebaseUid) {
+  if (!firebaseUid) return '';
+  try {
+    var raw = localStorage.getItem('qg-profile-' + firebaseUid);
+    if (!raw) return '';
+    var parsed = JSON.parse(raw);
+    return parsed && parsed.avatar_url ? String(parsed.avatar_url).trim() : '';
+  } catch (err) {
+    return '';
+  }
+}
+
+async function resolveUserAvatarUrl(firebaseUid) {
+  if (!firebaseUid) return '';
+  if (window._currentUser && window._currentUser.uid === firebaseUid &&
+      hasProfilePhotoUrl(window._currentUserAvatarUrl)) {
+    return window._currentUserAvatarUrl;
+  }
+  var localUrl = readLocalProfileAvatar(firebaseUid);
+  if (hasProfilePhotoUrl(localUrl)) {
+    if (window._currentUser && window._currentUser.uid === firebaseUid) {
+      window._currentUserAvatarUrl = localUrl;
+    }
+    return localUrl;
+  }
+  var dbUrl = await getUserAvatarUrl(firebaseUid);
+  if (hasProfilePhotoUrl(dbUrl)) {
+    if (window._currentUser && window._currentUser.uid === firebaseUid) {
+      window._currentUserAvatarUrl = dbUrl;
+    }
+    return dbUrl;
+  }
+  return '';
+}
+
+async function syncProfilePhotoToDb(firebaseUser, avatarUrl) {
+  if (!firebaseUser || !hasProfilePhotoUrl(avatarUrl)) return { success: false };
+  var existing = await getUserByFirebaseUid(firebaseUser.uid);
+  if (existing && hasProfilePhotoUrl(existing.avatar_url)) return { success: true };
+  var name = firebaseUser.displayName || (firebaseUser.email ? firebaseUser.email.split('@')[0] : '');
+  if (typeof formatPersonName === 'function' && name) name = formatPersonName(name);
+  var role = localStorage.getItem('qg-role') || localStorage.getItem('qg-session-mode') || 'worker';
+  return await upsertUserProfile({
+    name: name,
+    email: firebaseUser.email || '',
+    firebase_uid: firebaseUser.uid,
+    role: role === 'worker' ? 'worker' : 'poster',
+    avatar_url: avatarUrl
+  });
+}
+
 async function getUserAvatarUrl(firebaseUid) {
   if (!firebaseUid) return '';
   var user = await getUserByFirebaseUid(firebaseUid);
@@ -635,9 +689,7 @@ async function getUsersAvatarMap() {
 
 async function currentUserHasProfilePhoto() {
   if (!window._currentUser) return false;
-  if (hasProfilePhotoUrl(window._currentUserAvatarUrl)) return true;
-  var url = await getUserAvatarUrl(window._currentUser.uid);
-  if (url) window._currentUserAvatarUrl = url;
+  var url = await resolveUserAvatarUrl(window._currentUser.uid);
   return hasProfilePhotoUrl(url);
 }
 
@@ -646,8 +698,16 @@ async function ensureTaskerProfilePhoto() {
     localStorage.getItem('qg-role') === 'worker' ||
     localStorage.getItem('qg-session-mode') === 'worker';
   if (!isTasker) return { ok: true, avatar_url: window._currentUserAvatarUrl || '' };
-  var has = await currentUserHasProfilePhoto();
-  if (has) return { ok: true, avatar_url: window._currentUserAvatarUrl || '' };
+  var url = window._currentUser ? await resolveUserAvatarUrl(window._currentUser.uid) : '';
+  if (hasProfilePhotoUrl(url)) {
+    if (window._currentUser) {
+      var existing = await getUserByFirebaseUid(window._currentUser.uid);
+      if (!existing || !hasProfilePhotoUrl(existing.avatar_url)) {
+        await syncProfilePhotoToDb(window._currentUser, url);
+      }
+    }
+    return { ok: true, avatar_url: url };
+  }
   return { ok: false, error: 'profile_photo_required' };
 }
 
@@ -950,9 +1010,15 @@ async function submitApplication(appData) {
     if (posterId && String(posterId) === String(appData.worker_id)) {
       return { success: false, error: 'cannot_apply_own_task' };
     }
-    var workerPhoto = await getUserAvatarUrl(appData.worker_id);
+    var workerPhoto = await resolveUserAvatarUrl(appData.worker_id);
     if (!hasProfilePhotoUrl(workerPhoto)) {
       return { success: false, error: 'profile_photo_required' };
+    }
+    if (window._currentUser && window._currentUser.uid === appData.worker_id) {
+      var existing = await getUserByFirebaseUid(appData.worker_id);
+      if (!existing || !hasProfilePhotoUrl(existing.avatar_url)) {
+        await syncProfilePhotoToDb(window._currentUser, workerPhoto);
+      }
     }
   }
 
@@ -1194,6 +1260,9 @@ window.getUserAvatarUrl = getUserAvatarUrl;
 window.getUsersAvatarMap = getUsersAvatarMap;
 window.currentUserHasProfilePhoto = currentUserHasProfilePhoto;
 window.ensureTaskerProfilePhoto = ensureTaskerProfilePhoto;
+window.resolveUserAvatarUrl = resolveUserAvatarUrl;
+window.readLocalProfileAvatar = readLocalProfileAvatar;
+window.syncProfilePhotoToDb = syncProfilePhotoToDb;
 window.resolveUserName = resolveUserName;
 window.isGenericDisplayName = isGenericDisplayName;
 window.enrichConversationNames = enrichConversationNames;
