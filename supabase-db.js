@@ -1122,7 +1122,36 @@ async function sendChatMessage(convId, senderId, body) {
     last_message_at: new Date().toISOString()
   }, 'conv_id=eq.' + encodeURIComponent(convId));
 
+  notifyChatRecipientAsync(convId, senderId, isChatImageBody(body) ? '📷 Photo' : body);
+
   return result;
+}
+
+function notifyChatRecipientAsync(convId, senderId, preview) {
+  if (typeof notifyNewChatMessage !== 'function' && typeof window.showQuickGigsPush !== 'function') return;
+  (async function () {
+    try {
+      var conv = typeof getConversation === 'function' ? await getConversation(convId) : null;
+      if (!conv) return;
+      var recipientId = senderId === conv.poster_id ? conv.worker_id : conv.poster_id;
+      if (!recipientId || recipientId === senderId) return;
+      var recipient = typeof getUserByFirebaseUid === 'function' ? await getUserByFirebaseUid(recipientId) : null;
+      var senderName = typeof getUserNameByFirebaseUid === 'function'
+        ? await getUserNameByFirebaseUid(senderId)
+        : 'QuickGigs user';
+      var chatLink = 'https://quickgigs.ca/chat.html?conv=' + encodeURIComponent(convId);
+      if (typeof notifyNewChatMessage === 'function') {
+        await notifyNewChatMessage(recipientId, recipient && recipient.email, {
+          senderName: senderName,
+          taskTitle: conv.task_title || 'your task',
+          preview: String(preview || '').substring(0, 120),
+          link: chatLink
+        });
+      }
+    } catch (err) {
+      console.warn('Chat notification skipped:', err);
+    }
+  })();
 }
 
 async function markConversationRead(convId, userId, posterId) {

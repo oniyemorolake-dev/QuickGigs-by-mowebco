@@ -6,9 +6,54 @@
   right: 0;
   bottom: 0;
   z-index: 200;
-  padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  background: var(--tab-bg, #0b0118);
+  border-top: 0.5px solid var(--border, rgba(200, 168, 233, 0.1));
+  padding: 8px 0 calc(14px + env(safe-area-inset-bottom, 0px));
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
+  transition: background 0.25s;
+}
+
+body.light .tab-bar {
+  background: var(--tab-bg, #fff);
+  border-top-color: var(--border, #f0eeff);
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  text-decoration: none;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.tab-icon {
+  font-size: 22px;
+  color: var(--text-faint, rgba(255, 255, 255, 0.35));
+  transition: color 0.15s;
+  line-height: 1;
+}
+
+.tab-lbl {
+  font-size: 10px;
+  color: var(--text-faint, rgba(255, 255, 255, 0.35));
+  transition: color 0.15s;
+  line-height: 1.2;
+}
+
+.tab-item.active .tab-icon,
+.tab-item.active .tab-lbl {
+  color: var(--purple-light, #c8a8e9);
+}
+
+body.light .tab-item.active .tab-icon,
+body.light .tab-item.active .tab-lbl {
+  color: var(--purple, #6b3fa0);
 }
 
 body.qg-keyboard-open .tab-bar {
@@ -41,17 +86,12 @@ body.qg-page-chat {
 }
 
 /* Min tap targets (accessibility) */
-.tab-item,
 .act-btn,
 .accept-btn,
 .send-btn,
 .mode-btn,
 .submit-btn {
   min-height: 44px;
-}
-
-.tab-item {
-  justify-content: center;
 }
 
 /* Focus visible for keyboard users */

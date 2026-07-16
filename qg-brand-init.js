@@ -8,6 +8,7 @@
     var page = path.split('/').pop() || '';
     if (page === 'browsetask.html' || page === 'browsetask') return 'worker';
     if (page === 'posttask.html' || page === 'posttask') return 'poster';
+    if (page === 'workers.html' || page === 'workers') return 'poster';
     var stored = localStorage.getItem('qg-session-mode') || localStorage.getItem('qg-role');
     return stored === 'worker' ? 'worker' : 'poster';
   }

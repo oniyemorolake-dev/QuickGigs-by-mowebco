@@ -7,9 +7,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
 <link rel="stylesheet" href="qg-role-theme.css">
-<link rel="stylesheet" href="qg-sheet.css?v=20260716c">
-<link rel="stylesheet" href="qg-features.css?v=20260716c">
+<link rel="stylesheet" href="qg-brand.css">
+<link rel="stylesheet" href="qg-mobile.css">
+<link rel="stylesheet" href="qg-sheet.css?v=20260716d">
+<link rel="stylesheet" href="qg-features.css?v=20260716d">
 <script src="qg-brand-init.js"></script>
+<script>document.documentElement.setAttribute('data-qg-mode','poster');</script>
 <style>
 body{font-family:'DM Sans',sans-serif;background:var(--bg,#0b0118);color:var(--text,#fff);min-height:100vh;padding-bottom:76px;}
 .nav{position:sticky;top:0;z-index:50;background:var(--nav-bg,#0b0118);border-bottom:0.5px solid var(--border,rgba(200,168,233,0.1));padding:12px 18px;display:flex;align-items:center;justify-content:space-between;}
@@ -24,6 +27,7 @@ body.light .mode-btn{background:#f0eeff;color:#6b3fa0;}
 </style>
 </head>
 <body>
+<script src="qg-theme.js"></script>
 <nav class="nav">
   <a class="back-link" href="dashboard.html?mode=poster" aria-label="Back to dashboard">← Home</a>
   <div class="nav-brand"><span class="nav-logo">QuickGigs</span></div>

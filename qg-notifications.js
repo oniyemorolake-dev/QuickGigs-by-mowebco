@@ -24,6 +24,14 @@
           'Please leave a review to help the community:\n' +
           (p.link || 'https://quickgigs.ca/mytasks.html?tab=completed');
       }
+    },
+    new_message: {
+      subject: function (p) { return 'New message from ' + (p.senderName || 'QuickGigs'); },
+      body: function (p) {
+        return (p.senderName || 'Someone') + ' sent you a message about “' + (p.taskTitle || 'a task') + '”:\n\n' +
+          '“' + (p.preview || 'Open QuickGigs to read') + '”\n\n' +
+          (p.link || 'https://quickgigs.ca/messages.html');
+      }
     }
   };
 
@@ -119,8 +127,25 @@
     });
   }
 
+  async function notifyNewChatMessage(recipientId, recipientEmail, payload) {
+    if (!recipientId) return { success: false };
+    payload = payload || {};
+    return queueEmailNotification({
+      type: 'new_message',
+      userId: recipientId,
+      email: recipientEmail,
+      payload: {
+        senderName: payload.senderName,
+        taskTitle: payload.taskTitle,
+        preview: payload.preview,
+        link: payload.link || 'https://quickgigs.ca/messages.html'
+      }
+    });
+  }
+
   window.queueEmailNotification = queueEmailNotification;
   window.notifyPosterNewApplication = notifyPosterNewApplication;
   window.notifyWorkerAccepted = notifyWorkerAccepted;
   window.notifyTaskCompleted = notifyTaskCompleted;
+  window.notifyNewChatMessage = notifyNewChatMessage;
 })();
