@@ -472,6 +472,31 @@ async function postTask(taskData) {
   return result;
 }
 
+async function repostTask(sourceTaskId, posterId) {
+  if (!sourceTaskId || !posterId) return { success: false, error: 'missing_ids' };
+  var task = await getTaskById(sourceTaskId);
+  if (!task) return { success: false, error: 'not_found' };
+  if (String(task.posted_by || task.POSTED_BY || '') !== String(posterId)) {
+    return { success: false, error: 'not_owner' };
+  }
+  var st = String(task.status || task.STATUS || '').toLowerCase();
+  if (st !== 'expired') return { success: false, error: 'not_expired' };
+  return await postTask({
+    title: task.title || task.TITLE,
+    description: task.description || task.DESCRIPTION || '',
+    category: task.category || task.CATEGORY || 'other',
+    task_mode: task.task_mode || task.TASK_MODE || 'standard',
+    budget: task.budget || task.BUDGET || 0,
+    location: task.location || task.LOCATION || 'Calgary, AB',
+    posted_by: posterId,
+    poster_name: task.poster_name || task.POSTER_NAME,
+    photo_urls: task.photo_urls || task.PHOTO_URLS,
+    scheduled_at: task.scheduled_at || task.SCHEDULED_AT,
+    scheduled_label: task.scheduled_label || task.SCHEDULED_LABEL,
+    requires_photos: !!(task.requires_photos || task.REQUIRES_PHOTOS)
+  });
+}
+
 async function uploadTaskPhoto(file, userId) {
   return await uploadStoragePhoto(file, userId, 'task-photos', String(userId));
 }
@@ -1835,6 +1860,7 @@ window.getTasksByUser = getTasksByUser;
 window.getTaskById = getTaskById;
 window.lockConversationsForTask = lockConversationsForTask;
 window.postTask = postTask;
+window.repostTask = repostTask;
 window.uploadTaskPhoto = uploadTaskPhoto;
 window.uploadProfilePhoto = uploadProfilePhoto;
 window.uploadChatPhoto = uploadChatPhoto;

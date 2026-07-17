@@ -198,7 +198,7 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 | **Google Analytics ID** | Ads conversion tracking — set `ga4MeasurementId` in `qg-config.js` | 10 min |
 | **Stripe / payments** | Core launch blocker; chat rule switches to `payment` | Large |
 | **Photo sharing in chat** | Posters/taskers share task progress photos | 2–4 hrs |
-| **Repost expired task** | Posters one-click repost after 30 days | 1–2 hrs |
+| **Repost expired task** | ✅ One-click repost from Completed tab (poster) | `repostTask()` in `supabase-db.js`, `mytasks.html` |
 | **Social login (Google)** | Faster signup, fewer drop-offs | 4–8 hrs |
 | **Sentry error tracking** | Know when prod breaks | 1–2 hrs |
 
@@ -262,9 +262,8 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 1. **Deploy** — commit + push saved tasks + notification bell
 2. **Run SQL** — `supabase/user-notifications.sql` and `supabase/saved-tasks.sql` in Supabase (if not already)
 3. **Paste GA4 ID** in `qg-config.js` + set Google Ads conversion on `thank-you.html`
-4. **Repost task** on expired My Tasks rows (~1 hr)
-5. **Photo sharing in chat** (~2–4 hrs)
-6. **Social login (Google)** (~4–8 hrs)
+4. **Photo sharing in chat** (~2–4 hrs)
+5. **Social login (Google)** (~4–8 hrs)
 
 ---
 

@@ -652,6 +652,12 @@ document.getElementById('tabContent').addEventListener('click', function(e) {
   if (cancelProgBtn) {
     e.preventDefault();
     confirmCancelInProgress(cancelProgBtn.getAttribute('data-cancel-inprogress'));
+    return;
+  }
+  var repostBtn = e.target.closest('[data-repost-task]');
+  if (repostBtn) {
+    e.preventDefault();
+    confirmRepostTask(repostBtn.getAttribute('data-repost-task'));
   }
 });
 
@@ -909,7 +915,7 @@ function renderTab(){
     if (isPoster) {
       done = allTasks.filter(function(t){
         var st = taskStatus(t);
-        return (st === 'completed' || st === 'cancelled') && getField(t,'POSTED_BY') === userId;
+        return (st === 'completed' || st === 'cancelled' || st === 'expired') && getField(t,'POSTED_BY') === userId;
       });
     } else {
       done = allTasks.filter(function(t){
@@ -921,7 +927,7 @@ function renderTab(){
       });
     }
     if(!done.length){
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No completed tasks yet</div><div class="empty-sub">Completed or cancelled tasks will appear here.</div></div>';
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No completed tasks yet</div><div class="empty-sub">'+(isPoster?'Completed, cancelled, and expired postings appear here. Expired tasks can be reposted with one tap.':'Completed or cancelled tasks will appear here.')+'</div></div>';
       return;
     }
     content.innerHTML = '<div class="hint-box" style="background:rgba(107,63,160,0.12);border:1px solid rgba(200,168,233,0.2);border-radius:14px;padding:14px;margin-bottom:14px;font-size:13px;line-height:1.55;color:var(--text-muted);">⭐ <strong>Please leave a review</strong> on completed jobs — honest feedback helps QuickGigs stay safe for everyone.</div>' +
@@ -929,6 +935,7 @@ function renderTab(){
       var cat = getCat(t);
       var st = taskStatus(t);
       var isCancelled = st === 'cancelled';
+      var isExpired = st === 'expired';
       var acceptedApp = findAcceptedApplication(getField(t,'TASK_ID'));
       var isPoster = getField(t,'POSTED_BY') === userId;
       var workerId = acceptedApp ? getField(acceptedApp, 'WORKER_ID') : '';
@@ -946,13 +953,17 @@ function renderTab(){
         ? reportButtonHtml('task', getField(t,'TASK_ID'), getField(t,'TITLE')) +
           (otherUid ? reportButtonHtml('user', otherUid, otherNm) : '')
         : '';
-      var badge = isCancelled
+      var badge = isExpired
+        ? '<span class="tc-badge badge-open" style="opacity:0.75">⏱ Expired</span>'
+        : isCancelled
         ? '<span class="tc-badge badge-open" style="opacity:0.75">✕ Cancelled</span>'
         : '<span class="tc-badge badge-done">✓ Done</span>';
-      var actions = isCancelled
+      var actions = isExpired
+        ? '<div class="action-row"><button type="button" class="act-btn btn-primary" data-repost-task="'+escAttr(getField(t,'TASK_ID'))+'">↻ Repost task</button></div>'
+        : isCancelled
         ? ''
         : '<div class="action-row"><a class="act-btn btn-review" href="'+reviewHref+'">⭐ Leave a review</a></div>';
-      return '<div class="task-card'+(isCancelled?' is-faded':'')+'">'+
+      return '<div class="task-card'+(isCancelled || isExpired ?' is-faded':'')+'">'+
         '<div class="tc-top"><div class="tc-left">'+profileTapIcon(otherUid, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">'+otherLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div>'+badge+'</div>'+
         '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+'</div>'+
         '<div class="qg-action-row">'+disputeBtn+reportBtns+'</div>'+
@@ -1305,6 +1316,38 @@ window.confirmWithdrawApplication = function(appId) {
       }
       showToast('Application withdrawn');
       loadData();
+    }
+  });
+};
+
+window.confirmRepostTask = function(taskId) {
+  taskId = String(taskId);
+  var task = allTasks.find(function(t) { return String(getField(t, 'TASK_ID')) === taskId; });
+  var title = task ? getField(task, 'TITLE') : 'this task';
+  showConfirm({
+    title: 'Repost this task?',
+    message: '“' + title + '” will be posted again as a new open listing with the same details. The expired copy stays in your history.',
+    confirmLabel: 'Repost now',
+    onConfirm: async function() {
+      var userId = window._currentUser ? window._currentUser.uid : null;
+      if (!userId || typeof repostTask !== 'function') {
+        showToast('Could not repost — refresh and try again', '#ef4444');
+        return;
+      }
+      if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
+      var result = await repostTask(taskId, userId);
+      if (!result.success) {
+        var msg = result.error === 'not_expired'
+          ? 'Only expired tasks can be reposted.'
+          : (typeof formatSupabaseActionError === 'function'
+            ? formatSupabaseActionError('repost task', result.error)
+            : 'Could not repost — try again.');
+        showToast(msg, '#ef4444');
+        return;
+      }
+      showToast('Task reposted — now live on browse');
+      await loadData();
+      showTab('posted', document.getElementById('tabPosted'));
     }
   });
 };
