@@ -59,7 +59,7 @@ Stack: Firebase Auth + Supabase + static HTML/JS frontend
 
 ## Auth & signup
 
-- **Firebase auth** — login, signup, password reset
+- **Firebase auth** — login, signup, password reset, **Google sign-in**
 - **Role-based signup** — poster vs tasker
 - **Mode selector** — poster/tasker session modes
 - **Auto-capitalize names** on signup
@@ -117,7 +117,7 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 - **Fraud alerts** — temp email detection, review flags, high apply volume
 - **Admin action log** — security tab + CSV export
 - **Run SQL:** `supabase/admin-tools.sql` for `admin_notes`, `admin_actions`, `review_flag`
-- **Waitlist** — import emails, track invited vs signed up, export CSV (`supabase/waitlist-banner.sql`)
+- **Waitlist** — import emails, **Send invite** / **Send reminder** via Resend (`qg-notifications.js`)
 - **Announcement banner** — publish message to all users from Settings tab
 
 ---
@@ -139,7 +139,7 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 
 | Feature | Status | Where |
 |---------|--------|--------|
-| Email notifications (queue) | ✅ Queued in `notification_queue` on apply / accept / complete | `qg-notifications.js`, `supabase/priority-features.sql`, Edge Function template |
+| Email notifications (queue) | ✅ Queued + Edge Function URL in config; deploy Resend secrets to go live | `qg-notifications.js`, `supabase/functions/send-notification/` |
 | In-app notification bell | ✅ 🔔 in nav, unread badge, slide-out panel | `qg-bell.js`, `qg-bell.css`, `supabase/user-notifications.sql` |
 | Saved tasks (bookmarks) | ✅ ☆ Save on browse cards + ★ Saved filter tab | `qg-saved.js`, `supabase/saved-tasks.sql` |
 | PWA installable app | ✅ `manifest.json`, `sw.js`, install banner | `qg-pwa.js` |
@@ -186,7 +186,8 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 | Cookie consent | `qg-cookies.js` |
 | Tap-to-enlarge task photos | `qg-lightbox.js`, browse cards |
 | Thank-you / conversion page | `thank-you.html` (poster signup) |
-| Google Analytics hook | `qg-analytics.js` — paste `G-XXXXXXXXXX` in `qg-config.js` |
+| Google Analytics (GA4) | ✅ `G-82SPKK654N` in `qg-config.js`; tracks login/signup + `thank-you.html` conversion | `qg-analytics.js`, `login.html`, `signup.html` |
+| Google sign-in | ✅ Continue with Google on login + signup (OAuth onboarding for new users) | `qg-auth-google.js`, `login.html`, `signup.html` |
 
 ---
 
@@ -195,11 +196,10 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 | Feature | Why | Effort |
 |---------|-----|--------|
 | **Push all pending changes live** | Menu, lightbox, login fix not on quickgigs.ca yet | 10 min |
-| **Google Analytics ID** | Ads conversion tracking — set `ga4MeasurementId` in `qg-config.js` | 10 min |
+| **Google Analytics ID** | ✅ `G-82SPKK654N` set — add `ga4ConversionLabel` when Google Ads conversion is ready | Done |
+| **Social login (Google)** | ✅ Login + signup; enable Google provider in Firebase Console | `qg-auth-google.js` |
+| **Resend email invites** | ✅ Admin waitlist Send invite/reminder — deploy Edge Function + API key | `qg-admin.js`, `send-notification` |
 | **Stripe / payments** | Core launch blocker; chat rule switches to `payment` | Large |
-| **Photo sharing in chat** | ✅ Posters + taskers share photos; lightbox tap-to-enlarge | `chat.html`, `qg-config.js` |
-| **Repost expired task** | ✅ One-click repost from Completed tab (poster) | `repostTask()` in `supabase-db.js`, `mytasks.html` |
-| **Social login (Google)** | Faster signup, fewer drop-offs | 4–8 hrs |
 | **Sentry error tracking** | Know when prod breaks | 1–2 hrs |
 
 ---
@@ -259,11 +259,11 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 
 ## Suggested next quick wins
 
-1. **Deploy** — commit + push saved tasks + notification bell
-2. **Run SQL** — `supabase/user-notifications.sql` and `supabase/saved-tasks.sql` in Supabase (if not already)
-3. **Paste GA4 ID** in `qg-config.js` + set Google Ads conversion on `thank-you.html`
-4. ~~**Photo sharing in chat**~~ ✅
-5. **Social login (Google)** (~4–8 hrs)
+1. **Deploy** — push all local commits to GitHub (`git push origin main`)
+2. **Resend (one-time)** — Supabase → Edge Functions → deploy `send-notification`; set secrets `RESEND_API_KEY` + `FROM_EMAIL=QuickGigs <notify@quickgigs.ca>`; verify domain in Resend
+3. **Firebase (one-time)** — Authentication → Sign-in method → enable **Google**; add `quickgigs.ca` to authorized domains
+4. **Google Ads** — paste conversion label in `qg-config.js` → `ga4ConversionLabel`
+5. **Stripe / payments** — core launch blocker
 
 ---
 
@@ -273,6 +273,7 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 | Application accepted | ✅ In-app bell + email queue (`application_accepted`) |
 | Task marked complete | ✅ In-app bell + email queue (`task_completed`) |
 | New chat message | ✅ In-app bell (`new_message`); email if Edge Function configured |
+| Waitlist invite / reminder | ✅ Admin Send invite + Send reminder (`waitlist_invite`, `waitlist_reminder`) |
 | Password reset | ✅ Firebase |
 
 ## Email notifications — expected vs today

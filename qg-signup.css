@@ -111,6 +111,17 @@
 .signup-divider{display:flex;align-items:center;gap:12px;margin:1rem 0;}
 .signup-divider::before,.signup-divider::after{content:'';flex:1;height:0.5px;background:rgba(200,168,233,0.15);}
 .signup-divider span{font-size:0.72rem;color:rgba(255,255,255,0.35);}
+.signup-google-btn{
+  width:100%;padding:13px 16px;border-radius:14px;border:1px solid rgba(200,168,233,0.22);
+  background:rgba(255,255,255,0.06);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:0.25rem;
+  transition:background 0.15s,border-color 0.15s;
+}
+.signup-google-btn:hover{background:rgba(255,255,255,0.1);border-color:rgba(200,168,233,0.35);}
+.signup-google-btn:disabled{opacity:0.55;cursor:not-allowed;}
+.signup-google-icon{font-size:18px;line-height:1;}
+body.light .signup-google-btn{background:#fff;border-color:#e8e2ff;color:#1a0a3d;}
+body.light .signup-google-btn:hover{background:#f8f7ff;}
 .signup-login{text-align:center;font-size:0.85rem;color:rgba(255,255,255,0.6);}
 .signup-login a{color:#c8a8e9;text-decoration:none;font-weight:600;}
 .signup-login a:hover{text-decoration:underline;}

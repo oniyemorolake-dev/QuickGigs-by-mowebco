@@ -10,10 +10,10 @@ window.QG_CONFIG = {
   maxPhotoSizeMb: 5,
   // P1 — email queue (requires notification_queue table + optional Edge Function)
   emailNotificationsEnabled: true,
-  notificationFunctionUrl: '',
+  notificationFunctionUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/send-notification',
   shareBaseUrl: 'https://quickgigs.ca',
   // Google Analytics 4 — paste your Measurement ID (G-XXXXXXXXXX) to enable
-  ga4MeasurementId: '',
+  ga4MeasurementId: 'G-82SPKK654N',
   ga4ConversionLabel: '',
   // P2 — trust & moderation
   autoBanAfterWarnings: 3,

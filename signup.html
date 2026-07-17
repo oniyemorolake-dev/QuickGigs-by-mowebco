@@ -184,6 +184,9 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 
       <div class="signup-footer" id="signupFooter">
         <div class="signup-divider"><span>or</span></div>
+        <button type="button" class="signup-google-btn" id="googleSignupBtn">
+          <span class="signup-google-icon" aria-hidden="true">G</span> Continue with Google
+        </button>
         <div class="signup-login">Already have an account? <a href="login.html">Log in</a></div>
       </div>
     </div>
@@ -191,6 +194,9 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 </div>
 
 <script src="qg-utils.js"></script>
+<script src="qg-config.js"></script>
+<script src="qg-analytics.js"></script>
+<script src="qg-auth-google.js"></script>
 <script src="qg-onboarding.js?v=2"></script>
 <script src="qg-cookies.js"></script>
 <script src="supabase-db.js"></script>
@@ -202,7 +208,7 @@ attachNameFormatter('name');
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
@@ -215,6 +221,80 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+
+var oauthSignupUser = null;
+var oauthSignupMode = false;
+
+async function beginOAuthSignup(user) {
+  oauthSignupUser = user;
+  oauthSignupMode = true;
+  if (typeof qgInitOAuthSignupFields === 'function') qgInitOAuthSignupFields(user);
+  var secStep = document.querySelector('[data-step="security"]');
+  if (secStep) secStep.setAttribute('data-skip', '0');
+}
+
+async function handleGoogleSignupClick() {
+  var errorMsg = document.getElementById('errorMsg');
+  var okMsg = document.getElementById('okMsg');
+  var btn = document.getElementById('googleSignupBtn');
+  errorMsg.style.display = 'none';
+  if (okMsg) okMsg.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Connecting…';
+
+  try {
+    var provider = new GoogleAuthProvider();
+    var result = await signInWithPopup(auth, provider);
+    var user = result.user;
+    var existing = typeof getUserByFirebaseUid === 'function' ? await getUserByFirebaseUid(user.uid) : null;
+
+    if (existing && existing.status === 'banned') {
+      await auth.signOut();
+      errorMsg.textContent = 'This account has been suspended.';
+      errorMsg.style.display = 'block';
+      btn.disabled = false;
+      btn.innerHTML = '<span class="signup-google-icon" aria-hidden="true">G</span> Continue with Google';
+      return;
+    }
+
+    if (existing && typeof qgUserNeedsOnboarding === 'function' && !qgUserNeedsOnboarding(existing)) {
+      if (typeof syncCurrentUserProfile === 'function') await syncCurrentUserProfile(user);
+      if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'google' });
+      window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
+      return;
+    }
+
+    await beginOAuthSignup(user);
+    okMsg.textContent = 'Google connected — finish the steps below to create your account.';
+    okMsg.style.display = 'block';
+    btn.disabled = false;
+    btn.innerHTML = '<span class="signup-google-icon" aria-hidden="true">G</span> Continue with Google';
+  } catch (error) {
+    var message = typeof qgGoogleAuthErrorMessage === 'function'
+      ? qgGoogleAuthErrorMessage(error)
+      : 'Google sign-in failed.';
+    if (message) {
+      errorMsg.textContent = message;
+      errorMsg.style.display = 'block';
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<span class="signup-google-icon" aria-hidden="true">G</span> Continue with Google';
+  }
+}
+
+document.getElementById('googleSignupBtn').addEventListener('click', handleGoogleSignupClick);
+
+onAuthStateChanged(auth, async function(user) {
+  if (!user) return;
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('oauth') !== 'continue') return;
+  var existing = typeof getUserByFirebaseUid === 'function' ? await getUserByFirebaseUid(user.uid) : null;
+  if (existing && typeof qgUserNeedsOnboarding === 'function' && !qgUserNeedsOnboarding(existing)) {
+    window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
+    return;
+  }
+  await beginOAuthSignup(user);
+});
 
 var STEP_META = [
   { title: 'Join QuickGigs', sub: 'Canada\'s marketplace for everyday tasks — post a gig or earn helping others', icon: '✨', label: 'Account' },
@@ -314,6 +394,10 @@ function validateAccountBasic() {
 function validateAccountSecurity() {
   clearSignupErrors();
   var phone = window.sanitizeInput(document.getElementById('phone').value, 20);
+  if (oauthSignupMode) {
+    if (!validatePhone(phone)) { document.getElementById('phoneError').style.display = 'block'; return false; }
+    return true;
+  }
   var password = document.getElementById('password').value;
   var confirm = document.getElementById('confirmPassword').value;
   var valid = true;
@@ -326,6 +410,14 @@ function validateAccountSecurity() {
 function validateAccountStep() {
   var basic = validateAccountBasic();
   if (!basic) return null;
+  if (oauthSignupMode) {
+    if (!validateAccountSecurity()) return null;
+    return Object.assign({}, basic, {
+      phone: window.sanitizeInput(document.getElementById('phone').value, 20),
+      role: document.getElementById('roleInput').value,
+      oauth: true
+    });
+  }
   if (!validateAccountSecurity()) return null;
   return Object.assign({}, basic, {
     password: document.getElementById('password').value,
@@ -368,12 +460,29 @@ document.getElementById('submitBtn').onclick = async function() {
   submitBtn.disabled = true;
 
   try {
-    const userCredential = await createUserWithEmailAndPassword(auth, account.email, account.password);
-    await updateProfile(userCredential.user, { displayName: account.name });
+    var userCredential;
+    if (oauthSignupMode && oauthSignupUser) {
+      userCredential = { user: oauthSignupUser };
+      if (account.name && account.name !== oauthSignupUser.displayName) {
+        await updateProfile(oauthSignupUser, { displayName: account.name });
+      }
+    } else {
+      userCredential = await createUserWithEmailAndPassword(auth, account.email, account.password);
+      await updateProfile(userCredential.user, { displayName: account.name });
+    }
 
     var userPayload = Object.assign({}, account, identity, { firebase_uid: userCredential.user.uid });
+    delete userPayload.password;
+    delete userPayload.oauth;
     var saveResult = await saveUser(userPayload);
     if (!saveResult.success) console.warn('Could not save user to Supabase:', saveResult.error);
+
+    if (typeof qgTrackEvent === 'function') {
+      qgTrackEvent('sign_up_complete', {
+        method: oauthSignupMode ? 'google' : 'email',
+        role: account.role
+      });
+    }
 
     if (identity.account_status === 'pending_guardian' && identity.guardian_consent_token) {
       var consentUrl = 'https://quickgigs.ca/parent-consent.html?token=' + identity.guardian_consent_token;

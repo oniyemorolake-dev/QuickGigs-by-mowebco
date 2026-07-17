@@ -431,9 +431,11 @@ window.doLogout = function() { signOut(auth).then(function(){ window.location.hr
 </script>
 
 <script src="qg-utils.js"></script>
+<script src="qg-config.js"></script>
 <script src="supabase-db.js"></script>
+<script src="qg-notifications.js"></script>
 <script src="qg-stats.js"></script>
-<script src="qg-admin.js?v=2"></script>
+<script src="qg-admin.js?v=3"></script>
 <script>
 var SB_HEADERS = window.SB_HEADERS;
 var users=[],tasks=[],disputes=[],reports=[],applications=[],adminNotes=[],adminActions=[],waitlist=[],selectedUsers=[],pendingFn=null,currentSection='overview';

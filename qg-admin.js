@@ -609,8 +609,8 @@
         '<div class="cell">' + (w.invited_at ? new Date(w.invited_at).toLocaleDateString('en-CA') : '—') + '</div>' +
         '<div class="cell">' + (w.signed_up_at ? new Date(w.signed_up_at).toLocaleDateString('en-CA') : '—') + '</div>' +
         '<div class="act-btns">' +
-          (!w.signed_up ? '<button type="button" class="act-btn btn-view" onclick="adminMarkInvited(\'' + wid + '\')">Mark invited</button>' : '') +
-          (!w.signed_up && w.invited_at ? '<button type="button" class="act-btn btn-warn" onclick="adminMarkReminder(\'' + wid + '\')">Log reminder</button>' : '') +
+          (!w.signed_up ? '<button type="button" class="act-btn btn-view" onclick="adminMarkInvited(\'' + wid + '\')">Send invite</button>' : '') +
+          (!w.signed_up && w.invited_at ? '<button type="button" class="act-btn btn-warn" onclick="adminMarkReminder(\'' + wid + '\')">Send reminder</button>' : '') +
           '<button type="button" class="act-btn btn-remove" onclick="adminDeleteWaitlist(\'' + wid + '\')">Remove</button>' +
         '</div></div>';
     }).join('');
@@ -649,22 +649,36 @@
   async function adminMarkInvited(id) {
     var w = (window.waitlist || []).find(function (x) { return String(x.waitlist_id) === String(id); });
     if (!w) return;
+    if (typeof sendWaitlistEmail === 'function') {
+      var sent = await sendWaitlistEmail(w.email, 'waitlist_invite');
+      if (!sent.success && !sent.skipped) {
+        showToast('Could not send invite — deploy send-notification Edge Function + Resend API key', 'red');
+        return;
+      }
+    }
     var now = new Date().toISOString();
     await sbUpdate('waitlist', { invited_at: now }, 'waitlist_id=eq.' + encodeURIComponent(String(id)));
     w.invited_at = now;
     await logAdminAction('waitlist_invite', 'waitlist', w.email, {});
-    showToast('Marked invited — send invite from your email client', 'green');
+    showToast('Invite email sent to ' + w.email, 'green');
     renderWaitlist();
   }
 
   async function adminMarkReminder(id) {
     var w = (window.waitlist || []).find(function (x) { return String(x.waitlist_id) === String(id); });
     if (!w) return;
+    if (typeof sendWaitlistEmail === 'function') {
+      var sent = await sendWaitlistEmail(w.email, 'waitlist_reminder');
+      if (!sent.success && !sent.skipped) {
+        showToast('Could not send reminder — check Resend setup', 'red');
+        return;
+      }
+    }
     var now = new Date().toISOString();
     await sbUpdate('waitlist', { reminder_sent_at: now }, 'waitlist_id=eq.' + encodeURIComponent(String(id)));
     w.reminder_sent_at = now;
     await logAdminAction('waitlist_reminder', 'waitlist', w.email, {});
-    showToast('Reminder logged for ' + w.email, 'amber');
+    showToast('Reminder email sent to ' + w.email, 'amber');
     renderWaitlist();
   }
 

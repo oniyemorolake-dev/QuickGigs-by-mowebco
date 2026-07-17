@@ -41,11 +41,30 @@
           'Approve their account here:\n' + (p.consentUrl || 'https://quickgigs.ca/parent-consent.html') + '\n\n' +
           'If you did not authorize this, ignore this email or contact support@quickgigs.ca.\n\n— QuickGigs';
       }
+    },
+    waitlist_invite: {
+      subject: function () { return 'You\'re invited to QuickGigs beta 🎉'; },
+      body: function (p) {
+        return 'Hi,\n\nYou\'re on the QuickGigs waitlist — we\'re ready for you to join the beta.\n\n' +
+          'QuickGigs is Canada\'s marketplace for everyday tasks. Post a gig or earn helping others in your community.\n\n' +
+          'Create your free account here:\n' + (p.link || 'https://quickgigs.ca/signup.html') + '\n\n' +
+          'See you on QuickGigs,\n— The QuickGigs team';
+      }
+    },
+    waitlist_reminder: {
+      subject: function () { return 'Reminder: your QuickGigs beta invite is waiting'; },
+      body: function (p) {
+        return 'Hi,\n\nJust a friendly reminder — your QuickGigs beta invite is still open.\n\n' +
+          'Sign up free and start posting tasks or browsing gigs:\n' + (p.link || 'https://quickgigs.ca/signup.html') + '\n\n' +
+          '— QuickGigs';
+      }
     }
   };
 
   async function queueEmailNotification(opts) {
-    if (!opts || !opts.type || !opts.userId) return { success: false };
+    if (!opts || !opts.type) return { success: false };
+    var isWaitlist = opts.type.indexOf('waitlist_') === 0;
+    if (!opts.userId && !isWaitlist) return { success: false };
     var payload = opts.payload || {};
 
     var inAppTypes = {
@@ -70,7 +89,7 @@
       }
     }
 
-    if (window.QG_CONFIG && window.QG_CONFIG.emailNotificationsEnabled === false) {
+    if (!opts.forceEmail && window.QG_CONFIG && window.QG_CONFIG.emailNotificationsEnabled === false) {
       return { success: true, skipped: true };
     }
 
@@ -82,7 +101,7 @@
     var email = opts.email || '';
 
     var row = {
-      user_id: opts.userId,
+      user_id: opts.userId || ('waitlist:' + (email || 'unknown')),
       email: email,
       type: opts.type,
       subject: subject,
@@ -177,6 +196,20 @@
     });
   }
 
+  async function sendWaitlistEmail(email, type) {
+    if (!email) return { success: false, error: 'missing_email' };
+    var base = (window.QG_CONFIG && window.QG_CONFIG.shareBaseUrl) || 'https://quickgigs.ca';
+    return queueEmailNotification({
+      type: type,
+      userId: 'waitlist:' + email,
+      email: email,
+      forceEmail: true,
+      payload: {
+        link: base + '/signup.html?ref=waitlist'
+      }
+    });
+  }
+
   async function queueGuardianConsentEmail(opts) {
     if (!opts || !opts.guardianEmail) return { success: false };
     return queueEmailNotification({
@@ -191,6 +224,7 @@
   }
 
   window.queueEmailNotification = queueEmailNotification;
+  window.sendWaitlistEmail = sendWaitlistEmail;
   window.queueGuardianConsentEmail = queueGuardianConsentEmail;
   window.notifyPosterNewApplication = notifyPosterNewApplication;
   window.notifyWorkerAccepted = notifyWorkerAccepted;

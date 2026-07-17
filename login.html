@@ -65,6 +65,9 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
       </div>
 
       <div class="signup-divider"><span>or</span></div>
+      <button type="button" class="signup-google-btn" id="googleLoginBtn">
+        <span class="signup-google-icon" aria-hidden="true">G</span> Continue with Google
+      </button>
       <div class="signup-login">Don't have an account? <a href="signup.html">Sign up free</a></div>
 
       <div class="signup-auth-links">
@@ -78,6 +81,10 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 </div>
 
 <script src="qg-utils.js"></script>
+<script src="qg-config.js"></script>
+<script src="qg-analytics.js"></script>
+<script src="qg-auth-google.js"></script>
+<script src="supabase-db.js"></script>
 <script src="qg-cookies.js"></script>
 <script>
 attachPasswordToggle('password');
@@ -107,7 +114,7 @@ for (var i = 0; i < starCount; i++) {
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
@@ -138,6 +145,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
 
   try {
     await signInWithEmailAndPassword(auth, email, password);
+    if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'email' });
     submitBtn.textContent = 'Opening dashboard…';
     var dest = typeof getDashboardUrl === 'function'
       ? getDashboardUrl()
@@ -179,6 +187,57 @@ document.getElementById('forgotLink').addEventListener('click', async function()
   } catch (error) {
     errorMsg.textContent = 'Could not send reset email. Check the address and try again.';
     errorMsg.style.display = 'block';
+  }
+});
+
+document.getElementById('googleLoginBtn').addEventListener('click', async function() {
+  var errorMsg = document.getElementById('errorMsg');
+  var okMsg = document.getElementById('okMsg');
+  var btn = document.getElementById('googleLoginBtn');
+  errorMsg.style.display = 'none';
+  okMsg.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Connecting…';
+
+  try {
+    var provider = new GoogleAuthProvider();
+    var result = await signInWithPopup(auth, provider);
+    var user = result.user;
+
+    if (typeof syncCurrentUserProfile === 'function') {
+      await syncCurrentUserProfile(user);
+    }
+
+    var existing = typeof getUserByFirebaseUid === 'function'
+      ? await getUserByFirebaseUid(user.uid)
+      : null;
+
+    if (existing && existing.status === 'banned') {
+      await auth.signOut();
+      errorMsg.textContent = 'This account has been suspended. Contact support@quickgigs.ca if you think this is a mistake.';
+      errorMsg.style.display = 'block';
+      btn.disabled = false;
+      btn.innerHTML = '<span class="signup-google-icon" aria-hidden="true">G</span> Continue with Google';
+      return;
+    }
+
+    if (existing && typeof qgUserNeedsOnboarding === 'function' && !qgUserNeedsOnboarding(existing)) {
+      if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'google' });
+      window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
+      return;
+    }
+
+    window.location.replace('signup.html?oauth=continue');
+  } catch (error) {
+    var message = typeof qgGoogleAuthErrorMessage === 'function'
+      ? qgGoogleAuthErrorMessage(error)
+      : 'Google sign-in failed. Try again.';
+    if (message) {
+      errorMsg.textContent = message;
+      errorMsg.style.display = 'block';
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<span class="signup-google-icon" aria-hidden="true">G</span> Continue with Google';
   }
 });
 </script>
