@@ -42,7 +42,7 @@ Stack: Firebase Auth + Supabase + static HTML/JS frontend
 - **Chat unlocks on accept** — beta config (`chatUnlockAfter: 'accept'`)
 - **Chat fixes** — poster ↔ tasker messaging after accept, conversation lookup, unlock on open
 - **Fraud blocking** — phone numbers, emails, and social handles blocked in chat
-- **Poster-only image attach** — reference photos in chat (no IDs/personal documents)
+- **Chat photo sharing** — posters send reference photos, taskers send progress photos; tap to enlarge (`qg-lightbox.js`)
 - **Messages list** — active/completed sections, unread indicators, profile links on avatar/name
 
 ---
@@ -197,7 +197,7 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 | **Push all pending changes live** | Menu, lightbox, login fix not on quickgigs.ca yet | 10 min |
 | **Google Analytics ID** | Ads conversion tracking — set `ga4MeasurementId` in `qg-config.js` | 10 min |
 | **Stripe / payments** | Core launch blocker; chat rule switches to `payment` | Large |
-| **Photo sharing in chat** | Posters/taskers share task progress photos | 2–4 hrs |
+| **Photo sharing in chat** | ✅ Posters + taskers share photos; lightbox tap-to-enlarge | `chat.html`, `qg-config.js` |
 | **Repost expired task** | ✅ One-click repost from Completed tab (poster) | `repostTask()` in `supabase-db.js`, `mytasks.html` |
 | **Social login (Google)** | Faster signup, fewer drop-offs | 4–8 hrs |
 | **Sentry error tracking** | Know when prod breaks | 1–2 hrs |
@@ -262,7 +262,7 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 1. **Deploy** — commit + push saved tasks + notification bell
 2. **Run SQL** — `supabase/user-notifications.sql` and `supabase/saved-tasks.sql` in Supabase (if not already)
 3. **Paste GA4 ID** in `qg-config.js` + set Google Ads conversion on `thank-you.html`
-4. **Photo sharing in chat** (~2–4 hrs)
+4. ~~**Photo sharing in chat**~~ ✅
 5. **Social login (Google)** (~4–8 hrs)
 
 ---

@@ -167,7 +167,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <!-- FRAUD WARNING BAR -->
 <div class="fraud-bar">
-  ⚠️ Keep all communication and payments on QuickGigs. Posters can share job photos only — no IDs or personal documents. Taskers: use text messages.
+  ⚠️ Keep all communication and payments on QuickGigs. Share job or progress photos here — no IDs or personal documents.
 </div>
 
 <!-- CHAT AREA -->
@@ -175,8 +175,8 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <!-- INPUT -->
 <div class="input-area">
-  <input type="file" id="chatPhotoInput" accept="image/*" style="display:none" onchange="sendPosterImage(this)">
-  <button type="button" class="attach-btn" id="attachBtn" onclick="document.getElementById('chatPhotoInput').click()" aria-label="Send reference photo (posters only)" title="Posters only — share a photo of what needs doing">📷</button>
+  <input type="file" id="chatPhotoInput" accept="image/*" style="display:none" onchange="sendChatImage(this)">
+  <button type="button" class="attach-btn" id="attachBtn" onclick="document.getElementById('chatPhotoInput').click()" aria-label="Send photo in chat" title="Share a job or progress photo — no IDs or personal documents">📷</button>
   <div style="flex:1">
     <div class="input-wrap">
       <textarea class="msg-input" id="msgInput" placeholder="Type a message..." rows="1" enterkeyhint="send" autocomplete="off" autocorrect="on" oninput="handleInput(this)" onkeydown="handleKey(event)"></textarea>
@@ -220,6 +220,7 @@ onAuthStateChanged(auth, (user) => {
 <script src="qg-utils.js"></script>
 <script src="qg-config.js"></script>
 <script src="supabase-db.js"></script>
+<script src="qg-lightbox.js?v=1"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
 var isDark = localStorage.getItem('qg-mode') !== 'light';
@@ -243,6 +244,7 @@ var messages = [];
 var pollTimer = null;
 var currentUserId = null;
 var chatIsPoster = false;
+var chatLightboxBound = false;
 
 // ── FRAUD DETECTION (shared rules in qg-utils.js) ────────
 
@@ -401,32 +403,54 @@ async function initChat(){
 
   await refreshMessages();
   await markConversationRead(convId, currentUserId, currentConv.poster_id);
-  setupPosterImageAttach(isPoster);
+  setupChatImageAttach();
+  ensureChatLightbox();
   pollTimer = setInterval(refreshMessages, 4000);
 }
 
-function setupPosterImageAttach(isPoster) {
+function setupChatImageAttach() {
   var attachBtn = document.getElementById('attachBtn');
-  var posterOnly = !window.QG_CONFIG || window.QG_CONFIG.posterOnlyChatImages !== false;
-  if (attachBtn) {
-    attachBtn.classList.toggle('visible', isPoster && posterOnly);
+  if (!attachBtn) return;
+  var posterOnly = !!(window.QG_CONFIG && window.QG_CONFIG.posterOnlyChatImages);
+  var show = posterOnly ? chatIsPoster : true;
+  attachBtn.classList.toggle('visible', show);
+  if (posterOnly) {
     attachBtn.title = 'Share a reference photo of what needs doing (posters only). No IDs or personal documents.';
+    attachBtn.setAttribute('aria-label', 'Send reference photo (posters only)');
+  } else {
+    attachBtn.title = chatIsPoster
+      ? 'Share a reference photo — what needs doing. No IDs or personal documents.'
+      : 'Share a progress photo. No IDs or personal documents.';
+    attachBtn.setAttribute('aria-label', 'Send photo in chat');
   }
 }
 
-function renderMessageBubble(text) {
+function ensureChatLightbox() {
+  if (chatLightboxBound) return;
+  var scroll = document.getElementById('chatScroll');
+  if (scroll && typeof bindQgPhotoLightbox === 'function') {
+    bindQgPhotoLightbox(scroll, '.bubble-image.qg-modal-photo-tap');
+    chatLightboxBound = true;
+  }
+}
+
+function renderMessageBubble(text, opts) {
+  opts = opts || {};
   if (typeof isChatImageBody === 'function' && isChatImageBody(text)) {
     var url = typeof parseChatImageUrl === 'function' ? parseChatImageUrl(text) : '';
     if (url) {
-      return '<img class="bubble-image" src="'+window.escapeHtml(url)+'" alt="Reference photo from poster" onclick="window.open(this.src,\'_blank\')">' +
-        '<div class="bubble-image-caption">Reference photo</div>';
+      var caption = opts.senderIsPoster ? 'Reference photo' : 'Progress photo';
+      var escUrl = window.escapeHtml(url);
+      return '<img class="bubble-image qg-modal-photo-tap" src="'+escUrl+'" alt="'+window.escapeHtml(caption)+'" data-photo="'+escUrl+'" data-photo-caption="'+window.escapeHtml(caption)+'">' +
+        '<div class="bubble-image-caption">'+window.escapeHtml(caption)+'</div>';
     }
   }
   return window.escapeHtml(text);
 }
 
-window.sendPosterImage = async function(input) {
-  if (!chatIsPoster) {
+window.sendChatImage = async function(input) {
+  var posterOnly = !!(window.QG_CONFIG && window.QG_CONFIG.posterOnlyChatImages);
+  if (posterOnly && !chatIsPoster) {
     alert('Only the poster can send photos in chat. Taskers can describe questions in text.');
     input.value = '';
     return;
@@ -437,12 +461,19 @@ window.sendPosterImage = async function(input) {
   if (!file) return;
 
   var attachBtn = document.getElementById('attachBtn');
-  if (attachBtn) attachBtn.disabled = true;
+  var prevLabel = attachBtn ? attachBtn.textContent : '';
+  if (attachBtn) {
+    attachBtn.disabled = true;
+    attachBtn.textContent = '⏳';
+  }
 
   var upload = await uploadChatPhoto(file, currentUserId, convId);
   if (!upload.success) {
-    alert(upload.error || 'Could not upload photo. Run supabase/task-photos.sql in Supabase.');
-    if (attachBtn) attachBtn.disabled = false;
+    alert(upload.error || 'Could not upload photo. Run supabase/storage-beta-fix.sql in Supabase.');
+    if (attachBtn) {
+      attachBtn.disabled = false;
+      attachBtn.textContent = prevLabel || '📷';
+    }
     return;
   }
 
@@ -450,14 +481,21 @@ window.sendPosterImage = async function(input) {
   var result = await sendChatMessage(convId, currentUserId, body);
   if (!result.success) {
     alert('Photo uploaded but could not send. Try again.');
-    if (attachBtn) attachBtn.disabled = false;
+    if (attachBtn) {
+      attachBtn.disabled = false;
+      attachBtn.textContent = prevLabel || '📷';
+    }
     return;
   }
 
-  if (attachBtn) attachBtn.disabled = false;
+  if (attachBtn) {
+    attachBtn.disabled = false;
+    attachBtn.textContent = prevLabel || '📷';
+  }
   await refreshMessages();
   scrollToBottom();
 };
+window.sendPosterImage = window.sendChatImage;
 
 function showLockedState(isCompleted){
   var isPoster = currentConv && currentConv.poster_id === currentUserId;
@@ -489,6 +527,7 @@ async function refreshMessages(){
       id: m.message_id,
       from: m.sender_id === currentUserId ? 'me' : 'them',
       text: m.body,
+      senderIsPoster: currentConv && m.sender_id === currentConv.poster_id,
       time: formatMessageTime(m.created_at),
       date: formatMessageDate(m.created_at)
     };
@@ -508,7 +547,7 @@ function renderMessages(){
     }
     var isMe = m.from === 'me';
     html += '<div class="bubble-row '+(isMe?'mine':'theirs')+'">' +
-      '<div class="bubble">'+renderMessageBubble(m.text)+'</div>' +
+      '<div class="bubble">'+renderMessageBubble(m.text, { senderIsPoster: m.senderIsPoster })+'</div>' +
       '<div class="bubble-time">'+m.time+'</div>' +
     '</div>';
   });

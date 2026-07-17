@@ -5,7 +5,7 @@ window.QG_CONFIG = {
   // Set true ONLY after Supabase Auth → Firebase is enabled AND rls-secure.sql is applied
   supabaseFirebaseAuth: false,
   blockOffPlatformContact: true,
-  posterOnlyChatImages: true,
+  posterOnlyChatImages: false,
   maxTaskPhotos: 3,
   maxPhotoSizeMb: 5,
   // P1 — email queue (requires notification_queue table + optional Edge Function)
