@@ -110,9 +110,13 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 
 ## Admin
 
-- **`admin.html`** — dashboard UI shell (users, tasks, disputes, analytics)
-- **Demo data** — disputes, revenue, some stats are placeholders
-- **Manual warn/ban** in UI — not automated, not fully wired to live DB
+- **`admin.html`** — live console at [quickgigs.ca/admin.html](https://quickgigs.ca/admin.html) (login as `mowebsiteco@gmail.com`)
+- **User drawer** — edit name/role/status, flag for review, warn/ban, internal notes
+- **Task drawer** — edit title/budget/description/status, applicant list, expire/remove
+- **Moderation queue** — reports with resolve/dismiss
+- **Fraud alerts** — temp email detection, review flags, high apply volume
+- **Admin action log** — security tab + CSV export
+- **Run SQL:** `supabase/admin-tools.sql` for `admin_notes`, `admin_actions`, `review_flag`
 
 ---
 
