@@ -205,6 +205,22 @@ async function sbPost(table, data) {
   }
 }
 
+async function sbDelete(table, filters) {
+  try {
+    var url = SUPABASE_URL + '/rest/v1/' + table + '?' + filters;
+    var headers = await getSupabaseHeaders();
+    var res = await fetch(url, { method: 'DELETE', headers: headers });
+    if (!res.ok) {
+      var errText = await res.text();
+      throw new Error('DELETE failed: ' + res.status + (errText ? ' ' + errText : ''));
+    }
+    return { success: true };
+  } catch (err) {
+    console.error('Supabase DELETE error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
 async function sbUpdate(table, data, filters) {
   try {
     var url = SUPABASE_URL + '/rest/v1/' + table + '?' + filters;
@@ -1766,6 +1782,38 @@ async function markAllNotificationsRead(userId) {
   );
 }
 
+async function getSavedTaskIds(userId) {
+  if (!userId) return [];
+  var rows = await sbGet(
+    'saved_tasks',
+    'user_id=eq.' + encodeURIComponent(userId),
+    'created_at.desc',
+    200
+  );
+  if (!Array.isArray(rows)) return [];
+  return rows.map(function (r) { return r.task_id || r.TASK_ID; }).filter(Boolean);
+}
+
+async function saveTask(userId, taskId) {
+  if (!userId || !taskId) return { success: false };
+  var result = await sbPostReturn('saved_tasks', {
+    user_id: userId,
+    task_id: String(taskId)
+  });
+  if (!result.success && /duplicate|unique|23505/i.test(String(result.error || ''))) {
+    return { success: true, duplicate: true };
+  }
+  return result;
+}
+
+async function unsaveTask(userId, taskId) {
+  if (!userId || !taskId) return { success: false };
+  return await sbDelete(
+    'saved_tasks',
+    'user_id=eq.' + encodeURIComponent(userId) + '&task_id=eq.' + encodeURIComponent(String(taskId))
+  );
+}
+
 window.SUPABASE_URL = SUPABASE_URL;
 window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
 window.getSupabaseHeaders = getSupabaseHeaders;
@@ -1854,6 +1902,10 @@ window.fetchUserNotifications = fetchUserNotifications;
 window.getUnreadNotificationCount = getUnreadNotificationCount;
 window.markNotificationRead = markNotificationRead;
 window.markAllNotificationsRead = markAllNotificationsRead;
+window.getSavedTaskIds = getSavedTaskIds;
+window.saveTask = saveTask;
+window.unsaveTask = unsaveTask;
+window.sbDelete = sbDelete;
 window.sbGet = sbGet;
 window.sbPost = sbPost;
 window.sbPostReturn = sbPostReturn;

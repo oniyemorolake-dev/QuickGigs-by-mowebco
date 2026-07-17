@@ -86,6 +86,7 @@ body.light .mpill.active-all{background:var(--purple);color:#5a2d8a;}
 .mpill.active-standard{background:rgba(107,63,160,0.22);color:var(--lavender);border-color:var(--purple-light);}
 body.light .mpill.active-standard{background:#ede9ff;color:#5a2d8a;}
 .mpill.active-recurring{background:rgba(74,222,128,0.12);color:#16a34a;border-color:rgba(74,222,128,0.4);}
+.mpill.active-saved{background:rgba(251,191,36,0.15);color:#fbbf24;border-color:rgba(251,191,36,0.45);}
 .cat-wrap-outer{background:var(--nav-bg);padding:10px 18px 12px;border-bottom:0.5px solid var(--border);}
 .light .cat-wrap-outer{background:#f0eeff;border-radius:12px;margin:8px 18px 0;padding:10px;}
 .cat-label-txt{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);margin-bottom:8px;display:block;}
@@ -240,6 +241,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   <span class="mpill" onclick="setMode(this,'quick')">⚡ Quick</span>
   <span class="mpill" onclick="setMode(this,'standard')">📋 Standard</span>
   <span class="mpill" onclick="setMode(this,'recurring')">🔄 Recurring</span>
+  <span class="mpill" onclick="setMode(this,'saved')">★ Saved</span>
 </div>
 <div class="cat-wrap-outer">
   <span class="cat-label-txt">Category</span>
@@ -367,6 +369,7 @@ onAuthStateChanged(auth, (user) => {
 <script src="qg-pwa.js?v=4"></script>
 <script src="qg-notifications.js"></script>
 <script src="qg-share.js"></script>
+<script src="qg-saved.js?v=1"></script>
 <script src="qg-report.js?v=20260716d"></script>
 <script src="qg-stats.js"></script>
 <script>
@@ -524,6 +527,9 @@ async function loadTasks(){
     if ((!cached || !cached.length) && !window._currentUser) allTasks = getDemoTasks();
   }
   await hydratePosterNames();
+  if (typeof loadSavedTaskIds === 'function' && getCurrentUserId()) {
+    await loadSavedTaskIds(getCurrentUserId());
+  }
   renderCards();
   if (typeof fetchAllTasksFresh === 'function') {
     fetchAllTasksFresh().then(function(fresh){
@@ -583,7 +589,9 @@ function renderCards(){
   var dateFilter=(document.getElementById('dateFilter')&&document.getElementById('dateFilter').value)||'any';
   var sortVal = (document.getElementById('sortSel') && document.getElementById('sortSel').value) || 'newest';
   var filtered=allTasks.filter(function(t){
-    if (activeMode!=='all'&&t.mode!==activeMode) return false;
+    if (activeMode==='saved'){
+      if (typeof isTaskSaved !== 'function' || !isTaskSaved(t.id)) return false;
+    } else if (activeMode!=='all'&&t.mode!==activeMode) return false;
     if (activeCat!=='all'&&t.cat!==activeCat) return false;
     if (!taskMatchesLocation(t, locFilter, window._nearMeOnly)) return false;
     if (!taskMatchesDateRange(t, dateFilter)) return false;
@@ -612,6 +620,10 @@ function renderCards(){
     area.innerHTML='<div class="empty-state"><div class="empty-emoji">📍</div><p class="empty-txt">No tasks match your filters — try clearing location, date, or search</p></div>';
     return;
   }
+  if(!filtered.length && activeMode==='saved'){
+    area.innerHTML='<div class="empty-state"><div class="empty-emoji">★</div><p class="empty-txt">No saved tasks yet — tap ☆ Save on any task to bookmark it here.</p></div>';
+    return;
+  }
   if(!filtered.length){area.innerHTML='<div class="empty-state"><div class="empty-emoji">🔍</div><p class="empty-txt">'+(allTasks.length===0?'No tasks posted yet — be the first!':'No tasks match this filter')+'</p></div>';return;}
   area.innerHTML=filtered.map(function(t){
     var desc = (t.desc || '').trim();
@@ -622,6 +634,7 @@ function renderCards(){
       ? profileNameLink(t.posterName, t.posterId)
       : esc(t.posterName);
     var shareBtn = typeof shareButtonHtml === 'function' ? shareButtonHtml('task', t.id, t.title) : '';
+    var saveBtn = typeof bookmarkButtonHtml === 'function' ? bookmarkButtonHtml(t.id) : '';
     var reportBtn = typeof reportButtonHtml === 'function' ? reportButtonHtml('task', t.id, t.title) : '';
     var hasPhoto = t.photoUrls && t.photoUrls[0];
     var photoHero = renderCardPhotoHero(t);
@@ -633,11 +646,14 @@ function renderCards(){
       '<div class="tc-top"><div class="tc-left">'+iconHtml+'<div class="tc-meta"><p class="tc-cat">'+esc(t.catLabel)+'</p><p class="tc-title">'+esc(t.title)+'</p></div></div>'+getBadge(t.mode)+'</div>'+
       descHtml+
       '<div class="tc-bottom"><div><div class="tc-price">'+esc(t.priceLabel)+'</div><div class="tc-info">👤 '+posterLabel+' · 📍 '+esc(loc)+whenPart+' · '+esc(t.posted)+(t.applicants>0?' · '+t.applicants+' applied':'')+'</div>'+
-      '<div class="qg-action-row">'+shareBtn+reportBtn+'</div></div>'+
+      '<div class="qg-action-row">'+saveBtn+shareBtn+reportBtn+'</div></div>'+
       '<button class="apply-btn '+getBtnClass(t.mode)+'" onclick="openModal(\''+t.id+'\',event)">'+getBtnLabel(t.mode)+'</button></div></div></div>';
   }).join('');
   if (typeof bindShareTriggers === 'function') {
     bindShareTriggers(area, function(id){ return allTasks.find(function(t){ return String(t.id)===String(id); }); });
+  }
+  if (typeof bindSavedTriggers === 'function') {
+    bindSavedTriggers(area, function(){ if (activeMode==='saved') renderCards(); });
   }
   if (typeof bindReportTriggers === 'function') bindReportTriggers(area);
   if (typeof bindQgPhotoLightbox === 'function') bindQgPhotoLightbox(document.body);
@@ -823,6 +839,13 @@ initUserLocation().then(function(){
       if (t) openModal(t.id, { stopPropagation: function(){} });
     };
     setTimeout(tryOpen, 800);
+  }
+  if (params.get('saved') === '1') {
+    activeMode = 'saved';
+    document.querySelectorAll('#modeRow .mpill').forEach(function(p){
+      p.className = 'mpill';
+      if ((p.getAttribute('onclick')||'').indexOf("'saved'")>=0) p.className = 'mpill active-saved';
+    });
   }
 })();
 

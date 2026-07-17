@@ -135,6 +135,7 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 |---------|--------|--------|
 | Email notifications (queue) | ✅ Queued in `notification_queue` on apply / accept / complete | `qg-notifications.js`, `supabase/priority-features.sql`, Edge Function template |
 | In-app notification bell | ✅ 🔔 in nav, unread badge, slide-out panel | `qg-bell.js`, `qg-bell.css`, `supabase/user-notifications.sql` |
+| Saved tasks (bookmarks) | ✅ ☆ Save on browse cards + ★ Saved filter tab | `qg-saved.js`, `supabase/saved-tasks.sql` |
 | PWA installable app | ✅ `manifest.json`, `sw.js`, install banner | `qg-pwa.js` |
 | Report button | ✅ Modal on tasks & profiles | `qg-report.js`, browse + profile |
 | Search polish | ✅ Title, category, location, poster + nearest sort | `browsetask.html` |
@@ -191,7 +192,6 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 | **Google Analytics ID** | Ads conversion tracking — set `ga4MeasurementId` in `qg-config.js` | 10 min |
 | **Stripe / payments** | Core launch blocker; chat rule switches to `payment` | Large |
 | **Photo sharing in chat** | Posters/taskers share task progress photos | 2–4 hrs |
-| **Saved tasks (bookmarks)** | Workers return to tasks later | 2–3 hrs |
 | **Repost expired task** | Posters one-click repost after 30 days | 1–2 hrs |
 | **Social login (Google)** | Faster signup, fewer drop-offs | 4–8 hrs |
 | **Sentry error tracking** | Know when prod breaks | 1–2 hrs |
@@ -253,13 +253,12 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 
 ## Suggested next quick wins
 
-1. **Deploy** — commit + push notification bell + latest fixes
-2. **Run SQL** — `supabase/user-notifications.sql` in Supabase (if not already)
+1. **Deploy** — commit + push saved tasks + notification bell
+2. **Run SQL** — `supabase/user-notifications.sql` and `supabase/saved-tasks.sql` in Supabase (if not already)
 3. **Paste GA4 ID** in `qg-config.js` + set Google Ads conversion on `thank-you.html`
-4. **Saved tasks** bookmark button on browse cards (~2 hrs)
-5. **Repost task** on expired My Tasks rows (~1 hr)
-6. **Photo sharing in chat** (~2–4 hrs)
-7. **Social login (Google)** (~4–8 hrs)
+4. **Repost task** on expired My Tasks rows (~1 hr)
+5. **Photo sharing in chat** (~2–4 hrs)
+6. **Social login (Google)** (~4–8 hrs)
 
 ---
 
