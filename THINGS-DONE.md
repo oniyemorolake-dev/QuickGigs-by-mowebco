@@ -4,7 +4,7 @@ Last updated: July 2026
 Platform: [quickgigs.ca](https://quickgigs.ca)  
 Stack: Firebase Auth + Supabase + static HTML/JS frontend
 
-**Your action items:** see **[YOUR-SIDE.md](YOUR-SIDE.md)** — deploy, Firebase Google, Resend, SQL (I'll keep reminding you until done).
+**Your action items:** see **[YOUR-SIDE.md](YOUR-SIDE.md)** and **[GOOGLE-LOGIN-FIX.md](GOOGLE-LOGIN-FIX.md)** if Google login fails.
 
 ---
 

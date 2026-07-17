@@ -238,28 +238,18 @@ document.getElementById('googleLoginBtn').addEventListener('click', async functi
   provider.setCustomParameters({ prompt: 'select_account' });
 
   try {
-    if (typeof qgGooglePreferRedirect === 'function' && qgGooglePreferRedirect()) {
-      await signInWithRedirect(auth, provider);
-      return;
-    }
-    var result = await signInWithPopup(auth, provider);
-    await finishGoogleLogin(result.user);
+    await signInWithRedirect(auth, provider);
   } catch (error) {
     if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
       if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
       return;
     }
-    try {
-      await signInWithRedirect(auth, provider);
-      return;
-    } catch (redirectErr) {
-      var message = typeof qgGoogleAuthErrorMessage === 'function'
-        ? qgGoogleAuthErrorMessage(redirectErr)
-        : (typeof qgGoogleFirebaseSetupHint === 'string' ? qgGoogleFirebaseSetupHint : 'Google sign-in failed.');
-      errorMsg.textContent = message;
-      errorMsg.style.display = 'block';
-      if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
-    }
+    var message = typeof qgGoogleAuthErrorMessage === 'function'
+      ? qgGoogleAuthErrorMessage(error)
+      : (typeof qgGoogleFirebaseSetupHint === 'string' ? qgGoogleFirebaseSetupHint : 'Google sign-in failed.');
+    errorMsg.textContent = message + ' See GOOGLE-LOGIN-FIX.md in the repo.';
+    errorMsg.style.display = 'block';
+    if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
   }
 });
 </script>
