@@ -288,7 +288,9 @@ document.getElementById('successCardName').textContent = reviewee;
 document.getElementById('revLabel').textContent = reviewerRole === 'worker'
   ? 'You completed a task for — rate the poster'
   : 'Your tasker was — rate their work';
-document.getElementById('backBtn').href = 'mytasks.html?tab=completed';
+document.getElementById('backBtn').href = params.get('from') === 'chat' && params.get('conv')
+  ? ('chat.html?conv=' + encodeURIComponent(params.get('conv')))
+  : 'mytasks.html?tab=completed';
 
 // Tags differ slightly depending on who is reviewing whom
 var posterTags = ['On time','Great work','Friendly','Professional','Good value','Communicative','Detail-oriented','Would hire again'];

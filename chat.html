@@ -125,6 +125,9 @@ body.light .fraud-inline{background:#fef2f2;color:#dc2626;border-color:#fecaca;}
 .locked-icon{font-size:48px;margin-bottom:16px;}
 .locked-title{font-size:18px;font-weight:500;color:var(--text);margin-bottom:8px;}
 .locked-sub{font-size:14px;color:var(--text-muted);line-height:1.6;}
+.locked-action{margin-top:16px;padding:12px 20px;border-radius:13px;text-decoration:none;font-size:13px;font-weight:500;display:inline-block;}
+.locked-review-btn{background:rgba(251,191,36,0.15);color:#d97706;border:0.5px solid rgba(251,191,36,0.35);}
+.locked-pay-btn{background:var(--purple);color:#fff;}
 
 /* TAB BAR */
 .tab-bar{background:var(--tab-bg);border-top:0.5px solid var(--border);display:flex;padding:8px 0 14px;flex-shrink:0;transition:background 0.25s;}
@@ -312,7 +315,10 @@ async function initChat(){
   var taskStatus = '';
   if (currentConv.task_id && typeof getTaskById === 'function') {
     var taskRow = await getTaskById(currentConv.task_id);
-    if (taskRow) taskStatus = (taskRow.status || taskRow.STATUS || '').toLowerCase();
+    if (taskRow) {
+      taskStatus = (taskRow.status || taskRow.STATUS || '').toLowerCase();
+      currentConv.task_budget = taskRow.budget != null ? taskRow.budget : taskRow.BUDGET;
+    }
   }
   if (!currentConv.is_unlocked && convStatus !== 'completed') {
     var shouldUnlock = typeof shouldUnlockChatNow === 'function'
@@ -377,14 +383,19 @@ async function initChat(){
     ? 'Tasker · ' + (currentConv.task_title || 'Your task')
     : 'Poster · ' + (currentConv.task_title || 'Task');
   document.getElementById('taskTitle').textContent = currentConv.task_title || 'Task';
-  document.getElementById('taskMeta').textContent = (typeof parseConversationUnlocked === 'function'
-      ? parseConversationUnlocked(currentConv)
-      : currentConv.is_unlocked)
-    ? ((window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter === 'payment') ? 'Chat open · Escrow paid' : 'Chat open')
-    : 'Payment required · Chat locked';
+  var isCompleted = convStatus === 'completed' || taskStatus === 'completed';
+  var isCancelled = taskStatus === 'cancelled';
+  if (isCompleted) {
+    document.getElementById('taskMeta').textContent = '$' + (currentConv.task_budget || '—') + ' · Task completed';
+  } else {
+    document.getElementById('taskMeta').textContent = (typeof parseConversationUnlocked === 'function'
+        ? parseConversationUnlocked(currentConv)
+        : currentConv.is_unlocked)
+      ? ((window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter === 'payment') ? 'Chat open · Escrow paid' : 'Chat open')
+      : 'Payment required · Chat locked';
+  }
   document.getElementById('taskIcon').textContent = CAT_ICONS[cat] || '📦';
   document.getElementById('taskIcon').style.background = CAT_BG[cat] || 'rgba(107,63,160,0.2)';
-  var isCompleted = currentConv.status === 'completed';
   document.getElementById('taskStatus').textContent = isCompleted ? 'Completed' : 'In progress';
   document.getElementById('taskStatus').className = 'tb-status ' + (isCompleted ? 'status-done' : 'status-progress');
 
@@ -397,7 +408,7 @@ async function initChat(){
     : !!currentConv.is_unlocked;
 
   if(!chatOpen){
-    showLockedState(isCompleted);
+    showLockedState(isCompleted, isCancelled);
     return;
   }
 
@@ -497,15 +508,43 @@ window.sendChatImage = async function(input) {
 };
 window.sendPosterImage = window.sendChatImage;
 
-function showLockedState(isCompleted){
+function buildChatReviewHref() {
+  if (!currentConv || !currentUserId || !currentConv.task_id) return '';
+  var isPoster = currentConv.poster_id === currentUserId;
+  var revieweeId = isPoster ? currentConv.worker_id : currentConv.poster_id;
+  var revieweeName = isPoster
+    ? (currentConv.worker_name || 'Tasker')
+    : (currentConv.poster_name || 'Poster');
+  var role = isPoster ? 'poster' : 'worker';
+  return 'review.html?taskId=' + encodeURIComponent(String(currentConv.task_id)) +
+    '&task=' + encodeURIComponent(currentConv.task_title || 'Task') +
+    '&price=' + encodeURIComponent(String(currentConv.task_budget || '')) +
+    '&revieweeId=' + encodeURIComponent(String(revieweeId)) +
+    '&reviewee=' + encodeURIComponent(revieweeName) +
+    '&role=' + role +
+    '&from=chat&conv=' + encodeURIComponent(String(convId || ''));
+}
+
+function showLockedState(isCompleted, isCancelled){
   var isPoster = currentConv && currentConv.poster_id === currentUserId;
   var lockMsg;
   if (isCompleted) {
-    lockMsg = 'This task is completed. Chat is now closed. You can still leave a review from My Tasks.';
+    lockMsg = isCancelled
+      ? 'This task was cancelled. Chat is now closed.'
+      : 'This task is completed. Chat is now closed.';
   } else {
     lockMsg = typeof getChatLockMessage === 'function'
       ? getChatLockMessage(isPoster)
       : 'Messaging opens after payment is completed through QuickGigs.';
+  }
+  var actionHtml = '';
+  if (isCompleted && !isCancelled && currentConv && currentConv.task_id) {
+    var reviewHref = buildChatReviewHref();
+    if (reviewHref) {
+      actionHtml = '<a href="'+reviewHref+'" class="locked-action locked-review-btn">⭐ Leave a review</a>';
+    }
+  } else if (!isCompleted && isPoster && currentConv && currentConv.task_id) {
+    actionHtml = '<a href="payment.html?task='+encodeURIComponent(String(currentConv.task_id))+'" class="locked-action locked-pay-btn">💳 Pay & unlock chat</a>';
   }
   document.querySelector('.input-area').style.display = 'none';
   document.getElementById('chatScroll').innerHTML =
@@ -513,9 +552,7 @@ function showLockedState(isCompleted){
       '<div class="locked-icon">'+(isCompleted ? '✅' : '🔒')+'</div>' +
       '<div class="locked-title">'+(isCompleted ? 'Chat closed' : 'Chat locked')+'</div>' +
       '<div class="locked-sub">'+window.escapeHtml(lockMsg)+'</div>' +
-      (!isCompleted && isPoster && currentConv && currentConv.task_id
-        ? '<a href="payment.html?task='+encodeURIComponent(String(currentConv.task_id))+'" style="margin-top:16px;padding:12px 20px;border-radius:13px;background:var(--purple);color:#fff;text-decoration:none;font-size:13px;font-weight:500;">💳 Pay & unlock chat</a>'
-        : '') +
+      actionHtml +
     '</div>';
 }
 
