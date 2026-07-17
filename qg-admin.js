@@ -553,6 +553,180 @@
     else openUserDrawer(id);
   }
 
+  function syncWaitlistSignups() {
+    if (!window.waitlist || !window.users) return;
+    var emails = {};
+    (window.users || []).forEach(function (u) {
+      if (u.email) emails[String(u.email).toLowerCase()] = u.created_at || new Date().toISOString();
+    });
+    window.waitlist.forEach(function (w) {
+      var em = String(w.email || '').toLowerCase();
+      if (emails[em] && !w.signed_up) {
+        w.signed_up = true;
+        w.signed_up_at = emails[em];
+        if (typeof sbUpdate === 'function') {
+          sbUpdate('waitlist', { signed_up: true, signed_up_at: w.signed_up_at }, 'waitlist_id=eq.' + encodeURIComponent(String(w.waitlist_id)));
+        }
+      }
+    });
+  }
+
+  function renderWaitlist() {
+    syncWaitlistSignups();
+    var list = window.waitlist || [];
+    var total = list.length;
+    var signed = list.filter(function (w) { return w.signed_up; }).length;
+    var invited = list.filter(function (w) { return w.invited_at; }).length;
+    var pending = list.filter(function (w) { return !w.signed_up; }).length;
+
+    var statsEl = document.getElementById('waitlistStats');
+    if (statsEl) {
+      statsEl.innerHTML =
+        '<div class="admin-wl-stat"><div class="admin-wl-stat-val">' + total + '</div><div class="admin-wl-stat-label">Total</div></div>' +
+        '<div class="admin-wl-stat"><div class="admin-wl-stat-val">' + signed + '</div><div class="admin-wl-stat-label">Signed up</div></div>' +
+        '<div class="admin-wl-stat"><div class="admin-wl-stat-val">' + invited + '</div><div class="admin-wl-stat-label">Invited</div></div>' +
+        '<div class="admin-wl-stat"><div class="admin-wl-stat-val">' + pending + '</div><div class="admin-wl-stat-label">Not yet joined</div></div>';
+    }
+
+    var countEl = document.getElementById('waitlistCount');
+    if (countEl) countEl.textContent = '· ' + total + ' emails';
+
+    var body = document.getElementById('waitlistBody');
+    if (!body) return;
+    if (!list.length) {
+      body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-faint);font-size:13px">No waitlist emails yet — paste emails below to import.</div>';
+      return;
+    }
+
+    body.innerHTML = list.map(function (w) {
+      var wid = w.waitlist_id;
+      var st = w.signed_up ? 's-done' : (w.invited_at ? 's-progress' : 's-posted');
+      var sl = w.signed_up ? '✓ Joined' : (w.invited_at ? '📨 Invited' : '⏳ Waiting');
+      return '<div class="data-row g-disputes">' +
+        '<div class="cell">' + esc(w.email) + '</div>' +
+        '<div class="cell">' + esc(w.name || '—') + '</div>' +
+        '<div class="cell"><span class="status-pill ' + st + '">' + sl + '</span></div>' +
+        '<div class="cell">' + (w.invited_at ? new Date(w.invited_at).toLocaleDateString('en-CA') : '—') + '</div>' +
+        '<div class="cell">' + (w.signed_up_at ? new Date(w.signed_up_at).toLocaleDateString('en-CA') : '—') + '</div>' +
+        '<div class="act-btns">' +
+          (!w.signed_up ? '<button type="button" class="act-btn btn-view" onclick="adminMarkInvited(\'' + wid + '\')">Mark invited</button>' : '') +
+          (!w.signed_up && w.invited_at ? '<button type="button" class="act-btn btn-warn" onclick="adminMarkReminder(\'' + wid + '\')">Log reminder</button>' : '') +
+          '<button type="button" class="act-btn btn-remove" onclick="adminDeleteWaitlist(\'' + wid + '\')">Remove</button>' +
+        '</div></div>';
+    }).join('');
+  }
+
+  async function adminImportWaitlist() {
+    var box = document.getElementById('waitlistImport');
+    if (!box) return;
+    var raw = box.value || '';
+    var lines = raw.split(/[\n,;]+/).map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean);
+    var emails = [];
+    lines.forEach(function (line) {
+      var m = line.match(/[\w.+-]+@[\w.-]+\.\w+/);
+      if (m) emails.push(m[0]);
+    });
+    emails = emails.filter(function (e, i) { return emails.indexOf(e) === i; });
+    if (!emails.length) {
+      showToast('No valid emails found', 'amber');
+      return;
+    }
+    var added = 0;
+    for (var i = 0; i < emails.length; i++) {
+      var result = typeof sbPostReturn === 'function'
+        ? await sbPostReturn('waitlist', { email: emails[i] })
+        : await sbPost('waitlist', { email: emails[i] });
+      if (result.success) added++;
+      else if (/duplicate|unique/i.test(String(result.error || ''))) { /* skip */ }
+    }
+    box.value = '';
+    if (typeof window.loadWaitlist === 'function') await window.loadWaitlist();
+    renderWaitlist();
+    await logAdminAction('waitlist_import', 'waitlist', String(added), { count: added });
+    showToast('Imported ' + added + ' email(s)', 'green');
+  }
+
+  async function adminMarkInvited(id) {
+    var w = (window.waitlist || []).find(function (x) { return String(x.waitlist_id) === String(id); });
+    if (!w) return;
+    var now = new Date().toISOString();
+    await sbUpdate('waitlist', { invited_at: now }, 'waitlist_id=eq.' + encodeURIComponent(String(id)));
+    w.invited_at = now;
+    await logAdminAction('waitlist_invite', 'waitlist', w.email, {});
+    showToast('Marked invited — send invite from your email client', 'green');
+    renderWaitlist();
+  }
+
+  async function adminMarkReminder(id) {
+    var w = (window.waitlist || []).find(function (x) { return String(x.waitlist_id) === String(id); });
+    if (!w) return;
+    var now = new Date().toISOString();
+    await sbUpdate('waitlist', { reminder_sent_at: now }, 'waitlist_id=eq.' + encodeURIComponent(String(id)));
+    w.reminder_sent_at = now;
+    await logAdminAction('waitlist_reminder', 'waitlist', w.email, {});
+    showToast('Reminder logged for ' + w.email, 'amber');
+    renderWaitlist();
+  }
+
+  async function adminDeleteWaitlist(id) {
+    if (!confirm('Remove this waitlist entry?')) return;
+    if (typeof sbDelete === 'function') {
+      await sbDelete('waitlist', 'waitlist_id=eq.' + encodeURIComponent(String(id)));
+    }
+    window.waitlist = (window.waitlist || []).filter(function (w) { return String(w.waitlist_id) !== String(id); });
+    renderWaitlist();
+    showToast('Removed from waitlist', 'red');
+  }
+
+  function exportWaitlistCSV() {
+    var rows = (window.waitlist || []).map(function (w) {
+      return [w.email, w.name, w.signed_up ? 'yes' : 'no', w.invited_at, w.signed_up_at, w.reminder_sent_at].map(csvEscape).join(',');
+    });
+    rows.unshift(['Email', 'Name', 'Signed up', 'Invited at', 'Signed up at', 'Reminder sent'].join(','));
+    var blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'quickgigs-waitlist.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Waitlist exported', 'green');
+  }
+
+  async function loadPlatformBannerForm() {
+    if (typeof sbGet !== 'function') return;
+    var rows = await sbGet('platform_banner', 'id=eq.1', null, 1);
+    var b = rows && rows[0] ? rows[0] : { message: '', link: '', style: 'info', active: false };
+    var msg = document.getElementById('bannerMessage');
+    var link = document.getElementById('bannerLink');
+    var style = document.getElementById('bannerStyle');
+    var active = document.getElementById('bannerActive');
+    if (msg) msg.value = b.message || '';
+    if (link) link.value = b.link || '';
+    if (style) style.value = b.style || 'info';
+    if (active) active.checked = !!b.active;
+  }
+
+  async function adminSaveBanner() {
+    var patch = {
+      message: (document.getElementById('bannerMessage').value || '').trim(),
+      link: (document.getElementById('bannerLink').value || '').trim(),
+      style: document.getElementById('bannerStyle').value || 'info',
+      active: !!document.getElementById('bannerActive').checked,
+      updated_at: new Date().toISOString()
+    };
+    var result = await sbUpdate('platform_banner', patch, 'id=eq.1');
+    if (!result.success && typeof sbPostReturn === 'function') {
+      result = await sbPostReturn('platform_banner', Object.assign({ id: 1 }, patch));
+    }
+    if (result.success) {
+      await logAdminAction('banner_update', 'platform', '1', patch);
+      showToast(patch.active ? 'Banner published' : 'Banner saved (off)', 'green');
+    } else {
+      showToast('Could not save banner — run waitlist-banner.sql', 'red');
+    }
+  }
+
   window.closeAdminDrawer = closeAdminDrawer;
   window.openUserDrawer = openUserDrawer;
   window.openTaskDrawer = openTaskDrawer;
@@ -575,4 +749,12 @@
   window.isTempEmail = isTempEmail;
   window.findUser = findUser;
   window.userKey = userKey;
+  window.renderWaitlist = renderWaitlist;
+  window.adminImportWaitlist = adminImportWaitlist;
+  window.adminMarkInvited = adminMarkInvited;
+  window.adminMarkReminder = adminMarkReminder;
+  window.adminDeleteWaitlist = adminDeleteWaitlist;
+  window.exportWaitlistCSV = exportWaitlistCSV;
+  window.loadPlatformBannerForm = loadPlatformBannerForm;
+  window.adminSaveBanner = adminSaveBanner;
 })();

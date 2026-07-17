@@ -203,6 +203,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="nav-item" onclick="showSection('tasks',this)"><span class="nav-icon">📋</span>Tasks</button>
     <button class="nav-item" onclick="showSection('disputes',this)"><span class="nav-icon">🚨</span>Disputes <span class="nav-badge" id="disputeBadge">0</span></button>
     <button class="nav-item" onclick="showSection('reports',this)"><span class="nav-icon">🚩</span>Reports <span class="nav-badge" id="reportBadge">0</span></button>
+    <button class="nav-item" onclick="showSection('waitlist',this)"><span class="nav-icon">📬</span>Waitlist</button>
     <button class="nav-item" onclick="showSection('revenue',this)"><span class="nav-icon">💰</span>Revenue</button>
     <div class="nav-section">Security</div>
     <button class="nav-item" onclick="showSection('security',this)"><span class="nav-icon">🔒</span>Security Log</button>
@@ -325,6 +326,22 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
   </div>
 
+  <!-- WAITLIST -->
+  <div id="section-waitlist" style="display:none">
+    <div class="mini-card" style="margin-bottom:14px">
+      <div class="mc-title">Import waitlist emails</div>
+      <p style="font-size:12px;color:var(--text-faint);margin-bottom:10px;line-height:1.5">Paste emails one per line (or comma-separated). Duplicates are skipped automatically.</p>
+      <textarea class="admin-import-box" id="waitlistImport" placeholder="friend@gmail.com&#10;beta.user@outlook.com"></textarea>
+      <button type="button" class="action-pill pill-export" onclick="adminImportWaitlist()">Import emails</button>
+    </div>
+    <div id="waitlistStats" class="admin-wl-stats"></div>
+    <div class="table-card">
+      <div class="table-header"><div><span class="table-title">Waitlist</span><span class="table-count" id="waitlistCount"></span></div><button class="action-pill pill-export" onclick="exportWaitlistCSV()">↓ Export CSV</button></div>
+      <div class="col-row g-disputes"><div class="col-h">Email</div><div class="col-h">Name</div><div class="col-h">Status</div><div class="col-h">Invited</div><div class="col-h">Joined</div><div class="col-h" style="text-align:right">Actions</div></div>
+      <div id="waitlistBody"></div>
+    </div>
+  </div>
+
   <!-- REVENUE -->
   <div id="section-revenue" style="display:none">
     <div class="mini-card" style="text-align:center;padding:40px"><div style="font-size:48px;margin-bottom:16px">💰</div><div style="font-size:20px;font-weight:500;margin-bottom:8px">Revenue tracking coming soon</div><div style="font-size:14px;color:var(--text-muted);line-height:1.6;max-width:400px;margin:0 auto">Once Stripe Connect is live, you'll see real-time revenue, platform fees, worker payouts and transaction history here.</div></div>
@@ -332,6 +349,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
   <!-- SETTINGS -->
   <div id="section-settings" style="display:none">
+    <div class="mini-card" style="margin-bottom:14px">
+      <div class="mc-title">Platform announcement banner</div>
+      <p style="font-size:12px;color:var(--text-faint);margin-bottom:12px;line-height:1.5">Shows at the top of dashboard, browse, My Tasks, and messages for all logged-in users.</p>
+      <div class="admin-field"><label>Message</label><textarea id="bannerMessage" class="admin-import-box" style="min-height:60px" placeholder="Welcome to QuickGigs beta — post your first task today!"></textarea></div>
+      <div class="admin-field"><label>Link (optional)</label><input id="bannerLink" type="url" placeholder="https://quickgigs.ca/how-it-works.html"></div>
+      <div class="admin-field"><label>Style</label><select id="bannerStyle"><option value="info">Info (purple)</option><option value="success">Success (green)</option><option value="warn">Warning (amber)</option></select></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);margin:12px 0"><input type="checkbox" id="bannerActive"> Show banner live on site</label>
+      <button type="button" class="admin-drawer-btn primary" onclick="adminSaveBanner()">Save &amp; publish banner</button>
+    </div>
     <div class="mini-card" style="margin-bottom:14px">
       <div class="mc-title">Platform fees</div>
       <div style="display:grid;gap:12px;grid-template-columns:1fr 1fr 1fr">
@@ -407,10 +433,10 @@ window.doLogout = function() { signOut(auth).then(function(){ window.location.hr
 <script src="qg-utils.js"></script>
 <script src="supabase-db.js"></script>
 <script src="qg-stats.js"></script>
-<script src="qg-admin.js?v=1"></script>
+<script src="qg-admin.js?v=2"></script>
 <script>
 var SB_HEADERS = window.SB_HEADERS;
-var users=[],tasks=[],disputes=[],reports=[],applications=[],adminNotes=[],adminActions=[],selectedUsers=[],pendingFn=null,currentSection='overview';
+var users=[],tasks=[],disputes=[],reports=[],applications=[],adminNotes=[],adminActions=[],waitlist=[],selectedUsers=[],pendingFn=null,currentSection='overview';
 var sessionSeconds=30*60;
 
 function updateTimer(){
@@ -448,25 +474,37 @@ async function loadAdminMeta(){
 }
 window.loadAdminMeta=loadAdminMeta;
 
+async function loadWaitlist(){
+  try{
+    var headers = typeof getSupabaseHeaders === 'function' ? await getSupabaseHeaders() : SB_HEADERS;
+    var res = await fetch(window.SUPABASE_URL + '/rest/v1/waitlist?order=created_at.desc',{headers:headers});
+    var data = await res.json();
+    if(Array.isArray(data)) waitlist=data;
+  }catch(e){}
+}
+window.loadWaitlist=loadWaitlist;
+
 async function loadData(){
   try{
     var headers = typeof getSupabaseHeaders === 'function'
       ? await getSupabaseHeaders()
       : SB_HEADERS;
     var base = window.SUPABASE_URL + '/rest/v1/';
-    var[ur,tr,dr,rr,ap]=await Promise.all([
+    var[ur,tr,dr,rr,ap,wr]=await Promise.all([
       fetch(base+'users?order=created_at.desc',{headers:headers}),
       fetch(base+'tasks?order=created_at.desc',{headers:headers}),
       fetch(base+'disputes?order=created_at.desc',{headers:headers}).catch(function(){return {json:function(){return Promise.resolve([]);}};}),
       fetch(base+'reports?order=created_at.desc',{headers:headers}).catch(function(){return {json:function(){return Promise.resolve([]);}};}),
-      fetch(base+'applications?order=created_at.desc',{headers:headers}).catch(function(){return {json:function(){return Promise.resolve([]);}};})
+      fetch(base+'applications?order=created_at.desc',{headers:headers}).catch(function(){return {json:function(){return Promise.resolve([]);}};}),
+      fetch(base+'waitlist?order=created_at.desc',{headers:headers}).catch(function(){return {json:function(){return Promise.resolve([]);}};})
     ]);
-    var ud=await ur.json(),td=await tr.json(),dd=await dr.json(),rd=await rr.json(),ad=await ap.json();
+    var ud=await ur.json(),td=await tr.json(),dd=await dr.json(),rd=await rr.json(),ad=await ap.json(),wd=await wr.json();
     if(Array.isArray(ud)) users=ud;
     if(Array.isArray(td)) tasks=td;
     if(Array.isArray(dd)) disputes=dd;
     if(Array.isArray(rd)) reports=rd;
     if(Array.isArray(ad)) applications=ad;
+    if(Array.isArray(wd)) waitlist=wd;
     await loadAdminMeta();
   }catch(e){
     console.warn('Admin load failed',e);
@@ -609,15 +647,17 @@ window.showSection=function(section,btn){
   document.querySelectorAll('.nav-item').forEach(function(el){el.classList.remove('active');});
   if(btn) btn.classList.add('active');
   currentSection=section;
-  var titles={overview:'Dashboard Overview',users:'Beta users / waitlist',tasks:'Task Management',disputes:'Dispute Center',reports:'User reports',security:'Security Log',fraud:'Fraud Alerts',analytics:'Analytics',revenue:'Revenue',settings:'Platform Settings'};
+  var titles={overview:'Dashboard Overview',users:'Beta users / waitlist',tasks:'Task Management',disputes:'Dispute Center',reports:'User reports',waitlist:'Waitlist management',security:'Security Log',fraud:'Fraud Alerts',analytics:'Analytics',revenue:'Revenue',settings:'Platform Settings'};
   document.getElementById('pageTitle').textContent=titles[section]||section;
   if(section==='users') renderUsers(users);
   if(section==='tasks') renderTasks(tasks);
   if(section==='disputes') renderDisputes();
   if(section==='reports') renderReports();
+  if(section==='waitlist') renderWaitlist();
   if(section==='security') renderSecurityLog();
   if(section==='fraud') renderFraudLog();
   if(section==='analytics') renderAnalytics();
+  if(section==='settings') loadPlatformBannerForm();
 };
 
 window.selectAll=function(cb){document.querySelectorAll('#usersBody .checkbox').forEach(function(c){c.checked=cb.checked;});updateBulk();};

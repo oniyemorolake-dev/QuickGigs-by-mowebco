@@ -117,6 +117,8 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 - **Fraud alerts** — temp email detection, review flags, high apply volume
 - **Admin action log** — security tab + CSV export
 - **Run SQL:** `supabase/admin-tools.sql` for `admin_notes`, `admin_actions`, `review_flag`
+- **Waitlist** — import emails, track invited vs signed up, export CSV (`supabase/waitlist-banner.sql`)
+- **Announcement banner** — publish message to all users from Settings tab
 
 ---
 

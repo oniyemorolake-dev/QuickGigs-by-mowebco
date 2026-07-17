@@ -168,4 +168,9 @@
   bellScript.src = 'qg-bell.js?v=1';
   bellScript.defer = true;
   document.head.appendChild(bellScript);
+
+  var announceScript = document.createElement('script');
+  announceScript.src = 'qg-announcement.js?v=1';
+  announceScript.defer = true;
+  document.head.appendChild(announceScript);
 })();
