@@ -208,7 +208,7 @@ attachNameFormatter('name');
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
@@ -233,6 +233,34 @@ async function beginOAuthSignup(user) {
   if (secStep) secStep.setAttribute('data-skip', '0');
 }
 
+async function finishGoogleSignup(user) {
+  var errorMsg = document.getElementById('errorMsg');
+  var okMsg = document.getElementById('okMsg');
+  var existing = typeof getUserByFirebaseUid === 'function' ? await getUserByFirebaseUid(user.uid) : null;
+
+  if (existing && existing.status === 'banned') {
+    await auth.signOut();
+    errorMsg.textContent = 'This account has been suspended.';
+    errorMsg.style.display = 'block';
+    if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleSignupBtn');
+    return;
+  }
+
+  if (existing && typeof qgUserNeedsOnboarding === 'function' && !qgUserNeedsOnboarding(existing)) {
+    if (typeof syncCurrentUserProfile === 'function') await syncCurrentUserProfile(user);
+    if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'google' });
+    window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
+    return;
+  }
+
+  await beginOAuthSignup(user);
+  if (okMsg) {
+    okMsg.textContent = 'Google connected — finish the steps below to create your account.';
+    okMsg.style.display = 'block';
+  }
+  if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleSignupBtn');
+}
+
 async function handleGoogleSignupClick() {
   var errorMsg = document.getElementById('errorMsg');
   var okMsg = document.getElementById('okMsg');
@@ -242,47 +270,48 @@ async function handleGoogleSignupClick() {
   btn.disabled = true;
   btn.textContent = 'Connecting…';
 
+  var provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+
   try {
-    var provider = new GoogleAuthProvider();
+    if (typeof qgGooglePreferRedirect === 'function' && qgGooglePreferRedirect()) {
+      await signInWithRedirect(auth, provider);
+      return;
+    }
     var result = await signInWithPopup(auth, provider);
-    var user = result.user;
-    var existing = typeof getUserByFirebaseUid === 'function' ? await getUserByFirebaseUid(user.uid) : null;
-
-    if (existing && existing.status === 'banned') {
-      await auth.signOut();
-      errorMsg.textContent = 'This account has been suspended.';
-      errorMsg.style.display = 'block';
-      btn.disabled = false;
-      btn.innerHTML = '<span class="signup-google-icon" aria-hidden="true">G</span> Continue with Google';
-      return;
-    }
-
-    if (existing && typeof qgUserNeedsOnboarding === 'function' && !qgUserNeedsOnboarding(existing)) {
-      if (typeof syncCurrentUserProfile === 'function') await syncCurrentUserProfile(user);
-      if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'google' });
-      window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
-      return;
-    }
-
-    await beginOAuthSignup(user);
-    okMsg.textContent = 'Google connected — finish the steps below to create your account.';
-    okMsg.style.display = 'block';
-    btn.disabled = false;
-    btn.innerHTML = '<span class="signup-google-icon" aria-hidden="true">G</span> Continue with Google';
+    await finishGoogleSignup(result.user);
   } catch (error) {
-    var message = typeof qgGoogleAuthErrorMessage === 'function'
-      ? qgGoogleAuthErrorMessage(error)
-      : 'Google sign-in failed.';
-    if (message) {
+    if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+      if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleSignupBtn');
+      return;
+    }
+    try {
+      await signInWithRedirect(auth, provider);
+      return;
+    } catch (redirectErr) {
+      var message = typeof qgGoogleAuthErrorMessage === 'function'
+        ? qgGoogleAuthErrorMessage(redirectErr)
+        : (typeof qgGoogleFirebaseSetupHint === 'string' ? qgGoogleFirebaseSetupHint : 'Google sign-in failed.');
       errorMsg.textContent = message;
       errorMsg.style.display = 'block';
+      if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleSignupBtn');
     }
-    btn.disabled = false;
-    btn.innerHTML = '<span class="signup-google-icon" aria-hidden="true">G</span> Continue with Google';
   }
 }
 
 document.getElementById('googleSignupBtn').addEventListener('click', handleGoogleSignupClick);
+
+getRedirectResult(auth).then(function(result) {
+  if (result && result.user) finishGoogleSignup(result.user);
+}).catch(function(error) {
+  var errorMsg = document.getElementById('errorMsg');
+  var message = typeof qgGoogleAuthErrorMessage === 'function' ? qgGoogleAuthErrorMessage(error) : '';
+  if (message && errorMsg) {
+    errorMsg.textContent = message;
+    errorMsg.style.display = 'block';
+  }
+  if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleSignupBtn');
+});
 
 onAuthStateChanged(auth, async function(user) {
   if (!user) return;

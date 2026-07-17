@@ -114,7 +114,7 @@ for (var i = 0; i < starCount; i++) {
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
@@ -128,6 +128,41 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+
+async function finishGoogleLogin(user) {
+  var errorMsg = document.getElementById('errorMsg');
+  if (typeof syncCurrentUserProfile === 'function') {
+    await syncCurrentUserProfile(user);
+  }
+  var existing = typeof getUserByFirebaseUid === 'function'
+    ? await getUserByFirebaseUid(user.uid)
+    : null;
+  if (existing && existing.status === 'banned') {
+    await auth.signOut();
+    errorMsg.textContent = 'This account has been suspended. Contact support@quickgigs.ca if you think this is a mistake.';
+    errorMsg.style.display = 'block';
+    if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+    return;
+  }
+  if (existing && typeof qgUserNeedsOnboarding === 'function' && !qgUserNeedsOnboarding(existing)) {
+    if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'google' });
+    window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
+    return;
+  }
+  window.location.replace('signup.html?oauth=continue');
+}
+
+getRedirectResult(auth).then(function(result) {
+  if (result && result.user) finishGoogleLogin(result.user);
+}).catch(function(error) {
+  var errorMsg = document.getElementById('errorMsg');
+  var message = typeof qgGoogleAuthErrorMessage === 'function' ? qgGoogleAuthErrorMessage(error) : '';
+  if (message && errorMsg) {
+    errorMsg.textContent = message;
+    errorMsg.style.display = 'block';
+  }
+  if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+});
 
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
   e.preventDefault();
@@ -199,45 +234,32 @@ document.getElementById('googleLoginBtn').addEventListener('click', async functi
   btn.disabled = true;
   btn.textContent = 'Connecting…';
 
+  var provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+
   try {
-    var provider = new GoogleAuthProvider();
+    if (typeof qgGooglePreferRedirect === 'function' && qgGooglePreferRedirect()) {
+      await signInWithRedirect(auth, provider);
+      return;
+    }
     var result = await signInWithPopup(auth, provider);
-    var user = result.user;
-
-    if (typeof syncCurrentUserProfile === 'function') {
-      await syncCurrentUserProfile(user);
-    }
-
-    var existing = typeof getUserByFirebaseUid === 'function'
-      ? await getUserByFirebaseUid(user.uid)
-      : null;
-
-    if (existing && existing.status === 'banned') {
-      await auth.signOut();
-      errorMsg.textContent = 'This account has been suspended. Contact support@quickgigs.ca if you think this is a mistake.';
-      errorMsg.style.display = 'block';
-      btn.disabled = false;
-      btn.innerHTML = '<span class="signup-google-icon" aria-hidden="true">G</span> Continue with Google';
-      return;
-    }
-
-    if (existing && typeof qgUserNeedsOnboarding === 'function' && !qgUserNeedsOnboarding(existing)) {
-      if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'google' });
-      window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
-      return;
-    }
-
-    window.location.replace('signup.html?oauth=continue');
+    await finishGoogleLogin(result.user);
   } catch (error) {
-    var message = typeof qgGoogleAuthErrorMessage === 'function'
-      ? qgGoogleAuthErrorMessage(error)
-      : 'Google sign-in failed. Try again.';
-    if (message) {
+    if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+      if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+      return;
+    }
+    try {
+      await signInWithRedirect(auth, provider);
+      return;
+    } catch (redirectErr) {
+      var message = typeof qgGoogleAuthErrorMessage === 'function'
+        ? qgGoogleAuthErrorMessage(redirectErr)
+        : (typeof qgGoogleFirebaseSetupHint === 'string' ? qgGoogleFirebaseSetupHint : 'Google sign-in failed.');
       errorMsg.textContent = message;
       errorMsg.style.display = 'block';
+      if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
     }
-    btn.disabled = false;
-    btn.innerHTML = '<span class="signup-google-icon" aria-hidden="true">G</span> Continue with Google';
   }
 });
 </script>

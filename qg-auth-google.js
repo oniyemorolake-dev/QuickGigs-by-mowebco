@@ -7,7 +7,30 @@
     if (error.code === 'auth/account-exists-with-different-credential') {
       return 'This email is already registered with a password. Log in with email first.';
     }
+    if (error.code === 'auth/operation-not-allowed') {
+      return 'Google sign-in is not enabled in Firebase yet. Enable it under Authentication → Sign-in method → Google.';
+    }
+    if (error.code === 'auth/internal-error' || error.code === 'auth/invalid-api-key') {
+      return window.qgGoogleFirebaseSetupHint;
+    }
     return 'Google sign-in failed. Try again.';
+  };
+
+  window.qgGoogleFirebaseSetupHint =
+    'Google sign-in is not fully set up in Firebase yet. ' +
+    '1) Authentication → Google → Save (Web client ID must appear). ' +
+    '2) Settings → Authorized domains → add quickgigs.ca. ' +
+    '3) Google Cloud → OAuth consent screen → configure app + add your email as a test user (if still in Testing).';
+
+  window.qgResetGoogleBtn = function (btnId) {
+    var btn = document.getElementById(btnId || 'googleLoginBtn');
+    if (!btn) return;
+    btn.disabled = false;
+    btn.innerHTML = '<span class="signup-google-icon" aria-hidden="true">G</span> Continue with Google';
+  };
+
+  window.qgGooglePreferRedirect = function () {
+    return window.matchMedia('(max-width:768px)').matches;
   };
 
   window.qgGetDashboardRedirect = function () {

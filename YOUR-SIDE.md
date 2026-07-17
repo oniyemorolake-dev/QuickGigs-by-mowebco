@@ -30,6 +30,25 @@ Code is ready (`login.html`, `signup.html`). You must enable it in Firebase:
 
 **Test:** Login page → **Continue with Google**
 
+### If you see “The requested action is invalid”
+
+This means Google OAuth is not fully wired yet. Do **all** of these:
+
+1. **Firebase → Authentication → Sign-in method → Google**
+   - Enable is ON → click **Save**
+   - Re-open Google — **Web client ID** must show a value (not empty). If empty: toggle OFF, Save, toggle ON, Save again.
+
+2. **Firebase → Authentication → Settings → Authorized domains**
+   - Add **`quickgigs.ca`** (and **`www.quickgigs.ca`** if you use www)
+
+3. **Google Cloud Console** (same project — open via Firebase ⚙️ → Project settings → “Google Cloud Platform” link)
+   - **APIs & Services → OAuth consent screen**
+   - App name: **QuickGigs**, support email: your email
+   - If status is **Testing**: add **`mowebsiteco@gmail.com`** (and any test emails) under **Test users**
+   - Or click **Publish app** for production (External users)
+
+4. Hard refresh quickgigs.ca and try again (popup may fall back to full-page redirect automatically)
+
 ---
 
 ## One-time: Resend — waitlist + notification emails
