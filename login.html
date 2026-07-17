@@ -114,7 +114,7 @@ for (var i = 0; i < starCount; i++) {
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { initializeAuth, browserLocalPersistence, browserPopupRedirectResolver, signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
@@ -127,7 +127,10 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+const auth = initializeAuth(app, {
+  persistence: browserLocalPersistence,
+  popupRedirectResolver: browserPopupRedirectResolver
+});
 
 async function finishGoogleLogin(user) {
   var errorMsg = document.getElementById('errorMsg');
@@ -235,21 +238,33 @@ document.getElementById('googleLoginBtn').addEventListener('click', async functi
   btn.textContent = 'Connecting…';
 
   var provider = new GoogleAuthProvider();
+  provider.addScope('profile');
+  provider.addScope('email');
   provider.setCustomParameters({ prompt: 'select_account' });
 
   try {
-    await signInWithRedirect(auth, provider);
+    var result = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
+    await finishGoogleLogin(result.user);
   } catch (error) {
     if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
       if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
       return;
     }
-    var message = typeof qgGoogleAuthErrorMessage === 'function'
-      ? qgGoogleAuthErrorMessage(error)
-      : (typeof qgGoogleFirebaseSetupHint === 'string' ? qgGoogleFirebaseSetupHint : 'Google sign-in failed.');
-    errorMsg.textContent = message + ' See GOOGLE-LOGIN-FIX.md in the repo.';
-    errorMsg.style.display = 'block';
-    if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+    if (error.code === 'auth/popup-blocked') {
+      await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
+      return;
+    }
+    try {
+      await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
+      return;
+    } catch (redirectErr) {
+      var message = typeof qgGoogleAuthErrorMessage === 'function'
+        ? qgGoogleAuthErrorMessage(redirectErr)
+        : (typeof qgGoogleFirebaseSetupHint === 'string' ? qgGoogleFirebaseSetupHint : 'Google sign-in failed.');
+      errorMsg.textContent = message;
+      errorMsg.style.display = 'block';
+      if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+    }
   }
 });
 </script>
