@@ -4,6 +4,8 @@ Last updated: July 2026
 Platform: [quickgigs.ca](https://quickgigs.ca)  
 Stack: Firebase Auth + Supabase + static HTML/JS frontend
 
+**Your action items:** see **[YOUR-SIDE.md](YOUR-SIDE.md)** — deploy, Firebase Google, Resend, SQL (I'll keep reminding you until done).
+
 ---
 
 ## One-liner summary
@@ -210,7 +212,7 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 |---------|--------|
 | Read receipts in chat | `read_at` column + UI ticks |
 | Typing indicator | Supabase realtime or polling |
-| Confetti on task complete | Small delight moment |
+| Confetti on task complete + signup welcome | ✅ `qg-confetti.js` — My Tasks, thank-you, worker profile |
 | Pull to refresh (browse) | Mobile-native feel |
 | Infinite scroll (browse) | Replace load-all |
 | Task card load animations | Subtle fade/slide |

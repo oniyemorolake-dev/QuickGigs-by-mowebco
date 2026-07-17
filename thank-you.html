@@ -15,6 +15,7 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 </style>
 <script src="qg-config.js"></script>
 <script src="qg-analytics.js"></script>
+<script src="qg-confetti.js?v=1"></script>
 </head>
 <body>
 <div class="signup-bg-mesh"></div>
@@ -42,6 +43,7 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
   if (typeof qgTrackConversion === 'function' && window.QG_CONFIG && window.QG_CONFIG.ga4ConversionLabel) {
     qgTrackConversion(window.QG_CONFIG.ga4ConversionLabel);
   }
+  if (typeof qgBurstConfetti === 'function') qgBurstConfetti({ count: 90 });
 })();
 </script>
 </body>

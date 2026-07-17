@@ -546,6 +546,7 @@ onAuthStateChanged(auth, (user) => {
 <script src="qg-share.js"></script>
 <script src="qg-report.js?v=20260716d"></script>
 <script src="qg-stats.js"></script>
+<script src="qg-confetti.js?v=1"></script>
 <script src="qg-nav.js"></script>
 <script src="qg-menu.js?v=2"></script>
 <script src="qg-role-switch.js"></script>
@@ -899,6 +900,11 @@ async function loadProfile(user) {
 
   renderProfile(user, isOwnProfile);
   renderProfileActions(targetId, profileData.name, isOwnProfile);
+
+  if (isOwnProfile && params.get('welcome') === '1' && !sessionStorage.getItem('qg-welcome-confetti')) {
+    sessionStorage.setItem('qg-welcome-confetti', '1');
+    if (typeof qgBurstConfetti === 'function') qgBurstConfetti({ count: 90 });
+  }
 
   if (isOwnProfile && !profileData.avatar_url) {
     if (userIsTasker(profileData.role) && (photoSetupMode || photoRequired)) {

@@ -509,8 +509,8 @@ document.getElementById('submitBtn').onclick = async function() {
     okMsg.style.display = 'block';
 
     var dest = account.role === 'worker'
-      ? 'profile.html?setup=photo&required=1'
-      : 'thank-you.html?mode=poster';
+      ? 'profile.html?setup=photo&required=1&welcome=1'
+      : 'thank-you.html?mode=poster&welcome=1';
     setTimeout(function(){ window.location.href = dest; }, identity.account_status === 'pending_guardian' ? 2500 : 1500);
 
   } catch (error) {
