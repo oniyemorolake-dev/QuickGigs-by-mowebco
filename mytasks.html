@@ -345,14 +345,14 @@ function renderApplicantAction(a, taskId, task) {
     if (neg.counterBy === 'worker') {
       negoHtml = '<div class="nego-actions">' +
         '<span class="nego-status">Counter: $' + neg.counterPrice + '</span>' +
-        '<button type="button" class="decline-btn" data-poster-decline-counter="'+escAttr(appId)+'" data-task-id="'+escAttr(taskId)+'" data-worker-id="'+escAttr(workerId)+'">Decline</button>' +
+        '<button type="button" class="decline-btn" data-poster-decline-counter="'+escAttr(appId)+'" data-task-id="'+escAttr(taskId)+'" data-worker-id="'+escAttr(workerId)+'">Decline counter</button>' +
         '<button type="button" class="accept-btn" data-poster-accept-counter="'+escAttr(appId)+'" data-task-id="'+escAttr(taskId)+'" data-worker-id="'+escAttr(workerId)+'">Accept $' + neg.counterPrice + '</button>' +
         '</div>';
     } else if (neg.counterBy === 'poster') {
       negoHtml = '<div class="nego-actions"><span class="nego-status">Counter sent — waiting for tasker</span></div>';
     } else if (neg.counterRound === 0) {
       negoHtml = '<div class="nego-actions">' +
-        '<button type="button" class="decline-btn counter-btn" data-poster-counter="'+escAttr(appId)+'" data-task-id="'+escAttr(taskId)+'" data-worker-id="'+escAttr(workerId)+'">Counter $…</button>' +
+        '<button type="button" class="accept-btn counter-btn" data-poster-counter="'+escAttr(appId)+'" data-task-id="'+escAttr(taskId)+'" data-worker-id="'+escAttr(workerId)+'">Counter $…</button>' +
         '</div>';
     }
   }
@@ -708,40 +708,6 @@ document.getElementById('tabContent').addEventListener('click', function(e) {
     );
     return;
   }
-  var declineBtn = e.target.closest('.decline-btn');
-  if (declineBtn) {
-    e.preventDefault();
-    if (declineBtn.disabled) return;
-    declineApplicant(
-      declineBtn.getAttribute('data-decline-task-id'),
-      declineBtn.getAttribute('data-decline-app-id'),
-      declineBtn
-    );
-    return;
-  }
-  var toggleBtn = e.target.closest('.tc-applicants-toggle');
-  if (toggleBtn) {
-    toggleApplicants(toggleBtn.getAttribute('data-applicants-toggle'));
-    return;
-  }
-  var cancelPostingBtn = e.target.closest('[data-cancel-posting]');
-  if (cancelPostingBtn) {
-    e.preventDefault();
-    confirmCancelPosting(cancelPostingBtn.getAttribute('data-cancel-posting'));
-    return;
-  }
-  var cancelProgBtn = e.target.closest('[data-cancel-inprogress]');
-  if (cancelProgBtn) {
-    e.preventDefault();
-    confirmCancelInProgress(cancelProgBtn.getAttribute('data-cancel-inprogress'));
-    return;
-  }
-  var repostBtn = e.target.closest('[data-repost-task]');
-  if (repostBtn) {
-    e.preventDefault();
-    confirmRepostTask(repostBtn.getAttribute('data-repost-task'));
-    return;
-  }
   var posterCounterBtn = e.target.closest('[data-poster-counter]');
   if (posterCounterBtn) {
     e.preventDefault();
@@ -785,6 +751,40 @@ document.getElementById('tabContent').addEventListener('click', function(e) {
   if (posterDeclineCounterBtn) {
     e.preventDefault();
     runPosterCounterAction(posterDeclineCounterBtn.getAttribute('data-poster-decline-counter'), posterDeclineCounterBtn.getAttribute('data-task-id'), posterDeclineCounterBtn.getAttribute('data-worker-id'), 'decline');
+    return;
+  }
+  var declineBtn = e.target.closest('.decline-btn[data-decline-app-id]');
+  if (declineBtn) {
+    e.preventDefault();
+    if (declineBtn.disabled) return;
+    declineApplicant(
+      declineBtn.getAttribute('data-decline-task-id'),
+      declineBtn.getAttribute('data-decline-app-id'),
+      declineBtn
+    );
+    return;
+  }
+  var toggleBtn = e.target.closest('.tc-applicants-toggle');
+  if (toggleBtn) {
+    toggleApplicants(toggleBtn.getAttribute('data-applicants-toggle'));
+    return;
+  }
+  var cancelPostingBtn = e.target.closest('[data-cancel-posting]');
+  if (cancelPostingBtn) {
+    e.preventDefault();
+    confirmCancelPosting(cancelPostingBtn.getAttribute('data-cancel-posting'));
+    return;
+  }
+  var cancelProgBtn = e.target.closest('[data-cancel-inprogress]');
+  if (cancelProgBtn) {
+    e.preventDefault();
+    confirmCancelInProgress(cancelProgBtn.getAttribute('data-cancel-inprogress'));
+    return;
+  }
+  var repostBtn = e.target.closest('[data-repost-task]');
+  if (repostBtn) {
+    e.preventDefault();
+    confirmRepostTask(repostBtn.getAttribute('data-repost-task'));
   }
 });
 
