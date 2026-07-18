@@ -435,7 +435,7 @@ window.doLogout = function() { signOut(auth).then(function(){ window.location.hr
 <script src="supabase-db.js"></script>
 <script src="qg-notifications.js"></script>
 <script src="qg-stats.js"></script>
-<script src="qg-admin.js?v=3"></script>
+<script src="qg-admin.js?v=4"></script>
 <script>
 var SB_HEADERS = window.SB_HEADERS;
 var users=[],tasks=[],disputes=[],reports=[],applications=[],adminNotes=[],adminActions=[],waitlist=[],selectedUsers=[],pendingFn=null,currentSection='overview';
@@ -701,13 +701,19 @@ function openModal(title,sub,fields,confirmLabel,confirmClass,onConfirm,showNote
   document.getElementById('modalFields').innerHTML=fields;
   var btn=document.getElementById('modalConfirm');
   btn.textContent=confirmLabel;btn.className='modal-confirm '+confirmClass;
-  document.getElementById('modalNote').style.display=showNote?'block':'none';
+  var noteEl=document.getElementById('modalNote');
+  noteEl.style.display=showNote?'block':'none';
+  if(showNote&&!noteEl.value) noteEl.placeholder='Add a note (optional)...';
   pendingFn=onConfirm;
   document.getElementById('modalOverlay').classList.add('open');
 }
 window.closeModal=function(e){if(e&&e.target!==document.getElementById('modalOverlay')) return;closeModalDirect();};
 window.closeModalDirect=function(){document.getElementById('modalOverlay').classList.remove('open');pendingFn=null;};
-window.confirmAction=function(){if(pendingFn) pendingFn();closeModalDirect();};
+window.confirmAction=async function(){
+  if(!pendingFn){ closeModalDirect(); return; }
+  var ok=await pendingFn();
+  if(ok!==false) closeModalDirect();
+};
 
 function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(type||'green');t.style.display='block';setTimeout(function(){t.style.display='none';},3000);}
 window.toggleNotifs=function(){document.getElementById('notifPanel').classList.toggle('open');};

@@ -134,6 +134,7 @@ body.light .apply-btn,
 body.light .submit-btn{color:#2d1b4e;}
 .tc-badge{padding:3px 9px;border-radius:20px;font-size:9px;font-weight:500;white-space:nowrap;flex-shrink:0;margin-top:2px;}
 .badge-quick{background:rgba(251,191,36,0.15);color:#d97706;}
+.badge-negotiable{background:rgba(74,222,128,0.12);color:#16a34a;margin-left:4px;}
 .badge-standard{background:rgba(107,63,160,0.2);color:#9b6fc4;}
 body.light .badge-standard{background:#ede9ff;color:var(--purple);}
 .badge-recurring{background:rgba(74,222,128,0.1);color:#16a34a;}
@@ -294,6 +295,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
     <div class="modal-scroll">
       <p class="modal-title" id="modalTitle">Apply for task</p>
       <p class="modal-sub" id="modalSub">Submit your offer to the poster</p>
+      <p class="modal-sub" id="modalNegoHint" style="display:none;margin-top:-6px;font-size:11px;color:var(--text-muted)"></p>
       <div class="price-grid">
         <div><span class="modal-label">Your offer</span><div class="price-wrap"><span class="price-pre">$</span><input class="modal-input" id="offerPrice" type="number" min="20" placeholder="40" inputmode="decimal"></div></div>
         <div><span class="modal-label">Availability</span><input class="modal-input" id="offerAvail" type="text" placeholder="e.g. This Saturday, mornings"></div>
@@ -379,6 +381,7 @@ function normaliseTask(row){
   var catInfo=getCatInfo(row.CATEGORY||row.category);
   var mode=(row.TASK_MODE||row.task_mode||'standard').toLowerCase();
   var budget=parseFloat(row.BUDGET||row.budget||0);
+  var budgetNegotiable=!!(row.budget_negotiable||row.BUDGET_NEGOTIABLE);
   var posterUid=row.posted_by||row.POSTED_BY||'';
   var posterName=row.poster_name||row.POSTER_NAME||'';
   if(!posterName&&posterUid&&typeof resolveUserName==='function') posterName=resolveUserName(posterUid,row,userNames);
@@ -390,7 +393,8 @@ function normaliseTask(row){
     title:row.TITLE||row.title||'Untitled task',
     desc:row.DESCRIPTION||row.description||'',
     price:budget,
-    priceLabel:'$'+budget+(mode==='recurring'?'/hr':''),
+    budgetNegotiable:budgetNegotiable,
+    priceLabel:(budgetNegotiable?'Around ':'')+'$'+budget+(mode==='recurring'?'/hr':'')+(budgetNegotiable?', open to offers':''),
     location:row.LOCATION||row.location||'Calgary, AB',
     when: row.scheduled_label || row.SCHEDULED_LABEL || '',
     createdAt: row.created_at || row.CREATED_AT || '',
@@ -554,7 +558,14 @@ function getDemoTasks(){
 }
 
 function esc(s){return window.escapeHtml(s);}
-function getBadge(m){if(m==='quick')return '<span class="tc-badge badge-quick">⚡ Quick</span>';if(m==='recurring')return '<span class="tc-badge badge-recurring">🔄 Recurring</span>';return '<span class="tc-badge badge-standard">📋 Standard</span>';}
+function getBadge(m,t){
+  var modeBadge='';
+  if(m==='quick')modeBadge='<span class="tc-badge badge-quick">⚡ Quick</span>';
+  else if(m==='recurring')modeBadge='<span class="tc-badge badge-recurring">🔄 Recurring</span>';
+  else modeBadge='<span class="tc-badge badge-standard">📋 Standard</span>';
+  if(t&&t.budgetNegotiable)modeBadge+='<span class="tc-badge badge-negotiable">💬 Negotiable</span>';
+  return modeBadge;
+}
 function getBtnClass(m){return 'btn-'+m;}
 function getBtnLabel(m){return m==='quick'?'Apply ⚡':'Apply';}
 
@@ -643,7 +654,7 @@ function renderCards(){
     return '<div class="'+cardClass+'" data-task-id="'+esc(String(t.id))+'">'+
       photoHero+
       '<div class="tc-body">'+
-      '<div class="tc-top"><div class="tc-left">'+iconHtml+'<div class="tc-meta"><p class="tc-cat">'+esc(t.catLabel)+'</p><p class="tc-title">'+esc(t.title)+'</p></div></div>'+getBadge(t.mode)+'</div>'+
+      '<div class="tc-top"><div class="tc-left">'+iconHtml+'<div class="tc-meta"><p class="tc-cat">'+esc(t.catLabel)+'</p><p class="tc-title">'+esc(t.title)+'</p></div></div>'+getBadge(t.mode,t)+'</div>'+
       descHtml+
       '<div class="tc-bottom"><div><div class="tc-price">'+esc(t.priceLabel)+'</div><div class="tc-info">👤 '+posterLabel+' · 📍 '+esc(loc)+whenPart+' · '+esc(t.posted)+(t.applicants>0?' · '+t.applicants+' applied':'')+'</div>'+
       '<div class="qg-action-row">'+saveBtn+shareBtn+reportBtn+'</div></div>'+
@@ -681,11 +692,24 @@ window.openModal=async function(id,e){
     }
   }
   document.getElementById('modalTitle').textContent=activeTask.catLabel+' — '+activeTask.title.substring(0,40)+(activeTask.title.length>40?'…':'');
-  var sub = 'Budget: '+activeTask.priceLabel+' · '+activeTask.location;
+  var sub = (activeTask.budgetNegotiable ? 'Budget: Around ' : 'Budget: ') + activeTask.priceLabel + ' · ' + activeTask.location;
   if (activeTask.when) sub += ' · 🕐 ' + activeTask.when;
   if (activeTask.requiresPhotos) sub += ' · 📷 Photo updates requested';
   document.getElementById('modalSub').textContent=sub;
-  document.getElementById('offerPrice').value=activeTask.price;
+  var offerInput = document.getElementById('offerPrice');
+  offerInput.value=activeTask.price;
+  offerInput.readOnly = !activeTask.budgetNegotiable;
+  offerInput.style.opacity = activeTask.budgetNegotiable ? '1' : '0.75';
+  var negoHint = document.getElementById('modalNegoHint');
+  if (negoHint) {
+    if (activeTask.budgetNegotiable) {
+      negoHint.style.display = 'block';
+      negoHint.textContent = 'Negotiate your offer here — use chat later for schedule and details, not price.';
+    } else {
+      negoHint.style.display = 'block';
+      negoHint.textContent = 'Fixed budget — your offer matches the poster\'s price. Chat is for schedule and details.';
+    }
+  }
   document.getElementById('offerMsg').value='';
   document.getElementById('offerAvail').value='';
   document.getElementById('offerFraudError').style.display='none';

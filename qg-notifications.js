@@ -58,6 +58,45 @@
           'Sign up free and start posting tasks or browsing gigs:\n' + (p.link || 'https://quickgigs.ca/signup.html') + '\n\n' +
           '— QuickGigs';
       }
+    },
+    counter_offer_received: {
+      subject: function (p) { return 'Counter offer: $' + (p.amount || '') + ' on “' + (p.taskTitle || 'a task') + '”'; },
+      body: function (p) {
+        return (p.posterName || 'The poster') + ' countered your application at $' + (p.amount || '?') +
+          ' for “' + (p.taskTitle || '') + '”.\n\nAccept, decline, or counter back in My Tasks:\n' +
+          (p.link || 'https://quickgigs.ca/mytasks.html?tab=applied');
+      }
+    },
+    counter_offer_reply: {
+      subject: function (p) { return 'Counter back: $' + (p.amount || '') + ' on “' + (p.taskTitle || 'a task') + '”'; },
+      body: function (p) {
+        return (p.workerName || 'A tasker') + ' countered back at $' + (p.amount || '?') +
+          ' on “' + (p.taskTitle || '') + '”.\n\nReview in My Tasks → Posted:\n' +
+          (p.link || 'https://quickgigs.ca/mytasks.html?tab=posted');
+      }
+    },
+    counter_offer_accepted: {
+      subject: function (p) { return 'Price agreed: $' + (p.amount || '') + ' on “' + (p.taskTitle || 'a task') + '”'; },
+      body: function (p) {
+        return (p.partyName || 'They') + ' accepted $' + (p.amount || '?') +
+          ' for “' + (p.taskTitle || '') + '”.\n\nOpen QuickGigs to continue:\n' +
+          (p.link || 'https://quickgigs.ca/mytasks.html');
+      }
+    },
+    task_removed_admin: {
+      subject: function (p) { return 'Your task was removed: “' + (p.taskTitle || 'task') + '”'; },
+      body: function (p) {
+        return 'Hi,\n\nYour task “' + (p.taskTitle || '') + '” was removed by a QuickGigs moderator.\n\nReason:\n' +
+          (p.reason || 'Not specified') + '\n\nIf you believe this was a mistake, reply to support@quickgigs.ca.\n\n— QuickGigs';
+      }
+    },
+    task_removed_applicant: {
+      subject: function (p) { return 'Task removed: “' + (p.taskTitle || 'a task') + '”'; },
+      body: function (p) {
+        return 'Hi,\n\nA task you applied to was removed by QuickGigs moderation.\n\nTask: “' + (p.taskTitle || '') +
+          '”\nReason: ' + (p.reason || 'Not specified') + '\n\nBrowse other gigs:\n' +
+          (p.link || 'https://quickgigs.ca/browsetask.html') + '\n\n— QuickGigs';
+      }
     }
   };
 
@@ -71,7 +110,12 @@
       application_received: 1,
       application_accepted: 1,
       task_completed: 1,
-      new_message: 1
+      new_message: 1,
+      counter_offer_received: 1,
+      counter_offer_reply: 1,
+      counter_offer_accepted: 1,
+      task_removed_admin: 1,
+      task_removed_applicant: 1
     };
     if (inAppTypes[opts.type] && typeof pushInAppNotification === 'function') {
       try {
@@ -223,6 +267,95 @@
     });
   }
 
+  async function notifyWorkerCounterOffer(workerId, workerEmail, task, payload) {
+    if (!workerId) return;
+    payload = payload || {};
+    var taskId = payload.taskId || (task && (task.task_id || task.TASK_ID));
+    var type = payload.accepted ? 'counter_offer_accepted' : 'counter_offer_received';
+    return queueEmailNotification({
+      type: type,
+      userId: workerId,
+      email: workerEmail,
+      payload: {
+        taskTitle: task && (task.title || task.TITLE),
+        taskId: taskId,
+        amount: payload.amount,
+        posterName: payload.posterName,
+        partyName: payload.posterName || 'The poster',
+        link: 'https://quickgigs.ca/mytasks.html?tab=applied' + (taskId ? '&expand=' + encodeURIComponent(taskId) : '')
+      }
+    });
+  }
+
+  async function notifyPosterCounterReply(posterId, posterEmail, task, payload) {
+    if (!posterId) return;
+    payload = payload || {};
+    var taskId = payload.taskId || (task && (task.task_id || task.TASK_ID));
+    var type = payload.action === 'accept' ? 'counter_offer_accepted' : 'counter_offer_reply';
+    return queueEmailNotification({
+      type: type,
+      userId: posterId,
+      email: posterEmail,
+      payload: {
+        taskTitle: task && (task.title || task.TITLE),
+        taskId: taskId,
+        amount: payload.amount,
+        workerName: payload.workerName,
+        partyName: payload.workerName || 'The tasker',
+        link: 'https://quickgigs.ca/mytasks.html?tab=posted' + (taskId ? '&expand=' + encodeURIComponent(taskId) : '')
+      }
+    });
+  }
+
+  async function notifyAdminTaskRemoved(task, applications, reason) {
+    if (!task) return { success: false };
+    reason = String(reason || '').trim();
+    var taskTitle = task.title || task.TITLE || 'Task';
+    var posterId = task.posted_by || task.POSTED_BY;
+    var posterUser = posterId && typeof getUserByFirebaseUid === 'function'
+      ? await getUserByFirebaseUid(posterId)
+      : null;
+
+    if (posterId) {
+      await queueEmailNotification({
+        type: 'task_removed_admin',
+        userId: posterId,
+        email: posterUser && posterUser.email,
+        payload: {
+          taskTitle: taskTitle,
+          reason: reason,
+          link: 'https://quickgigs.ca/mytasks.html?tab=posted'
+        }
+      });
+    }
+
+    var seen = {};
+    var apps = applications || [];
+    for (var i = 0; i < apps.length; i++) {
+      var app = apps[i];
+      var st = String(app.status || app.STATUS || 'pending').toLowerCase();
+      if (st === 'cancelled' || st === 'declined') continue;
+      var wid = app.worker_id || app.WORKER_ID;
+      if (!wid || seen[wid]) continue;
+      seen[wid] = true;
+      var workerUser = typeof getUserByFirebaseUid === 'function' ? await getUserByFirebaseUid(wid) : null;
+      await queueEmailNotification({
+        type: 'task_removed_applicant',
+        userId: wid,
+        email: workerUser && workerUser.email,
+        payload: {
+          taskTitle: taskTitle,
+          reason: reason,
+          link: 'https://quickgigs.ca/mytasks.html?tab=applied'
+        }
+      });
+    }
+    return { success: true };
+  }
+
+  window.notifyWorkerCounterOffer = notifyWorkerCounterOffer;
+  window.notifyPosterCounterReply = notifyPosterCounterReply;
+  window.notifyAdminTaskRemoved = notifyAdminTaskRemoved;
   window.queueEmailNotification = queueEmailNotification;
   window.sendWaitlistEmail = sendWaitlistEmail;
   window.queueGuardianConsentEmail = queueGuardianConsentEmail;

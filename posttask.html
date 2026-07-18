@@ -114,6 +114,19 @@ body.theme-posttask .photo-upload-btn{background:rgba(107,63,160,0.35);color:#f3
 .dark .mode-desc{color:rgba(255,255,255,0.35);}
 .light .mode-desc{color:#9ca3af;}
 
+.budget-type-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.budget-type-card{border-radius:12px;padding:12px 14px;cursor:pointer;transition:all 0.2s;}
+.dark .budget-type-card{background:rgba(255,255,255,0.04);border:0.5px solid rgba(200,168,233,0.12);}
+.light .budget-type-card{background:#f8f7ff;border:0.5px solid #e8e2ff;}
+.dark .budget-type-card.selected{background:rgba(107,63,160,0.3);border:1.5px solid #9b6fc4;}
+.light .budget-type-card.selected{background:#ede9ff;border:1.5px solid #9b6fc4;}
+.budget-type-card strong{display:block;font-size:13px;margin-bottom:2px;}
+.dark .budget-type-card strong{color:#fff;}
+.light .budget-type-card strong{color:#2d1b4e;}
+.budget-type-card span{font-size:10px;}
+.dark .budget-type-card span{color:rgba(255,255,255,0.4);}
+.light .budget-type-card span{color:#9ca3af;}
+
 /* CATEGORIES */
 .cat-wrap{display:flex;flex-wrap:wrap;gap:6px;}
 .light .cat-wrap{background:#f0eeff;border-radius:12px;padding:10px;}
@@ -362,6 +375,21 @@ body{padding-bottom:76px;}
     </div>
   </div>
 
+  <div class="section">
+    <span class="section-label">Budget type</span>
+    <div class="budget-type-row">
+      <div class="budget-type-card selected" data-budget-type="fixed" onclick="selectBudgetType(this)">
+        <strong>Fixed</strong>
+        <span>Non-negotiable price</span>
+      </div>
+      <div class="budget-type-card" data-budget-type="negotiable" onclick="selectBudgetType(this)">
+        <strong>Negotiable</strong>
+        <span>Open to offers</span>
+      </div>
+    </div>
+    <p class="hint-text" id="budgetTypeHint" style="margin-top:10px">Taskers see your exact budget. Use chat for schedule and details — not price haggling.</p>
+  </div>
+
   <!-- HINT -->
   <div class="hint-box" id="hintBox">
     <span style="font-size:16px;">💡</span>
@@ -460,6 +488,7 @@ applyTheme();
 
 var selectedMode = 'quick';
 var selectedCat  = '';
+var selectedBudgetType = 'fixed';
 var selectedRec  = 'Daily';
 var selectedTimeSlot = 'exact';
 var TIME_SLOT_LABELS = {
@@ -778,6 +807,18 @@ window.selectMode = function(el) {
   updateSchedulePreview();
 };
 
+window.selectBudgetType = function(el) {
+  document.querySelectorAll('.budget-type-card').forEach(function(c){ c.classList.remove('selected'); });
+  el.classList.add('selected');
+  selectedBudgetType = el.getAttribute('data-budget-type') || 'fixed';
+  var hint = document.getElementById('budgetTypeHint');
+  if (hint) {
+    hint.textContent = selectedBudgetType === 'negotiable'
+      ? 'Taskers see “Around $X, open to offers.” Counter-offers stay on the application — use chat for schedule and details.'
+      : 'Taskers see your exact budget. Use chat for schedule and details — not price haggling.';
+  }
+};
+
 window.selectCat = function(el) {
   document.querySelectorAll('.cat-chip').forEach(function(c){ c.classList.remove('selected'); });
   el.classList.add('selected');
@@ -911,6 +952,7 @@ window.handleSubmit = async function(skipPhotos) {
     category:    selectedCat,
     task_mode:   selectedMode,
     budget:      budget,
+    budget_negotiable: selectedBudgetType === 'negotiable',
     location:    location,
     posted_by:   window._currentUser.uid,
     poster_name: posterName,

@@ -102,6 +102,12 @@ body.light .tc-applicants-toggle{color:var(--purple);}
 .applicant-row{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:10px 0;border-top:0.5px solid var(--border);transition:opacity 0.25s,background 0.25s;}
 .applicant-row .app-price{margin-left:auto;}
 .applicant-row .applicant-actions{width:100%;padding-top:4px;}
+.nego-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px;width:100%;padding-top:4px;}
+.nego-status{font-size:10px;color:var(--text-muted);width:100%;text-align:right;padding-top:2px;}
+.app-counter-pending{font-size:10px;color:#d97706;margin-top:2px;}
+.counter-btn{color:var(--lavender)!important;border-color:rgba(155,111,196,0.35)!important;}
+.nego-block{width:100%;margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(107,63,160,0.12);border:0.5px solid rgba(155,111,196,0.2);}
+.nego-block-title{font-size:11px;font-weight:600;margin-bottom:8px;color:var(--lavender);}
 .applicant-row.is-faded{opacity:0.35;}
 .applicant-row.is-accepted{background:rgba(74,222,128,0.1);border-radius:10px;padding:10px 8px;}
 .applicant-row.is-accepting{background:rgba(107,63,160,0.12);border-radius:10px;}
@@ -176,6 +182,18 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
     <div class="confirm-btns">
       <button type="button" class="confirm-cancel" onclick="closeConfirm()">Keep</button>
       <button type="button" class="confirm-ok" id="confirmOkBtn" onclick="runConfirm()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="confirm-overlay" id="counterOverlay" onclick="if(event.target===this)closeCounterModal()">
+  <div class="confirm-box">
+    <div class="confirm-title" id="counterTitle">Counter offer</div>
+    <div class="confirm-msg" id="counterMsg">Enter your counter amount (min $20).</div>
+    <input class="field-input" id="counterAmount" type="number" min="20" placeholder="85" style="width:100%;margin:12px 0 4px;padding:12px 14px;border-radius:10px;border:0.5px solid var(--border);background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;">
+    <div class="confirm-btns">
+      <button type="button" class="confirm-cancel" onclick="closeCounterModal()">Cancel</button>
+      <button type="button" class="confirm-ok" id="counterOkBtn" onclick="runCounterSubmit()">Send counter</button>
     </div>
   </div>
 </div>
@@ -306,7 +324,7 @@ function isPaymentGatedChat() {
   return !window.QG_CONFIG || window.QG_CONFIG.chatUnlockAfter === 'payment';
 }
 
-function renderApplicantAction(a, taskId) {
+function renderApplicantAction(a, taskId, task) {
   var appId = getField(a, 'APP_ID');
   var workerId = getField(a, 'WORKER_ID');
   var status = (getField(a, 'STATUS') || 'pending').toLowerCase();
@@ -319,12 +337,34 @@ function renderApplicantAction(a, taskId) {
   }
   if (status === 'declined') return '<span class="accept-status declined">Not selected</span>';
   if (status === 'cancelled') return '<span class="accept-status declined">Withdrawn</span>';
+
+  var negotiable = isTaskNegotiable(task);
+  var neg = getNegotiationState(a);
+  var negoHtml = '';
+  if (negotiable) {
+    if (neg.counterBy === 'worker') {
+      negoHtml = '<div class="nego-actions">' +
+        '<span class="nego-status">Counter: $' + neg.counterPrice + '</span>' +
+        '<button type="button" class="decline-btn" data-poster-decline-counter="'+escAttr(appId)+'" data-task-id="'+escAttr(taskId)+'" data-worker-id="'+escAttr(workerId)+'">Decline</button>' +
+        '<button type="button" class="accept-btn" data-poster-accept-counter="'+escAttr(appId)+'" data-task-id="'+escAttr(taskId)+'" data-worker-id="'+escAttr(workerId)+'">Accept $' + neg.counterPrice + '</button>' +
+        '</div>';
+    } else if (neg.counterBy === 'poster') {
+      negoHtml = '<div class="nego-actions"><span class="nego-status">Counter sent — waiting for tasker</span></div>';
+    } else if (neg.counterRound === 0) {
+      negoHtml = '<div class="nego-actions">' +
+        '<button type="button" class="decline-btn counter-btn" data-poster-counter="'+escAttr(appId)+'" data-task-id="'+escAttr(taskId)+'" data-worker-id="'+escAttr(workerId)+'">Counter $…</button>' +
+        '</div>';
+    }
+  }
+
   var chatBtn = isPaymentGatedChat() ? '' :
     '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border);margin-right:6px" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">💬 Chat</button>';
-  return '<div class="applicant-actions">' +
+  var acceptDisabled = neg.counterBy ? ' disabled title="Resolve the counter-offer first"' : '';
+  return negoHtml +
+    '<div class="applicant-actions">' +
     '<button type="button" class="decline-btn" data-decline-task-id="'+escAttr(taskId)+'" data-decline-app-id="'+escAttr(appId)+'">Decline</button>' +
     chatBtn +
-    '<button type="button" class="accept-btn" data-task-id="'+escAttr(taskId)+'" data-app-id="'+escAttr(appId)+'">Accept</button>' +
+    '<button type="button" class="accept-btn" data-task-id="'+escAttr(taskId)+'" data-app-id="'+escAttr(appId)+'"'+acceptDisabled+'>Accept</button>' +
     '</div>';
 }
 
@@ -575,6 +615,7 @@ function getField(row,f){
     CATEGORY:['CATEGORY','category'],
     TASK_MODE:['TASK_MODE','task_mode'],
     BUDGET:['BUDGET','budget'],
+    BUDGET_NEGOTIABLE:['BUDGET_NEGOTIABLE','budget_negotiable'],
     LOCATION:['LOCATION','location'],
     STATUS:['STATUS','status'],
     CREATED_AT:['CREATED_AT','created_at'],
@@ -583,7 +624,10 @@ function getField(row,f){
     WORKER_ID:['WORKER_ID','worker_id'],
     WORKER_NAME:['WORKER_NAME','worker_name'],
     MESSAGE:['MESSAGE','message'],
-    PRICE:['PRICE','price']
+    PRICE:['PRICE','price'],
+    COUNTER_PRICE:['COUNTER_PRICE','counter_price'],
+    COUNTER_BY:['COUNTER_BY','counter_by'],
+    COUNTER_ROUND:['COUNTER_ROUND','counter_round']
   };
   var keys = fieldMap[f] || [f, f.toLowerCase()];
   for(var i = 0; i < keys.length; i++){
@@ -591,6 +635,43 @@ function getField(row,f){
   }
   return '';
 }
+function isTaskNegotiable(task) {
+  if (typeof isTaskBudgetNegotiable === 'function') return isTaskBudgetNegotiable(task);
+  return !!(getField(task, 'BUDGET_NEGOTIABLE'));
+}
+
+function getNegotiationState(a) {
+  if (typeof parseNegotiationFields === 'function') {
+    var parsed = parseNegotiationFields(a);
+    return {
+      counterPrice: parsed.counterPrice,
+      counterBy: parsed.counterBy || '',
+      counterRound: parsed.counterRound || 0
+    };
+  }
+  return {
+    counterPrice: getField(a, 'COUNTER_PRICE') ? Number(getField(a, 'COUNTER_PRICE')) : null,
+    counterBy: getField(a, 'COUNTER_BY') || '',
+    counterRound: Number(getField(a, 'COUNTER_ROUND') || 0) || 0
+  };
+}
+
+function formatAppPriceHtml(a) {
+  var price = getField(a, 'PRICE');
+  var neg = getNegotiationState(a);
+  if (neg.counterBy && neg.counterPrice) {
+    var who = neg.counterBy === 'poster' ? 'Poster counter' : 'Your counter';
+    return '$' + price + '<div class="app-counter-pending">' + who + ': $' + neg.counterPrice + '</div>';
+  }
+  return '$' + price;
+}
+
+function formatTaskBudgetMeta(task) {
+  var budget = getField(task, 'BUDGET');
+  if (isTaskNegotiable(task)) return 'Around $' + budget + ' · negotiable';
+  return '$' + budget + ' · fixed';
+}
+
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function personLink(name, uid) {
   if (uid && typeof profileNameLink === 'function') return profileNameLink(name, uid, { className: 'profile-link' });
@@ -659,6 +740,51 @@ document.getElementById('tabContent').addEventListener('click', function(e) {
   if (repostBtn) {
     e.preventDefault();
     confirmRepostTask(repostBtn.getAttribute('data-repost-task'));
+    return;
+  }
+  var posterCounterBtn = e.target.closest('[data-poster-counter]');
+  if (posterCounterBtn) {
+    e.preventDefault();
+    openCounterModal({
+      role: 'poster',
+      appId: posterCounterBtn.getAttribute('data-poster-counter'),
+      taskId: posterCounterBtn.getAttribute('data-task-id'),
+      workerId: posterCounterBtn.getAttribute('data-worker-id')
+    });
+    return;
+  }
+  var workerCounterBtn = e.target.closest('[data-worker-counter-back]');
+  if (workerCounterBtn) {
+    e.preventDefault();
+    openCounterModal({
+      role: 'worker',
+      appId: workerCounterBtn.getAttribute('data-worker-counter-back'),
+      taskId: workerCounterBtn.getAttribute('data-task-id')
+    });
+    return;
+  }
+  var workerAcceptBtn = e.target.closest('[data-worker-accept-counter]');
+  if (workerAcceptBtn) {
+    e.preventDefault();
+    runWorkerCounterAction(workerAcceptBtn.getAttribute('data-worker-accept-counter'), workerAcceptBtn.getAttribute('data-task-id'), 'accept');
+    return;
+  }
+  var workerDeclineBtn = e.target.closest('[data-worker-decline-counter]');
+  if (workerDeclineBtn) {
+    e.preventDefault();
+    runWorkerCounterAction(workerDeclineBtn.getAttribute('data-worker-decline-counter'), workerDeclineBtn.getAttribute('data-task-id'), 'decline');
+    return;
+  }
+  var posterAcceptCounterBtn = e.target.closest('[data-poster-accept-counter]');
+  if (posterAcceptCounterBtn) {
+    e.preventDefault();
+    runPosterCounterAction(posterAcceptCounterBtn.getAttribute('data-poster-accept-counter'), posterAcceptCounterBtn.getAttribute('data-task-id'), posterAcceptCounterBtn.getAttribute('data-worker-id'), 'accept');
+    return;
+  }
+  var posterDeclineCounterBtn = e.target.closest('[data-poster-decline-counter]');
+  if (posterDeclineCounterBtn) {
+    e.preventDefault();
+    runPosterCounterAction(posterDeclineCounterBtn.getAttribute('data-poster-decline-counter'), posterDeclineCounterBtn.getAttribute('data-task-id'), posterDeclineCounterBtn.getAttribute('data-worker-id'), 'decline');
   }
 });
 
@@ -693,6 +819,96 @@ window.runConfirm = async function() {
   closeConfirm();
   if (opts && typeof opts.onConfirm === 'function') await opts.onConfirm();
 };
+
+var pendingCounterAction = null;
+
+window.openCounterModal = function(opts) {
+  pendingCounterAction = opts || null;
+  document.getElementById('counterTitle').textContent = opts && opts.role === 'worker' ? 'Counter back' : 'Counter offer';
+  document.getElementById('counterMsg').textContent = opts && opts.role === 'worker'
+    ? 'Send your counter (max 2 rounds in beta).'
+    : 'Propose a different price — the tasker gets a notification.';
+  document.getElementById('counterAmount').value = '';
+  document.getElementById('counterOverlay').classList.add('open');
+  setTimeout(function(){ document.getElementById('counterAmount').focus(); }, 50);
+};
+
+window.closeCounterModal = function() {
+  pendingCounterAction = null;
+  document.getElementById('counterOverlay').classList.remove('open');
+};
+
+window.runCounterSubmit = async function() {
+  var opts = pendingCounterAction;
+  if (!opts) return;
+  var amount = Math.round(Number(document.getElementById('counterAmount').value));
+  if (!amount || amount < 20) {
+    showToast('Enter at least $20', '#ef4444');
+    return;
+  }
+  var btn = document.getElementById('counterOkBtn');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  var userId = window._currentUser ? window._currentUser.uid : null;
+  var result;
+  if (opts.role === 'worker' && typeof workerRespondToCounter === 'function') {
+    result = await workerRespondToCounter(opts.appId, userId, 'counter', amount, { taskId: opts.taskId });
+  } else if (typeof posterSendCounterOffer === 'function') {
+    result = await posterSendCounterOffer(opts.appId, userId, amount, { taskId: opts.taskId, workerId: opts.workerId });
+  } else {
+    result = { success: false, error: 'missing_api' };
+  }
+  btn.disabled = false;
+  btn.textContent = 'Send counter';
+  closeCounterModal();
+  if (!result || !result.success) {
+    var msg = typeof formatSupabaseActionError === 'function'
+      ? formatSupabaseActionError('send counter', (result && result.error) || 'failed')
+      : 'Could not send counter — run supabase/negotiation.sql, then refresh.';
+    if (result && result.error === 'max_rounds') msg = 'Max 2 counter rounds reached for beta.';
+    showToast(msg, '#ef4444');
+    return;
+  }
+  showToast('Counter sent', '#4ade80');
+  await reloadMyTasksData();
+  renderTab();
+};
+
+async function runWorkerCounterAction(appId, taskId, action, amount) {
+  var userId = window._currentUser ? window._currentUser.uid : null;
+  if (!userId || typeof workerRespondToCounter !== 'function') return;
+  var result = await workerRespondToCounter(appId, userId, action, amount, { taskId: taskId });
+  if (!result.success) {
+    showToast(typeof formatSupabaseActionError === 'function'
+      ? formatSupabaseActionError('update counter', result.error)
+      : 'Could not update counter', '#ef4444');
+    return;
+  }
+  showToast(action === 'accept' ? 'Counter accepted — price updated' : 'Counter declined', '#4ade80');
+  await reloadMyTasksData();
+  renderTab();
+}
+
+async function runPosterCounterAction(appId, taskId, workerId, action) {
+  var userId = window._currentUser ? window._currentUser.uid : null;
+  if (!userId || typeof posterRespondToCounter !== 'function') return;
+  var result = await posterRespondToCounter(appId, userId, action, { taskId: taskId, workerId: workerId });
+  if (!result.success) {
+    showToast(typeof formatSupabaseActionError === 'function'
+      ? formatSupabaseActionError('update counter', result.error)
+      : 'Could not update counter', '#ef4444');
+    return;
+  }
+  showToast(action === 'accept' ? 'Counter accepted — price updated' : 'Counter declined', '#4ade80');
+  await reloadMyTasksData();
+  renderTab();
+}
+
+async function reloadMyTasksData() {
+  if (typeof getAllApplications === 'function') {
+    allApplications = await getAllApplications();
+  }
+}
 
 window.showTab = function(tab, btn){
   activeTab = typeof normalizeMyTasksTab === 'function' ? normalizeMyTasksTab(tab) : tab;
@@ -761,8 +977,8 @@ function renderTab(){
         return '<div class="'+rowClass+'">'+
           '<a href="' + (typeof getProfileUrl === 'function' ? getProfileUrl(workerId) : ('profile.html?user=' + encodeURIComponent(String(workerId)))) + '" style="flex-shrink:0">' + avatarHtml + '</a>' +
           '<div class="app-info"><div class="app-name">'+personLinkWithBadge(workerName, workerId)+'</div><div class="app-msg">'+esc(getField(a,'MESSAGE'))+'</div>'+workerReport+'</div>'+
-          '<div class="app-price">$'+getField(a,'PRICE')+'</div>'+
-          renderApplicantAction(a, taskId)+
+          '<div class="app-price">'+formatAppPriceHtml(a)+'</div>'+
+          renderApplicantAction(a, taskId, t)+
         '</div>';
       }).join('') : '<div style="font-size:12px;color:var(--text-faint);padding:10px 0">No pending applicants</div>';
       var toggleLabel = pendingApps.length
@@ -773,7 +989,7 @@ function renderTab(){
         : '';
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-open">Open</span></div>'+
-        '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+' budget'+(postedLabel ? ' · Posted '+esc(postedLabel) : '')+'</div>'+
+        '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · '+esc(formatTaskBudgetMeta(t))+(postedLabel ? ' · Posted '+esc(postedLabel) : '')+'</div>'+
         '<button type="button" class="tc-applicants-toggle'+(isOpen?' open':'')+'" data-applicants-toggle="'+escAttr(taskId)+'" data-applicant-count="'+escAttr(pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : ''))+'" data-applicant-names="'+escAttr(namePreview + (pendingApps.length > 3 ? '…' : ''))+'">👥 '+esc(toggleLabel)+'</button>'+
         '<div class="applicants-panel'+(isOpen?' open':'')+'" id="'+taskDomId(taskId)+'">'+appHtml+'</div>'+
         '<div class="action-row"><button type="button" class="act-btn btn-danger" data-cancel-posting="'+escAttr(taskId)+'">✕ Cancel posting</button></div>'+
@@ -820,7 +1036,21 @@ function renderTab(){
       var appIdStr = JSON.stringify(String(getField(a,'APP_ID')));
       var cardClass = 'task-card' + (appStatus === 'cancelled' || appStatus === 'declined' ? ' is-faded' : '');
       var actions = '';
+      var negoBlock = '';
       if (appStatus === 'pending' && taskStatus !== 'cancelled') {
+        var neg = getNegotiationState(a);
+        if (isTaskNegotiable(task) && neg.counterBy === 'poster') {
+          var canCounterBack = neg.counterRound === 1;
+          negoBlock = '<div class="nego-block">' +
+            '<div class="nego-block-title">Poster countered at $' + neg.counterPrice + '</div>' +
+            '<div class="action-row">' +
+            '<button type="button" class="act-btn btn-secondary" data-worker-decline-counter="'+escAttr(getField(a,'APP_ID'))+'" data-task-id="'+escAttr(getField(a,'TASK_ID'))+'">Decline</button>' +
+            (canCounterBack ? '<button type="button" class="act-btn btn-secondary counter-btn" data-worker-counter-back="'+escAttr(getField(a,'APP_ID'))+'" data-task-id="'+escAttr(getField(a,'TASK_ID'))+'">Counter $…</button>' : '') +
+            '<button type="button" class="act-btn" style="background:var(--purple);color:#fff" data-worker-accept-counter="'+escAttr(getField(a,'APP_ID'))+'" data-task-id="'+escAttr(getField(a,'TASK_ID'))+'">Accept $' + neg.counterPrice + '</button>' +
+            '</div></div>';
+        } else if (isTaskNegotiable(task) && neg.counterBy === 'worker') {
+          negoBlock = '<div class="nego-block"><div class="nego-block-title">Counter sent — waiting for poster</div></div>';
+        }
         actions = '<div class="action-row">';
         if (!isPaymentGatedChat()) {
           actions += '<button class="act-btn btn-secondary" onclick="openChatForTask('+taskIdStr+')">💬 Message poster</button>';
@@ -843,7 +1073,8 @@ function renderTab(){
       }
         return '<div class="'+cardClass+'">'+
         '<div class="tc-top"><div class="tc-left">'+profileTapIcon(posterId, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">Applied · Posted by '+personLink(posterName, posterId)+'</div><div class="tc-title">'+esc(getField(task,'TITLE')||'Task #'+getField(a,'TASK_ID'))+'</div></div></div>'+statusLabel+'</div>'+
-        '<div class="tc-meta">Your offer: $'+getField(a,'PRICE')+' · '+esc(getField(a,'MESSAGE')).substring(0,60)+'...'+(getField(task,'CREATED_AT') && typeof formatRelativeTime === 'function' ? ' · Task posted '+esc(formatRelativeTime(getField(task,'CREATED_AT'))) : '')+'</div>'+
+        '<div class="tc-meta">Your offer: '+formatAppPriceHtml(a)+' · '+esc(getField(a,'MESSAGE')).substring(0,60)+'...'+(getField(task,'CREATED_AT') && typeof formatRelativeTime === 'function' ? ' · Task posted '+esc(formatRelativeTime(getField(task,'CREATED_AT'))) : '')+'</div>'+
+        negoBlock+
         actions+
       '</div>';
     }).join('');
@@ -1005,6 +1236,12 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
   }
 
   var workerName = displayName(workerId, app);
+
+  if (typeof hasPendingApplicationCounter === 'function' && hasPendingApplicationCounter(app)) {
+    setAcceptLoading(acceptBtn, false);
+    showToast('Resolve the counter-offer before accepting', '#ef4444');
+    return;
+  }
 
   var workerUser = await getUserByFirebaseUid(workerId);
   if (workerUser && workerUser.name && typeof isGenericDisplayName === 'function' && !isGenericDisplayName(workerUser.name)) {

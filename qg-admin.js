@@ -241,7 +241,8 @@
         '<div class="admin-drawer-actions">' +
           '<button type="button" class="admin-drawer-btn primary" onclick="adminSaveTask()">Save changes</button>' +
           '<button type="button" class="admin-drawer-btn warn" onclick="adminExpireTask()">Mark expired</button>' +
-          '<button type="button" class="admin-drawer-btn danger" onclick="adminRemoveTask()">Remove task</button>' +
+          '<button type="button" class="admin-drawer-btn danger" onclick="adminRemoveTask()">Delete task</button>' +
+          '<p style="font-size:10px;color:rgba(255,255,255,0.4);margin:8px 0 0;line-height:1.4">Delete cancels the listing and emails the poster (with your reason). Applicants are notified too.</p>' +
           '<a class="admin-drawer-btn ghost" href="browsetask.html?task=' + encodeURIComponent(tid) + '" target="_blank" rel="noopener">View on browse ↗</a>' +
         '</div>' +
       '</div>';
@@ -381,18 +382,74 @@
 
   async function adminRemoveTask() {
     var t = findTask(drawerState.id);
-    if (!t || !confirm('Cancel/remove "' + (t.title || 'this task') + '"?')) return;
+    if (!t) return;
     var tid = String(t.task_id || t.id);
-    if (typeof updateTaskStatus === 'function') {
-      await updateTaskStatus(tid, 'cancelled');
-    } else {
-      await sbUpdate('tasks', { status: 'cancelled' }, 'task_id=eq.' + encodeURIComponent(tid));
+    var title = t.title || 'this task';
+
+    if (typeof openModal !== 'function') {
+      var reasonFallback = prompt('Reason for deleting this task (required):');
+      if (!reasonFallback || reasonFallback.trim().length < 5) {
+        showToast('Add a reason (min 5 characters)', 'red');
+        return;
+      }
+      await executeAdminTaskDelete(tid, reasonFallback.trim(), t);
+      return;
     }
-    t.status = 'cancelled';
-    await logAdminAction('task_remove', 'task', tid, {});
-    window.tasks = window.tasks.filter(function (x) { return String(x.task_id || x.id) !== tid; });
-    showToast('Task removed', 'red');
+
+    var noteEl = document.getElementById('modalNote');
+    if (noteEl) {
+      noteEl.value = '';
+      noteEl.placeholder = 'Why is this task being removed? (required — sent to the poster by email)';
+    }
+
+    openModal(
+      'Delete task',
+      'Cancel “' + title + '” and email the poster your reason. Pending applicants are notified too.',
+      '',
+      'Delete & email',
+      'danger',
+      async function () {
+        var reason = (document.getElementById('modalNote').value || '').trim();
+        if (reason.length < 5) {
+          showToast('Add a reason (min 5 characters)', 'red');
+          return false;
+        }
+        await executeAdminTaskDelete(tid, reason, t);
+        return true;
+      },
+      true
+    );
+  }
+
+  async function executeAdminTaskDelete(tid, reason, t) {
+    var result;
+    if (typeof adminRemoveTaskWithReason === 'function') {
+      result = await adminRemoveTaskWithReason(tid, reason);
+    } else if (typeof cancelTask === 'function') {
+      result = await cancelTask(tid);
+      if (result.success && typeof notifyAdminTaskRemoved === 'function') {
+        var apps = (window.applications || []).filter(function (a) {
+          return String(a.task_id || a.TASK_ID) === tid;
+        });
+        await notifyAdminTaskRemoved(t, apps, reason);
+      }
+    } else {
+      result = await sbUpdate('tasks', { status: 'cancelled' }, 'task_id=eq.' + encodeURIComponent(tid));
+    }
+
+    if (!result || !result.success) {
+      showToast('Could not delete task', 'red');
+      return;
+    }
+
+    await logAdminAction('task_delete', 'task', tid, { reason: reason });
+    window.tasks = (window.tasks || []).filter(function (x) {
+      return String(x.task_id || x.id) !== tid;
+    });
+    if (t) t.status = 'cancelled';
+    showToast('Task deleted — poster emailed', 'green');
     renderTasks(window.tasks);
+    renderOverview();
     closeAdminDrawer();
   }
 

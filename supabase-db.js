@@ -419,6 +419,35 @@ async function getTasksByUser(userId) {
   return await sbGet('tasks', 'posted_by=eq.' + userId, 'created_at.desc', 50);
 }
 
+var MAX_COUNTER_ROUNDS = 2;
+
+function isTaskBudgetNegotiable(task) {
+  if (!task) return false;
+  return !!(task.budget_negotiable || task.BUDGET_NEGOTIABLE);
+}
+
+function parseNegotiationFields(app) {
+  if (!app) return { counterPrice: null, counterBy: null, counterRound: 0 };
+  var counterPrice = app.counter_price != null ? app.counter_price : app.COUNTER_PRICE;
+  var counterBy = app.counter_by || app.COUNTER_BY || null;
+  var counterRound = Number(app.counter_round != null ? app.counter_round : (app.COUNTER_ROUND || 0)) || 0;
+  return {
+    counterPrice: counterPrice != null && counterPrice !== '' ? Math.round(Number(counterPrice)) : null,
+    counterBy: counterBy ? String(counterBy).toLowerCase() : null,
+    counterRound: counterRound
+  };
+}
+
+function hasPendingApplicationCounter(app) {
+  var neg = parseNegotiationFields(app);
+  return neg.counterPrice != null && !!neg.counterBy;
+}
+
+function getEffectiveApplicationPrice(app) {
+  if (!app) return 0;
+  return Math.round(Number(app.price != null ? app.price : (app.PRICE || 0)) || 0);
+}
+
 async function postTask(taskData) {
   var row = {
     title:       taskData.title,
@@ -437,6 +466,7 @@ async function postTask(taskData) {
   if (taskData.scheduled_label) extras.scheduled_label = taskData.scheduled_label;
   if (taskData.photo_urls) extras.photo_urls = taskData.photo_urls;
   if (taskData.requires_photos) extras.requires_photos = true;
+  if (taskData.budget_negotiable) extras.budget_negotiable = true;
 
   var withoutPhotos = Object.assign({}, row, extras);
   delete withoutPhotos.photo_urls;
@@ -493,7 +523,8 @@ async function repostTask(sourceTaskId, posterId) {
     photo_urls: task.photo_urls || task.PHOTO_URLS,
     scheduled_at: task.scheduled_at || task.SCHEDULED_AT,
     scheduled_label: task.scheduled_label || task.SCHEDULED_LABEL,
-    requires_photos: !!(task.requires_photos || task.REQUIRES_PHOTOS)
+    requires_photos: !!(task.requires_photos || task.REQUIRES_PHOTOS),
+    budget_negotiable: !!(task.budget_negotiable || task.BUDGET_NEGOTIABLE)
   });
 }
 
@@ -1361,7 +1392,197 @@ function normalizeApplicationRow(row) {
   if (row.worker_id == null && row.WORKER_ID != null) row.worker_id = row.WORKER_ID;
   if (row.task_id == null && row.TASK_ID != null) row.task_id = row.TASK_ID;
   if (row.status == null && row.STATUS != null) row.status = row.STATUS;
+  if (row.counter_price == null && row.COUNTER_PRICE != null) row.counter_price = row.COUNTER_PRICE;
+  if (row.counter_by == null && row.COUNTER_BY != null) row.counter_by = row.COUNTER_BY;
+  if (row.counter_round == null && row.COUNTER_ROUND != null) row.counter_round = row.COUNTER_ROUND;
   return row;
+}
+
+function applicationPatchToCache(patch) {
+  var cachePatch = Object.assign({}, patch);
+  if (patch.price != null) cachePatch.PRICE = patch.price;
+  if (patch.counter_price != null) cachePatch.COUNTER_PRICE = patch.counter_price;
+  if (patch.counter_by != null) cachePatch.COUNTER_BY = patch.counter_by;
+  if (patch.counter_round != null) cachePatch.COUNTER_ROUND = patch.counter_round;
+  if (patch.status != null) cachePatch.STATUS = patch.status;
+  return cachePatch;
+}
+
+async function patchApplicationFields(appId, patch, opts) {
+  opts = opts || {};
+  var appRow = await getApplicationById(appId, opts);
+  var filters = buildApplicationUpdateFilters(appId, opts, appRow);
+  var result = { success: false, error: 'Could not update application' };
+  for (var i = 0; i < filters.length; i++) {
+    result = await tryPatchRow('applications', patch, filters[i], async function () {
+      var fresh = await getApplicationById(appId, opts);
+      return !!fresh;
+    });
+    if (result.success) break;
+  }
+  if (result.success) {
+    mergeApplicationInCache(appId, opts.taskId, opts.workerId, applicationPatchToCache(patch));
+  }
+  return result;
+}
+
+async function posterSendCounterOffer(appId, posterId, amount, opts) {
+  opts = opts || {};
+  amount = Math.round(Number(amount));
+  if (!amount || amount < 20) return { success: false, error: 'invalid_amount' };
+  var app = await getApplicationById(appId, opts);
+  if (!app) return { success: false, error: 'not_found' };
+  var taskId = app.task_id || app.TASK_ID || opts.taskId;
+  var workerId = app.worker_id || app.WORKER_ID || opts.workerId;
+  var task = await getTaskById(taskId);
+  if (!task || String(task.posted_by || task.POSTED_BY) !== String(posterId)) {
+    return { success: false, error: 'not_owner' };
+  }
+  if (!isTaskBudgetNegotiable(task)) return { success: false, error: 'not_negotiable' };
+  var st = String(app.status || app.STATUS || 'pending').toLowerCase();
+  if (st !== 'pending') return { success: false, error: 'not_pending' };
+  var neg = parseNegotiationFields(app);
+  if (neg.counterBy === 'poster') return { success: false, error: 'counter_pending' };
+  if (neg.counterBy === 'worker') return { success: false, error: 'respond_to_counter' };
+  if (neg.counterRound >= 1) return { success: false, error: 'max_rounds' };
+
+  var patch = {
+    counter_price: amount,
+    counter_by: 'poster',
+    counter_round: neg.counterRound + 1,
+    last_counter_at: new Date().toISOString()
+  };
+  var result = await patchApplicationFields(appId, patch, { taskId: taskId, workerId: workerId });
+  if (result.success && typeof notifyWorkerCounterOffer === 'function') {
+    try {
+      var workerUser = workerId ? await getUserByFirebaseUid(workerId) : null;
+      var posterName = task.poster_name || task.POSTER_NAME || 'The poster';
+      await notifyWorkerCounterOffer(workerId, workerUser && workerUser.email, task, {
+        amount: amount,
+        posterName: posterName,
+        appId: appId,
+        taskId: taskId
+      });
+    } catch (notifyErr) {
+      console.warn('Counter notification skipped:', notifyErr);
+    }
+  }
+  return result;
+}
+
+async function workerRespondToCounter(appId, workerId, action, amount, opts) {
+  opts = opts || {};
+  action = String(action || '').toLowerCase();
+  var app = await getApplicationById(appId, opts);
+  if (!app) return { success: false, error: 'not_found' };
+  if (String(app.worker_id || app.WORKER_ID) !== String(workerId)) {
+    return { success: false, error: 'not_worker' };
+  }
+  var st = String(app.status || app.STATUS || 'pending').toLowerCase();
+  if (st !== 'pending') return { success: false, error: 'not_pending' };
+  var neg = parseNegotiationFields(app);
+  if (neg.counterBy !== 'poster' || neg.counterPrice == null) {
+    return { success: false, error: 'no_counter' };
+  }
+  var taskId = app.task_id || app.TASK_ID || opts.taskId;
+  var task = await getTaskById(taskId);
+  var patch;
+  if (action === 'accept') {
+    patch = {
+      price: neg.counterPrice,
+      counter_price: null,
+      counter_by: null
+    };
+  } else if (action === 'decline') {
+    patch = { counter_price: null, counter_by: null };
+  } else if (action === 'counter') {
+    amount = Math.round(Number(amount));
+    if (!amount || amount < 20) return { success: false, error: 'invalid_amount' };
+    if (neg.counterRound !== 1) return { success: false, error: 'max_rounds' };
+    patch = {
+      counter_price: amount,
+      counter_by: 'worker',
+      counter_round: neg.counterRound + 1,
+      last_counter_at: new Date().toISOString()
+    };
+  } else {
+    return { success: false, error: 'invalid_action' };
+  }
+
+  var result = await patchApplicationFields(appId, patch, { taskId: taskId, workerId: workerId });
+  if (!result.success) return result;
+
+  if (action === 'counter' && typeof notifyPosterCounterReply === 'function') {
+    try {
+      var posterId = task && (task.posted_by || task.POSTED_BY);
+      var posterUser = posterId ? await getUserByFirebaseUid(posterId) : null;
+      var workerName = app.worker_name || app.WORKER_NAME || 'A tasker';
+      await notifyPosterCounterReply(posterId, posterUser && posterUser.email, task, {
+        amount: amount,
+        workerName: workerName,
+        appId: appId,
+        taskId: taskId,
+        action: 'counter'
+      });
+    } catch (notifyErr) {
+      console.warn('Counter reply notification skipped:', notifyErr);
+    }
+  } else if (action === 'accept' && typeof notifyPosterCounterReply === 'function') {
+    try {
+      var posterIdAccept = task && (task.posted_by || task.POSTED_BY);
+      var posterUserAccept = posterIdAccept ? await getUserByFirebaseUid(posterIdAccept) : null;
+      var workerNameAccept = app.worker_name || app.WORKER_NAME || 'A tasker';
+      await notifyPosterCounterReply(posterIdAccept, posterUserAccept && posterUserAccept.email, task, {
+        amount: neg.counterPrice,
+        workerName: workerNameAccept,
+        appId: appId,
+        taskId: taskId,
+        action: 'accept'
+      });
+    } catch (notifyErr2) {
+      console.warn('Counter accept notification skipped:', notifyErr2);
+    }
+  }
+  return result;
+}
+
+async function posterRespondToCounter(appId, posterId, action, opts) {
+  opts = opts || {};
+  action = String(action || '').toLowerCase();
+  if (action !== 'accept' && action !== 'decline') {
+    return { success: false, error: 'invalid_action' };
+  }
+  var app = await getApplicationById(appId, opts);
+  if (!app) return { success: false, error: 'not_found' };
+  var taskId = app.task_id || app.TASK_ID || opts.taskId;
+  var workerId = app.worker_id || app.WORKER_ID || opts.workerId;
+  var task = await getTaskById(taskId);
+  if (!task || String(task.posted_by || task.POSTED_BY) !== String(posterId)) {
+    return { success: false, error: 'not_owner' };
+  }
+  var neg = parseNegotiationFields(app);
+  if (neg.counterBy !== 'worker' || neg.counterPrice == null) {
+    return { success: false, error: 'no_counter' };
+  }
+  var patch = action === 'accept'
+    ? { price: neg.counterPrice, counter_price: null, counter_by: null }
+    : { counter_price: null, counter_by: null };
+  var result = await patchApplicationFields(appId, patch, { taskId: taskId, workerId: workerId });
+  if (result.success && action === 'accept' && typeof notifyWorkerCounterOffer === 'function') {
+    try {
+      var workerUser = workerId ? await getUserByFirebaseUid(workerId) : null;
+      await notifyWorkerCounterOffer(workerId, workerUser && workerUser.email, task, {
+        amount: neg.counterPrice,
+        posterName: task.poster_name || task.POSTER_NAME || 'The poster',
+        appId: appId,
+        taskId: taskId,
+        accepted: true
+      });
+    } catch (notifyErr) {
+      console.warn('Counter accept notification skipped:', notifyErr);
+    }
+  }
+  return result;
 }
 
 async function getAllApplications() {
@@ -1553,6 +1774,30 @@ async function cancelTask(taskId) {
   return result;
 }
 
+/** Admin moderation — cancel task and email poster + applicants with reason. */
+async function adminRemoveTaskWithReason(taskId, reason) {
+  taskId = String(taskId || '');
+  reason = String(reason || '').trim();
+  if (!taskId) return { success: false, error: 'missing_task' };
+  if (reason.length < 5) return { success: false, error: 'reason_required' };
+
+  var task = await getTaskById(taskId);
+  if (!task) return { success: false, error: 'not_found' };
+
+  var apps = await getApplicationsByTask(taskId);
+  var result = await cancelTask(taskId);
+  if (!result.success) return result;
+
+  if (typeof notifyAdminTaskRemoved === 'function') {
+    try {
+      await notifyAdminTaskRemoved(task, apps || [], reason);
+    } catch (notifyErr) {
+      console.warn('Admin task removal notification skipped:', notifyErr);
+    }
+  }
+  return { success: true };
+}
+
 /** Mark task + accepted application completed — used by both poster and tasker. */
 async function completeTask(taskId) {
   taskId = String(taskId);
@@ -1735,6 +1980,21 @@ var INAPP_BODY = {
   },
   new_message: function (p) {
     return (p.senderName || 'Someone') + ': “' + (p.preview || 'New message') + '”';
+  },
+  counter_offer_received: function (p) {
+    return (p.posterName || 'The poster') + ' countered at $' + (p.amount || '?') + ' for “' + (p.taskTitle || 'a task') + '”. Tap to respond.';
+  },
+  counter_offer_reply: function (p) {
+    return (p.workerName || 'A tasker') + ' countered back at $' + (p.amount || '?') + ' on “' + (p.taskTitle || 'a task') + '”.';
+  },
+  counter_offer_accepted: function (p) {
+    return (p.partyName || 'They') + ' accepted $' + (p.amount || '?') + ' for “' + (p.taskTitle || 'a task') + '”.';
+  },
+  task_removed_admin: function (p) {
+    return 'Your task “' + (p.taskTitle || '') + '” was removed. Reason: ' + (p.reason || 'See email for details');
+  },
+  task_removed_applicant: function (p) {
+    return '“' + (p.taskTitle || 'A task') + '” was removed — ' + (p.reason || 'see email for details');
   }
 };
 
@@ -1742,7 +2002,12 @@ var INAPP_TITLE = {
   application_received: function (p) { return '👤 New applicant'; },
   application_accepted: function (p) { return '🎉 You were hired!'; },
   task_completed: function (p) { return '✅ Task complete'; },
-  new_message: function (p) { return '💬 New message'; }
+  new_message: function (p) { return '💬 New message'; },
+  counter_offer_received: function (p) { return '💰 Counter offer'; },
+  counter_offer_reply: function (p) { return '↩️ Counter back'; },
+  counter_offer_accepted: function (p) { return '✓ Price agreed'; },
+  task_removed_admin: function (p) { return '🚫 Task removed'; },
+  task_removed_applicant: function (p) { return '🚫 Task removed'; }
 };
 
 async function pushInAppNotification(opts) {
@@ -1908,11 +2173,20 @@ window.getApplicationsByWorker = getApplicationsByWorker;
 window.getAllApplications = getAllApplications;
 window.submitApplication = submitApplication;
 window.updateApplicationStatus = updateApplicationStatus;
+window.patchApplicationFields = patchApplicationFields;
+window.posterSendCounterOffer = posterSendCounterOffer;
+window.workerRespondToCounter = workerRespondToCounter;
+window.posterRespondToCounter = posterRespondToCounter;
+window.isTaskBudgetNegotiable = isTaskBudgetNegotiable;
+window.parseNegotiationFields = parseNegotiationFields;
+window.hasPendingApplicationCounter = hasPendingApplicationCounter;
+window.getEffectiveApplicationPrice = getEffectiveApplicationPrice;
 window.formatSupabaseActionError = formatSupabaseActionError;
 window.formatUploadError = formatUploadError;
 window.cancelApplication = cancelApplication;
 window.declineApplication = declineApplication;
 window.cancelTask = cancelTask;
+window.adminRemoveTaskWithReason = adminRemoveTaskWithReason;
 window.completeTask = completeTask;
 window.releaseAcceptedTasker = releaseAcceptedTasker;
 window.declinePendingApplicationsForTask = declinePendingApplicationsForTask;

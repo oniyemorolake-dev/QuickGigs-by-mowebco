@@ -277,6 +277,20 @@ Run in **Supabase → SQL Editor** (safe to re-run where noted):
 | New chat message | ✅ In-app bell (`new_message`); email if Edge Function configured |
 | Waitlist invite / reminder | ✅ Admin Send invite + Send reminder (`waitlist_invite`, `waitlist_reminder`) |
 | Password reset | ✅ Firebase |
+| Counter-offer on application | ✅ Bell + email (`counter_offer_received`, `counter_offer_reply`, `counter_offer_accepted`) |
+
+## Negotiable budgets + counter-offers (beta)
+
+- **Post task:** Fixed (non-negotiable) or Negotiable (“Around $X, open to offers”)
+- **Browse:** Negotiable badge on cards; fixed tasks lock offer to poster budget
+- **My Tasks → Posted:** Poster **Counter $…** on applicants (negotiable tasks only)
+- **My Tasks → Applied:** Tasker **Accept / Decline / Counter back** (max 2 rounds)
+- **Chat:** Schedule and details only — price stays on the application record
+- **SQL:** Run `supabase/negotiation.sql` in Supabase SQL Editor (also in `beta-setup-all.sql`)
+
+## Admin task deletion
+
+- **Admin → Tasks drawer → Delete task:** requires a reason, cancels the task, emails poster + applicants (`task_removed_admin`, `task_removed_applicant`), bell notification
 
 ## Email notifications — expected vs today
 

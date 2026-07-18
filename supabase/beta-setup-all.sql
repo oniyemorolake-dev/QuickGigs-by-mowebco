@@ -360,3 +360,11 @@ CREATE POLICY "anon_delete_waitlist" ON waitlist FOR DELETE TO anon USING (true)
 CREATE POLICY "anon_select_platform_banner" ON platform_banner FOR SELECT TO anon USING (true);
 CREATE POLICY "anon_insert_platform_banner" ON platform_banner FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon_update_platform_banner" ON platform_banner FOR UPDATE TO anon USING (true) WITH CHECK (true);
+
+-- ── NEGOTIABLE BUDGETS + COUNTER-OFFERS ──────────────────────────
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS budget_negotiable BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS counter_price NUMERIC;
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS counter_by TEXT;
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS counter_round INT NOT NULL DEFAULT 0;
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS last_counter_at TIMESTAMPTZ;
