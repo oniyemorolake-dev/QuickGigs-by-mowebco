@@ -142,9 +142,12 @@ async function sbGetOrThrow(table, filters, order, limit) {
   var controller = new AbortController();
   var timeoutId = setTimeout(function () { controller.abort(); }, 8000);
   try {
-    var url = SUPABASE_URL + '/rest/v1/' + table + '?order=' + (order || 'created_at.desc');
-    if (filters) url += '&' + filters;
-    if (limit) url += '&limit=' + limit;
+    var qs = [];
+    if (filters) qs.push(filters);
+    if (order === undefined) qs.push('order=created_at.desc');
+    else if (order) qs.push('order=' + order);
+    if (limit) qs.push('limit=' + limit);
+    var url = SUPABASE_URL + '/rest/v1/' + table + (qs.length ? '?' + qs.join('&') : '');
     var headers = await getSupabaseHeaders();
     var res = await fetch(url, { method: 'GET', headers: headers, signal: controller.signal });
     if (!res.ok) {

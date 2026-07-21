@@ -129,7 +129,7 @@
 
   async function fetchBanner() {
     if (typeof sbGet !== 'function') return null;
-    var rows = await sbGet('platform_banner', 'id=eq.1', null, 1);
+    var rows = await sbGet('platform_banner', 'id=eq.1', 'id.asc', 1);
     return rows && rows[0] ? rows[0] : null;
   }
 

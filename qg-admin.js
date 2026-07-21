@@ -766,7 +766,7 @@
 
   async function loadPlatformBannerForm() {
     if (typeof sbGet !== 'function') return;
-    var rows = await sbGet('platform_banner', 'id=eq.1', null, 1);
+    var rows = await sbGet('platform_banner', 'id=eq.1', 'id.asc', 1);
     var statusEl = document.getElementById('bannerDbStatus');
     if (!rows || !rows.length) {
       if (statusEl) {
@@ -818,7 +818,7 @@
       }
     }
 
-    var savedRows = await sbGet('platform_banner', 'id=eq.1', null, 1);
+    var savedRows = await sbGet('platform_banner', 'id=eq.1', 'id.asc', 1);
     var saved = savedRows && savedRows[0] ? savedRows[0] : null;
     if (!saved) {
       showToast('Save failed — run supabase/soft-close.sql in Supabase SQL Editor, then try again', 'red');
