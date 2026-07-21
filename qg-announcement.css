@@ -80,6 +80,46 @@ body.light .qg-platform-banner.is-warn {
   opacity: 1;
 }
 
+.qg-soft-close-box {
+  text-align: center;
+  padding: 20px 16px;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.22);
+  border-radius: 16px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.qg-soft-close-title {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #fde68a;
+  margin-bottom: 10px;
+}
+
+.qg-soft-close-sub {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.5;
+}
+
+.qg-soft-close-block {
+  max-width: 420px;
+  margin: 0 auto 20px;
+  padding: 18px 16px;
+  border-radius: 14px;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.qg-soft-close-block a {
+  color: #c8a8e9;
+}
+
 .admin-import-box {
   width: 100%;
   min-height: 120px;

@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS platform_banner (
   link       TEXT,
   style      TEXT NOT NULL DEFAULT 'info',
   active     BOOLEAN NOT NULL DEFAULT FALSE,
+  soft_close BOOLEAN NOT NULL DEFAULT FALSE,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

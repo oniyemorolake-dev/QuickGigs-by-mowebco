@@ -1,10 +1,17 @@
-/* QuickGigs — platform announcement banner (admin-controlled) */
+/* QuickGigs — platform announcement banner + admin soft close */
 (function () {
-  var SKIP = { login: 1, signup: 1, 'parent-consent': 1, admin: 1, index: 1, terms: 1, privacy: 1 };
+  var SKIP = { admin: 1, terms: 1, privacy: 1 };
+  var BLOCK_PAGES = { posttask: 1, browsetask: 1, signup: 1 };
+  var ADMIN_EMAIL = (window.QG_CONFIG && window.QG_CONFIG.adminEmail) || 'mowebsiteco@gmail.com';
 
   function pageKey() {
     var path = (window.location.pathname || '').split('/').pop() || 'index.html';
     return path.replace(/\.html$/i, '') || 'index';
+  }
+
+  function isAdminUser() {
+    var u = window._currentUser;
+    return !!(u && u.email && String(u.email).toLowerCase() === String(ADMIN_EMAIL).toLowerCase());
   }
 
   function loadCss() {
@@ -12,7 +19,7 @@
     var link = document.createElement('link');
     link.id = 'qg-announce-css';
     link.rel = 'stylesheet';
-    link.href = 'qg-announcement.css?v=1';
+    link.href = 'qg-announcement.css?v=2';
     document.head.appendChild(link);
   }
 
@@ -27,6 +34,7 @@
 
   function injectBanner(banner) {
     if (!banner || !banner.active || !banner.message) return;
+    if (banner.soft_close) return;
     if (localStorage.getItem(dismissKey(banner)) === '1') return;
 
     var existing = document.getElementById('qgPlatformBanner');
@@ -61,18 +69,73 @@
     }
   }
 
+  function applyIndexSoftClose(banner) {
+    var wrap = document.getElementById('ctaWrap');
+    var badge = document.querySelector('.beta-badge');
+    if (badge) {
+      badge.textContent = '🔒 Beta closed · Launching soon';
+      badge.style.color = '#fde68a';
+      badge.style.background = 'rgba(251,191,36,0.12)';
+      badge.style.borderColor = 'rgba(251,191,36,0.25)';
+    }
+    if (wrap) {
+      wrap.innerHTML =
+        '<div class="qg-soft-close-box">' +
+          '<p class="qg-soft-close-title">' + esc(banner.message || 'QuickGigs beta is closed while we prepare for launch.') + '</p>' +
+          (banner.link ? '<p class="qg-soft-close-sub"><a href="' + esc(banner.link) + '" style="color:var(--al)">Learn more →</a></p>' : '') +
+          '<p class="qg-soft-close-sub">Already have an account? <a href="login.html" style="color:var(--al);font-weight:500">Log in</a></p>' +
+        '</div>';
+    }
+  }
+
+  function applySignupSoftClose(banner) {
+    var card = document.querySelector('.signup-card') || document.querySelector('.signup-page');
+    if (!card) return;
+    var msg = banner.message || 'Sign-ups are paused while we prepare for launch.';
+    var block = document.createElement('div');
+    block.className = 'qg-soft-close-block';
+    block.innerHTML = '<p><strong>Beta closed</strong></p><p>' + esc(msg) + '</p>' +
+      '<p style="margin-top:12px"><a href="index.html">← Back to home</a> · <a href="login.html">Log in</a></p>';
+    card.parentNode.insertBefore(block, card);
+    card.style.display = 'none';
+  }
+
+  function applySoftClose(banner) {
+    if (!banner || !banner.active || !banner.soft_close) return false;
+    if (isAdminUser()) return false;
+
+    var key = pageKey();
+    if (key === 'index') {
+      applyIndexSoftClose(banner);
+      return true;
+    }
+    if (key === 'signup') {
+      applySignupSoftClose(banner);
+      return true;
+    }
+    if (BLOCK_PAGES[key]) {
+      window.location.replace('index.html?closed=1');
+      return true;
+    }
+    return false;
+  }
+
   async function fetchBanner() {
     if (typeof sbGet !== 'function') return null;
     var rows = await sbGet('platform_banner', 'id=eq.1', null, 1);
     return rows && rows[0] ? rows[0] : null;
   }
 
-  async function showBanner() {
+  async function applyPlatformState() {
     try {
       var banner = await fetchBanner();
-      if (banner) injectBanner(banner);
+      if (!banner) return null;
+      if (applySoftClose(banner)) return banner;
+      injectBanner(banner);
+      return banner;
     } catch (err) {
       console.warn('Platform banner load failed:', err);
+      return null;
     }
   }
 
@@ -82,12 +145,12 @@
     var tries = 0;
     var timer = setInterval(function () {
       if (typeof sbGet !== 'function') {
-        if (++tries > 25) clearInterval(timer);
+        if (++tries > 40) clearInterval(timer);
         return;
       }
       clearInterval(timer);
       window.__qgAnnounceInit = true;
-      showBanner();
+      applyPlatformState();
     }, 250);
   }
 
@@ -97,5 +160,6 @@
     init();
   }
 
-  window.QG_refreshPlatformBanner = showBanner;
+  window.QG_refreshPlatformBanner = applyPlatformState;
+  window.QG_fetchPlatformBanner = fetchBanner;
 })();

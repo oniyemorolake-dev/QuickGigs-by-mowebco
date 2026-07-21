@@ -17,7 +17,8 @@ window.QG_CONFIG = {
   ga4ConversionLabel: '',
   // P2 — trust & moderation
   autoBanAfterWarnings: 3,
-  paymentsEnabled: false
+  paymentsEnabled: false,
+  adminEmail: 'mowebsiteco@gmail.com'
 };
 
 // Returns whether a new conversation should start unlocked.

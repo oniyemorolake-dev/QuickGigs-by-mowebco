@@ -767,15 +767,17 @@
   async function loadPlatformBannerForm() {
     if (typeof sbGet !== 'function') return;
     var rows = await sbGet('platform_banner', 'id=eq.1', null, 1);
-    var b = rows && rows[0] ? rows[0] : { message: '', link: '', style: 'info', active: false };
+    var b = rows && rows[0] ? rows[0] : { message: '', link: '', style: 'info', active: false, soft_close: false };
     var msg = document.getElementById('bannerMessage');
     var link = document.getElementById('bannerLink');
     var style = document.getElementById('bannerStyle');
     var active = document.getElementById('bannerActive');
+    var softClose = document.getElementById('bannerSoftClose');
     if (msg) msg.value = b.message || '';
     if (link) link.value = b.link || '';
     if (style) style.value = b.style || 'info';
     if (active) active.checked = !!b.active;
+    if (softClose) softClose.checked = !!b.soft_close;
   }
 
   async function adminSaveBanner() {
@@ -784,17 +786,28 @@
       link: (document.getElementById('bannerLink').value || '').trim(),
       style: document.getElementById('bannerStyle').value || 'info',
       active: !!document.getElementById('bannerActive').checked,
+      soft_close: !!document.getElementById('bannerSoftClose').checked,
       updated_at: new Date().toISOString()
     };
+    if (!patch.message && (patch.active || patch.soft_close)) {
+      showToast('Add a message before publishing', 'red');
+      return;
+    }
+    if (patch.soft_close) patch.active = true;
+
     var result = await sbUpdate('platform_banner', patch, 'id=eq.1');
-    if (!result.success && typeof sbPostReturn === 'function') {
+    if ((!result.success || result.notFound) && typeof sbPostReturn === 'function') {
       result = await sbPostReturn('platform_banner', Object.assign({ id: 1 }, patch));
+    }
+    if ((!result.success || result.notFound) && typeof sbPost === 'function') {
+      result = await sbPost('platform_banner', Object.assign({ id: 1 }, patch));
     }
     if (result.success) {
       await logAdminAction('banner_update', 'platform', '1', patch);
-      showToast(patch.active ? 'Banner published' : 'Banner saved (off)', 'green');
+      var label = patch.soft_close ? 'Soft close is LIVE' : (patch.active ? 'Banner published' : 'Banner saved (off)');
+      showToast(label, 'green');
     } else {
-      showToast('Could not save banner — run waitlist-banner.sql', 'red');
+      showToast('Could not save — run supabase/soft-close.sql (or waitlist-banner.sql)', 'red');
     }
   }
 
