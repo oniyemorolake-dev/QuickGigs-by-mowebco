@@ -96,6 +96,24 @@ In **Supabase → SQL Editor**, run any you haven’t yet:
 | `supabase/admin-tools.sql` | Admin notes / flags |
 | `supabase/waitlist-banner.sql` | Waitlist + announcement banner |
 | `supabase/storage-beta-fix.sql` | Photo upload 403 fix |
+| `supabase/negotiation.sql` | Negotiable budgets + counter-offers |
+| `supabase/payments.sql` | **Before launch** — escrow payment records |
+| `supabase/stripe-connect.sql` | Worker Stripe Connect accounts |
+| **[STRIPE-SETUP.md](STRIPE-SETUP.md)** | Deploy Checkout + webhook (Phase 4) |
+
+---
+
+## Beta complete → launch prep
+
+**You’re done with closed beta** (2 completed gigs, engineers OK).  
+Full launch checklist: **[LAUNCH-PREP.md](LAUNCH-PREP.md)**
+
+**Your next steps (in order):**
+
+1. Run `supabase/payments.sql` in Supabase SQL Editor  
+2. Create / finish **Stripe** account (Test mode) — Connect Express  
+3. Tell us when ready → we wire `payment.html` + Edge Function (Phase 4 in LAUNCH-PREP.md)  
+4. Launch day: flip `chatUnlockAfter` to `'payment'`, run `rls-secure.sql`
 
 ---
 

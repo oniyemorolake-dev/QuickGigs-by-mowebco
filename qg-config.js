@@ -18,6 +18,11 @@ window.QG_CONFIG = {
   // P2 — trust & moderation
   autoBanAfterWarnings: 3,
   paymentsEnabled: false,
+  // Paste pk_test_... after deploying Edge Functions (see STRIPE-SETUP.md)
+  stripePublishableKey: '',
+  createCheckoutUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-checkout',
+  connectLinkUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-connect-link',
+  platformFeePercent: 25,
   adminEmail: 'mowebsiteco@gmail.com'
 };
 

@@ -1124,7 +1124,10 @@ function renderTab(){
           (otherUserId ? reportButtonHtml('user', otherUserId, otherName) : '')
         : '';
       var posterActions = isPosterTask
-        ? '<button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')">💬 Message</button>' +
+        ? (isPaymentGatedChat()
+          ? '<a class="act-btn btn-primary" href="payment.html?task='+encodeURIComponent(String(taskId))+'">💳 Pay &amp; unlock chat</a>'
+          : '') +
+          '<button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')">💬 Message</button>' +
           '<button class="act-btn btn-success" onclick="markComplete('+JSON.stringify(String(taskId))+', this)">✓ Mark complete</button>' +
           '<button class="act-btn btn-primary" onclick="confirmChangeTasker('+JSON.stringify(String(taskId))+')">↩ Change tasker</button>' +
           '<button class="act-btn btn-danger" data-cancel-inprogress="'+escAttr(taskId)+'">✕ Cancel task</button>'
@@ -1343,6 +1346,9 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
     }, 900);
   } else if (isPaymentGatedChat()) {
     showToast('Accepted ' + workerName + '! Complete payment to unlock chat.');
+    setTimeout(function () {
+      window.location.href = 'payment.html?task=' + encodeURIComponent(taskId);
+    }, 900);
   } else {
     showToast('Accepted ' + workerName + '! Moved to In Progress 💬');
   }

@@ -17,15 +17,23 @@ body.light .card{background:#fff;border-color:#e8e2ff;}
 h1{font-size:20px;font-weight:500;text-align:center;margin-bottom:10px;}
 p{font-size:14px;color:rgba(255,255,255,0.55);line-height:1.65;text-align:center;margin-bottom:18px;}
 body.light p{color:#5a5a72;}
-.steps{text-align:left;font-size:13px;line-height:1.7;color:rgba(255,255,255,0.7);margin:18px 0 22px;padding-left:18px;}
-body.light .steps{color:#5a5a72;}
+.amount-box{background:rgba(107,63,160,0.15);border:0.5px solid rgba(200,168,233,0.2);border-radius:14px;padding:16px;margin-bottom:18px;text-align:center;}
+.amount-val{font-size:32px;font-weight:500;color:#c8a8e9;line-height:1;}
+.amount-sub{font-size:12px;color:rgba(255,255,255,0.45);margin-top:6px;}
+body.light .amount-sub{color:#5a5a72;}
+.task-title{font-size:13px;color:rgba(255,255,255,0.7);margin-top:10px;line-height:1.5;}
+body.light .task-title{color:#5a5a72;}
 .escrow-box{background:rgba(107,63,160,0.15);border:0.5px solid rgba(200,168,233,0.2);border-radius:14px;padding:14px;margin-bottom:18px;font-size:12px;line-height:1.6;color:#c8a8e9;}
 body.light .escrow-box{background:#f0eeff;color:#6b3fa0;border-color:#e0d8ff;}
 .btn{display:block;width:100%;padding:14px;border-radius:13px;border:none;background:#6b3fa0;color:#fff;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;text-align:center;margin-top:8px;min-height:44px;}
+.btn:disabled{opacity:0.45;cursor:not-allowed;}
 .btn-secondary{background:transparent;border:0.5px solid rgba(200,168,233,0.25);color:rgba(255,255,255,0.7);}
 body.light .btn-secondary{border-color:#e8e2ff;color:#6b3fa0;}
-.note{font-size:12px;text-align:center;margin-top:16px;color:rgba(255,255,255,0.35);}
+.note{font-size:12px;text-align:center;margin-top:16px;color:rgba(255,255,255,0.35);line-height:1.55;}
 body.light .note{color:#9ca3af;}
+.warn{background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.25);border-radius:12px;padding:12px;font-size:12px;line-height:1.55;color:#fde68a;margin-bottom:14px;text-align:left;}
+.success{color:#4ade80;}
+.error{color:#f87171;}
 </style>
 </head>
 <body>
@@ -34,33 +42,34 @@ body.light .note{color:#9ca3af;}
 <script src="qg-config.js"></script>
 <script src="qg-mobile.js"></script>
 <script src="supabase-db.js"></script>
+<script src="qg-stripe.js"></script>
 
 <div class="card">
-  <div class="icon">💳</div>
-  <h1>Pay to unlock chat</h1>
-  <p>Your payment is held safely until you confirm the job is done. The tasker is not paid until then.</p>
-  <div class="escrow-box">
-    <strong>How escrow works</strong><br>
-    1. You pay when you accept a worker<br>
-    2. QuickGigs holds the money (not the tasker yet)<br>
-    3. Chat unlocks so you can coordinate<br>
-    4. When you mark the task complete, payment is released<br>
-    5. Chat locks again after completion
+  <div class="icon" id="payIcon">💳</div>
+  <h1 id="payTitle">Pay to unlock chat</h1>
+  <p id="paySub">Your payment is held safely until you confirm the job is done.</p>
+  <div class="amount-box" id="amountBox" style="display:none">
+    <div class="amount-val" id="amountVal">$0</div>
+    <div class="amount-sub">CAD · includes QuickGigs platform fee</div>
+    <div class="task-title" id="taskTitle"></div>
   </div>
-  <ol class="steps">
-    <li>Accept a worker in <strong>My Tasks</strong></li>
-    <li>Pay here via Stripe (coming at launch)</li>
-    <li>Chat opens — no phone numbers needed</li>
-    <li>Confirm completion to release payment</li>
-  </ol>
-  <button class="btn" id="payBtn" disabled>Stripe checkout — coming at launch</button>
-  <a class="btn btn-secondary" href="mytasks.html?tab=inprogress">Back to My Tasks</a>
-  <p class="note">Payment confirmation will show as “Escrow paid” in chat once Stripe is live.</p>
+  <div class="escrow-box" id="escrowBox">
+    <strong>How it works</strong><br>
+    1. Pay when you accept a worker<br>
+    2. Chat unlocks so you can coordinate<br>
+    3. Mark complete when the job is done<br>
+    4. Tasker receives payout via Stripe Connect
+  </div>
+  <div id="payMsg"></div>
+  <button class="btn" id="payBtn" disabled>Loading…</button>
+  <a class="btn btn-secondary" id="backBtn" href="mytasks.html?tab=inprogress">Back to My Tasks</a>
+  <p class="note" id="payNote">Use Stripe Test card 4242 4242 4242 4242 while in Test mode.</p>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
   authDomain: "quickgigs-7b12d.firebaseapp.com",
@@ -71,9 +80,128 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-onAuthStateChanged(auth, function(user) {
+
+function qs(name) {
+  return new URLSearchParams(window.location.search).get(name) || '';
+}
+
+function getField(row, key) {
+  if (!row) return '';
+  var lower = key.toLowerCase();
+  for (var k in row) if (Object.prototype.hasOwnProperty.call(row, k) && k.toLowerCase() === lower) return row[k];
+  return '';
+}
+
+function resolveAmount(task, app) {
+  var price = getField(app, 'price');
+  if (price != null && price !== '') return Number(price);
+  return Number(getField(task, 'budget') || 0);
+}
+
+function setMsg(html, cls) {
+  var el = document.getElementById('payMsg');
+  el.innerHTML = html ? '<p class="' + (cls || '') + '" style="font-size:13px;text-align:center;margin-bottom:12px">' + html + '</p>' : '';
+}
+
+async function loadPaymentPage(user) {
+  var taskId = qs('task');
+  var payBtn = document.getElementById('payBtn');
+  if (!taskId) {
+    setMsg('Missing task.', 'error');
+    payBtn.textContent = 'Invalid link';
+    return;
+  }
+
+  if (!window.QG_paymentsLive || !window.QG_paymentsLive()) {
+    setMsg('Payments not live yet. Deploy Edge Functions and add your <strong>pk_test_</strong> key — see <strong>STRIPE-SETUP.md</strong>.', 'warn');
+    payBtn.textContent = 'Setup required';
+    payBtn.disabled = true;
+    return;
+  }
+
+  var task = typeof getTaskById === 'function' ? await getTaskById(taskId) : null;
+  if (!task) {
+    setMsg('Task not found.', 'error');
+    payBtn.textContent = 'Task not found';
+    return;
+  }
+
+  if (String(getField(task, 'posted_by')) !== String(user.uid)) {
+    setMsg('Only the poster can pay for this task.', 'error');
+    payBtn.textContent = 'Not allowed';
+    return;
+  }
+
+  var apps = typeof getApplicationsByTask === 'function'
+    ? await getApplicationsByTask(taskId)
+    : [];
+  var accepted = (apps || []).find(function (a) {
+    return String(getField(a, 'status') || '').toLowerCase() === 'accepted';
+  });
+  if (!accepted) {
+    setMsg('Accept a worker first, then return here to pay.', 'warn');
+    payBtn.textContent = 'Accept a worker first';
+    payBtn.disabled = true;
+    document.getElementById('backBtn').href = 'mytasks.html?tab=posted';
+    return;
+  }
+
+  var amount = resolveAmount(task, accepted);
+  document.getElementById('amountBox').style.display = 'block';
+  document.getElementById('amountVal').textContent = '$' + amount.toFixed(2);
+  document.getElementById('taskTitle').textContent = getField(task, 'title') || 'Task';
+
+  var existing = typeof getPaymentByTask === 'function' ? await getPaymentByTask(taskId) : null;
+  var paidStatus = existing && ['held', 'completed', 'paid'].indexOf(String(existing.status || '').toLowerCase()) >= 0;
+
+  if (paidStatus || qs('paid') === '1') {
+    document.getElementById('payIcon').textContent = '✅';
+    document.getElementById('payTitle').textContent = 'Payment received';
+    document.getElementById('paySub').textContent = 'Chat is unlocked. Coordinate with your tasker in Messages.';
+    setMsg('Escrow paid — you can open chat now.', 'success');
+    payBtn.textContent = 'Open chat';
+    payBtn.disabled = false;
+    payBtn.onclick = async function () {
+      var workerId = getField(accepted, 'worker_id');
+      var conv = typeof getConversationForTask === 'function'
+        ? await getConversationForTask(taskId, user.uid, workerId)
+        : null;
+      if (conv && conv.conv_id) {
+        window.location.href = 'chat.html?conv=' + encodeURIComponent(conv.conv_id);
+      } else {
+        window.location.href = 'messages.html';
+      }
+    };
+    document.getElementById('escrowBox').style.display = 'none';
+    return;
+  }
+
+  if (qs('cancelled') === '1') {
+    setMsg('Payment cancelled — you can try again when ready.', 'warn');
+  }
+
+  payBtn.textContent = 'Pay $' + amount.toFixed(2) + ' with Stripe';
+  payBtn.disabled = false;
+  payBtn.onclick = async function () {
+    payBtn.disabled = true;
+    payBtn.textContent = 'Redirecting to Stripe…';
+    var result = await window.QG_startCheckout(taskId, user.uid);
+    if (result.ok && result.url) {
+      window.location.href = result.url;
+      return;
+    }
+    var err = result.error || 'Could not start checkout';
+    if (err === 'stripe_not_configured') err = 'Stripe secret not set in Supabase — see STRIPE-SETUP.md';
+    setMsg(err, 'error');
+    payBtn.disabled = false;
+    payBtn.textContent = 'Try again';
+  };
+}
+
+onAuthStateChanged(auth, function (user) {
   if (!user) { window.location.href = 'login.html'; return; }
   window._currentUser = user;
+  loadPaymentPage(user);
 });
 </script>
 </body>

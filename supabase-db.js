@@ -1942,8 +1942,13 @@ async function submitReview(reviewData) {
 }
 
 async function getPaymentByTask(taskId) {
-  var results = await sbGet('payments', 'task_id=eq.' + taskId);
-  return results[0] || null;
+  var results = await sbGet('payments', 'task_id=eq.' + encodeURIComponent(String(taskId)), 'created_at.desc', 5);
+  if (!results || !results.length) return null;
+  var paid = results.find(function (p) {
+    var st = String(p.status || '').toLowerCase();
+    return st === 'held' || st === 'completed' || st === 'paid';
+  });
+  return paid || results[0];
 }
 
 async function savePayment(paymentData) {

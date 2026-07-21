@@ -361,6 +361,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 </div>
 
 <div class="qg-action-row" id="profileShareReport" style="justify-content:center;padding:0 20px 8px;display:none"></div>
+<div id="profilePayoutBox" style="display:none;padding:0 20px 16px;max-width:520px;margin:0 auto"></div>
 
 <div class="divider"></div>
 
@@ -542,6 +543,7 @@ onAuthStateChanged(auth, (user) => {
 <script src="qg-utils.js"></script>
 <script src="qg-config.js"></script>
 <script src="supabase-db.js"></script>
+<script src="qg-stripe.js"></script>
 <script src="qg-pwa.js?v=4"></script>
 <script src="qg-share.js"></script>
 <script src="qg-report.js?v=20260716d"></script>
@@ -900,6 +902,7 @@ async function loadProfile(user) {
 
   renderProfile(user, isOwnProfile);
   renderProfileActions(targetId, profileData.name, isOwnProfile);
+  renderPayoutSetup(user, isOwnProfile);
 
   if (isOwnProfile && params.get('welcome') === '1' && !sessionStorage.getItem('qg-welcome-confetti')) {
     sessionStorage.setItem('qg-welcome-confetti', '1');
@@ -1010,6 +1013,40 @@ function renderProfileActions(targetId, displayName, isOwnProfile) {
   row.innerHTML = shareBtn + reportBtn;
   if (typeof bindShareTriggers === 'function') bindShareTriggers(row);
   if (typeof bindReportTriggers === 'function') bindReportTriggers(row);
+}
+
+function renderPayoutSetup(user, isOwnProfile) {
+  var box = document.getElementById('profilePayoutBox');
+  if (!box || !isOwnProfile || !user) {
+    if (box) box.style.display = 'none';
+    return;
+  }
+  if (typeof window.QG_paymentsLive !== 'function' || !window.QG_paymentsLive()) {
+    box.style.display = 'none';
+    return;
+  }
+  box.style.display = 'block';
+  box.innerHTML =
+    '<div style="background:rgba(107,63,160,0.12);border:1px solid rgba(200,168,233,0.2);border-radius:14px;padding:14px;text-align:center">' +
+      '<div style="font-size:13px;font-weight:500;margin-bottom:6px">💳 Tasker payouts</div>' +
+      '<div style="font-size:12px;color:var(--text-muted);line-height:1.55;margin-bottom:12px">Connect Stripe to get paid when posters complete tasks. Required before you can receive marketplace payouts.</div>' +
+      '<button type="button" class="empty-btn" id="stripeConnectBtn" style="margin:0 auto">Set up payouts</button>' +
+    '</div>';
+  var btn = document.getElementById('stripeConnectBtn');
+  if (!btn || btn._bound) return;
+  btn._bound = true;
+  btn.onclick = async function () {
+    btn.disabled = true;
+    btn.textContent = 'Opening Stripe…';
+    var result = await window.QG_startConnectOnboarding(user.uid, user.email || '');
+    if (result.ok && result.url) {
+      window.location.href = result.url;
+      return;
+    }
+    btn.disabled = false;
+    btn.textContent = 'Set up payouts';
+    alert(result.error || 'Could not open Stripe setup — deploy create-connect-link first (see STRIPE-SETUP.md).');
+  };
 }
 
 async function renderReviews(reviews) {
