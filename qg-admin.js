@@ -767,7 +767,21 @@
   async function loadPlatformBannerForm() {
     if (typeof sbGet !== 'function') return;
     var rows = await sbGet('platform_banner', 'id=eq.1', null, 1);
-    var b = rows && rows[0] ? rows[0] : { message: '', link: '', style: 'info', active: false, soft_close: false };
+    var statusEl = document.getElementById('bannerDbStatus');
+    if (!rows || !rows.length) {
+      if (statusEl) {
+        statusEl.textContent = 'Database not ready — run supabase/soft-close.sql in Supabase SQL Editor, then refresh.';
+        statusEl.style.color = 'var(--red, #f87171)';
+      }
+      return;
+    }
+    var b = rows[0];
+    if (statusEl) {
+      statusEl.textContent = b.soft_close
+        ? 'Live: soft close ON (homepage sign-up hidden)'
+        : (b.active ? 'Live: announcement banner only' : 'Saved: banner off');
+      statusEl.style.color = b.soft_close ? 'var(--amber, #fbbf24)' : 'var(--text-faint)';
+    }
     var msg = document.getElementById('bannerMessage');
     var link = document.getElementById('bannerLink');
     var style = document.getElementById('bannerStyle');
@@ -796,18 +810,40 @@
     if (patch.soft_close) patch.active = true;
 
     var result = await sbUpdate('platform_banner', patch, 'id=eq.1');
-    if ((!result.success || result.notFound) && typeof sbPostReturn === 'function') {
-      result = await sbPostReturn('platform_banner', Object.assign({ id: 1 }, patch));
+    if (!result.success || result.notFound) {
+      if (typeof sbPostReturn === 'function') {
+        result = await sbPostReturn('platform_banner', Object.assign({ id: 1 }, patch));
+      } else if (typeof sbPost === 'function') {
+        result = await sbPost('platform_banner', Object.assign({ id: 1 }, patch));
+      }
     }
-    if ((!result.success || result.notFound) && typeof sbPost === 'function') {
-      result = await sbPost('platform_banner', Object.assign({ id: 1 }, patch));
+
+    var savedRows = await sbGet('platform_banner', 'id=eq.1', null, 1);
+    var saved = savedRows && savedRows[0] ? savedRows[0] : null;
+    if (!saved) {
+      showToast('Save failed — run supabase/soft-close.sql in Supabase SQL Editor, then try again', 'red');
+      return;
     }
-    if (result.success) {
+    if (patch.soft_close && !saved.soft_close) {
+      showToast('Soft close did not save — run supabase/soft-close.sql in Supabase, then try again', 'red');
+      return;
+    }
+    if (patch.active && !saved.active && !patch.soft_close) {
+      showToast('Banner did not save — check Supabase platform_banner table', 'red');
+      return;
+    }
+
+    if (result.success || saved) {
       await logAdminAction('banner_update', 'platform', '1', patch);
-      var label = patch.soft_close ? 'Soft close is LIVE' : (patch.active ? 'Banner published' : 'Banner saved (off)');
+      var label = saved.soft_close ? 'Soft close is LIVE' : (saved.active ? 'Banner published' : 'Banner saved (off)');
       showToast(label, 'green');
+      var activeEl = document.getElementById('bannerActive');
+      var softCloseEl = document.getElementById('bannerSoftClose');
+      if (softCloseEl) softCloseEl.checked = !!saved.soft_close;
+      if (activeEl) activeEl.checked = !!saved.active;
+      await loadPlatformBannerForm();
     } else {
-      showToast('Could not save — run supabase/soft-close.sql (or waitlist-banner.sql)', 'red');
+      showToast('Could not save — run supabase/soft-close.sql in Supabase SQL Editor', 'red');
     }
   }
 

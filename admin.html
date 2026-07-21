@@ -357,7 +357,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="admin-field"><label>Style</label><select id="bannerStyle"><option value="info">Info (purple)</option><option value="success">Success (green)</option><option value="warn">Warning (amber)</option></select></div>
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);margin:12px 0 6px"><input type="checkbox" id="bannerActive"> Show banner live on site (announcement only)</label>
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);margin:0 0 12px"><input type="checkbox" id="bannerSoftClose"> <strong>Soft close</strong> — hide sign-up &amp; block post/browse (login OK)</label>
+      <p style="font-size:11px;color:var(--text-faint);margin:0 0 12px;line-height:1.5">First time? Run <code style="font-size:10px">supabase/soft-close.sql</code> in Supabase SQL Editor. Preview the closed homepage in an incognito window (or log out) — your admin account bypasses soft close on app pages.</p>
       <button type="button" class="admin-drawer-btn primary" onclick="adminSaveBanner()">Save &amp; publish banner</button>
+      <p id="bannerDbStatus" style="font-size:11px;color:var(--text-faint);margin-top:10px;line-height:1.5"></p>
     </div>
     <div class="mini-card" style="margin-bottom:14px">
       <div class="mc-title">Platform fees</div>
@@ -436,7 +438,7 @@ window.doLogout = function() { signOut(auth).then(function(){ window.location.hr
 <script src="supabase-db.js"></script>
 <script src="qg-notifications.js"></script>
 <script src="qg-stats.js"></script>
-<script src="qg-admin.js?v=5"></script>
+<script src="qg-admin.js?v=6"></script>
 <script>
 var SB_HEADERS = window.SB_HEADERS;
 var users=[],tasks=[],disputes=[],reports=[],applications=[],adminNotes=[],adminActions=[],waitlist=[],selectedUsers=[],pendingFn=null,currentSection='overview';

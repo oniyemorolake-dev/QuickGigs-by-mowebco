@@ -246,7 +246,7 @@ async function sbUpdate(table, data, filters) {
       return { success: true, data: rows };
     }
     if (res.ok) {
-      return { success: true, data: [], minimal: true };
+      return { success: false, error: 'No matching row updated', notFound: true, minimal: true };
     }
     return { success: false, error: 'No matching row updated', notFound: true };
   } catch (err) {

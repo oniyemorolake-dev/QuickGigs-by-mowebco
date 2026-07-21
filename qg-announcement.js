@@ -14,12 +14,19 @@
     return !!(u && u.email && String(u.email).toLowerCase() === String(ADMIN_EMAIL).toLowerCase());
   }
 
+  function shouldBypassSoftClose() {
+    if (!isAdminUser()) return false;
+    var key = pageKey();
+    if (key === 'index' || key === 'signup') return false;
+    return true;
+  }
+
   function loadCss() {
     if (document.getElementById('qg-announce-css')) return;
     var link = document.createElement('link');
     link.id = 'qg-announce-css';
     link.rel = 'stylesheet';
-    link.href = 'qg-announcement.css?v=2';
+    link.href = 'qg-announcement.css?v=3';
     document.head.appendChild(link);
   }
 
@@ -102,7 +109,7 @@
 
   function applySoftClose(banner) {
     if (!banner || !banner.active || !banner.soft_close) return false;
-    if (isAdminUser()) return false;
+    if (shouldBypassSoftClose()) return false;
 
     var key = pageKey();
     if (key === 'index') {
