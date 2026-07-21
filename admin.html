@@ -351,12 +351,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div id="section-settings" style="display:none">
     <div class="mini-card" style="margin-bottom:14px">
       <div class="mc-title">Platform announcement banner</div>
-      <p style="font-size:12px;color:var(--text-faint);margin-bottom:12px;line-height:1.5">Shows on homepage, dashboard, browse, and messages. Turn on <strong>Soft close</strong> to hide sign-up buttons and block new posts/browse while launch prep runs. Login still works for existing users.</p>
-      <div class="admin-field"><label>Message</label><textarea id="bannerMessage" class="admin-import-box" style="min-height:60px" placeholder="Beta closed — we are launching soon with Stripe payments. Thanks for testing!"></textarea></div>
+      <p style="font-size:12px;color:var(--text-faint);margin-bottom:12px;line-height:1.5">Shows on homepage, dashboard, browse, and messages. Turn on <strong>Soft close</strong> to hide sign-up buttons and block new posts/browse while launch prep runs.</p>
+      <div class="admin-field"><label>Message</label><textarea id="bannerMessage" class="admin-import-box" style="min-height:60px" placeholder="Beta is closed while we prepare for launch with secure payments. Thanks for testing — we will be back soon at quickgigs.ca."></textarea></div>
       <div class="admin-field"><label>Link (optional)</label><input id="bannerLink" type="url" placeholder="https://quickgigs.ca/how-it-works.html"></div>
       <div class="admin-field"><label>Style</label><select id="bannerStyle"><option value="info">Info (purple)</option><option value="success">Success (green)</option><option value="warn">Warning (amber)</option></select></div>
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);margin:12px 0 6px"><input type="checkbox" id="bannerActive"> Show banner live on site (announcement only)</label>
-      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);margin:0 0 12px"><input type="checkbox" id="bannerSoftClose"> <strong>Soft close</strong> — hide sign-up &amp; block post/browse (login OK)</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);margin:0 0 12px"><input type="checkbox" id="bannerSoftClose"> <strong>Soft close</strong> — hide sign-up &amp; block post/browse</label>
       <p style="font-size:11px;color:var(--text-faint);margin:0 0 12px;line-height:1.5">First time? Run <code style="font-size:10px">supabase/soft-close.sql</code> in Supabase SQL Editor. Preview the closed homepage in an incognito window (or log out) — your admin account bypasses soft close on app pages.</p>
       <button type="button" class="admin-drawer-btn primary" onclick="adminSaveBanner()">Save &amp; publish banner</button>
       <p id="bannerDbStatus" style="font-size:11px;color:var(--text-faint);margin-top:10px;line-height:1.5"></p>

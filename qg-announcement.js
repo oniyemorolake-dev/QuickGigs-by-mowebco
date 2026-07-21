@@ -90,7 +90,6 @@
         '<div class="qg-soft-close-box">' +
           '<p class="qg-soft-close-title">' + esc(banner.message || 'QuickGigs beta is closed while we prepare for launch.') + '</p>' +
           (banner.link ? '<p class="qg-soft-close-sub"><a href="' + esc(banner.link) + '" style="color:var(--al)">Learn more →</a></p>' : '') +
-          '<p class="qg-soft-close-sub">Already have an account? <a href="login.html" style="color:var(--al);font-weight:500">Log in</a></p>' +
         '</div>';
     }
   }
@@ -102,7 +101,7 @@
     var block = document.createElement('div');
     block.className = 'qg-soft-close-block';
     block.innerHTML = '<p><strong>Beta closed</strong></p><p>' + esc(msg) + '</p>' +
-      '<p style="margin-top:12px"><a href="index.html">← Back to home</a> · <a href="login.html">Log in</a></p>';
+      '<p style="margin-top:12px"><a href="index.html">← Back to home</a></p>';
     card.parentNode.insertBefore(block, card);
     card.style.display = 'none';
   }
