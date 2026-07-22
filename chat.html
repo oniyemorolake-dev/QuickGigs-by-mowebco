@@ -220,9 +220,11 @@ onAuthStateChanged(auth, (user) => {
 });
 </script>
 
+<link rel="stylesheet" href="qg-stripe.css">
 <script src="qg-utils.js"></script>
 <script src="qg-config.js"></script>
 <script src="supabase-db.js"></script>
+<script src="qg-stripe.js"></script>
 <script src="qg-lightbox.js?v=1"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
@@ -305,6 +307,17 @@ async function initChat(){
   if(!currentConv || (currentConv.poster_id !== currentUserId && currentConv.worker_id !== currentUserId)){
     window.location.href = 'messages.html';
     return;
+  }
+
+  var payReturn = new URLSearchParams(window.location.search);
+  if (payReturn.get('paid') === '1' && currentConv.task_id) {
+    if (typeof window.QG_waitForPaymentHeld === 'function') {
+      await window.QG_waitForPaymentHeld(currentConv.task_id, 15000);
+    }
+    currentConv = await getConversation(convId) || currentConv;
+    if (typeof window.QG_handlePaymentReturn === 'function') {
+      await window.QG_handlePaymentReturn();
+    }
   }
 
   if (typeof enrichConversationNames === 'function') {
@@ -544,7 +557,7 @@ function showLockedState(isCompleted, isCancelled){
       actionHtml = '<a href="'+reviewHref+'" class="locked-action locked-review-btn">⭐ Leave a review</a>';
     }
   } else if (!isCompleted && isPoster && currentConv && currentConv.task_id) {
-    actionHtml = '<a href="payment.html?task='+encodeURIComponent(String(currentConv.task_id))+'" class="locked-action locked-pay-btn">💳 Pay & unlock chat</a>';
+    actionHtml = '<button type="button" class="locked-action locked-pay-btn" data-pay-task="'+String(currentConv.task_id)+'" data-pay-return="chat" data-pay-conv="'+String(convId)+'">💳 Pay & unlock chat</button>';
   }
   document.querySelector('.input-area').style.display = 'none';
   document.getElementById('chatScroll').innerHTML =

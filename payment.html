@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-brand.css">
 <link rel="stylesheet" href="qg-mobile.css">
+<link rel="stylesheet" href="qg-stripe.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'DM Sans',sans-serif;background:#0b0118;color:#fff;min-height:100vh;padding:24px 20px calc(40px + env(safe-area-inset-bottom, 0px));}
@@ -47,7 +48,7 @@ body.light .note{color:#9ca3af;}
 <div class="card">
   <div class="icon" id="payIcon">💳</div>
   <h1 id="payTitle">Pay to unlock chat</h1>
-  <p id="paySub">Your payment is held safely until you confirm the job is done.</p>
+  <p id="paySub">Pay securely without leaving QuickGigs — Apple Pay when available.</p>
   <div class="amount-box" id="amountBox" style="display:none">
     <div class="amount-val" id="amountVal">$0</div>
     <div class="amount-sub">CAD · includes QuickGigs platform fee</div>
@@ -63,7 +64,7 @@ body.light .note{color:#9ca3af;}
   <div id="payMsg"></div>
   <button class="btn" id="payBtn" disabled>Loading…</button>
   <a class="btn btn-secondary" id="backBtn" href="mytasks.html?tab=inprogress">Back to My Tasks</a>
-  <p class="note" id="payNote">Use Stripe Test card 4242 4242 4242 4242 while in Test mode.</p>
+  <p class="note" id="payNote">Test card: 4242 4242 4242 4242 · Apple Pay on Safari when domain is verified in Stripe</p>
 </div>
 
 <script type="module">
@@ -110,6 +111,10 @@ async function loadPaymentPage(user) {
     setMsg('Missing task.', 'error');
     payBtn.textContent = 'Invalid link';
     return;
+  }
+
+  if (qs('paid') === '1' && typeof window.QG_handlePaymentReturn === 'function') {
+    await window.QG_handlePaymentReturn();
   }
 
   if (!window.QG_paymentsLive || !window.QG_paymentsLive()) {
@@ -176,25 +181,21 @@ async function loadPaymentPage(user) {
     return;
   }
 
-  if (qs('cancelled') === '1') {
-    setMsg('Payment cancelled — you can try again when ready.', 'warn');
-  }
-
-  payBtn.textContent = 'Pay $' + amount.toFixed(2) + ' with Stripe';
+  payBtn.textContent = 'Pay $' + amount.toFixed(2) + ' securely';
   payBtn.disabled = false;
   payBtn.onclick = async function () {
     payBtn.disabled = true;
-    payBtn.textContent = 'Redirecting to Stripe…';
-    var result = await window.QG_startCheckout(taskId, user.uid);
-    if (result.ok && result.url) {
-      window.location.href = result.url;
-      return;
-    }
-    var err = result.error || 'Could not start checkout';
-    if (err === 'stripe_not_configured') err = 'Stripe secret not set in Supabase — see STRIPE-SETUP.md';
-    setMsg(err, 'error');
+    payBtn.textContent = 'Opening checkout…';
+    var result = await window.QG_openPayModal(taskId, user.uid, {
+      returnPage: 'payment',
+      amount: amount,
+      title: getField(task, 'title') || 'Pay to unlock chat'
+    });
     payBtn.disabled = false;
-    payBtn.textContent = 'Try again';
+    payBtn.textContent = 'Pay $' + amount.toFixed(2) + ' securely';
+    if (result && result.error && result.error !== 'payments_not_live') {
+      setMsg(result.error, 'error');
+    }
   };
 }
 

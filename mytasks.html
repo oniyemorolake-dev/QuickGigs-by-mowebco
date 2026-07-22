@@ -203,6 +203,8 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <script src="qg-utils.js"></script>
 <script src="qg-config.js"></script>
 <script src="supabase-db.js"></script>
+<link rel="stylesheet" href="qg-stripe.css">
+<script src="qg-stripe.js"></script>
 <script src="qg-nav.js"></script>
 <script src="qg-pwa.js?v=4"></script>
 <script src="qg-notifications.js"></script>
@@ -330,7 +332,8 @@ function renderApplicantAction(a, taskId, task) {
   var status = (getField(a, 'STATUS') || 'pending').toLowerCase();
   if (status === 'accepted') {
     if (isPaymentGatedChat()) {
-      return '<span class="accept-status">✓ Accepted · Pay to unlock chat</span>';
+      return '<button type="button" class="accept-btn" style="background:var(--purple);color:#fff" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks">💳 Pay to unlock chat</button>' +
+        '<span class="accept-status">✓ Accepted</span>';
     }
     return '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border)" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">💬 Chat</button>' +
       '<span class="accept-status">✓ Accepted</span>';
@@ -535,6 +538,10 @@ async function loadData(){
     try { sessionStorage.removeItem('qg-just-posted'); } catch (e) {}
     activeTab = 'posted';
     if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('tasks');
+  }
+
+  if (typeof window.QG_handlePaymentReturn === 'function') {
+    await window.QG_handlePaymentReturn();
   }
 
   try {
@@ -1133,7 +1140,7 @@ function renderTab(){
         : '';
       var posterActions = isPosterTask
         ? (isPaymentGatedChat()
-          ? '<a class="act-btn btn-primary" href="payment.html?task='+encodeURIComponent(String(taskId))+'">💳 Pay &amp; unlock chat</a>'
+          ? '<button type="button" class="act-btn btn-primary" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks" data-pay-amount="'+escAttr(String(getField(t,'BUDGET')))+'" data-pay-title="'+escAttr(getField(t,'TITLE'))+'">💳 Pay &amp; unlock chat</button>'
           : '') +
           '<button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')">💬 Message</button>' +
           '<button class="act-btn btn-success" onclick="markComplete('+JSON.stringify(String(taskId))+', this)">✓ Mark complete</button>' +
@@ -1353,10 +1360,17 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
       window.location.href = 'chat.html?conv=' + encodeURIComponent(convResult.data.conv_id);
     }, 900);
   } else if (isPaymentGatedChat()) {
-    showToast('Accepted ' + workerName + '! Complete payment to unlock chat.');
+    showToast('Accepted ' + workerName + '! Pay now to unlock chat.');
+    var payAmount = getField(app, 'PRICE') || getField(task, 'BUDGET');
     setTimeout(function () {
-      window.location.href = 'payment.html?task=' + encodeURIComponent(taskId);
-    }, 900);
+      if (typeof window.QG_openPayModal === 'function') {
+        window.QG_openPayModal(taskId, userId, {
+          returnPage: 'mytasks',
+          amount: payAmount,
+          title: getField(task, 'TITLE') || 'Pay to unlock chat'
+        });
+      }
+    }, 500);
   } else {
     showToast('Accepted ' + workerName + '! Moved to In Progress 💬');
   }

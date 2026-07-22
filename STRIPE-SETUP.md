@@ -32,6 +32,8 @@ Never commit `sk_test_` or `whsec_` to GitHub.
 
 ## 3. Deploy Edge Functions
 
+**Important:** After pulling the embedded checkout update, redeploy `create-checkout`:
+
 From your machine (with [Supabase CLI](https://supabase.com/docs/guides/cli) linked to the project):
 
 ```bash
@@ -70,8 +72,16 @@ Push to GitHub → wait ~2 min → hard refresh quickgigs.ca.
 
 1. **Tasker** → Profile → **Set up payouts** (Stripe Connect Express test onboarding)
 2. **Poster** → accept a worker on My Tasks
-3. **Poster** → **Pay & unlock chat** → Stripe test card `4242 4242 4242 4242`
-4. Chat should unlock after payment
+3. **Pay modal opens** (no redirect) — use test card `4242 4242 4242 4242` or Apple Pay on iPhone Safari
+4. Chat unlocks after payment (webhook)
+
+### Apple Pay / Google Pay
+
+Embedded Checkout shows wallet buttons automatically when:
+
+- Stripe Dashboard → **Settings → Payment methods** → Apple Pay / Google Pay enabled
+- For Apple Pay on web: **Settings → Payment method domains** → add `quickgigs.ca`
+- User pays on a supported browser/device (Safari + Apple Pay on iPhone, Chrome + Google Pay on Android)
 
 ---
 

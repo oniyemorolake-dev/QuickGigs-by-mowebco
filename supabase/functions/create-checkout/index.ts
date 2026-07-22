@@ -42,6 +42,7 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const taskId = String(body.task_id || '').trim();
     const posterId = String(body.poster_id || '').trim();
+    const returnPage = String(body.return_page || 'payment').toLowerCase();
     if (!taskId || !posterId) return json({ ok: false, error: 'missing_task_or_poster' }, 400);
 
     const supabase = createClient(
@@ -105,6 +106,15 @@ Deno.serve(async (req) => {
     const title = String(getField(task, 'title') || 'QuickGigs task');
     const siteUrl = (Deno.env.get('SITE_URL') || 'https://quickgigs.ca').replace(/\/$/, '');
 
+    let returnUrl = `${siteUrl}/payment.html?task=${encodeURIComponent(taskId)}&paid=1&session_id={CHECKOUT_SESSION_ID}`;
+    if (returnPage === 'mytasks') {
+      returnUrl = `${siteUrl}/mytasks.html?tab=inprogress&paid=1&task=${encodeURIComponent(taskId)}&session_id={CHECKOUT_SESSION_ID}`;
+    } else if (returnPage === 'chat') {
+      const returnConv = String(body.return_conv || '').trim();
+      const convQs = returnConv ? `&conv=${encodeURIComponent(returnConv)}` : '';
+      returnUrl = `${siteUrl}/chat.html?paid=1&task=${encodeURIComponent(taskId)}${convQs}&session_id={CHECKOUT_SESSION_ID}`;
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
 
     const paymentIntentData: Stripe.Checkout.SessionCreateParams['payment_intent_data'] = {
@@ -123,7 +133,9 @@ Deno.serve(async (req) => {
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
+      ui_mode: 'embedded',
       currency: 'cad',
+      return_url: returnUrl,
       line_items: [
         {
           price_data: {
@@ -138,8 +150,6 @@ Deno.serve(async (req) => {
         },
       ],
       payment_intent_data: paymentIntentData,
-      success_url: `${siteUrl}/payment.html?task=${encodeURIComponent(taskId)}&paid=1&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${siteUrl}/payment.html?task=${encodeURIComponent(taskId)}&cancelled=1`,
       metadata: {
         project: 'quickgigs',
         task_id: taskId,
@@ -167,7 +177,7 @@ Deno.serve(async (req) => {
 
     return json({
       ok: true,
-      url: session.url,
+      client_secret: session.client_secret,
       session_id: session.id,
       amount,
       worker_has_payouts: !!workerConnectId,
