@@ -241,7 +241,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="stats-grid">
       <div class="stat-card"><div class="stat-accent accent-purple"></div><div class="stat-header"><span class="stat-icon">👥</span><span class="trend trend-up" id="userTrend">Loading</span></div><div class="stat-val c-purple" id="statUsers">—</div><div class="stat-label">Total users</div><div class="stat-sub" id="statUsersSub"></div><div class="mini-chart" id="chartUsers"></div></div>
       <div class="stat-card"><div class="stat-accent accent-green"></div><div class="stat-header"><span class="stat-icon">📋</span><span class="trend trend-up" id="taskTrend">Loading</span></div><div class="stat-val" id="statTasks">—</div><div class="stat-label">Tasks posted</div><div class="stat-sub" id="statTasksSub"></div><div class="mini-chart" id="chartTasks"></div></div>
-      <div class="stat-card"><div class="stat-accent accent-amber"></div><div class="stat-header"><span class="stat-icon">💰</span><span class="trend trend-neutral">Beta mode</span></div><div class="stat-val c-green">$0</div><div class="stat-label">Platform revenue</div><div class="stat-sub">Stripe not live yet</div><div class="mini-chart" id="chartRevenue"></div></div>
+      <div class="stat-card"><div class="stat-accent accent-amber"></div><div class="stat-header"><span class="stat-icon">💰</span><span class="trend trend-neutral" id="revenueTrend">Live</span></div><div class="stat-val c-green" id="statRevenue">—</div><div class="stat-label">Platform revenue</div><div class="stat-sub" id="statRevenueSub">Fees collected on paid tasks</div><div class="mini-chart" id="chartRevenue"></div></div>
       <div class="stat-card"><div class="stat-accent accent-red"></div><div class="stat-header"><span class="stat-icon">🚨</span><span class="trend trend-warn" id="disputeTrend">Needs attention</span></div><div class="stat-val c-red" id="statDisputes">—</div><div class="stat-label">Open disputes</div><div class="stat-sub" id="statDisputesSub"></div><div class="mini-chart" id="chartDisputes"></div></div>
     </div>
     <div class="mini-card" style="margin-bottom:20px">
@@ -344,7 +344,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
   <!-- REVENUE -->
   <div id="section-revenue" style="display:none">
-    <div class="mini-card" style="text-align:center;padding:40px"><div style="font-size:48px;margin-bottom:16px">💰</div><div style="font-size:20px;font-weight:500;margin-bottom:8px">Revenue tracking coming soon</div><div style="font-size:14px;color:var(--text-muted);line-height:1.6;max-width:400px;margin:0 auto">Once Stripe Connect is live, you'll see real-time revenue, platform fees, worker payouts and transaction history here.</div></div>
+    <div class="stats-grid" id="revenueStatsGrid" style="margin-bottom:16px"></div>
+    <div class="table-card">
+      <div class="table-header">
+        <div><span class="table-title">All payments</span><span class="table-count" id="revenueCount"></span></div>
+        <button class="action-pill pill-export" onclick="exportCSV('payments')">↓ Export CSV</button>
+      </div>
+      <div class="col-row g-disputes">
+        <div class="col-h">Task</div>
+        <div class="col-h">Poster</div>
+        <div class="col-h">Worker</div>
+        <div class="col-h">Amount</div>
+        <div class="col-h">Fee</div>
+        <div class="col-h">Status</div>
+        <div class="col-h">Date</div>
+      </div>
+      <div id="revenueBody"></div>
+    </div>
   </div>
 
   <!-- SETTINGS -->
@@ -441,7 +457,7 @@ window.doLogout = function() { signOut(auth).then(function(){ window.location.hr
 <script src="qg-admin.js?v=6"></script>
 <script>
 var SB_HEADERS = window.SB_HEADERS;
-var users=[],tasks=[],disputes=[],reports=[],applications=[],adminNotes=[],adminActions=[],waitlist=[],selectedUsers=[],pendingFn=null,currentSection='overview';
+var users=[],tasks=[],disputes=[],reports=[],applications=[],adminNotes=[],adminActions=[],waitlist=[],payments=[],selectedUsers=[],pendingFn=null,currentSection='overview';
 var sessionSeconds=30*60;
 
 function updateTimer(){
@@ -495,22 +511,29 @@ async function loadData(){
       ? await getSupabaseHeaders()
       : SB_HEADERS;
     var base = window.SUPABASE_URL + '/rest/v1/';
-    var[ur,tr,dr,rr,ap,wr]=await Promise.all([
+    var[ur,tr,dr,rr,ap,wr,pr]=await Promise.all([
       fetch(base+'users?order=created_at.desc',{headers:headers}),
       fetch(base+'tasks?order=created_at.desc',{headers:headers}),
       fetch(base+'disputes?order=created_at.desc',{headers:headers}).catch(function(){return {json:function(){return Promise.resolve([]);}};}),
       fetch(base+'reports?order=created_at.desc',{headers:headers}).catch(function(){return {json:function(){return Promise.resolve([]);}};}),
       fetch(base+'applications?order=created_at.desc',{headers:headers}).catch(function(){return {json:function(){return Promise.resolve([]);}};}),
-      fetch(base+'waitlist?order=created_at.desc',{headers:headers}).catch(function(){return {json:function(){return Promise.resolve([]);}};})
+      fetch(base+'waitlist?order=created_at.desc',{headers:headers}).catch(function(){return {json:function(){return Promise.resolve([]);}};}),
+      fetch(base+'payments?order=created_at.desc&limit=500',{headers:headers}).catch(function(){return {json:function(){return Promise.resolve([]);}};})
     ]);
-    var ud=await ur.json(),td=await tr.json(),dd=await dr.json(),rd=await rr.json(),ad=await ap.json(),wd=await wr.json();
+    var ud=await ur.json(),td=await tr.json(),dd=await dr.json(),rd=await rr.json(),ad=await ap.json(),wd=await wr.json(),pd=await pr.json();
     if(Array.isArray(ud)) users=ud;
     if(Array.isArray(td)) tasks=td;
     if(Array.isArray(dd)) disputes=dd;
     if(Array.isArray(rd)) reports=rd;
     if(Array.isArray(ad)) applications=ad;
     if(Array.isArray(wd)) waitlist=wd;
+    if(Array.isArray(pd)) payments=pd;
     await loadAdminMeta();
+    window.users = users;
+    window.tasks = tasks;
+    window.payments = payments;
+    window.applications = applications;
+    window.waitlist = waitlist;
   }catch(e){
     console.warn('Admin load failed',e);
   }
@@ -520,6 +543,68 @@ function getDemoUsers(){return [{user_id:'1',name:'Sarah K.',email:'sarah@gmail.
 function getDemoTasks(){return [{task_id:'1',title:'Deep clean 2 bedroom apartment',posted_by:'James O.',budget:120,task_mode:'standard',status:'in_progress',created_at:'2026-06-21'},{task_id:'2',title:'Grocery run — Superstore NW',posted_by:'Aisha M.',budget:30,task_mode:'quick',status:'completed',created_at:'2026-06-20'},{task_id:'3',title:'Math tutor Grade 10',posted_by:'Sarah K.',budget:35,task_mode:'recurring',status:'open',created_at:'2026-06-22'},{task_id:'4',title:'Box braids — natural hair',posted_by:'Priya N.',budget:80,task_mode:'standard',status:'completed',created_at:'2026-06-19'},{task_id:'5',title:'Moving couch to storage',posted_by:'Marcus L.',budget:60,task_mode:'standard',status:'in_progress',created_at:'2026-06-21'}];}
 function getDemoDisputes(){return [{id:'1',task:'Box braids — natural hair',poster:'Priya N.',worker:'Sarah K.',status:'open',opened:'2 hrs ago',reason:'Worker did not complete task as agreed'},{id:'2',task:'Moving couch to storage',poster:'Marcus L.',worker:'David T.',status:'open',opened:'5 hrs ago',reason:'Poster refused to release payment'},{id:'3',task:'Grocery run NW',poster:'Aisha M.',worker:'James O.',status:'resolved',opened:'2 days ago',reason:'Item damaged during delivery'}];}
 
+function adminPayField(p, key) {
+  if (!p) return '';
+  var lower = key.toLowerCase();
+  for (var k in p) { if (k.toLowerCase() === lower) return p[k]; }
+  return '';
+}
+
+function adminPaymentStats(rows) {
+  var held = 0, paidFees = 0, gmv = 0, refunded = 0;
+  (rows || []).forEach(function(p) {
+    var st = String(adminPayField(p, 'status') || '').toLowerCase();
+    var amt = parseFloat(adminPayField(p, 'amount')) || 0;
+    var fee = parseFloat(adminPayField(p, 'platform_fee')) || 0;
+    if (st === 'refunded') { refunded += amt; return; }
+    if (st === 'held') { held += amt; gmv += amt; }
+    if (st === 'paid' || st === 'completed') { paidFees += fee; gmv += amt; }
+  });
+  return { held: held, paidFees: paidFees, gmv: gmv, refunded: refunded };
+}
+
+function renderRevenue(){
+  var stats = adminPaymentStats(payments);
+  var grid = document.getElementById('revenueStatsGrid');
+  if (grid) {
+    grid.innerHTML = [
+      { val: '$' + stats.paidFees.toFixed(2), lbl: 'Platform fees (paid out)', sub: '25% on completed tasks' },
+      { val: '$' + stats.held.toFixed(2), lbl: 'In escrow', sub: 'Held until task complete' },
+      { val: '$' + stats.gmv.toFixed(2), lbl: 'Gross volume', sub: 'All held + paid payments' },
+      { val: '$' + stats.refunded.toFixed(2), lbl: 'Refunded', sub: 'Cancelled before completion' }
+    ].map(function(s) {
+      return '<div class="stat-card"><div class="stat-val c-green">' + s.val + '</div><div class="stat-label">' + s.lbl + '</div><div class="stat-sub">' + s.sub + '</div></div>';
+    }).join('');
+  }
+  var countEl = document.getElementById('revenueCount');
+  if (countEl) countEl.textContent = payments.length ? (' · ' + payments.length) : '';
+  var body = document.getElementById('revenueBody');
+  if (!body) return;
+  if (!payments.length) {
+    body.innerHTML = '<div style="padding:28px;text-align:center;color:rgba(255,255,255,0.35);font-size:13px">No payments yet — they appear here when posters pay through Stripe.</div>';
+    return;
+  }
+  var taskMap = {};
+  tasks.forEach(function(t) { taskMap[String(t.task_id || t.id)] = t.title || ''; });
+  body.innerHTML = payments.slice(0, 100).map(function(p) {
+    var tid = adminPayField(p, 'task_id');
+    var title = taskMap[String(tid)] || ('Task ' + tid);
+    var st = String(adminPayField(p, 'status') || '').toLowerCase();
+    var stLabel = st === 'held' ? 'Escrow' : (st === 'paid' ? 'Paid out' : (st === 'refunded' ? 'Refunded' : st));
+    var when = adminPayField(p, 'created_at');
+    when = when ? new Date(when).toLocaleDateString('en-CA') : '—';
+    return '<div class="col-row g-disputes">' +
+      '<div>' + (typeof esc==='function'?esc(title):title) + '</div>' +
+      '<div style="font-size:11px;color:var(--text-faint)">' + String(adminPayField(p,'poster_id')).slice(0,8) + '…</div>' +
+      '<div style="font-size:11px;color:var(--text-faint)">' + String(adminPayField(p,'worker_id')).slice(0,8) + '…</div>' +
+      '<div>$' + (parseFloat(adminPayField(p,'amount'))||0).toFixed(2) + '</div>' +
+      '<div>$' + (parseFloat(adminPayField(p,'platform_fee'))||0).toFixed(2) + '</div>' +
+      '<div><span class="status-pill">' + stLabel + '</span></div>' +
+      '<div style="font-size:11px;color:var(--text-faint)">' + when + '</div>' +
+    '</div>';
+  }).join('');
+}
+
 function renderOverview(){
   var active=users.filter(function(u){return u.status==='active';}).length;
   var warned=users.filter(function(u){return u.status==='warned';}).length;
@@ -527,6 +612,10 @@ function renderOverview(){
   var openD=disputes.filter(function(d){return (d.status||'open')==='open';}).length;
   var openR=reports.filter(function(r){return (r.status||'open')==='open';}).length;
   var doneT=tasks.filter(function(t){return t.status==='completed';}).length;
+  var payStats = adminPaymentStats(payments);
+  var platformFeesPaid = payStats.paidFees;
+  var escrowHeld = payStats.held;
+  var revenueChartData = [0,0,0,0,0,0,Math.max(platformFeesPaid, payments.length > 0 ? 1 : 0)];
   document.getElementById('statUsers').textContent=users.length;
   document.getElementById('statUsersSub').textContent=active+' active · '+warned+' warned · '+banned+' banned';
   document.getElementById('userTrend').textContent='↑ '+users.length+' total';
@@ -540,8 +629,12 @@ function renderOverview(){
   else{document.getElementById('alertBanner').style.display='flex';document.getElementById('alertBanner').querySelector('.alert-text').textContent=openD+' open dispute(s) and '+openR+' open report(s) need review.';}
   renderMiniChart('chartUsers',[5,8,12,18,22,30,users.length],'#9b6fc4');
   renderMiniChart('chartTasks',[1,2,3,5,7,10,tasks.length],'#16a34a');
-  renderMiniChart('chartRevenue',[0,0,0,0,0,0,0],'#d97706');
+  renderMiniChart('chartRevenue', revenueChartData,'#d97706');
   renderMiniChart('chartDisputes',[0,1,2,1,3,2,openD],'#ef4444');
+  var revEl = document.getElementById('statRevenue');
+  var revSub = document.getElementById('statRevenueSub');
+  if (revEl) revEl.textContent = '$' + platformFeesPaid.toFixed(2);
+  if (revSub) revSub.textContent = escrowHeld.toFixed(2) + ' CAD in escrow · ' + payments.length + ' payments';
   renderActivity();renderCategories();renderRecentSignups();
 }
 
@@ -662,6 +755,7 @@ window.showSection=function(section,btn){
   if(section==='security') renderSecurityLog();
   if(section==='fraud') renderFraudLog();
   if(section==='analytics') renderAnalytics();
+  if(section==='revenue') renderRevenue();
   if(section==='settings') loadPlatformBannerForm();
 };
 

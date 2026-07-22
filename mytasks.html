@@ -1789,30 +1789,47 @@ window.confirmCancelInProgress = function(taskId) {
   taskId = String(taskId);
   var task = allTasks.find(function(t) { return String(getField(t, 'TASK_ID')) === taskId; });
   var title = task ? getField(task, 'TITLE') : 'this task';
-  showConfirm({
-    title: 'Cancel this task?',
-    message: '“' + title + '” will be marked cancelled. The assigned worker will see it in their history. Use this if the job is no longer happening.',
-    confirmLabel: 'Cancel task',
-    onConfirm: async function() {
-      if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
-      var result = await cancelTask(taskId);
-      if (!result.success) {
-        var cancelMsg = typeof formatSupabaseActionError === 'function'
-          ? formatSupabaseActionError('cancel task', result.error)
-          : (result.error || 'Could not cancel task — run supabase/beta-setup-all.sql in Supabase, then refresh.');
-        showToast(cancelMsg, '#ef4444');
-        return;
-      }
-      allTasks.forEach(function(t) {
-        if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, 'cancelled');
-      });
-      if (typeof mergeTaskInCache === 'function') mergeTaskInCache(taskId, { status: 'cancelled' });
-      activeTab = 'completed';
-      syncTabButtons();
-      renderTab();
-      showToast('Task cancelled');
-      await loadData();
+  var paid = typeof isTaskPaid === 'function' ? isTaskPaid(taskId) : false;
+  var payRowPromise = typeof getPaymentByTask === 'function' ? getPaymentByTask(taskId) : Promise.resolve(null);
+  payRowPromise.then(function(payRow) {
+    var pst = payRow && String(payRow.status || payRow.STATUS || '').toLowerCase();
+    if (pst === 'paid') {
+      showToast('Task already paid out — open a dispute if you need help', '#f59e0b');
+      return;
     }
+    var refundNote = (paid || pst === 'held')
+      ? ' Payment in escrow will be refunded to your card.'
+      : '';
+    showConfirm({
+      title: 'Cancel this task?',
+      message: '“' + title + '” will be marked cancelled. The assigned worker will be notified.' + refundNote,
+      confirmLabel: 'Cancel task',
+      onConfirm: async function() {
+        if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
+        var userId = window._currentUser ? window._currentUser.uid : '';
+        var result = await cancelTask(taskId, { actorId: userId, refundHeld: true });
+        if (!result.success) {
+          if (result.needsDispute || result.error === 'paid_task_needs_dispute') {
+            showToast('Already paid out — use Dispute or contact support', '#f59e0b');
+            return;
+          }
+          var cancelMsg = typeof formatSupabaseActionError === 'function'
+            ? formatSupabaseActionError('cancel task', result.error)
+            : (result.error || 'Could not cancel task — refresh and try again.');
+          showToast(cancelMsg, '#ef4444');
+          return;
+        }
+        allTasks.forEach(function(t) {
+          if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, 'cancelled');
+        });
+        if (typeof mergeTaskInCache === 'function') mergeTaskInCache(taskId, { status: 'cancelled' });
+        activeTab = 'completed';
+        syncTabButtons();
+        renderTab();
+        showToast((paid || pst === 'held') ? 'Task cancelled — refund processing' : 'Task cancelled');
+        await loadData();
+      }
+    });
   });
 };
 </script>

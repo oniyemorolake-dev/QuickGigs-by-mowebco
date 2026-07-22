@@ -496,6 +496,15 @@
         return [a.created_at, a.admin_email, a.action_type, a.target_type, a.target_id, JSON.stringify(a.detail || {})].map(csvEscape).join(',');
       });
       rows.unshift(['When', 'Admin', 'Action', 'Target type', 'Target ID', 'Detail'].join(','));
+    } else if (type === 'payments') {
+      filename = 'quickgigs-payments.csv';
+      rows = (window.payments || []).map(function (p) {
+        return [
+          p.task_id, p.poster_id, p.worker_id, p.amount, p.platform_fee, p.worker_payout,
+          p.status, p.stripe_id, p.transfer_id, p.created_at, p.completed_at
+        ].map(csvEscape).join(',');
+      });
+      rows.unshift(['Task ID', 'Poster', 'Worker', 'Amount', 'Platform fee', 'Worker payout', 'Status', 'Stripe ID', 'Transfer ID', 'Created', 'Completed'].join(','));
     } else {
       showToast('Nothing to export', 'amber');
       return;

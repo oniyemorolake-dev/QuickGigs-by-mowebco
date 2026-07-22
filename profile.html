@@ -363,6 +363,11 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 <div class="qg-action-row" id="profileShareReport" style="justify-content:center;padding:0 20px 8px;display:none"></div>
 <div id="profilePayoutBox" style="display:none;padding:0 20px 16px;max-width:520px;margin:0 auto"></div>
 
+<div class="section" id="profilePaymentsSection" style="display:none;padding:0 20px 16px;max-width:520px;margin:0 auto">
+  <div class="sec-title" id="payments">Payment history</div>
+  <div id="profilePaymentHistory"></div>
+</div>
+
 <div class="divider"></div>
 
 <!-- STATS -->
@@ -543,6 +548,7 @@ onAuthStateChanged(auth, (user) => {
 <script src="qg-utils.js"></script>
 <script src="qg-config.js"></script>
 <script src="supabase-db.js"></script>
+<script src="qg-payments-ui.js?v=1"></script>
 <script src="qg-stripe.js"></script>
 <script src="qg-pwa.js?v=4"></script>
 <script src="qg-share.js"></script>
@@ -902,7 +908,8 @@ async function loadProfile(user) {
 
   renderProfile(user, isOwnProfile);
   renderProfileActions(targetId, profileData.name, isOwnProfile);
-  renderPayoutSetup(user, isOwnProfile);
+  renderPayoutSetup(user, isOwnProfile, dbUser);
+  if (isOwnProfile) renderProfilePaymentHistory(user.uid, dbUser);
 
   if (isOwnProfile && params.get('welcome') === '1' && !sessionStorage.getItem('qg-welcome-confetti')) {
     sessionStorage.setItem('qg-welcome-confetti', '1');
@@ -1015,7 +1022,7 @@ function renderProfileActions(targetId, displayName, isOwnProfile) {
   if (typeof bindReportTriggers === 'function') bindReportTriggers(row);
 }
 
-function renderPayoutSetup(user, isOwnProfile) {
+function renderPayoutSetup(user, isOwnProfile, dbUser) {
   var box = document.getElementById('profilePayoutBox');
   if (!box || !isOwnProfile || !user) {
     if (box) box.style.display = 'none';
@@ -1025,12 +1032,28 @@ function renderPayoutSetup(user, isOwnProfile) {
     box.style.display = 'none';
     return;
   }
+  if (!userIsTasker(profileData.role) && !(typeof isWorkerMode === 'function' && isWorkerMode())) {
+    box.style.display = 'none';
+    return;
+  }
   box.style.display = 'block';
+
+  var connectId = dbUser && (dbUser.stripe_connect_id || '');
+  var payoutsOk = dbUser && (dbUser.stripe_payouts_enabled === true || dbUser.stripe_payouts_enabled === 1 || dbUser.stripe_payouts_enabled === 'true');
+  var boxCls = payoutsOk ? 'payout-box-connected' : (connectId ? 'payout-box-pending' : '');
+  var title = payoutsOk ? '✓ Payouts connected' : (connectId ? '⏳ Finish payout setup' : '💳 Tasker payouts');
+  var desc = payoutsOk
+    ? 'Stripe is connected. When a poster marks your task complete, your share is sent to your bank.'
+    : (connectId
+      ? 'You started Stripe setup — finish verification so we can pay you when tasks complete.'
+      : 'Connect Stripe to receive your share when posters mark tasks complete. Required before your first payout.');
+  var btnLabel = payoutsOk ? 'Update payout details' : (connectId ? 'Continue Stripe setup' : 'Set up payouts');
+
   box.innerHTML =
-    '<div style="background:rgba(107,63,160,0.12);border:1px solid rgba(200,168,233,0.2);border-radius:14px;padding:14px;text-align:center">' +
-      '<div style="font-size:13px;font-weight:500;margin-bottom:6px">💳 Tasker payouts</div>' +
-      '<div style="font-size:12px;color:var(--text-muted);line-height:1.55;margin-bottom:12px">Connect Stripe to get paid when posters complete tasks. Required before you can receive marketplace payouts.</div>' +
-      '<button type="button" class="empty-btn" id="stripeConnectBtn" style="margin:0 auto">Set up payouts</button>' +
+    '<div id="payouts" style="background:rgba(107,63,160,0.12);border:1px solid rgba(200,168,233,0.2);border-radius:14px;padding:14px;text-align:center" class="' + boxCls + '">' +
+      '<div style="font-size:13px;font-weight:500;margin-bottom:6px">' + title + '</div>' +
+      '<div style="font-size:12px;color:var(--text-muted);line-height:1.55;margin-bottom:12px">' + desc + '</div>' +
+      '<button type="button" class="empty-btn" id="stripeConnectBtn" style="margin:0 auto">' + btnLabel + '</button>' +
     '</div>';
   var btn = document.getElementById('stripeConnectBtn');
   if (!btn || btn._bound) return;
@@ -1044,10 +1067,63 @@ function renderPayoutSetup(user, isOwnProfile) {
       return;
     }
     btn.disabled = false;
-    btn.textContent = 'Set up payouts';
+    btn.textContent = btnLabel;
     alert(result.error || 'Could not open Stripe setup — deploy create-connect-link first (see STRIPE-SETUP.md).');
   };
 }
+
+async function renderProfilePaymentHistory(userId, dbUser) {
+  var sec = document.getElementById('profilePaymentsSection');
+  var list = document.getElementById('profilePaymentHistory');
+  if (!sec || !list || !userId) return;
+  if (!window.QG_CONFIG || !window.QG_CONFIG.paymentsEnabled || typeof getPaymentsForUser !== 'function') {
+    sec.style.display = 'none';
+    return;
+  }
+  sec.style.display = 'block';
+  list.innerHTML = '<div class="pay-history-empty">Loading payments…</div>';
+  try {
+    var isTaskerView = userIsTasker(profileData.role) || (typeof isWorkerMode === 'function' && isWorkerMode());
+    var role = isTaskerView ? 'worker' : 'poster';
+    var payments = await getPaymentsForUser(userId, role);
+    var tasks = typeof getAllTasks === 'function' ? await getAllTasks() : [];
+    var taskMap = typeof QG_buildTaskTitleMap === 'function' ? QG_buildTaskTitleMap(tasks) : {};
+    list.innerHTML = typeof QG_renderPaymentHistoryList === 'function'
+      ? QG_renderPaymentHistoryList(payments, { role: role, taskMap: taskMap })
+      : '';
+    var earnedEl = document.getElementById('statEarned');
+    if (earnedEl && isTaskerView && typeof QG_sumPayments === 'function') {
+      var sums = QG_sumPayments(payments, { role: 'worker' });
+      if (sums.paid > 0) earnedEl.textContent = '$' + sums.paid.toFixed(0);
+      else if (sums.held > 0) earnedEl.textContent = '$' + sums.held.toFixed(0);
+    }
+  } catch (e) {
+    list.innerHTML = '<div class="pay-history-empty">Could not load payments — refresh and try again.</div>';
+  }
+}
+
+(function handleStripeProfileReturn() {
+  var p = new URLSearchParams(window.location.search);
+  var stripeParam = p.get('stripe');
+  if (!stripeParam) return;
+  if (window.history && window.history.replaceState) {
+    window.history.replaceState({}, '', 'profile.html#payouts');
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    setTimeout(function () {
+      if (stripeParam === 'done' && typeof showToast === 'function') {
+        showToast('Stripe setup saved — checking payout status…', '#4ade80');
+      } else if (stripeParam === 'refresh' && typeof showToast === 'function') {
+        showToast('Continue Stripe setup when you\'re ready', '#f59e0b');
+      }
+      if (window._currentUser && typeof window.QG_syncConnectStatus === 'function') {
+        window.QG_syncConnectStatus(window._currentUser.uid).then(function () {
+          if (typeof loadProfile === 'function' && window._currentUser) loadProfile(window._currentUser);
+        });
+      }
+    }, 600);
+  });
+})();
 
 async function renderReviews(reviews) {
   var listEl = document.getElementById('reviewsList');

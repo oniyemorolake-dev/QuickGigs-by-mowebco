@@ -1798,7 +1798,26 @@ async function declineApplication(appId, opts) {
   return await updateApplicationStatus(appId, 'declined', opts);
 }
 
-async function cancelTask(taskId) {
+async function cancelTask(taskId, opts) {
+  opts = opts || {};
+  taskId = String(taskId);
+
+  if (typeof getPaymentByTask === 'function') {
+    var payment = await getPaymentByTask(taskId);
+    if (payment) {
+      var pst = String(payment.status || payment.STATUS || '').toLowerCase();
+      if (pst === 'paid') {
+        return { success: false, error: 'paid_task_needs_dispute', needsDispute: true };
+      }
+      if (pst === 'held' && opts.refundHeld !== false) {
+        var refund = await refundTaskPayment(taskId, opts.actorId);
+        if (!refund.ok && !refund.skipped) {
+          return { success: false, error: refund.error || 'refund_failed' };
+        }
+      }
+    }
+  }
+
   var result = await updateTaskStatus(taskId, 'cancelled');
   if (!result.success) return result;
 
@@ -2012,6 +2031,44 @@ async function getPaymentsForUser(userId, role) {
   if (!userId) return [];
   var col = role === 'poster' ? 'poster_id' : 'worker_id';
   return await sbGet('payments', col + '=eq.' + encodeURIComponent(String(userId)), 'created_at.desc', 100);
+}
+
+async function refundTaskPayment(taskId, actorId) {
+  var cfg = window.QG_CONFIG || {};
+  if (!cfg.paymentsEnabled) return { ok: true, skipped: true };
+
+  var payment = await getPaymentByTask(taskId);
+  if (!payment) return { ok: true, skipped: true };
+
+  var st = String(payment.status || '').toLowerCase();
+  if (st === 'refunded') return { ok: true, already: true };
+  if (st === 'paid') return { ok: false, error: 'already_released_use_dispute' };
+  if (st !== 'held') return { ok: true, skipped: true };
+
+  if (typeof getSupabaseHeaders !== 'function') {
+    return { ok: false, error: 'Database not loaded' };
+  }
+
+  var url = cfg.refundPaymentUrl ||
+    'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/refund-payment';
+  try {
+    var headers = await getSupabaseHeaders();
+    var res = await fetch(url, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({
+        task_id: String(taskId),
+        actor_id: String(actorId || '')
+      })
+    });
+    var data = {};
+    try { data = await res.json(); } catch (e) { data = { ok: false, error: 'Invalid response' }; }
+    if (!res.ok && data.ok !== false) data.ok = false;
+    return data;
+  } catch (err) {
+    console.error('refundTaskPayment failed:', err);
+    return { ok: false, error: err.message || String(err) };
+  }
 }
 
 async function releaseTaskPayout(taskId, actorId) {
@@ -2305,6 +2362,7 @@ window.mergeReviewInCache = mergeReviewInCache;
 window.getPaymentByTask = getPaymentByTask;
 window.getPaymentsForUser = getPaymentsForUser;
 window.releaseTaskPayout = releaseTaskPayout;
+window.refundTaskPayment = refundTaskPayment;
 window.savePayment = savePayment;
 window.unlockChatForTask = unlockChatForTask;
 window.pushInAppNotification = pushInAppNotification;

@@ -364,6 +364,28 @@
     });
   });
 
+  async function syncConnectStatus(workerId) {
+    if (!workerId || typeof getSupabaseHeaders !== 'function') return { ok: false };
+    var url = fnUrl(
+      'syncConnectUrl',
+      'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/sync-connect-status'
+    );
+    try {
+      var headers = await getSupabaseHeaders();
+      var res = await fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ worker_id: String(workerId) })
+      });
+      var data = {};
+      try { data = await res.json(); } catch (e) { data = { ok: false }; }
+      return data;
+    } catch (err) {
+      console.warn('syncConnectStatus failed:', err);
+      return { ok: false, error: String(err) };
+    }
+  }
+
   window.QG_paymentsLive = paymentsLive;
   window.QG_startCheckout = startCheckout;
   window.QG_startConnectOnboarding = startConnectOnboarding;
@@ -372,4 +394,5 @@
   window.QG_handlePaymentReturn = handlePaymentReturnFromUrl;
   window.QG_waitForPaymentHeld = waitForPaymentHeld;
   window.QG_confirmCheckoutSession = confirmCheckoutSession;
+  window.QG_syncConnectStatus = syncConnectStatus;
 })();

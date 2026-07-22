@@ -111,9 +111,11 @@ Full checklist: **[LAUNCH-PREP.md](LAUNCH-PREP.md)**
 **Your next steps (in order):**
 
 1. **Hard refresh** quickgigs.ca (Ctrl+Shift+R) — service worker must update to v37+  
-2. Deploy **`confirm-checkout`** Edge Function (instant chat unlock after pay):
+2. Deploy Edge Functions (instant refund + Connect sync):
    ```bash
    supabase functions deploy confirm-checkout --no-verify-jwt
+   supabase functions deploy refund-payment --no-verify-jwt
+   supabase functions deploy sync-connect-status --no-verify-jwt
    ```
 3. Run **`supabase/payments-release.sql`** in Supabase SQL Editor (if not done)  
 4. **Test the money loop** with 2 accounts (poster + tasker):

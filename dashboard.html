@@ -204,6 +204,17 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <!-- ACTION CARDS -->
 <div class="actions" id="actionsGrid"></div>
 
+<div id="dashConnectBanner" style="display:none"></div>
+
+<!-- PAYMENT HISTORY -->
+<div class="section qg-page-wide" id="paymentHistorySection" style="display:none">
+  <div class="section-hdr">
+    <span class="section-title">Payment history</span>
+    <a class="see-all" href="profile.html#payments">View all</a>
+  </div>
+  <div id="paymentHistoryList"></div>
+</div>
+
 <!-- FEED SECTION -->
 <div class="section qg-page-wide">
   <div class="section-hdr">
@@ -299,6 +310,7 @@ onAuthStateChanged(auth, async (user) => {
 </script>
 
 <script src="supabase-db.js"></script>
+<script src="qg-payments-ui.js?v=1"></script>
 <script src="qg-location.js"></script>
 <script src="qg-config.js"></script>
 <script src="qg-stats.js"></script>
@@ -511,6 +523,15 @@ function renderAll(){
     return myPosted.some(function(t){ return String(taskField(t, 'id')) === String(appField(a, 'task_id')); });
   }).length : 0;
   var totalSpent = myPosted.reduce(function(s, t){ return s + (parseFloat(taskField(t, 'budget')) || 0); }, 0);
+  var posterPayments = (dashData.payments || []).filter(function(p) {
+    return String(p.poster_id || p.POSTER_ID || '') === String(userId);
+  });
+  var posterPaySums = typeof QG_sumPayments === 'function'
+    ? QG_sumPayments(posterPayments, { role: 'poster' })
+    : { held: 0, paid: 0 };
+  var totalPaidDisplay = posterPaySums.paid > 0
+    ? '$' + posterPaySums.paid.toFixed(0)
+    : (posterPaySums.held > 0 ? '$' + posterPaySums.held.toFixed(0) + ' in escrow' : '$' + totalSpent);
 
   var myInProgressWorker = userId ? dashData.posted.filter(function(t){
     if (taskField(t, 'status') !== 'in_progress') return false;
@@ -537,13 +558,13 @@ function renderAll(){
         {icon:'📋', val: String(myPosted.length), cls:'', lbl:'Tasks posted', href:'mytasks.html?tab=posted'},
         {icon:'👥', val: String(applicantCount), cls:'purple', lbl:'Applicants', href:'mytasks.html?tab=posted&applicants=1'},
         {icon:'✅', val: String(myCompleted.length), cls:'', lbl:'Completed', href:'mytasks.html?tab=completed'},
-        {icon:'💸', val: '$' + totalSpent, cls:'green', lbl:'Total posted', href:'mytasks.html?tab=posted'}
+        {icon:'💸', val: totalPaidDisplay, cls:'green', lbl:'Paid via QuickGigs', href:'profile.html#payments'}
       ]
     : [
         {icon:'📨', val: String(myApps.length), cls:'', lbl:'Applications', href:'mytasks.html?tab=applied'},
         {icon:'✅', val: String(myAcceptedApps.length), cls:'purple', lbl:'Jobs accepted', href:'mytasks.html?tab=applied'},
         {icon:'⏳', val: String(myInProgressWorker), cls:'', lbl:'In progress', href:'mytasks.html?tab=inprogress'},
-        {icon:'💰', val: earnedLabel, cls:'green', lbl:'Total earned', href:'mytasks.html?tab=completed'}
+        {icon:'💰', val: earnedLabel, cls:'green', lbl:'Total earned', href:'profile.html#payments'}
       ];
 
   document.getElementById('statsGrid').innerHTML = stats.map(function(s){
@@ -577,6 +598,42 @@ function renderAll(){
       : '') +
     '<button type="button" class="action-card secondary" style="grid-column:1/-1;margin-top:2px;border:none;width:100%;text-align:left;font:inherit;color:inherit" onclick="typeof promptQuickGigsInstall===\'function\'&&promptQuickGigsInstall()"><div class="action-icon">📲</div><div class="action-title">Add to Home Screen</div><div class="action-desc">Install QuickGigs on iPhone (Safari Share menu) or Android</div></button>' +
     '<a class="action-card secondary" href="feedback.html" style="grid-column:1/-1;margin-top:2px"><div class="action-icon">🐛</div><div class="action-title">Beta feedback</div><div class="action-desc">Report a bug or share an idea — we read every message</div></a>';
+
+  var paySection = document.getElementById('paymentHistorySection');
+  var payList = document.getElementById('paymentHistoryList');
+  if (paySection && payList && window.QG_CONFIG && window.QG_CONFIG.paymentsEnabled && typeof QG_renderPaymentHistoryList === 'function') {
+    var rolePayments = dashData.payments || [];
+    if (rolePayments.length) {
+      paySection.style.display = 'block';
+      payList.innerHTML = QG_renderPaymentHistoryList(rolePayments.slice(0, 5), {
+        role: isPoster ? 'poster' : 'worker',
+        taskMap: typeof QG_buildTaskTitleMap === 'function' ? QG_buildTaskTitleMap(dashData.posted) : {}
+      });
+    } else {
+      paySection.style.display = 'none';
+    }
+  }
+
+  var connectBanner = document.getElementById('dashConnectBanner');
+  if (connectBanner && !isPoster && window.QG_CONFIG && window.QG_CONFIG.paymentsEnabled && userId) {
+    var needsPayout = myInProgressWorker > 0 || pendingEarned > 0;
+    if (needsPayout && typeof getUserByFirebaseUid === 'function') {
+      getUserByFirebaseUid(userId).then(function(u) {
+        var ok = u && (u.stripe_payouts_enabled === true || u.stripe_payouts_enabled === 'true' || u.stripe_payouts_enabled === 1);
+        if (ok) {
+          connectBanner.style.display = 'none';
+          return;
+        }
+        connectBanner.style.display = 'block';
+        connectBanner.innerHTML = '💳 <strong>Set up payouts</strong> — connect Stripe so you get paid when tasks complete. ' +
+          '<a href="profile.html#payouts">Set up now →</a>';
+      }).catch(function() { connectBanner.style.display = 'none'; });
+    } else {
+      connectBanner.style.display = 'none';
+    }
+  } else if (connectBanner) {
+    connectBanner.style.display = 'none';
+  }
 
   var sectionTitle = document.getElementById('sectionTitle');
   var seeAll = document.querySelector('.section-hdr .see-all');

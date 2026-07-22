@@ -1119,3 +1119,62 @@ body.light .qg-role-flip-opt.active {
   text-align: center;
   color: var(--text-faint, rgba(255, 255, 255, 0.35));
 }
+
+/* Payment history */
+.pay-history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  text-decoration: none;
+  color: inherit;
+  border-bottom: 0.5px solid var(--border, rgba(200, 168, 233, 0.1));
+}
+.pay-history-row:last-child { border-bottom: none; }
+.pay-history-row:hover { opacity: 0.85; }
+.pay-history-main { flex: 1; min-width: 0; }
+.pay-history-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text, #fff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pay-history-meta { font-size: 11px; color: var(--text-faint, rgba(255,255,255,0.35)); margin-top: 3px; }
+.pay-history-right { text-align: right; flex-shrink: 0; }
+.pay-history-amt { font-size: 15px; font-weight: 600; color: var(--text, #fff); }
+.pay-history-st {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.pay-st-held { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.pay-st-paid { background: rgba(74,222,128,0.12); color: #4ade80; }
+.pay-st-pending { background: rgba(155,111,196,0.15); color: #c8a8e9; }
+.pay-st-refunded { background: rgba(239,68,68,0.12); color: #f87171; }
+.pay-history-empty {
+  text-align: center;
+  padding: 28px 16px;
+  font-size: 13px;
+  color: var(--text-muted, rgba(255,255,255,0.45));
+  line-height: 1.55;
+  border: 0.5px dashed var(--border, rgba(200,168,233,0.15));
+  border-radius: 14px;
+}
+.payout-box-connected { border-color: rgba(74,222,128,0.35) !important; background: rgba(74,222,128,0.08) !important; }
+.payout-box-pending { border-color: rgba(251,191,36,0.35) !important; background: rgba(251,191,36,0.08) !important; }
+#dashConnectBanner {
+  margin: 0 20px 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(107,63,160,0.14);
+  border: 0.5px solid rgba(200,168,233,0.2);
+  font-size: 13px;
+  line-height: 1.55;
+}
+#dashConnectBanner a { color: var(--purple-light, #9b6fc4); font-weight: 500; }

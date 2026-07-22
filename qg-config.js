@@ -22,6 +22,8 @@ window.QG_CONFIG = {
   stripePublishableKey: 'pk_test_51Tlh7hCPjV7Oq67QZsRZgVeZMY0AgYDwl0YgOtV33gXPdDhJF7tMzw0BfjTZkVE3hcIXkhsx6XNJZCM1lSTVpfk200OajLTBz9',
   createCheckoutUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-checkout',
   confirmCheckoutUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/confirm-checkout',
+  refundPaymentUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/refund-payment',
+  syncConnectUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/sync-connect-status',
   connectLinkUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-connect-link',
   releasePayoutUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/release-payout',
   platformFeePercent: 25,
