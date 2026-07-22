@@ -228,6 +228,7 @@ var userNames = {};
 var userAvatars = {};
 var workerVerifiedMap = {};
 var expandedApplicantTasks = {};
+var paymentByTaskId = {};
 var isDark = localStorage.getItem('qg-mode') !== 'light';
 var TAB_IDS = { posted: 'tabPosted', applied: 'tabApplied', inprogress: 'tabInprogress', completed: 'tabCompleted' };
 
@@ -238,6 +239,17 @@ applyTheme();
 function pickDefaultTab() {
   var params = new URLSearchParams(window.location.search);
   var tabParam = params.get('tab');
+  try {
+    if (sessionStorage.getItem('qg-payment-tab') === 'inprogress') {
+      activeTab = 'inprogress';
+      sessionStorage.removeItem('qg-payment-tab');
+      return;
+    }
+  } catch (e) {}
+  if (params.get('paid') === '1' || tabParam === 'inprogress') {
+    activeTab = 'inprogress';
+    return;
+  }
   if (typeof normalizeMyTasksTab === 'function') {
     activeTab = normalizeMyTasksTab(tabParam || defaultMyTasksTab());
     return;
@@ -278,6 +290,28 @@ function syncTabButtons() {
     var el = document.getElementById(TAB_IDS[key]);
     if (el) el.classList.toggle('active', activeTab === key);
   });
+}
+
+function isTaskPaid(taskId) {
+  var p = paymentByTaskId[String(taskId)];
+  if (!p) return false;
+  var st = String(p.status || p.STATUS || '').toLowerCase();
+  return st === 'held' || st === 'paid' || st === 'completed';
+}
+
+async function refreshPaymentMap(userId) {
+  paymentByTaskId = {};
+  if (!userId || !window.QG_CONFIG || !window.QG_CONFIG.paymentsEnabled) return;
+  if (typeof getPaymentsForUser !== 'function') return;
+  try {
+    var rows = await getPaymentsForUser(userId, 'poster');
+    (rows || []).forEach(function (p) {
+      var tid = p.task_id || p.TASK_ID;
+      if (tid) paymentByTaskId[String(tid)] = p;
+    });
+  } catch (e) {
+    console.warn('Payment map load failed:', e);
+  }
 }
 
 function displayName(uid, taskOrApp) {
@@ -533,7 +567,15 @@ async function loadData(){
   if (!userId) return;
 
   var params = new URLSearchParams(window.location.search);
-  if (params.get('tab') === 'posted' || sessionStorage.getItem('qg-just-posted') === '1') {
+  var preferInProgress = params.get('paid') === '1' || params.get('tab') === 'inprogress';
+  try {
+    if (sessionStorage.getItem('qg-payment-tab') === 'inprogress') preferInProgress = true;
+  } catch (e) {}
+  if (params.get('paid') === '1' || preferInProgress) {
+    activeTab = 'inprogress';
+    if (typeof setSessionMode === 'function') setSessionMode('poster');
+    if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('tasks');
+  } else if (params.get('tab') === 'posted' || sessionStorage.getItem('qg-just-posted') === '1') {
     if (typeof setSessionMode === 'function') setSessionMode('poster');
     try { sessionStorage.removeItem('qg-just-posted'); } catch (e) {}
     activeTab = 'posted';
@@ -541,14 +583,15 @@ async function loadData(){
   }
 
   if (typeof window.QG_handlePaymentReturn === 'function') {
-    await window.QG_handlePaymentReturn();
+    if (await window.QG_handlePaymentReturn()) preferInProgress = true;
   }
 
   try {
     var cached = typeof readTasksCache === 'function' ? readTasksCache(true) : null;
     if (cached && cached.length) {
       allTasks = cached;
-      pickDefaultTab();
+      if (preferInProgress) activeTab = 'inprogress';
+      else pickDefaultTab();
       applyExpandFromUrl();
       syncRoleTabs();
       syncTabButtons();
@@ -577,6 +620,7 @@ async function loadData(){
     userAvatars = results[3] || {};
     await hydrateApplicantAvatars();
     await hydrateMissingNames();
+    await refreshPaymentMap(userId);
 
     if (typeof fetchAllTasksFresh === 'function') { /* already fresh */ }
   } catch (err) {
@@ -589,7 +633,12 @@ async function loadData(){
     showToast('Showing saved tasks — reconnect or run beta-setup-all.sql if this persists', '#f59e0b');
   }
 
-  pickDefaultTab();
+  if (preferInProgress) {
+    activeTab = 'inprogress';
+    if (typeof setSessionMode === 'function') setSessionMode('poster');
+  } else {
+    pickDefaultTab();
+  }
   applyExpandFromUrl();
   syncRoleTabs();
   syncTabButtons();
@@ -604,6 +653,11 @@ async function loadData(){
   }
 }
 window.loadData = loadData;
+window.QG_refreshPaymentState = async function(taskId) {
+  var uid = window._currentUser ? window._currentUser.uid : null;
+  if (uid) await refreshPaymentMap(uid);
+  if (taskId && typeof invalidateTasksCache === 'function') invalidateTasksCache();
+};
 
 function getDemoTasks(){
   return [
@@ -1134,15 +1188,23 @@ function renderTab(){
       var disputeBtn = typeof disputeButtonHtml === 'function'
         ? disputeButtonHtml(taskId, getField(t,'TITLE'), otherUserId, otherName)
         : '';
-      var reportBtns = typeof reportButtonHtml === 'function'
-        ? reportButtonHtml('task', taskId, getField(t,'TITLE')) +
-          (otherUserId ? reportButtonHtml('user', otherUserId, otherName) : '')
-        : '';
+      var reportBtns = typeof reportButtonHtml === 'function' && otherUserId
+        ? reportButtonHtml('user', otherUserId, otherName)
+        : (typeof reportButtonHtml === 'function'
+          ? reportButtonHtml('task', taskId, getField(t,'TITLE'))
+          : '');
+      var taskPaid = isPosterTask && isTaskPaid(taskId);
+      var payAction = '';
+      if (isPosterTask && isPaymentGatedChat()) {
+        if (taskPaid) {
+          payAction = '<span class="act-btn btn-secondary" style="opacity:0.9;cursor:default;pointer-events:none">✓ Paid · chat unlocked</span>';
+        } else {
+          payAction = '<button type="button" class="act-btn btn-primary" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks" data-pay-amount="'+escAttr(String(getField(t,'BUDGET')))+'" data-pay-title="'+escAttr(getField(t,'TITLE'))+'">💳 Pay &amp; unlock chat</button>';
+        }
+      }
       var posterActions = isPosterTask
-        ? (isPaymentGatedChat()
-          ? '<button type="button" class="act-btn btn-primary" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks" data-pay-amount="'+escAttr(String(getField(t,'BUDGET')))+'" data-pay-title="'+escAttr(getField(t,'TITLE'))+'">💳 Pay &amp; unlock chat</button>'
-          : '') +
-          '<button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')">💬 Message</button>' +
+        ? payAction +
+          '<button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')"'+(taskPaid ? '' : (isPaymentGatedChat() ? ' title="Pay first to unlock chat"' : ''))+'>💬 Message</button>' +
           '<button class="act-btn btn-success" onclick="markComplete('+JSON.stringify(String(taskId))+', this)">✓ Mark complete</button>' +
           '<button class="act-btn btn-primary" onclick="confirmChangeTasker('+JSON.stringify(String(taskId))+')">↩ Change tasker</button>' +
           '<button class="act-btn btn-danger" data-cancel-inprogress="'+escAttr(taskId)+'">✕ Cancel task</button>'
@@ -1348,7 +1410,7 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
 
   if(!convResult.success){
     setAcceptLoading(acceptBtn, false);
-    showToast('Accepted but chat setup failed — run supabase/messaging.sql', '#f59e0b');
+    showToast('Accepted but chat setup failed — try Messages or refresh', '#f59e0b');
     loadData();
     return;
   }
@@ -1401,13 +1463,27 @@ window.openChatWithWorker = async function(taskId, workerId){
   var statusForChat = taskStatus(task);
   var conv = await getConversationForTask(taskId, posterId, workerId);
   if (conv && conv.conv_id) {
-    if (!isPaymentGatedChat()) {
-      var unlockResult = typeof forceUnlockConversationForTask === 'function'
-        ? await forceUnlockConversationForTask(conv, statusForChat)
-        : await unlockConversationIfAllowed(conv.conv_id, conv.status, statusForChat);
-      if (!unlockResult.success && !unlockResult.skipped) {
-        showToast('Chat still locked — run supabase/beta-setup-all.sql in Supabase, then try again.', '#f59e0b');
+    var unlockResult = typeof forceUnlockConversationForTask === 'function'
+      ? await forceUnlockConversationForTask(conv, statusForChat)
+      : { success: true };
+    if (isPaymentGatedChat()) {
+      var paid = typeof isTaskPaid === 'function' ? isTaskPaid(taskId) : false;
+      if (!paid) {
+        var payRow = typeof getPaymentByTask === 'function' ? await getPaymentByTask(taskId) : null;
+        var pst = payRow && String(payRow.status || '').toLowerCase();
+        paid = pst === 'held' || pst === 'paid';
       }
+      if (!paid) {
+        showToast('Pay first to unlock chat', '#f59e0b');
+        if (String(posterId) === String(userId) && typeof window.QG_openPayModal === 'function') {
+          window.QG_openPayModal(taskId, userId, { returnPage: 'mytasks', title: getField(task, 'TITLE') });
+        }
+        return;
+      }
+    }
+    if (!unlockResult.success && !parseConversationUnlocked(unlockResult.conv || conv)) {
+      showToast('Chat is still unlocking — wait a moment and try again', '#f59e0b');
+      return;
     }
     window.location.href = 'chat.html?conv=' + encodeURIComponent(conv.conv_id);
     return;
@@ -1434,7 +1510,7 @@ window.openChatWithWorker = async function(taskId, workerId){
     }
   }
 
-  showToast('No chat thread yet — open Messages or run supabase/messaging.sql in Supabase.', '#f59e0b');
+  showToast('No chat thread yet — check Messages', '#f59e0b');
   setTimeout(function(){ window.location.href = 'messages.html'; }, 1200);
 };
 
@@ -1467,7 +1543,7 @@ window.openChatForTask = async function(taskId){
     return;
   }
 
-  showToast('No chat yet — try Messages or run supabase/messaging.sql', '#f59e0b');
+  showToast('No chat yet — open Messages', '#f59e0b');
   setTimeout(function(){ window.location.href = 'messages.html'; }, 1200);
 };
 
@@ -1666,6 +1742,10 @@ window.confirmChangeTasker = function(taskId) {
   var appId = acceptedApp ? getField(acceptedApp, 'APP_ID') : '';
   if (!appId) {
     showToast('No assigned tasker found — refresh and try again', '#ef4444');
+    return;
+  }
+  if (typeof isTaskPaid === 'function' && isTaskPaid(taskId)) {
+    showToast('Cannot change tasker after payment — cancel the task or contact support', '#f59e0b');
     return;
   }
   showConfirm({

@@ -311,13 +311,14 @@ async function initChat(){
 
   var payReturn = new URLSearchParams(window.location.search);
   if (payReturn.get('paid') === '1' && currentConv.task_id) {
+    var sessionId = payReturn.get('session_id') || '';
+    if (sessionId && typeof window.QG_confirmCheckoutSession === 'function') {
+      await window.QG_confirmCheckoutSession(sessionId);
+    }
     if (typeof window.QG_waitForPaymentHeld === 'function') {
-      await window.QG_waitForPaymentHeld(currentConv.task_id, 15000);
+      await window.QG_waitForPaymentHeld(currentConv.task_id, 8000);
     }
     currentConv = await getConversation(convId) || currentConv;
-    if (typeof window.QG_handlePaymentReturn === 'function') {
-      await window.QG_handlePaymentReturn();
-    }
   }
 
   if (typeof enrichConversationNames === 'function') {
@@ -334,11 +335,17 @@ async function initChat(){
     }
   }
   if (!currentConv.is_unlocked && convStatus !== 'completed') {
-    var shouldUnlock = typeof shouldUnlockChatNow === 'function'
-      ? shouldUnlockChatNow(convStatus, taskStatus)
-      : (typeof resolveChatUnlockedOnCreate === 'function' &&
-        resolveChatUnlockedOnCreate(convStatus === 'application' ? 'application' : 'in_progress'));
-    if (shouldUnlock) {
+    var chatRule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'payment';
+    var tryUnlock = false;
+    if (chatRule === 'payment' && (taskStatus === 'in_progress' || convStatus === 'in_progress')) {
+      tryUnlock = true;
+    } else if (typeof shouldUnlockChatNow === 'function' && shouldUnlockChatNow(convStatus, taskStatus)) {
+      tryUnlock = true;
+    } else if (typeof resolveChatUnlockedOnCreate === 'function' &&
+        resolveChatUnlockedOnCreate(convStatus === 'application' ? 'application' : 'in_progress')) {
+      tryUnlock = true;
+    }
+    if (tryUnlock) {
       var unlockResult = typeof unlockChatForTask === 'function'
         ? await unlockChatForTask(currentConv.task_id, currentConv.poster_id, currentConv.worker_id)
         : (typeof forceUnlockConversationForTask === 'function'

@@ -21,6 +21,7 @@ window.QG_CONFIG = {
   // Paste pk_test_... for testing (must match sk_test_ in Supabase secrets — not pk_live_ until launch)
   stripePublishableKey: 'pk_test_51Tlh7hCPjV7Oq67QZsRZgVeZMY0AgYDwl0YgOtV33gXPdDhJF7tMzw0BfjTZkVE3hcIXkhsx6XNJZCM1lSTVpfk200OajLTBz9',
   createCheckoutUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-checkout',
+  confirmCheckoutUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/confirm-checkout',
   connectLinkUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-connect-link',
   releasePayoutUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/release-payout',
   platformFeePercent: 25,

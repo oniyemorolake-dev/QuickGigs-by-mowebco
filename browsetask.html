@@ -410,6 +410,7 @@ function normaliseTask(row){
   };
 }
 var allTasks=[],activeMode='all',activeCat='all',activeTask=null;
+var appliedTaskIds = {};
 var userNames={};
 var dbSubmitApplication = window.submitApplication;
 var isDark=localStorage.getItem('qg-mode')!=='light';
@@ -506,8 +507,25 @@ function isOwnPostedTask(t){
 }
 function filterBrowseTasks(list){
   return (list || []).filter(function(t){
-    return t.status === 'open' && !isOwnPostedTask(t);
+    return t.status === 'open' && !isOwnPostedTask(t) && !appliedTaskIds[String(t.id)];
   });
+}
+
+async function loadMyAppliedTaskIds(userId) {
+  appliedTaskIds = {};
+  if (!userId || typeof getApplicationsByWorker !== 'function') return;
+  try {
+    var apps = await getApplicationsByWorker(userId);
+    (apps || []).forEach(function(a) {
+      var tid = a.task_id || a.TASK_ID;
+      var st = String(a.status || a.STATUS || 'pending').toLowerCase();
+      if (!tid) return;
+      if (st === 'declined' || st === 'withdrawn' || st === 'cancelled') return;
+      appliedTaskIds[String(tid)] = true;
+    });
+  } catch (e) {
+    console.warn('Could not load your applications:', e);
+  }
 }
 
 async function loadTasks(){
@@ -534,12 +552,20 @@ async function loadTasks(){
   if (typeof loadSavedTaskIds === 'function' && getCurrentUserId()) {
     await loadSavedTaskIds(getCurrentUserId());
   }
+  if (getCurrentUserId()) {
+    await loadMyAppliedTaskIds(getCurrentUserId());
+  }
   renderCards();
   if (typeof fetchAllTasksFresh === 'function') {
     fetchAllTasksFresh().then(function(fresh){
       if (!fresh || !fresh.length) return;
       allTasks = filterBrowseTasks(fresh.map(normaliseTask));
-      hydratePosterNames().then(renderCards);
+      hydratePosterNames().then(function() {
+        if (getCurrentUserId()) {
+          return loadMyAppliedTaskIds(getCurrentUserId()).then(renderCards);
+        }
+        renderCards();
+      });
     }).catch(function(err) {
       console.warn('Background task refresh failed:', err);
     });
@@ -817,7 +843,7 @@ window.submitApplication=async function(){
         chatNote = ' Application saved — chat opens after acceptance and payment.';
       } else if (!convResult.success) {
         console.warn('Chat setup failed:', convResult.error);
-        chatNote = ' (Run supabase/messaging.sql if messages are empty.)';
+        chatNote = ' Open Messages to track your application.';
       }
     }
   } catch(err) {
@@ -832,6 +858,11 @@ window.submitApplication=async function(){
   }
   closeModal();
   btn.textContent='Send application';btn.disabled=false;
+  if (activeTask && activeTask.id) {
+    appliedTaskIds[String(activeTask.id)] = true;
+    allTasks = allTasks.filter(function(t) { return String(t.id) !== String(activeTask.id); });
+    renderCards();
+  }
   var toast=document.getElementById('toast');
   toast.innerHTML='Application sent!' + (chatNote || '') + ' <a href="messages.html" style="color:#fff;text-decoration:underline;margin-left:6px">Messages</a>';
   toast.style.display='block';

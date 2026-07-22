@@ -154,6 +154,28 @@
     return data;
   }
 
+  async function confirmCheckoutSession(sessionId) {
+    if (!sessionId || typeof getSupabaseHeaders !== 'function') return { ok: false };
+    var url = fnUrl(
+      'confirmCheckoutUrl',
+      'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/confirm-checkout'
+    );
+    try {
+      var headers = await getSupabaseHeaders();
+      var res = await fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ session_id: String(sessionId) })
+      });
+      var data = {};
+      try { data = await res.json(); } catch (e) { data = { ok: false }; }
+      return data;
+    } catch (err) {
+      console.warn('confirmCheckoutSession failed:', err);
+      return { ok: false, error: String(err) };
+    }
+  }
+
   async function waitForPaymentHeld(taskId, maxMs) {
     if (typeof getPaymentByTask !== 'function') return false;
     var start = Date.now();
@@ -164,9 +186,29 @@
         var st = row && String(row.status || '').toLowerCase();
         if (st && ['held', 'completed', 'paid'].indexOf(st) >= 0) return true;
       } catch (e) {}
-      await new Promise(function (r) { setTimeout(r, 1200); });
+      await new Promise(function (r) { setTimeout(r, 400); });
     }
     return false;
+  }
+
+  async function tryUnlockChatAfterPayment(taskId) {
+    if (!taskId || typeof getTaskById !== 'function' || typeof unlockChatForTask !== 'function') return;
+    if (!window._currentUser) return;
+    try {
+      var task = await getTaskById(taskId);
+      if (!task) return;
+      var posterId = task.posted_by || task.POSTED_BY;
+      if (String(posterId) !== String(window._currentUser.uid)) return;
+      var apps = typeof getApplicationsByTask === 'function' ? await getApplicationsByTask(taskId) : [];
+      var accepted = (apps || []).find(function (a) {
+        return String(a.status || a.STATUS || '').toLowerCase() === 'accepted';
+      });
+      if (!accepted) return;
+      var workerId = accepted.worker_id || accepted.WORKER_ID;
+      await unlockChatForTask(taskId, posterId, workerId);
+    } catch (e) {
+      console.warn('Post-payment chat unlock skipped:', e);
+    }
   }
 
   function cleanPaymentReturnParams() {
@@ -181,13 +223,37 @@
   async function handlePaymentReturnFromUrl() {
     var params = new URLSearchParams(window.location.search);
     if (params.get('paid') !== '1') return false;
+
     var taskId = params.get('task') || '';
-    if (taskId) await waitForPaymentHeld(taskId, 15000);
-    if (typeof showToast === 'function') {
-      showToast('Payment received — chat unlocked!', '#4ade80');
+    var sessionId = params.get('session_id') || '';
+    var handledKey = 'qg-paid-' + taskId + '-' + (sessionId || '1');
+    if (sessionStorage.getItem(handledKey) === '1') return false;
+    sessionStorage.setItem(handledKey, '1');
+    try { sessionStorage.setItem('qg-payment-tab', 'inprogress'); } catch (e) {}
+
+    if (typeof activeTab !== 'undefined') activeTab = 'inprogress';
+    if (typeof setSessionMode === 'function') setSessionMode('poster');
+
+    if (sessionId) {
+      await confirmCheckoutSession(sessionId);
     }
+
+    var paid = taskId ? await waitForPaymentHeld(taskId, sessionId ? 6000 : 12000) : false;
+    if (paid && taskId) await tryUnlockChatAfterPayment(taskId);
+
+    if (typeof window.QG_refreshPaymentState === 'function') {
+      await window.QG_refreshPaymentState(taskId);
+    }
+
+    if (typeof showToast === 'function') {
+      showToast(
+        paid ? 'Payment accepted — chat is open' : 'Payment processing — tap Message again in a moment',
+        paid ? '#4ade80' : '#f59e0b'
+      );
+    }
+
     cleanPaymentReturnParams();
-    if (typeof loadData === 'function') loadData();
+    if (typeof renderTab === 'function') renderTab();
     return true;
   }
 
@@ -305,4 +371,5 @@
   window.QG_closePayModal = closePayModal;
   window.QG_handlePaymentReturn = handlePaymentReturnFromUrl;
   window.QG_waitForPaymentHeld = waitForPaymentHeld;
+  window.QG_confirmCheckoutSession = confirmCheckoutSession;
 })();

@@ -1224,7 +1224,25 @@ function parseConversationUnlocked(conv) {
 async function forceUnlockConversationForTask(conv, taskStatus) {
   if (!conv || !conv.conv_id) return { success: false, error: 'No conversation' };
   var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'payment';
-  if (rule === 'payment') return { success: parseConversationUnlocked(conv), conv: conv };
+
+  if (parseConversationUnlocked(conv) && String(conv.status || '').toLowerCase() !== 'application') {
+    return { success: true, conv: conv };
+  }
+
+  if (rule === 'payment') {
+    var taskId = conv.task_id || conv.TASK_ID;
+    if (taskId && typeof getPaymentByTask === 'function') {
+      var payment = await getPaymentByTask(taskId);
+      var pst = payment && String(payment.status || '').toLowerCase();
+      if (pst === 'held' || pst === 'paid' || pst === 'completed') {
+        var payUnlock = await updateConversation(conv.conv_id, { is_unlocked: true, status: 'in_progress' });
+        if (payUnlock.success) {
+          return { success: true, conv: Object.assign({}, conv, { is_unlocked: true, status: 'in_progress' }) };
+        }
+      }
+    }
+    return { success: parseConversationUnlocked(conv), conv: conv, skipped: !parseConversationUnlocked(conv) };
+  }
 
   var convStatus = String(conv.status || '').toLowerCase();
   var ts = String(taskStatus || '').toLowerCase();
@@ -1896,6 +1914,10 @@ async function releaseAcceptedTasker(taskId, appId) {
       return updateConversation(c.conv_id, { is_unlocked: false, status: 'application' });
     }));
   }
+
+  invalidateTasksCache();
+  invalidateAppsCache();
+  mergeTaskInCache(taskId, { status: 'open', STATUS: 'open' });
 
   return { success: true };
 }

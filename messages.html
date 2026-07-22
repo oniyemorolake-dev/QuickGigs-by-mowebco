@@ -286,7 +286,7 @@ async function loadConversations(){
     console.error('Failed to load conversations:', err);
     var hint = String(err && err.message || '').indexOf('401') >= 0
       ? 'Session error — hard refresh and log in again.'
-      : 'Make sure you ran supabase/messaging.sql in your Supabase project.';
+      : 'Could not load messages — check your connection and try again.';
     content.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Could not load messages</div><div class="empty-sub">'+window.escapeHtml(hint)+'</div></div>';
   }
 }
