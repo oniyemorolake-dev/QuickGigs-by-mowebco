@@ -8,6 +8,10 @@ ALTER TABLE tasks ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMPTZ;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS scheduled_label TEXT;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS photo_urls TEXT;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS requires_photos BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS tasks_created_idx ON tasks (created_at DESC);
+CREATE INDEX IF NOT EXISTS tasks_status_created_idx ON tasks (status, created_at DESC);
 
 GRANT SELECT, INSERT, UPDATE ON tasks TO anon, authenticated;
 

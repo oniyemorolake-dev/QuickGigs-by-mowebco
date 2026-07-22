@@ -169,6 +169,23 @@ async function sbGet(table, filters, order, limit) {
   }
 }
 
+async function sbGetTasksList(filters, limit) {
+  var orders = ['created_at.desc', 'task_id.desc', null];
+  var lastErr = null;
+  for (var i = 0; i < orders.length; i++) {
+    try {
+      return await sbGetOrThrow('tasks', filters, orders[i], limit || 200);
+    } catch (err) {
+      lastErr = err;
+      var msg = String(err.message || err);
+      if (msg.indexOf('created_at') >= 0 || msg.indexOf('42703') >= 0) continue;
+      if (!orders[i]) throw err;
+    }
+  }
+  if (lastErr) console.warn('sbGetTasksList failed:', lastErr);
+  return [];
+}
+
 async function sbPostReturn(table, data) {
   try {
     var headers = await getSupabaseHeaders({ 'Prefer': 'return=representation' });
@@ -322,12 +339,12 @@ async function expireStaleOpenTasksOnce() {
 
 async function getTasks() {
   await expireStaleOpenTasksOnce();
-  var rows = await sbGet('tasks', 'status=eq.open', 'created_at.desc', 100);
+  var rows = await sbGetTasksList('status=eq.open', 100);
   return filterBrowseableTasks(rows);
 }
 
 async function getAllTasks() {
-  return await sbGet('tasks', null, 'created_at.desc', 100);
+  return await sbGetTasksList(null, 100);
 }
 
 async function fetchTasksWithCache() {
@@ -342,7 +359,7 @@ async function fetchTasksWithCache() {
 async function fetchAllTasksFresh() {
   var stale = readTasksCache(true);
   try {
-    var items = await sbGetOrThrow('tasks', null, 'created_at.desc', 200);
+    var items = await sbGetTasksList(null, 200);
     var list = Array.isArray(items) ? items.map(normalizeTaskRow) : [];
     writeTasksCache(list);
     window._supabaseUsingStaleCache = false;
@@ -419,7 +436,7 @@ async function lockConversationsForTask(taskId) {
 }
 
 async function getTasksByUser(userId) {
-  return await sbGet('tasks', 'posted_by=eq.' + userId, 'created_at.desc', 50);
+  return await sbGetTasksList('posted_by=eq.' + encodeURIComponent(String(userId)), 50);
 }
 
 var MAX_COUNTER_ROUNDS = 2;
@@ -496,9 +513,18 @@ async function postTask(taskData) {
     var key = JSON.stringify(attempts[i]);
     if (seen[key]) continue;
     seen[key] = true;
-    result = await sbPost('tasks', attempts[i]);
+    result = await sbPostReturn('tasks', attempts[i]);
     if (result.success) {
-      invalidateTasksCache();
+      if (result.data) {
+        var row = normalizeTaskRow(result.data);
+        var cached = readTasksCache(true) || [];
+        var rowId = getTaskRowId(row);
+        cached = cached.filter(function (t) { return String(getTaskRowId(t)) !== String(rowId); });
+        cached.unshift(row);
+        writeTasksCache(cached);
+      } else {
+        invalidateTasksCache();
+      }
       return result;
     }
   }

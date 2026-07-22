@@ -214,6 +214,8 @@ body{padding-bottom:76px;}
 <body class="theme-posttask">
 <script src="qg-theme.js"></script>
 <script src="qg-location.js"></script>
+<script src="qg-nav.js"></script>
+<script>if (typeof setSessionMode === 'function') setSessionMode('poster');</script>
 
 <!-- NAV -->
 <nav class="nav">
@@ -406,9 +408,9 @@ body{padding-bottom:76px;}
 <div class="success-screen content" id="successScreen">
   <div class="success-icon">🎉</div>
   <p class="success-title">Task posted!</p>
-  <p class="success-sub">Workers near you will start applying soon. You'll get notified when someone applies.</p>
-  <button class="success-btn" onclick="window.location.href='mytasks.html'">View in My Tasks</button>
-  <button class="success-btn" style="margin-left:8px;background:rgba(255,255,255,0.1)" onclick="window.location.href='dashboard.html'">Back to dashboard</button>
+  <p class="success-sub">Your task is live under <strong>My Tasks → Posted</strong> (Poster mode). Browse only shows other people's gigs — not your own.</p>
+  <button class="success-btn" onclick="window.location.href='mytasks.html?tab=posted&mode=poster'">View in My Tasks</button>
+  <button class="success-btn" style="margin-left:8px;background:rgba(255,255,255,0.1)" onclick="window.location.href='dashboard.html?mode=poster'">Back to dashboard</button>
 </div>
 
 <script src="qg-utils.js"></script>
@@ -985,6 +987,8 @@ window.handleSubmit = async function(skipPhotos) {
   var result = await postTask(taskData);
 
   if (result.success) {
+    if (typeof setSessionMode === 'function') setSessionMode('poster');
+    try { sessionStorage.setItem('qg-just-posted', '1'); } catch (e) {}
     document.getElementById('formContent').style.display = 'none';
     document.getElementById('successScreen').style.display = 'block';
   } else {
@@ -1000,7 +1004,6 @@ window.handleSubmit = async function(skipPhotos) {
 </script>
 
 <nav class="tab-bar" id="qgTabBar"></nav>
-<script src="qg-nav.js"></script>
 <script>
 if (typeof setSessionMode === 'function') setSessionMode('poster');
 renderQuickGigsTabBar('post');
