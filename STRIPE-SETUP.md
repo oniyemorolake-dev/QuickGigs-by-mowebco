@@ -95,6 +95,7 @@ Fine. Use metadata `project: quickgigs` on all QuickGigs payments. Keep a **sepa
 
 | Issue | Fix |
 |-------|-----|
+| Checkout redirects to old Stripe page | Redeploy `create-checkout` Edge Function (embedded mode) |
 | Pay button says “not configured” | Deploy functions + set secrets + `paymentsEnabled: true` + `pk_test_` in config |
 | Checkout fails `stripe_not_configured` | Set `STRIPE_SECRET_KEY` in Supabase secrets |
 | Chat stays locked after pay | Check webhook fired; Stripe → Webhooks → event log |
