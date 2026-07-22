@@ -1474,7 +1474,10 @@ window.openChatForTask = async function(taskId){
 window.markComplete = async function(taskId, btn){
   taskId = String(taskId);
   if (btn) { btn.disabled = true; btn.textContent = 'Completing…'; }
-  var completeFn = typeof completeTask === 'function' ? completeTask : function(id) { return updateTaskStatus(id, 'completed'); };
+  var userId = window._currentUser ? window._currentUser.uid : '';
+  var completeFn = typeof completeTask === 'function'
+    ? function(id) { return completeTask(id, userId); }
+    : function(id) { return updateTaskStatus(id, 'completed'); };
   var result = await completeFn(taskId);
   if (!result.success) {
     if (btn) { btn.disabled = false; btn.textContent = '✓ Mark complete'; }
@@ -1483,6 +1486,9 @@ window.markComplete = async function(taskId, btn){
       : (result.error || 'Could not mark complete — run supabase/beta-setup-all.sql in Supabase');
     showToast(msg, '#ef4444');
     return;
+  }
+  if (result.release && result.release.ok && !result.release.skipped && !result.release.already) {
+    showToast('Payout sent to tasker (75/25 split)', '#4ade80');
   }
   allTasks.forEach(function(t) {
     if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, 'completed');

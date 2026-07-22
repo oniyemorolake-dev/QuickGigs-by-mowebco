@@ -11,6 +11,7 @@ Run once (if not already):
 | File | Purpose |
 |------|---------|
 | `supabase/payments.sql` | Payment records ✅ (you ran this) |
+| `supabase/payments-release.sql` | Transfer ID column for payout release |
 | `supabase/stripe-connect.sql` | Worker payout accounts |
 
 ---
@@ -39,6 +40,7 @@ From your machine (with [Supabase CLI](https://supabase.com/docs/guides/cli) lin
 ```bash
 cd "c:\QuickGigs by mowebco"
 supabase functions deploy create-checkout --no-verify-jwt
+supabase functions deploy release-payout --no-verify-jwt
 supabase functions deploy stripe-webhook --no-verify-jwt
 supabase functions deploy create-connect-link --no-verify-jwt
 ```
@@ -74,6 +76,13 @@ Push to GitHub → wait ~2 min → hard refresh quickgigs.ca.
 2. **Poster** → accept a worker on My Tasks
 3. **Pay modal opens** (no redirect) — use test card `4242 4242 4242 4242` or Apple Pay on iPhone Safari
 4. Chat unlocks after payment (webhook)
+5. **Mark complete** → worker receives **75%** payout (platform keeps **25%**)
+
+### Escrow flow
+
+1. Poster pays → funds held on platform (`payments.status = held`)
+2. Task marked complete → `release-payout` sends worker share to Connect account
+3. Tasker dashboard **Total earned** updates after payout
 
 ### Apple Pay / Google Pay
 
@@ -99,6 +108,7 @@ Fine. Use metadata `project: quickgigs` on all QuickGigs payments. Keep a **sepa
 | Pay button says “not configured” | Deploy functions + set secrets + `paymentsEnabled: true` + `pk_test_` in config |
 | Checkout fails `stripe_not_configured` | Set `STRIPE_SECRET_KEY` in Supabase secrets |
 | Chat stays locked after pay | Check webhook fired; Stripe → Webhooks → event log |
+| Mark complete fails payout | Tasker must finish **Set up payouts** in Profile first |
 | Worker payout missing | Tasker must complete Connect onboarding first |
 
 ---

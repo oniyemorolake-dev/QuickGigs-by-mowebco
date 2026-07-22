@@ -1827,10 +1827,19 @@ async function adminRemoveTaskWithReason(taskId, reason) {
   return { success: true };
 }
 
-/** Mark task + accepted application completed — used by both poster and tasker. */
-async function completeTask(taskId) {
+/** Mark task + accepted application completed — releases escrow payout when payment is held. */
+async function completeTask(taskId, actorId) {
   taskId = String(taskId);
   if (!taskId) return { success: false, error: 'Missing task id' };
+
+  var release = await releaseTaskPayout(taskId, actorId);
+  if (!release.ok && !release.skipped) {
+    var releaseErr = release.error || 'payout_release_failed';
+    if (releaseErr === 'worker_payout_setup_required') {
+      releaseErr = 'Tasker must set up payouts in Profile before funds can be released';
+    }
+    return { success: false, error: releaseErr, release: release };
+  }
 
   var taskResult = await updateTaskStatus(taskId, 'completed');
   if (!taskResult.success) return taskResult;
@@ -1853,7 +1862,7 @@ async function completeTask(taskId) {
   }
   invalidateTasksCache();
   mergeTaskInCache(taskId, { status: 'completed', STATUS: 'completed' });
-  return { success: true };
+  return { success: true, release: release };
 }
 
 /** Poster releases current tasker — task reopens for other applicants. */
@@ -1975,6 +1984,49 @@ async function getPaymentByTask(taskId) {
     return st === 'held' || st === 'completed' || st === 'paid';
   });
   return paid || results[0];
+}
+
+async function getPaymentsForUser(userId, role) {
+  if (!userId) return [];
+  var col = role === 'poster' ? 'poster_id' : 'worker_id';
+  return await sbGet('payments', col + '=eq.' + encodeURIComponent(String(userId)), 'created_at.desc', 100);
+}
+
+async function releaseTaskPayout(taskId, actorId) {
+  var cfg = window.QG_CONFIG || {};
+  if (!cfg.paymentsEnabled) return { ok: true, skipped: true };
+
+  var payment = await getPaymentByTask(taskId);
+  if (!payment) return { ok: true, skipped: true };
+
+  var st = String(payment.status || '').toLowerCase();
+  if (st === 'paid') return { ok: true, already: true };
+  if (st !== 'held') return { ok: true, skipped: true };
+
+  if (typeof getSupabaseHeaders !== 'function') {
+    return { ok: false, error: 'Database not loaded' };
+  }
+
+  var url = cfg.releasePayoutUrl ||
+    'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/release-payout';
+  try {
+    var headers = await getSupabaseHeaders();
+    var res = await fetch(url, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({
+        task_id: String(taskId),
+        actor_id: String(actorId || '')
+      })
+    });
+    var data = {};
+    try { data = await res.json(); } catch (e) { data = { ok: false, error: 'Invalid response' }; }
+    if (!res.ok && data.ok !== false) data.ok = false;
+    return data;
+  } catch (err) {
+    console.error('releaseTaskPayout failed:', err);
+    return { ok: false, error: err.message || String(err) };
+  }
 }
 
 async function savePayment(paymentData) {
@@ -2229,6 +2281,8 @@ window.submitReview = submitReview;
 window.readReviewsCache = readReviewsCache;
 window.mergeReviewInCache = mergeReviewInCache;
 window.getPaymentByTask = getPaymentByTask;
+window.getPaymentsForUser = getPaymentsForUser;
+window.releaseTaskPayout = releaseTaskPayout;
 window.savePayment = savePayment;
 window.unlockChatForTask = unlockChatForTask;
 window.pushInAppNotification = pushInAppNotification;

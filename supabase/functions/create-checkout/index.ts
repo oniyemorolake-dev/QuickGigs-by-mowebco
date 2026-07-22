@@ -123,13 +123,10 @@ Deno.serve(async (req) => {
         task_id: taskId,
         poster_id: posterId,
         worker_id: workerId,
+        worker_connect_id: workerConnectId || '',
       },
     };
-
-    if (workerConnectId) {
-      paymentIntentData.application_fee_amount = platformFeeCents;
-      paymentIntentData.transfer_data = { destination: workerConnectId };
-    }
+    // Escrow: full charge lands on platform; worker paid on task complete via release-payout
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',

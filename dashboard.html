@@ -329,7 +329,7 @@ else {
   localStorage.setItem('qg-session-mode', sessionMode);
 }
 var isPoster = sessionMode === 'poster';
-var dashData = { posted: [], apps: [], userId: null };
+var dashData = { posted: [], apps: [], payments: [], userId: null };
 
 window.switchMode = function(){
   if (typeof switchRoleMode === 'function') switchRoleMode();
@@ -430,10 +430,14 @@ async function loadDashboardData(userId) {
       : window.SUPABASE_HEADERS;
     var res = await Promise.all([
       typeof fetchAllTasksFresh === 'function' ? fetchAllTasksFresh() : fetch(window.SUPABASE_URL + '/rest/v1/tasks?order=created_at.desc&limit=100', { headers: headers }).then(function (r) { return r.ok ? r.json() : []; }),
-      fetch(window.SUPABASE_URL + '/rest/v1/applications?order=created_at.desc&limit=200', { headers: headers }).then(function (r) { return r.ok ? r.json() : []; })
+      fetch(window.SUPABASE_URL + '/rest/v1/applications?order=created_at.desc&limit=200', { headers: headers }).then(function (r) { return r.ok ? r.json() : []; }),
+      typeof getPaymentsForUser === 'function'
+        ? getPaymentsForUser(userId, isPoster ? 'poster' : 'worker')
+        : Promise.resolve([])
     ]);
     dashData.posted = Array.isArray(res[0]) ? res[0] : [];
     dashData.apps = Array.isArray(res[1]) ? res[1] : [];
+    dashData.payments = Array.isArray(res[2]) ? res[2] : [];
   } catch (err) {
     console.warn('Dashboard stats load failed:', err);
     if (!cached || !cached.length) {
@@ -515,6 +519,19 @@ function renderAll(){
     });
   }).length : 0;
 
+  var workerPayments = (dashData.payments || []).filter(function(p) {
+    return String(p.worker_id || p.WORKER_ID || '') === String(userId);
+  });
+  var totalEarned = workerPayments.reduce(function(s, p) {
+    if (String(p.status || '').toLowerCase() !== 'paid') return s;
+    return s + (parseFloat(p.worker_payout != null ? p.worker_payout : p.WORKER_PAYOUT) || 0);
+  }, 0);
+  var pendingEarned = workerPayments.reduce(function(s, p) {
+    if (String(p.status || '').toLowerCase() !== 'held') return s;
+    return s + (parseFloat(p.worker_payout != null ? p.worker_payout : p.WORKER_PAYOUT) || 0);
+  }, 0);
+  var earnedLabel = totalEarned > 0 ? '$' + totalEarned.toFixed(0) : (pendingEarned > 0 ? '$' + pendingEarned.toFixed(0) + ' pending' : '—');
+
   var stats = isPoster
     ? [
         {icon:'📋', val: String(myPosted.length), cls:'', lbl:'Tasks posted', href:'mytasks.html?tab=posted'},
@@ -526,7 +543,7 @@ function renderAll(){
         {icon:'📨', val: String(myApps.length), cls:'', lbl:'Applications', href:'mytasks.html?tab=applied'},
         {icon:'✅', val: String(myAcceptedApps.length), cls:'purple', lbl:'Jobs accepted', href:'mytasks.html?tab=applied'},
         {icon:'⏳', val: String(myInProgressWorker), cls:'', lbl:'In progress', href:'mytasks.html?tab=inprogress'},
-        {icon:'💰', val: '—', cls:'green', lbl:'Total earned', href:'mytasks.html?tab=applied'}
+        {icon:'💰', val: earnedLabel, cls:'green', lbl:'Total earned', href:'mytasks.html?tab=completed'}
       ];
 
   document.getElementById('statsGrid').innerHTML = stats.map(function(s){
