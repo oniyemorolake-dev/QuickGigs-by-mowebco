@@ -1,6 +1,6 @@
 /* QuickGigs — platform announcement banner + admin soft close */
 (function () {
-  var SKIP = { admin: 1, terms: 1, privacy: 1 };
+  var SKIP = { admin: 1, terms: 1, privacy: 1, login: 1, 'reset-password': 1 };
   var BLOCK_PAGES = { posttask: 1, browsetask: 1, signup: 1 };
   var ADMIN_EMAIL = (window.QG_CONFIG && window.QG_CONFIG.adminEmail) || 'mowebsiteco@gmail.com';
 
@@ -15,10 +15,15 @@
   }
 
   function shouldBypassSoftClose() {
-    if (!isAdminUser()) return false;
+    var u = window._currentUser;
     var key = pageKey();
-    if (key === 'index' || key === 'signup') return false;
-    return true;
+    if (u && u.email && isAdminUser()) {
+      if (key === 'index' || key === 'signup') return false;
+      return true;
+    }
+    // Existing users can use the app during soft close (new sign-ups stay blocked)
+    if (u && u.uid && key !== 'index' && key !== 'signup') return true;
+    return false;
   }
 
   function loadCss() {
@@ -89,12 +94,15 @@
       wrap.innerHTML =
         '<div class="qg-soft-close-box">' +
           '<p class="qg-soft-close-title">' + esc(banner.message || 'QuickGigs beta is closed while we prepare for launch.') + '</p>' +
+          '<p class="qg-soft-close-sub" style="margin-top:14px">Already have an account? <a href="login.html" style="color:var(--al);font-weight:500;text-decoration:none">Log in to continue →</a></p>' +
           (banner.link ? '<p class="qg-soft-close-sub"><a href="' + esc(banner.link) + '" style="color:var(--al)">Learn more →</a></p>' : '') +
         '</div>';
     }
   }
 
   function applySignupSoftClose(banner) {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('oauth') === 'continue') return;
     var card = document.querySelector('.signup-card') || document.querySelector('.signup-page');
     if (!card) return;
     var msg = banner.message || 'Sign-ups are paused while we prepare for launch.';
@@ -104,6 +112,21 @@
       '<p style="margin-top:12px"><a href="index.html">← Back to home</a></p>';
     card.parentNode.insertBefore(block, card);
     card.style.display = 'none';
+  }
+
+  function deferBlockPageRedirect() {
+    var waited = 0;
+    var timer = setInterval(function () {
+      if (window._currentUser && window._currentUser.uid) {
+        clearInterval(timer);
+        return;
+      }
+      waited += 150;
+      if (waited >= 4000) {
+        clearInterval(timer);
+        window.location.replace('index.html?closed=1');
+      }
+    }, 150);
   }
 
   function applySoftClose(banner) {
@@ -120,7 +143,8 @@
       return true;
     }
     if (BLOCK_PAGES[key]) {
-      window.location.replace('index.html?closed=1');
+      if (window._currentUser && window._currentUser.uid) return false;
+      deferBlockPageRedirect();
       return true;
     }
     return false;
@@ -168,4 +192,14 @@
 
   window.QG_refreshPlatformBanner = applyPlatformState;
   window.QG_fetchPlatformBanner = fetchBanner;
+  window.QG_onAuthReadyForSoftClose = function () {
+    applyPlatformState();
+  };
+
+  window.QG_setCurrentUserForSoftClose = function (user) {
+    window._currentUser = user;
+    if (typeof window.QG_onAuthReadyForSoftClose === 'function') {
+      window.QG_onAuthReadyForSoftClose();
+    }
+  };
 })();

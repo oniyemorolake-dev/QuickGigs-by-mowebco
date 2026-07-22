@@ -170,7 +170,7 @@
   document.head.appendChild(bellScript);
 
   var announceScript = document.createElement('script');
-  announceScript.src = 'qg-announcement.js?v=4';
+  announceScript.src = 'qg-announcement.js?v=5';
   announceScript.defer = true;
   document.head.appendChild(announceScript);
 })();
