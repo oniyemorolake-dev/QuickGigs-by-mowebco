@@ -1,0 +1,16 @@
+/* QuickGigs — nav chrome (menu + bell). Load in head to prevent refresh flash. */
+
+.qg-menu-overlay:not(.open),
+.qg-bell-overlay:not(.open) {
+  position: fixed !important;
+  inset: 0 !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+}
+
+.qg-menu-overlay:not(.open) .qg-menu-drawer,
+.qg-bell-overlay:not(.open) .qg-bell-panel {
+  transform: translateX(100%) !important;
+}

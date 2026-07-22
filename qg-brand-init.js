@@ -35,6 +35,13 @@
   window.QG_getBrandMode = getMode;
   window.QG_applyRoleLabels = applyRoleLabels;
 
+  if (!document.querySelector('link[href*="qg-chrome.css"]')) {
+    var chrome = document.createElement('link');
+    chrome.rel = 'stylesheet';
+    chrome.href = 'qg-chrome.css?v=1';
+    document.head.appendChild(chrome);
+  }
+
   if (!document.getElementById('qg-light-nav-css')) {
     var link = document.createElement('link');
     link.id = 'qg-light-nav-css';

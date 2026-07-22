@@ -106,22 +106,27 @@ In **Supabase → SQL Editor**, run any you haven’t yet:
 ## Beta complete → launch prep
 
 **You’re done with closed beta** (2 completed gigs, engineers OK).  
-Full launch checklist: **[LAUNCH-PREP.md](LAUNCH-PREP.md)**
+Full checklist: **[LAUNCH-PREP.md](LAUNCH-PREP.md)**
 
 **Your next steps (in order):**
 
-1. Run `supabase/payments.sql` in Supabase SQL Editor  
-2. Create / finish **Stripe** account (Test mode) — Connect Express  
-3. Tell us when ready → we wire `payment.html` + Edge Function (Phase 4 in LAUNCH-PREP.md)  
-4. Launch day: flip `chatUnlockAfter` to `'payment'`, run `rls-secure.sql`
+1. **Hard refresh** quickgigs.ca (Ctrl+Shift+R) — service worker must update to v37+  
+2. Deploy **`confirm-checkout`** Edge Function (instant chat unlock after pay):
+   ```bash
+   supabase functions deploy confirm-checkout --no-verify-jwt
+   ```
+3. Run **`supabase/payments-release.sql`** in Supabase SQL Editor (if not done)  
+4. **Test the money loop** with 2 accounts (poster + tasker):
+   - Post → accept → **Pay & unlock chat** → message → **Mark complete** → worker sees earnings  
+   - Stripe test card: `4242 4242 4242 4242`  
+5. When that works: Resend emails (`send-notification`), then open sign-ups (Admin → soft close off)
 
 ---
 
-## Not yet — Stripe / payments
+## Payments (live in code)
 
-**Intentionally off for beta.** Chat unlocks on accept (`chatUnlockAfter: 'accept'` in `qg-config.js`).
-
-When you’re ready for launch: Stripe Connect, then switch config to `chatUnlockAfter: 'payment'`.
+`chatUnlockAfter: 'payment'` in `qg-config.js`. Stripe test keys are set.  
+Setup details: **[STRIPE-SETUP.md](STRIPE-SETUP.md)**
 
 ---
 

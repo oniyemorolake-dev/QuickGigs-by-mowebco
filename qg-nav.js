@@ -160,12 +160,12 @@
   document.head.appendChild(mobileScript);
 
   var menuScript = document.createElement('script');
-  menuScript.src = 'qg-menu.js?v=2';
+  menuScript.src = 'qg-menu.js?v=3';
   menuScript.defer = true;
   document.head.appendChild(menuScript);
 
   var bellScript = document.createElement('script');
-  bellScript.src = 'qg-bell.js?v=1';
+  bellScript.src = 'qg-bell.js?v=2';
   bellScript.defer = true;
   document.head.appendChild(bellScript);
 

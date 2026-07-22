@@ -15,6 +15,18 @@
   var authTimer;
   var notifications = [];
 
+  function injectCriticalCss() {
+    if (document.getElementById('qg-overlay-critical')) return;
+    var style = document.createElement('style');
+    style.id = 'qg-overlay-critical';
+    style.textContent =
+      '.qg-menu-overlay:not(.open),.qg-bell-overlay:not(.open){position:fixed!important;inset:0!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;}' +
+      '.qg-menu-overlay:not(.open) .qg-menu-drawer,.qg-bell-overlay:not(.open) .qg-bell-panel{transform:translateX(100%)!important;}';
+    document.head.appendChild(style);
+  }
+
+  injectCriticalCss();
+
   function pageKey() {
     var path = (window.location.pathname || '').split('/').pop() || 'index.html';
     return path.replace(/\.html$/i, '') || 'index';
@@ -26,10 +38,11 @@
 
   function loadCss() {
     if (document.getElementById('qg-bell-css')) return;
+    injectCriticalCss();
     var link = document.createElement('link');
     link.id = 'qg-bell-css';
     link.rel = 'stylesheet';
-    link.href = 'qg-bell.css?v=1';
+    link.href = 'qg-bell.css?v=2';
     document.head.appendChild(link);
   }
 
@@ -197,6 +210,7 @@
 
   function openBellPanel() {
     if (open) return;
+    buildPanel();
     open = true;
     renderList();
     overlay.classList.add('open');
@@ -206,7 +220,7 @@
   }
 
   function closeBellPanel() {
-    if (!open) return;
+    if (!open || !overlay) return;
     open = false;
     overlay.classList.remove('open');
     overlay.setAttribute('aria-hidden', 'true');
@@ -245,7 +259,6 @@
     window.__qgBellInit = true;
     loadCss();
     injectBell();
-    buildPanel();
     document.addEventListener('keydown', onKeyDown);
     waitForAuth();
     authTimer = setInterval(function () {

@@ -79,9 +79,17 @@
 
   (function loadMenu() {
     if (document.getElementById('qg-menu-loader')) return;
+    if (!document.getElementById('qg-overlay-critical')) {
+      var critical = document.createElement('style');
+      critical.id = 'qg-overlay-critical';
+      critical.textContent =
+        '.qg-menu-overlay:not(.open),.qg-bell-overlay:not(.open){position:fixed!important;inset:0!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;}' +
+        '.qg-menu-overlay:not(.open) .qg-menu-drawer,.qg-bell-overlay:not(.open) .qg-bell-panel{transform:translateX(100%)!important;}';
+      document.head.appendChild(critical);
+    }
     var s = document.createElement('script');
     s.id = 'qg-menu-loader';
-    s.src = 'qg-menu.js?v=2';
+    s.src = 'qg-menu.js?v=3';
     s.defer = true;
     document.head.appendChild(s);
   })();

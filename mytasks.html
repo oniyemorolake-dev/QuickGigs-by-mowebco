@@ -169,9 +169,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   <button class="tab-btn" id="tabCompleted" onclick="showTab('completed',this)">Completed</button>
 </div>
 
-<div class="content qg-page-wrap" id="tabContent">
-  <div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Loading...</div></div>
-</div>
+<div class="content qg-page-wrap" id="tabContent" aria-busy="true"></div>
 
 <div class="toast" id="toast"></div>
 
@@ -643,6 +641,8 @@ async function loadData(){
   syncRoleTabs();
   syncTabButtons();
   renderTab();
+  var tabEl = document.getElementById('tabContent');
+  if (tabEl) tabEl.removeAttribute('aria-busy');
 
   var expandTarget = new URLSearchParams(window.location.search).get('expand');
   if (expandTarget) {
