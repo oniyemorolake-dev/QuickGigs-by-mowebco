@@ -1,7 +1,7 @@
 // QuickGigs — platform rules (single place to change launch behaviour)
 window.QG_CONFIG = {
   // When chat unlocks: 'payment' (launch) | 'accept' (beta) | 'apply' (internal testing only)
-  chatUnlockAfter: 'accept',
+  chatUnlockAfter: 'payment',
   // Set true ONLY after Supabase Auth → Firebase is enabled AND rls-secure.sql is applied
   supabaseFirebaseAuth: false,
   blockOffPlatformContact: true,
@@ -17,9 +17,9 @@ window.QG_CONFIG = {
   ga4ConversionLabel: '',
   // P2 — trust & moderation
   autoBanAfterWarnings: 3,
-  paymentsEnabled: false,
-  // Paste pk_test_... after deploying Edge Functions (see STRIPE-SETUP.md)
-  stripePublishableKey: '',
+  paymentsEnabled: true,
+  // Paste pk_test_... for testing (must match sk_test_ in Supabase secrets — not pk_live_ until launch)
+  stripePublishableKey: 'pk_test_51Tlh7hCPjV7Oq67QZsRZgVeZMY0AgYDwl0YgOtV33gXPdDhJF7tMzw0BfjTZkVE3hcIXkhsx6XNJZCM1lSTVpfk200OajLTBz9',
   createCheckoutUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-checkout',
   connectLinkUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-connect-link',
   platformFeePercent: 25,
