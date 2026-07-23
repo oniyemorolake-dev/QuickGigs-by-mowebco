@@ -2014,6 +2014,18 @@ async function submitReview(reviewData) {
     tags:           tags.length ? tags.join(', ') : null
   };
   var result = await sbPost('reviews', row);
+  if (!result.success) {
+    var errText = String(result.error || '');
+    if (errText.indexOf('column') >= 0 || errText.indexOf('PGRST204') >= 0) {
+      result = await sbPost('reviews', {
+        task_id: row.task_id,
+        reviewer_id: row.reviewer_id,
+        reviewee_id: row.reviewee_id,
+        rating: row.rating,
+        review_comment: row.review_comment
+      });
+    }
+  }
   if (result.success) {
     mergeReviewInCache(Object.assign({}, row, {
       created_at: new Date().toISOString()
@@ -2023,6 +2035,10 @@ async function submitReview(reviewData) {
   var err = result.error || '';
   if (String(err).indexOf('reviews_task_reviewer_uniq') >= 0 || String(err).indexOf('duplicate') >= 0) {
     return { success: false, error: 'already_reviewed' };
+  }
+  if (String(err).indexOf('401') >= 0 || String(err).indexOf('403') >= 0 ||
+      String(err).indexOf('42501') >= 0 || String(err).toLowerCase().indexOf('row-level') >= 0) {
+    return { success: false, error: 'reviews_rls_blocked' };
   }
   if (String(err).indexOf('relation "reviews" does not exist') >= 0 || String(err).indexOf('42P01') >= 0) {
     return { success: false, error: 'reviews_table_missing' };

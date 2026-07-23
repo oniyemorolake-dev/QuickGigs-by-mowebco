@@ -273,8 +273,14 @@ var saveReviewToDb = window.submitReview;
 function reviewErrorMessage(err) {
   var code = String(err || '');
   if (code === 'already_reviewed') return 'You already reviewed this task.';
-  if (code === 'reviews_table_missing') return 'Reviews not set up yet — run supabase/reviews.sql in Supabase SQL Editor.';
-  if (code === 'missing_review_fields') return 'Missing review info — go back to My Tasks and open review again.';
+  if (code === 'reviews_table_missing') return 'Reviews not set up — run supabase/reviews.sql in Supabase SQL Editor.';
+  if (code === 'reviews_rls_blocked') {
+    return 'Reviews blocked by database rules — run supabase/reviews.sql again in Supabase SQL Editor.';
+  }
+  if (code === 'missing_review_fields') return 'Missing review info — go back to My Tasks → Completed and open review again.';
+  if (code.indexOf('401') >= 0 || code.indexOf('403') >= 0 || code.indexOf('42501') >= 0) {
+    return 'Reviews blocked — run supabase/reviews.sql in Supabase SQL Editor, then refresh.';
+  }
   if (typeof formatSupabaseActionError === 'function') {
     return formatSupabaseActionError('submit review', code);
   }
