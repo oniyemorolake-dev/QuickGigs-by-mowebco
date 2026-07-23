@@ -267,3 +267,39 @@ window.getCurrentPageReturnUrl = getCurrentPageReturnUrl;
 window.sanitizeReturnUrl = sanitizeReturnUrl;
 window.getProfileUrl = getProfileUrl;
 window.profileNameLink = profileNameLink;
+
+/** In-app toast — bottom of screen, not browser alert(). */
+function showToast(msg, color) {
+  if (!msg) return;
+  if (!document.getElementById('qg-toast-styles')) {
+    var style = document.createElement('style');
+    style.id = 'qg-toast-styles';
+    style.textContent =
+      '.qg-toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(12px);' +
+      'background:#4ade80;color:#0b0118;padding:12px 22px;border-radius:20px;font-family:DM Sans,sans-serif;' +
+      'font-size:13px;font-weight:500;z-index:13000;max-width:min(92vw,420px);text-align:center;line-height:1.45;' +
+      'box-shadow:0 8px 32px rgba(0,0,0,.35);opacity:0;visibility:hidden;pointer-events:none;' +
+      'transition:opacity .2s ease,transform .2s ease,visibility .2s ease}' +
+      '.qg-toast.visible{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}';
+    document.head.appendChild(style);
+  }
+  var el = document.getElementById('qgToast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'qgToast';
+    el.className = 'qg-toast';
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+    document.body.appendChild(el);
+  }
+  el.textContent = String(msg);
+  el.style.background = color || '#4ade80';
+  el.style.color = color ? '#fff' : '#0b0118';
+  el.classList.add('visible');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(function () {
+    el.classList.remove('visible');
+  }, 3200);
+}
+
+window.showToast = showToast;

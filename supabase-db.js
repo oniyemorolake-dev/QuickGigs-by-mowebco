@@ -1999,20 +1999,33 @@ async function getReviewsForUser(userId) {
 }
 
 async function submitReview(reviewData) {
+  if (!reviewData || !reviewData.reviewer_id || !reviewData.reviewee_id || !reviewData.task_id) {
+    return { success: false, error: 'missing_review_fields' };
+  }
+  var tags = Array.isArray(reviewData.tags) ? reviewData.tags.filter(Boolean) : [];
   var row = {
-    task_id:        reviewData.task_id,
-    reviewer_id:    reviewData.reviewer_id,
-    reviewee_id:    reviewData.reviewee_id,
-    rating:         reviewData.rating,
-    review_comment: reviewData.review_comment || ''
+    task_id:        String(reviewData.task_id),
+    reviewer_id:    String(reviewData.reviewer_id),
+    reviewee_id:    String(reviewData.reviewee_id),
+    rating:         Number(reviewData.rating),
+    review_comment: String(reviewData.review_comment || ''),
+    reviewer_name:  reviewData.reviewer_name || '',
+    task_title:     reviewData.task_title || '',
+    tags:           tags.length ? tags.join(', ') : null
   };
   var result = await sbPost('reviews', row);
   if (result.success) {
     mergeReviewInCache(Object.assign({}, row, {
-      created_at: new Date().toISOString(),
-      reviewer_name: reviewData.reviewer_name || '',
-      task_title: reviewData.task_title || ''
+      created_at: new Date().toISOString()
     }));
+    return result;
+  }
+  var err = result.error || '';
+  if (String(err).indexOf('reviews_task_reviewer_uniq') >= 0 || String(err).indexOf('duplicate') >= 0) {
+    return { success: false, error: 'already_reviewed' };
+  }
+  if (String(err).indexOf('relation "reviews" does not exist') >= 0 || String(err).indexOf('42P01') >= 0) {
+    return { success: false, error: 'reviews_table_missing' };
   }
   return result;
 }

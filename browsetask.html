@@ -705,7 +705,7 @@ window.openModal=async function(id,e){
   activeTask=allTasks.find(function(t){return String(t.id)===String(id);});
   if(!activeTask)return;
   if(isOwnPostedTask(activeTask)){
-    alert('This is your own posting. Switch to Poster mode → My Tasks to manage applicants.');
+    showToast('This is your own posting. Switch to Poster mode → My Tasks to manage applicants.', '#f59e0b');
     return;
   }
   if (typeof ensureTaskerProfilePhoto === 'function') {
@@ -767,8 +767,8 @@ window.submitApplication=async function(){
   var msg=window.sanitizeInput(document.getElementById('offerMsg').value, 1000);
   var avail=window.sanitizeInput(document.getElementById('offerAvail').value, 120);
   var fraudErr = document.getElementById('offerFraudError');
-  if(!price||price<20){alert('Please enter an offer of at least $20');return;}
-  if(!msg){alert('Please add a message to the poster');return;}
+  if(!price||price<20){ showToast('Please enter an offer of at least $20', '#ef4444'); return; }
+  if(!msg){ showToast('Please add a message to the poster', '#ef4444'); return; }
   if (typeof containsOffPlatformContact === 'function' && containsOffPlatformContact(msg + ' ' + avail)) {
     fraudErr.textContent = typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : 'Remove contact or payment details from your message.';
     fraudErr.style.display = 'block';
@@ -779,7 +779,7 @@ window.submitApplication=async function(){
   btn.textContent='Sending...';btn.disabled=true;
   var userId=window._currentUser?window._currentUser.uid:'anonymous';
   if (activeTask && isOwnPostedTask(activeTask)) {
-    alert('You cannot apply to your own task.');
+    showToast('You cannot apply to your own task.', '#ef4444');
     btn.textContent='Send application';btn.disabled=false;
     return;
   }
@@ -793,7 +793,7 @@ window.submitApplication=async function(){
   if (typeof ensureTaskerProfilePhoto === 'function') {
     var photoGate = await ensureTaskerProfilePhoto();
     if (!photoGate.ok) {
-      alert('Add a profile photo before applying. Posters need to see who they\'re hiring.');
+      showToast('Add a profile photo before applying. Posters need to see who they\'re hiring.', '#f59e0b');
       window.location.href = 'profile.html?setup=photo&required=1&return=browsetask.html';
       btn.textContent='Send application';btn.disabled=false;
       return;
@@ -851,7 +851,7 @@ window.submitApplication=async function(){
     if (err.message === 'photo_required') {
       window.location.href = 'profile.html?setup=photo&required=1&return=browsetask.html';
     } else {
-      alert(err.message === 'own_task' ? 'You cannot apply to your own task.' : 'Could not send application. Please try again.');
+      showToast(err.message === 'own_task' ? 'You cannot apply to your own task.' : 'Could not send application. Please try again.', '#ef4444');
     }
     btn.textContent='Send application';btn.disabled=false;
     return;

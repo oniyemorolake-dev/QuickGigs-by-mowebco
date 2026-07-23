@@ -6,6 +6,7 @@
 <title>QuickGigs — Leave a Review</title>
 <script src="qg-brand-init.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="qg-chrome.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -192,7 +193,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
     <div class="char-count" id="charCount">0 / 500</div>
   </div>
 
-  <button class="submit-btn" id="submitBtn" onclick="submitReview()" disabled>Submit review</button>
+  <button class="submit-btn" id="submitBtn" onclick="submitReviewForm()" disabled>Submit review</button>
   <div class="submit-note" id="submitNote">Your star rating and comment help other QuickGigs users. Both poster and tasker should review after every job.</div>
 
 </div>
@@ -267,7 +268,18 @@ applyTheme();
 // ── STATE ──────────────────────────────────────────────
 var currentRating = 0;
 var selectedTags  = [];
-var dbSubmitReview = window.submitReview;
+var saveReviewToDb = window.submitReview;
+
+function reviewErrorMessage(err) {
+  var code = String(err || '');
+  if (code === 'already_reviewed') return 'You already reviewed this task.';
+  if (code === 'reviews_table_missing') return 'Reviews not set up yet — run supabase/reviews.sql in Supabase SQL Editor.';
+  if (code === 'missing_review_fields') return 'Missing review info — go back to My Tasks and open review again.';
+  if (typeof formatSupabaseActionError === 'function') {
+    return formatSupabaseActionError('submit review', code);
+  }
+  return 'Could not submit your review. Please try again.';
+}
 
 // ── URL PARAMS ─────────────────────────────────────────
 // Usage: review.html?task=Deep clean&price=120&date=Jun 21&reviewee=Sarah K.&role=poster
@@ -354,36 +366,34 @@ function updateSubmitBtn(){
 }
 
 // ── SUBMIT ─────────────────────────────────────────────
-window.submitReview = async function(){
+window.submitReviewForm = async function(){
   if(currentRating === 0){ return; }
+  if (!window._currentUser || !window._currentUser.uid) {
+    showToast('Please sign in again', '#ef4444');
+    return;
+  }
+
+  var revieweeId = params.get('revieweeId');
+  var taskId = params.get('taskId');
+  if (!taskId || !revieweeId) {
+    showToast('Missing task info — open review from My Tasks → Completed', '#f59e0b');
+    return;
+  }
 
   var comment = window.sanitizeInput(document.getElementById('commentInput').value, 500);
   var submitBtn = document.getElementById('submitBtn');
   submitBtn.disabled = true;
   submitBtn.textContent = 'Submitting...';
 
-  var reviewData = {
-    task_id:        params.get('taskId') || null,
-    reviewer_id:    window._currentUser ? window._currentUser.uid : null,
-    reviewee_id:    params.get('revieweeId') || reviewee,
-    rating:         currentRating,
-    review_comment: comment,
-    tags:           selectedTags,
-    task_title:     taskTitle,
-    task_price:     taskPrice,
-    created_at:     new Date().toISOString()
-  };
-
   try {
-    var result = await dbSubmitReview({
-      task_id:        params.get('taskId') || null,
-      reviewer_id:    window._currentUser ? window._currentUser.uid : null,
-      reviewee_id:    params.get('revieweeId') || reviewee,
+    var result = await saveReviewToDb({
+      task_id:        taskId,
+      reviewer_id:    window._currentUser.uid,
+      reviewee_id:    revieweeId,
       rating:         currentRating,
       review_comment: comment,
-      reviewer_name:  window._currentUser
-        ? (window._currentUser.displayName || (window._currentUser.email || '').split('@')[0])
-        : '',
+      tags:           selectedTags,
+      reviewer_name:  window._currentUser.displayName || (window._currentUser.email || '').split('@')[0],
       task_title:     taskTitle
     });
     if (!result.success) throw new Error(result.error || 'save failed');
@@ -391,7 +401,7 @@ window.submitReview = async function(){
     console.warn('Review save error:', err);
     submitBtn.disabled = false;
     submitBtn.textContent = 'Submit review';
-    alert('Could not submit your review right now. Please try again.');
+    showToast(reviewErrorMessage(err && err.message ? err.message : err), '#ef4444');
     return;
   }
 

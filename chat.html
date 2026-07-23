@@ -505,7 +505,7 @@ function renderMessageBubble(text, opts) {
 window.sendChatImage = async function(input) {
   var posterOnly = !!(window.QG_CONFIG && window.QG_CONFIG.posterOnlyChatImages);
   if (posterOnly && !chatIsPoster) {
-    alert('Only the poster can send photos in chat. Taskers can describe questions in text.');
+    showToast('Only the poster can send photos in chat. Taskers can describe questions in text.', '#f59e0b');
     input.value = '';
     return;
   }
@@ -523,7 +523,7 @@ window.sendChatImage = async function(input) {
 
   var upload = await uploadChatPhoto(file, currentUserId, convId);
   if (!upload.success) {
-    alert(upload.error || 'Could not upload photo. Run supabase/storage-beta-fix.sql in Supabase.');
+    showToast(typeof formatUploadError === 'function' ? formatUploadError(upload.error) : (upload.error || 'Could not upload photo.'), '#ef4444');
     if (attachBtn) {
       attachBtn.disabled = false;
       attachBtn.textContent = prevLabel || '📷';
@@ -534,7 +534,7 @@ window.sendChatImage = async function(input) {
   var body = (window.CHAT_IMAGE_PREFIX || '[img]') + upload.url;
   var result = await sendChatMessage(convId, currentUserId, body);
   if (!result.success) {
-    alert('Photo uploaded but could not send. Try again.');
+    showToast('Photo uploaded but could not send. Try again.', '#ef4444');
     if (attachBtn) {
       attachBtn.disabled = false;
       attachBtn.textContent = prevLabel || '📷';
@@ -699,7 +699,7 @@ window.sendMessage = async function(){
       var warnEl = document.getElementById('fraudInlineText');
       if (warnEl && typeof getOffPlatformWarning === 'function') warnEl.textContent = getOffPlatformWarning();
     } else {
-      alert('Could not send message. Please try again.');
+      showToast('Could not send message. Please try again.', '#ef4444');
     }
     sendBtn.disabled = false;
     return;

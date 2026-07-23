@@ -14,3 +14,34 @@
 .qg-bell-overlay:not(.open) .qg-bell-panel {
   transform: translateX(100%) !important;
 }
+
+/* Shared toast — bottom of screen (not browser alert) */
+.qg-toast {
+  position: fixed;
+  bottom: 88px;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: #4ade80;
+  color: #0b0118;
+  padding: 12px 22px;
+  border-radius: 20px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 13000;
+  max-width: min(92vw, 420px);
+  text-align: center;
+  line-height: 1.45;
+  white-space: normal;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+}
+
+.qg-toast.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
