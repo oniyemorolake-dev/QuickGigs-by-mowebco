@@ -363,6 +363,29 @@ async function initChat(){
     }
   }
 
+  var taskAlreadyPaid = false;
+  if (currentConv.task_id && typeof getPaymentByTask === 'function') {
+    var payRow = await getPaymentByTask(currentConv.task_id);
+    var paySt = payRow && String(payRow.status || '').toLowerCase();
+    taskAlreadyPaid = paySt === 'held' || paySt === 'paid' || paySt === 'completed';
+    if (taskAlreadyPaid && !parseConversationUnlocked(currentConv) && convStatus !== 'completed') {
+      var paidUnlock = typeof unlockChatForTask === 'function'
+        ? await unlockChatForTask(currentConv.task_id, currentConv.poster_id, currentConv.worker_id)
+        : (typeof forceUnlockConversationForTask === 'function'
+          ? await forceUnlockConversationForTask(currentConv, taskStatus)
+          : { success: false });
+      if (paidUnlock.success) {
+        currentConv.is_unlocked = true;
+        currentConv.status = 'in_progress';
+        if (paidUnlock.conv) currentConv = Object.assign({}, currentConv, paidUnlock.conv);
+        else {
+          var paidFresh = await getConversation(convId);
+          if (paidFresh) currentConv = paidFresh;
+        }
+      }
+    }
+  }
+
   if (typeof parseConversationUnlocked === 'function' && parseConversationUnlocked(currentConv)) {
     currentConv.is_unlocked = true;
   }
@@ -428,7 +451,7 @@ async function initChat(){
     : !!currentConv.is_unlocked;
 
   if(!chatOpen){
-    showLockedState(isCompleted, isCancelled);
+    showLockedState(isCompleted, isCancelled, taskAlreadyPaid);
     return;
   }
 
@@ -545,13 +568,15 @@ function buildChatReviewHref() {
     '&from=chat&conv=' + encodeURIComponent(String(convId || ''));
 }
 
-function showLockedState(isCompleted, isCancelled){
+function showLockedState(isCompleted, isCancelled, taskAlreadyPaid){
   var isPoster = currentConv && currentConv.poster_id === currentUserId;
   var lockMsg;
   if (isCompleted) {
     lockMsg = isCancelled
       ? 'This task was cancelled. Chat is now closed.'
       : 'This task is completed. Chat is now closed.';
+  } else if (taskAlreadyPaid) {
+    lockMsg = 'Payment received — opening chat…';
   } else {
     lockMsg = typeof getChatLockMessage === 'function'
       ? getChatLockMessage(isPoster)
@@ -563,8 +588,10 @@ function showLockedState(isCompleted, isCancelled){
     if (reviewHref) {
       actionHtml = '<a href="'+reviewHref+'" class="locked-action locked-review-btn">⭐ Leave a review</a>';
     }
-  } else if (!isCompleted && isPoster && currentConv && currentConv.task_id) {
+  } else if (!isCompleted && isPoster && currentConv && currentConv.task_id && !taskAlreadyPaid) {
     actionHtml = '<button type="button" class="locked-action locked-pay-btn" data-pay-task="'+String(currentConv.task_id)+'" data-pay-return="chat" data-pay-conv="'+String(convId)+'">💳 Pay & unlock chat</button>';
+  } else if (!isCompleted && taskAlreadyPaid) {
+    actionHtml = '<button type="button" class="locked-action locked-pay-btn" onclick="window.location.reload()">↻ Refresh chat</button>';
   }
   document.querySelector('.input-area').style.display = 'none';
   document.getElementById('chatScroll').innerHTML =

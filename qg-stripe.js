@@ -85,12 +85,51 @@
     }
   }
 
+  function formatPayError(err) {
+    if (err == null || err === '') return 'Could not start checkout';
+    if (typeof err === 'string') {
+      if (err === 'already_paid') return 'This task is already paid.';
+      if (err === 'stripe_not_configured') {
+        return 'Stripe secret not set in Supabase — redeploy create-checkout (see STRIPE-SETUP.md)';
+      }
+      if (err === 'task_not_in_progress') return 'Task must be in progress before paying.';
+      if (err === 'no_accepted_worker') return 'Accept a tasker first, then pay.';
+      if (err === 'not_task_poster') return 'Only the poster can pay for this task.';
+      return err;
+    }
+    if (typeof err === 'object') {
+      if (typeof err.message === 'string' && err.message) return err.message;
+      if (typeof err.error === 'string' && err.error) return formatPayError(err.error);
+      if (typeof err.code === 'string' && err.code) return formatPayError(err.code);
+      try { return JSON.stringify(err); } catch (e) { /* fall through */ }
+    }
+    return String(err);
+  }
+
+  function extractPayErrorCode(result) {
+    if (!result) return '';
+    var err = result.error;
+    if (typeof err === 'string') return err;
+    if (err && typeof err === 'object') {
+      if (typeof err.code === 'string') return err.code;
+      if (typeof err.error === 'string') return err.error;
+      if (typeof err.message === 'string') return err.message;
+    }
+    if (typeof result.message === 'string') return result.message;
+    return '';
+  }
+
+  function isAlreadyPaidError(result) {
+    var code = extractPayErrorCode(result).toLowerCase();
+    return code === 'already_paid' || code.indexOf('already_paid') >= 0;
+  }
+
   function setModalError(message) {
     var loading = document.getElementById('qgStripeLoading');
     if (loading) {
       loading.style.display = 'flex';
       loading.className = 'qg-stripe-error';
-      loading.innerHTML = message + '<br><br><button type="button" class="qg-stripe-close" style="width:auto;height:auto;border-radius:10px;padding:10px 16px;margin-top:8px" onclick="window.QG_closePayModal&&window.QG_closePayModal()">Close</button>';
+      loading.innerHTML = formatPayError(message) + '<br><br><button type="button" class="qg-stripe-close" style="width:auto;height:auto;border-radius:10px;padding:10px 16px;margin-top:8px" onclick="window.QG_closePayModal&&window.QG_closePayModal()">Close</button>';
     }
   }
 
@@ -131,6 +170,7 @@
     var data = {};
     try { data = await res.json(); } catch (e) { data = { ok: false, error: 'Invalid response' }; }
     if (!res.ok && data.ok !== false) data.ok = false;
+    if (!data.error && data.message) data.error = data.message;
     return data;
   }
 
@@ -192,22 +232,98 @@
   }
 
   async function tryUnlockChatAfterPayment(taskId) {
-    if (!taskId || typeof getTaskById !== 'function' || typeof unlockChatForTask !== 'function') return;
-    if (!window._currentUser) return;
+    if (!taskId || typeof getTaskById !== 'function' || typeof unlockChatForTask !== 'function') return false;
+    if (!window._currentUser) return false;
     try {
       var task = await getTaskById(taskId);
-      if (!task) return;
+      if (!task) return false;
       var posterId = task.posted_by || task.POSTED_BY;
-      if (String(posterId) !== String(window._currentUser.uid)) return;
+      if (String(posterId) !== String(window._currentUser.uid)) return false;
       var apps = typeof getApplicationsByTask === 'function' ? await getApplicationsByTask(taskId) : [];
       var accepted = (apps || []).find(function (a) {
         return String(a.status || a.STATUS || '').toLowerCase() === 'accepted';
       });
-      if (!accepted) return;
+      if (!accepted) return false;
       var workerId = accepted.worker_id || accepted.WORKER_ID;
-      await unlockChatForTask(taskId, posterId, workerId);
+      var unlock = await unlockChatForTask(taskId, posterId, workerId);
+      return !!(unlock && unlock.success);
     } catch (e) {
       console.warn('Post-payment chat unlock skipped:', e);
+      return false;
+    }
+  }
+
+  async function finishAlreadyPaid(taskId, options) {
+    options = options || {};
+    closePayModal();
+    await tryUnlockChatAfterPayment(taskId);
+    if (typeof window.QG_refreshPaymentState === 'function') {
+      await window.QG_refreshPaymentState(taskId);
+    }
+    if (typeof showToast === 'function') {
+      showToast('Already paid — opening chat', '#4ade80');
+    }
+    if (options.returnPage === 'chat' && options.returnConv) {
+      window.location.href = 'chat.html?conv=' + encodeURIComponent(String(options.returnConv));
+      return { ok: true, already_paid: true };
+    }
+    if (typeof loadData === 'function') loadData();
+    return { ok: true, already_paid: true };
+  }
+
+  async function taskHasHeldPayment(taskId) {
+    if (!taskId || typeof getPaymentByTask !== 'function') return false;
+    try {
+      var row = await getPaymentByTask(taskId);
+      var st = row && String(row.status || '').toLowerCase();
+      return st === 'held' || st === 'paid' || st === 'completed';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async function confirmAndUnlockTask(taskId, sessionId, options) {
+    options = options || {};
+    if (sessionId) {
+      await confirmCheckoutSession(sessionId);
+    }
+    if (taskId) {
+      await waitForPaymentHeld(taskId, sessionId ? 8000 : 4000);
+      await tryUnlockChatAfterPayment(taskId);
+      if (typeof window.QG_refreshPaymentState === 'function') {
+        await window.QG_refreshPaymentState(taskId);
+      }
+    }
+    if (typeof showToast === 'function') {
+      showToast('Payment accepted — chat is open', '#4ade80');
+    }
+    if (options.returnPage === 'chat' && options.returnConv) {
+      closePayModal();
+      window.location.href = 'chat.html?conv=' + encodeURIComponent(String(options.returnConv));
+      return;
+    }
+    if (typeof loadData === 'function') loadData();
+    if (typeof renderTab === 'function') renderTab();
+  }
+
+  async function syncPendingPaymentsForPoster(userId) {
+    if (!userId || typeof getPaymentsForUser !== 'function') return;
+    try {
+      var rows = await getPaymentsForUser(userId, 'poster');
+      var pending = (rows || []).filter(function (p) {
+        var st = String(p.status || '').toLowerCase();
+        var sid = String(p.stripe_id || '');
+        return st === 'pending' && sid.indexOf('cs_') === 0;
+      });
+      for (var i = 0; i < pending.length; i++) {
+        var sid = String(pending[i].stripe_id || '');
+        if (!sid) continue;
+        await confirmCheckoutSession(sid);
+        var tid = pending[i].task_id;
+        if (tid) await tryUnlockChatAfterPayment(tid);
+      }
+    } catch (e) {
+      console.warn('syncPendingPaymentsForPoster failed:', e);
     }
   }
 
@@ -291,6 +407,10 @@
       }
     }
 
+    if (await taskHasHeldPayment(taskId)) {
+      return await finishAlreadyPaid(taskId, options);
+    }
+
     destroyCheckout();
     setModalLoading('Opening secure checkout…');
     _overlayEl.classList.add('open');
@@ -299,15 +419,10 @@
     var result = await startCheckout(taskId, posterId, options.returnPage || 'mytasks', options.returnConv || '');
 
     if (!result.ok) {
-      var err = result.error || 'Could not start checkout';
-      if (err === 'stripe_not_configured') err = 'Stripe secret not set in Supabase — redeploy create-checkout (see STRIPE-SETUP.md)';
-      if (err === 'already_paid') {
-        closePayModal();
-        if (typeof showToast === 'function') showToast('Already paid — chat is unlocked', '#4ade80');
-        if (typeof loadData === 'function') loadData();
-        return result;
+      if (isAlreadyPaidError(result)) {
+        return await finishAlreadyPaid(taskId, options);
       }
-      setModalError(err);
+      setModalError(result.error || extractPayErrorCode(result) || 'Could not start checkout');
       return result;
     }
 
@@ -333,15 +448,19 @@
         amountEl.textContent = '$' + Number(result.amount).toFixed(2) + ' CAD';
         amountEl.style.display = 'block';
       }
-      _checkoutInstance = await stripe.initEmbeddedCheckout({
-        clientSecret: result.client_secret
-      });
+      var checkoutOpts = {
+        clientSecret: result.client_secret,
+        onComplete: function () {
+          confirmAndUnlockTask(taskId, result.session_id || '', options);
+        }
+      };
+      _checkoutInstance = await stripe.initEmbeddedCheckout(checkoutOpts);
       _checkoutInstance.mount('#qg-stripe-checkout-mount');
       return { ok: true };
     } catch (err) {
       console.error('Embedded checkout failed:', err);
-      setModalError(String(err && err.message ? err.message : err));
-      return { ok: false, error: String(err) };
+      setModalError(err);
+      return { ok: false, error: formatPayError(err) };
     }
   }
 
@@ -395,4 +514,5 @@
   window.QG_waitForPaymentHeld = waitForPaymentHeld;
   window.QG_confirmCheckoutSession = confirmCheckoutSession;
   window.QG_syncConnectStatus = syncConnectStatus;
+  window.QG_syncPendingPayments = syncPendingPaymentsForPoster;
 })();

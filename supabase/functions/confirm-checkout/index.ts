@@ -58,15 +58,42 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    await supabase
+    const heldPatch = {
+      status: 'held',
+      stripe_id: paymentIntentId,
+      completed_at: new Date().toISOString(),
+    };
+
+    const { data: bySession } = await supabase
       .from('payments')
-      .update({
-        status: 'held',
-        stripe_id: paymentIntentId,
-        completed_at: new Date().toISOString(),
-      })
-      .eq('task_id', taskId)
-      .eq('poster_id', posterId);
+      .update(heldPatch)
+      .eq('stripe_id', session.id)
+      .select('payment_id');
+
+    if (!bySession || !bySession.length) {
+      const { data: byTask } = await supabase
+        .from('payments')
+        .update(heldPatch)
+        .eq('task_id', taskId)
+        .eq('poster_id', posterId)
+        .eq('status', 'pending')
+        .select('payment_id');
+
+      if (!byTask || !byTask.length) {
+        const amountTotal = session.amount_total != null ? session.amount_total / 100 : 0;
+        await supabase.from('payments').insert({
+          task_id: taskId,
+          poster_id: posterId,
+          worker_id: workerId,
+          amount: amountTotal,
+          platform_fee: 0,
+          worker_payout: 0,
+          stripe_id: paymentIntentId,
+          status: 'held',
+          completed_at: new Date().toISOString(),
+        });
+      }
+    }
 
     const { data: convs } = await supabase
       .from('conversations')

@@ -290,6 +290,14 @@ function syncTabButtons() {
   });
 }
 
+function paymentStatusRank(p) {
+  var st = String((p && (p.status || p.STATUS)) || '').toLowerCase();
+  if (st === 'paid' || st === 'completed') return 4;
+  if (st === 'held') return 3;
+  if (st === 'pending') return 1;
+  return 0;
+}
+
 function isTaskPaid(taskId) {
   var p = paymentByTaskId[String(taskId)];
   if (!p) return false;
@@ -305,10 +313,38 @@ async function refreshPaymentMap(userId) {
     var rows = await getPaymentsForUser(userId, 'poster');
     (rows || []).forEach(function (p) {
       var tid = p.task_id || p.TASK_ID;
-      if (tid) paymentByTaskId[String(tid)] = p;
+      if (!tid) return;
+      var key = String(tid);
+      var cur = paymentByTaskId[key];
+      if (!cur || paymentStatusRank(p) > paymentStatusRank(cur)) {
+        paymentByTaskId[key] = p;
+      }
     });
   } catch (e) {
     console.warn('Payment map load failed:', e);
+  }
+}
+
+async function syncInProgressPaymentState(userId) {
+  if (!userId || !window.QG_CONFIG || !window.QG_CONFIG.paymentsEnabled) return;
+  if (typeof window.QG_syncPendingPayments === 'function') {
+    await window.QG_syncPendingPayments(userId);
+  }
+  if (typeof getPaymentByTask !== 'function') return;
+  var inProgress = allTasks.filter(function (t) {
+    return taskStatus(t) === 'in_progress' && String(getField(t, 'POSTED_BY')) === String(userId);
+  });
+  for (var i = 0; i < inProgress.length; i++) {
+    var tid = String(getField(inProgress[i], 'TASK_ID'));
+    try {
+      var row = await getPaymentByTask(tid);
+      if (row) {
+        var cur = paymentByTaskId[tid];
+        if (!cur || paymentStatusRank(row) > paymentStatusRank(cur)) {
+          paymentByTaskId[tid] = row;
+        }
+      }
+    } catch (e) {}
   }
 }
 
@@ -364,6 +400,10 @@ function renderApplicantAction(a, taskId, task) {
   var status = (getField(a, 'STATUS') || 'pending').toLowerCase();
   if (status === 'accepted') {
     if (isPaymentGatedChat()) {
+      if (typeof isTaskPaid === 'function' && isTaskPaid(taskId)) {
+        return '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border)" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">💬 Chat</button>' +
+          '<span class="accept-status">✓ Accepted · Paid</span>';
+      }
       return '<button type="button" class="accept-btn" style="background:var(--purple);color:#fff" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks">💳 Pay to unlock chat</button>' +
         '<span class="accept-status">✓ Accepted</span>';
     }
@@ -583,6 +623,9 @@ async function loadData(){
   if (typeof window.QG_handlePaymentReturn === 'function') {
     if (await window.QG_handlePaymentReturn()) preferInProgress = true;
   }
+  if (typeof window.QG_syncPendingPayments === 'function') {
+    await window.QG_syncPendingPayments(userId);
+  }
 
   try {
     var cached = typeof readTasksCache === 'function' ? readTasksCache(true) : null;
@@ -619,6 +662,7 @@ async function loadData(){
     await hydrateApplicantAvatars();
     await hydrateMissingNames();
     await refreshPaymentMap(userId);
+    await syncInProgressPaymentState(userId);
 
     if (typeof fetchAllTasksFresh === 'function') { /* already fresh */ }
   } catch (err) {
@@ -655,7 +699,10 @@ async function loadData(){
 window.loadData = loadData;
 window.QG_refreshPaymentState = async function(taskId) {
   var uid = window._currentUser ? window._currentUser.uid : null;
-  if (uid) await refreshPaymentMap(uid);
+  if (uid) {
+    await refreshPaymentMap(uid);
+    await syncInProgressPaymentState(uid);
+  }
   if (taskId && typeof invalidateTasksCache === 'function') invalidateTasksCache();
 };
 
@@ -1461,6 +1508,9 @@ window.openChatWithWorker = async function(taskId, workerId){
 
   var posterId = getField(task, 'POSTED_BY');
   var statusForChat = taskStatus(task);
+  if (typeof window.QG_refreshPaymentState === 'function') {
+    await window.QG_refreshPaymentState(taskId);
+  }
   var conv = await getConversationForTask(taskId, posterId, workerId);
   if (conv && conv.conv_id) {
     var unlockResult = typeof forceUnlockConversationForTask === 'function'
@@ -1482,6 +1532,10 @@ window.openChatWithWorker = async function(taskId, workerId){
       }
     }
     if (!unlockResult.success && !parseConversationUnlocked(unlockResult.conv || conv)) {
+      if (paid) {
+        window.location.href = 'chat.html?conv=' + encodeURIComponent(conv.conv_id);
+        return;
+      }
       showToast('Chat is still unlocking — wait a moment and try again', '#f59e0b');
       return;
     }
