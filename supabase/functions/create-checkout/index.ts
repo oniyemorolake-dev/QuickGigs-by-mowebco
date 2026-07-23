@@ -77,6 +77,7 @@ Deno.serve(async (req) => {
 
     const workerId = String(getField(app, 'worker_id') || '');
     if (!workerId) return json({ ok: false, error: 'worker_missing' }, 400);
+    if (workerId === posterId) return json({ ok: false, error: 'cannot_pay_self' }, 400);
 
     const { data: existingPayments } = await supabase
       .from('payments')

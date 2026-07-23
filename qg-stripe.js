@@ -95,6 +95,9 @@
       if (err === 'task_not_in_progress') return 'Task must be in progress before paying.';
       if (err === 'no_accepted_worker') return 'Accept a tasker first, then pay.';
       if (err === 'not_task_poster') return 'Only the poster can pay for this task.';
+      if (err === 'cannot_pay_self') {
+        return 'You cannot pay on your own task. Use a second account as the tasker, cancel this task, and repost.';
+      }
       return err;
     }
     if (typeof err === 'object') {
@@ -231,6 +234,46 @@
     return false;
   }
 
+  async function navigateToChatForTask(taskId) {
+    if (!taskId || typeof getTaskById !== 'function') return false;
+    try {
+      var task = await getTaskById(taskId);
+      if (!task) return false;
+      var posterId = task.posted_by || task.POSTED_BY;
+      var apps = typeof getApplicationsByTask === 'function' ? await getApplicationsByTask(taskId) : [];
+      var accepted = (apps || []).find(function (a) {
+        return String(a.status || a.STATUS || '').toLowerCase() === 'accepted';
+      });
+      if (!accepted) return false;
+      var workerId = accepted.worker_id || accepted.WORKER_ID;
+      if (typeof getConversationForTask !== 'function') return false;
+      var conv = await getConversationForTask(taskId, posterId, workerId);
+      if (conv && conv.conv_id) {
+        closePayModal();
+        window.location.href = 'chat.html?conv=' + encodeURIComponent(String(conv.conv_id));
+        return true;
+      }
+    } catch (e) {
+      console.warn('navigateToChatForTask failed:', e);
+    }
+    return false;
+  }
+
+  async function isSelfPayTask(taskId, posterId) {
+    if (!taskId || !posterId || typeof getApplicationsByTask !== 'function') return false;
+    try {
+      var apps = await getApplicationsByTask(taskId);
+      var accepted = (apps || []).find(function (a) {
+        return String(a.status || a.STATUS || '').toLowerCase() === 'accepted';
+      });
+      if (!accepted) return false;
+      var workerId = accepted.worker_id || accepted.WORKER_ID;
+      return workerId && String(workerId) === String(posterId);
+    } catch (e) {
+      return false;
+    }
+  }
+
   async function tryUnlockChatAfterPayment(taskId) {
     if (!taskId || typeof getTaskById !== 'function' || typeof unlockChatForTask !== 'function') return false;
     if (!window._currentUser) return false;
@@ -261,10 +304,13 @@
       await window.QG_refreshPaymentState(taskId);
     }
     if (typeof showToast === 'function') {
-      showToast('Already paid — opening chat', '#4ade80');
+      showToast('Payment confirmed — opening chat', '#4ade80');
     }
     if (options.returnPage === 'chat' && options.returnConv) {
       window.location.href = 'chat.html?conv=' + encodeURIComponent(String(options.returnConv));
+      return { ok: true, already_paid: true };
+    }
+    if (await navigateToChatForTask(taskId)) {
       return { ok: true, already_paid: true };
     }
     if (typeof loadData === 'function') loadData();
@@ -294,14 +340,15 @@
         await window.QG_refreshPaymentState(taskId);
       }
     }
+    closePayModal();
     if (typeof showToast === 'function') {
-      showToast('Payment accepted — chat is open', '#4ade80');
+      showToast('Payment accepted — opening chat', '#4ade80');
     }
     if (options.returnPage === 'chat' && options.returnConv) {
-      closePayModal();
       window.location.href = 'chat.html?conv=' + encodeURIComponent(String(options.returnConv));
       return;
     }
+    if (await navigateToChatForTask(taskId)) return;
     if (typeof loadData === 'function') loadData();
     if (typeof renderTab === 'function') renderTab();
   }
@@ -391,6 +438,13 @@
       return { ok: false, error: 'missing_task_or_poster' };
     }
 
+    if (await isSelfPayTask(taskId, posterId)) {
+      if (typeof showToast === 'function') {
+        showToast('Use a second account as tasker — cancel this task and repost', '#ef4444');
+      }
+      return { ok: false, error: 'cannot_pay_self' };
+    }
+
     ensurePayModalDom();
     var titleEl = document.getElementById('qgStripeTitle');
     var subEl = document.getElementById('qgStripeSub');
@@ -465,6 +519,32 @@
   }
 
   document.addEventListener('click', function (e) {
+    var syncBtn = e.target.closest('[data-sync-pay-task]');
+    if (syncBtn) {
+      e.preventDefault();
+      var syncTaskId = syncBtn.getAttribute('data-sync-pay-task');
+      var syncUserId = window._currentUser && window._currentUser.uid;
+      if (!syncTaskId || !syncUserId) return;
+      syncBtn.disabled = true;
+      syncBtn.textContent = 'Syncing…';
+      (async function () {
+        if (typeof window.QG_syncPendingPayments === 'function') {
+          await window.QG_syncPendingPayments(syncUserId);
+        }
+        if (typeof window.QG_refreshPaymentState === 'function') {
+          await window.QG_refreshPaymentState(syncTaskId);
+        }
+        if (typeof loadData === 'function') await loadData();
+        if (typeof showToast === 'function') {
+          var synced = typeof isTaskPaid === 'function' && isTaskPaid(syncTaskId);
+          showToast(
+            synced ? 'Payment synced — tap Message' : 'No completed payment found — use a second tasker account',
+            synced ? '#4ade80' : '#f59e0b'
+          );
+        }
+      })();
+      return;
+    }
     var btn = e.target.closest('[data-pay-task]');
     if (!btn) return;
     e.preventDefault();

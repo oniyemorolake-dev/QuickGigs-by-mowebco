@@ -1240,13 +1240,17 @@ function renderTab(){
         : (typeof reportButtonHtml === 'function'
           ? reportButtonHtml('task', taskId, getField(t,'TITLE'))
           : '');
+      var selfTask = isPosterTask && workerId && String(workerId) === String(userId);
       var taskPaid = isPosterTask && isTaskPaid(taskId);
       var payAction = '';
       if (isPosterTask && isPaymentGatedChat()) {
-        if (taskPaid) {
+        if (selfTask) {
+          payAction = '<span class="act-btn btn-danger" style="opacity:0.95;cursor:default;pointer-events:none;font-size:12px">⚠ Same account as tasker — cancel &amp; use 2 logins</span>';
+        } else if (taskPaid) {
           payAction = '<span class="act-btn btn-secondary" style="opacity:0.9;cursor:default;pointer-events:none">✓ Paid · chat unlocked</span>';
         } else {
-          payAction = '<button type="button" class="act-btn btn-primary" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks" data-pay-amount="'+escAttr(String(getField(t,'BUDGET')))+'" data-pay-title="'+escAttr(getField(t,'TITLE'))+'">💳 Pay &amp; unlock chat</button>';
+          payAction = '<button type="button" class="act-btn btn-primary" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks" data-pay-amount="'+escAttr(String(getField(t,'BUDGET')))+'" data-pay-title="'+escAttr(getField(t,'TITLE'))+'">💳 Pay &amp; unlock chat</button>' +
+            '<button type="button" class="act-btn btn-secondary" data-sync-pay-task="'+escAttr(taskId)+'" title="Paid in Stripe but still locked? Tap to sync">↻ Sync payment</button>';
         }
       }
       var posterActions = isPosterTask
@@ -1507,6 +1511,10 @@ window.openChatWithWorker = async function(taskId, workerId){
   }
 
   var posterId = getField(task, 'POSTED_BY');
+  if (String(posterId) === String(workerId)) {
+    showToast('Same account as tasker — cancel this task and test with two logins', '#ef4444');
+    return;
+  }
   var statusForChat = taskStatus(task);
   if (typeof window.QG_refreshPaymentState === 'function') {
     await window.QG_refreshPaymentState(taskId);
@@ -1516,8 +1524,9 @@ window.openChatWithWorker = async function(taskId, workerId){
     var unlockResult = typeof forceUnlockConversationForTask === 'function'
       ? await forceUnlockConversationForTask(conv, statusForChat)
       : { success: true };
+    var paid = false;
     if (isPaymentGatedChat()) {
-      var paid = typeof isTaskPaid === 'function' ? isTaskPaid(taskId) : false;
+      paid = typeof isTaskPaid === 'function' ? isTaskPaid(taskId) : false;
       if (!paid) {
         var payRow = typeof getPaymentByTask === 'function' ? await getPaymentByTask(taskId) : null;
         var pst = payRow && String(payRow.status || '').toLowerCase();
@@ -1571,6 +1580,13 @@ window.openChatWithWorker = async function(taskId, workerId){
 window.openChatForTask = async function(taskId){
   var userId = window._currentUser ? window._currentUser.uid : null;
   if(!userId) return;
+
+  if (typeof window.QG_refreshPaymentState === 'function') {
+    await window.QG_refreshPaymentState(taskId);
+  }
+  if (typeof window.QG_syncPendingPayments === 'function') {
+    await window.QG_syncPendingPayments(userId);
+  }
 
   var task = allTasks.find(function(t){ return String(getField(t,'TASK_ID')) === String(taskId); });
   if(!task) {
