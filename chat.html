@@ -450,6 +450,12 @@ async function initChat(){
     ? parseConversationUnlocked(currentConv)
     : !!currentConv.is_unlocked;
 
+  if (!chatOpen && taskAlreadyPaid && !isCompleted) {
+    currentConv.is_unlocked = true;
+    chatOpen = true;
+    document.getElementById('taskMeta').textContent = 'Chat open · Escrow paid';
+  }
+
   if(!chatOpen){
     showLockedState(isCompleted, isCancelled, taskAlreadyPaid);
     return;

@@ -301,8 +301,12 @@ function paymentStatusRank(p) {
 function isTaskPaid(taskId) {
   var p = paymentByTaskId[String(taskId)];
   if (!p) return false;
-  var st = String(p.status || p.STATUS || '').toLowerCase();
-  return st === 'held' || st === 'paid' || st === 'completed';
+  return typeof isPaymentStatusComplete === 'function'
+    ? isPaymentStatusComplete(p.status || p.STATUS)
+    : (function () {
+      var st = String(p.status || p.STATUS || '').toLowerCase();
+      return st === 'held' || st === 'paid' || st === 'completed';
+    })();
 }
 
 async function refreshPaymentMap(userId) {
@@ -1515,62 +1519,35 @@ window.openChatWithWorker = async function(taskId, workerId){
     showToast('Same account as tasker — cancel this task and test with two logins', '#ef4444');
     return;
   }
-  var statusForChat = taskStatus(task);
+
   if (typeof window.QG_refreshPaymentState === 'function') {
     await window.QG_refreshPaymentState(taskId);
   }
-  var conv = await getConversationForTask(taskId, posterId, workerId);
-  if (conv && conv.conv_id) {
-    var unlockResult = typeof forceUnlockConversationForTask === 'function'
-      ? await forceUnlockConversationForTask(conv, statusForChat)
-      : { success: true };
-    var paid = false;
-    if (isPaymentGatedChat()) {
-      paid = typeof isTaskPaid === 'function' ? isTaskPaid(taskId) : false;
-      if (!paid) {
-        var payRow = typeof getPaymentByTask === 'function' ? await getPaymentByTask(taskId) : null;
-        var pst = payRow && String(payRow.status || '').toLowerCase();
-        paid = pst === 'held' || pst === 'paid';
-      }
-      if (!paid) {
-        showToast('Pay first to unlock chat', '#f59e0b');
-        if (String(posterId) === String(userId) && typeof window.QG_openPayModal === 'function') {
-          window.QG_openPayModal(taskId, userId, { returnPage: 'mytasks', title: getField(task, 'TITLE') });
-        }
-        return;
-      }
-    }
-    if (!unlockResult.success && !parseConversationUnlocked(unlockResult.conv || conv)) {
-      if (paid) {
-        window.location.href = 'chat.html?conv=' + encodeURIComponent(conv.conv_id);
-        return;
-      }
-      showToast('Chat is still unlocking — wait a moment and try again', '#f59e0b');
+
+  if (isPaymentGatedChat() && typeof ensureChatReadyForTask === 'function') {
+    var ready = await ensureChatReadyForTask(taskId, userId);
+    if (ready.ok && ready.conv_id) {
+      window.location.href = 'chat.html?conv=' + encodeURIComponent(ready.conv_id);
       return;
     }
-    window.location.href = 'chat.html?conv=' + encodeURIComponent(conv.conv_id);
-    return;
+    if (ready.error === 'not_paid') {
+      showToast('Pay first to unlock chat', '#f59e0b');
+      if (String(posterId) === String(userId) && typeof window.QG_openPayModal === 'function') {
+        window.QG_openPayModal(taskId, userId, { returnPage: 'mytasks', title: getField(task, 'TITLE') });
+      }
+      return;
+    }
+    if (ready.error === 'self_task') {
+      showToast('Same account as tasker — use two logins to test pay + chat', '#ef4444');
+      return;
+    }
   }
 
-  if (!isPaymentGatedChat() && typeof createConversation === 'function') {
-    var workerName = displayName(workerId);
-    var posterName = window._currentUser.displayName || window._currentUser.email.split('@')[0];
-    if (typeof formatPersonName === 'function') posterName = formatPersonName(posterName);
-    var created = await createConversation({
-      task_id: taskId,
-      poster_id: posterId,
-      worker_id: workerId,
-      poster_name: posterName,
-      worker_name: workerName,
-      task_title: getField(task, 'TITLE'),
-      task_category: getField(task, 'CATEGORY'),
-      status: 'in_progress',
-      is_unlocked: true
-    });
-    if (created.success && created.data && created.data.conv_id) {
-      window.location.href = 'chat.html?conv=' + encodeURIComponent(created.data.conv_id);
-      return;
-    }
+  var statusForChat = taskStatus(task);
+  var conv = await getConversationForTask(taskId, posterId, workerId);
+  if (conv && conv.conv_id) {
+    window.location.href = 'chat.html?conv=' + encodeURIComponent(conv.conv_id);
+    return;
   }
 
   showToast('No chat thread yet — check Messages', '#f59e0b');

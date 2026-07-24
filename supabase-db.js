@@ -1229,16 +1229,40 @@ async function forceUnlockConversationForTask(conv, taskStatus) {
     return { success: true, conv: conv };
   }
 
+  async function verifyUnlocked() {
+    var fresh = await getConversation(conv.conv_id);
+    return !!(fresh && parseConversationUnlocked(fresh));
+  }
+
   if (rule === 'payment') {
     var taskId = conv.task_id || conv.TASK_ID;
     if (taskId && typeof getPaymentByTask === 'function') {
       var payment = await getPaymentByTask(taskId);
       var pst = payment && String(payment.status || '').toLowerCase();
       if (pst === 'held' || pst === 'paid' || pst === 'completed') {
-        var payUnlock = await updateConversation(conv.conv_id, { is_unlocked: true, status: 'in_progress' });
+        var patch = { is_unlocked: true, status: 'in_progress' };
+        var payUnlock = await updateConversation(conv.conv_id, patch);
         if (payUnlock.success) {
-          return { success: true, conv: Object.assign({}, conv, { is_unlocked: true, status: 'in_progress' }) };
+          return { success: true, conv: Object.assign({}, conv, patch) };
         }
+        if (typeof tryPatchRow === 'function') {
+          payUnlock = await tryPatchRow(
+            'conversations',
+            patch,
+            'conv_id=eq.' + encodeURIComponent(conv.conv_id),
+            verifyUnlocked
+          );
+          if (payUnlock.success) {
+            var verified = await getConversation(conv.conv_id);
+            return { success: true, conv: verified || Object.assign({}, conv, patch) };
+          }
+        }
+        if (await verifyUnlocked()) {
+          var unlockedConv = await getConversation(conv.conv_id);
+          return { success: true, conv: unlockedConv || conv };
+        }
+        // Paid in Stripe/DB but PATCH blocked — still allow chat client-side
+        return { success: true, conv: Object.assign({}, conv, { is_unlocked: true, status: 'in_progress' }), unverified: true };
       }
     }
     return { success: parseConversationUnlocked(conv), conv: conv, skipped: !parseConversationUnlocked(conv) };
@@ -2047,13 +2071,98 @@ async function submitReview(reviewData) {
 }
 
 async function getPaymentByTask(taskId) {
-  var results = await sbGet('payments', 'task_id=eq.' + encodeURIComponent(String(taskId)), 'created_at.desc', 5);
+  var tid = String(taskId);
+  var results = await sbGet('payments', 'task_id=eq.' + encodeURIComponent(tid), 'created_at.desc', 20);
+  if ((!results || !results.length) && tid !== String(parseInt(tid, 10))) {
+    results = await sbGet('payments', 'task_id=eq.' + encodeURIComponent(String(parseInt(tid, 10))), 'created_at.desc', 20);
+  }
   if (!results || !results.length) return null;
-  var paid = results.find(function (p) {
+  var rank = function (p) {
     var st = String(p.status || '').toLowerCase();
-    return st === 'held' || st === 'completed' || st === 'paid';
+    if (st === 'paid' || st === 'completed') return 4;
+    if (st === 'held') return 3;
+    if (st === 'pending') return 1;
+    return 0;
+  };
+  var best = results[0];
+  for (var i = 1; i < results.length; i++) {
+    if (rank(results[i]) > rank(best)) best = results[i];
+  }
+  return best;
+}
+
+function isPaymentStatusComplete(status) {
+  var st = String(status || '').toLowerCase();
+  return st === 'held' || st === 'paid' || st === 'completed';
+}
+
+async function isTaskPaymentComplete(taskId) {
+  if (typeof getPaymentByTask !== 'function') return false;
+  var row = await getPaymentByTask(taskId);
+  return row && isPaymentStatusComplete(row.status);
+}
+
+async function ensureChatReadyForTask(taskId, actorId) {
+  taskId = String(taskId || '');
+  if (!taskId) return { ok: false, error: 'missing_task' };
+
+  if (typeof window.QG_syncPendingPayments === 'function' && actorId) {
+    await window.QG_syncPendingPayments(actorId);
+  }
+
+  var task = typeof getTaskById === 'function' ? await getTaskById(taskId) : null;
+  if (!task) return { ok: false, error: 'task_not_found' };
+
+  var posterId = task.posted_by || task.POSTED_BY;
+  var apps = typeof getApplicationsByTask === 'function' ? await getApplicationsByTask(taskId) : [];
+  var accepted = (apps || []).find(function (a) {
+    return String(a.status || a.STATUS || '').toLowerCase() === 'accepted';
   });
-  return paid || results[0];
+  if (!accepted) return { ok: false, error: 'no_accepted_worker' };
+
+  var workerId = accepted.worker_id || accepted.WORKER_ID;
+  if (String(workerId) === String(posterId)) {
+    return { ok: false, error: 'self_task' };
+  }
+
+  var paid = await isTaskPaymentComplete(taskId);
+  if (!paid) return { ok: false, error: 'not_paid', posterId: posterId, workerId: workerId };
+
+  var conv = typeof getConversationForTask === 'function'
+    ? await getConversationForTask(taskId, posterId, workerId)
+    : null;
+
+  if ((!conv || !conv.conv_id) && typeof createConversation === 'function') {
+    var created = await createConversation({
+      task_id: taskId,
+      poster_id: posterId,
+      worker_id: workerId,
+      task_title: task.title || task.TITLE,
+      task_category: task.category || task.CATEGORY,
+      status: 'in_progress',
+      is_unlocked: false
+    });
+    if (created && created.data) conv = created.data;
+    if (!conv || !conv.conv_id) {
+      conv = await getConversationForTask(taskId, posterId, workerId);
+    }
+  }
+
+  if (!conv || !conv.conv_id) return { ok: false, error: 'no_conversation', paid: true };
+
+  var unlock = typeof forceUnlockConversationForTask === 'function'
+    ? await forceUnlockConversationForTask(conv, 'in_progress')
+    : { success: true, conv: conv };
+
+  return {
+    ok: true,
+    paid: true,
+    conv_id: conv.conv_id,
+    unlocked: !!(unlock && unlock.success),
+    conv: (unlock && unlock.conv) || conv,
+    posterId: posterId,
+    workerId: workerId
+  };
 }
 
 async function getPaymentsForUser(userId, role) {
@@ -2390,6 +2499,9 @@ window.readReviewsCache = readReviewsCache;
 window.mergeReviewInCache = mergeReviewInCache;
 window.getPaymentByTask = getPaymentByTask;
 window.getPaymentsForUser = getPaymentsForUser;
+window.isTaskPaymentComplete = isTaskPaymentComplete;
+window.isPaymentStatusComplete = isPaymentStatusComplete;
+window.ensureChatReadyForTask = ensureChatReadyForTask;
 window.releaseTaskPayout = releaseTaskPayout;
 window.refundTaskPayment = refundTaskPayment;
 window.savePayment = savePayment;

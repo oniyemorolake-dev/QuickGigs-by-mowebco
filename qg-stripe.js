@@ -235,7 +235,20 @@
   }
 
   async function navigateToChatForTask(taskId) {
-    if (!taskId || typeof getTaskById !== 'function') return false;
+    if (!taskId) return false;
+    if (typeof ensureChatReadyForTask === 'function' && window._currentUser) {
+      try {
+        var ready = await ensureChatReadyForTask(taskId, window._currentUser.uid);
+        if (ready.ok && ready.conv_id) {
+          closePayModal();
+          window.location.href = 'chat.html?conv=' + encodeURIComponent(String(ready.conv_id));
+          return true;
+        }
+      } catch (e) {
+        console.warn('navigateToChatForTask ensureChatReady failed:', e);
+      }
+    }
+    if (typeof getTaskById !== 'function') return false;
     try {
       var task = await getTaskById(taskId);
       if (!task) return false;
@@ -275,8 +288,12 @@
   }
 
   async function tryUnlockChatAfterPayment(taskId) {
-    if (!taskId || typeof getTaskById !== 'function' || typeof unlockChatForTask !== 'function') return false;
-    if (!window._currentUser) return false;
+    if (!taskId || !window._currentUser) return false;
+    if (typeof ensureChatReadyForTask === 'function') {
+      var ready = await ensureChatReadyForTask(taskId, window._currentUser.uid);
+      return !!(ready && ready.ok);
+    }
+    if (typeof getTaskById !== 'function' || typeof unlockChatForTask !== 'function') return false;
     try {
       var task = await getTaskById(taskId);
       if (!task) return false;
@@ -359,15 +376,18 @@
       var rows = await getPaymentsForUser(userId, 'poster');
       var pending = (rows || []).filter(function (p) {
         var st = String(p.status || '').toLowerCase();
-        var sid = String(p.stripe_id || '');
-        return st === 'pending' && sid.indexOf('cs_') === 0;
+        return st === 'pending';
       });
       for (var i = 0; i < pending.length; i++) {
         var sid = String(pending[i].stripe_id || '');
         if (!sid) continue;
         await confirmCheckoutSession(sid);
         var tid = pending[i].task_id;
-        if (tid) await tryUnlockChatAfterPayment(tid);
+        if (tid && typeof ensureChatReadyForTask === 'function') {
+          await ensureChatReadyForTask(tid, userId);
+        } else if (tid) {
+          await tryUnlockChatAfterPayment(tid);
+        }
       }
     } catch (e) {
       console.warn('syncPendingPaymentsForPoster failed:', e);
