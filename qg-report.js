@@ -196,7 +196,7 @@
   async function submitReport() {
     var user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
     if (!user) {
-      alert('Please sign in to submit a report.');
+      qgNotify('Please sign in to submit a report.', '#f59e0b');
       window.location.href = 'login.html';
       return;
     }
@@ -231,7 +231,7 @@
       if (typeof showToast === 'function') {
         showToast('Report submitted. Thank you for helping keep QuickGigs safe.');
       } else {
-        alert('Report submitted. Thank you.');
+        qgNotify('Report submitted. Thank you.', '#4ade80');
       }
     } else {
       var details = (detailsEl.value || '').trim();
@@ -246,7 +246,7 @@
         closeReportModal();
         window.location.href = 'mailto:support@quickgigs.ca?subject=' + mailSubject + '&body=' + mailBody;
       } else {
-        alert('Could not submit report. Please email support@quickgigs.ca with what happened.');
+        qgNotify('Could not submit report. Please email support@quickgigs.ca', '#ef4444');
       }
     }
   }

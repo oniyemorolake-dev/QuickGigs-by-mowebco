@@ -303,3 +303,12 @@ function showToast(msg, color) {
 }
 
 window.showToast = showToast;
+
+/** Toast with alert() fallback for modules that load before qg-utils. */
+function qgNotify(msg, color) {
+  if (!msg) return;
+  if (typeof showToast === 'function') showToast(msg, color);
+  else if (typeof window.showToast === 'function') window.showToast(msg, color);
+  else alert(msg);
+}
+window.qgNotify = qgNotify;

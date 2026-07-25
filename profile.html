@@ -1068,7 +1068,7 @@ function renderPayoutSetup(user, isOwnProfile, dbUser) {
     }
     btn.disabled = false;
     btn.textContent = btnLabel;
-    alert(result.error || 'Could not open Stripe setup — deploy create-connect-link first (see STRIPE-SETUP.md).');
+    showToast(result.error || 'Could not open Stripe setup — see STRIPE-SETUP.md', '#ef4444');
   };
 }
 
@@ -1305,7 +1305,7 @@ window.uploadAvatar = async function(input) {
   input.value = '';
   if (!user || !file) return;
   if (typeof uploadProfilePhoto !== 'function') {
-    alert('Photo upload not ready — run supabase/storage-beta-fix.sql in Supabase.');
+    showToast('Photo upload not ready — run supabase/storage-beta-fix.sql', '#f59e0b');
     return;
   }
   var wrap = document.getElementById('avatarWrap');
@@ -1316,7 +1316,7 @@ window.uploadAvatar = async function(input) {
   if (wrap) wrap.classList.remove('is-uploading');
   if (!upload.success) {
     if (hint) hint.textContent = 'Tap photo to change';
-    alert(typeof formatUploadError === 'function' ? formatUploadError(upload.error) : (upload.error || 'Could not upload photo.'));
+    showToast(typeof formatUploadError === 'function' ? formatUploadError(upload.error) : (upload.error || 'Could not upload photo.'), '#ef4444');
     return;
   }
   profileData.avatar_url = upload.url;

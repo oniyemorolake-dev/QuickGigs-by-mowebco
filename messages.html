@@ -108,6 +108,9 @@ body.light .locked-banner{background:#f5f2ff;border-color:#e8e2ff;}
 .tab-lbl{font-size:10px;color:var(--text-faint);transition:color 0.15s;}
 .tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:var(--purple-light);}
 body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color:var(--purple);}
+.app-legal-footer{text-align:center;padding:20px 16px 96px;font-size:10px;color:var(--text-faint);line-height:1.75;}
+.app-legal-footer a{color:var(--purple-light);text-decoration:none;}
+body.light .app-legal-footer a{color:var(--purple);}
 </style>
 <link rel="stylesheet" href="qg-brand.css">
 </head>
@@ -131,7 +134,9 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <div id="mainContent"></div>
 
+<footer class="app-legal-footer site-footer" id="siteFooter"></footer>
 <nav class="tab-bar" id="qgTabBar"></nav>
+<script src="qg-site.js"></script>
 <script src="qg-nav.js"></script>
 <script>renderQuickGigsTabBar('messages');</script>
 

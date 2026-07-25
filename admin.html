@@ -712,7 +712,7 @@ function renderDisputes(data){
     var reason=(d.reason||d.details||'—').substring(0,60);
     var who=d.opened_by_email||d.opened_by_id||'—';
     var when=d.created_at?new Date(d.created_at).toLocaleDateString('en-CA'):'—';
-    return '<div class="data-row g-disputes"><div class="user-cell"><div><div class="u-name">'+title+'</div></div></div><div class="cell">'+reason+'</div><div class="cell">'+who+'</div><div class="cell"><span class="status-pill '+sc+'">'+sl+'</span></div><div class="cell">'+when+'</div><div class="act-btns"><button class="act-btn btn-view" onclick="alert(\'Review in Supabase or email support\')">Review</button></div></div>';
+    return '<div class="data-row g-disputes"><div class="user-cell"><div><div class="u-name">'+title+'</div></div></div><div class="cell">'+reason+'</div><div class="cell">'+who+'</div><div class="cell"><span class="status-pill '+sc+'">'+sl+'</span></div><div class="cell">'+when+'</div><div class="act-btns"><button class="act-btn btn-view" onclick="showToast(\'Review in Supabase or email support\',\'amber\')">Review</button></div></div>';
   }).join('');
 }
 

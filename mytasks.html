@@ -142,6 +142,9 @@ body.light .accept-btn{color:#2d1b4e;}
 
 /* TAB BAR */
 .tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--tab-bg);border-top:0.5px solid var(--border);display:flex;padding:8px 0 14px;z-index:100;}
+.app-legal-footer{text-align:center;padding:20px 16px 96px;font-size:10px;color:var(--text-faint);line-height:1.75;}
+.app-legal-footer a{color:var(--purple-light);text-decoration:none;}
+body.light .app-legal-footer a{color:var(--purple);}
 .tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;}
 .tab-icon{font-size:22px;color:var(--text-faint);}
 .tab-lbl{font-size:10px;color:var(--text-faint);}
@@ -196,6 +199,8 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   </div>
 </div>
 
+<footer class="app-legal-footer site-footer" id="siteFooter"></footer>
+
 <nav class="tab-bar" id="qgTabBar"></nav>
 
 <script src="qg-utils.js"></script>
@@ -207,6 +212,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <script src="qg-pwa.js?v=4"></script>
 <script src="qg-notifications.js"></script>
 <script src="qg-push.js?v=1"></script>
+<script src="qg-site.js"></script>
 <script src="qg-share.js"></script>
 <script>
 (function(){document.querySelectorAll('#qgReportOverlay,#qgDisputeOverlay,.qg-report-overlay').forEach(function(n){n.remove()});})();
@@ -643,12 +649,9 @@ async function loadData(){
       renderTab();
     }
 
-    var tasksPromise = typeof fetchAllTasksFresh === 'function'
-      ? fetchAllTasksFresh()
-      : (typeof getAllTasks === 'function' ? getAllTasks() : Promise.resolve([]));
-    var appsPromise = typeof fetchAllApplicationsFresh === 'function'
-      ? fetchAllApplicationsFresh()
-      : (typeof getAllApplications === 'function' ? getAllApplications() : Promise.resolve([]));
+    var bundlePromise = typeof fetchMyTasksBundle === 'function'
+      ? fetchMyTasksBundle(userId)
+      : Promise.resolve(null);
     var namesPromise = typeof getUsersNameMap === 'function'
       ? getUsersNameMap().catch(function () { return {}; })
       : Promise.resolve({});
@@ -656,13 +659,31 @@ async function loadData(){
       ? getUsersAvatarMap().catch(function () { return {}; })
       : Promise.resolve({});
 
-    var results = await Promise.all([tasksPromise, appsPromise, namesPromise, avatarsPromise]);
-    var freshTasks = Array.isArray(results[0]) ? results[0] : [];
-    var freshApps = Array.isArray(results[1]) ? results[1] : [];
-    if (freshTasks.length || !allTasks.length) allTasks = freshTasks;
-    if (freshApps.length || !allApplications.length) allApplications = freshApps;
-    userNames = results[2] || {};
-    userAvatars = results[3] || {};
+    var results = await Promise.all([bundlePromise, namesPromise, avatarsPromise]);
+    var bundle = results[0];
+    var freshTasks = bundle && Array.isArray(bundle.tasks) ? bundle.tasks : [];
+    var freshApps = bundle && Array.isArray(bundle.applications) ? bundle.applications : [];
+    if (!bundle) {
+      var tasksPromise = typeof fetchAllTasksFresh === 'function'
+        ? fetchAllTasksFresh()
+        : (typeof getAllTasks === 'function' ? getAllTasks() : Promise.resolve([]));
+      var appsPromise = typeof fetchAllApplicationsFresh === 'function'
+        ? fetchAllApplicationsFresh()
+        : (typeof getAllApplications === 'function' ? getAllApplications() : Promise.resolve([]));
+      var legacy = await Promise.all([tasksPromise, appsPromise]);
+      freshTasks = Array.isArray(legacy[0]) ? legacy[0] : [];
+      freshApps = Array.isArray(legacy[1]) ? legacy[1] : [];
+    }
+    allTasks = typeof mergeTaskLists === 'function'
+      ? mergeTaskLists(allTasks, freshTasks)
+      : (freshTasks.length ? freshTasks : allTasks);
+    allApplications = typeof mergeApplicationLists === 'function'
+      ? mergeApplicationLists(allApplications, freshApps)
+      : (freshApps.length ? freshApps : allApplications);
+    if (typeof writeTasksCache === 'function') writeTasksCache(allTasks);
+    if (typeof writeAppsCache === 'function') writeAppsCache(allApplications);
+    userNames = results[1] || {};
+    userAvatars = results[2] || {};
     await hydrateApplicantAvatars();
     await hydrateMissingNames();
     await refreshPaymentMap(userId);
@@ -676,7 +697,10 @@ async function loadData(){
   }
 
   if (typeof isSupabaseUsingStaleCache === 'function' && isSupabaseUsingStaleCache()) {
-    showToast('Showing saved tasks — reconnect or run beta-setup-all.sql if this persists', '#f59e0b');
+    showToast('Showing saved tasks — reconnect or run tasks-my-tasks-fix.sql if this persists', '#f59e0b');
+  }
+  if (!allTasks.length && !allApplications.length && userId) {
+    showToast('No tasks loaded — run supabase/tasks-my-tasks-fix.sql in Supabase SQL Editor, then hard refresh', '#f59e0b');
   }
 
   if (preferInProgress) {
@@ -1062,8 +1086,13 @@ function renderTab(){
       return;
     }
     var myTasks = allTasks.filter(function(t){ return getField(t,'POSTED_BY') === userId && taskStatus(t) === 'open'; });
+    var inProgPosted = allTasks.filter(function(t){ return getField(t,'POSTED_BY') === userId && taskStatus(t) === 'in_progress'; });
     if(!myTasks.length){
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">Post a task here in Poster mode. Review applicants and accept a tasker — work happens on their Tasker side.</div><a class="empty-btn" href="posttask.html">Post a task</a></div>';
+      var movedLink = inProgPosted.length
+        ? '<p class="empty-sub" style="margin-top:10px">Accepted tasks move to <strong>In Progress</strong> — you have ' + inProgPosted.length + ' active.</p>' +
+          '<button type="button" class="empty-btn" onclick="showTab(\'inprogress\',document.getElementById(\'tabInprogress\'))">View In Progress →</button>'
+        : '';
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">Post a task in Poster mode. When you accept a tasker, the job moves to In Progress — not here.</div>' + movedLink + '<a class="empty-btn" href="posttask.html">Post a task</a></div>';
       return;
     }
     content.innerHTML = myTasks.map(function(t){
@@ -1214,10 +1243,19 @@ function renderTab(){
     }
     if(!inProg.length){
       var emptySub = isPoster
-        ? 'After you accept a tasker from the Posted tab, the job appears here. You can message them or change tasker if needed.'
-        : 'When a poster accepts your application, the job moves here. Switch to Tasker mode if you were browsing as a poster.';
+        ? (isPaymentGatedChat()
+          ? 'After you accept a tasker, pay to unlock chat — then coordinate here until the job is done.'
+          : 'After you accept a tasker from Posted, the job appears here.')
+        : 'When a poster accepts you, the job shows here. Switch to Tasker mode on Profile if you were browsing as a poster.';
+      var openPosted = isPoster ? allTasks.filter(function(t){
+        return getField(t,'POSTED_BY') === userId && taskStatus(t) === 'open';
+      }).length : 0;
+      var postedLink = openPosted > 0 && isPoster
+        ? '<button type="button" class="empty-btn" onclick="showTab(\'posted\',document.getElementById(\'tabPosted\'))">Review ' + openPosted + ' open posting' + (openPosted !== 1 ? 's' : '') + ' →</button>'
+        : '';
       content.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Nothing in progress</div><div class="empty-sub">' + emptySub + '</div>' +
-        (isPoster ? '<a class="empty-btn" href="mytasks.html?tab=posted">Review applicants</a>' : '<a class="empty-btn" href="browsetask.html">Browse tasks</a>') +
+        postedLink +
+        (isPoster ? '' : '<a class="empty-btn" href="browsetask.html">Browse tasks</a>') +
         '</div>';
       return;
     }
@@ -1477,7 +1515,10 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
       window.location.href = 'chat.html?conv=' + encodeURIComponent(convResult.data.conv_id);
     }, 900);
   } else if (isPaymentGatedChat()) {
-    showToast('Accepted ' + workerName + '! Pay now to unlock chat.');
+    showToast('Accepted ' + workerName + '! Opening payment…', '#4ade80');
+    activeTab = 'inprogress';
+    syncTabButtons();
+    renderTab();
     var payAmount = getField(app, 'PRICE') || getField(task, 'BUDGET');
     setTimeout(function () {
       if (typeof window.QG_openPayModal === 'function') {

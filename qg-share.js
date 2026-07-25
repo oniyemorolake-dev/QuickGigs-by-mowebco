@@ -49,7 +49,7 @@
     var copied = await copyToClipboard(url);
     if (copied) {
       if (typeof showToast === 'function') showToast('Link copied to clipboard');
-      else alert('Link copied!');
+      else qgNotify('Link copied!', '#4ade80');
       return { success: true, method: 'clipboard' };
     }
     prompt('Copy this link:', url);

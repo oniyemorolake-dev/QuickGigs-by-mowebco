@@ -234,14 +234,19 @@
     return false;
   }
 
-  async function navigateToChatForTask(taskId) {
+  async function navigateToChatForTask(taskId, sessionId) {
     if (!taskId) return false;
     if (typeof ensureChatReadyForTask === 'function' && window._currentUser) {
       try {
-        var ready = await ensureChatReadyForTask(taskId, window._currentUser.uid);
+        var ready = await ensureChatReadyForTask(taskId, window._currentUser.uid, {
+          sessionId: sessionId || ''
+        });
         if (ready.ok && ready.conv_id) {
           closePayModal();
-          window.location.href = 'chat.html?conv=' + encodeURIComponent(String(ready.conv_id));
+          if (typeof window.qgShowGlobalLoading === 'function') {
+            window.qgShowGlobalLoading('Opening chat…');
+          }
+          window.location.replace('chat.html?conv=' + encodeURIComponent(String(ready.conv_id)));
           return true;
         }
       } catch (e) {
@@ -263,6 +268,9 @@
       var conv = await getConversationForTask(taskId, posterId, workerId);
       if (conv && conv.conv_id) {
         closePayModal();
+        if (typeof window.qgShowGlobalLoading === 'function') {
+          window.qgShowGlobalLoading('Opening chat…');
+        }
         window.location.href = 'chat.html?conv=' + encodeURIComponent(String(conv.conv_id));
         return true;
       }
@@ -365,7 +373,7 @@
       window.location.href = 'chat.html?conv=' + encodeURIComponent(String(options.returnConv));
       return;
     }
-    if (await navigateToChatForTask(taskId)) return;
+    if (await navigateToChatForTask(taskId, sessionId)) return;
     if (typeof loadData === 'function') loadData();
     if (typeof renderTab === 'function') renderTab();
   }
@@ -410,8 +418,7 @@
     var taskId = params.get('task') || '';
     var sessionId = params.get('session_id') || '';
     var handledKey = 'qg-paid-' + taskId + '-' + (sessionId || '1');
-    if (sessionStorage.getItem(handledKey) === '1') return false;
-    sessionStorage.setItem(handledKey, '1');
+    if (sessionStorage.getItem(handledKey) === 'done') return false;
     try { sessionStorage.setItem('qg-payment-tab', 'inprogress'); } catch (e) {}
 
     if (typeof activeTab !== 'undefined') activeTab = 'inprogress';
@@ -420,22 +427,31 @@
     if (sessionId) {
       await confirmCheckoutSession(sessionId);
     }
+    if (typeof window.QG_syncPendingPayments === 'function' && window._currentUser) {
+      await window.QG_syncPendingPayments(window._currentUser.uid);
+    }
 
-    var paid = taskId ? await waitForPaymentHeld(taskId, sessionId ? 6000 : 12000) : false;
+    var paid = taskId ? await waitForPaymentHeld(taskId, sessionId ? 10000 : 12000) : false;
     if (paid && taskId) await tryUnlockChatAfterPayment(taskId);
 
     if (typeof window.QG_refreshPaymentState === 'function') {
       await window.QG_refreshPaymentState(taskId);
     }
 
+    cleanPaymentReturnParams();
+
+    if (taskId && await navigateToChatForTask(taskId, sessionId)) {
+      sessionStorage.setItem(handledKey, 'done');
+      return true;
+    }
+
+    sessionStorage.setItem(handledKey, 'done');
     if (typeof showToast === 'function') {
       showToast(
-        paid ? 'Payment accepted — chat is open' : 'Payment processing — tap Message again in a moment',
+        paid ? 'Payment accepted — tap Message to open chat' : 'Payment processing — try again in a moment',
         paid ? '#4ade80' : '#f59e0b'
       );
     }
-
-    cleanPaymentReturnParams();
     if (typeof renderTab === 'function') renderTab();
     return true;
   }
@@ -446,10 +462,10 @@
     posterId = String(posterId || '');
 
     if (!paymentsLive()) {
-      if (typeof showToast === 'function') {
+      if (typeof qgNotify === 'function') {
+        qgNotify('Payments not configured — see STRIPE-SETUP.md', '#f59e0b');
+      } else if (typeof showToast === 'function') {
         showToast('Payments not configured — see STRIPE-SETUP.md', '#f59e0b');
-      } else {
-        alert('Payments not configured — see STRIPE-SETUP.md');
       }
       return { ok: false, error: 'payments_not_live' };
     }
@@ -615,4 +631,5 @@
   window.QG_confirmCheckoutSession = confirmCheckoutSession;
   window.QG_syncConnectStatus = syncConnectStatus;
   window.QG_syncPendingPayments = syncPendingPaymentsForPoster;
+  window.QG_navigateToChatForTask = navigateToChatForTask;
 })();

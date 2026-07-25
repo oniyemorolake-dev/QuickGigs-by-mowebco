@@ -280,28 +280,28 @@
           return true;
         }
         if (type === 'pronouns' && !resolveChipValue(state, 'pronouns')) {
-          alert('Please choose or enter your pronouns.');
+          qgNotify('Please choose or enter your pronouns.', '#f59e0b');
           return false;
         }
         if (type === 'gender' && !resolveChipValue(state, 'gender')) {
-          alert('Please choose a gender option or select "Prefer not to say".');
+          qgNotify('Please choose a gender option or select "Prefer not to say".', '#f59e0b');
           return false;
         }
         if (type === 'dob') {
           if (dobApi && dobApi.sync) dobApi.sync();
           var age = getAgeFromState(state);
           if (age < 16) {
-            alert('QuickGigs is for ages 16 and up. If you\'re under 16, a parent can create an account for you when you\'re old enough.');
+            qgNotify('QuickGigs is for ages 16 and up.', '#f59e0b');
             return false;
           }
         }
         if (type === 'guardian') {
           if (!state.guardianName || state.guardianName.length < 2) {
-            alert('Please enter your parent or guardian\'s full name.');
+            qgNotify('Please enter your parent or guardian\'s full name.', '#f59e0b');
             return false;
           }
           if (!state.guardianEmail || state.guardianEmail.indexOf('@') < 1) {
-            alert('Please enter a valid parent/guardian email.');
+            qgNotify('Please enter a valid parent/guardian email.', '#f59e0b');
             return false;
           }
         }

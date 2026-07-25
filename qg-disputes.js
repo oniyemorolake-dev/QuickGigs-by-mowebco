@@ -160,7 +160,7 @@
   async function submitDispute() {
     var user = typeof getCurrentUser === 'function' ? getCurrentUser() : window._currentUser;
     if (!user) {
-      alert('Please sign in to open a dispute.');
+      qgNotify('Please sign in to open a dispute.', '#f59e0b');
       window.location.href = 'login.html';
       return;
     }
@@ -172,7 +172,7 @@
 
     var details = (document.getElementById('qgDisputeDetails').value || '').trim();
     if (!details) {
-      alert('Please describe what happened so we can review.');
+      qgNotify('Please describe what happened so we can review.', '#f59e0b');
       btn.disabled = false;
       btn.textContent = 'Submit dispute';
       return;
@@ -203,10 +203,10 @@
       if (typeof showToast === 'function') {
         showToast('Dispute submitted — we will review within 48 hours.');
       } else {
-        alert('Dispute submitted. We will review within 48 hours and email you.');
+        qgNotify('Dispute submitted — we will review within 48 hours.', '#4ade80');
       }
     } else {
-      alert('Could not submit dispute. Run supabase/disputes.sql in Supabase, then try again.');
+      qgNotify('Could not submit dispute. Run supabase/disputes.sql in Supabase.', '#ef4444');
     }
   }
 

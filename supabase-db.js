@@ -107,6 +107,37 @@ function getTaskRowId(row) {
   return row.task_id != null ? row.task_id : (row.TASK_ID != null ? row.TASK_ID : row.id);
 }
 
+function mergeTaskLists(existing, incoming) {
+  var map = {};
+  (existing || []).forEach(function (t) {
+    var id = getTaskRowId(t);
+    if (id == null || id === '') return;
+    map[String(id)] = t;
+  });
+  (incoming || []).forEach(function (t) {
+    var id = getTaskRowId(t);
+    if (id == null || id === '') return;
+    var key = String(id);
+    map[key] = map[key] ? Object.assign({}, map[key], normalizeTaskRow(t)) : normalizeTaskRow(t);
+  });
+  return Object.keys(map).map(function (k) { return map[k]; });
+}
+
+function mergeApplicationLists(existing, incoming) {
+  var map = {};
+  function appKey(a) {
+    var id = a.app_id || a.APP_ID || a.id;
+    if (id != null && id !== '') return 'id:' + String(id);
+    return 'pair:' + String(a.task_id || a.TASK_ID) + ':' + String(a.worker_id || a.WORKER_ID);
+  }
+  (existing || []).forEach(function (a) { map[appKey(a)] = a; });
+  (incoming || []).forEach(function (a) {
+    var k = appKey(a);
+    map[k] = map[k] ? Object.assign({}, map[k], normalizeApplicationRow(a)) : normalizeApplicationRow(a);
+  });
+  return Object.keys(map).map(function (k) { return map[k]; });
+}
+
 function mergeTaskInCache(taskId, patch) {
   var cached = readTasksCache(true);
   if (!cached || !cached.length) return;
@@ -437,6 +468,70 @@ async function lockConversationsForTask(taskId) {
 
 async function getTasksByUser(userId) {
   return await sbGetTasksList('posted_by=eq.' + encodeURIComponent(String(userId)), 50);
+}
+
+/** My Tasks — poster listings + worker jobs (avoids loading entire tasks table). */
+async function fetchMyTasksBundle(userId) {
+  if (!userId) return { tasks: [], applications: [] };
+  userId = String(userId);
+  var taskMap = {};
+  var appMap = {};
+
+  function addTask(row) {
+    if (!row) return;
+    row = normalizeTaskRow(row);
+    var id = getTaskRowId(row);
+    if (id == null || id === '') return;
+    taskMap[String(id)] = row;
+  }
+
+  function addApp(row) {
+    if (!row) return;
+    row = normalizeApplicationRow(row);
+    var id = row.app_id || row.APP_ID || row.id;
+    var key = id != null && id !== ''
+      ? String(id)
+      : String(row.task_id || row.TASK_ID) + ':' + String(row.worker_id || row.WORKER_ID);
+    appMap[key] = row;
+  }
+
+  try {
+    var posted = await getTasksByUser(userId);
+    (posted || []).forEach(addTask);
+  } catch (e) {
+    console.warn('fetchMyTasksBundle posted tasks failed:', e);
+  }
+
+  var workerApps = [];
+  try {
+    workerApps = typeof getApplicationsByWorker === 'function'
+      ? await getApplicationsByWorker(userId)
+      : [];
+    (workerApps || []).forEach(addApp);
+  } catch (e) {
+    console.warn('fetchMyTasksBundle worker apps failed:', e);
+  }
+
+  var postedTaskIds = Object.keys(taskMap);
+  for (var i = 0; i < postedTaskIds.length; i++) {
+    try {
+      var taskApps = await getApplicationsByTask(postedTaskIds[i]);
+      (taskApps || []).forEach(addApp);
+    } catch (e) {}
+  }
+
+  for (var j = 0; j < workerApps.length; j++) {
+    var tid = workerApps[j].task_id || workerApps[j].TASK_ID;
+    if (!tid || taskMap[String(tid)]) continue;
+    try {
+      addTask(await getTaskById(tid));
+    } catch (e) {}
+  }
+
+  return {
+    tasks: Object.keys(taskMap).map(function (k) { return taskMap[k]; }),
+    applications: Object.keys(appMap).map(function (k) { return appMap[k]; })
+  };
 }
 
 var MAX_COUNTER_ROUNDS = 2;
@@ -2102,7 +2197,8 @@ async function isTaskPaymentComplete(taskId) {
   return row && isPaymentStatusComplete(row.status);
 }
 
-async function ensureChatReadyForTask(taskId, actorId) {
+async function ensureChatReadyForTask(taskId, actorId, options) {
+  options = options || {};
   taskId = String(taskId || '');
   if (!taskId) return { ok: false, error: 'missing_task' };
 
@@ -2126,6 +2222,13 @@ async function ensureChatReadyForTask(taskId, actorId) {
   }
 
   var paid = await isTaskPaymentComplete(taskId);
+  if (!paid && options.sessionId && typeof window.QG_confirmCheckoutSession === 'function') {
+    await window.QG_confirmCheckoutSession(options.sessionId);
+    paid = await isTaskPaymentComplete(taskId);
+  }
+  if (!paid && typeof window.QG_waitForPaymentHeld === 'function') {
+    paid = await window.QG_waitForPaymentHeld(taskId, options.sessionId ? 10000 : 6000);
+  }
   if (!paid) return { ok: false, error: 'not_paid', posterId: posterId, workerId: workerId };
 
   var conv = typeof getConversationForTask === 'function'
@@ -2418,6 +2521,9 @@ window.getTasks = getTasks;
 window.getAllTasks = getAllTasks;
 window.fetchTasksWithCache = fetchTasksWithCache;
 window.fetchAllTasksFresh = fetchAllTasksFresh;
+window.fetchMyTasksBundle = fetchMyTasksBundle;
+window.mergeTaskLists = mergeTaskLists;
+window.mergeApplicationLists = mergeApplicationLists;
 window.fetchAllApplicationsFresh = fetchAllApplicationsFresh;
 window.readTasksCache = readTasksCache;
 window.mergeTaskInCache = mergeTaskInCache;

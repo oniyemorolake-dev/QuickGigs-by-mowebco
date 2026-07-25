@@ -221,9 +221,11 @@ onAuthStateChanged(auth, (user) => {
 </script>
 
 <link rel="stylesheet" href="qg-stripe.css">
+<link rel="stylesheet" href="qg-trust.css">
 <script src="qg-utils.js"></script>
 <script src="qg-config.js"></script>
 <script src="supabase-db.js"></script>
+<script src="qg-site.js"></script>
 <script src="qg-stripe.js"></script>
 <script src="qg-lightbox.js?v=1"></script>
 <script>
@@ -294,7 +296,48 @@ function formatMessageDate(iso){
 
 async function initChat(){
   currentUserId = window._currentUser ? window._currentUser.uid : null;
-  if(!convId || !currentUserId){
+  if(!currentUserId){
+    window.location.href = 'login.html';
+    return;
+  }
+
+  var payParams = new URLSearchParams(window.location.search);
+  var paidReturn = payParams.get('paid') === '1';
+  var taskFromUrl = payParams.get('task') || '';
+  var sessionFromUrl = payParams.get('session_id') || '';
+
+  if (paidReturn && taskFromUrl && !convId) {
+    if (typeof window.qgShowGlobalLoading === 'function') {
+      window.qgShowGlobalLoading('Payment confirmed — opening chat…');
+    }
+    if (sessionFromUrl && typeof window.QG_confirmCheckoutSession === 'function') {
+      await window.QG_confirmCheckoutSession(sessionFromUrl);
+    }
+    if (typeof window.QG_syncPendingPayments === 'function') {
+      await window.QG_syncPendingPayments(currentUserId);
+    }
+    if (typeof window.QG_waitForPaymentHeld === 'function') {
+      await window.QG_waitForPaymentHeld(taskFromUrl, 10000);
+    }
+    if (typeof ensureChatReadyForTask === 'function') {
+      var boot = await ensureChatReadyForTask(taskFromUrl, currentUserId, { sessionId: sessionFromUrl });
+      if (boot.ok && boot.conv_id) {
+        window.location.replace('chat.html?conv=' + encodeURIComponent(String(boot.conv_id)));
+        return;
+      }
+    }
+    if (typeof window.QG_navigateToChatForTask === 'function' &&
+        await window.QG_navigateToChatForTask(taskFromUrl, sessionFromUrl)) {
+      return;
+    }
+    if (typeof showToast === 'function') {
+      showToast('Payment received — finishing setup…', '#f59e0b');
+    }
+    window.location.href = 'mytasks.html?tab=inprogress&task=' + encodeURIComponent(taskFromUrl);
+    return;
+  }
+
+  if(!convId){
     window.location.href = 'messages.html';
     return;
   }
@@ -466,6 +509,7 @@ async function initChat(){
   setupChatImageAttach();
   ensureChatLightbox();
   pollTimer = setInterval(refreshMessages, 4000);
+  if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
 }
 
 function setupChatImageAttach() {

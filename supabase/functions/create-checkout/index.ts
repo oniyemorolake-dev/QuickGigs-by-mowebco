@@ -107,13 +107,13 @@ Deno.serve(async (req) => {
     const title = String(getField(task, 'title') || 'QuickGigs task');
     const siteUrl = (Deno.env.get('SITE_URL') || 'https://quickgigs.ca').replace(/\/$/, '');
 
-    let returnUrl = `${siteUrl}/payment.html?task=${encodeURIComponent(taskId)}&paid=1&session_id={CHECKOUT_SESSION_ID}`;
-    if (returnPage === 'mytasks') {
-      returnUrl = `${siteUrl}/mytasks.html?tab=inprogress&paid=1&task=${encodeURIComponent(taskId)}&session_id={CHECKOUT_SESSION_ID}`;
-    } else if (returnPage === 'chat') {
-      const returnConv = String(body.return_conv || '').trim();
-      const convQs = returnConv ? `&conv=${encodeURIComponent(returnConv)}` : '';
-      returnUrl = `${siteUrl}/chat.html?paid=1&task=${encodeURIComponent(taskId)}${convQs}&session_id={CHECKOUT_SESSION_ID}`;
+    const returnConv = String(body.return_conv || '').trim();
+    const convQs = returnConv ? `conv=${encodeURIComponent(returnConv)}&` : '';
+    let returnUrl =
+      `${siteUrl}/chat.html?${convQs}paid=1&task=${encodeURIComponent(taskId)}&session_id={CHECKOUT_SESSION_ID}`;
+    if (returnPage === 'mytasks' || returnPage === 'payment') {
+      returnUrl =
+        `${siteUrl}/chat.html?paid=1&task=${encodeURIComponent(taskId)}&session_id={CHECKOUT_SESSION_ID}`;
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });

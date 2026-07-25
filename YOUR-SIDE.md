@@ -86,10 +86,13 @@ ga4ConversionLabel: 'YOUR_LABEL_HERE',
 
 ## Supabase SQL (run once if a feature is broken)
 
+**Run first if tasks vanish or chat won't unlock after pay:** `supabase/launch-stabilize.sql` (one file — tasks, apps, payments, chat).
+
 In **Supabase → SQL Editor**, run any you haven’t yet:
 
 | File | For |
 |------|-----|
+| **`supabase/launch-stabilize.sql`** | **Launch fix — tasks + pay + chat (start here)** |
 | `supabase/beta-setup-all.sql` | Full beta base (or re-run new sections) |
 | `supabase/user-notifications.sql` | Notification bell |
 | `supabase/saved-tasks.sql` | Saved tasks ☆ |
@@ -110,18 +113,15 @@ Full checklist: **[LAUNCH-PREP.md](LAUNCH-PREP.md)**
 
 **Your next steps (in order):**
 
-1. **Hard refresh** quickgigs.ca (Ctrl+Shift+R) — service worker must update to v37+  
-2. Deploy Edge Functions (instant refund + Connect sync):
-   ```bash
-   supabase functions deploy confirm-checkout --no-verify-jwt
-   supabase functions deploy refund-payment --no-verify-jwt
-   supabase functions deploy sync-connect-status --no-verify-jwt
-   ```
-3. Run **`supabase/payments-release.sql`** in Supabase SQL Editor (if not done)  
-4. **Test the money loop** with 2 accounts (poster + tasker):
-   - Post → accept → **Pay & unlock chat** → message → **Mark complete** → worker sees earnings  
-   - Stripe test card: `4242 4242 4242 4242`  
-5. When that works: Resend emails (`send-notification`), then open sign-ups (Admin → soft close off)
+1. **Hard refresh** quickgigs.ca (Ctrl+Shift+R) — service worker **v47+**
+2. Run **`supabase/launch-stabilize.sql`** in Supabase SQL Editor (if not done)
+3. Deploy Edge Functions via Supabase Dashboard (JWT **off** on each):
+   - `create-checkout`, `confirm-checkout`, `stripe-webhook`
+4. Run **`supabase/payments-release.sql`** in Supabase SQL Editor (if not done)
+5. **Test the money loop** with 2 accounts (poster + tasker):
+   - Post → accept → **Pay & unlock chat** → message → **Mark complete** → worker sees earnings
+   - Stripe test card: `4242 4242 4242 4242`
+6. When that works: Resend emails (`send-notification`), then open sign-ups (Admin → soft close off)
 
 ---
 

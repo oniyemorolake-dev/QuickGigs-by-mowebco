@@ -242,7 +242,7 @@
 
   window.promptQuickGigsInstall = function () {
     if (isStandalone()) {
-      alert('QuickGigs is already installed on this device.');
+      qgNotify('QuickGigs is already installed on this device.', '#4ade80');
       return Promise.resolve({ outcome: 'accepted' });
     }
     if (isIos()) {
@@ -253,7 +253,7 @@
       deferredPrompt.prompt();
       return deferredPrompt.userChoice;
     }
-    alert('To install QuickGigs: open your browser menu and choose "Add to Home Screen" or "Install app".');
+    qgNotify('To install: browser menu → Add to Home Screen or Install app', '#6b3fa0');
     return Promise.resolve({ outcome: 'dismissed' });
   };
 

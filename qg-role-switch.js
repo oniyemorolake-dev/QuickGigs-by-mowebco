@@ -14,6 +14,7 @@
       ? "You're in Tasker mode — browse gigs and apply."
       : "You're in Poster mode — post tasks and hire.";
     if (typeof showToast === 'function') showToast(msg);
+    else if (typeof qgNotify === 'function') qgNotify(msg);
     else alert(msg);
   }
 

@@ -139,7 +139,7 @@
     if (typeof firebase !== 'undefined' && firebase.auth) {
       await firebase.auth().signOut();
     }
-    alert('Your QuickGigs account has been suspended after repeated community warnings. Contact support@quickgigs.ca if you believe this is an error.');
+    qgNotify('Your account has been suspended. Contact support@quickgigs.ca if this is an error.', '#ef4444');
     window.location.href = 'login.html';
     return { ok: false, banned: true };
   }

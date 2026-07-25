@@ -99,7 +99,7 @@
 
   window.requestQuickGigsNotifications = async function () {
     if (typeof Notification === 'undefined') {
-      alert('Notifications are not supported in this browser. Add QuickGigs to your home screen and use email alerts instead.');
+      qgNotify('Notifications are not supported in this browser. Add QuickGigs to your home screen.', '#f59e0b');
       return false;
     }
     var perm = Notification.permission;
