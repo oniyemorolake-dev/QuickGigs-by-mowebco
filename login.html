@@ -243,6 +243,18 @@ document.getElementById('googleLoginBtn').addEventListener('click', async functi
   provider.addScope('email');
   provider.setCustomParameters({ prompt: 'select_account' });
 
+  var useRedirect = typeof qgGooglePreferRedirect === 'function' && qgGooglePreferRedirect();
+  if (useRedirect) {
+    try {
+      await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
+    } catch (redirectErr) {
+      var rMsg = typeof qgGoogleAuthErrorMessage === 'function' ? qgGoogleAuthErrorMessage(redirectErr) : '';
+      if (rMsg) { errorMsg.textContent = rMsg; errorMsg.style.display = 'block'; }
+      if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+    }
+    return;
+  }
+
   try {
     var result = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
     await finishGoogleLogin(result.user);
@@ -251,13 +263,26 @@ document.getElementById('googleLoginBtn').addEventListener('click', async functi
       if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
       return;
     }
+    var popupMsg = typeof qgGoogleAuthErrorMessage === 'function' ? qgGoogleAuthErrorMessage(error) : '';
+    if (popupMsg && error.code !== 'auth/popup-blocked') {
+      errorMsg.textContent = popupMsg;
+      errorMsg.style.display = 'block';
+      if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+      return;
+    }
     if (error.code === 'auth/popup-blocked') {
-      await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
+      try {
+        await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
+      } catch (redirectErr) {
+        errorMsg.textContent = typeof qgGoogleAuthErrorMessage === 'function'
+          ? qgGoogleAuthErrorMessage(redirectErr) : 'Popup blocked — allow popups or try again.';
+        errorMsg.style.display = 'block';
+        if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+      }
       return;
     }
     try {
       await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
-      return;
     } catch (redirectErr) {
       var message = typeof qgGoogleAuthErrorMessage === 'function'
         ? qgGoogleAuthErrorMessage(redirectErr)

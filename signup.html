@@ -232,9 +232,24 @@ var oauthSignupMode = false;
 async function beginOAuthSignup(user) {
   oauthSignupUser = user;
   oauthSignupMode = true;
+  if (typeof window.QG_setCurrentUserForSoftClose === 'function') {
+    window.QG_setCurrentUserForSoftClose(user);
+  }
+  var notice = document.getElementById('qgSignupSoftCloseNotice');
+  if (notice) notice.remove();
+  var card = document.querySelector('.signup-card');
+  if (card) card.style.display = '';
   if (typeof qgInitOAuthSignupFields === 'function') qgInitOAuthSignupFields(user);
   var secStep = document.querySelector('[data-step="security"]');
   if (secStep) secStep.setAttribute('data-skip', '0');
+  setTimeout(function () {
+    if (window._qgSignupWizard && window._qgSignupWizard.showStep) {
+      window._qgSignupWizard.showStep(0);
+      if (typeof updateSignupStepUI === 'function') updateSignupStepUI(0);
+    }
+    var cardEl = document.querySelector('.signup-card');
+    if (cardEl && cardEl.scrollIntoView) cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
 }
 
 async function finishGoogleSignup(user) {
@@ -259,7 +274,7 @@ async function finishGoogleSignup(user) {
 
   await beginOAuthSignup(user);
   if (okMsg) {
-    okMsg.textContent = 'Google connected — finish the steps below to create your account.';
+    okMsg.textContent = 'Google connected — enter your phone number and finish the steps below.';
     okMsg.style.display = 'block';
   }
   if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleSignupBtn');
@@ -279,6 +294,23 @@ async function handleGoogleSignupClick() {
   provider.addScope('email');
   provider.setCustomParameters({ prompt: 'select_account' });
 
+  var useRedirect = typeof qgGooglePreferRedirect === 'function' && qgGooglePreferRedirect();
+  if (useRedirect) {
+    try {
+      await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
+    } catch (redirectErr) {
+      var redirectMsg = typeof qgGoogleAuthErrorMessage === 'function'
+        ? qgGoogleAuthErrorMessage(redirectErr)
+        : (typeof qgGoogleFirebaseSetupHint === 'string' ? qgGoogleFirebaseSetupHint : 'Google sign-in failed.');
+      if (redirectMsg) {
+        errorMsg.textContent = redirectMsg;
+        errorMsg.style.display = 'block';
+      }
+      if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleSignupBtn');
+    }
+    return;
+  }
+
   try {
     var result = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
     await finishGoogleSignup(result.user);
@@ -287,13 +319,26 @@ async function handleGoogleSignupClick() {
       if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleSignupBtn');
       return;
     }
+    var popupMsg = typeof qgGoogleAuthErrorMessage === 'function' ? qgGoogleAuthErrorMessage(error) : '';
+    if (popupMsg && error.code !== 'auth/popup-blocked') {
+      errorMsg.textContent = popupMsg;
+      errorMsg.style.display = 'block';
+      if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleSignupBtn');
+      return;
+    }
     if (error.code === 'auth/popup-blocked') {
-      await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
+      try {
+        await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
+      } catch (redirectErr) {
+        errorMsg.textContent = typeof qgGoogleAuthErrorMessage === 'function'
+          ? qgGoogleAuthErrorMessage(redirectErr) : 'Popup blocked — allow popups for quickgigs.ca or try again.';
+        errorMsg.style.display = 'block';
+        if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleSignupBtn');
+      }
       return;
     }
     try {
       await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
-      return;
     } catch (redirectErr) {
       var message = typeof qgGoogleAuthErrorMessage === 'function'
         ? qgGoogleAuthErrorMessage(redirectErr)
@@ -401,6 +446,7 @@ var wizard = window.QGSignupWizard.create({
   root: document.getElementById('signupWizard'),
   onStepChange: updateSignupStepUI
 });
+window._qgSignupWizard = wizard;
 updateSignupStepUI(0);
 
 function clearSignupErrors() {

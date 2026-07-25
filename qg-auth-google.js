@@ -10,6 +10,12 @@
     if (error.code === 'auth/operation-not-allowed') {
       return 'Google sign-in is not enabled in Firebase yet. Enable it under Authentication → Sign-in method → Google.';
     }
+    if (error.code === 'auth/unauthorized-domain') {
+      return 'This domain is not authorized in Firebase. Add quickgigs.ca under Authentication → Settings → Authorized domains.';
+    }
+    if (error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-oauth-client-id') {
+      return window.qgGoogleFirebaseSetupHint;
+    }
     if (error.code === 'auth/internal-error' || error.code === 'auth/invalid-api-key') {
       return window.qgGoogleFirebaseSetupHint;
     }

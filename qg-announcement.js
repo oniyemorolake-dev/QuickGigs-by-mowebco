@@ -106,12 +106,15 @@
     var card = document.querySelector('.signup-card') || document.querySelector('.signup-page');
     if (!card) return;
     var msg = banner.message || 'Sign-ups are paused while we prepare for launch.';
-    var block = document.createElement('div');
-    block.className = 'qg-soft-close-block';
-    block.innerHTML = '<p><strong>Beta closed</strong></p><p>' + esc(msg) + '</p>' +
-      '<p style="margin-top:12px"><a href="index.html">← Back to home</a></p>';
-    card.parentNode.insertBefore(block, card);
-    card.style.display = 'none';
+    var existing = document.getElementById('qgSignupSoftCloseNotice');
+    if (existing) existing.remove();
+    var notice = document.createElement('div');
+    notice.id = 'qgSignupSoftCloseNotice';
+    notice.className = 'qg-soft-close-block';
+    notice.style.marginBottom = '16px';
+    notice.innerHTML = '<p><strong>Heads up</strong></p><p>' + esc(msg) + '</p>' +
+      '<p style="margin-top:10px;font-size:12px">You can still sign up with Google or email below for testing. To fully reopen sign-ups, turn off soft close in Admin → Settings.</p>';
+    card.insertBefore(notice, card.firstChild);
   }
 
   function deferBlockPageRedirect() {
