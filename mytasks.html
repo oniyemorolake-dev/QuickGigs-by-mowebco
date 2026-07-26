@@ -242,7 +242,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 
 <script src="qg-utils.js"></script>
 <script src="qg-config.js"></script>
-<script src="supabase-db.js?v=20260725k"></script>
+<script src="supabase-db.js?v=20260725m"></script>
 <script src="qg-stripe.js?v=20260725g"></script>
 <script src="qg-nav.js?v=20260725"></script>
 <script src="qg-pwa.js?v=4"></script>
@@ -1826,16 +1826,24 @@ window.markComplete = async function(taskId, btn){
   var result = await completeFn(taskId);
   if (!result.success) {
     if (btn) { btn.disabled = false; btn.textContent = '✓ Mark complete'; }
+    var errCode = result.error;
+    if (result.release && result.release.error && !errCode) errCode = result.release.error;
+    if (result.release && result.release.details && !errCode) errCode = result.release.details;
     var msg = typeof formatSupabaseActionError === 'function'
-      ? formatSupabaseActionError('mark complete', result.error)
-      : (result.error || 'Could not mark complete — run supabase/beta-setup-all.sql in Supabase');
+      ? formatSupabaseActionError('mark complete', errCode)
+      : (errCode || 'Could not mark complete — run supabase/beta-setup-all.sql in Supabase');
     showToast(msg, '#ef4444');
+    console.error('markComplete failed:', result);
     return;
   }
   if (result.release && result.release.ok && !result.release.skipped && !result.release.already) {
     showToast('Payout sent to tasker (75/25 split)', '#4ade80');
   } else if (result.pendingPayout) {
     showToast('Task complete — payout waits until tasker sets up Stripe in Profile', '#f59e0b');
+  } else if (result.payoutFailed) {
+    var payoutMsg = (result.release && result.release.error) ? String(result.release.error) : 'Payout pending';
+    if (payoutMsg.length > 80) payoutMsg = payoutMsg.slice(0, 80) + '…';
+    showToast('Task complete — payout will retry (' + payoutMsg + ')', '#f59e0b');
   }
   allTasks.forEach(function(t) {
     if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, 'completed');
