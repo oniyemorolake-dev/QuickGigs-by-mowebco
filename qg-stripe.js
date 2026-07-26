@@ -357,10 +357,26 @@
       if (!accepted) return;
       var workerId = accepted.worker_id || accepted.WORKER_ID;
       var conv = await getConversationForTask(taskId, posterId, workerId);
-      if (conv && conv.conv_id) options.returnConv = String(conv.conv_id);
+      if (conv && conv.conv_id) {
+        options.returnConv = String(conv.conv_id);
+        markJustPaidConv(taskId, conv.conv_id);
+      }
     } catch (e) {
       console.warn('attachReturnConv failed:', e);
     }
+  }
+
+  function markJustPaidConv(taskId, convId) {
+    if (!convId) return;
+    try {
+      sessionStorage.setItem('qg-just-paid-conv', String(convId) + '|' + Date.now());
+      if (taskId) sessionStorage.setItem('qg-task-conv-' + String(taskId), String(convId));
+    } catch (e) {}
+  }
+
+  function readCachedTaskConv(taskId) {
+    if (!taskId) return '';
+    try { return sessionStorage.getItem('qg-task-conv-' + String(taskId)) || ''; } catch (e) { return ''; }
   }
 
   async function goToChatAfterPayment(taskId, sessionId, options) {
@@ -372,21 +388,17 @@
       window.qgShowGlobalLoading('Opening chat…');
     }
 
+    if (!options.returnConv && taskId) {
+      options.returnConv = readCachedTaskConv(taskId);
+    }
+
     if (options.returnConv) {
+      markJustPaidConv(taskId, options.returnConv);
       window.location.replace(buildChatPayReturnUrl(taskId, sessionId, options.returnConv));
       return true;
     }
 
     if (taskId) {
-      try {
-        var navPromise = navigateToChatForTask(taskId, sessionId, { skipLoading: true });
-        var navigated = typeof withTimeout === 'function'
-          ? await withTimeout(navPromise, 2000, false)
-          : await navPromise;
-        if (navigated) return true;
-      } catch (e) {
-        console.warn('goToChatAfterPayment navigate failed:', e);
-      }
       window.location.replace(buildChatPayReturnUrl(taskId, sessionId));
       return true;
     }
@@ -869,5 +881,7 @@
   window.QG_navigateToChatForTask = navigateToChatForTask;
   window.QG_goToChatAfterPayment = goToChatAfterPayment;
   window.QG_buildChatPayReturnUrl = buildChatPayReturnUrl;
+  window.QG_markJustPaidConv = markJustPaidConv;
+  window.QG_readCachedTaskConv = readCachedTaskConv;
   window.QG_formatPayError = formatPayError;
 })();

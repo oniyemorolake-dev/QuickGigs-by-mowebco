@@ -224,9 +224,9 @@ onAuthStateChanged(auth, (user) => {
 <link rel="stylesheet" href="qg-trust.css">
 <script src="qg-utils.js"></script>
 <script src="qg-config.js"></script>
-<script src="supabase-db.js?v=20260725e"></script>
+<script src="supabase-db.js?v=20260725f"></script>
 <script src="qg-site.js"></script>
-<script src="qg-stripe.js?v=20260725e"></script>
+<script src="qg-stripe.js?v=20260725f"></script>
 <script src="qg-lightbox.js?v=1"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
@@ -294,6 +294,95 @@ function formatMessageDate(iso){
   return d.toLocaleDateString('en-CA', {month:'short', day:'numeric', year:'numeric'});
 }
 
+function isJustPaidConv(id) {
+  if (!id) return false;
+  try {
+    var raw = sessionStorage.getItem('qg-just-paid-conv');
+    if (!raw) return false;
+    var parts = raw.split('|');
+    if (String(parts[0]) !== String(id)) return false;
+    return Date.now() - Number(parts[1] || 0) < 300000;
+  } catch (e) { return false; }
+}
+
+function clearJustPaidConv(id) {
+  try {
+    if (isJustPaidConv(id)) sessionStorage.removeItem('qg-just-paid-conv');
+  } catch (e) {}
+}
+
+function cleanPaidUrlParams() {
+  if (!window.history || !window.history.replaceState) return;
+  var url = new URL(window.location.href);
+  if (!url.searchParams.get('paid') && !url.searchParams.get('session_id')) return;
+  url.searchParams.delete('paid');
+  url.searchParams.delete('session_id');
+  window.history.replaceState({}, '', url.pathname + '?' + url.searchParams.toString());
+}
+
+function renderChatHeaderFromConv(conv, isPoster, otherName, otherUid) {
+  var convStatus = (conv.status || 'in_progress').toLowerCase();
+  var cat = (conv.task_category || 'other').toLowerCase();
+  var isCompleted = convStatus === 'completed';
+  document.getElementById('chatName').textContent = otherName;
+  var profileLink = document.getElementById('chatProfileLink');
+  if (profileLink && otherUid) {
+    profileLink.href = typeof getProfileUrl === 'function'
+      ? getProfileUrl(otherUid)
+      : ('profile.html?user=' + encodeURIComponent(otherUid));
+    profileLink.title = 'View ' + otherName + '\'s profile';
+  }
+  document.getElementById('chatSub').textContent = isPoster
+    ? 'Tasker · ' + (conv.task_title || 'Your task')
+    : 'Poster · ' + (conv.task_title || 'Task');
+  document.getElementById('taskTitle').textContent = conv.task_title || 'Task';
+  document.getElementById('taskMeta').textContent = isCompleted
+    ? ('$' + (conv.task_budget || '—') + ' · Task completed')
+    : 'Chat open · Escrow paid';
+  document.getElementById('taskIcon').textContent = CAT_ICONS[cat] || '📦';
+  document.getElementById('taskIcon').style.background = CAT_BG[cat] || 'rgba(107,63,160,0.2)';
+  document.getElementById('taskStatus').textContent = isCompleted ? 'Completed' : 'In progress';
+  document.getElementById('taskStatus').className = 'tb-status ' + (isCompleted ? 'status-done' : 'status-progress');
+}
+
+function deferChatEnrichment(conv, otherUid, otherName, isPoster) {
+  (async function () {
+    var name = otherName;
+    if ((!name || (typeof isGenericDisplayName === 'function' && isGenericDisplayName(name))) &&
+        typeof getUserNameByFirebaseUid === 'function') {
+      var fetchedName = await getUserNameByFirebaseUid(otherUid);
+      if (fetchedName) {
+        name = fetchedName;
+        document.getElementById('chatName').textContent = fetchedName;
+      }
+    }
+    if (typeof getUserAvatarUrl === 'function') {
+      var otherAvatar = await getUserAvatarUrl(otherUid);
+      var chatAvatarEl = document.getElementById('chatAvatar');
+      if (chatAvatarEl && typeof renderUserAvatarHtml === 'function') {
+        var avatarHtml = renderUserAvatarHtml(name, otherAvatar, { className: 'nav-chat-avatar' });
+        chatAvatarEl.outerHTML = avatarHtml.replace('class="nav-chat-avatar"', 'class="nav-chat-avatar" id="chatAvatar"');
+      }
+    }
+    if (conv && conv.task_id) loadTaskPhotos(conv.task_id);
+    if (typeof enrichConversationNames === 'function') {
+      enrichConversationNames(conv).catch(function () {});
+    }
+  })();
+}
+
+function runBackgroundUnlock(conv, sessionId) {
+  if (!conv || !conv.task_id) return;
+  (async function () {
+    if (sessionId && typeof window.QG_confirmCheckoutSession === 'function') {
+      await window.QG_confirmCheckoutSession(sessionId).catch(function () {});
+    }
+    if (typeof unlockChatForTask === 'function') {
+      await unlockChatForTask(conv.task_id, conv.poster_id, conv.worker_id).catch(function () {});
+    }
+  })();
+}
+
 async function initChat(){
   currentUserId = window._currentUser ? window._currentUser.uid : null;
   if(!currentUserId){
@@ -307,59 +396,15 @@ async function initChat(){
   var sessionFromUrl = payParams.get('session_id') || '';
 
   if (paidReturn && taskFromUrl && !convId) {
-    var paidBootKey = 'qg-paid-boot-' + taskFromUrl + '-' + (sessionFromUrl || '1');
-    if (sessionStorage.getItem(paidBootKey) === 'stuck') {
-      if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
-      if (typeof showToast === 'function') {
-        showToast('Payment received — open Messages or tap Pay again to sync', '#f59e0b');
-      }
-      window.location.replace('mytasks.html?tab=inprogress&task=' + encodeURIComponent(taskFromUrl));
+    var cachedConv = typeof window.QG_readCachedTaskConv === 'function'
+      ? window.QG_readCachedTaskConv(taskFromUrl)
+      : '';
+    if (!cachedConv) {
+      try { cachedConv = sessionStorage.getItem('qg-task-conv-' + taskFromUrl) || ''; } catch (e) {}
+    }
+    if (cachedConv && typeof window.QG_buildChatPayReturnUrl === 'function') {
+      window.location.replace(window.QG_buildChatPayReturnUrl(taskFromUrl, sessionFromUrl, cachedConv));
       return;
-    }
-    try { sessionStorage.setItem(paidBootKey, 'busy'); } catch (e) {}
-
-    if (typeof window.qgShowGlobalLoading === 'function') {
-      window.qgShowGlobalLoading('Payment confirmed — opening chat…');
-    }
-    if (sessionFromUrl && typeof window.QG_confirmCheckoutSession === 'function') {
-      window.QG_confirmCheckoutSession(sessionFromUrl).catch(function () {});
-    }
-    if (typeof getTaskById === 'function' && typeof getApplicationsByTask === 'function' && typeof getConversationForTask === 'function') {
-      var payTask = await getTaskById(taskFromUrl);
-      if (payTask) {
-        var payPoster = payTask.posted_by || payTask.POSTED_BY;
-        var payApps = await getApplicationsByTask(taskFromUrl);
-        var payAccepted = (payApps || []).find(function (a) {
-          return String(a.status || a.STATUS || '').toLowerCase() === 'accepted';
-        });
-        if (payAccepted) {
-          var payWorker = payAccepted.worker_id || payAccepted.WORKER_ID;
-          var payConv = await getConversationForTask(taskFromUrl, payPoster, payWorker);
-          if (payConv && payConv.conv_id) {
-            try { sessionStorage.removeItem(paidBootKey); } catch (e) {}
-            window.location.replace(window.QG_buildChatPayReturnUrl(taskFromUrl, sessionFromUrl, payConv.conv_id));
-            return;
-          }
-        }
-      }
-    }
-    if (typeof ensureChatReadyForTask === 'function') {
-      var boot = await ensureChatReadyForTask(taskFromUrl, currentUserId, { sessionId: sessionFromUrl, skipSync: true });
-      if (boot.conv_id) {
-        try { sessionStorage.removeItem(paidBootKey); } catch (e) {}
-        window.location.replace('chat.html?conv=' + encodeURIComponent(String(boot.conv_id)));
-        return;
-      }
-    }
-    if (typeof window.QG_navigateToChatForTask === 'function' &&
-        await window.QG_navigateToChatForTask(taskFromUrl, sessionFromUrl)) {
-      try { sessionStorage.removeItem(paidBootKey); } catch (e) {}
-      return;
-    }
-    try { sessionStorage.setItem(paidBootKey, 'stuck'); } catch (e) {}
-    if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
-    if (typeof showToast === 'function') {
-      showToast('Payment received — finishing setup…', '#f59e0b');
     }
     window.location.replace('mytasks.html?tab=inprogress&task=' + encodeURIComponent(taskFromUrl));
     return;
@@ -370,181 +415,120 @@ async function initChat(){
     return;
   }
 
+  var justPaid = paidReturn || !!sessionFromUrl || isJustPaidConv(convId);
+
   if (typeof syncCurrentUserProfile === 'function' && window._currentUser) {
     syncCurrentUserProfile(window._currentUser).catch(function () {});
   }
 
-  currentConv = await getConversation(convId);
+  if (justPaid && sessionFromUrl) {
+    cleanPaidUrlParams();
+  }
+
+  var convPromise = getConversation(convId);
+  var messagesPromise = (justPaid && typeof getMessagesForConversation === 'function')
+    ? getMessagesForConversation(convId)
+    : null;
+
+  currentConv = await convPromise;
   if(!currentConv || (currentConv.poster_id !== currentUserId && currentConv.worker_id !== currentUserId)){
     window.location.href = 'messages.html';
     return;
   }
 
-  var payReturn = new URLSearchParams(window.location.search);
-  var sessionFromPay = payReturn.get('session_id') || '';
-  var paidFromPay = payReturn.get('paid') === '1';
-  if ((paidFromPay || sessionFromPay) && currentConv.task_id) {
-    if (sessionFromPay && typeof window.QG_confirmCheckoutSession === 'function') {
-      if (typeof withTimeout === 'function') {
-        await withTimeout(window.QG_confirmCheckoutSession(sessionFromPay), 3000, null);
-      } else {
-        await window.QG_confirmCheckoutSession(sessionFromPay);
-      }
-    }
-    if (window.history && window.history.replaceState) {
-      var cleanUrl = new URL(window.location.href);
-      cleanUrl.searchParams.delete('paid');
-      cleanUrl.searchParams.delete('session_id');
-      window.history.replaceState({}, '', cleanUrl.pathname + '?' + cleanUrl.searchParams.toString());
-    }
-  }
-
-  if (typeof enrichConversationNames === 'function') {
-    currentConv = await enrichConversationNames(currentConv);
-  }
-
-  var convStatus = (currentConv.status || 'in_progress').toLowerCase();
-  var taskStatus = '';
-  if (currentConv.task_id && typeof getTaskById === 'function') {
-    var taskRow = await getTaskById(currentConv.task_id);
-    if (taskRow) {
-      taskStatus = (taskRow.status || taskRow.STATUS || '').toLowerCase();
-      currentConv.task_budget = taskRow.budget != null ? taskRow.budget : taskRow.BUDGET;
-    }
-  }
-  if (!currentConv.is_unlocked && convStatus !== 'completed') {
-    var chatRule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'payment';
-    var tryUnlock = false;
-    if (chatRule === 'payment' && (taskStatus === 'in_progress' || convStatus === 'in_progress')) {
-      tryUnlock = true;
-    } else if (typeof shouldUnlockChatNow === 'function' && shouldUnlockChatNow(convStatus, taskStatus)) {
-      tryUnlock = true;
-    } else if (typeof resolveChatUnlockedOnCreate === 'function' &&
-        resolveChatUnlockedOnCreate(convStatus === 'application' ? 'application' : 'in_progress')) {
-      tryUnlock = true;
-    }
-    if (tryUnlock) {
-      var unlockResult = typeof unlockChatForTask === 'function'
-        ? await unlockChatForTask(currentConv.task_id, currentConv.poster_id, currentConv.worker_id)
-        : (typeof forceUnlockConversationForTask === 'function'
-          ? await forceUnlockConversationForTask(currentConv, taskStatus)
-          : await updateConversation(convId, { is_unlocked: true, status: 'in_progress' }));
-      if (unlockResult.success) {
-        currentConv.is_unlocked = true;
-        currentConv.status = 'in_progress';
-        if (unlockResult.conv) currentConv = Object.assign({}, currentConv, unlockResult.conv);
-        else {
-          var freshConv = await getConversation(convId);
-          if (freshConv) currentConv = freshConv;
-        }
-      }
-    }
-  }
-
-  var taskAlreadyPaid = false;
-  if (currentConv.task_id && typeof getPaymentByTask === 'function') {
-    var payRow = await getPaymentByTask(currentConv.task_id);
-    var paySt = payRow && String(payRow.status || '').toLowerCase();
-    taskAlreadyPaid = paySt === 'held' || paySt === 'paid' || paySt === 'completed';
-    if (taskAlreadyPaid && !parseConversationUnlocked(currentConv) && convStatus !== 'completed') {
-      var paidUnlock = typeof unlockChatForTask === 'function'
-        ? await unlockChatForTask(currentConv.task_id, currentConv.poster_id, currentConv.worker_id)
-        : (typeof forceUnlockConversationForTask === 'function'
-          ? await forceUnlockConversationForTask(currentConv, taskStatus)
-          : { success: false });
-      if (paidUnlock.success) {
-        currentConv.is_unlocked = true;
-        currentConv.status = 'in_progress';
-        if (paidUnlock.conv) currentConv = Object.assign({}, currentConv, paidUnlock.conv);
-        else {
-          var paidFresh = await getConversation(convId);
-          if (paidFresh) currentConv = paidFresh;
-        }
-      }
-    }
-  }
-
-  if (typeof parseConversationUnlocked === 'function' && parseConversationUnlocked(currentConv)) {
-    currentConv.is_unlocked = true;
+  if (justPaid) {
+    runBackgroundUnlock(currentConv, sessionFromUrl);
+    clearJustPaidConv(convId);
   }
 
   var isPoster = currentConv.poster_id === currentUserId;
   var otherUid = isPoster ? currentConv.worker_id : currentConv.poster_id;
-  var otherName = isPoster ? (currentConv.worker_name || '') : (currentConv.poster_name || '');
-  if ((!otherName || (typeof isGenericDisplayName === 'function' && isGenericDisplayName(otherName))) && typeof getUserNameByFirebaseUid === 'function') {
-    var fetchedName = await getUserNameByFirebaseUid(otherUid);
-    if (fetchedName) otherName = fetchedName;
-  }
-  if (!otherName || (typeof isGenericDisplayName === 'function' && isGenericDisplayName(otherName))) {
-    otherName = isPoster ? 'Tasker' : 'Poster';
-  }
-  var otherAvatar = '';
-  if (typeof getUserAvatarUrl === 'function') {
-    otherAvatar = await getUserAvatarUrl(otherUid);
-  }
-  var chatAvatarEl = document.getElementById('chatAvatar');
-  if (chatAvatarEl && typeof renderUserAvatarHtml === 'function') {
-    var avatarHtml = renderUserAvatarHtml(otherName, otherAvatar, { className: 'nav-chat-avatar' });
-    chatAvatarEl.outerHTML = avatarHtml.replace('class="nav-chat-avatar"', 'class="nav-chat-avatar" id="chatAvatar"');
-  }
-  var cat = (currentConv.task_category || 'other').toLowerCase();
-
+  var otherName = isPoster ? (currentConv.worker_name || 'Tasker') : (currentConv.poster_name || 'Poster');
   chatIsPoster = isPoster;
   window._chatIsPoster = isPoster;
 
-  document.getElementById('chatName').textContent = otherName;
-  var profileLink = document.getElementById('chatProfileLink');
-  if (profileLink && otherUid) {
-    profileLink.href = typeof getProfileUrl === 'function'
-      ? getProfileUrl(otherUid)
-      : ('profile.html?user=' + encodeURIComponent(otherUid));
-    profileLink.title = 'View ' + otherName + '\'s profile';
-  }
-  document.getElementById('chatSub').textContent = isPoster
-    ? 'Tasker · ' + (currentConv.task_title || 'Your task')
-    : 'Poster · ' + (currentConv.task_title || 'Task');
-  document.getElementById('taskTitle').textContent = currentConv.task_title || 'Task';
-  var isCompleted = convStatus === 'completed' || taskStatus === 'completed';
-  var isCancelled = taskStatus === 'cancelled';
-  if (isCompleted) {
-    document.getElementById('taskMeta').textContent = '$' + (currentConv.task_budget || '—') + ' · Task completed';
-  } else {
-    document.getElementById('taskMeta').textContent = (typeof parseConversationUnlocked === 'function'
-        ? parseConversationUnlocked(currentConv)
-        : currentConv.is_unlocked)
-      ? ((window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter === 'payment') ? 'Chat open · Escrow paid' : 'Chat open')
-      : 'Payment required · Chat locked';
-  }
-  document.getElementById('taskIcon').textContent = CAT_ICONS[cat] || '📦';
-  document.getElementById('taskIcon').style.background = CAT_BG[cat] || 'rgba(107,63,160,0.2)';
-  document.getElementById('taskStatus').textContent = isCompleted ? 'Completed' : 'In progress';
-  document.getElementById('taskStatus').className = 'tb-status ' + (isCompleted ? 'status-done' : 'status-progress');
+  var convStatus = (currentConv.status || 'in_progress').toLowerCase();
+  var taskStatus = '';
+  var isCompleted = convStatus === 'completed';
+  var isCancelled = false;
 
-  await loadTaskPhotos(currentConv.task_id);
+  var chatOpen = justPaid || (typeof parseConversationUnlocked === 'function'
+    ? parseConversationUnlocked(currentConv)
+    : !!currentConv.is_unlocked);
+
+  if (!chatOpen && !justPaid) {
+    if (currentConv.task_id && typeof getTaskById === 'function') {
+      var taskRow = await getTaskById(currentConv.task_id);
+      if (taskRow) {
+        taskStatus = (taskRow.status || taskRow.STATUS || '').toLowerCase();
+        isCancelled = taskStatus === 'cancelled';
+        isCompleted = isCompleted || taskStatus === 'completed';
+        currentConv.task_budget = taskRow.budget != null ? taskRow.budget : taskRow.BUDGET;
+      }
+    }
+    var taskAlreadyPaid = false;
+    if (currentConv.task_id && typeof getPaymentByTask === 'function') {
+      var payRow = await getPaymentByTask(currentConv.task_id);
+      var paySt = payRow && String(payRow.status || '').toLowerCase();
+      taskAlreadyPaid = paySt === 'held' || paySt === 'paid' || paySt === 'completed';
+    }
+    if (taskAlreadyPaid) {
+      chatOpen = true;
+      currentConv.is_unlocked = true;
+      if (typeof unlockChatForTask === 'function') {
+        unlockChatForTask(currentConv.task_id, currentConv.poster_id, currentConv.worker_id).catch(function () {});
+      }
+    }
+    if (!chatOpen) {
+      renderChatHeaderFromConv(currentConv, isPoster, otherName, otherUid);
+      document.getElementById('taskMeta').textContent = 'Payment required · Chat locked';
+      showLockedState(isCompleted, isCancelled, taskAlreadyPaid);
+      if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
+      deferChatEnrichment(currentConv, otherUid, otherName, isPoster);
+      return;
+    }
+  }
+
+  if (justPaid) currentConv.is_unlocked = true;
+
+  renderChatHeaderFromConv(currentConv, isPoster, otherName, otherUid);
+  document.querySelector('.input-area').style.display = '';
 
   if(isCompleted) currentConv.is_unlocked = false;
 
-  var chatOpen = typeof parseConversationUnlocked === 'function'
-    ? parseConversationUnlocked(currentConv)
-    : !!currentConv.is_unlocked;
-
-  if (!chatOpen && taskAlreadyPaid && !isCompleted) {
-    currentConv.is_unlocked = true;
-    chatOpen = true;
-    document.getElementById('taskMeta').textContent = 'Chat open · Escrow paid';
-  }
-
-  if(!chatOpen){
-    showLockedState(isCompleted, isCancelled, taskAlreadyPaid);
+  if(!currentConv.is_unlocked && !justPaid){
+    showLockedState(isCompleted, isCancelled, false);
+    if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
+    deferChatEnrichment(currentConv, otherUid, otherName, isPoster);
     return;
   }
 
-  await refreshMessages();
-  await markConversationRead(convId, currentUserId, currentConv.poster_id);
+  if (messagesPromise) {
+    var rows = await messagesPromise;
+    messages = (rows || []).map(function(m){
+      return {
+        id: m.message_id,
+        from: m.sender_id === currentUserId ? 'me' : 'them',
+        text: m.body,
+        senderIsPoster: currentConv && m.sender_id === currentConv.poster_id,
+        time: formatMessageTime(m.created_at),
+        date: formatMessageDate(m.created_at)
+      };
+    });
+    renderMessages();
+    scrollToBottom();
+  } else {
+    await refreshMessages();
+  }
+
   setupChatImageAttach();
   ensureChatLightbox();
   pollTimer = setInterval(refreshMessages, 4000);
+  if (typeof markConversationRead === 'function') {
+    markConversationRead(convId, currentUserId, currentConv.poster_id).catch(function () {});
+  }
   if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
+  deferChatEnrichment(currentConv, otherUid, otherName, isPoster);
 }
 
 function setupChatImageAttach() {

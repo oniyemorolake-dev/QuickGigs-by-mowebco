@@ -1249,23 +1249,14 @@ function resolveUserName(uid, taskRow, userNames) {
 
 async function enrichConversationNames(conv) {
   if (!conv) return conv;
-  var map = await getUsersNameMap();
-  var posterName = resolveUserName(conv.poster_id, {
-    poster_id: conv.poster_id,
-    poster_name: conv.poster_name
-  }, map);
-  var workerName = resolveUserName(conv.worker_id, {
-    worker_id: conv.worker_id,
-    worker_name: conv.worker_name
-  }, map);
-
-  if (!posterName || isGenericDisplayName(posterName)) {
-    posterName = await getUserNameByFirebaseUid(conv.poster_id);
+  var posterName = conv.poster_name || '';
+  var workerName = conv.worker_name || '';
+  if ((!posterName || isGenericDisplayName(posterName)) && typeof getUserNameByFirebaseUid === 'function') {
+    posterName = await getUserNameByFirebaseUid(conv.poster_id) || posterName;
   }
-  if (!workerName || isGenericDisplayName(workerName)) {
-    workerName = await getUserNameByFirebaseUid(conv.worker_id);
+  if ((!workerName || isGenericDisplayName(workerName)) && typeof getUserNameByFirebaseUid === 'function') {
+    workerName = await getUserNameByFirebaseUid(conv.worker_id) || workerName;
   }
-
   var patch = {};
   if (posterName && !isGenericDisplayName(posterName) && posterName !== conv.poster_name) {
     conv.poster_name = posterName;
@@ -1276,7 +1267,7 @@ async function enrichConversationNames(conv) {
     patch.worker_name = workerName;
   }
   if (conv.conv_id && (patch.poster_name || patch.worker_name)) {
-    await updateConversation(conv.conv_id, patch);
+    updateConversation(conv.conv_id, patch).catch(function () {});
   }
   return conv;
 }

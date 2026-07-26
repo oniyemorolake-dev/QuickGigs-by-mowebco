@@ -242,8 +242,8 @@ body.light .app-legal-footer a{color:var(--purple);}
 
 <script src="qg-utils.js"></script>
 <script src="qg-config.js"></script>
-<script src="supabase-db.js?v=20260725e"></script>
-<script src="qg-stripe.js?v=20260725e"></script>
+<script src="supabase-db.js?v=20260725f"></script>
+<script src="qg-stripe.js?v=20260725f"></script>
 <script src="qg-nav.js?v=20260725"></script>
 <script src="qg-pwa.js?v=4"></script>
 <script src="qg-notifications.js"></script>
@@ -1644,9 +1644,10 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
   if (convResult.data && convResult.data.conv_id && !isPaymentGatedChat()) {
     await unlockConversationIfAllowed(convResult.data.conv_id, convResult.data.status, 'in_progress');
     showToast('Accepted ' + workerName + '! Opening chat…');
-    setTimeout(function(){
-      window.location.href = 'chat.html?conv=' + encodeURIComponent(convResult.data.conv_id);
-    }, 900);
+    try {
+      sessionStorage.setItem('qg-task-conv-' + String(taskId), String(convResult.data.conv_id));
+    } catch (e) {}
+    window.location.href = 'chat.html?conv=' + encodeURIComponent(convResult.data.conv_id);
   } else if (isPaymentGatedChat()) {
     showToast('Accepted ' + workerName + '! Opening payment…', '#4ade80');
     activeTab = 'inprogress';
@@ -1655,6 +1656,12 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
     setAcceptLoading(acceptBtn, false);
     var payAmount = getField(app, 'PRICE') || getField(task, 'BUDGET');
     var payConvId = convResult.data && convResult.data.conv_id ? String(convResult.data.conv_id) : '';
+    if (payConvId) {
+      try { sessionStorage.setItem('qg-task-conv-' + String(taskId), payConvId); } catch (e) {}
+      if (typeof window.QG_markJustPaidConv === 'function') {
+        window.QG_markJustPaidConv(taskId, payConvId);
+      }
+    }
     if (typeof window.QG_openPayModal === 'function') {
       window.QG_openPayModal(taskId, userId, {
         returnPage: 'mytasks',
@@ -1702,17 +1709,24 @@ window.openChatWithWorker = async function(taskId, workerId){
 
   if (typeof window.QG_syncPendingPayments === 'function') {
     if (typeof withTimeout === 'function') {
-      await withTimeout(window.QG_syncPendingPayments(userId), 2000, null);
+      withTimeout(window.QG_syncPendingPayments(userId), 1500, null);
     } else {
-      await window.QG_syncPendingPayments(userId);
+      window.QG_syncPendingPayments(userId);
     }
   }
   if (typeof window.QG_refreshPaymentState === 'function') {
-    await window.QG_refreshPaymentState(taskId);
+    window.QG_refreshPaymentState(taskId);
   }
 
   if (typeof window.qgShowGlobalLoading === 'function') {
     window.qgShowGlobalLoading('Opening chat…');
+  }
+
+  var cachedConv = '';
+  try { cachedConv = sessionStorage.getItem('qg-task-conv-' + String(taskId)) || ''; } catch (e) {}
+  if (cachedConv) {
+    window.location.href = 'chat.html?conv=' + encodeURIComponent(cachedConv);
+    return;
   }
 
   var existingConv = await getConversationForTask(taskId, posterId, workerId);
