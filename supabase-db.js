@@ -2265,9 +2265,9 @@ async function ensureChatReadyForTask(taskId, actorId, options) {
 
   if (options.sessionId && typeof window.QG_confirmCheckoutSession === 'function') {
     await window.QG_confirmCheckoutSession(options.sessionId);
-  } else if (typeof window.QG_syncPendingPayments === 'function' && actorId) {
+  } else if (!options.skipSync && typeof window.QG_syncPendingPayments === 'function' && actorId) {
     if (typeof withTimeout === 'function') {
-      await withTimeout(window.QG_syncPendingPayments(actorId), 5000, null);
+      await withTimeout(window.QG_syncPendingPayments(actorId), 2000, null);
     } else {
       await window.QG_syncPendingPayments(actorId);
     }
@@ -2294,7 +2294,7 @@ async function ensureChatReadyForTask(taskId, actorId, options) {
     paid = await isTaskPaymentComplete(taskId);
   }
   if (!paid && typeof window.QG_waitForPaymentHeld === 'function') {
-    paid = await window.QG_waitForPaymentHeld(taskId, options.sessionId ? 10000 : 6000);
+    paid = await window.QG_waitForPaymentHeld(taskId, options.sessionId ? 3000 : 4000);
   }
   if (!paid) {
     var convExisting = typeof getConversationForTask === 'function'

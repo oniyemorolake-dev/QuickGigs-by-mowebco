@@ -224,9 +224,9 @@ onAuthStateChanged(auth, (user) => {
 <link rel="stylesheet" href="qg-trust.css">
 <script src="qg-utils.js"></script>
 <script src="qg-config.js"></script>
-<script src="supabase-db.js?v=20260725d"></script>
+<script src="supabase-db.js?v=20260725e"></script>
 <script src="qg-site.js"></script>
-<script src="qg-stripe.js?v=20260725d"></script>
+<script src="qg-stripe.js?v=20260725e"></script>
 <script src="qg-lightbox.js?v=1"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
@@ -322,25 +322,7 @@ async function initChat(){
       window.qgShowGlobalLoading('Payment confirmed — opening chat…');
     }
     if (sessionFromUrl && typeof window.QG_confirmCheckoutSession === 'function') {
-      await window.QG_confirmCheckoutSession(sessionFromUrl);
-    }
-    if (typeof window.QG_syncPendingPayments === 'function') {
-      if (typeof withTimeout === 'function') {
-        await withTimeout(window.QG_syncPendingPayments(currentUserId), 5000, null);
-      } else {
-        await window.QG_syncPendingPayments(currentUserId);
-      }
-    }
-    if (typeof window.QG_waitForPaymentHeld === 'function') {
-      await window.QG_waitForPaymentHeld(taskFromUrl, 8000);
-    }
-    if (typeof ensureChatReadyForTask === 'function') {
-      var boot = await ensureChatReadyForTask(taskFromUrl, currentUserId, { sessionId: sessionFromUrl });
-      if (boot.conv_id) {
-        try { sessionStorage.removeItem(paidBootKey); } catch (e) {}
-        window.location.replace('chat.html?conv=' + encodeURIComponent(String(boot.conv_id)));
-        return;
-      }
+      window.QG_confirmCheckoutSession(sessionFromUrl).catch(function () {});
     }
     if (typeof getTaskById === 'function' && typeof getApplicationsByTask === 'function' && typeof getConversationForTask === 'function') {
       var payTask = await getTaskById(taskFromUrl);
@@ -355,10 +337,18 @@ async function initChat(){
           var payConv = await getConversationForTask(taskFromUrl, payPoster, payWorker);
           if (payConv && payConv.conv_id) {
             try { sessionStorage.removeItem(paidBootKey); } catch (e) {}
-            window.location.replace('chat.html?conv=' + encodeURIComponent(String(payConv.conv_id)));
+            window.location.replace(window.QG_buildChatPayReturnUrl(taskFromUrl, sessionFromUrl, payConv.conv_id));
             return;
           }
         }
+      }
+    }
+    if (typeof ensureChatReadyForTask === 'function') {
+      var boot = await ensureChatReadyForTask(taskFromUrl, currentUserId, { sessionId: sessionFromUrl, skipSync: true });
+      if (boot.conv_id) {
+        try { sessionStorage.removeItem(paidBootKey); } catch (e) {}
+        window.location.replace('chat.html?conv=' + encodeURIComponent(String(boot.conv_id)));
+        return;
       }
     }
     if (typeof window.QG_navigateToChatForTask === 'function' &&
@@ -381,7 +371,7 @@ async function initChat(){
   }
 
   if (typeof syncCurrentUserProfile === 'function' && window._currentUser) {
-    await syncCurrentUserProfile(window._currentUser);
+    syncCurrentUserProfile(window._currentUser).catch(function () {});
   }
 
   currentConv = await getConversation(convId);
@@ -391,15 +381,22 @@ async function initChat(){
   }
 
   var payReturn = new URLSearchParams(window.location.search);
-  if (payReturn.get('paid') === '1' && currentConv.task_id) {
-    var sessionId = payReturn.get('session_id') || '';
-    if (sessionId && typeof window.QG_confirmCheckoutSession === 'function') {
-      await window.QG_confirmCheckoutSession(sessionId);
+  var sessionFromPay = payReturn.get('session_id') || '';
+  var paidFromPay = payReturn.get('paid') === '1';
+  if ((paidFromPay || sessionFromPay) && currentConv.task_id) {
+    if (sessionFromPay && typeof window.QG_confirmCheckoutSession === 'function') {
+      if (typeof withTimeout === 'function') {
+        await withTimeout(window.QG_confirmCheckoutSession(sessionFromPay), 3000, null);
+      } else {
+        await window.QG_confirmCheckoutSession(sessionFromPay);
+      }
     }
-    if (typeof window.QG_waitForPaymentHeld === 'function') {
-      await window.QG_waitForPaymentHeld(currentConv.task_id, 8000);
+    if (window.history && window.history.replaceState) {
+      var cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete('paid');
+      cleanUrl.searchParams.delete('session_id');
+      window.history.replaceState({}, '', cleanUrl.pathname + '?' + cleanUrl.searchParams.toString());
     }
-    currentConv = await getConversation(convId) || currentConv;
   }
 
   if (typeof enrichConversationNames === 'function') {

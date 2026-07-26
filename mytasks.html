@@ -242,8 +242,8 @@ body.light .app-legal-footer a{color:var(--purple);}
 
 <script src="qg-utils.js"></script>
 <script src="qg-config.js"></script>
-<script src="supabase-db.js?v=20260725d"></script>
-<script src="qg-stripe.js?v=20260725d"></script>
+<script src="supabase-db.js?v=20260725e"></script>
+<script src="qg-stripe.js?v=20260725e"></script>
 <script src="qg-nav.js?v=20260725"></script>
 <script src="qg-pwa.js?v=4"></script>
 <script src="qg-notifications.js"></script>
@@ -374,7 +374,11 @@ async function refreshPaymentMap(userId) {
 async function syncInProgressPaymentState(userId) {
   if (!userId || !window.QG_CONFIG || !window.QG_CONFIG.paymentsEnabled) return;
   if (typeof window.QG_syncPendingPayments === 'function') {
-    await window.QG_syncPendingPayments(userId);
+    if (typeof withTimeout === 'function') {
+      await withTimeout(window.QG_syncPendingPayments(userId), 2000, null);
+    } else {
+      await window.QG_syncPendingPayments(userId);
+    }
   }
   if (typeof getPaymentByTask !== 'function') return;
   var inProgress = allTasks.filter(function (t) {
@@ -1667,7 +1671,7 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
   } else {
     showToast('Accepted ' + workerName + '! Moved to In Progress 💬');
   }
-  loadData();
+  setTimeout(function () { loadData(); }, 100);
 };
 
 function findAcceptedApplication(taskId) {
@@ -1697,7 +1701,11 @@ window.openChatWithWorker = async function(taskId, workerId){
   }
 
   if (typeof window.QG_syncPendingPayments === 'function') {
-    await window.QG_syncPendingPayments(userId);
+    if (typeof withTimeout === 'function') {
+      await withTimeout(window.QG_syncPendingPayments(userId), 2000, null);
+    } else {
+      await window.QG_syncPendingPayments(userId);
+    }
   }
   if (typeof window.QG_refreshPaymentState === 'function') {
     await window.QG_refreshPaymentState(taskId);
@@ -1755,7 +1763,11 @@ window.openChatForTask = async function(taskId){
   if(!userId) return;
 
   if (typeof window.QG_syncPendingPayments === 'function') {
-    await window.QG_syncPendingPayments(userId);
+    if (typeof withTimeout === 'function') {
+      await withTimeout(window.QG_syncPendingPayments(userId), 2000, null);
+    } else {
+      await window.QG_syncPendingPayments(userId);
+    }
   }
   if (typeof window.QG_refreshPaymentState === 'function') {
     await window.QG_refreshPaymentState(taskId);
