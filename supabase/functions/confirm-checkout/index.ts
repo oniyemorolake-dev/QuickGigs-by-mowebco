@@ -16,6 +16,49 @@ function json(body: Record<string, unknown>, status = 200) {
   });
 }
 
+function isNumericId(val: string): boolean {
+  return /^\d+$/.test(String(val || '').trim());
+}
+
+function taskIdKeys(taskId: string): (string | number)[] {
+  const keys: (string | number)[] = [];
+  const seen = new Set<string>();
+  const add = (v: string | number) => {
+    const s = String(v);
+    if (seen.has(s)) return;
+    seen.add(s);
+    keys.push(v);
+  };
+  add(taskId);
+  if (isNumericId(taskId)) add(parseInt(taskId, 10));
+  return keys;
+}
+
+async function unlockConversation(
+  supabase: ReturnType<typeof createClient>,
+  taskId: string,
+  posterId: string,
+  workerId: string,
+) {
+  for (const key of taskIdKeys(taskId)) {
+    const { data: convs } = await supabase
+      .from('conversations')
+      .select('conv_id')
+      .eq('task_id', key)
+      .eq('poster_id', posterId)
+      .eq('worker_id', workerId)
+      .limit(1);
+    if (convs && convs[0]?.conv_id) {
+      await supabase
+        .from('conversations')
+        .update({ is_unlocked: true, status: 'in_progress' })
+        .eq('conv_id', convs[0].conv_id);
+      return convs[0].conv_id;
+    }
+  }
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -71,15 +114,22 @@ Deno.serve(async (req) => {
       .select('payment_id');
 
     if (!bySession || !bySession.length) {
-      const { data: byTask } = await supabase
-        .from('payments')
-        .update(heldPatch)
-        .eq('task_id', taskId)
-        .eq('poster_id', posterId)
-        .eq('status', 'pending')
-        .select('payment_id');
+      let updated = false;
+      for (const key of taskIdKeys(taskId)) {
+        const { data: byTask } = await supabase
+          .from('payments')
+          .update(heldPatch)
+          .eq('task_id', key)
+          .eq('poster_id', posterId)
+          .eq('status', 'pending')
+          .select('payment_id');
+        if (byTask && byTask.length) {
+          updated = true;
+          break;
+        }
+      }
 
-      if (!byTask || !byTask.length) {
+      if (!updated) {
         const amountTotal = session.amount_total != null ? session.amount_total / 100 : 0;
         await supabase.from('payments').insert({
           task_id: taskId,
@@ -95,20 +145,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { data: convs } = await supabase
-      .from('conversations')
-      .select('conv_id')
-      .eq('task_id', taskId)
-      .eq('poster_id', posterId)
-      .eq('worker_id', workerId)
-      .limit(1);
-
-    if (convs && convs[0]?.conv_id) {
-      await supabase
-        .from('conversations')
-        .update({ is_unlocked: true, status: 'in_progress' })
-        .eq('conv_id', convs[0].conv_id);
-    }
+    await unlockConversation(supabase, taskId, posterId, workerId);
 
     return json({ ok: true, task_id: taskId, status: 'held' });
   } catch (err) {

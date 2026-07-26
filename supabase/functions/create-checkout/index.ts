@@ -52,14 +52,59 @@ function resolveAmount(task: Record<string, unknown>, app: Record<string, unknow
   return Number(budget || 0);
 }
 
+function isNumericId(val: string): boolean {
+  return /^\d+$/.test(String(val || '').trim());
+}
+
+function isUuidLike(val: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    String(val || '').trim(),
+  );
+}
+
+function relationTaskKeys(task: Record<string, unknown> | null, inputTaskId: string): (string | number)[] {
+  const keys: (string | number)[] = [];
+  const seen = new Set<string>();
+  const add = (v: unknown) => {
+    if (v == null || v === '') return;
+    const s = String(v);
+    if (seen.has(s)) return;
+    seen.add(s);
+    keys.push(v as string | number);
+    const n = parseInt(s, 10);
+    if (!isNaN(n) && String(n) === s) {
+      const ns = 'n:' + n;
+      if (!seen.has(ns)) {
+        seen.add(ns);
+        keys.push(n);
+      }
+    }
+  };
+  add(inputTaskId);
+  if (task) {
+    add(getField(task, 'id'));
+    add(getField(task, 'task_id'));
+  }
+  return keys;
+}
+
 async function fetchTaskRow(supabase: ReturnType<typeof createClient>, taskId: string) {
-  const ids: (string | number)[] = [taskId];
-  const n = parseInt(taskId, 10);
-  if (!isNaN(n)) ids.push(n);
+  type Attempt = { col: 'id' | 'task_id'; val: string | number };
+  const attempts: Attempt[] = [];
+
+  if (isNumericId(taskId)) {
+    attempts.push({ col: 'id', val: parseInt(taskId, 10) });
+  }
+  if (isUuidLike(taskId)) {
+    attempts.push({ col: 'task_id', val: taskId });
+  }
+  if (!attempts.length) {
+    attempts.push({ col: 'task_id', val: taskId });
+  }
 
   let lastErr: unknown = null;
-  for (const id of ids) {
-    const { data, error } = await supabase.from('tasks').select('*').eq('task_id', id).limit(1);
+  for (const attempt of attempts) {
+    const { data, error } = await supabase.from('tasks').select('*').eq(attempt.col, attempt.val).limit(1);
     if (error) {
       lastErr = error;
       continue;
@@ -71,21 +116,24 @@ async function fetchTaskRow(supabase: ReturnType<typeof createClient>, taskId: s
 
 async function fetchAcceptedApp(
   supabase: ReturnType<typeof createClient>,
-  taskId: string,
+  task: Record<string, unknown>,
+  inputTaskId: string,
 ) {
-  const ids: (string | number)[] = [taskId];
-  const n = parseInt(taskId, 10);
-  if (!isNaN(n)) ids.push(n);
+  const keys = relationTaskKeys(task, inputTaskId);
+  let lastErr: unknown = null;
 
-  for (const id of ids) {
-    const { data, error } = await supabase.from('applications').select('*').eq('task_id', id);
-    if (error) return { app: null, error };
+  for (const key of keys) {
+    const { data, error } = await supabase.from('applications').select('*').eq('task_id', key);
+    if (error) {
+      lastErr = error;
+      continue;
+    }
     const accepted = (data || []).find((row) =>
       String(getField(row as Record<string, unknown>, 'status') || '').toLowerCase() === 'accepted'
     );
     if (accepted) return { app: accepted as Record<string, unknown>, error: null };
   }
-  return { app: null, error: null };
+  return { app: null, error: lastErr };
 }
 
 async function upsertPendingPayment(
@@ -93,14 +141,28 @@ async function upsertPendingPayment(
   row: Record<string, unknown>,
 ) {
   const taskId = String(row.task_id || '');
-  const { data: existing, error: findErr } = await supabase
-    .from('payments')
-    .select('payment_id')
-    .eq('task_id', taskId)
-    .eq('status', 'pending')
-    .limit(1);
+  const keys = relationTaskKeys(null, taskId);
+  let existing: { payment_id?: string }[] | null = null;
+  let findErr: unknown = null;
 
-  if (findErr) return { ok: false, error: errorMessage(findErr) };
+  for (const key of keys.length ? keys : [taskId]) {
+    const res = await supabase
+      .from('payments')
+      .select('payment_id')
+      .eq('task_id', key)
+      .eq('status', 'pending')
+      .limit(1);
+    if (res.error) {
+      findErr = res.error;
+      continue;
+    }
+    if (res.data && res.data.length) {
+      existing = res.data;
+      break;
+    }
+  }
+
+  if (findErr && !existing) return { ok: false, error: errorMessage(findErr) };
 
   if (existing && existing[0]?.payment_id) {
     const { error: updErr } = await supabase
@@ -149,8 +211,8 @@ Deno.serve(async (req) => {
     const status = String(getField(task, 'status') || '').toLowerCase();
     if (status !== 'in_progress') return json({ ok: false, error: 'task_not_in_progress' }, 400);
 
-    const { app, error: appErr } = await fetchAcceptedApp(supabase, taskId);
-    if (appErr) {
+    const { app, error: appErr } = await fetchAcceptedApp(supabase, task, taskId);
+    if (appErr && !app) {
       return json({ ok: false, error: 'application_lookup_failed', details: errorMessage(appErr) }, 500);
     }
     if (!app) return json({ ok: false, error: 'no_accepted_worker' }, 400);
@@ -159,13 +221,25 @@ Deno.serve(async (req) => {
     if (!workerId) return json({ ok: false, error: 'worker_missing' }, 400);
     if (workerId === posterId) return json({ ok: false, error: 'cannot_pay_self' }, 400);
 
-    const { data: existingPayments } = await supabase
-      .from('payments')
-      .select('payment_id')
-      .eq('task_id', taskId)
-      .in('status', ['held', 'completed', 'paid'])
-      .limit(1);
-    if (existingPayments && existingPayments.length) {
+    const paymentTaskId = String(
+      getField(app, 'task_id') || getField(task, 'id') || getField(task, 'task_id') || taskId,
+    );
+
+    const paidKeys = relationTaskKeys(task, paymentTaskId);
+    let alreadyPaid = false;
+    for (const key of paidKeys) {
+      const { data: existingPayments } = await supabase
+        .from('payments')
+        .select('payment_id')
+        .eq('task_id', key)
+        .in('status', ['held', 'completed', 'paid'])
+        .limit(1);
+      if (existingPayments && existingPayments.length) {
+        alreadyPaid = true;
+        break;
+      }
+    }
+    if (alreadyPaid) {
       return json({ ok: false, error: 'already_paid' }, 409);
     }
 
@@ -191,10 +265,10 @@ Deno.serve(async (req) => {
     const returnConv = String(body.return_conv || '').trim();
     const convQs = returnConv ? `conv=${encodeURIComponent(returnConv)}&` : '';
     let returnUrl =
-      `${siteUrl}/chat.html?${convQs}paid=1&task=${encodeURIComponent(taskId)}&session_id={CHECKOUT_SESSION_ID}`;
+      `${siteUrl}/chat.html?${convQs}paid=1&task=${encodeURIComponent(paymentTaskId)}&session_id={CHECKOUT_SESSION_ID}`;
     if (returnPage === 'mytasks' || returnPage === 'payment') {
       returnUrl =
-        `${siteUrl}/chat.html?paid=1&task=${encodeURIComponent(taskId)}&session_id={CHECKOUT_SESSION_ID}`;
+        `${siteUrl}/chat.html?paid=1&task=${encodeURIComponent(paymentTaskId)}&session_id={CHECKOUT_SESSION_ID}`;
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
@@ -223,7 +297,7 @@ Deno.serve(async (req) => {
         payment_intent_data: {
           metadata: {
             project: 'quickgigs',
-            task_id: taskId,
+            task_id: paymentTaskId,
             poster_id: posterId,
             worker_id: workerId,
             worker_connect_id: workerConnectId || '',
@@ -231,7 +305,7 @@ Deno.serve(async (req) => {
         },
         metadata: {
           project: 'quickgigs',
-          task_id: taskId,
+          task_id: paymentTaskId,
           poster_id: posterId,
           worker_id: workerId,
         },
@@ -246,7 +320,7 @@ Deno.serve(async (req) => {
     }
 
     const paymentRow = {
-      task_id: taskId,
+      task_id: paymentTaskId,
       poster_id: posterId,
       worker_id: workerId,
       amount,
