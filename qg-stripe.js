@@ -164,10 +164,13 @@
 
   function isAlreadyPaidError(result) {
     if (!result) return false;
-    if (result.status === 409 || result.httpStatus === 409) return true;
     var code = extractPayErrorCode(result).toLowerCase();
+    // confirm-checkout also returns 409 for payment_not_complete — that is NOT already paid
+    if (code === 'payment_not_complete' || code.indexOf('payment_not_complete') >= 0) return false;
     if (code === 'already_paid' || code.indexOf('already_paid') >= 0) return true;
-    return errorMentionsAlreadyPaid(result) || errorMentionsAlreadyPaid(result.error);
+    if (errorMentionsAlreadyPaid(result) || errorMentionsAlreadyPaid(result.error)) return true;
+    if ((result.status === 409 || result.httpStatus === 409) && code.indexOf('already') >= 0) return true;
+    return false;
   }
 
   function escHtml(s) {
@@ -647,16 +650,57 @@
     goToChatAfterPayment(taskId, sessionId, options);
   }
 
-  async function syncPendingPaymentsForPoster(userId) {
-    if (!userId || typeof getPaymentsForUser !== 'function') return;
+  async function syncPaymentFromServer(posterId, options) {
+    options = options || {};
+    if (!posterId || typeof getSupabaseHeaders !== 'function') {
+      return { ok: false, error: 'missing_poster_or_auth' };
+    }
+    var url = fnUrl(
+      'syncPaymentUrl',
+      'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/sync-payment'
+    );
+    try {
+      var headers = await getSupabaseHeaders();
+      var res = await fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+          poster_id: String(posterId),
+          actor_id: String(posterId),
+          task_id: options.taskId ? String(options.taskId) : '',
+          worker_id: options.workerId ? String(options.workerId) : ''
+        })
+      });
+      var data = {};
+      try { data = await res.json(); } catch (e) { data = { ok: false, error: 'Invalid response' }; }
+      if (!res.ok && data.ok !== false) data.ok = false;
+      data.httpStatus = res.status;
+      return data;
+    } catch (err) {
+      console.warn('syncPaymentFromServer failed:', err);
+      return { ok: false, error: String(err) };
+    }
+  }
+
+  async function syncPendingPaymentsForPoster(userId, options) {
+    options = options || {};
+    if (!userId) return;
     if (syncPendingPaymentsForPoster._running) return syncPendingPaymentsForPoster._running;
     syncPendingPaymentsForPoster._running = (async function () {
       try {
+        // Server recovery: pending rows + Stripe session list for this poster
+        var serverSync = await syncPaymentFromServer(userId, {
+          taskId: options.taskId || '',
+          workerId: options.workerId || ''
+        });
+        if (serverSync && serverSync.ok) return serverSync;
+
+        if (typeof getPaymentsForUser !== 'function') return serverSync;
         var rows = await getPaymentsForUser(userId, 'poster');
         var pending = (rows || []).filter(function (p) {
           var st = String(p.status || '').toLowerCase();
           return st === 'pending';
-        }).slice(0, 3);
+        }).slice(0, 5);
         var seenTasks = {};
         for (var i = 0; i < pending.length; i++) {
           var tid = String(pending[i].task_id || '');
@@ -670,8 +714,10 @@
             console.warn('Pending session not paid yet:', sid);
           }
         }
+        return serverSync;
       } catch (e) {
         console.warn('syncPendingPaymentsForPoster failed:', e);
+        return { ok: false, error: String(e) };
       } finally {
         syncPendingPaymentsForPoster._running = null;
       }
@@ -876,22 +922,49 @@
       syncBtn.disabled = true;
       syncBtn.textContent = 'Syncing…';
       (async function () {
-        if (typeof window.QG_syncPendingPayments === 'function') {
-          await window.QG_syncPendingPayments(syncUserId);
+        var workerId = '';
+        try {
+          if (typeof findAcceptedApplication === 'function') {
+            var app = findAcceptedApplication(syncTaskId);
+            if (app && typeof getField === 'function') workerId = String(getField(app, 'WORKER_ID') || '');
+            else if (app) workerId = String(app.worker_id || app.WORKER_ID || '');
+          }
+        } catch (e) {}
+        var serverResult = null;
+        if (typeof window.QG_syncPayment === 'function') {
+          serverResult = await window.QG_syncPayment(syncUserId, {
+            taskId: syncTaskId,
+            workerId: workerId
+          });
+        } else if (typeof window.QG_syncPendingPayments === 'function') {
+          serverResult = await window.QG_syncPendingPayments(syncUserId, {
+            taskId: syncTaskId,
+            workerId: workerId
+          });
         }
         if (typeof window.QG_refreshPaymentState === 'function') {
           await window.QG_refreshPaymentState(syncTaskId);
         }
-        var synced = typeof isTaskPaid === 'function' && isTaskPaid(syncTaskId);
+        // Alias recovered UUID payment onto this UI task id
+        if (serverResult && serverResult.ok && serverResult.payment && typeof indexPaymentRow === 'function') {
+          indexPaymentRow(serverResult.payment, [syncTaskId, String(serverResult.task_id || '')]);
+        }
+        var synced = (typeof isTaskPaid === 'function' && isTaskPaid(syncTaskId)) ||
+          !!(serverResult && serverResult.ok);
         if (typeof activeTab !== 'undefined') activeTab = 'inprogress';
         if (typeof syncTabButtons === 'function') syncTabButtons();
         if (typeof renderTab === 'function') renderTab();
         else if (typeof loadData === 'function') await loadData();
         if (typeof showToast === 'function') {
-          showToast(
-            synced ? 'Payment synced — tap Message' : 'No completed payment found yet — finish Pay to unlock first',
-            synced ? '#4ade80' : '#f59e0b'
-          );
+          if (synced) {
+            showToast('Payment found — chat unlocked. Tap Message', '#4ade80');
+          } else {
+            var detail = (serverResult && serverResult.error) ? String(serverResult.error) : 'no_paid_session_found';
+            showToast(
+              'No paid Stripe checkout found — check Stripe Dashboard before paying again (' + detail + ')',
+              '#f59e0b'
+            );
+          }
         }
         syncBtn.disabled = false;
         syncBtn.textContent = '↻ Sync payment';
@@ -956,6 +1029,7 @@
   window.QG_confirmCheckoutSession = confirmCheckoutSession;
   window.QG_syncConnectStatus = syncConnectStatus;
   window.QG_syncPendingPayments = syncPendingPaymentsForPoster;
+  window.QG_syncPayment = syncPaymentFromServer;
 
   async function syncChatUnlock(convId, actorId) {
     if (typeof syncConversationUnlock === 'function') {
