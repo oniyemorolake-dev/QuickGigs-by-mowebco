@@ -333,13 +333,14 @@ Deno.serve(async (req) => {
     if (!best && heldRows && heldRows.length) best = heldRows[0] as Record<string, unknown>;
 
     if (!best) {
+      // Use 200 so browsers don't log a scary "Failed to load resource" 404
       return json({
         ok: false,
         success: false,
         error: 'no_paid_session_found',
         details: 'No Stripe-paid QuickGigs checkout found for this poster. Do not pay again until you check Stripe Dashboard → Payments.',
         recovered: recovered.length,
-      }, 404);
+      }, 200);
     }
 
     // Ensure chat unlocked for best row

@@ -31,6 +31,7 @@
       '<div class="sub">' + (sub || '') + '</div>' + btn + '</div>';
   };
 
+  var _qgLoadingTimer = null;
   window.qgShowGlobalLoading = function (msg) {
     var el = document.getElementById('qgGlobalLoading');
     if (!el) {
@@ -43,9 +44,18 @@
     var t = document.getElementById('qgGlobalLoadingTxt');
     if (t) t.textContent = msg || 'Loading…';
     el.classList.add('show');
+    // Never leave a full-screen blocker stuck (breaks all My Tasks buttons)
+    if (_qgLoadingTimer) clearTimeout(_qgLoadingTimer);
+    _qgLoadingTimer = setTimeout(function () {
+      window.qgHideGlobalLoading();
+    }, 8000);
   };
 
   window.qgHideGlobalLoading = function () {
+    if (_qgLoadingTimer) {
+      clearTimeout(_qgLoadingTimer);
+      _qgLoadingTimer = null;
+    }
     var el = document.getElementById('qgGlobalLoading');
     if (el) el.classList.remove('show');
   };
