@@ -592,7 +592,7 @@ function renderAll(){
     : [
         {icon:'🔍',title:'Browse gigs',desc:'Find work near you',href:'browsetask.html',cls:'primary'},
         {icon:'📂',title:'Categories',desc:'Explore gigs by skill type',href:'categories.html',cls:'secondary'},
-        {icon:'💼',title:'My jobs',desc:'Applications & active work',href:'mytasks.html?tab=applied',cls:'secondary'}
+        {icon:'💼',title:'My jobs',desc:'Applications & active work',href:'mytasks.html?tab=applied&mode=worker',cls:'secondary'}
       ];
   document.getElementById('actionsGrid').innerHTML = actions.map(function(a){
     return '<a class="action-card '+a.cls+'" href="'+a.href+'"><div class="action-icon">'+a.icon+'</div><div class="action-title">'+a.title+'</div><div class="action-desc">'+a.desc+'</div></a>';

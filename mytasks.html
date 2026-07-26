@@ -251,7 +251,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 <script src="supabase-db.js?v=20260726m"></script>
 <script src="qg-stripe.js?v=20260726m"></script>
 <script src="qg-site.js?v=20260726m"></script>
-<script src="qg-nav.js?v=20260725"></script>
+<script src="qg-nav.js?v=20260726n"></script>
 <script src="qg-pwa.js?v=4"></script>
 <script src="qg-notifications.js"></script>
 <script src="qg-push.js?v=1"></script>
@@ -756,19 +756,32 @@ async function loadData(){
 
   renderTabLoading();
   var params = new URLSearchParams(window.location.search);
-  var preferInProgress = params.get('paid') === '1' || params.get('tab') === 'inprogress';
+  var tabParam = params.get('tab') || '';
+  // Only force poster after a payment return — NOT every time someone opens In Progress
+  var preferInProgress = params.get('paid') === '1';
   try {
     if (sessionStorage.getItem('qg-payment-tab') === 'inprogress') preferInProgress = true;
   } catch (e) {}
-  if (params.get('paid') === '1' || preferInProgress) {
-    activeTab = 'inprogress';
-    if (typeof setSessionMode === 'function') setSessionMode('poster');
-    if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('tasks');
-  } else if (params.get('tab') === 'posted' || sessionStorage.getItem('qg-just-posted') === '1') {
+
+  if (tabParam === 'applied' || params.get('mode') === 'worker') {
+    if (typeof setSessionMode === 'function') setSessionMode('worker');
+    if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('jobs');
+    activeTab = tabParam === 'inprogress' || tabParam === 'completed' ? tabParam : 'applied';
+  } else if (tabParam === 'posted' || sessionStorage.getItem('qg-just-posted') === '1') {
     if (typeof setSessionMode === 'function') setSessionMode('poster');
     try { sessionStorage.removeItem('qg-just-posted'); } catch (e) {}
     activeTab = 'posted';
     if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('tasks');
+  } else if (preferInProgress) {
+    activeTab = 'inprogress';
+    if (typeof setSessionMode === 'function') setSessionMode('poster');
+    if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('tasks');
+  } else if (tabParam === 'inprogress' || tabParam === 'completed') {
+    // Keep current poster/tasker mode — do not flip roles
+    activeTab = tabParam;
+    if (typeof renderQuickGigsTabBar === 'function') {
+      renderQuickGigsTabBar(typeof isWorkerMode === 'function' && isWorkerMode() ? 'jobs' : 'tasks');
+    }
   }
 
   // Show cached tasks immediately — never block UI on payment sync
@@ -881,7 +894,10 @@ async function loadData(){
       activeTab = 'completed';
     } else if (preferInProgress) {
       activeTab = 'inprogress';
+      // Payment return only — stay poster for that flow
       if (typeof setSessionMode === 'function') setSessionMode('poster');
+    } else if (tabParam === 'applied' || tabParam === 'posted' || tabParam === 'inprogress' || tabParam === 'completed') {
+      activeTab = typeof normalizeMyTasksTab === 'function' ? normalizeMyTasksTab(tabParam) : tabParam;
     } else {
       pickDefaultTab();
     }

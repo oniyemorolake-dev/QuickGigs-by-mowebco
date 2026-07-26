@@ -4,13 +4,13 @@
     poster: [
       { id: 'home', href: 'dashboard.html?mode=poster', icon: '🏠', label: 'Home' },
       { id: 'post', href: 'posttask.html', icon: '➕', label: 'Post' },
-      { id: 'tasks', href: 'mytasks.html?tab=posted', icon: '📋', label: 'My Tasks' },
+      { id: 'tasks', href: 'mytasks.html?tab=posted&mode=poster', icon: '📋', label: 'My Tasks' },
       { id: 'messages', href: 'messages.html', icon: '💬', label: 'Messages' }
     ],
     worker: [
       { id: 'home', href: 'dashboard.html?mode=worker', icon: '🏠', label: 'Home' },
       { id: 'browse', href: 'browsetask.html', icon: '🔍', label: 'Browse' },
-      { id: 'jobs', href: 'mytasks.html?tab=applied', icon: '💼', label: 'My Jobs' },
+      { id: 'jobs', href: 'mytasks.html?tab=applied&mode=worker', icon: '💼', label: 'My Jobs' },
       { id: 'messages', href: 'messages.html', icon: '💬', label: 'Messages' }
     ]
   };
@@ -22,7 +22,12 @@
   function getSessionMode() {
     var params = new URLSearchParams(window.location.search);
     var fromUrl = params.get('mode');
-    if (fromUrl) return normalizeMode(fromUrl);
+    if (fromUrl) {
+      // Persist so Tasker → My Jobs doesn't flip back to Poster on next click
+      var normalized = normalizeMode(fromUrl);
+      try { localStorage.setItem('qg-session-mode', normalized); } catch (e) {}
+      return normalized;
+    }
     var stored = localStorage.getItem('qg-session-mode') || localStorage.getItem('qg-role');
     return normalizeMode(stored);
   }
