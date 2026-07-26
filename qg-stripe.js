@@ -100,6 +100,18 @@
       if (err === 'stripe_not_configured') {
         return 'Stripe secret not set in Supabase — redeploy create-checkout (see STRIPE-SETUP.md)';
       }
+      if (err === 'supabase_service_role_not_configured') {
+        return 'Payments server not configured — set SUPABASE_SERVICE_ROLE_KEY on create-checkout Edge Function';
+      }
+      if (err === 'stripe_session_failed' || err === 'checkout_failed' || err === 'payment_row_failed') {
+        return 'Payment server error — refresh and try again. If it keeps failing, redeploy create-checkout.';
+      }
+      if (err === 'task_lookup_failed' || err === 'application_lookup_failed') {
+        return 'Could not load task data — refresh My Tasks and try again';
+      }
+      if (err === 'invalid_amount' || err === 'amount_below_minimum') {
+        return 'Task amount must be at least $0.50 CAD before paying';
+      }
       if (err === 'task_not_in_progress') return 'Task must be in progress before paying.';
       if (err === 'no_accepted_worker') return 'Accept a tasker first, then pay.';
       if (err === 'not_task_poster') return 'Only the poster can pay for this task.';
@@ -197,14 +209,53 @@
       (buttonsHtml || '');
   }
 
+  function checkoutErrorText(result) {
+    if (!result) return 'Could not start checkout';
+    var code = extractPayErrorCode(result);
+    var details = result.details || (result.error && typeof result.error === 'object' ? result.error.details : '');
+    if (typeof details === 'object') details = formatPayError(details);
+    var text = formatPayError(code || result.error || result.message || 'Could not start checkout');
+    if (details && String(details).indexOf('[object Object]') < 0 && text.indexOf(String(details)) < 0) {
+      text += ' (' + String(details).substring(0, 120) + ')';
+    }
+    if (result.httpStatus === 502 || result.httpStatus === 500) {
+      console.error('Checkout failed:', result);
+    }
+    return text;
+  }
+
   function setModalError(message) {
-    var text = formatPayError(message);
     setModalPanel(
       'error',
       payErrorTitle(message),
-      text,
+      formatPayError(message),
       '<button type="button" class="qg-stripe-action-btn qg-stripe-action-secondary" onclick="window.QG_closePayModal&&window.QG_closePayModal()">Close</button>'
     );
+  }
+
+  function setModalCheckoutError(taskId, posterId, options, result) {
+    var text = checkoutErrorText(result);
+    var retryBtn = taskId
+      ? '<button type="button" class="qg-stripe-action-btn" id="qgStripeRetryPayBtn">Try again</button>'
+      : '';
+    setModalPanel(
+      'error',
+      payErrorTitle(extractPayErrorCode(result) || result && result.error),
+      text,
+      retryBtn +
+      '<button type="button" class="qg-stripe-action-btn qg-stripe-action-secondary" onclick="window.QG_closePayModal&&window.QG_closePayModal()">Close</button>'
+    );
+    var retry = document.getElementById('qgStripeRetryPayBtn');
+    if (retry) {
+      retry.onclick = function () {
+        retry.disabled = true;
+        retry.textContent = 'Retrying…';
+        openPayModal(taskId, posterId, options).finally(function () {
+          retry.disabled = false;
+          retry.textContent = 'Try again';
+        });
+      };
+    }
   }
 
   function setModalAlreadyPaid(taskId, options) {
@@ -268,9 +319,13 @@
     try { data = await res.json(); } catch (e) { data = { ok: false, error: 'Invalid response' }; }
     if (!res.ok && data.ok !== false) data.ok = false;
     data.httpStatus = res.status;
-    if (typeof data.error === 'object' && data.error && typeof data.error.message === 'string') {
-      data.message = data.message || data.error.message;
+    if (typeof data.error === 'object' && data.error) {
+      if (typeof data.error.message === 'string') data.message = data.message || data.error.message;
+      if (typeof data.error.details === 'string') data.details = data.details || data.error.details;
     }
+    if (typeof data.details === 'string' && data.details && !data.message) data.message = data.details;
+    if (typeof data.error === 'object') data.error = extractPayErrorCode({ error: data.error }) || data.message || 'checkout_failed';
+    if (data.error === '[object Object]') data.error = data.details || data.message || 'checkout_failed';
     if (!data.error && data.message) data.error = data.message;
     return data;
   }
@@ -732,7 +787,7 @@
         setModalAlreadyPaid(taskId, options);
         return { ok: true, already_paid: true };
       }
-      setModalError(result.error || extractPayErrorCode(result) || result.message || 'Could not start checkout');
+      setModalCheckoutError(taskId, posterId, options, result);
       return result;
     }
 
@@ -769,7 +824,7 @@
       return { ok: true };
     } catch (err) {
       console.error('Embedded checkout failed:', err);
-      setModalError(err);
+      setModalCheckoutError(taskId, posterId, options, { error: err });
       return { ok: false, error: formatPayError(err) };
     }
   }

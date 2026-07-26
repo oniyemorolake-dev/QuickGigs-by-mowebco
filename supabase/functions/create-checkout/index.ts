@@ -1,6 +1,6 @@
 // QuickGigs — Stripe Checkout for accepted task (poster pays)
 // Deploy: supabase functions deploy create-checkout --no-verify-jwt
-// Secrets: STRIPE_SECRET_KEY, SITE_URL (https://quickgigs.ca)
+// Secrets: STRIPE_SECRET_KEY, SITE_URL (https://quickgigs.ca), SUPABASE_SERVICE_ROLE_KEY
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
@@ -25,11 +25,95 @@ function getField(row: Record<string, unknown>, key: string) {
   return undefined;
 }
 
+function errorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'string') return err;
+  if (err && typeof err === 'object') {
+    const e = err as Record<string, unknown>;
+    if (typeof e.message === 'string' && e.message) return e.message;
+    if (typeof e.error === 'string' && e.error) return e.error;
+    if (typeof e.details === 'string' && e.details) return e.details;
+    if (typeof e.hint === 'string' && e.hint) return e.hint;
+    if (typeof e.code === 'string' && e.code) return e.code;
+    try {
+      const raw = JSON.stringify(err);
+      if (raw && raw !== '{}') return raw.length > 240 ? raw.slice(0, 240) + '…' : raw;
+    } catch {
+      /* fall through */
+    }
+  }
+  return 'checkout_failed';
+}
+
 function resolveAmount(task: Record<string, unknown>, app: Record<string, unknown>) {
   const price = getField(app, 'price');
   if (price != null && price !== '') return Number(price);
   const budget = getField(task, 'budget');
   return Number(budget || 0);
+}
+
+async function fetchTaskRow(supabase: ReturnType<typeof createClient>, taskId: string) {
+  const ids: (string | number)[] = [taskId];
+  const n = parseInt(taskId, 10);
+  if (!isNaN(n)) ids.push(n);
+
+  let lastErr: unknown = null;
+  for (const id of ids) {
+    const { data, error } = await supabase.from('tasks').select('*').eq('task_id', id).limit(1);
+    if (error) {
+      lastErr = error;
+      continue;
+    }
+    if (data && data[0]) return { task: data[0] as Record<string, unknown>, error: null };
+  }
+  return { task: null, error: lastErr };
+}
+
+async function fetchAcceptedApp(
+  supabase: ReturnType<typeof createClient>,
+  taskId: string,
+) {
+  const ids: (string | number)[] = [taskId];
+  const n = parseInt(taskId, 10);
+  if (!isNaN(n)) ids.push(n);
+
+  for (const id of ids) {
+    const { data, error } = await supabase.from('applications').select('*').eq('task_id', id);
+    if (error) return { app: null, error };
+    const accepted = (data || []).find((row) =>
+      String(getField(row as Record<string, unknown>, 'status') || '').toLowerCase() === 'accepted'
+    );
+    if (accepted) return { app: accepted as Record<string, unknown>, error: null };
+  }
+  return { app: null, error: null };
+}
+
+async function upsertPendingPayment(
+  supabase: ReturnType<typeof createClient>,
+  row: Record<string, unknown>,
+) {
+  const taskId = String(row.task_id || '');
+  const { data: existing, error: findErr } = await supabase
+    .from('payments')
+    .select('payment_id')
+    .eq('task_id', taskId)
+    .eq('status', 'pending')
+    .limit(1);
+
+  if (findErr) return { ok: false, error: errorMessage(findErr) };
+
+  if (existing && existing[0]?.payment_id) {
+    const { error: updErr } = await supabase
+      .from('payments')
+      .update(row)
+      .eq('payment_id', existing[0].payment_id);
+    if (updErr) return { ok: false, error: errorMessage(updErr) };
+    return { ok: true };
+  }
+
+  const { error: insErr } = await supabase.from('payments').insert(row);
+  if (insErr) return { ok: false, error: errorMessage(insErr) };
+  return { ok: true };
 }
 
 Deno.serve(async (req) => {
@@ -39,24 +123,24 @@ Deno.serve(async (req) => {
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeKey) return json({ ok: false, error: 'stripe_not_configured' }, 503);
 
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    if (!supabaseUrl || !serviceKey) {
+      return json({ ok: false, error: 'supabase_service_role_not_configured' }, 503);
+    }
+
     const body = await req.json();
     const taskId = String(body.task_id || '').trim();
     const posterId = String(body.poster_id || '').trim();
     const returnPage = String(body.return_page || 'payment').toLowerCase();
     if (!taskId || !posterId) return json({ ok: false, error: 'missing_task_or_poster' }, 400);
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const supabase = createClient(supabaseUrl, serviceKey);
 
-    const { data: tasks, error: taskErr } = await supabase
-      .from('tasks')
-      .select('*')
-      .eq('task_id', taskId)
-      .limit(1);
-    if (taskErr) throw taskErr;
-    const task = tasks && tasks[0];
+    const { task, error: taskErr } = await fetchTaskRow(supabase, taskId);
+    if (taskErr) {
+      return json({ ok: false, error: 'task_lookup_failed', details: errorMessage(taskErr) }, 500);
+    }
     if (!task) return json({ ok: false, error: 'task_not_found' }, 404);
 
     const postedBy = String(getField(task, 'posted_by') || '');
@@ -65,14 +149,10 @@ Deno.serve(async (req) => {
     const status = String(getField(task, 'status') || '').toLowerCase();
     if (status !== 'in_progress') return json({ ok: false, error: 'task_not_in_progress' }, 400);
 
-    const { data: apps, error: appErr } = await supabase
-      .from('applications')
-      .select('*')
-      .eq('task_id', taskId)
-      .eq('status', 'accepted')
-      .limit(1);
-    if (appErr) throw appErr;
-    const app = apps && apps[0];
+    const { app, error: appErr } = await fetchAcceptedApp(supabase, taskId);
+    if (appErr) {
+      return json({ ok: false, error: 'application_lookup_failed', details: errorMessage(appErr) }, 500);
+    }
     if (!app) return json({ ok: false, error: 'no_accepted_worker' }, 400);
 
     const workerId = String(getField(app, 'worker_id') || '');
@@ -81,7 +161,7 @@ Deno.serve(async (req) => {
 
     const { data: existingPayments } = await supabase
       .from('payments')
-      .select('*')
+      .select('payment_id')
       .eq('task_id', taskId)
       .in('status', ['held', 'completed', 'paid'])
       .limit(1);
@@ -91,6 +171,7 @@ Deno.serve(async (req) => {
 
     const amount = resolveAmount(task, app);
     if (!amount || amount <= 0) return json({ ok: false, error: 'invalid_amount' }, 400);
+    if (amount < 0.5) return json({ ok: false, error: 'amount_below_minimum' }, 400);
 
     const amountCents = Math.round(amount * 100);
     const platformFeePercent = Number(Deno.env.get('PLATFORM_FEE_PERCENT') || '25');
@@ -118,51 +199,53 @@ Deno.serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
 
-    const paymentIntentData: Stripe.Checkout.SessionCreateParams['payment_intent_data'] = {
-      metadata: {
-        project: 'quickgigs',
-        task_id: taskId,
-        poster_id: posterId,
-        worker_id: workerId,
-        worker_connect_id: workerConnectId || '',
-      },
-    };
-    // Escrow: full charge lands on platform; worker paid on task complete via release-payout
-
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      ui_mode: 'embedded',
-      currency: 'cad',
-      return_url: returnUrl,
-      line_items: [
-        {
-          price_data: {
-            currency: 'cad',
-            product_data: {
-              name: title.substring(0, 120),
-              description: 'QuickGigs task payment (CAD)',
+    let session: Stripe.Checkout.Session;
+    try {
+      session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        ui_mode: 'embedded',
+        redirect_on_completion: 'never',
+        currency: 'cad',
+        return_url: returnUrl,
+        line_items: [
+          {
+            price_data: {
+              currency: 'cad',
+              product_data: {
+                name: title.substring(0, 120),
+                description: 'QuickGigs task payment (CAD)',
+              },
+              unit_amount: amountCents,
             },
-            unit_amount: amountCents,
+            quantity: 1,
           },
-          quantity: 1,
+        ],
+        payment_intent_data: {
+          metadata: {
+            project: 'quickgigs',
+            task_id: taskId,
+            poster_id: posterId,
+            worker_id: workerId,
+            worker_connect_id: workerConnectId || '',
+          },
         },
-      ],
-      payment_intent_data: paymentIntentData,
-      metadata: {
-        project: 'quickgigs',
-        task_id: taskId,
-        poster_id: posterId,
-        worker_id: workerId,
-      },
-    });
+        metadata: {
+          project: 'quickgigs',
+          task_id: taskId,
+          poster_id: posterId,
+          worker_id: workerId,
+        },
+      });
+    } catch (stripeErr) {
+      console.error('Stripe session create failed:', stripeErr);
+      return json({ ok: false, error: 'stripe_session_failed', details: errorMessage(stripeErr) }, 502);
+    }
 
-    await supabase
-      .from('payments')
-      .delete()
-      .eq('task_id', taskId)
-      .eq('status', 'pending');
+    if (!session.client_secret) {
+      return json({ ok: false, error: 'missing_client_secret' }, 502);
+    }
 
-    await supabase.from('payments').insert({
+    const paymentRow = {
       task_id: taskId,
       poster_id: posterId,
       worker_id: workerId,
@@ -171,7 +254,12 @@ Deno.serve(async (req) => {
       worker_payout: workerPayoutCents / 100,
       stripe_id: session.id,
       status: 'pending',
-    });
+    };
+
+    const saved = await upsertPendingPayment(supabase, paymentRow);
+    if (!saved.ok) {
+      return json({ ok: false, error: 'payment_row_failed', details: saved.error }, 500);
+    }
 
     return json({
       ok: true,
@@ -182,6 +270,6 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error('create-checkout error:', err);
-    return json({ ok: false, error: String(err) }, 500);
+    return json({ ok: false, error: 'checkout_failed', details: errorMessage(err) }, 500);
   }
 });
