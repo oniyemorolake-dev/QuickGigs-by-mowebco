@@ -10,7 +10,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>QuickGigs — Admin Console</title>
-<link rel="stylesheet" href="qg-admin.css?v=2">
+<link rel="stylesheet" href="qg-admin.css?v=3">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -236,6 +236,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div><div class="page-title" id="pageTitle">Dashboard Overview</div><div class="page-sub" id="pageSub"></div></div>
     </div>
     <div class="topbar-right">
+      <button type="button" class="admin-live-toggle" id="adminLiveToggle" onclick="toggleAdminLive()" aria-pressed="false" title="Poll every 15s when on">
+        <span class="admin-live-dot" id="adminLiveDot" hidden></span>
+        Live
+      </button>
       <div class="health-score"><span class="health-label">Platform health</span><span class="health-val">87</span><span style="font-size:13px">/ 100</span></div>
       <button class="notif-btn" onclick="toggleNotifs()">🔔<div class="notif-dot"></div></button>
     </div>
@@ -249,34 +253,53 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
   <!-- OVERVIEW -->
   <div id="section-overview">
-    <div class="mini-card" style="margin-bottom:14px">
-      <div class="mc-title">Today <span class="mc-sub">Since midnight</span></div>
-      <div class="today-strip" id="todaySnapshot"></div>
+    <div class="overview-toolbar">
+      <button type="button" class="action-pill pill-filter" id="btnEditLayout" onclick="toggleAdminEditLayout()">Edit layout</button>
+      <button type="button" class="action-pill pill-export" id="btnResetLayout" onclick="resetAdminLayout()" style="display:none">Reset layout</button>
     </div>
-    <div class="mini-card" style="margin-bottom:14px">
-      <div class="mc-title">Signups · last 7 days <span class="mc-sub">Cohort</span></div>
-      <div class="cohort-wrap" id="cohortChart"></div>
-      <div class="activation-line" id="activationRate">—</div>
-    </div>
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-accent accent-purple"></div><div class="stat-header"><span class="stat-icon">👥</span><span class="trend trend-up" id="userTrend">Loading</span></div><div class="stat-val c-purple" id="statUsers">—</div><div class="stat-label">Total users</div><div class="stat-sub" id="statUsersSub"></div><div class="mini-chart" id="chartUsers"></div></div>
-      <div class="stat-card"><div class="stat-accent accent-green"></div><div class="stat-header"><span class="stat-icon">📋</span><span class="trend trend-up" id="taskTrend">Loading</span></div><div class="stat-val" id="statTasks">—</div><div class="stat-label">Tasks posted</div><div class="stat-sub" id="statTasksSub"></div><div class="mini-chart" id="chartTasks"></div></div>
-      <div class="stat-card"><div class="stat-accent accent-amber"></div><div class="stat-header"><span class="stat-icon">💰</span><span class="trend trend-neutral" id="revenueTrend">Live</span></div><div class="stat-val c-green" id="statRevenue">—</div><div class="stat-label">Platform revenue</div><div class="stat-sub" id="statRevenueSub">Fees collected on paid tasks</div><div class="mini-chart" id="chartRevenue"></div></div>
-      <div class="stat-card"><div class="stat-accent accent-red"></div><div class="stat-header"><span class="stat-icon">🚨</span><span class="trend trend-warn" id="disputeTrend">Needs attention</span></div><div class="stat-val c-red" id="statDisputes">—</div><div class="stat-label">Open disputes</div><div class="stat-sub" id="statDisputesSub"></div><div class="mini-chart" id="chartDisputes"></div></div>
-    </div>
-    <div class="mini-card" style="margin-bottom:20px">
-      <div class="mc-title">Platform health breakdown <span class="mc-sub">Updated live</span></div>
-      <div class="health-grid">
-        <div class="health-item"><div class="health-item-label">Task completion rate</div><div class="health-item-val" style="color:var(--green)">78%</div><div class="health-item-bar"><div class="health-item-fill" style="width:78%;background:linear-gradient(90deg,#16a34a,#4ade80)"></div></div></div>
-        <div class="health-item"><div class="health-item-label">User satisfaction</div><div class="health-item-val" style="color:var(--lavender)">4.8★</div><div class="health-item-bar"><div class="health-item-fill" style="width:96%;background:linear-gradient(90deg,#6b3fa0,#9b6fc4)"></div></div></div>
-        <div class="health-item"><div class="health-item-label">Dispute rate</div><div class="health-item-val" style="color:var(--amber)">5.1%</div><div class="health-item-bar"><div class="health-item-fill" style="width:5%;background:linear-gradient(90deg,#d97706,#fbbf24)"></div></div></div>
-        <div class="health-item"><div class="health-item-label">Worker acceptance rate</div><div class="health-item-val" style="color:var(--green)">91%</div><div class="health-item-bar"><div class="health-item-fill" style="width:91%;background:linear-gradient(90deg,#16a34a,#4ade80)"></div></div></div>
+    <div id="overviewDash" class="overview-dash">
+      <div class="dash-card mini-card" data-dash-id="today" data-dash-span="full">
+        <div class="mc-title">Today <span class="mc-sub">Since midnight</span></div>
+        <div class="today-strip" id="todaySnapshot"></div>
       </div>
-    </div>
-    <div class="bottom-grid">
-      <div class="mini-card"><div class="mc-title">Live activity <span class="mc-sub">Last 24hrs</span></div><div id="activityFeed"></div></div>
-      <div class="mini-card"><div class="mc-title">Top categories <span class="mc-sub">By volume</span></div><div id="categoryChart"></div></div>
-      <div class="mini-card"><div class="mc-title">Recent signups <span class="mc-sub">Last 7 days</span></div><div id="recentSignups"></div></div>
+      <div class="dash-card mini-card" data-dash-id="cohort" data-dash-span="full">
+        <div class="mc-title">Signups · last 7 days <span class="mc-sub">Cohort</span></div>
+        <div class="cohort-wrap" id="cohortChart"></div>
+        <div class="activation-line" id="activationRate">—</div>
+      </div>
+      <div class="dash-card" data-dash-id="stats" data-dash-span="full">
+        <div class="stats-grid" style="margin-bottom:0">
+          <div class="stat-card"><div class="stat-accent accent-purple"></div><div class="stat-header"><span class="stat-icon">👥</span><span class="trend trend-up" id="userTrend">Loading</span></div><div class="stat-val c-purple" id="statUsers">—</div><div class="stat-label">Total users</div><div class="stat-sub" id="statUsersSub"></div><div class="mini-chart" id="chartUsers"></div></div>
+          <div class="stat-card"><div class="stat-accent accent-green"></div><div class="stat-header"><span class="stat-icon">📋</span><span class="trend trend-up" id="taskTrend">Loading</span></div><div class="stat-val" id="statTasks">—</div><div class="stat-label">Tasks posted</div><div class="stat-sub" id="statTasksSub"></div><div class="mini-chart" id="chartTasks"></div></div>
+          <div class="stat-card"><div class="stat-accent accent-amber"></div><div class="stat-header"><span class="stat-icon">💰</span><span class="trend trend-neutral" id="revenueTrend">Fees</span></div><div class="stat-val c-green" id="statRevenue">—</div><div class="stat-label">Platform revenue</div><div class="stat-sub" id="statRevenueSub">Fees collected on paid tasks</div><div class="mini-chart" id="chartRevenue"></div></div>
+          <div class="stat-card"><div class="stat-accent accent-red"></div><div class="stat-header"><span class="stat-icon">🚨</span><span class="trend trend-warn" id="disputeTrend">Needs attention</span></div><div class="stat-val c-red" id="statDisputes">—</div><div class="stat-label">Open disputes</div><div class="stat-sub" id="statDisputesSub"></div><div class="mini-chart" id="chartDisputes"></div></div>
+        </div>
+      </div>
+      <div class="dash-card mini-card" data-dash-id="health" data-dash-span="full">
+        <div class="mc-title">Platform health breakdown <span class="mc-sub">Updated live</span></div>
+        <div class="health-grid">
+          <div class="health-item"><div class="health-item-label">Task completion rate</div><div class="health-item-val" style="color:var(--green)">78%</div><div class="health-item-bar"><div class="health-item-fill" style="width:78%;background:linear-gradient(90deg,#16a34a,#4ade80)"></div></div></div>
+          <div class="health-item"><div class="health-item-label">User satisfaction</div><div class="health-item-val" style="color:var(--lavender)">4.8★</div><div class="health-item-bar"><div class="health-item-fill" style="width:96%;background:linear-gradient(90deg,#6b3fa0,#9b6fc4)"></div></div></div>
+          <div class="health-item"><div class="health-item-label">Dispute rate</div><div class="health-item-val" style="color:var(--amber)">5.1%</div><div class="health-item-bar"><div class="health-item-fill" style="width:5%;background:linear-gradient(90deg,#d97706,#fbbf24)"></div></div></div>
+          <div class="health-item"><div class="health-item-label">Worker acceptance rate</div><div class="health-item-val" style="color:var(--green)">91%</div><div class="health-item-bar"><div class="health-item-fill" style="width:91%;background:linear-gradient(90deg,#16a34a,#4ade80)"></div></div></div>
+        </div>
+      </div>
+      <div class="dash-card mini-card" data-dash-id="insights" data-dash-span="full">
+        <div class="mc-title">Insights <span class="mc-sub">Rule-based from your data</span></div>
+        <div id="adminInsights" class="insights-list"></div>
+      </div>
+      <div class="dash-card mini-card" data-dash-id="activity">
+        <div class="mc-title">Live activity <span class="mc-sub">Last 24hrs</span></div>
+        <div id="activityFeed"></div>
+      </div>
+      <div class="dash-card mini-card" data-dash-id="categories">
+        <div class="mc-title">Top categories <span class="mc-sub">By volume</span></div>
+        <div id="categoryChart"></div>
+      </div>
+      <div class="dash-card mini-card" data-dash-id="signups">
+        <div class="mc-title">Recent signups <span class="mc-sub">Last 7 days</span></div>
+        <div id="recentSignups"></div>
+      </div>
     </div>
   </div>
 
@@ -548,8 +571,10 @@ async function initAdmin(){
   renderOverview();
   if(typeof renderTodaySnapshot==='function') renderTodaySnapshot();
   if(typeof renderCohortChart==='function') renderCohortChart();
+  if(typeof renderAdminInsights==='function') renderAdminInsights();
   renderNotifications();
-  setInterval(async function(){ await loadData(); if(currentSection==='overview'){ renderOverview(); if(typeof renderTodaySnapshot==='function') renderTodaySnapshot(); if(typeof renderCohortChart==='function') renderCohortChart(); } },60000);
+  if(typeof adminInitRefresh==='function') adminInitRefresh();
+  else setInterval(async function(){ await loadData(); if(currentSection==='overview'){ renderOverview(); if(typeof renderTodaySnapshot==='function') renderTodaySnapshot(); if(typeof renderCohortChart==='function') renderCohortChart(); } },60000);
 }
 
 async function loadAdminMeta(){
@@ -905,5 +930,6 @@ window.toggleNotifs=function(){document.getElementById('notifPanel').classList.t
 window.currentSection=currentSection;
 </script>
 <script src="qg-admin-power.js?v=1"></script>
+<script src="qg-admin-dash.js?v=1"></script>
 </body>
 </html>
