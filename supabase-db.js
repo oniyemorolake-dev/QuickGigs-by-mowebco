@@ -74,6 +74,10 @@ function readTasksCache(allowStale) {
 
 function writeTasksCache(items) {
   writeJsonCache(TASKS_CACHE_KEY, items);
+  // Alias key used by UX cache-first helpers (same payload; does not change fetch queries)
+  try {
+    sessionStorage.setItem('qg-tasks-cache', JSON.stringify({ at: Date.now(), items: items || [] }));
+  } catch (err) {}
 }
 
 function readAppsCache(allowStale) {

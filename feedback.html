@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
 <link rel="stylesheet" href="qg-polish.css?v=20260726c">
+<link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — Beta Feedback</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -189,8 +190,9 @@ body.light{background:#fafafe;color:#2d1b4e;}
   </div>
 </div>
 
-<script src="qg-utils.js"></script>
-<script src="qg-polish.js?v=20260726c"></script>
+<script defer src="qg-utils.js"></script>
+<script defer src="qg-polish.js?v=20260726c"></script>
+<script src="qg-ux.js?v=20260726ux" defer></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";

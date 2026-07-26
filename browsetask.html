@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
 <link rel="stylesheet" href="qg-polish.css?v=20260726c">
+<link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — Browse Tasks in Canada</title>
 <meta name="description" content="Browse everyday tasks and gigs on QuickGigs — Canada's task marketplace, available coast to coast.">
@@ -210,7 +211,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 <link rel="stylesheet" href="qg-lightbox.css?v=1">
 </head>
 <body>
-<script src="qg-theme.js"></script>
+<script defer src="qg-theme.js"></script>
 <nav class="nav">
   <div class="nav-brand">
     <span class="nav-logo">QuickGigs</span>
@@ -333,10 +334,10 @@ body.light .app-legal-footer a{color:var(--purple);}
 <div class="toast" id="toast">Application sent! You'll hear back soon 🎉</div>
 <footer class="app-legal-footer site-footer" id="siteFooter"></footer>
 <nav class="tab-bar" id="qgTabBar"></nav>
-<script src="qg-site.js"></script>
-<script src="qg-nav.js"></script>
-<script src="qg-menu.js?v=2"></script>
-<script src="qg-lightbox.js?v=1"></script>
+<script defer src="qg-site.js"></script>
+<script defer src="qg-nav.js"></script>
+<script defer src="qg-menu.js?v=2"></script>
+<script defer src="qg-lightbox.js?v=1"></script>
 <script>
 if (typeof setSessionMode === 'function') setSessionMode('worker');
 renderQuickGigsTabBar('browse');
@@ -382,18 +383,19 @@ onAuthStateChanged(auth, (user) => {
 });
 </script>
 
-<script src="qg-utils.js"></script>
-<script src="qg-polish.js?v=20260726c"></script>
-<script src="qg-config.js"></script>
-<script src="qg-categories.js"></script>
-<script src="supabase-db.js"></script>
-<script src="qg-location.js"></script>
-<script src="qg-pwa.js?v=4"></script>
-<script src="qg-notifications.js"></script>
-<script src="qg-share.js"></script>
-<script src="qg-saved.js?v=1"></script>
-<script src="qg-report.js?v=20260716d"></script>
-<script src="qg-stats.js"></script>
+<script defer src="qg-utils.js"></script>
+<script defer src="qg-polish.js?v=20260726c"></script>
+<script src="qg-ux.js?v=20260726ux" defer></script>
+<script defer src="qg-config.js"></script>
+<script defer src="qg-categories.js"></script>
+<script defer src="supabase-db.js"></script>
+<script defer src="qg-location.js"></script>
+<script defer src="qg-pwa.js?v=4"></script>
+<script defer src="qg-notifications.js"></script>
+<script defer src="qg-share.js"></script>
+<script defer src="qg-saved.js?v=1"></script>
+<script defer src="qg-report.js?v=20260716d"></script>
+<script defer src="qg-stats.js"></script>
 <script>
 function esc(s){return window.escapeHtml(s);}
 var CAT_MAP = window.QG_CAT_MAP || {};
@@ -414,7 +416,7 @@ function normaliseTask(row){
     desc:row.DESCRIPTION||row.description||'',
     price:budget,
     budgetNegotiable:budgetNegotiable,
-    priceLabel:(budgetNegotiable?'Around ':'')+'$'+budget+(mode==='recurring'?'/hr':'')+(budgetNegotiable?', open to offers':''),
+    priceLabel:(budgetNegotiable?'Around ':'')+'$'+budget+(mode==='recurring'?'/hr':'')+' CAD'+(budgetNegotiable?', open to offers':''),
     location:row.LOCATION||row.location||'Calgary, AB',
     when: row.scheduled_label || row.SCHEDULED_LABEL || '',
     createdAt: row.created_at || row.CREATED_AT || '',
@@ -674,14 +676,14 @@ function renderCards(){
     : countTxt + ' across Canada';
   var area=document.getElementById('cardsArea');
   if (!filtered.length && (locFilter || window._nearMeOnly || dateFilter !== 'any') && allTasks.length) {
-    area.innerHTML='<div class="empty-state"><div class="empty-emoji">📍</div><p class="empty-txt">No tasks match your filters — try clearing location, date, or search</p></div>';
+    area.innerHTML='<div class="empty-state"><div class="empty-emoji">📍</div><p class="empty-txt">No tasks match your filters — try clearing location, date, or search</p><button type="button" class="empty-btn" onclick="if(typeof clearFilters===\'function\')clearFilters();else location.reload()">Clear filters</button></div>';
     return;
   }
   if(!filtered.length && activeMode==='saved'){
-    area.innerHTML='<div class="empty-state"><div class="empty-emoji">★</div><p class="empty-txt">No saved tasks yet — tap ☆ Save on any task to bookmark it here.</p></div>';
+    area.innerHTML='<div class="empty-state"><div class="empty-emoji">★</div><p class="empty-txt">No saved tasks yet — tap ☆ Save on any task to bookmark it here.</p><button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.href=\'browsetask.html\'">Browse open tasks →</button></div>';
     return;
   }
-  if(!filtered.length){area.innerHTML='<div class="empty-state"><div class="empty-emoji">🔍</div><p class="empty-txt">'+(allTasks.length===0?'No tasks posted yet — be the first!':'No tasks match this filter')+'</p></div>';return;}
+  if(!filtered.length){area.innerHTML='<div class="empty-state"><div class="empty-emoji">🔍</div><p class="empty-txt">'+(allTasks.length===0?'No tasks posted yet — be the first!':'No tasks match this filter')+'</p>'+(allTasks.length===0?'<a class="empty-btn" href="posttask.html" style="display:inline-block;margin-top:14px;padding:12px 20px;border-radius:12px;background:var(--purple);color:#fff;text-decoration:none">Post a task →</a>':'<button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.reload()">Reset browse</button>')+'</div>';return;}
   area.innerHTML=filtered.map(function(t){
     var desc = (t.desc || '').trim();
     var descHtml = desc ? '<p class="tc-desc">'+esc(desc)+'</p>' : '<p class="tc-desc is-empty"></p>';

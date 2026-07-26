@@ -96,11 +96,40 @@
     var items = NAV[mode] || NAV.poster;
     bar.innerHTML = items.map(function (item) {
       var cls = item.id === activeId ? 'tab-item active' : 'tab-item';
+      var unreadBadge = item.id === 'messages'
+        ? '<span class="tab-unread-badge" id="qgMsgUnreadBadge" aria-hidden="true"></span>'
+        : '';
       return '<a class="' + cls + '" href="' + item.href + '" aria-label="' + item.label + '">' +
         '<span class="tab-icon" aria-hidden="true">' + item.icon + '</span>' +
+        unreadBadge +
         '<span class="tab-lbl">' + item.label + '</span></a>';
     }).join('');
     applyRoleTheme();
+    refreshMessagesUnreadBadge();
+  }
+
+  function refreshMessagesUnreadBadge() {
+    var badge = document.getElementById('qgMsgUnreadBadge');
+    var link = badge && badge.closest('.tab-item');
+    if (!badge || !link) return;
+    var user = window._currentUser;
+    if (!user || typeof getConversationsForUser !== 'function') return;
+    getConversationsForUser(user.uid).then(function (rows) {
+      var n = 0;
+      (rows || []).forEach(function (conv) {
+        var lastRead = user.uid === conv.poster_id ? conv.poster_last_read_at : conv.worker_last_read_at;
+        if (!lastRead || (conv.last_message_at && new Date(conv.last_message_at) > new Date(lastRead))) n += 1;
+      });
+      if (n > 0) {
+        badge.textContent = n > 99 ? '99+' : String(n);
+        link.classList.add('has-unread');
+        link.setAttribute('aria-label', 'Messages, ' + n + ' unread');
+      } else {
+        badge.textContent = '';
+        link.classList.remove('has-unread');
+        link.setAttribute('aria-label', 'Messages');
+      }
+    }).catch(function () {});
   }
 
   function initRoleThemeEarly() {
@@ -158,6 +187,7 @@
   window.isPosterMode = isPosterMode;
   window.switchRoleMode = switchRoleMode;
   window.renderQuickGigsTabBar = renderQuickGigsTabBar;
+  window.refreshMessagesUnreadBadge = refreshMessagesUnreadBadge;
   window.applyMyTasksTabsForMode = applyMyTasksTabsForMode;
   window.defaultMyTasksTab = defaultMyTasksTab;
   window.normalizeMyTasksTab = normalizeMyTasksTab;

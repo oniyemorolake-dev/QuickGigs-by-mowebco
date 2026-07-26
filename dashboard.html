@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -6,6 +6,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
 <link rel="stylesheet" href="qg-polish.css?v=20260726c">
+<link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — Dashboard</title>
 <link rel="manifest" href="/manifest.json?v=4">
@@ -19,7 +20,7 @@
 <link rel="stylesheet" href="qg-role-theme.css">
 <link rel="stylesheet" href="qg-features.css?v=20260716">
 <script src="qg-brand-init.js"></script>
-<script src="qg-pwa.js?v=4"></script>
+<script defer src="qg-pwa.js?v=4"></script>
 <link rel="stylesheet" href="qg-cookies.css">
 <link rel="stylesheet" href="qg-menu.css?v=2">
 <style>
@@ -172,7 +173,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <link rel="stylesheet" href="qg-brand.css">
 </head>
 <body>
-<script src="qg-theme.js"></script>
+<script defer src="qg-theme.js"></script>
 
 <!-- NAV -->
 <nav class="nav">
@@ -234,8 +235,8 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <!-- TAB BAR -->
 <nav class="tab-bar" id="qgTabBar"></nav>
-<script src="qg-nav.js"></script>
-<script src="qg-menu.js?v=2"></script>
+<script defer src="qg-nav.js"></script>
+<script defer src="qg-menu.js?v=2"></script>
 <script>renderQuickGigsTabBar('home');</script>
 
 <script type="module">
@@ -313,16 +314,16 @@ onAuthStateChanged(auth, async (user) => {
 });
 </script>
 
-<script src="supabase-db.js"></script>
-<script src="qg-payments-ui.js?v=1"></script>
-<script src="qg-location.js"></script>
-<script src="qg-config.js"></script>
-<script src="qg-stats.js"></script>
-<script src="qg-notifications.js"></script>
-<script src="qg-push.js?v=1"></script>
-<script src="qg-cookies.js"></script>
-<script src="qg-site.js"></script>
-<script src="qg-role-switch.js"></script>
+<script defer src="supabase-db.js"></script>
+<script defer src="qg-payments-ui.js?v=1"></script>
+<script defer src="qg-location.js"></script>
+<script defer src="qg-config.js"></script>
+<script defer src="qg-stats.js"></script>
+<script defer src="qg-notifications.js"></script>
+<script defer src="qg-push.js?v=1"></script>
+<script defer src="qg-cookies.js"></script>
+<script defer src="qg-site.js"></script>
+<script defer src="qg-role-switch.js"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
 var isDark = localStorage.getItem('qg-mode') !== 'light';
@@ -709,6 +710,7 @@ document.addEventListener('click', function(e) {
   }
 });
 </script>
-<script src="qg-polish.js?v=20260726c"></script>
+<script defer src="qg-polish.js?v=20260726c"></script>
+<script src="qg-ux.js?v=20260726ux" defer></script>
 </body>
 </html>

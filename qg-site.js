@@ -1,20 +1,18 @@
 /* QuickGigs — shared footer, loading, empty states, back nav */
 (function () {
-  var FOOTER_LINKS =
-    '<a href="how-it-works.html">How it works</a> · ' +
-    '<a href="faq.html">FAQ</a> · ' +
-    '<a href="safety.html">Safety</a> · ' +
-    '<a href="guidelines.html">Guidelines</a> · ' +
-    '<a href="dispute-resolution.html">Disputes</a> · ' +
-    '<a href="terms.html">Terms</a> · ' +
-    '<a href="privacy.html">Privacy</a> · ' +
-    '<a href="feedback.html">Feedback</a>';
-
   window.renderQuickGigsFooter = function (containerId) {
     var el = document.getElementById(containerId || 'siteFooter');
     if (!el) return;
-    el.innerHTML = FOOTER_LINKS;
-    el.classList.add('site-footer');
+    el.classList.add('site-footer', 'qg-trust-footer');
+    el.innerHTML =
+      '<div class="qg-foot-brand">QuickGigs</div>' +
+      '<div class="qg-foot-co">A MoTechCo company © 2026</div>' +
+      '<div class="qg-foot-links">' +
+      '<a href="terms.html">Terms</a> · ' +
+      '<a href="privacy.html">Privacy</a> · ' +
+      '<a href="feedback.html">Feedback</a>' +
+      '</div>' +
+      '<div class="qg-foot-email"><a href="mailto:mowebsiteco@gmail.com">mowebsiteco@gmail.com</a></div>';
   };
 
   window.qgLoadingHtml = function (msg) {

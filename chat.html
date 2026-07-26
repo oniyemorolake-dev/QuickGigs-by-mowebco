@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
 <link rel="stylesheet" href="qg-polish.css?v=20260726c">
+<link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — Chat</title>
 <script src="qg-brand-init.js"></script>
@@ -196,7 +197,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled aria-label="Send message">➤</button>
 </div>
 
-<script src="qg-mobile.js"></script>
+<script defer src="qg-mobile.js"></script>
 <script src="qg-menu.js?v=1" defer></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
@@ -227,13 +228,14 @@ onAuthStateChanged(auth, (user) => {
 
 <link rel="stylesheet" href="qg-stripe.css">
 <link rel="stylesheet" href="qg-trust.css">
-<script src="qg-utils.js"></script>
-<script src="qg-polish.js?v=20260726c"></script>
-<script src="qg-config.js"></script>
-<script src="supabase-db.js?v=20260725j"></script>
-<script src="qg-site.js"></script>
-<script src="qg-stripe.js?v=20260725g"></script>
-<script src="qg-lightbox.js?v=1"></script>
+<script defer src="qg-utils.js"></script>
+<script defer src="qg-polish.js?v=20260726c"></script>
+<script src="qg-ux.js?v=20260726ux" defer></script>
+<script defer src="qg-config.js"></script>
+<script defer src="supabase-db.js?v=20260725j"></script>
+<script defer src="qg-site.js"></script>
+<script defer src="qg-stripe.js?v=20260725g"></script>
+<script defer src="qg-lightbox.js?v=1"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
 var isDark = localStorage.getItem('qg-mode') !== 'light';

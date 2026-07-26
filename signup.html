@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
 <link rel="stylesheet" href="qg-polish.css?v=20260726c">
+<link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — Sign Up · Canada</title>
 <meta name="description" content="Join QuickGigs — Canada's task marketplace. Post gigs or earn as a tasker anywhere in Canada, coast to coast.">
@@ -72,8 +73,8 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
               <span class="signup-role-desc">Browse gigs &amp; get paid</span>
             </button>
           </div>
-          <div class="signup-field"><label>Full name <span class="req">*</span></label><input type="text" id="name" placeholder="Your full name" autocomplete="name" required><div class="signup-error" id="nameError">Please enter your full name</div></div>
-          <div class="signup-field"><label>Email address <span class="req">*</span></label><input type="email" id="email" placeholder="you@example.com" autocomplete="email" required><div class="signup-error" id="emailError">Please enter a valid email</div></div>
+          <div class="signup-field"><label for="name">Full name <span class="req">*</span></label><input type="text" id="name" placeholder="Your full name" autocomplete="name" enterkeyhint="next" required><div class="signup-error" id="nameError">Please enter your full name</div></div>
+          <div class="signup-field"><label for="email">Email address <span class="req">*</span></label><input type="email" id="email" placeholder="you@example.com" autocomplete="email" enterkeyhint="next" required><div class="signup-error" id="emailError">Please enter a valid email</div></div>
           <div class="qg-wizard-nav"><button type="button" class="signup-btn" data-qg-next>Continue →</button></div>
         </div>
 
@@ -81,9 +82,9 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
         <div class="qg-wizard-step" data-step="security">
           <div class="qg-step-title">Secure your account</div>
           <p class="qg-step-sub">Phone and password are required for all QuickGigs members.</p>
-          <div class="signup-field"><label>Phone number <span class="req">*</span></label><input type="tel" id="phone" placeholder="+1 (403) 000-0000" autocomplete="tel" required><div class="signup-error" id="phoneError">Please enter a valid phone number</div></div>
-          <div class="signup-field"><label>Password <span class="req">*</span></label><input type="password" id="password" placeholder="At least 8 characters" autocomplete="new-password" required><div class="signup-error" id="passwordError">Password must be at least 8 characters</div></div>
-          <div class="signup-field"><label>Confirm password <span class="req">*</span></label><input type="password" id="confirmPassword" placeholder="Repeat your password" autocomplete="new-password" required><div class="signup-error" id="confirmError">Passwords do not match</div></div>
+          <div class="signup-field"><label for="phone">Phone number <span class="req">*</span></label><input type="tel" id="phone" placeholder="+1 (403) 000-0000" autocomplete="tel" enterkeyhint="next" required><div class="signup-error" id="phoneError">Please enter a valid phone number</div></div>
+          <div class="signup-field"><label for="password">Password <span class="req">*</span></label><input type="password" id="password" placeholder="At least 8 characters" autocomplete="new-password" enterkeyhint="next" required><div class="signup-error" id="passwordError">Password must be at least 8 characters</div></div>
+          <div class="signup-field"><label for="confirmPassword">Confirm password <span class="req">*</span></label><input type="password" id="confirmPassword" placeholder="Repeat your password" autocomplete="new-password" enterkeyhint="done" required><div class="signup-error" id="confirmError">Passwords do not match</div></div>
           <div class="qg-wizard-nav">
             <button type="button" class="signup-btn signup-btn-secondary" data-qg-back>← Back</button>
             <button type="button" class="signup-btn" data-qg-next>Continue →</button>
@@ -170,7 +171,7 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
           <p class="qg-step-sub">One last step — review and create your account.</p>
           <div class="signup-terms-check">
             <input type="checkbox" id="termsAgree">
-            <label for="termsAgree">I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms of Service</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>. I confirm my name, birthday, and age information are accurate.</label>
+            <label for="termsAgree">I agree to the <a href="terms.html" target="_blank" rel="noopener noreferrer">Terms of Service</a> and <a href="privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>. I confirm my name, birthday, and age information are accurate.</label>
           </div>
           <div class="qg-wizard-nav" style="margin-top:1rem">
             <button type="button" class="signup-btn signup-btn-secondary" data-qg-back>← Back</button>
@@ -181,6 +182,7 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 
       <input type="hidden" id="roleInput" value="poster">
 
+      <p class="qg-pipeda-line">🔒 Your data is protected under Canadian privacy law (PIPEDA)</p>
       <div class="signup-trust">
         <span>🔒 Secure signup</span>
         <span>🇨🇦 PIPEDA compliant</span>
@@ -198,16 +200,17 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
   </div>
 </div>
 
-<script src="qg-utils.js"></script>
-<script src="qg-polish.js?v=20260726c"></script>
-<script src="qg-config.js"></script>
-<script src="qg-analytics.js"></script>
-<script src="qg-auth-google.js"></script>
-<script src="qg-onboarding.js?v=2"></script>
-<script src="qg-cookies.js"></script>
-<script src="supabase-db.js"></script>
-<script src="qg-announcement.js?v=5"></script>
-<script src="qg-notifications.js"></script>
+<script defer src="qg-utils.js"></script>
+<script defer src="qg-polish.js?v=20260726c"></script>
+<script src="qg-ux.js?v=20260726ux" defer></script>
+<script defer src="qg-config.js"></script>
+<script defer src="qg-analytics.js"></script>
+<script defer src="qg-auth-google.js"></script>
+<script defer src="qg-onboarding.js?v=2"></script>
+<script defer src="qg-cookies.js"></script>
+<script defer src="supabase-db.js"></script>
+<script defer src="qg-announcement.js?v=5"></script>
+<script defer src="qg-notifications.js"></script>
 <script>
 attachPasswordToggle('password');
 attachPasswordToggle('confirmPassword');

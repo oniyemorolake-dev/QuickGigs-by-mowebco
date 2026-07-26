@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -6,6 +6,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <meta name="theme-color" content="#6b3fa0">
 <link rel="stylesheet" href="qg-polish.css?v=20260726c">
+<link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — Log In · Canada</title>
 <meta name="description" content="Log in to QuickGigs — Canada's marketplace for everyday tasks and gigs, available nationwide.">
@@ -51,16 +52,17 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 
       <form id="loginForm">
         <div class="signup-field">
-          <label>Email address <span class="req">*</span></label>
-          <input type="email" id="email" placeholder="you@example.com" autocomplete="email" required>
+          <label for="email">Email address <span class="req">*</span></label>
+          <input type="email" id="email" placeholder="you@example.com" autocomplete="email" enterkeyhint="next" required>
         </div>
         <div class="signup-field">
-          <label>Password <span class="req">*</span></label>
-          <input type="password" id="password" placeholder="Your password" autocomplete="current-password" required>
+          <label for="password">Password <span class="req">*</span></label>
+          <input type="password" id="password" placeholder="Your password" autocomplete="current-password" enterkeyhint="done" required>
         </div>
         <button type="button" class="signup-forgot" id="forgotLink">Forgot password?</button>
         <button type="submit" class="signup-btn" id="submitBtn">Log in →</button>
       </form>
+      <p class="qg-pipeda-line">🔒 Your data is protected under Canadian privacy law (PIPEDA)</p>
 
       <div class="signup-trust">
         <span>🔒 Encrypted</span>
@@ -84,14 +86,15 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
   </div>
 </div>
 
-<script src="qg-utils.js"></script>
-<script src="qg-polish.js?v=20260726c"></script>
-<script src="qg-config.js"></script>
-<script src="qg-analytics.js"></script>
-<script src="qg-auth-google.js"></script>
-<script src="supabase-db.js"></script>
-<script src="qg-announcement.js?v=5"></script>
-<script src="qg-cookies.js"></script>
+<script defer src="qg-utils.js"></script>
+<script defer src="qg-polish.js?v=20260726c"></script>
+<script src="qg-ux.js?v=20260726ux" defer></script>
+<script defer src="qg-config.js"></script>
+<script defer src="qg-analytics.js"></script>
+<script defer src="qg-auth-google.js"></script>
+<script defer src="supabase-db.js"></script>
+<script defer src="qg-announcement.js?v=5"></script>
+<script defer src="qg-cookies.js"></script>
 <script>
 attachPasswordToggle('password');
 

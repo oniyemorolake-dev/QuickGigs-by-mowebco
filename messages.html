@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
 <link rel="stylesheet" href="qg-polish.css?v=20260726c">
+<link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — Messages</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -141,8 +142,8 @@ body.light .app-legal-footer a{color:var(--purple);}
 
 <footer class="app-legal-footer site-footer" id="siteFooter"></footer>
 <nav class="tab-bar" id="qgTabBar"></nav>
-<script src="qg-site.js"></script>
-<script src="qg-nav.js"></script>
+<script defer src="qg-site.js"></script>
+<script defer src="qg-nav.js"></script>
 <script>renderQuickGigsTabBar('messages');</script>
 
 <script type="module">
@@ -179,12 +180,13 @@ onAuthStateChanged(auth, (user) => {
 });
 </script>
 
-<script src="qg-utils.js"></script>
-<script src="qg-polish.js?v=20260726c"></script>
-<script src="qg-config.js"></script>
-<script src="supabase-db.js?v=20260725j"></script>
-<script src="qg-notifications.js"></script>
-<script src="qg-push.js?v=1"></script>
+<script defer src="qg-utils.js"></script>
+<script defer src="qg-polish.js?v=20260726c"></script>
+<script src="qg-ux.js?v=20260726ux" defer></script>
+<script defer src="qg-config.js"></script>
+<script defer src="supabase-db.js?v=20260725j"></script>
+<script defer src="qg-notifications.js"></script>
+<script defer src="qg-push.js?v=1"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
 var isDark = localStorage.getItem('qg-mode') !== 'light';

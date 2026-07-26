@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
 <link rel="stylesheet" href="qg-polish.css?v=20260726c">
+<link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — My Tasks</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -194,7 +195,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 <link rel="stylesheet" href="qg-brand.css">
 </head>
 <body>
-<script src="qg-theme.js"></script>
+<script defer src="qg-theme.js"></script>
 
 <nav class="nav">
   <div class="nav-brand">
@@ -245,24 +246,25 @@ body.light .app-legal-footer a{color:var(--purple);}
 
 <nav class="tab-bar" id="qgTabBar"></nav>
 
-<script src="qg-utils.js"></script>
-<script src="qg-polish.js?v=20260726c"></script>
-<script src="qg-config.js?v=20260726m"></script>
-<script src="supabase-db.js?v=20260726m"></script>
-<script src="qg-stripe.js?v=20260726m"></script>
-<script src="qg-site.js?v=20260726m"></script>
-<script src="qg-nav.js?v=20260726n"></script>
-<script src="qg-pwa.js?v=4"></script>
-<script src="qg-notifications.js"></script>
-<script src="qg-push.js?v=1"></script>
-<script src="qg-share.js"></script>
+<script defer src="qg-utils.js"></script>
+<script defer src="qg-polish.js?v=20260726c"></script>
+<script src="qg-ux.js?v=20260726ux" defer></script>
+<script defer src="qg-config.js?v=20260726m"></script>
+<script defer src="supabase-db.js?v=20260726m"></script>
+<script defer src="qg-stripe.js?v=20260726m"></script>
+<script defer src="qg-site.js?v=20260726m"></script>
+<script defer src="qg-nav.js?v=20260726n"></script>
+<script defer src="qg-pwa.js?v=4"></script>
+<script defer src="qg-notifications.js"></script>
+<script defer src="qg-push.js?v=1"></script>
+<script defer src="qg-share.js"></script>
 <script>
 (function(){document.querySelectorAll('#qgReportOverlay,#qgDisputeOverlay,.qg-report-overlay').forEach(function(n){n.remove()});})();
 </script>
-<script src="qg-report.js?v=20260716d"></script>
-<script src="qg-stats.js?v=20260726d"></script>
-<script src="qg-confetti.js?v=1"></script>
-<script src="qg-disputes.js?v=20260716d"></script>
+<script defer src="qg-report.js?v=20260716d"></script>
+<script defer src="qg-stats.js?v=20260726d"></script>
+<script defer src="qg-confetti.js?v=1"></script>
+<script defer src="qg-disputes.js?v=20260716d"></script>
 <script>
 var navActive = (typeof isWorkerMode === 'function' && isWorkerMode()) ? 'jobs' : 'tasks';
 renderQuickGigsTabBar(navActive);
@@ -1009,15 +1011,15 @@ function formatAppPriceHtml(a) {
   var neg = getNegotiationState(a);
   if (neg.counterBy && neg.counterPrice) {
     var who = neg.counterBy === 'poster' ? 'Poster counter' : 'Your counter';
-    return '$' + price + '<div class="app-counter-pending">' + who + ': $' + neg.counterPrice + '</div>';
+    return '$' + price + ' CAD<div class="app-counter-pending">' + who + ': $' + neg.counterPrice + ' CAD</div>';
   }
-  return '$' + price;
+  return '$' + price + ' CAD';
 }
 
 function formatTaskBudgetMeta(task) {
   var budget = getField(task, 'BUDGET');
-  if (isTaskNegotiable(task)) return 'Around $' + budget + ' · negotiable';
-  return '$' + budget + ' · fixed';
+  if (isTaskNegotiable(task)) return 'Around $' + budget + ' CAD · negotiable';
+  return '$' + budget + ' CAD · fixed';
 }
 
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -1404,19 +1406,24 @@ function renderTab(){
           '<div class="app-price">'+formatAppPriceHtml(a)+'</div>'+
           renderApplicantAction(a, taskId, t)+
         '</div>';
-      }).join('') : '<div style="font-size:12px;color:var(--text-faint);padding:10px 0">No pending applicants</div>';
+      }).join('') : '<div style="font-size:12px;color:var(--text-faint);padding:10px 0">No pending applicants yet.</div>';
       var toggleLabel = pendingApps.length
         ? pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : '') + (namePreview ? ' · ' + namePreview + (pendingApps.length > 3 ? '…' : '') : '') + ' — Tap to ' + (isOpen ? 'hide' : 'view')
         : (hasAccepted ? 'Worker accepted — Tap to view' : 'No applicants yet');
       var postedLabel = typeof formatRelativeTime === 'function'
         ? formatRelativeTime(getField(t, 'CREATED_AT'))
         : '';
+      var shareEmpty = (!pendingApps.length && !hasAccepted)
+        ? (typeof shareButtonHtml === 'function'
+          ? shareButtonHtml('task', taskId, getField(t,'TITLE')).replace('↗ Share', 'Share your task')
+          : '<button type="button" class="act-btn qg-share-trigger" data-share-kind="task" data-share-id="'+escAttr(taskId)+'" data-share-label="'+escAttr(getField(t,'TITLE'))+'">Share your task</button>')
+        : '';
       return '<div class="task-card">'+
-        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-open">Open</span></div>'+
+        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-open">● Open</span></div>'+
         '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · '+esc(formatTaskBudgetMeta(t))+(postedLabel ? ' · Posted '+esc(postedLabel) : '')+'</div>'+
         '<button type="button" class="tc-applicants-toggle'+(isOpen?' open':'')+'" data-applicants-toggle="'+escAttr(taskId)+'" data-applicant-count="'+escAttr(pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : ''))+'" data-applicant-names="'+escAttr(namePreview + (pendingApps.length > 3 ? '…' : ''))+'">👥 '+esc(toggleLabel)+'</button>'+
         '<div class="applicants-panel'+(isOpen?' open':'')+'" id="'+taskDomId(taskId)+'">'+appHtml+'</div>'+
-        '<div class="action-row"><button type="button" class="act-btn btn-danger" data-cancel-posting="'+escAttr(taskId)+'">✕ Cancel posting</button></div>'+
+        '<div class="action-row">'+shareEmpty+'<button type="button" class="act-btn btn-danger" data-cancel-posting="'+escAttr(taskId)+'">✕ Cancel posting</button></div>'+
       '</div>';
     }).join('');
   }
@@ -1614,7 +1621,7 @@ function renderTab(){
       });
     }
     if(!done.length){
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No completed tasks yet</div><div class="empty-sub">'+(isPoster?'Completed, cancelled, and expired postings appear here. Expired tasks can be reposted with one tap.':'Completed or cancelled tasks will appear here.')+'</div></div>';
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No completed tasks yet</div><div class="empty-sub">'+(isPoster?'Completed, cancelled, and expired postings appear here. Expired tasks can be reposted with one tap.':'Completed or cancelled tasks will appear here.')+'</div>'+(isPoster?'<a class="empty-btn" href="posttask.html">Post a task →</a>':'<a class="empty-btn" href="browsetask.html">Browse tasks →</a>')+'</div>';
       return;
     }
     content.innerHTML = '<div class="hint-box" style="background:rgba(107,63,160,0.12);border:1px solid rgba(200,168,233,0.2);border-radius:14px;padding:14px;margin-bottom:14px;font-size:13px;line-height:1.55;color:var(--text-muted);">⭐ <strong>Please leave a review</strong> on completed jobs — honest feedback helps QuickGigs stay safe for everyone.</div>' +
@@ -1661,6 +1668,13 @@ function renderTab(){
 
   if (typeof bindDisputeTriggers === 'function') bindDisputeTriggers(content);
   if (typeof bindReportTriggers === 'function') bindReportTriggers(content);
+  if (typeof bindShareTriggers === 'function') {
+    bindShareTriggers(content, function (id) {
+      return (allTasks || []).find(function (t) {
+        return String(getField(t, 'TASK_ID')) === String(id);
+      });
+    });
+  }
 }
 
 window.acceptApplicant = async function(taskId, appId, acceptBtn){

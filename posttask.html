@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
 <link rel="stylesheet" href="qg-polish.css?v=20260726c">
+<link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — Post a Task</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -217,9 +218,9 @@ body{padding-bottom:76px;}
 <link rel="stylesheet" href="qg-brand.css">
 </head>
 <body class="theme-posttask">
-<script src="qg-theme.js"></script>
-<script src="qg-location.js"></script>
-<script src="qg-nav.js"></script>
+<script defer src="qg-theme.js"></script>
+<script defer src="qg-location.js"></script>
+<script defer src="qg-nav.js"></script>
 <script>if (typeof setSessionMode === 'function') setSessionMode('poster');</script>
 
 <!-- NAV -->
@@ -372,7 +373,7 @@ body{padding-bottom:76px;}
       <span class="section-label">Your budget</span>
       <div class="price-wrap">
         <span class="price-pre">$</span>
-        <input class="field-input" id="taskBudget" type="number" min="20" placeholder="40">
+        <input class="field-input" id="taskBudget" type="number" min="20" inputmode="decimal" enterkeyhint="done" placeholder="40">
       </div>
       <div class="field-error" id="budgetError">Minimum budget is $20</div>
     </div>
@@ -405,7 +406,8 @@ body{padding-bottom:76px;}
 
   <!-- SUBMIT -->
   <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">Post task →</button>
-  <p class="footer-note">Payment is held in escrow when you accept — released only after you confirm the job is done.</p>
+  <p class="qg-beta-free-note">Free to post during beta. No payment required.</p>
+  <p class="footer-note">After beta, payment is held in escrow when you accept — released only after you confirm the job is done. <span data-qg-tip="Escrow means funds are held safely until you mark the task complete. During beta, posting is free.">What is escrow?</span></p>
 
 </div>
 
@@ -418,10 +420,11 @@ body{padding-bottom:76px;}
   <button class="success-btn" style="margin-left:8px;background:rgba(255,255,255,0.1)" onclick="window.location.href='dashboard.html?mode=poster'">Back to dashboard</button>
 </div>
 
-<script src="qg-utils.js"></script>
-<script src="qg-polish.js?v=20260726c"></script>
-<script src="qg-config.js"></script>
-<script src="supabase-db.js"></script>
+<script defer src="qg-utils.js"></script>
+<script defer src="qg-polish.js?v=20260726c"></script>
+<script src="qg-ux.js?v=20260726ux" defer></script>
+<script defer src="qg-config.js"></script>
+<script defer src="supabase-db.js"></script>
 <script>
 var selectedPhotos = [];
 
@@ -995,6 +998,7 @@ window.handleSubmit = async function(skipPhotos) {
   if (result.success) {
     if (typeof setSessionMode === 'function') setSessionMode('poster');
     try { sessionStorage.setItem('qg-just-posted', '1'); } catch (e) {}
+    if (typeof window.qgClearPostDraft === 'function') window.qgClearPostDraft();
     document.getElementById('formContent').style.display = 'none';
     document.getElementById('successScreen').style.display = 'block';
   } else {
