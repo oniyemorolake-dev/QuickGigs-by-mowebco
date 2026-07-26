@@ -651,9 +651,16 @@ async function completeTaskViaServer(taskId, actorId, options) {
       body: JSON.stringify(body)
     });
     var data = {};
-    try { data = await res.json(); } catch (e) { data = { ok: false, success: false, error: 'Invalid response' }; }
+    try { data = await res.json(); } catch (e) {
+      data = { ok: false, success: false, error: 'Invalid response (' + res.status + ')' };
+    }
     if (!res.ok && data.ok !== false) data.ok = false;
     if (data.success == null) data.success = !!data.ok;
+    if (!data.success) {
+      var parts = [data.error || ('HTTP ' + res.status)];
+      if (data.details) parts.push(String(data.details));
+      data.error = parts.join(' — ');
+    }
     return data;
   } catch (err) {
     return { ok: false, success: false, error: err.message || String(err) };
@@ -1071,11 +1078,26 @@ async function updateTaskStatus(taskId, status, options) {
   }
   var orFilter = buildTaskIdOrFilter(taskId, task);
   if (orFilter && filters.indexOf(orFilter) === -1) filters.unshift(orFilter);
+  if (options.posterId && statusVal === 'completed') {
+    var byPoster = 'posted_by=eq.' + encodeURIComponent(String(options.posterId)) +
+      '&status=eq.in_progress';
+    if (filters.indexOf(byPoster) === -1) filters.push(byPoster);
+  }
   var result = { success: false, error: 'Could not update task — refresh and try again' };
   for (var i = 0; i < filters.length; i++) {
     result = await tryPatchRow('tasks', patch, filters[i], async function () {
-      var fresh = await getTaskById(taskId);
-      return !!(fresh && String(fresh.status || fresh.STATUS || '').toLowerCase() === statusVal);
+      var fresh = await getTaskById(taskId, options);
+      if (fresh && String(fresh.status || fresh.STATUS || '').toLowerCase() === statusVal) return true;
+      if (options.posterId) {
+        var posted = await sbGet(
+          'tasks',
+          'posted_by=eq.' + encodeURIComponent(String(options.posterId)) + '&status=eq.' + statusVal,
+          'created_at.desc',
+          5
+        );
+        return !!(posted && posted.length);
+      }
+      return false;
     });
     if (result.success) break;
   }
@@ -1084,7 +1106,7 @@ async function updateTaskStatus(taskId, status, options) {
     if (current === statusVal) result = { success: true };
   }
   if (!result.success) {
-    var fresh = await getTaskById(taskId);
+    var fresh = await getTaskById(taskId, options);
     if (fresh && String(fresh.status || fresh.STATUS || '').toLowerCase() === statusVal) {
       result = { success: true };
     }
@@ -2272,10 +2294,17 @@ async function completeTask(taskId, actorId, options) {
       ? await resolveTaskContext(taskId, actorId, options)
       : { taskId: taskId, canonicalTaskId: taskId, ids: [taskId], accepted: null, posterId: '', workerId: '' };
 
+    if (options.posterId && !ctx.posterId) ctx.posterId = String(options.posterId);
+    if (options.workerId && !ctx.workerId) ctx.workerId = String(options.workerId);
+    if (options.taskRow && !ctx.task) ctx.task = options.taskRow;
+
     var serverResult = await completeTaskViaServer(taskId, actorId, {
-      posterId: ctx.posterId,
-      workerId: ctx.workerId,
-      canonicalTaskId: ctx.canonicalTaskId
+      posterId: ctx.posterId || options.posterId || '',
+      workerId: ctx.workerId || options.workerId || '',
+      // Only send canonical when it looks like a real DB task_id (UUID), not legacy 668
+      canonicalTaskId: /^[0-9a-f]{8}-/i.test(String(ctx.canonicalTaskId || ''))
+        ? ctx.canonicalTaskId
+        : ''
     });
 
     if (!serverResult.success) {
