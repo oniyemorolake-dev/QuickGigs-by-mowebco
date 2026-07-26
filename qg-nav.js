@@ -168,7 +168,7 @@
   initRoleThemeEarly();
 
   var mobileScript = document.createElement('script');
-  mobileScript.src = 'qg-mobile.js';
+  mobileScript.src = 'qg-mobile.js?v=20260726n';
   mobileScript.defer = true;
   document.head.appendChild(mobileScript);
 

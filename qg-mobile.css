@@ -108,13 +108,33 @@ body.qg-page-chat {
   }
 }
 
+/* Stop iOS zoom on focus: inputs under 16px cause page enlarge */
+@media (max-width: 768px) {
+  input,
+  textarea,
+  select,
+  .modal-input,
+  .search-input,
+  .location-filter-input,
+  .form-input,
+  .qg-custom-input,
+  .qg-report-textarea,
+  .confirm-box input,
+  .confirm-box textarea {
+    font-size: 16px !important;
+    line-height: 1.35;
+  }
+}
+
 .qg-keyboard-open .modal-overlay.open {
   align-items: flex-start;
-  padding-bottom: 12px;
+  padding-top: max(8px, env(safe-area-inset-top, 0px));
+  padding-bottom: 8px;
 }
 .qg-keyboard-open .modal-overlay.open .modal {
-  max-height: none;
-  margin-top: 8px;
+  max-height: calc(var(--qg-vvh, 100dvh) - 16px);
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 @media (max-width: 480px) {

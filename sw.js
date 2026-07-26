@@ -1,5 +1,5 @@
 /* QuickGigs service worker — never cache JS/CSS (always fresh); HTML network-first */
-var CACHE_NAME = 'quickgigs-v76';
+var CACHE_NAME = 'quickgigs-v77';
 var OFFLINE_FALLBACK = '/dashboard.html';
 
 var STATIC_ASSETS = [
