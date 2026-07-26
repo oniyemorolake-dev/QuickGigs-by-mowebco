@@ -2,16 +2,31 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+
+<title>Chat — QuickGigs</title>
+<meta name="description" content="Chat with your poster or tasker on QuickGigs.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="canonical" href="https://quickgigs.ca/chat.html">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://quickgigs.ca/chat.html">
+<meta property="og:title" content="Chat — QuickGigs">
+<meta property="og:description" content="Chat with your poster or tasker on QuickGigs.">
+<meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
+<meta property="og:locale" content="en_CA">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Chat — QuickGigs">
+<meta name="twitter:description" content="Chat with your poster or tasker on QuickGigs.">
+<meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
-<link rel="stylesheet" href="qg-polish.css?v=20260726c">
+<link rel="stylesheet" href="qg-polish.css?v=20260726seo">
 <link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>QuickGigs — Chat</title>
+
 <script src="qg-brand-init.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -178,7 +193,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <!-- FRAUD WARNING BAR -->
 <div class="fraud-bar">
-  ⚠️ Keep all communication and payments on QuickGigs. Share job or progress photos here — no IDs or personal documents.
+  ⚠️ Keep all communication and payments on QuickGigs. Share task or progress photos here — no IDs or personal documents.
 </div>
 
 <!-- CHAT AREA -->
@@ -236,6 +251,7 @@ onAuthStateChanged(auth, (user) => {
 <script src="qg-bigtech.js?v=20260726bt" defer></script>
 <script src="qg-wave2.js?v=20260726w2" defer></script>
 <script defer src="qg-config.js"></script>
+<script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="supabase-db.js?v=20260725j"></script>
 <script defer src="qg-site.js"></script>
 <script defer src="qg-stripe.js?v=20260725g"></script>
@@ -850,7 +866,7 @@ window.sendMessage = async function(){
       var warnEl = document.getElementById('fraudInlineText');
       if (warnEl && typeof getOffPlatformWarning === 'function') warnEl.textContent = getOffPlatformWarning();
     } else {
-      showToast('Could not send message. Please try again.', '#ef4444');
+      showToast('Could not send message. Try again.', '#ef4444');
     }
     sendBtn.disabled = false;
     return;
@@ -869,5 +885,6 @@ window.addEventListener('beforeunload', function(){
   if(pollTimer) clearInterval(pollTimer);
 });
 </script>
+<script defer src="qg-help.js?v=20260726seo"></script>
 </body>
 </html>

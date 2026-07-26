@@ -2,16 +2,31 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+
+<title>Post a task — QuickGigs</title>
+<meta name="description" content="Post a task in minutes on QuickGigs. Hire local taskers for errands, cleaning, tutoring, and more across Canada.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://quickgigs.ca/posttask.html">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://quickgigs.ca/posttask.html">
+<meta property="og:title" content="Post a task — QuickGigs">
+<meta property="og:description" content="Post a task in minutes on QuickGigs. Hire local taskers for errands, cleaning, tutoring, and more across Canada.">
+<meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
+<meta property="og:locale" content="en_CA">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Post a task — QuickGigs">
+<meta name="twitter:description" content="Post a task in minutes on QuickGigs. Hire local taskers for errands, cleaning, tutoring, and more across Canada.">
+<meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
-<link rel="stylesheet" href="qg-polish.css?v=20260726c">
+<link rel="stylesheet" href="qg-polish.css?v=20260726seo">
 <link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>QuickGigs — Post a Task</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
 <link rel="stylesheet" href="qg-role-theme.css">
@@ -302,14 +317,14 @@ body{padding-bottom:76px;}
       <span class="cat-chip" onclick="selectCat(this)">🔧 Trades</span>
       <span class="cat-chip" onclick="selectCat(this)">📦 Other</span>
     </div>
-    <div class="field-error" id="catError">Please select a category</div>
+    <div class="field-error" id="catError">Select a category</div>
   </div>
 
   <!-- TITLE -->
   <div class="field section">
     <span class="section-label">Task title</span>
     <input class="field-input" id="taskTitle" type="text" placeholder="e.g. Pick up prescription from Shoppers" maxlength="100">
-    <div class="field-error" id="titleError">Please add a title</div>
+    <div class="field-error" id="titleError">Add a title</div>
   </div>
 
   <!-- DESCRIPTION -->
@@ -321,7 +336,7 @@ body{padding-bottom:76px;}
   <!-- PHOTOS -->
   <div class="section">
     <span class="section-label">Photos <span style="font-weight:400;text-transform:none;letter-spacing:0;opacity:0.85">(optional but recommended)</span></span>
-    <p class="field-hint">Add photos here so taskers see the job before they apply — room, item, or area. <strong>No IDs, mail, or personal documents.</strong> You can also send more in chat after payment.</p>
+    <p class="field-hint">Add photos here so taskers see the task before they apply — room, item, or area. <strong>No IDs, mail, or personal documents.</strong> You can also send more in chat after payment.</p>
     <input type="file" id="taskPhotos" accept="image/*" multiple style="display:none" onchange="handlePhotoPick(this)">
     <button type="button" class="photo-upload-btn" onclick="document.getElementById('taskPhotos').click()">📷 Add photos (up to 3)</button>
     <div id="photoPreview" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;"></div>
@@ -356,10 +371,10 @@ body{padding-bottom:76px;}
         <div class="time-custom-wrap" id="timeCustomWrap" style="display:none;">
           <input class="field-input" id="taskTime" type="time">
         </div>
-        <div class="field-error" id="timeError">Please choose a time</div>
+        <div class="field-error" id="timeError">Choose a time</div>
       </div>
     </div>
-    <div class="field-error" id="dateError">Please choose a date</div>
+    <div class="field-error" id="dateError">Choose a date</div>
     <div class="time-slots" id="timeSlots">
       <div class="time-slot selected" data-slot="exact" onclick="selectTimeSlot(this)">Exact time</div>
       <div class="time-slot" data-slot="morning" onclick="selectTimeSlot(this)">Morning</div>
@@ -409,15 +424,15 @@ body{padding-bottom:76px;}
   <!-- SUBMIT -->
   <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">Post task →</button>
   <p class="qg-beta-free-note">Free to post during beta. No payment required.</p>
-  <p class="footer-note">After beta, payment is held in escrow when you accept — released only after you confirm the job is done. <span data-qg-tip="Escrow means funds are held safely until you mark the task complete. During beta, posting is free.">What is escrow?</span></p>
+  <p class="footer-note">After beta, payment is held in escrow when you accept — released only after you confirm the task is done. <span data-qg-tip="Escrow means funds are held safely until you mark the task complete. During beta, posting is free.">What is escrow?</span></p>
 
 </div>
 
 <!-- SUCCESS SCREEN -->
 <div class="success-screen content" id="successScreen">
   <div class="success-icon">🎉</div>
-  <p class="success-title">Task posted!</p>
-  <p class="success-sub">Your task is live under <strong>My Tasks → Posted</strong> (Poster mode). Browse only shows other people's gigs — not your own.</p>
+  <p class="success-title">Task posted</p>
+  <p class="success-sub">Your task is live under <strong>My Tasks → Posted</strong> (Poster mode). Browse only shows other people's tasks — not your own.</p>
   <button class="success-btn" onclick="window.location.href='mytasks.html?tab=posted&mode=poster'">View in My Tasks</button>
   <button class="success-btn" style="margin-left:8px;background:rgba(255,255,255,0.1)" onclick="window.location.href='dashboard.html?mode=poster'">Back to dashboard</button>
 </div>
@@ -428,6 +443,7 @@ body{padding-bottom:76px;}
 <script src="qg-bigtech.js?v=20260726bt" defer></script>
 <script src="qg-wave2.js?v=20260726w2" defer></script>
 <script defer src="qg-config.js"></script>
+<script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="supabase-db.js"></script>
 <script>
 var selectedPhotos = [];
@@ -937,13 +953,13 @@ window.handleSubmit = async function(skipPhotos) {
     valid = false;
   }
   if (!valid) {
-    var errMsg = scrollToFirstFormError() || 'Please fix the highlighted fields above.';
+    var errMsg = scrollToFirstFormError() || 'Fix the highlighted fields above.';
     showFormBanner(errMsg);
     return;
   }
 
   if (!window._currentUser) {
-    showFormBanner('Please log in again to post a task.');
+    showFormBanner('Log in again to post a task.');
     setTimeout(function(){ window.location.href = 'login.html'; }, 2000);
     return;
   }
@@ -1010,6 +1026,7 @@ window.handleSubmit = async function(skipPhotos) {
       }
     } catch (e2) {}
     if (typeof haptic === 'function') haptic([15, 30, 15]);
+    if (typeof qgTrackEvent === 'function') qgTrackEvent('post_task', { category: taskData.category || '' });
     document.getElementById('formContent').style.display = 'none';
     document.getElementById('successScreen').style.display = 'block';
   } else {
@@ -1029,5 +1046,6 @@ window.handleSubmit = async function(skipPhotos) {
 if (typeof setSessionMode === 'function') setSessionMode('poster');
 renderQuickGigsTabBar('post');
 </script>
+<script defer src="qg-help.js?v=20260726seo"></script>
 </body>
 </html>

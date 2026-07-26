@@ -2,16 +2,31 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+
+<title>Profile — QuickGigs</title>
+<meta name="description" content="Your QuickGigs profile, skills, and reviews.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="canonical" href="https://quickgigs.ca/profile.html">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://quickgigs.ca/profile.html">
+<meta property="og:title" content="Profile — QuickGigs">
+<meta property="og:description" content="Your QuickGigs profile, skills, and reviews.">
+<meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
+<meta property="og:locale" content="en_CA">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Profile — QuickGigs">
+<meta name="twitter:description" content="Your QuickGigs profile, skills, and reviews.">
+<meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
-<link rel="stylesheet" href="qg-polish.css?v=20260726c">
+<link rel="stylesheet" href="qg-polish.css?v=20260726seo">
 <link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>QuickGigs — Profile</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
 <link rel="stylesheet" href="qg-features.css?v=20260716c">
@@ -426,7 +441,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 </div>
 
 <!-- TOAST -->
-<div class="toast" id="toast">Profile saved! 🎉</div>
+<div class="toast" id="toast">Saved</div>
 
 <!-- EDIT PROFILE — profile studio -->
 <div class="modal-overlay" id="modalOverlay" onclick="handleOverlay(event)">
@@ -480,7 +495,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
         <input class="edit-input" id="editPronouns" type="text" placeholder="e.g. she/her, they/them" maxlength="40" style="margin-bottom:0">
         <div class="edit-bio-wrap">
           <textarea class="edit-bio-input" id="editBio" placeholder=" " maxlength="160"></textarea>
-          <div class="bio-prompt" id="bioPrompt">What makes you great at gigs?</div>
+          <div class="bio-prompt" id="bioPrompt">What makes you great at tasks?</div>
           <div class="bio-count" id="bioCountWrap"><span id="bioCount">0</span>/160</div>
         </div>
       </div>
@@ -495,7 +510,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
         <div class="edit-card-head"><span class="edit-card-icon">📍</span><span>Tasker details</span></div>
         <label class="edit-label" for="editAvailability">Availability</label>
         <select class="edit-input" id="editAvailability" style="margin-bottom:12px">
-          <option value="available">Available for gigs</option>
+          <option value="available">Available for tasks</option>
           <option value="busy">Busy — not taking new tasks</option>
         </select>
         <label class="edit-label" for="editServiceArea">Service area</label>
@@ -559,6 +574,7 @@ onAuthStateChanged(auth, (user) => {
 <script src="qg-bigtech.js?v=20260726bt" defer></script>
 <script src="qg-wave2.js?v=20260726w2" defer></script>
 <script defer src="qg-config.js"></script>
+<script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="supabase-db.js"></script>
 <script defer src="qg-payments-ui.js?v=1"></script>
 <script defer src="qg-stripe.js"></script>
@@ -584,7 +600,7 @@ applyTheme();
 
 function showToast(msg) {
   var t = document.getElementById('toast');
-  t.textContent = msg || 'Profile saved! 🎉';
+  t.textContent = msg || 'Saved';
   t.classList.add('show');
   t.style.display = 'block';
   setTimeout(function(){ t.classList.remove('show'); t.style.display = 'none'; }, 2800);
@@ -612,7 +628,7 @@ function updateAvatarDisplay(name, url) {
 }
 
 var BIO_PROMPTS = [
-  'What makes you great at gigs?',
+  'What makes you great at tasks?',
   'Friendly, reliable, and on time…',
   'Your city local who loves helping out',
   'Tell people why they should pick you'
@@ -682,7 +698,7 @@ function updateEditProgress() {
     label.textContent = 'Profile looking fire 🔥';
     hint.textContent = 'You\'re ready to impress posters and taskers';
   } else if (pct >= 75) {
-    label.textContent = 'Almost there!';
+    label.textContent = 'Almost there';
     hint.textContent = 'One more touch and you\'re golden';
   } else if (pct >= 40) {
     label.textContent = 'Nice start — keep going';
@@ -990,7 +1006,7 @@ function renderProfile(user, isOwnProfile) {
   var showWorker = userIsTasker(role);
   if (trustSec && trustTxt && showWorker) {
     trustSec.style.display = 'block';
-    var avail = profileData.availability === 'busy' ? '🔴 Busy — not taking new tasks' : '🟢 Available for gigs';
+    var avail = profileData.availability === 'busy' ? '🔴 Busy — not taking new tasks' : '🟢 Available for tasks';
     var area = profileData.service_area ? '📍 ' + profileData.service_area : '';
     var langs = profileData.languages ? '🗣 ' + profileData.languages : '';
     trustTxt.innerHTML = [avail, area, langs].filter(Boolean).join('<br>') || 'Add service area and availability in Customize profile.';
@@ -1296,7 +1312,7 @@ window.saveProfile = async function() {
   if (btn) {
     btn.classList.remove('is-saving');
     btn.classList.add('is-success');
-    btn.querySelector('.save-text').textContent = 'Saved! 🎉';
+    btn.querySelector('.save-text').textContent = 'Saved';
   }
 
   setTimeout(function() {
@@ -1307,7 +1323,7 @@ window.saveProfile = async function() {
       btn.classList.remove('is-success');
       btn.querySelector('.save-text').textContent = 'Save profile ✨';
     }
-    showToast('Profile saved! 🎉');
+    showToast('Saved');
   }, 650);
 };
 
@@ -1364,5 +1380,6 @@ document.addEventListener('qg-mode-changed', function(e) {
   renderProfile(window._currentUser, true);
 });
 </script>
+<script defer src="qg-help.js?v=20260726seo"></script>
 </body>
 </html>

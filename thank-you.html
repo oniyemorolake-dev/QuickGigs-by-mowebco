@@ -38,7 +38,7 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
   if (link) link.href = 'dashboard.html?mode=' + mode;
 
   if (typeof qgTrackEvent === 'function') {
-    qgTrackEvent('sign_up_complete', { method: 'email', role: mode });
+    qgTrackEvent('sign_up', { method: 'email', role: mode });
   }
   if (typeof qgTrackConversion === 'function' && window.QG_CONFIG && window.QG_CONFIG.ga4ConversionLabel) {
     qgTrackConversion(window.QG_CONFIG.ga4ConversionLabel);

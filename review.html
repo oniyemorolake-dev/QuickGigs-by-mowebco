@@ -2,16 +2,31 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+
+<title>Leave a review — QuickGigs</title>
+<meta name="description" content="Leave a review after a completed QuickGigs task.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="canonical" href="https://quickgigs.ca/review.html">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://quickgigs.ca/review.html">
+<meta property="og:title" content="Leave a review — QuickGigs">
+<meta property="og:description" content="Leave a review after a completed QuickGigs task.">
+<meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
+<meta property="og:locale" content="en_CA">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Leave a review — QuickGigs">
+<meta name="twitter:description" content="Leave a review after a completed QuickGigs task.">
+<meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
-<link rel="stylesheet" href="qg-polish.css?v=20260726c">
+<link rel="stylesheet" href="qg-polish.css?v=20260726seo">
 <link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>QuickGigs — Leave a Review</title>
+
 <script src="qg-brand-init.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-chrome.css">
@@ -143,6 +158,8 @@ body.light .src-tags{color:var(--purple);}
 .tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:var(--purple-light);}
 body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color:var(--purple);}
 </style>
+<script src="qg-config.js"></script>
+<script defer src="qg-analytics.js?v=20260726seo"></script>
 </head>
 <body>
 
@@ -197,19 +214,19 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   <!-- Written comment -->
   <div class="comment-section">
     <span class="section-label">Write a review <span style="font-size:10px;opacity:0.6">(optional)</span></span>
-    <textarea class="comment-input" id="commentInput" placeholder="Tell others about your experience..." maxlength="500" oninput="updateCharCount()"></textarea>
+    <textarea class="comment-input" id="commentInput" placeholder="Tell others about your experience..." maxlength="500" data-qg-counter="1" oninput="updateCharCount()"></textarea>
     <div class="char-count" id="charCount">0 / 500</div>
   </div>
 
-  <button class="submit-btn" id="submitBtn" onclick="submitReviewForm()" disabled>Submit review</button>
-  <div class="submit-note" id="submitNote">Your star rating and comment help other QuickGigs users. Both poster and tasker should review after every job.</div>
+  <button class="submit-btn" id="submitBtn" onclick="submitReviewForm()" disabled>Post review</button>
+  <div class="submit-note" id="submitNote">Your star rating and comment help other QuickGigs users. Both poster and tasker should review after every task.</div>
 
 </div>
 
 <!-- SUCCESS SCREEN -->
 <div class="success-screen" id="successScreen">
   <div class="success-icon">🎉</div>
-  <div class="success-title">Review submitted!</div>
+  <div class="success-title">Review submitted</div>
   <div class="success-stars" id="successStars">⭐⭐⭐⭐⭐</div>
   <div class="success-sub">Thanks for reviewing <span id="successName">Sarah K.</span> — your feedback helps build trust on QuickGigs.</div>
   <div class="success-rating-card">
@@ -258,11 +275,11 @@ onAuthStateChanged(auth, (user) => {
 </script>
 
 <script defer src="qg-utils.js"></script>
-<script defer src="qg-polish.js?v=20260726c"></script>
+<script defer src="qg-polish.js?v=20260726d"></script>
 <script src="qg-ux.js?v=20260726ux" defer></script>
 <script src="qg-bigtech.js?v=20260726bt" defer></script>
 <script src="qg-wave2.js?v=20260726w2" defer></script>
-<script defer src="supabase-db.js"></script>
+<script defer src="supabase-db.js?v=20260726rev"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
 var isDark = localStorage.getItem('qg-mode') !== 'light';
@@ -286,17 +303,18 @@ function reviewErrorMessage(err) {
   var code = String(err || '');
   if (code === 'already_reviewed') return 'You already reviewed this task.';
   if (code === 'reviews_table_missing') return 'Reviews not set up — run supabase/reviews.sql in Supabase SQL Editor.';
-  if (code === 'reviews_rls_blocked') {
-    return 'Reviews blocked by database rules — run supabase/reviews.sql again in Supabase SQL Editor.';
+  if (code === 'reviews_rls_blocked' || code === 'reviews_save_failed' || code === 'reviews_task_id_type') {
+    return 'Could not save review — run supabase/reviews.sql in Supabase SQL Editor, then refresh.';
   }
+  if (code === 'invalid_rating') return 'Choose a star rating before submitting.';
   if (code === 'missing_review_fields') return 'Missing review info — go back to My Tasks → Completed and open review again.';
   if (code.indexOf('401') >= 0 || code.indexOf('403') >= 0 || code.indexOf('42501') >= 0) {
-    return 'Reviews blocked — run supabase/reviews.sql in Supabase SQL Editor, then refresh.';
+    return 'Could not save review — run supabase/reviews.sql in Supabase SQL Editor, then refresh.';
   }
   if (typeof formatSupabaseActionError === 'function') {
     return formatSupabaseActionError('submit review', code);
   }
-  return 'Could not submit your review. Please try again.';
+  return 'Could not submit your review. Try again.';
 }
 
 // ── URL PARAMS ─────────────────────────────────────────
@@ -312,7 +330,7 @@ var reviewerRole= params.get('role')     || 'poster'; // poster reviews worker, 
 document.getElementById('taskTitle').textContent    = taskTitle;
 document.getElementById('taskMeta').textContent     = '$' + taskPrice + ' · Completed ' + taskDate;
 document.getElementById('revieweeName').textContent = reviewee;
-document.getElementById('revieweeAvatar').textContent = reviewee.charAt(0).toUpperCase();
+document.getElementById('revieweeAvatar').textContent = (reviewee || 'U').charAt(0).toUpperCase();
 document.getElementById('successName').textContent  = reviewee;
 document.getElementById('successCardName').textContent = reviewee;
 document.getElementById('revLabel').textContent = reviewerRole === 'worker'
@@ -401,7 +419,7 @@ window.submitReviewForm = async function(){
   var comment = window.sanitizeInput(document.getElementById('commentInput').value, 500);
   var submitBtn = document.getElementById('submitBtn');
   submitBtn.disabled = true;
-  submitBtn.textContent = 'Submitting...';
+  submitBtn.textContent = 'Sending review…';
 
   try {
     var saveFn = window.submitReview || window.saveReviewToDb;
@@ -420,7 +438,7 @@ window.submitReviewForm = async function(){
   } catch (err) {
     console.warn('Review save error:', err);
     submitBtn.disabled = false;
-    submitBtn.textContent = 'Submit review';
+    submitBtn.textContent = 'Post review';
     showToast(reviewErrorMessage(err && err.message ? err.message : err), '#ef4444');
     return;
   }
@@ -438,7 +456,17 @@ window.submitReviewForm = async function(){
 
   window.scrollTo(0, 0);
 };
+
+window.addEventListener('DOMContentLoaded', function () {
+  var el = document.getElementById('revieweeAvatar');
+  if (!el) return;
+  el.textContent = (reviewee || 'U').charAt(0).toUpperCase();
+  if (typeof avatarGradientForName === 'function') {
+    el.style.background = avatarGradientForName(reviewee);
+  }
+});
 </script>
 <script src="qg-menu.js?v=1" defer></script>
+<script defer src="qg-help.js?v=20260726seo"></script>
 </body>
 </html>

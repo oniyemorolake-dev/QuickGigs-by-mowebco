@@ -2,16 +2,31 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+
+<title>My tasks — QuickGigs</title>
+<meta name="description" content="Manage posted tasks and applications on QuickGigs.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="canonical" href="https://quickgigs.ca/mytasks.html">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://quickgigs.ca/mytasks.html">
+<meta property="og:title" content="My tasks — QuickGigs">
+<meta property="og:description" content="Manage posted tasks and applications on QuickGigs.">
+<meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
+<meta property="og:locale" content="en_CA">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="My tasks — QuickGigs">
+<meta name="twitter:description" content="Manage posted tasks and applications on QuickGigs.">
+<meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
-<link rel="stylesheet" href="qg-polish.css?v=20260726c">
+<link rel="stylesheet" href="qg-polish.css?v=20260726seo">
 <link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>QuickGigs — My Tasks</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
 <link rel="stylesheet" href="qg-role-theme.css">
@@ -21,6 +36,7 @@
 <link rel="stylesheet" href="qg-features.css?v=20260716c">
 <link rel="stylesheet" href="qg-stripe.css">
 <script src="qg-brand-init.js"></script>
+<script src="qg-theme.js"></script>
 <script>
 (function () {
   var mode = localStorage.getItem('qg-session-mode');
@@ -197,7 +213,6 @@ body.light .app-legal-footer a{color:var(--purple);}
 <link rel="stylesheet" href="qg-brand.css">
 </head>
 <body>
-<script defer src="qg-theme.js"></script>
 
 <nav class="nav">
   <div class="nav-brand">
@@ -212,7 +227,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 
 <div class="tabs-wrap">
   <button class="tab-btn active" id="tabPosted" onclick="showTab('posted',this)">Posted</button>
-  <button class="tab-btn" id="tabApplied" onclick="showTab('applied',this)" title="Jobs you applied to (Tasker mode)">Applied</button>
+  <button class="tab-btn" id="tabApplied" onclick="showTab('applied',this)" title="Tasks you applied to (Tasker mode)">Applied</button>
   <button class="tab-btn" id="tabInprogress" onclick="showTab('inprogress',this)">In Progress</button>
   <button class="tab-btn" id="tabCompleted" onclick="showTab('completed',this)">Completed</button>
 </div>
@@ -249,14 +264,15 @@ body.light .app-legal-footer a{color:var(--purple);}
 <nav class="tab-bar" id="qgTabBar"></nav>
 
 <script defer src="qg-utils.js"></script>
-<script defer src="qg-polish.js?v=20260726c"></script>
+<script defer src="qg-polish.js?v=20260726e"></script>
 <script src="qg-ux.js?v=20260726ux" defer></script>
 <script src="qg-bigtech.js?v=20260726bt" defer></script>
 <script src="qg-wave2.js?v=20260726w2" defer></script>
-<script defer src="qg-config.js?v=20260726m"></script>
-<script defer src="supabase-db.js?v=20260726m"></script>
-<script defer src="qg-stripe.js?v=20260726m"></script>
-<script defer src="qg-site.js?v=20260726m"></script>
+<script defer src="qg-config.js?v=20260726e"></script>
+<script defer src="qg-analytics.js?v=20260726seo"></script>
+<script defer src="supabase-db.js?v=20260726e"></script>
+<script defer src="qg-stripe.js?v=20260726e"></script>
+<script defer src="qg-site.js?v=20260726e"></script>
 <script defer src="qg-nav.js?v=20260726n"></script>
 <script defer src="qg-pwa.js?v=4"></script>
 <script defer src="qg-notifications.js"></script>
@@ -288,7 +304,14 @@ var paymentByTaskId = {};
 var isDark = localStorage.getItem('qg-mode') !== 'light';
 var TAB_IDS = { posted: 'tabPosted', applied: 'tabApplied', inprogress: 'tabInprogress', completed: 'tabCompleted' };
 
-function applyTheme(){ window.QG_applyTheme(isDark, 'modeBtn', false); }
+function applyTheme(){
+  if (typeof window.QG_applyTheme === 'function') window.QG_applyTheme(isDark, 'modeBtn', false);
+  else {
+    document.body.className = isDark ? '' : 'light';
+    var btn = document.getElementById('modeBtn');
+    if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+  }
+}
 window.toggleTheme = function(){ isDark = !isDark; localStorage.setItem('qg-mode', isDark?'dark':'light'); applyTheme(); };
 applyTheme();
 
@@ -1425,7 +1448,7 @@ function renderTab(){
           ? '<p class="empty-sub" style="margin-top:10px">Your posting may be under <strong>In Progress</strong> or <strong>Completed</strong>.</p>' +
             '<button type="button" class="empty-btn" onclick="showTab(\'inprogress\',document.getElementById(\'tabInprogress\'))">Check In Progress →</button>'
           : '');
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">Post a task in Poster mode. When you accept a tasker, the job moves to In Progress — not here.</div>' + movedLink +
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">Post a task in Poster mode. When you accept a tasker, the task moves to In Progress — not here.</div>' + movedLink +
         '<a class="empty-btn" href="posttask.html">Post a task</a>' +
         '<button type="button" class="empty-btn btn-secondary" style="margin-top:8px;background:var(--surface);color:var(--text-muted);border:1px solid var(--border)" onclick="typeof loadData===\'function\'&&loadData()">↻ Refresh list</button></div>';
       return;
@@ -2131,7 +2154,8 @@ window.markComplete = async function(taskId, btn){
     syncTabButtons();
     renderTab();
     if (typeof qgBurstConfetti === 'function') qgBurstConfetti();
-    showToast('Task complete! Please leave a review.');
+    if (typeof qgTrackEvent === 'function') qgTrackEvent('complete_task', { task_id: String(finalTaskId || taskId || '') });
+    showToast('Task complete. Leave a review when you can.');
     if (btn) { btn.disabled = false; btn.textContent = '✓ Mark complete'; }
   }
 
@@ -2537,15 +2561,16 @@ onAuthStateChanged(auth, function (user) {
       }
     }
   }
+  // Load tasks immediately — profile sync must not block the list
+  bootMyTasks();
   if (typeof syncCurrentUserProfile === 'function') {
     Promise.race([
       syncCurrentUserProfile(user),
       new Promise(function (resolve) { setTimeout(resolve, 6000); })
-    ]).then(bootMyTasks).catch(function () { bootMyTasks(); });
-  } else {
-    bootMyTasks();
+    ]).catch(function () {});
   }
 });
 </script>
+<script defer src="qg-help.js?v=20260726seo"></script>
 </body>
 </html>

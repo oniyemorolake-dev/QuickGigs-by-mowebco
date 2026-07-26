@@ -2,14 +2,29 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+
+<title>Feedback — QuickGigs</title>
+<meta name="description" content="Share beta feedback with the QuickGigs team. Help improve Canada's task marketplace.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://quickgigs.ca/feedback.html">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://quickgigs.ca/feedback.html">
+<meta property="og:title" content="Feedback — QuickGigs">
+<meta property="og:description" content="Share beta feedback with the QuickGigs team. Help improve Canada's task marketplace.">
+<meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
+<meta property="og:locale" content="en_CA">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Feedback — QuickGigs">
+<meta name="twitter:description" content="Share beta feedback with the QuickGigs team. Help improve Canada's task marketplace.">
+<meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
-<link rel="stylesheet" href="qg-polish.css?v=20260726c">
+<link rel="stylesheet" href="qg-polish.css?v=20260726seo">
 <link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>QuickGigs — Beta Feedback</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -111,6 +126,8 @@ body.light{background:#fafafe;color:#2d1b4e;}
 .home-link{display:inline-block;padding:12px 24px;border-radius:12px;text-decoration:none;font-size:14px;font-weight:500;background:rgba(107,63,160,0.25);color:#c8a8e9;border:0.5px solid rgba(200,168,233,0.3);}
 .light .home-link{background:#ede9ff;color:#6b3fa0;border-color:#e8e2ff;}
 </style>
+<script src="qg-config.js"></script>
+<script defer src="qg-analytics.js?v=20260726seo"></script>
 </head>
 <body class="dark">
 
@@ -174,7 +191,7 @@ body.light{background:#fafafe;color:#2d1b4e;}
         <p class="field-hint">Only if you'd like us to follow up with you.</p>
       </div>
 
-      <button type="submit" class="submit-btn" id="submitBtn">Submit feedback</button>
+      <button type="submit" class="submit-btn" id="submitBtn">Send feedback</button>
     </form>
 
     <p class="footer-note">
@@ -184,7 +201,7 @@ body.light{background:#fafafe;color:#2d1b4e;}
 
   <div class="success-screen" id="successScreen">
     <div class="success-icon">✅</div>
-    <p class="success-title">Thank you!</p>
+    <p class="success-title">Thank you</p>
     <p class="success-sub">Your feedback was sent. We're a small team building QuickGigs for Canada — every report helps us ship something better.</p>
     <a class="home-link" href="dashboard.html">Back to dashboard</a>
   </div>
@@ -251,7 +268,7 @@ document.getElementById('feedbackForm').addEventListener('submit', function(e) {
   var email = document.getElementById('emailField').value.trim();
 
   if (!type || !message) {
-    errorMsg.textContent = 'Please select a type and describe your feedback.';
+    errorMsg.textContent = 'Select a type and describe your feedback.';
     errorMsg.style.display = 'block';
     return;
   }
@@ -270,10 +287,10 @@ document.getElementById('feedbackForm').addEventListener('submit', function(e) {
     document.getElementById('formScreen').style.display = 'none';
     document.getElementById('successScreen').classList.add('show');
   }).catch(function() {
-    errorMsg.textContent = 'Something went wrong. Please try again or email mowebsiteco@gmail.com directly.';
+    errorMsg.textContent = 'Something went wrong. Try again or email mowebsiteco@gmail.com directly.';
     errorMsg.style.display = 'block';
     submitBtn.disabled = false;
-    submitBtn.textContent = 'Submit feedback';
+    submitBtn.textContent = 'Send feedback';
   });
 });
 </script>

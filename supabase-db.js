@@ -373,7 +373,8 @@ async function expireStaleOpenTasksOnce() {
 }
 
 async function getTasks() {
-  await expireStaleOpenTasksOnce();
+  // Never block browse/My Tasks on the expiry sweep
+  try { expireStaleOpenTasksOnce(); } catch (e) {}
   var rows = await sbGetTasksList('status=eq.open', 100);
   return filterBrowseableTasks(rows);
 }
@@ -825,6 +826,7 @@ async function fetchMyTasksBundle(userId) {
     if (wid === userId || myTaskIds[tid]) addApp(a);
   });
 
+  var missingIds = [];
   (allApps || []).forEach(function (a) {
     if (String(a.worker_id || a.WORKER_ID || '') !== userId) return;
     var tid = a.task_id || a.TASK_ID;
@@ -833,10 +835,17 @@ async function fetchMyTasksBundle(userId) {
       return String(getTaskRowId(t)) === String(tid);
     });
     if (match) addTask(match);
-    else {
-      getTaskById(tid).then(addTask).catch(function () {});
-    }
+    else missingIds.push(String(tid));
   });
+  if (missingIds.length && typeof getTaskById === 'function') {
+    var unique = {};
+    missingIds.forEach(function (id) { unique[id] = true; });
+    await Promise.all(Object.keys(unique).map(function (id) {
+      return withTimeout(getTaskById(id), 4000, null).then(function (row) {
+        if (row) addTask(row);
+      });
+    }));
+  }
 
   return {
     tasks: Object.keys(taskMap).map(function (k) { return taskMap[k]; }),
@@ -2229,6 +2238,14 @@ function formatSupabaseActionError(action, err) {
   } else msg = String(err);
   if (msg === '[object Object]') msg = '';
   var lower = msg.toLowerCase();
+  var act = String(action || '').toLowerCase();
+  var isReviewAction = act.indexOf('review') >= 0;
+  if (isReviewAction || lower.indexOf('reviews') >= 0) {
+    if (lower.indexOf('already') >= 0 || lower.indexOf('duplicate') >= 0 || lower.indexOf('23505') >= 0) {
+      return 'You already reviewed this task.';
+    }
+    return 'Could not ' + action + ' — run supabase/reviews.sql in Supabase SQL Editor, then refresh.';
+  }
   if (lower.indexOf('401') >= 0 || lower.indexOf('403') >= 0 || lower.indexOf('42501') >= 0 || lower.indexOf('row-level') >= 0) {
     return 'Could not ' + action + ' — run supabase/beta-setup-all.sql in Supabase SQL Editor, then refresh.';
   }
@@ -2538,12 +2555,25 @@ async function submitReview(reviewData) {
   if (!reviewData || !reviewData.reviewer_id || !reviewData.reviewee_id || !reviewData.task_id) {
     return { success: false, error: 'missing_review_fields' };
   }
+  var taskId = String(reviewData.task_id).trim();
+  // Prefer canonical UUID when the UI still has a legacy numeric id
+  if (taskId && !isUuidLikeId(taskId) && typeof getTaskById === 'function') {
+    try {
+      var taskRow = await getTaskById(taskId);
+      var resolved = taskRow && (taskRow.task_id || taskRow.TASK_ID || taskRow.id);
+      if (resolved) taskId = String(resolved);
+    } catch (e) {}
+  }
+  var rating = Number(reviewData.rating);
+  if (!rating || rating < 1 || rating > 5) {
+    return { success: false, error: 'invalid_rating' };
+  }
   var tags = Array.isArray(reviewData.tags) ? reviewData.tags.filter(Boolean) : [];
   var row = {
-    task_id:        String(reviewData.task_id),
+    task_id:        taskId,
     reviewer_id:    String(reviewData.reviewer_id),
     reviewee_id:    String(reviewData.reviewee_id),
-    rating:         Number(reviewData.rating),
+    rating:         rating,
     review_comment: String(reviewData.review_comment || ''),
     reviewer_name:  reviewData.reviewer_name || '',
     task_title:     reviewData.task_title || '',
@@ -2568,18 +2598,27 @@ async function submitReview(reviewData) {
     }));
     return result;
   }
-  var err = result.error || '';
-  if (String(err).indexOf('reviews_task_reviewer_uniq') >= 0 || String(err).indexOf('duplicate') >= 0) {
+  var err = String(result.error || '');
+  var errLower = err.toLowerCase();
+  if (err.indexOf('reviews_task_reviewer_uniq') >= 0 || errLower.indexOf('duplicate') >= 0 || err.indexOf('23505') >= 0) {
     return { success: false, error: 'already_reviewed' };
   }
-  if (String(err).indexOf('401') >= 0 || String(err).indexOf('403') >= 0 ||
-      String(err).indexOf('42501') >= 0 || String(err).toLowerCase().indexOf('row-level') >= 0) {
+  if (err.indexOf('401') >= 0 || err.indexOf('403') >= 0 ||
+      err.indexOf('42501') >= 0 || errLower.indexOf('row-level') >= 0) {
     return { success: false, error: 'reviews_rls_blocked' };
   }
-  if (String(err).indexOf('relation "reviews" does not exist') >= 0 || String(err).indexOf('42P01') >= 0) {
+  if (err.indexOf('relation "reviews" does not exist') >= 0 || err.indexOf('42P01') >= 0 ||
+      err.indexOf('PGRST205') >= 0 || errLower.indexOf("could not find the table") >= 0) {
     return { success: false, error: 'reviews_table_missing' };
   }
-  return result;
+  if (err.indexOf('22P02') >= 0 || errLower.indexOf('invalid input syntax for type uuid') >= 0) {
+    return { success: false, error: 'reviews_task_id_type' };
+  }
+  if (err.indexOf('23503') >= 0 || errLower.indexOf('foreign key') >= 0 || errLower.indexOf('reviews_task_id_fkey') >= 0) {
+    return { success: false, error: 'reviews_task_id_type' };
+  }
+  // Any other reviews insert failure → point at reviews.sql (not tasks-beta-fix)
+  return { success: false, error: 'reviews_save_failed' };
 }
 
 function pickBestPaymentRow(rows) {

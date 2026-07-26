@@ -141,10 +141,39 @@ CREATE POLICY "chat_photos_select" ON storage.objects
   USING (bucket_id = 'chat-photos');
 
 -- ── REVIEWS (show on profiles after completed tasks) ─────────────
+CREATE TABLE IF NOT EXISTS reviews (
+  review_id       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  task_id         TEXT NOT NULL,
+  reviewer_id     TEXT NOT NULL,
+  reviewee_id     TEXT NOT NULL,
+  rating          INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  review_comment  TEXT NOT NULL DEFAULT '',
+  reviewer_name   TEXT,
+  task_title      TEXT,
+  tags            TEXT,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS reviewer_name TEXT;
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS task_title TEXT;
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS tags TEXT;
+ALTER TABLE reviews DROP CONSTRAINT IF EXISTS reviews_task_id_fkey;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'reviews'
+      AND column_name = 'task_id' AND data_type = 'uuid'
+  ) THEN
+    ALTER TABLE reviews ALTER COLUMN task_id TYPE TEXT USING task_id::text;
+  END IF;
+END $$;
+CREATE UNIQUE INDEX IF NOT EXISTS reviews_task_reviewer_uniq ON reviews (task_id, reviewer_id);
 GRANT SELECT, INSERT ON reviews TO anon, authenticated;
 
 ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "reviews_select_auth" ON reviews;
+DROP POLICY IF EXISTS "reviews_insert_auth" ON reviews;
 DROP POLICY IF EXISTS "anon_select_reviews" ON reviews;
 DROP POLICY IF EXISTS "anon_insert_reviews" ON reviews;
 

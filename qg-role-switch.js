@@ -11,7 +11,7 @@
   function showRoleToast(mode) {
     var label = mode === 'worker' ? 'Tasker' : 'Poster';
     var msg = mode === 'worker'
-      ? "You're in Tasker mode — browse gigs and apply."
+      ? "You're in Tasker mode — browse tasks and apply."
       : "You're in Poster mode — post tasks and hire.";
     if (typeof showToast === 'function') showToast(msg);
     else if (typeof qgNotify === 'function') qgNotify(msg);
@@ -151,15 +151,15 @@
         html = '<a class="dash-hero" href="mytasks.html?tab=inprogress">' +
           '<span class="dash-hero-emoji">💼</span>' +
           '<span class="dash-hero-body">' +
-            '<strong>' + workerInProg + ' active job' + (workerInProg !== 1 ? 's' : '') + '</strong>' +
+            '<strong>' + workerInProg + ' active task' + (workerInProg !== 1 ? 's' : '') + '</strong>' +
             '<span>Check messages and mark complete when you\'re done</span>' +
           '</span>' +
-          '<span class="dash-hero-cta">My jobs →</span></a>';
+          '<span class="dash-hero-cta">My tasks →</span></a>';
       } else if (nearby > 0) {
         html = '<a class="dash-hero dash-hero-primary" href="browsetask.html">' +
           '<span class="dash-hero-emoji">🔍</span>' +
           '<span class="dash-hero-body">' +
-            '<strong>' + nearby + ' gig' + (nearby !== 1 ? 's' : '') + ' near ' + city + '</strong>' +
+            '<strong>' + nearby + ' task' + (nearby !== 1 ? 's' : '') + ' near ' + city + '</strong>' +
             '<span>Apply with your offer — posters review applicants here</span>' +
           '</span>' +
           '<span class="dash-hero-cta">Browse →</span></a>';

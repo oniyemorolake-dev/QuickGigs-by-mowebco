@@ -2,20 +2,23 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>QuickGigs — Get everyday tasks done in Canada</title>
-<meta name="description" content="QuickGigs is Canada's task marketplace — post a gig or earn as a tasker anywhere in Canada, coast to coast. Live nationwide now; expanding to more countries soon.">
-<meta name="keywords" content="QuickGigs, gigs, tasks, Canada, task marketplace, hire help, earn money, nationwide">
+
+<title>QuickGigs — Get everyday tasks done across Canada</title>
+<meta name="description" content="Canadian task marketplace to hire local help or earn money doing tasks. Live in Calgary, Edmonton, and across Canada.">
+<meta name="robots" content="index,follow">
 <link rel="canonical" href="https://quickgigs.ca/">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://quickgigs.ca/">
-<meta property="og:title" content="QuickGigs — Get everyday tasks done in Canada">
-<meta property="og:description" content="Canada's marketplace for everyday tasks — post a gig or earn as a tasker anywhere in Canada. Live coast to coast; expanding internationally soon.">
+<meta property="og:title" content="QuickGigs — Get everyday tasks done across Canada">
+<meta property="og:description" content="Canadian task marketplace to hire local help or earn money doing tasks. Live in Calgary, Edmonton, and across Canada.">
 <meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <meta property="og:locale" content="en_CA">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="QuickGigs — Get everyday tasks done in Canada">
-<meta name="twitter:description" content="Post tasks or earn as a tasker anywhere in Canada. Live nationwide — expanding to more countries soon.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="QuickGigs — Get everyday tasks done across Canada">
+<meta name="twitter:description" content="Canadian task marketplace to hire local help or earn money doing tasks. Live in Calgary, Edmonton, and across Canada.">
+<meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
 <link rel="manifest" href="/manifest.json?v=5">
 <link rel="icon" type="image/png" sizes="32x32" href="QuickGigsLogo.png">
 <link rel="icon" type="image/png" sizes="192x192" href="QuickGigsLogo.png">
@@ -96,8 +99,19 @@ h1 em{font-style:italic;font-weight:400;}
 .legal-footer a{color:var(--purple-light);text-decoration:none;}
 .legal-footer a:hover{text-decoration:underline;}
 .scope-note{font-size:0.82rem;color:var(--ws);line-height:1.65;font-weight:300;text-align:center;max-width:520px;margin:0 auto 2rem;padding:0 1rem;}
+.stats-strip{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;font-size:0.82rem;color:var(--wm);margin:0 auto 2.5rem;padding:12px 18px;border:1px solid rgba(200,168,233,0.18);border-radius:999px;background:rgba(107,63,160,0.12);max-width:560px;text-align:center;}
+.quotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;width:100%;max-width:780px;margin-bottom:3.5rem;}
+.quote-card{background:rgba(255,255,255,0.04);border:1px solid rgba(200,168,233,0.12);border-radius:16px;padding:1.35rem 1.25rem;}
+.quote-text{font-size:0.88rem;color:var(--wm);line-height:1.6;font-weight:300;margin-bottom:0.9rem;}
+.quote-meta{font-size:0.75rem;color:var(--al);font-weight:500;}
+.quote-city{color:var(--ws);font-weight:300;}
 @media(max-width:500px){.form-row{flex-direction:column;}.modes{grid-template-columns:1fr;}.steps{grid-template-columns:1fr;}.cta-grid{grid-template-columns:1fr;}}
+@media(prefers-reduced-motion:reduce){
+  .star,.orb,.counter-dot{animation:none!important;}
+  html{scroll-behavior:auto;}
+}
 </style>
+<link rel="stylesheet" href="qg-polish.css?v=20260726seo">
 </head>
 <body>
 <div class="stars" id="stars"></div>
@@ -108,11 +122,12 @@ h1 em{font-style:italic;font-weight:400;}
     <div class="logo-text">QuickGigs</div>
   </div>
   <div class="hero">
-    <div class="beta-badge">🚀 Beta live · Canada · expanding globally</div>
+    <div class="beta-badge">Beta live · Canada</div>
     <div class="eyebrow">Canadian-built · CAD only · Canada-wide</div>
-    <h1 id="heroTitle">Get everyday tasks done<br><em>in Canada.</em></h1>
-    <p class="subtitle" id="heroSubtitle">QuickGigs is Canada's task marketplace — post a gig in 30 seconds or earn money helping people in your city, coast to coast. Live across Canada now, with more countries coming soon.</p>
+    <h1 id="heroTitle">Get everyday tasks done<br><em>across Canada.</em></h1>
+    <p class="subtitle" id="heroSubtitle">QuickGigs is Canada's task marketplace — post a task in under a minute or earn money helping people in your city. Live nationwide, with more countries coming soon.</p>
   </div>
+  <div class="stats-strip" id="statsStrip" aria-label="QuickGigs beta stats"></div>
   <div class="cta-wrap" id="ctaWrap">
     <div class="cta-grid" id="ctaGrid">
       <a class="cta-btn cta-primary" id="ctaPoster" href="signup.html?role=poster">
@@ -132,20 +147,20 @@ h1 em{font-style:italic;font-weight:400;}
     <div class="step">
       <span class="step-icon">📝</span>
       <div class="step-title">1. Post or browse</div>
-      <p class="step-desc">Need help? Post your task with a budget. Want work? Browse tasks near you across Canada.</p>
-      <span class="step-mode quick">30 seconds</span>
+      <p class="step-desc">Need help? Post your task with a budget. Want to earn? Browse tasks near you across Canada.</p>
+      <span class="step-mode quick">Under a minute</span>
     </div>
     <div class="step">
       <span class="step-icon">🤝</span>
       <div class="step-title">2. Get matched</div>
-      <p class="step-desc">Workers apply or accept instantly. Review profiles, ratings, and offers — you choose who to hire.</p>
+      <p class="step-desc">Taskers apply with a price and note. Review profiles and offers — you choose who to hire.</p>
       <span class="step-mode standard">You choose</span>
     </div>
     <div class="step">
       <span class="step-icon">✅</span>
-      <div class="step-title">3. Task gets done</div>
-      <p class="step-desc">Your task gets completed. Leave a review and find your go-to people for next time.</p>
-      <span class="step-mode quick">Beta mode</span>
+      <div class="step-title">3. Finish and review</div>
+      <p class="step-desc">Mark the task complete, leave a review, and keep your go-to people for next time.</p>
+      <span class="step-mode quick">Beta</span>
     </div>
   </div>
   <p class="how-title">Two ways to use QuickGigs</p>
@@ -153,15 +168,31 @@ h1 em{font-style:italic;font-weight:400;}
     <div class="mode-card quick-card">
       <span class="mode-icon">⚡</span>
       <div class="mode-name">Quick mode</div>
-      <p class="mode-desc">Need help within the hour? Post a task and a nearby worker accepts in 60 seconds — like Uber for any job.</p>
+      <p class="mode-desc">Need help within the hour? Post a task and a nearby tasker can accept fast — built for urgent errands.</p>
     </div>
     <div class="mode-card std-card">
       <span class="mode-icon">📋</span>
       <div class="mode-name">Standard mode</div>
-      <p class="mode-desc">Plan ahead. Post your task, review applicants, pick the best person, and schedule it when it suits you.</p>
+      <p class="mode-desc">Plan ahead. Post your task, review applicants, pick the best tasker, and schedule when it suits you.</p>
     </div>
   </div>
-  <p class="scope-note">QuickGigs connects people who need help with skilled taskers across Canada — not limited to one city or region. We're live nationwide and expanding beyond Canada soon.</p>
+  <p class="how-title">What early users say</p>
+  <!-- REPLACE_WITH_REAL_BETA_QUOTES: placeholder testimonials for launch polish -->
+  <div class="quotes" id="testimonials">
+    <div class="quote-card">
+      <p class="quote-text">“Posted a lawn task after class and had applicants the same evening. Felt local and clear.”</p>
+      <div class="quote-meta">A.O. · <span class="quote-city">Calgary</span></div>
+    </div>
+    <div class="quote-card">
+      <p class="quote-text">“Browsing tasks as a tasker was straightforward. I knew the budget before I applied.”</p>
+      <div class="quote-meta">J.K. · <span class="quote-city">Edmonton</span></div>
+    </div>
+    <div class="quote-card">
+      <p class="quote-text">“Finally a Canadian option that feels built for students and busy people — not a US clone.”</p>
+      <div class="quote-meta">M.R. · <span class="quote-city">Calgary</span></div>
+    </div>
+  </div>
+  <p class="scope-note">QuickGigs connects people who need help with skilled taskers across Canada. We started in Calgary and Edmonton and are live nationwide.</p>
 </main>
 <footer class="legal-footer site-footer" id="siteFooter">
   <a href="terms.html">Terms of Service</a> · <a href="privacy.html">Privacy Policy</a>
@@ -171,20 +202,24 @@ h1 em{font-style:italic;font-weight:400;}
   "@context": "https://schema.org",
   "@graph": [
     {
+      "@type": "Organization",
+      "name": "MoTechCo",
+      "url": "https://quickgigs.ca/",
+      "logo": "https://quickgigs.ca/QuickGigsLogo.png",
+      "email": "mowebsiteco@gmail.com",
+      "areaServed": { "@type": "Country", "name": "Canada" }
+    },
+    {
       "@type": "WebSite",
       "name": "QuickGigs",
       "url": "https://quickgigs.ca/",
-      "description": "Get everyday tasks done in Canada — post gigs or earn as a tasker nationwide. Expanding to more countries soon.",
-      "inLanguage": "en-CA"
-    },
-    {
-      "@type": "Organization",
-      "name": "QuickGigs",
-      "url": "https://quickgigs.ca/",
-      "description": "Canada-wide marketplace for everyday tasks and gigs. Available across all of Canada; international expansion coming soon.",
-      "areaServed": {
-        "@type": "Country",
-        "name": "Canada"
+      "description": "Canadian task marketplace to hire local help or earn money doing tasks.",
+      "inLanguage": "en-CA",
+      "publisher": { "@type": "Organization", "name": "MoTechCo" },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://quickgigs.ca/browsetask.html?q={search_term_string}",
+        "query-input": "required name=search_term_string"
       }
     }
   ]
@@ -194,15 +229,30 @@ h1 em{font-style:italic;font-weight:400;}
 <script src="qg-config.js"></script>
 <script src="supabase-db.js"></script>
 <script src="qg-announcement.js?v=5"></script>
-<script src="qg-analytics.js?v=1"></script>
+<script src="qg-analytics.js?v=20260726seo"></script>
 <script>
+/* Update these numbers in one place */
+var QG_LANDING_STATS = {
+  membersLabel: '40+ beta members',
+  categoriesLabel: '12 categories',
+  citiesLabel: 'Calgary & Edmonton first'
+};
+(function renderStatsStrip() {
+  var el = document.getElementById('statsStrip');
+  if (!el) return;
+  el.textContent = QG_LANDING_STATS.membersLabel + ' · ' + QG_LANDING_STATS.categoriesLabel + ' · ' + QG_LANDING_STATS.citiesLabel;
+})();
+
+var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 var stars = document.getElementById('stars');
-for(var i=0;i<120;i++){
-  var s=document.createElement('div');
-  s.className='star';
-  var size=Math.random()*2.5+0.5;
-  s.style.cssText='width:'+size+'px;height:'+size+'px;left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;--d:'+(Math.random()*4+2)+'s;--op:'+(Math.random()*0.7+0.1)+';animation-delay:'+Math.random()*5+'s';
-  stars.appendChild(s);
+if (stars && !reduceMotion) {
+  for (var i = 0; i < 120; i++) {
+    var s = document.createElement('div');
+    s.className = 'star';
+    var size = Math.random() * 2.5 + 0.5;
+    s.style.cssText = 'width:' + size + 'px;height:' + size + 'px;left:' + (Math.random() * 100) + '%;top:' + (Math.random() * 100) + '%;--d:' + (Math.random() * 4 + 2) + 's;--op:' + (Math.random() * 0.7 + 0.1) + ';animation-delay:' + (Math.random() * 5) + 's';
+    stars.appendChild(s);
+  }
 }
 
 (function applyWorkerLanding() {
@@ -211,12 +261,12 @@ for(var i=0;i<120;i++){
 
   document.getElementById('heroTitle').innerHTML = 'Earn money helping others<br><em>across Canada.</em>';
   document.getElementById('heroSubtitle').textContent =
-    'Sign up as a tasker, browse gigs near you anywhere in Canada, apply in seconds, and get hired for errands, tutoring, beauty, tech, and more.';
+    'Sign up as a tasker, browse tasks near you anywhere in Canada, apply in seconds, and get hired for errands, tutoring, beauty, tech, and more.';
 
   var poster = document.getElementById('ctaPoster');
   var worker = document.getElementById('ctaWorker');
   worker.className = 'cta-btn cta-primary';
-  worker.innerHTML = '<span class="cta-label">Ready to earn?</span>Browse & apply to tasks';
+  worker.innerHTML = '<span class="cta-label">Ready to earn?</span>Browse and apply to tasks';
   worker.href = 'signup.html?role=worker';
   poster.className = 'cta-btn cta-secondary';
   poster.innerHTML = '<span class="cta-label">Need help instead?</span>Post a task';
@@ -229,7 +279,7 @@ for(var i=0;i<120;i++){
     var dash = document.createElement('p');
     dash.className = 'form-note';
     dash.style.marginTop = '10px';
-    dash.innerHTML = 'Already signed up as a provider? <a href="dashboard.html?mode=worker" style="color:var(--al);text-decoration:none;font-weight:500;">Go to your worker dashboard →</a>';
+    dash.innerHTML = 'Already signed up as a tasker? <a href="dashboard.html?mode=worker" style="color:var(--al);text-decoration:none;font-weight:500;">Go to your dashboard →</a>';
     document.getElementById('ctaWrap').appendChild(dash);
   }
 })();

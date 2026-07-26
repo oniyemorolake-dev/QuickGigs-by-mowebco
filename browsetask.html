@@ -2,23 +2,38 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+
+<title>Browse tasks — QuickGigs</title>
+<meta name="description" content="Browse open tasks near you on QuickGigs — Canada's marketplace to earn money doing errands, home help, and more.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://quickgigs.ca/browsetask.html">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://quickgigs.ca/browsetask.html">
+<meta property="og:title" content="Browse tasks — QuickGigs">
+<meta property="og:description" content="Browse open tasks near you on QuickGigs — Canada's marketplace to earn money doing errands, home help, and more.">
+<meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
+<meta property="og:locale" content="en_CA">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Browse tasks — QuickGigs">
+<meta name="twitter:description" content="Browse open tasks near you on QuickGigs — Canada's marketplace to earn money doing errands, home help, and more.">
+<meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
-<link rel="stylesheet" href="qg-polish.css?v=20260726c">
+<link rel="stylesheet" href="qg-polish.css?v=20260726seo">
 <link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>QuickGigs — Browse Tasks in Canada</title>
-<meta name="description" content="Browse everyday tasks and gigs on QuickGigs — Canada's task marketplace, available coast to coast.">
+
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
 <link rel="stylesheet" href="qg-role-theme.css">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
 <link rel="stylesheet" href="qg-features.css?v=20260716c">
 <script src="qg-brand-init.js"></script>
+<script src="qg-theme.js"></script>
 <script>document.documentElement.setAttribute('data-qg-mode','worker');</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -213,7 +228,6 @@ body.light .app-legal-footer a{color:var(--purple);}
 <link rel="stylesheet" href="qg-lightbox.css?v=1">
 </head>
 <body>
-<script defer src="qg-theme.js"></script>
 <nav class="nav">
   <div class="nav-brand">
     <span class="nav-logo">QuickGigs</span>
@@ -290,7 +304,7 @@ body.light .app-legal-footer a{color:var(--purple);}
   <a href="profile.html?setup=photo&required=1&return=browsetask.html">Add photo</a>
 </div>
 <div class="results-bar">
-  <span class="results-txt" id="resultsCount">Loading tasks...</span>
+  <span class="results-txt" id="resultsCount">Loading tasks…</span>
   <div class="filter-sorts">
     <select class="date-filter" id="dateFilter" onchange="applyFilters()" aria-label="Filter by post date">
       <option value="any">Any time</option>
@@ -329,7 +343,7 @@ body.light .app-legal-footer a{color:var(--purple);}
     <div class="modal-handle"></div>
     <div class="modal-scroll">
       <p class="modal-title" id="modalTitle">Apply for task</p>
-      <p class="modal-sub" id="modalSub">Submit your offer to the poster</p>
+      <p class="modal-sub" id="modalSub">Send your offer to the poster</p>
       <p class="modal-sub" id="modalNegoHint" style="display:none;margin-top:-6px;font-size:11px;color:var(--text-muted)"></p>
       <div class="price-grid">
         <div><span class="modal-label">Your offer</span><div class="price-wrap"><span class="price-pre">$</span><input class="modal-input" id="offerPrice" type="number" min="20" placeholder="40" inputmode="decimal"></div></div>
@@ -348,7 +362,7 @@ body.light .app-legal-footer a{color:var(--purple);}
     </div>
   </div>
 </div>
-<div class="toast" id="toast">Application sent! You'll hear back soon 🎉</div>
+<div class="toast" id="toast">Application sent. You will hear back soon.</div>
 <footer class="app-legal-footer site-footer" id="siteFooter"></footer>
 <nav class="tab-bar" id="qgTabBar"></nav>
 <script defer src="qg-site.js"></script>
@@ -401,13 +415,14 @@ onAuthStateChanged(auth, (user) => {
 </script>
 
 <script defer src="qg-utils.js"></script>
-<script defer src="qg-polish.js?v=20260726c"></script>
+<script defer src="qg-polish.js?v=20260726e"></script>
 <script src="qg-ux.js?v=20260726ux" defer></script>
 <script src="qg-bigtech.js?v=20260726bt" defer></script>
 <script src="qg-wave2.js?v=20260726w2" defer></script>
-<script defer src="qg-config.js"></script>
+<script defer src="qg-config.js?v=20260726e"></script>
+<script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="qg-categories.js"></script>
-<script defer src="supabase-db.js"></script>
+<script defer src="supabase-db.js?v=20260726e"></script>
 <script defer src="qg-location.js"></script>
 <script defer src="qg-pwa.js?v=4"></script>
 <script defer src="qg-notifications.js"></script>
@@ -758,10 +773,14 @@ function renderCards(){
   var scopeLabel = locFilter
     ? locFilter.split(',')[0].trim()
     : (window._nearMeOnly && window.getUserCityLabel ? window.getUserCityLabel() : '');
-  var countTxt = filtered.length + ' task' + (filtered.length !== 1 ? 's' : '');
+  var openTotal = (allTasks || []).length;
+  var countTxt = openTotal + ' open task' + (openTotal !== 1 ? 's' : '');
+  if (filtered.length !== openTotal && (activeMode !== 'all' || activeCat !== 'all' || search || locFilter || window._nearMeOnly || dateFilter !== 'any' || budgetPreset)) {
+    countTxt = filtered.length + ' of ' + openTotal + ' open task' + (openTotal !== 1 ? 's' : '');
+  }
   document.getElementById('resultsCount').textContent = scopeLabel
     ? countTxt + ' near ' + scopeLabel
-    : countTxt + ' across Canada';
+    : countTxt;
   var area=document.getElementById('cardsArea');
   if (!filtered.length && (locFilter || window._nearMeOnly || dateFilter !== 'any') && allTasks.length) {
     area.innerHTML='<div class="empty-state"><div class="empty-emoji">📍</div><p class="empty-txt">No tasks match your filters — try clearing location, date, or search</p><button type="button" class="empty-btn" onclick="if(typeof clearFilters===\'function\')clearFilters();else location.reload()">Clear filters</button></div>';
@@ -771,7 +790,7 @@ function renderCards(){
     area.innerHTML='<div class="empty-state"><div class="empty-emoji">★</div><p class="empty-txt">No saved tasks yet — tap ☆ Save on any task to bookmark it here.</p><button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.href=\'browsetask.html\'">Browse open tasks →</button></div>';
     return;
   }
-  if(!filtered.length){area.innerHTML='<div class="empty-state"><div class="empty-emoji">🔍</div><p class="empty-txt">'+(allTasks.length===0?'No tasks posted yet — be the first!':'No tasks match this filter')+'</p>'+(allTasks.length===0?'<a class="empty-btn" href="posttask.html" style="display:inline-block;margin-top:14px;padding:12px 20px;border-radius:12px;background:var(--purple);color:#fff;text-decoration:none">Post a task →</a>':'<button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.reload()">Reset browse</button>')+'</div>';return;}
+  if(!filtered.length){area.innerHTML='<div class="empty-state"><div class="empty-emoji">🔍</div><p class="empty-txt">'+(allTasks.length===0?'No open tasks yet — post the first one':'No tasks match this filter')+'</p>'+(allTasks.length===0?'<a class="empty-btn" href="posttask.html" style="display:inline-block;margin-top:14px;padding:12px 20px;border-radius:12px;background:var(--purple);color:#fff;text-decoration:none">Post a task →</a>':'<button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.reload()">Reset browse</button>')+'</div>';return;}
   area.innerHTML=filtered.map(function(t){
     var loc = formatLocationDisplay(t.location);
     var shareBtn = typeof shareButtonHtml === 'function' ? shareButtonHtml('task', t.id, t.title) : '';
@@ -797,6 +816,7 @@ function renderCards(){
   }
   if (typeof bindReportTriggers === 'function') bindReportTriggers(area);
   if (typeof bindQgPhotoLightbox === 'function') bindQgPhotoLightbox(document.body);
+  if (typeof qgStaggerCards === 'function') qgStaggerCards(area);
 }
 
 window.setMode=function(el,mode){document.querySelectorAll('.mpill').forEach(function(p){p.className='mpill';});activeMode=mode;el.className='mpill active-'+mode;if(typeof haptic==='function')haptic(10);renderCards();};
@@ -1007,12 +1027,13 @@ window.submitApplication=async function(){
     if (err.message === 'photo_required') {
       window.location.href = 'profile.html?setup=photo&required=1&return=browsetask.html';
     } else {
-      showToast(err.message === 'own_task' ? 'You cannot apply to your own task.' : 'Could not send application. Please try again.', '#ef4444');
+      showToast(err.message === 'own_task' ? 'You cannot apply to your own task.' : 'Could not send application. Try again.', '#ef4444');
     }
     btn.textContent='Send application';btn.disabled=false;
     return;
   }
   if (typeof qgMicroConfirm === 'function') qgMicroConfirm(btn);
+  if (typeof qgTrackEvent === 'function') qgTrackEvent('apply_task', { task_id: activeTask && activeTask.id ? String(activeTask.id) : '' });
   closeModal();
   btn.textContent='Send application';btn.disabled=false;
   if (activeTask && activeTask.id) {
@@ -1021,18 +1042,26 @@ window.submitApplication=async function(){
     renderCards();
   }
   var toast=document.getElementById('toast');
-  toast.innerHTML='Application sent!' + (chatNote || '') + ' <a href="messages.html" style="color:#fff;text-decoration:underline;margin-left:6px">Messages</a>';
+  toast.innerHTML='Application sent.' + (chatNote || '') + ' <a href="messages.html" style="color:#fff;text-decoration:underline;margin-left:6px">Messages</a>';
   toast.style.display='block';
   setTimeout(function(){toast.style.display='none';},5000);
 };
 
 window.reloadBrowseTasks = loadTasks;
 window.toggleMode=function(){isDark=!isDark;applyTheme();};
-function applyTheme(){window.QG_applyTheme(isDark,'modeBtn',false);localStorage.setItem('qg-mode',isDark?'dark':'light');}
+function applyTheme(){
+  if (typeof window.QG_applyTheme === 'function') window.QG_applyTheme(isDark,'modeBtn',false);
+  else {
+    document.body.className = isDark ? '' : 'light';
+    var btn = document.getElementById('modeBtn');
+    if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+  }
+  localStorage.setItem('qg-mode',isDark?'dark':'light');
+}
 applyTheme();
 initUserLocation().then(function(){
   renderCards();
-});
+}).catch(function(){ renderCards(); });
 
 (function applyBrowseUrlParams(){
   var params = new URLSearchParams(window.location.search);
@@ -1063,5 +1092,6 @@ initUserLocation().then(function(){
 
 loadTasks();
 </script>
+<script defer src="qg-help.js?v=20260726seo"></script>
 </body>
 </html>

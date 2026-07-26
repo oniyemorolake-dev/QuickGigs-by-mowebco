@@ -1,4 +1,11 @@
 User-agent: *
 Allow: /
+Disallow: /dashboard.html
+Disallow: /mytasks.html
+Disallow: /messages.html
+Disallow: /chat.html
+Disallow: /profile.html
+Disallow: /admin.html
+Disallow: /review.html
 
 Sitemap: https://quickgigs.ca/sitemap.xml

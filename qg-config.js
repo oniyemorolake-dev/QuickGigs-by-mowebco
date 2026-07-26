@@ -13,7 +13,7 @@ window.QG_CONFIG = {
   emailNotificationsEnabled: true,
   notificationFunctionUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/send-notification',
   shareBaseUrl: 'https://quickgigs.ca',
-  // Google Analytics 4 — paste your Measurement ID (G-XXXXXXXXXX) to enable
+  // Google Analytics 4 — set to G-XXXXXXXXXX to disable, or your live Measurement ID
   ga4MeasurementId: 'G-82SPKK654N',
   ga4ConversionLabel: '',
   // P2 — trust & moderation

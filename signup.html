@@ -2,17 +2,31 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+
+<title>Sign up — QuickGigs</title>
+<meta name="description" content="Create a free QuickGigs account to hire local help or earn money doing tasks in Calgary, Edmonton, and beyond.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://quickgigs.ca/signup.html">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://quickgigs.ca/signup.html">
+<meta property="og:title" content="Sign up — QuickGigs">
+<meta property="og:description" content="Create a free QuickGigs account to hire local help or earn money doing tasks in Calgary, Edmonton, and beyond.">
+<meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
+<meta property="og:locale" content="en_CA">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Sign up — QuickGigs">
+<meta name="twitter:description" content="Create a free QuickGigs account to hire local help or earn money doing tasks in Calgary, Edmonton, and beyond.">
+<meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
-<link rel="stylesheet" href="qg-polish.css?v=20260726c">
+<link rel="stylesheet" href="qg-polish.css?v=20260726seo">
 <link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>QuickGigs — Sign Up · Canada</title>
-<meta name="description" content="Join QuickGigs — Canada's task marketplace. Post gigs or earn as a tasker anywhere in Canada, coast to coast.">
+
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-signup.css?v=4">
 <link rel="stylesheet" href="qg-onboarding.css?v=2">
@@ -72,11 +86,11 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
             <button type="button" class="signup-role" onclick="setRole('worker',this)">
               <span class="signup-role-emoji">💰</span>
               <span class="signup-role-label">I want to earn</span>
-              <span class="signup-role-desc">Browse gigs &amp; get paid</span>
+              <span class="signup-role-desc">browse tasks &amp; get paid</span>
             </button>
           </div>
-          <div class="signup-field"><label for="name">Full name <span class="req">*</span></label><input type="text" id="name" placeholder="Your full name" autocomplete="name" enterkeyhint="next" required><div class="signup-error" id="nameError">Please enter your full name</div></div>
-          <div class="signup-field"><label for="email">Email address <span class="req">*</span></label><input type="email" id="email" placeholder="you@example.com" autocomplete="email" enterkeyhint="next" required><div class="signup-error" id="emailError">Please enter a valid email</div></div>
+          <div class="signup-field"><label for="name">Full name <span class="req">*</span></label><input type="text" id="name" placeholder="Your full name" autocomplete="name" enterkeyhint="next" required><div class="signup-error" id="nameError">Enter your full name</div></div>
+          <div class="signup-field"><label for="email">Email address <span class="req">*</span></label><input type="email" id="email" placeholder="you@example.com" autocomplete="email" enterkeyhint="next" required><div class="signup-error" id="emailError">Enter a valid email</div></div>
           <div class="qg-wizard-nav"><button type="button" class="signup-btn" data-qg-next>Continue →</button></div>
         </div>
 
@@ -169,7 +183,7 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 
         <!-- Step 5: Terms -->
         <div class="qg-wizard-step" data-step="terms">
-          <div class="qg-step-title">You're almost in!</div>
+          <div class="qg-step-title">You're almost in</div>
           <p class="qg-step-sub">One last step — review and create your account.</p>
           <div class="signup-terms-check">
             <input type="checkbox" id="termsAgree">
@@ -396,7 +410,7 @@ var STEP_META = [
   { title: 'About you', sub: 'Pick the option that fits you best', icon: '🌈', label: 'Identity' },
   { title: 'Date of birth', sub: 'We verify your age to keep QuickGigs safe', icon: '🎂', label: 'Birthday' },
   { title: 'Parent consent', sub: 'Required for members aged 16–17', icon: '👨‍👩‍👧', label: 'Guardian' },
-  { title: 'Almost there!', sub: 'Create your QuickGigs account', icon: '🚀', label: 'Finish' }
+  { title: 'Almost there', sub: 'Create your QuickGigs account', icon: '🚀', label: 'Finish' }
 ];
 var STEP_TOTAL = STEP_META.length;
 
@@ -544,7 +558,7 @@ document.getElementById('submitBtn').onclick = async function() {
     return;
   }
   if (!document.getElementById('termsAgree').checked) {
-    errorMsg.textContent = 'Please agree to the Terms of Service and Privacy Policy.';
+    errorMsg.textContent = 'Agree to the Terms of Service and Privacy Policy.';
     errorMsg.style.display = 'block';
     return;
   }
@@ -572,7 +586,7 @@ document.getElementById('submitBtn').onclick = async function() {
     if (!saveResult.success) console.warn('Could not save user to Supabase:', saveResult.error);
 
     if (typeof qgTrackEvent === 'function') {
-      qgTrackEvent('sign_up_complete', {
+      qgTrackEvent('sign_up', {
         method: oauthSignupMode ? 'google' : 'email',
         role: account.role
       });
@@ -598,7 +612,7 @@ document.getElementById('submitBtn').onclick = async function() {
     localStorage.setItem('qg-session-mode', account.role === 'worker' ? 'worker' : 'poster');
 
     okMsg.textContent = identity.account_status === 'pending_guardian'
-      ? 'Account created! Ask your parent to check their email to approve. Redirecting…'
+      ? 'Account created Ask your parent to check their email to approve. Redirecting…'
       : 'Welcome to QuickGigs 🎉 Redirecting…';
     okMsg.style.display = 'block';
 
@@ -608,9 +622,9 @@ document.getElementById('submitBtn').onclick = async function() {
     setTimeout(function(){ window.location.href = dest; }, identity.account_status === 'pending_guardian' ? 2500 : 1500);
 
   } catch (error) {
-    var message = 'Something went wrong. Please try again.';
+    var message = 'Something went wrong. Try again.';
     if (error.code === 'auth/email-already-in-use') message = 'This email is already registered. Try logging in.';
-    if (error.code === 'auth/invalid-email') message = 'Please enter a valid email address.';
+    if (error.code === 'auth/invalid-email') message = 'Enter a valid email address.';
     if (error.code === 'auth/weak-password') message = 'Password is too weak. Use at least 8 characters.';
     errorMsg.textContent = message;
     errorMsg.style.display = 'block';

@@ -2,15 +2,30 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+
+<title>Dashboard — QuickGigs</title>
+<meta name="description" content="Your QuickGigs dashboard for posting tasks and finding work as a tasker.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="canonical" href="https://quickgigs.ca/dashboard.html">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://quickgigs.ca/dashboard.html">
+<meta property="og:title" content="Dashboard — QuickGigs">
+<meta property="og:description" content="Your QuickGigs dashboard for posting tasks and finding work as a tasker.">
+<meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
+<meta property="og:locale" content="en_CA">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Dashboard — QuickGigs">
+<meta name="twitter:description" content="Your QuickGigs dashboard for posting tasks and finding work as a tasker.">
+<meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
-<link rel="stylesheet" href="qg-polish.css?v=20260726c">
+<link rel="stylesheet" href="qg-polish.css?v=20260726seo">
 <link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>QuickGigs — Dashboard</title>
+
 <link rel="manifest" href="/manifest.json?v=4">
 <link rel="apple-touch-icon" href="/QuickGigsLogo.png" sizes="180x180">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -22,6 +37,7 @@
 <link rel="stylesheet" href="qg-role-theme.css">
 <link rel="stylesheet" href="qg-features.css?v=20260716">
 <script src="qg-brand-init.js"></script>
+<script src="qg-theme.js"></script>
 <script defer src="qg-pwa.js?v=4"></script>
 <link rel="stylesheet" href="qg-cookies.css">
 <link rel="stylesheet" href="qg-menu.css?v=2">
@@ -175,7 +191,6 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <link rel="stylesheet" href="qg-brand.css">
 </head>
 <body>
-<script defer src="qg-theme.js"></script>
 
 <!-- NAV -->
 <nav class="nav">
@@ -322,6 +337,7 @@ onAuthStateChanged(auth, async (user) => {
 <script defer src="qg-payments-ui.js?v=1"></script>
 <script defer src="qg-location.js"></script>
 <script defer src="qg-config.js"></script>
+<script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="qg-stats.js"></script>
 <script defer src="qg-notifications.js"></script>
 <script defer src="qg-push.js?v=1"></script>
@@ -332,7 +348,12 @@ onAuthStateChanged(auth, async (user) => {
 // ── THEME ──────────────────────────────────────────────
 var isDark = localStorage.getItem('qg-mode') !== 'light';
 function applyTheme(){
-  window.QG_applyTheme(isDark, 'modeBtn', false);
+  if (typeof window.QG_applyTheme === 'function') window.QG_applyTheme(isDark, 'modeBtn', false);
+  else {
+    document.body.className = isDark ? '' : 'light';
+    var btn = document.getElementById('modeBtn');
+    if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+  }
 }
 window.toggleTheme = function(){
   isDark = !isDark;
@@ -623,13 +644,13 @@ function renderAll(){
   var actions = isPoster
     ? [
         {icon:'➕',title:'Post a task',desc:'Need something done?',href:'posttask.html',cls:'primary'},
-        {icon:'👥',title:'Find taskers',desc:'Browse skilled workers near you',href:'workers.html',cls:'secondary'},
+        {icon:'👥',title:'Find taskers',desc:'Browse skilled taskers near you',href:'workers.html',cls:'secondary'},
         {icon:'📂',title:'Review applicants',desc:'See who applied to your tasks',href:'mytasks.html?tab=posted',cls:'secondary'}
       ]
     : [
-        {icon:'🔍',title:'Browse gigs',desc:'Find work near you',href:'browsetask.html',cls:'primary'},
-        {icon:'📂',title:'Categories',desc:'Explore gigs by skill type',href:'categories.html',cls:'secondary'},
-        {icon:'💼',title:'My jobs',desc:'Applications & active work',href:'mytasks.html?tab=applied&mode=worker',cls:'secondary'}
+        {icon:'🔍',title:'Browse tasks',desc:'Find tasks near you',href:'browsetask.html',cls:'primary'},
+        {icon:'📂',title:'Categories',desc:'Explore tasks by skill type',href:'categories.html',cls:'secondary'},
+        {icon:'💼',title:'My tasks',desc:'Applications & active work',href:'mytasks.html?tab=applied&mode=worker',cls:'secondary'}
       ];
   document.getElementById('actionsGrid').innerHTML = actions.map(function(a){
     return '<a class="action-card '+a.cls+'" href="'+a.href+'"><div class="action-icon">'+a.icon+'</div><div class="action-title">'+a.title+'</div><div class="action-desc">'+a.desc+'</div></a>';
@@ -701,7 +722,7 @@ function renderAll(){
       html = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">No open tasks yet — post one in under a minute</div><a class="empty-btn" href="posttask.html">Post a task</a></div>';
     }
   } else {
-    sectionTitle.textContent = 'Gigs near you';
+    sectionTitle.textContent = 'Tasks near you';
     if (seeAll) { seeAll.href = 'browsetask.html'; seeAll.textContent = 'See all'; }
     var openNearby = dashData.posted.filter(function(t){
       return taskField(t, 'status') === 'open' && taskField(t, 'posted_by') !== userId;
@@ -718,7 +739,7 @@ function renderAll(){
         '</a>';
       }).join('');
     } else {
-      html = '<div class="empty"><div class="empty-icon">🔍</div><div class="empty-txt">No gigs posted nearby yet — check back soon</div><a class="empty-btn" href="browsetask.html">Browse all tasks</a></div>';
+      html = '<div class="empty"><div class="empty-icon">🔍</div><div class="empty-txt">No tasks nearby yet — post one or widen your area</div><a class="empty-btn" href="browsetask.html">Browse all tasks</a></div>';
     }
     if (myPosted.length) {
       html += '<div style="margin-top:16px"></div><div class="section-hdr"><span class="section-title">Tasks you posted</span><a class="see-all" href="mytasks.html?tab=posted">See all</a></div>';
@@ -750,5 +771,6 @@ document.addEventListener('click', function(e) {
 <script src="qg-ux.js?v=20260726ux" defer></script>
 <script src="qg-bigtech.js?v=20260726bt" defer></script>
 <script src="qg-wave2.js?v=20260726w2" defer></script>
+<script defer src="qg-help.js?v=20260726seo"></script>
 </body>
 </html>

@@ -28,6 +28,13 @@
     };
   }
 
+  if (typeof window.formatCad !== 'function') {
+    window.formatCad = function (amount) {
+      var n = Math.round(Number(amount) || 0);
+      return '$' + n + ' CAD';
+    };
+  }
+
   if (typeof window.timeAgo !== 'function') {
     window.timeAgo = function (dateStr) {
       if (!dateStr) return '';
@@ -80,7 +87,10 @@
     // Character counters for textareas (skip if already has one)
     document.querySelectorAll('textarea').forEach(function (ta) {
       if (ta.dataset.qgCounter === '1') return;
-      if (ta.nextElementSibling && ta.nextElementSibling.classList && ta.nextElementSibling.classList.contains('qg-char-counter')) return;
+      if (ta.nextElementSibling && ta.nextElementSibling.classList) {
+        var sib = ta.nextElementSibling;
+        if (sib.classList.contains('qg-char-counter') || sib.classList.contains('char-count') || sib.id === 'charCount') return;
+      }
       var max = ta.getAttribute('maxlength') || 500;
       var counter = document.createElement('div');
       counter.className = 'qg-char-counter';
@@ -117,7 +127,7 @@
       });
     });
 
-    // Page-specific: back to top on browse + dashboard
+    // Page-specific: back to top on browse + dashboard (IntersectionObserver, not scroll spam)
     var page = (window.location.pathname || '').split('/').pop() || '';
     if (page === 'browsetask.html' || page === 'dashboard.html') {
       if (!document.getElementById('backToTop')) {
@@ -125,15 +135,42 @@
         topBtn.id = 'backToTop';
         topBtn.setAttribute('aria-label', 'Back to top');
         topBtn.textContent = '↑';
-        topBtn.style.cssText = 'display:none;position:fixed;bottom:90px;right:20px;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);border:none;color:#fff;font-size:18px;cursor:pointer;z-index:99;box-shadow:0 4px 15px rgba(107,63,160,0.4);transition:all 0.2s;align-items:center;justify-content:center';
+        topBtn.style.cssText = 'display:none;position:fixed;bottom:90px;right:20px;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);border:none;color:#fff;font-size:18px;cursor:pointer;z-index:99;box-shadow:0 4px 15px rgba(107,63,160,0.4);transition:opacity 0.2s ease;align-items:center;justify-content:center';
         topBtn.onclick = function () { window.scrollTo({ top: 0, behavior: 'smooth' }); };
         document.body.appendChild(topBtn);
-        window.addEventListener('scroll', function () {
-          var btn = document.getElementById('backToTop');
-          if (btn) btn.style.display = window.scrollY > 300 ? 'flex' : 'none';
-        }, { passive: true });
+        var sentinel = document.getElementById('qgBackTopSentinel');
+        if (!sentinel) {
+          sentinel = document.createElement('div');
+          sentinel.id = 'qgBackTopSentinel';
+          sentinel.setAttribute('aria-hidden', 'true');
+          sentinel.style.cssText = 'position:absolute;top:300px;left:0;width:1px;height:1px;pointer-events:none;opacity:0';
+          document.body.appendChild(sentinel);
+        }
+        if (typeof IntersectionObserver === 'function') {
+          var io = new IntersectionObserver(function (entries) {
+            var entry = entries[0];
+            topBtn.style.display = entry && !entry.isIntersecting ? 'flex' : 'none';
+          });
+          io.observe(sentinel);
+        } else {
+          topBtn.style.display = 'none';
+        }
       }
     }
+
+    // Stagger-fade cards on first render (capped at 8)
+    window.qgStaggerCards = function (root) {
+      var host = root || document;
+      var cards = host.querySelectorAll('.task-card, .stat-card, .action-card, .mini-card, .step, .mode-card');
+      var n = Math.min(cards.length, 8);
+      for (var i = 0; i < n; i++) {
+        if (cards[i].dataset.qgStagger === '1') continue;
+        cards[i].dataset.qgStagger = '1';
+        cards[i].classList.add('qg-stagger-in');
+        cards[i].style.animationDelay = (i * 40) + 'ms';
+      }
+    };
+    window.qgStaggerCards(document);
 
     if (page === 'browsetask.html') {
       var startY = 0;
@@ -143,7 +180,7 @@
       document.addEventListener('touchend', function (e) {
         if (e.changedTouches[0].clientY - startY > 80 && window.scrollY === 0) {
           if (typeof window.loadTasks === 'function') window.loadTasks();
-          toastSafe('Refreshing...', '#9b6fc4');
+          toastSafe('Refreshing tasks', '#9b6fc4');
         }
       }, { passive: true });
     }
