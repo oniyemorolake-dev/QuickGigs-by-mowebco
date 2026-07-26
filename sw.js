@@ -1,5 +1,5 @@
 /* QuickGigs service worker — offline fallback; app files always network-first */
-var CACHE_NAME = 'quickgigs-v67';
+var CACHE_NAME = 'quickgigs-v70';
 var OFFLINE_FALLBACK = '/dashboard.html';
 
 var STATIC_ASSETS = [

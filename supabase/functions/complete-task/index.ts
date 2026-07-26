@@ -1,4 +1,4 @@
-// QuickGigs — Mark task complete (service role; verifies row updates)
+// QuickGigs — Mark task complete (service role; UUID + legacy id safe)
 // Deploy: supabase functions deploy complete-task --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -33,81 +33,18 @@ function isUuidLike(val: string): boolean {
   );
 }
 
-function taskIdKeys(...vals: (string | number | undefined | null)[]): string[] {
-  const keys: string[] = [];
-  const seen = new Set<string>();
-  const add = (v: unknown) => {
-    if (v == null || v === '') return;
-    const s = String(v);
-    if (seen.has(s)) return;
-    seen.add(s);
-    keys.push(s);
-  };
-  vals.forEach(add);
-  return keys;
-}
-
-function findAcceptedApp(rows: unknown[] | null | undefined) {
-  return (rows || []).find((row) =>
-    String(getField(row as Record<string, unknown>, 'status') || '').toLowerCase() === 'accepted'
-  ) as Record<string, unknown> | undefined;
-}
-
 function canonicalTaskId(task: Record<string, unknown>): string {
   return String(getField(task, 'task_id') || getField(task, 'id') || '');
 }
 
 type Sb = ReturnType<typeof createClient>;
 
-async function findAcceptedAppForTask(supabase: Sb, taskKey: string) {
+async function loadTaskByAnyId(supabase: Sb, taskKey: string) {
   if (!taskKey) return null;
-  const { data } = await supabase.from('applications').select('*').eq('task_id', taskKey);
-  return findAcceptedApp(data) || null;
-}
-
-async function resolveByPosterWorker(
-  supabase: Sb,
-  posterId: string,
-  workerId: string,
-  inputTaskId: string,
-) {
-  if (!posterId || !workerId) return null;
-
-  const { data: posterTasks } = await supabase
-    .from('tasks')
-    .select('*')
-    .eq('posted_by', posterId)
-    .in('status', ['in_progress', 'completed']);
-
-  const matches: Record<string, unknown>[] = [];
-  const inputKeys = new Set(taskIdKeys(inputTaskId));
-
-  for (const t of posterTasks || []) {
-    const row = t as Record<string, unknown>;
-    const tid = canonicalTaskId(row);
-    let accepted = tid ? await findAcceptedAppForTask(supabase, tid) : null;
-    if (!accepted) {
-      for (const key of inputKeys) {
-        accepted = await findAcceptedAppForTask(supabase, key);
-        if (accepted && String(getField(accepted, 'worker_id') || '') === workerId) break;
-        accepted = null;
-      }
-    }
-    if (!accepted) continue;
-    if (String(getField(accepted, 'worker_id') || '') !== workerId) continue;
-    matches.push(row);
-  }
-
-  if (!matches.length) return null;
-  if (matches.length === 1) return matches[0];
-
-  const byInput = matches.find((t) => inputKeys.has(canonicalTaskId(t)));
-  if (byInput) return byInput;
-
-  const inProgress = matches.filter((t) =>
-    String(getField(t, 'status') || '').toLowerCase() === 'in_progress'
-  );
-  return inProgress[0] || matches[0];
+  // Avoid querying UUID column with bare integers
+  if (!isUuidLike(taskKey) && isNumericId(taskKey)) return null;
+  const { data } = await supabase.from('tasks').select('*').eq('task_id', taskKey).limit(1);
+  return data?.[0] ? data[0] as Record<string, unknown> : null;
 }
 
 async function resolveTask(
@@ -118,67 +55,144 @@ async function resolveTask(
   hintWorkerId: string,
 ) {
   if (isUuidLike(inputTaskId)) {
-    const { data } = await supabase.from('tasks').select('*').eq('task_id', inputTaskId).limit(1);
-    if (data?.[0]) return data[0] as Record<string, unknown>;
-  }
-
-  // Direct eq for numeric/text task_id (legacy rows)
-  for (const key of taskIdKeys(inputTaskId)) {
-    const { data } = await supabase.from('tasks').select('*').eq('task_id', key).limit(1);
-    if (data?.[0]) return data[0] as Record<string, unknown>;
-  }
-
-  // Conversations are often legacy BIGINT task ids
-  for (const key of taskIdKeys(inputTaskId)) {
-    const n = isNumericId(key) ? Number(key) : key;
-    const { data: convs } = await supabase
-      .from('conversations')
-      .select('*')
-      .eq('task_id', n)
-      .limit(5);
-    for (const conv of convs || []) {
-      const posterId = String(getField(conv as Record<string, unknown>, 'poster_id') || '');
-      const workerId = String(getField(conv as Record<string, unknown>, 'worker_id') || '');
-      const found = await resolveByPosterWorker(supabase, posterId, workerId, inputTaskId);
-      if (found) return found;
-    }
+    const direct = await loadTaskByAnyId(supabase, inputTaskId);
+    if (direct) return direct;
   }
 
   const posterId = hintPosterId || actorId;
   const workerId = hintWorkerId;
-  if (posterId && workerId) {
-    const found = await resolveByPosterWorker(supabase, posterId, workerId, inputTaskId);
-    if (found) return found;
-  }
 
-  // Actor is worker: find their accepted app, then task
-  if (actorId) {
-    const { data: workerApps } = await supabase
-      .from('applications')
-      .select('*')
-      .eq('worker_id', actorId)
-      .eq('status', 'accepted');
-    for (const app of workerApps || []) {
-      const appTaskId = String(getField(app as Record<string, unknown>, 'task_id') || '');
-      if (!appTaskId) continue;
-      if (taskIdKeys(inputTaskId).includes(appTaskId) || (workerApps || []).length === 1) {
-        const { data } = await supabase.from('tasks').select('*').eq('task_id', appTaskId).limit(1);
-        if (data?.[0]) return data[0] as Record<string, unknown>;
+  // 1) Payment row for poster+worker → UUID task_id
+  if (posterId && workerId) {
+    const { data: pays } = await supabase
+      .from('payments')
+      .select('task_id,status')
+      .eq('poster_id', posterId)
+      .eq('worker_id', workerId)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    for (const p of pays || []) {
+      const tid = String(getField(p as Record<string, unknown>, 'task_id') || '');
+      if (isUuidLike(tid)) {
+        const t = await loadTaskByAnyId(supabase, tid);
+        if (t) return t;
       }
     }
   }
 
-  // Last resort: single in-progress task for poster
-  if (hintPosterId) {
-    const { data: rows } = await supabase
-      .from('tasks')
+  // 2) Conversation (legacy bigint) → poster/worker → poster in_progress tasks
+  if (isNumericId(inputTaskId)) {
+    const { data: convs } = await supabase
+      .from('conversations')
+      .select('poster_id,worker_id,task_id')
+      .eq('task_id', parseInt(inputTaskId, 10))
+      .limit(5);
+    for (const conv of convs || []) {
+      const cPoster = String(getField(conv as Record<string, unknown>, 'poster_id') || posterId);
+      const cWorker = String(getField(conv as Record<string, unknown>, 'worker_id') || workerId);
+      const found = await resolvePosterInProgress(supabase, cPoster, cWorker);
+      if (found) return found;
+    }
+  }
+
+  // 3) Accepted applications for worker (task_id may be legacy or UUID)
+  if (workerId) {
+    const { data: apps } = await supabase
+      .from('applications')
       .select('*')
-      .eq('posted_by', hintPosterId)
-      .eq('status', 'in_progress');
-    if (rows && rows.length === 1) return rows[0] as Record<string, unknown>;
+      .eq('worker_id', workerId)
+      .eq('status', 'accepted');
+    for (const app of apps || []) {
+      const appTaskId = String(getField(app as Record<string, unknown>, 'task_id') || '');
+      if (isUuidLike(appTaskId)) {
+        const t = await loadTaskByAnyId(supabase, appTaskId);
+        if (t && (!posterId || String(getField(t, 'posted_by') || '') === posterId)) return t;
+      }
+    }
+  }
+
+  // 4) Poster in_progress (+ optional worker match via apps/conversations)
+  if (posterId) {
+    const found = await resolvePosterInProgress(supabase, posterId, workerId);
+    if (found) return found;
   }
 
   return null;
+}
+
+async function resolvePosterInProgress(supabase: Sb, posterId: string, workerId: string) {
+  if (!posterId) return null;
+  const { data: posterTasks } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('posted_by', posterId)
+    .eq('status', 'in_progress');
+
+  const rows = (posterTasks || []) as Record<string, unknown>[];
+  if (!rows.length) {
+    const { data: done } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('posted_by', posterId)
+      .eq('status', 'completed')
+      .order('created_at', { ascending: false })
+      .limit(5);
+    return (done && done[0]) ? done[0] as Record<string, unknown> : null;
+  }
+  if (rows.length === 1) return rows[0];
+  if (!workerId) return rows[0];
+
+  for (const t of rows) {
+    const tid = canonicalTaskId(t);
+    // Match accepted app on UUID
+    if (tid) {
+      const { data: apps } = await supabase
+        .from('applications')
+        .select('worker_id,status')
+        .eq('task_id', tid)
+        .eq('status', 'accepted')
+        .limit(5);
+      if ((apps || []).some((a) => String(getField(a as Record<string, unknown>, 'worker_id') || '') === workerId)) {
+        return t;
+      }
+    }
+    // Match conversation by poster+worker (legacy id on conv)
+    const { data: convs } = await supabase
+      .from('conversations')
+      .select('conv_id')
+      .eq('poster_id', posterId)
+      .eq('worker_id', workerId)
+      .in('status', ['in_progress', 'application'])
+      .limit(1);
+    if (convs && convs.length) {
+      // Prefer the in-progress task that is "current" — if multiple poster tasks, pick first with payment
+      const { data: pay } = await supabase
+        .from('payments')
+        .select('task_id')
+        .eq('poster_id', posterId)
+        .eq('worker_id', workerId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      const payTid = pay?.[0] ? String(getField(pay[0] as Record<string, unknown>, 'task_id') || '') : '';
+      if (payTid && payTid === tid) return t;
+    }
+  }
+
+  // Fallback: payment UUID for this pair
+  const { data: pay } = await supabase
+    .from('payments')
+    .select('task_id')
+    .eq('poster_id', posterId)
+    .eq('worker_id', workerId)
+    .order('created_at', { ascending: false })
+    .limit(1);
+  const payTid = pay?.[0] ? String(getField(pay[0] as Record<string, unknown>, 'task_id') || '') : '';
+  if (isUuidLike(payTid)) {
+    const t = await loadTaskByAnyId(supabase, payTid);
+    if (t) return t;
+  }
+
+  return rows[0];
 }
 
 async function markTaskCompleted(supabase: Sb, task: Record<string, unknown>) {
@@ -198,24 +212,12 @@ async function markTaskCompleted(supabase: Sb, task: Record<string, unknown>) {
 
   if (error) return { ok: false as const, error: error.message };
   if (!data || !data.length) {
-    // Try numeric cast for BIGINT columns
-    if (isNumericId(tid)) {
-      const { data: data2, error: err2 } = await supabase
-        .from('tasks')
-        .update({ status: 'completed' })
-        .eq('task_id', parseInt(tid, 10))
-        .select('task_id,status')
-        .limit(1);
-      if (err2) return { ok: false as const, error: err2.message };
-      if (data2 && data2.length) return { ok: true as const, task_id: String(data2[0].task_id) };
-    }
     return { ok: false as const, error: 'task_update_matched_zero_rows' };
   }
-
   return { ok: true as const, task_id: String(data[0].task_id) };
 }
 
-async function completeApplication(
+async function completeApps(
   supabase: Sb,
   task: Record<string, unknown>,
   inputTaskId: string,
@@ -223,58 +225,26 @@ async function completeApplication(
 ) {
   if (!workerId) return;
   const tid = canonicalTaskId(task);
-  const keys = taskIdKeys(tid, inputTaskId, getField(task, 'task_id'));
+  const keys = [tid, inputTaskId].filter(Boolean);
 
   for (const key of keys) {
-    const { data: apps } = await supabase
+    await supabase
       .from('applications')
-      .select('*')
+      .update({ status: 'completed' })
       .eq('task_id', key)
       .eq('worker_id', workerId)
       .eq('status', 'accepted');
-    for (const app of apps || []) {
-      const appId = getField(app as Record<string, unknown>, 'app_id')
-        || getField(app as Record<string, unknown>, 'id')
-        || getField(app as Record<string, unknown>, 'application_id');
-      if (appId) {
-        await supabase.from('applications').update({ status: 'completed' }).eq('app_id', appId);
-        await supabase.from('applications').update({ status: 'completed' }).eq('id', appId);
-      } else {
-        await supabase
-          .from('applications')
-          .update({ status: 'completed' })
-          .eq('task_id', key)
-          .eq('worker_id', workerId)
-          .eq('status', 'accepted');
-      }
-    }
   }
+
+  // Also by worker only for this poster task when app task_id is legacy
+  await supabase
+    .from('applications')
+    .update({ status: 'completed' })
+    .eq('worker_id', workerId)
+    .eq('status', 'accepted');
 }
 
-async function lockConversations(
-  supabase: Sb,
-  task: Record<string, unknown>,
-  inputTaskId: string,
-  posterId: string,
-  workerId: string,
-) {
-  const keys = taskIdKeys(canonicalTaskId(task), inputTaskId);
-  for (const key of keys) {
-    const filters = isNumericId(key)
-      ? [key, parseInt(key, 10)]
-      : [key];
-    for (const f of filters) {
-      const { data: convs } = await supabase.from('conversations').select('conv_id').eq('task_id', f);
-      for (const conv of convs || []) {
-        if (conv?.conv_id) {
-          await supabase
-            .from('conversations')
-            .update({ is_unlocked: false, status: 'completed' })
-            .eq('conv_id', conv.conv_id);
-        }
-      }
-    }
-  }
+async function lockChats(supabase: Sb, posterId: string, workerId: string, inputTaskId: string) {
   if (posterId && workerId) {
     const { data: byPair } = await supabase
       .from('conversations')
@@ -282,6 +252,20 @@ async function lockConversations(
       .eq('poster_id', posterId)
       .eq('worker_id', workerId);
     for (const conv of byPair || []) {
+      if (conv?.conv_id) {
+        await supabase
+          .from('conversations')
+          .update({ is_unlocked: false, status: 'completed' })
+          .eq('conv_id', conv.conv_id);
+      }
+    }
+  }
+  if (isNumericId(inputTaskId)) {
+    const { data: byLegacy } = await supabase
+      .from('conversations')
+      .select('conv_id')
+      .eq('task_id', parseInt(inputTaskId, 10));
+    for (const conv of byLegacy || []) {
       if (conv?.conv_id) {
         await supabase
           .from('conversations')
@@ -315,41 +299,41 @@ Deno.serve(async (req) => {
     const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', serviceKey);
 
     let task: Record<string, unknown> | null = null;
-    if (canonicalFromClient) {
-      const { data } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('task_id', canonicalFromClient)
-        .limit(1);
-      task = data?.[0] ? data[0] as Record<string, unknown> : null;
+    if (canonicalFromClient && isUuidLike(canonicalFromClient)) {
+      task = await loadTaskByAnyId(supabase, canonicalFromClient);
     }
     if (!task) {
       task = await resolveTask(supabase, inputTaskId, actorId, hintPosterId, hintWorkerId);
-    }
-    if (!task && hintPosterId && hintWorkerId) {
-      task = await resolveByPosterWorker(supabase, hintPosterId, hintWorkerId, inputTaskId);
     }
     if (!task) {
       return json({
         ok: false,
         success: false,
         error: 'task_not_found',
-        details: `Could not resolve task ${inputTaskId} for actor ${actorId}`,
+        details: `Could not resolve task ${inputTaskId} poster=${hintPosterId} worker=${hintWorkerId}`,
       }, 404);
     }
 
     const posterId = String(getField(task, 'posted_by') || hintPosterId || '');
     let workerId = hintWorkerId;
-    const accepted = await findAcceptedAppForTask(supabase, canonicalTaskId(task));
-    if (accepted) workerId = String(getField(accepted, 'worker_id') || workerId);
     if (!workerId) {
-      for (const key of taskIdKeys(inputTaskId)) {
-        const app = await findAcceptedAppForTask(supabase, key);
-        if (app) {
-          workerId = String(getField(app, 'worker_id') || '');
-          break;
-        }
-      }
+      const { data: apps } = await supabase
+        .from('applications')
+        .select('worker_id')
+        .eq('task_id', canonicalTaskId(task))
+        .eq('status', 'accepted')
+        .limit(1);
+      workerId = apps?.[0] ? String(getField(apps[0] as Record<string, unknown>, 'worker_id') || '') : '';
+    }
+    if (!workerId && posterId) {
+      const { data: convs } = await supabase
+        .from('conversations')
+        .select('worker_id')
+        .eq('poster_id', posterId)
+        .in('status', ['in_progress', 'application'])
+        .order('created_at', { ascending: false })
+        .limit(1);
+      workerId = convs?.[0] ? String(getField(convs[0] as Record<string, unknown>, 'worker_id') || '') : '';
     }
 
     if (!posterId) return json({ ok: false, success: false, error: 'poster_missing' }, 400);
@@ -382,8 +366,8 @@ Deno.serve(async (req) => {
       }, 500);
     }
 
-    await completeApplication(supabase, task, inputTaskId, workerId);
-    await lockConversations(supabase, task, inputTaskId, posterId, workerId);
+    await completeApps(supabase, task, inputTaskId, workerId);
+    await lockChats(supabase, posterId, workerId, inputTaskId);
 
     return json({
       ok: true,

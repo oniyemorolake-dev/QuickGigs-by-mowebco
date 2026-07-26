@@ -248,7 +248,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 <script src="qg-utils.js"></script>
 <script src="qg-polish.js?v=20260726c"></script>
 <script src="qg-config.js?v=20260726b"></script>
-<script src="supabase-db.js?v=20260726d"></script>
+<script src="supabase-db.js?v=20260726g"></script>
 <script src="qg-stripe.js?v=20260726d"></script>
 <script src="qg-nav.js?v=20260725"></script>
 <script src="qg-pwa.js?v=4"></script>
@@ -285,6 +285,12 @@ applyTheme();
 function pickDefaultTab() {
   var params = new URLSearchParams(window.location.search);
   var tabParam = params.get('tab');
+  try {
+    if (sessionStorage.getItem('qg-just-completed')) {
+      activeTab = 'completed';
+      return;
+    }
+  } catch (e) {}
   try {
     if (sessionStorage.getItem('qg-payment-tab') === 'inprogress') {
       activeTab = 'inprogress';
@@ -804,11 +810,18 @@ async function loadData(){
     showToast('No tasks loaded — tap Refresh list or hard refresh the page', '#f59e0b');
   }
 
-  if (preferInProgress) {
-    activeTab = 'inprogress';
-    if (typeof setSessionMode === 'function') setSessionMode('poster');
-  } else {
-    pickDefaultTab();
+  try {
+    if (sessionStorage.getItem('qg-just-completed')) {
+      activeTab = 'completed';
+    } else if (preferInProgress) {
+      activeTab = 'inprogress';
+      if (typeof setSessionMode === 'function') setSessionMode('poster');
+    } else {
+      pickDefaultTab();
+    }
+  } catch (tabErr) {
+    if (preferInProgress) activeTab = 'inprogress';
+    else pickDefaultTab();
   }
   applyExpandFromUrl();
   syncRoleTabs();
@@ -1698,9 +1711,31 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
 };
 
 function findAcceptedApplication(taskId) {
+  taskId = String(taskId || '');
+  var pay = paymentByTaskId[taskId];
+  var payUuid = pay && pay.task_id ? String(pay.task_id) : '';
+  var payWorker = pay && pay.worker_id ? String(pay.worker_id) : '';
+  var keys = [taskId];
+  if (payUuid && keys.indexOf(payUuid) === -1) keys.push(payUuid);
+
+  var accepted = allApplications.find(function(a) {
+    var atid = String(getField(a, 'TASK_ID') || '');
+    var st = String(getField(a, 'STATUS') || '').toLowerCase();
+    if (st !== 'accepted') return false;
+    if (keys.indexOf(atid) >= 0) return true;
+    if (payWorker && String(getField(a, 'WORKER_ID') || '') === payWorker) return true;
+    return false;
+  });
+  if (accepted) return accepted;
+
+  // Fallback: in_progress / completed app rows for this task (legacy id mismatch)
   return allApplications.find(function(a) {
-    return String(getField(a, 'TASK_ID')) === String(taskId) &&
-      String(getField(a, 'STATUS') || '').toLowerCase() === 'accepted';
+    var atid = String(getField(a, 'TASK_ID') || '');
+    var st = String(getField(a, 'STATUS') || '').toLowerCase();
+    if (st !== 'accepted' && st !== 'in_progress' && st !== 'completed') return false;
+    if (keys.indexOf(atid) >= 0) return true;
+    if (payWorker && String(getField(a, 'WORKER_ID') || '') === payWorker) return true;
+    return false;
   });
 }
 
@@ -1845,12 +1880,52 @@ window.markComplete = async function(taskId, btn){
   }
   var taskRow = allTasks.find(function(t){ return String(getField(t,'TASK_ID')) === taskId; });
   var acceptedApp = typeof findAcceptedApplication === 'function' ? findAcceptedApplication(taskId) : null;
-  var posterId = taskRow ? String(getField(taskRow, 'POSTED_BY') || '') : '';
+  var posterId = taskRow ? String(getField(taskRow, 'POSTED_BY') || '') : String(userId);
   var workerId = acceptedApp ? String(getField(acceptedApp, 'WORKER_ID') || '') : '';
+  var payRow = paymentByTaskId[taskId];
+  if (!workerId && payRow && payRow.worker_id) workerId = String(payRow.worker_id);
+  if (!posterId && payRow && payRow.poster_id) posterId = String(payRow.poster_id);
+  // Resolve worker via conversation when app task_id is UUID and UI shows legacy id
+  if (!workerId && posterId && typeof getConversationsForUser === 'function') {
+    try {
+      var convs = await getConversationsForUser(posterId);
+      var matchConv = (convs || []).find(function (c) {
+        var cTid = String(c.task_id || '');
+        var cSt = String(c.status || '').toLowerCase();
+        return (cTid === taskId || (payRow && String(payRow.task_id) === cTid)) &&
+          (cSt === 'in_progress' || cSt === 'application' || cSt === 'completed');
+      });
+      if (!matchConv) {
+        matchConv = (convs || []).find(function (c) {
+          return String(c.poster_id || '') === posterId &&
+            String(c.status || '').toLowerCase() === 'in_progress';
+        });
+      }
+      if (matchConv && matchConv.worker_id) workerId = String(matchConv.worker_id);
+    } catch (convErr) {
+      console.warn('markComplete conv lookup failed:', convErr);
+    }
+  }
+  if (!workerId && typeof getPaymentByTask === 'function' && posterId) {
+    try {
+      payRow = await getPaymentByTask(taskId, {
+        posterId: posterId,
+        workerId: workerId,
+        actorId: userId,
+        actorRole: 'poster'
+      });
+      if (payRow) {
+        indexPaymentRow(payRow, [taskId]);
+        if (payRow.worker_id) workerId = String(payRow.worker_id);
+      }
+    } catch (payErr) {
+      console.warn('markComplete payment lookup failed:', payErr);
+    }
+  }
   console.log('markComplete called with taskId:', taskId, 'userId:', userId);
   console.log('completeFn exists:', typeof completeTask === 'function');
   console.log('taskRow found:', taskRow);
-  console.log('acceptedApp found:', acceptedApp);
+  console.log('acceptedApp found:', acceptedApp, 'workerId:', workerId, 'posterId:', posterId);
   var completeOpts = {
     taskRow: taskRow || null,
     acceptedApp: acceptedApp || null,
@@ -1889,66 +1964,69 @@ window.markComplete = async function(taskId, btn){
     if (payoutMsg.length > 80) payoutMsg = payoutMsg.slice(0, 80) + '…';
     showToast('Task complete — payout will retry (' + payoutMsg + ')', '#f59e0b');
   }
+
+  try { sessionStorage.setItem('qg-just-completed', taskId); } catch (e) {}
+  try { sessionStorage.removeItem('qg-payment-tab'); } catch (e) {}
+
+  var completedKeys = [taskId];
+  if (result.task_id) completedKeys.push(String(result.task_id));
+  if (payRow && payRow.task_id) completedKeys.push(String(payRow.task_id));
+  // Always update the exact row object we completed (ID mismatch-safe)
+  if (taskRow) setRowStatus(taskRow, 'completed');
   allTasks.forEach(function(t) {
-    if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, 'completed');
+    var tid = String(getField(t, 'TASK_ID'));
+    if (completedKeys.indexOf(tid) >= 0 || t === taskRow) setRowStatus(t, 'completed');
   });
   allApplications.forEach(function(a) {
-    if (String(getField(a, 'TASK_ID')) === taskId) {
+    var atid = String(getField(a, 'TASK_ID'));
+    if (completedKeys.indexOf(atid) >= 0 || (workerId && String(getField(a, 'WORKER_ID')) === String(workerId))) {
       var st = String(getField(a, 'STATUS')).toLowerCase();
-      if (st === 'accepted' || st === 'completed') setRowStatus(a, 'completed');
+      if (st === 'accepted' || st === 'completed' || st === 'in_progress') setRowStatus(a, 'completed');
     }
   });
-  if (typeof mergeTaskInCache === 'function') mergeTaskInCache(taskId, { status: 'completed' });
+  if (typeof mergeTaskInCache === 'function') {
+    completedKeys.forEach(function (k) { mergeTaskInCache(k, { status: 'completed', STATUS: 'completed' }); });
+  }
+  if (typeof writeTasksCache === 'function') writeTasksCache(allTasks);
+
   activeTab = 'completed';
   if (window.history && window.history.replaceState) {
     var doneUrl = new URL(window.location.href);
     doneUrl.searchParams.set('tab', 'completed');
+    doneUrl.searchParams.delete('paid');
     window.history.replaceState({}, '', doneUrl.pathname + doneUrl.search);
   }
   syncTabButtons();
   renderTab();
   if (typeof qgBurstConfetti === 'function') qgBurstConfetti();
   showToast('Task complete! Please leave a review.');
+  if (btn) { btn.disabled = false; btn.textContent = '✓ Mark complete'; }
 
   if (typeof notifyTaskCompleted === 'function') {
     try {
       var doneTask = allTasks.find(function(t){ return String(getField(t,'TASK_ID')) === taskId; });
-      var posterId = doneTask ? getField(doneTask, 'POSTED_BY') : '';
+      var notifyPosterId = doneTask ? getField(doneTask, 'POSTED_BY') : posterId;
       var workerApp = allApplications.find(function(a){
         return String(getField(a,'TASK_ID')) === taskId && ['accepted','completed'].indexOf(String(getField(a,'STATUS')).toLowerCase()) >= 0;
       });
-      var workerId = workerApp ? getField(workerApp, 'WORKER_ID') : '';
-      if (posterId) {
-        var posterUser = await getUserByFirebaseUid(posterId);
-        await notifyTaskCompleted(posterId, posterUser && posterUser.email, { title: getField(doneTask, 'TITLE') }, 'poster');
+      var notifyWorkerId = workerApp ? getField(workerApp, 'WORKER_ID') : workerId;
+      if (notifyPosterId) {
+        var posterUser = await getUserByFirebaseUid(notifyPosterId);
+        await notifyTaskCompleted(notifyPosterId, posterUser && posterUser.email, { title: getField(doneTask, 'TITLE') }, 'poster');
       }
-      if (workerId) {
-        var wUser = await getUserByFirebaseUid(workerId);
-        await notifyTaskCompleted(workerId, wUser && wUser.email, { title: getField(doneTask, 'TITLE') }, 'worker');
+      if (notifyWorkerId) {
+        var wUser = await getUserByFirebaseUid(notifyWorkerId);
+        await notifyTaskCompleted(notifyWorkerId, wUser && wUser.email, { title: getField(doneTask, 'TITLE') }, 'worker');
       }
     } catch (notifyErr) {
       console.warn('Complete notification skipped:', notifyErr);
     }
   }
 
-  // Reload, but keep local completed status if the fetch is stale
-  try {
-    await loadData();
-  } catch (reloadErr) {
-    console.warn('Post-complete reload skipped:', reloadErr);
-  }
-  allTasks.forEach(function(t) {
-    if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, 'completed');
-  });
-  allApplications.forEach(function(a) {
-    if (String(getField(a, 'TASK_ID')) === taskId) {
-      var st = String(getField(a, 'STATUS')).toLowerCase();
-      if (st === 'accepted' || st === 'completed' || st === 'in_progress') setRowStatus(a, 'completed');
-    }
-  });
-  activeTab = 'completed';
-  syncTabButtons();
-  renderTab();
+  // Soft background refresh — do NOT call loadData() (it resets the Completed tab)
+  setTimeout(function () {
+    try { sessionStorage.removeItem('qg-just-completed'); } catch (e) {}
+  }, 8000);
 };
 
 window.declineApplicant = async function(taskId, appId, declineBtn) {

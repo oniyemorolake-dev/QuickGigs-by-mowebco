@@ -519,17 +519,36 @@ async function resolveTaskContext(taskId, actorId, options) {
 
   if (options.taskRow) {
     var cachedTask = normalizeTaskRow(options.taskRow);
-    var cachedPosterId = String(cachedTask.posted_by || cachedTask.POSTED_BY || '');
+    var cachedPosterId = String(cachedTask.posted_by || cachedTask.POSTED_BY || options.posterId || '');
     var cachedWorkerId = options.workerId ? String(options.workerId) : '';
     var cachedAccepted = options.acceptedApp ? normalizeApplicationRow(options.acceptedApp) : null;
     if (cachedAccepted) {
       cachedWorkerId = String(cachedAccepted.worker_id || cachedAccepted.WORKER_ID || cachedWorkerId);
     }
     var cachedCanonical = String(getTaskRowId(cachedTask) || taskId);
+    var cachedPayment = null;
+    if (typeof getPaymentByTask === 'function' && cachedPosterId) {
+      try {
+        cachedPayment = await getPaymentByTask(taskId, {
+          posterId: cachedPosterId,
+          workerId: cachedWorkerId,
+          actorId: actorId || cachedPosterId,
+          actorRole: 'poster'
+        });
+      } catch (e) { cachedPayment = null; }
+    }
+    if (cachedPayment && cachedPayment.task_id && isUuidLikeId(String(cachedPayment.task_id))) {
+      cachedCanonical = String(cachedPayment.task_id);
+      var uuidTask = await getTaskById(cachedCanonical, { _depth: 1 });
+      if (uuidTask) cachedTask = uuidTask;
+    }
     var cachedIds = [taskId, cachedCanonical];
     if (cachedAccepted) {
       var atid = cachedAccepted.task_id || cachedAccepted.TASK_ID;
       if (atid != null && cachedIds.indexOf(String(atid)) === -1) cachedIds.push(String(atid));
+    }
+    if (cachedPayment && cachedPayment.task_id != null) {
+      cachedIds.push(String(cachedPayment.task_id));
     }
     return {
       taskId: taskId,
@@ -538,7 +557,7 @@ async function resolveTaskContext(taskId, actorId, options) {
       posterId: cachedPosterId,
       workerId: cachedWorkerId,
       accepted: cachedAccepted,
-      payment: null,
+      payment: cachedPayment,
       ids: cachedIds
     };
   }
@@ -2389,6 +2408,7 @@ async function completeTask(taskId, actorId, options) {
 
     return {
       success: true,
+      task_id: (serverResult && serverResult.task_id) || ctx.canonicalTaskId || taskId,
       release: release,
       pendingPayout: pendingPayout,
       payoutFailed: payoutFailed
@@ -2596,7 +2616,8 @@ async function getPaymentByTask(taskId, options) {
       return true;
     });
     best = pickBestPaymentRow(filtered);
-    if (best && options.workerId) return best;
+    // Return when worker matched, or poster has exactly one payment row
+    if (best && (options.workerId || filtered.length === 1)) return best;
   }
 
   var ids = [];
