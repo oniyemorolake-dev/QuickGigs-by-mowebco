@@ -487,7 +487,16 @@ function taskPostedByUser(task, userId) {
   return String(task.posted_by || task.POSTED_BY || '') === String(userId);
 }
 
-/** My Tasks — poster listings + worker jobs (avoids loading entire tasks table). */
+function withTimeout(promise, ms, fallback) {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise(function (resolve) {
+      setTimeout(function () { resolve(fallback); }, ms);
+    })
+  ]);
+}
+
+/** My Tasks — poster listings + worker jobs (bulk fetch, no N+1 loops). */
 async function fetchMyTasksBundle(userId) {
   if (!userId) return { tasks: [], applications: [] };
   userId = String(userId);
@@ -512,67 +521,57 @@ async function fetchMyTasksBundle(userId) {
     appMap[key] = row;
   }
 
+  var allTasks = [];
+  var allApps = [];
   try {
-    var posted = await getTasksByUser(userId);
-    (posted || []).forEach(addTask);
+    allTasks = await withTimeout(fetchAllTasksFresh(), 10000, []);
   } catch (e) {
-    console.warn('fetchMyTasksBundle posted tasks failed:', e);
-  }
-
-  if (!Object.keys(taskMap).length) {
+    console.warn('fetchMyTasksBundle tasks fetch failed:', e);
     try {
-      var fallbackTasks = typeof fetchAllTasksFresh === 'function'
-        ? await fetchAllTasksFresh()
-        : await sbGetTasksList(null, 200);
-      (fallbackTasks || []).forEach(function (row) {
-        if (taskPostedByUser(row, userId)) addTask(row);
-      });
+      allTasks = await getTasksByUser(userId);
     } catch (e2) {
-      console.warn('fetchMyTasksBundle fallback task scan failed:', e2);
+      allTasks = [];
     }
   }
+  if (!Array.isArray(allTasks)) allTasks = [];
 
-  var workerApps = [];
+  (allTasks || []).forEach(function (row) {
+    if (taskPostedByUser(row, userId)) addTask(row);
+  });
+
   try {
-    workerApps = typeof getApplicationsByWorker === 'function'
-      ? await getApplicationsByWorker(userId)
-      : [];
-    (workerApps || []).forEach(addApp);
+    allApps = await withTimeout(fetchAllApplicationsFresh(), 8000, []);
   } catch (e) {
-    console.warn('fetchMyTasksBundle worker apps failed:', e);
-  }
-
-  var postedTaskIds = Object.keys(taskMap);
-  for (var i = 0; i < postedTaskIds.length; i++) {
+    console.warn('fetchMyTasksBundle applications fetch failed:', e);
     try {
-      var taskApps = await getApplicationsByTask(postedTaskIds[i]);
-      (taskApps || []).forEach(addApp);
-    } catch (e) {}
-  }
-
-  for (var j = 0; j < workerApps.length; j++) {
-    var tid = workerApps[j].task_id || workerApps[j].TASK_ID;
-    if (!tid || taskMap[String(tid)]) continue;
-    try {
-      addTask(await getTaskById(tid));
-    } catch (e) {}
-  }
-
-  if (Object.keys(taskMap).length && !Object.keys(appMap).length) {
-    try {
-      var allApps = typeof fetchAllApplicationsFresh === 'function'
-        ? await fetchAllApplicationsFresh()
-        : await sbGetOrThrow('applications', null, 'created_at.desc', 200);
-      var taskIds = {};
-      Object.keys(taskMap).forEach(function (k) { taskIds[k] = true; });
-      (allApps || []).forEach(function (a) {
-        var appTaskId = String(a.task_id || a.TASK_ID || '');
-        if (taskIds[appTaskId]) addApp(a);
-      });
-    } catch (e3) {
-      console.warn('fetchMyTasksBundle poster applications fallback failed:', e3);
+      allApps = await getApplicationsByWorker(userId);
+    } catch (e2) {
+      allApps = [];
     }
   }
+  if (!Array.isArray(allApps)) allApps = [];
+
+  var myTaskIds = {};
+  Object.keys(taskMap).forEach(function (k) { myTaskIds[k] = true; });
+
+  (allApps || []).forEach(function (a) {
+    var wid = String(a.worker_id || a.WORKER_ID || '');
+    var tid = String(a.task_id || a.TASK_ID || '');
+    if (wid === userId || myTaskIds[tid]) addApp(a);
+  });
+
+  (allApps || []).forEach(function (a) {
+    if (String(a.worker_id || a.WORKER_ID || '') !== userId) return;
+    var tid = a.task_id || a.TASK_ID;
+    if (!tid || taskMap[String(tid)]) return;
+    var match = (allTasks || []).find(function (t) {
+      return String(getTaskRowId(t)) === String(tid);
+    });
+    if (match) addTask(match);
+    else {
+      getTaskById(tid).then(addTask).catch(function () {});
+    }
+  });
 
   return {
     tasks: Object.keys(taskMap).map(function (k) { return taskMap[k]; }),
@@ -2585,6 +2584,7 @@ window.fetchTasksWithCache = fetchTasksWithCache;
 window.fetchAllTasksFresh = fetchAllTasksFresh;
 window.fetchMyTasksBundle = fetchMyTasksBundle;
 window.taskPostedByUser = taskPostedByUser;
+window.withTimeout = withTimeout;
 window.mergeTaskLists = mergeTaskLists;
 window.mergeApplicationLists = mergeApplicationLists;
 window.fetchAllApplicationsFresh = fetchAllApplicationsFresh;
