@@ -77,7 +77,11 @@
     var mount = document.getElementById('qg-stripe-checkout-mount');
     if (loading) {
       loading.style.display = 'flex';
-      loading.innerHTML = '<div class="qg-stripe-spinner"></div>' + (message || 'Loading…');
+      loading.className = 'qg-stripe-panel qg-stripe-loading-state';
+      loading.innerHTML =
+        '<div class="qg-stripe-spinner"></div>' +
+        '<div class="qg-stripe-status-title">' + escHtml(message || 'Loading…') + '</div>' +
+        '<div class="qg-stripe-status-msg">Secure checkout powered by Stripe</div>';
     }
     if (mount) {
       mount.style.display = 'none';
@@ -88,7 +92,8 @@
   function formatPayError(err) {
     if (err == null || err === '') return 'Could not start checkout';
     if (typeof err === 'string') {
-      if (err === 'already_paid') return 'This task is already paid.';
+      if (err === '[object Object]') return 'Payment could not start — try Message or refresh the page';
+      if (err === 'already_paid') return 'This task is already paid — opening chat…';
       if (err === 'stripe_not_configured') {
         return 'Stripe secret not set in Supabase — redeploy create-checkout (see STRIPE-SETUP.md)';
       }
@@ -100,39 +105,125 @@
       }
       return err;
     }
+    if (err instanceof Error && err.message) return formatPayError(err.message);
     if (typeof err === 'object') {
-      if (typeof err.message === 'string' && err.message) return err.message;
-      if (typeof err.error === 'string' && err.error) return formatPayError(err.error);
+      if (typeof err.message === 'string' && err.message) return formatPayError(err.message);
+      if (err.error != null && err.error !== err) return formatPayError(err.error);
       if (typeof err.code === 'string' && err.code) return formatPayError(err.code);
-      try { return JSON.stringify(err); } catch (e) { /* fall through */ }
+      if (typeof err.code === 'number' && err.details) return formatPayError(String(err.details));
+      if (typeof err.details === 'string' && err.details) return formatPayError(err.details);
+      try {
+        var raw = JSON.stringify(err);
+        if (raw && raw !== '{}') return raw.length > 180 ? raw.substring(0, 180) + '…' : raw;
+      } catch (e) { /* fall through */ }
     }
     return String(err);
   }
 
+  function errorMentionsAlreadyPaid(val) {
+    if (val == null) return false;
+    if (typeof val === 'string') return val.toLowerCase().indexOf('already_paid') >= 0;
+    if (typeof val === 'object') {
+      if (errorMentionsAlreadyPaid(val.error)) return true;
+      if (errorMentionsAlreadyPaid(val.message)) return true;
+      if (errorMentionsAlreadyPaid(val.code)) return true;
+    }
+    return false;
+  }
+
   function extractPayErrorCode(result) {
     if (!result) return '';
+    if (errorMentionsAlreadyPaid(result)) return 'already_paid';
+    if (errorMentionsAlreadyPaid(result.error)) return 'already_paid';
     var err = result.error;
     if (typeof err === 'string') return err;
     if (err && typeof err === 'object') {
       if (typeof err.code === 'string') return err.code;
       if (typeof err.error === 'string') return err.error;
       if (typeof err.message === 'string') return err.message;
+      if (err.error && typeof err.error === 'object') return extractPayErrorCode({ error: err.error });
     }
     if (typeof result.message === 'string') return result.message;
     return '';
   }
 
   function isAlreadyPaidError(result) {
+    if (!result) return false;
+    if (result.status === 409 || result.httpStatus === 409) return true;
     var code = extractPayErrorCode(result).toLowerCase();
-    return code === 'already_paid' || code.indexOf('already_paid') >= 0;
+    if (code === 'already_paid' || code.indexOf('already_paid') >= 0) return true;
+    return errorMentionsAlreadyPaid(result) || errorMentionsAlreadyPaid(result.error);
+  }
+
+  function escHtml(s) {
+    if (typeof window.escapeHtml === 'function') return window.escapeHtml(s);
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function payErrorTitle(err) {
+    var code = formatPayError(extractPayErrorCode({ error: err }) || err).toLowerCase();
+    if (code.indexOf('already_paid') >= 0) return 'Already paid';
+    if (code.indexOf('stripe_not_configured') >= 0) return 'Payments not set up';
+    if (code.indexOf('not_task_poster') >= 0) return 'Not allowed';
+    if (code.indexOf('cannot_pay_self') >= 0) return 'Use two accounts';
+    if (code.indexOf('no_accepted_worker') >= 0) return 'Accept a tasker first';
+    if (code.indexOf('task_not_in_progress') >= 0) return 'Task not ready';
+    return 'Payment couldn\u2019t start';
+  }
+
+  function setModalPanel(kind, title, message, buttonsHtml) {
+    var loading = document.getElementById('qgStripeLoading');
+    var mount = document.getElementById('qg-stripe-checkout-mount');
+    if (mount) {
+      mount.style.display = 'none';
+      mount.innerHTML = '';
+    }
+    if (!loading) return;
+    loading.style.display = 'flex';
+    loading.className = 'qg-stripe-panel qg-stripe-' + kind;
+    loading.innerHTML =
+      '<div class="qg-stripe-status-icon" aria-hidden="true">' +
+        (kind === 'success' ? '\u2713' : kind === 'error' ? '!' : '\u2026') +
+      '</div>' +
+      '<div class="qg-stripe-status-title">' + escHtml(title) + '</div>' +
+      '<div class="qg-stripe-status-msg">' + escHtml(message) + '</div>' +
+      (buttonsHtml || '');
   }
 
   function setModalError(message) {
-    var loading = document.getElementById('qgStripeLoading');
-    if (loading) {
-      loading.style.display = 'flex';
-      loading.className = 'qg-stripe-error';
-      loading.innerHTML = formatPayError(message) + '<br><br><button type="button" class="qg-stripe-close" style="width:auto;height:auto;border-radius:10px;padding:10px 16px;margin-top:8px" onclick="window.QG_closePayModal&&window.QG_closePayModal()">Close</button>';
+    var text = formatPayError(message);
+    setModalPanel(
+      'error',
+      payErrorTitle(message),
+      text,
+      '<button type="button" class="qg-stripe-action-btn qg-stripe-action-secondary" onclick="window.QG_closePayModal&&window.QG_closePayModal()">Close</button>'
+    );
+  }
+
+  function setModalAlreadyPaid(taskId, options) {
+    options = options || {};
+    var titleEl = document.getElementById('qgStripeTitle');
+    var subEl = document.getElementById('qgStripeSub');
+    if (titleEl) titleEl.textContent = 'Payment complete';
+    if (subEl) subEl.textContent = 'This task is already paid — chat is unlocked';
+    setModalPanel(
+      'success',
+      'Already paid',
+      'Your payment went through. Tap below to open chat with your tasker.',
+      '<button type="button" class="qg-stripe-action-btn" id="qgStripeOpenChatBtn">Open chat</button>' +
+      '<button type="button" class="qg-stripe-action-btn qg-stripe-action-secondary" onclick="window.QG_closePayModal&&window.QG_closePayModal()">Stay here</button>'
+    );
+    var openBtn = document.getElementById('qgStripeOpenChatBtn');
+    if (openBtn) {
+      openBtn.onclick = function () {
+        openBtn.disabled = true;
+        openBtn.textContent = 'Opening…';
+        finishAlreadyPaid(taskId, options);
+      };
     }
   }
 
@@ -173,6 +264,10 @@
     var data = {};
     try { data = await res.json(); } catch (e) { data = { ok: false, error: 'Invalid response' }; }
     if (!res.ok && data.ok !== false) data.ok = false;
+    data.httpStatus = res.status;
+    if (typeof data.error === 'object' && data.error && typeof data.error.message === 'string') {
+      data.message = data.message || data.error.message;
+    }
     if (!data.error && data.message) data.error = data.message;
     return data;
   }
@@ -481,12 +576,19 @@
       return { ok: false, error: 'cannot_pay_self' };
     }
 
+    if (typeof window.QG_syncPendingPayments === 'function') {
+      await window.QG_syncPendingPayments(posterId);
+    }
+    if (typeof window.QG_refreshPaymentState === 'function') {
+      await window.QG_refreshPaymentState(taskId);
+    }
+
     ensurePayModalDom();
     var titleEl = document.getElementById('qgStripeTitle');
     var subEl = document.getElementById('qgStripeSub');
     var amountEl = document.getElementById('qgStripeAmount');
     if (titleEl) titleEl.textContent = options.title || 'Pay to unlock chat';
-    if (subEl) subEl.textContent = options.subtitle || 'Secure payment · held in escrow until job is done';
+    if (subEl) subEl.textContent = options.subtitle || 'Pay once to unlock chat · held in escrow until the job is done';
     if (amountEl) {
       if (options.amount != null && options.amount !== '') {
         amountEl.textContent = '$' + Number(options.amount).toFixed(2) + ' CAD';
@@ -498,7 +600,11 @@
     }
 
     if (await taskHasHeldPayment(taskId)) {
-      return await finishAlreadyPaid(taskId, options);
+      ensurePayModalDom();
+      _overlayEl.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      setModalAlreadyPaid(taskId, options);
+      return { ok: true, already_paid: true };
     }
 
     destroyCheckout();
@@ -510,9 +616,10 @@
 
     if (!result.ok) {
       if (isAlreadyPaidError(result)) {
-        return await finishAlreadyPaid(taskId, options);
+        setModalAlreadyPaid(taskId, options);
+        return { ok: true, already_paid: true };
       }
-      setModalError(result.error || extractPayErrorCode(result) || 'Could not start checkout');
+      setModalError(result.error || extractPayErrorCode(result) || result.message || 'Could not start checkout');
       return result;
     }
 
@@ -632,4 +739,5 @@
   window.QG_syncConnectStatus = syncConnectStatus;
   window.QG_syncPendingPayments = syncPendingPaymentsForPoster;
   window.QG_navigateToChatForTask = navigateToChatForTask;
+  window.QG_formatPayError = formatPayError;
 })();

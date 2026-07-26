@@ -29,8 +29,7 @@
 .qg-stripe-sheet {
   width: 100%;
   max-width: 480px;
-  max-height: 92vh;
-  max-height: 92dvh;
+  max-height: min(96dvh, 100%);
   background: #fff;
   border-radius: 20px 20px 0 0;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
@@ -110,33 +109,102 @@
 
 .qg-stripe-body {
   flex: 1;
-  min-height: 320px;
+  min-height: 0;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   padding: 8px 12px 16px;
 }
 
 #qg-stripe-checkout-mount {
-  min-height: 300px;
+  min-height: 280px;
 }
 
+.qg-stripe-panel,
 .qg-stripe-loading,
 .qg-stripe-error {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 240px;
-  padding: 24px;
+  min-height: 200px;
+  padding: 24px 20px;
   text-align: center;
   font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  color: #5a5a72;
-  line-height: 1.55;
+  gap: 8px;
 }
 
-.qg-stripe-error {
+.qg-stripe-loading-state {
+  color: #5a5a72;
+}
+
+.qg-stripe-status-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.qg-stripe-success .qg-stripe-status-icon {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.qg-stripe-error .qg-stripe-status-icon {
+  background: #fee2e2;
   color: #b91c1c;
+}
+
+.qg-stripe-loading-state .qg-stripe-status-icon {
+  display: none;
+}
+
+.qg-stripe-status-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #2d1b4e;
+  line-height: 1.35;
+}
+
+.qg-stripe-status-msg {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.55;
+  max-width: 320px;
+}
+
+.qg-stripe-action-btn {
+  margin-top: 10px;
+  width: 100%;
+  max-width: 280px;
+  min-height: 48px;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 12px;
+  background: #6b3fa0;
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.qg-stripe-action-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.qg-stripe-action-secondary {
+  background: #f5f2ff;
+  color: #6b3fa0;
+}
+
+.qg-stripe-error .qg-stripe-status-msg {
+  color: #991b1b;
 }
 
 .qg-stripe-spinner {
@@ -161,4 +229,66 @@
   text-align: center;
   line-height: 1.45;
   flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .qg-stripe-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .qg-stripe-sheet {
+    max-height: 96dvh;
+    border-radius: 18px 18px 0 0;
+  }
+
+  .qg-stripe-head {
+    padding: 14px 14px 10px;
+  }
+
+  .qg-stripe-title {
+    font-size: 16px;
+  }
+
+  .qg-stripe-sub {
+    font-size: 12px;
+  }
+
+  .qg-stripe-amount {
+    font-size: 20px;
+  }
+
+  .qg-stripe-body {
+    padding: 6px 8px 12px;
+  }
+
+  #qg-stripe-checkout-mount {
+    min-height: 240px;
+  }
+
+  .qg-stripe-panel,
+  .qg-stripe-loading,
+  .qg-stripe-error {
+    min-height: 180px;
+    padding: 20px 16px;
+  }
+
+  .qg-stripe-action-btn {
+    max-width: none;
+  }
+
+  .qg-stripe-foot {
+    font-size: 10px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+body.qg-keyboard-open .qg-stripe-overlay.open {
+  align-items: flex-start;
+}
+
+body.qg-keyboard-open .qg-stripe-overlay.open .qg-stripe-sheet {
+  max-height: calc(100dvh - 8px);
+  margin-top: 4px;
 }

@@ -2,14 +2,23 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — My Tasks</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
 <link rel="stylesheet" href="qg-role-theme.css">
+<link rel="stylesheet" href="qg-mobile.css">
+<link rel="stylesheet" href="qg-menu.css?v=3">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
 <link rel="stylesheet" href="qg-features.css?v=20260716c">
+<link rel="stylesheet" href="qg-stripe.css">
 <script src="qg-brand-init.js"></script>
+<script>
+(function () {
+  var mode = localStorage.getItem('qg-session-mode');
+  document.documentElement.setAttribute('data-qg-mode', mode === 'worker' ? 'worker' : 'poster');
+})();
+</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -23,13 +32,12 @@ body.light{
   --text-muted:#5a5a72;--text-faint:#9ca3af;--nav-bg:#fff;--tab-bg:#fff;
   --card-bg:#fff;--lavender:#6b3fa0;
 }
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh;padding-bottom:76px;transition:background 0.25s,color 0.25s;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh;min-height:100dvh;transition:background 0.25s,color 0.25s;overflow-x:hidden;}
 
-.nav{position:sticky;top:0;z-index:50;background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;transition:background 0.25s;}
-.nav-logo{font-family:'Playfair Display',serif;font-style:italic;font-size:1.25rem;color:var(--lavender);}
-.nav-title{font-size:16px;font-weight:500;color:var(--text);}
-.mode-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);}
-body.light .mode-btn{background:#f0eeff;color:var(--purple);}
+.nav{position:sticky;top:0;z-index:50;background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:10px;transition:background 0.25s;}
+.nav-brand{flex-shrink:0;min-width:0;}
+.nav-title{flex:1;min-width:0;font-size:16px;font-weight:500;color:var(--text);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nav-right{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto;}
 
 /* TABS */
 .tabs-wrap{background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:0 20px;display:flex;gap:0;overflow-x:auto;transition:background 0.25s;}
@@ -37,9 +45,14 @@ body.light .mode-btn{background:#f0eeff;color:var(--purple);}
 .tab-btn{padding:12px 16px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;font-family:'DM Sans',sans-serif;color:var(--text-muted);border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.15s;}
 .tab-btn.active{color:var(--purple-light);border-bottom-color:var(--purple-light);}
 body.light .tab-btn.active{color:var(--purple);border-bottom-color:var(--purple);}
+/* Poster = your listings. Tasker = jobs you applied to — never both tab sets at once */
+[data-qg-mode="poster"] #tabApplied,
+body.qg-mode-poster #tabApplied{display:none!important;visibility:hidden!important;pointer-events:none!important;width:0!important;padding:0!important;overflow:hidden!important;border:none!important;}
+[data-qg-mode="worker"] #tabPosted,
+body.qg-mode-worker #tabPosted{display:none!important;visibility:hidden!important;pointer-events:none!important;width:0!important;padding:0!important;overflow:hidden!important;border:none!important;}
 
 /* CONTENT */
-.content{padding:16px 20px;}
+.content{padding:16px 20px;max-width:100%;overflow-x:hidden;min-height:55vh;}
 
 /* CARDS */
 .task-card{border-radius:16px;padding:15px;margin-bottom:10px;border:0.5px solid var(--border);background:var(--card-bg);}
@@ -72,7 +85,7 @@ body.light .tc-applicants-toggle{color:var(--purple);}
 
 /* ACTION BUTTONS */
 .action-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
-.act-btn{padding:8px 16px;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;border:none;transition:opacity 0.15s;}
+.act-btn{padding:8px 16px;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;border:none;transition:opacity 0.15s;min-height:44px;display:inline-flex;align-items:center;justify-content:center;}
 .act-btn:hover{opacity:0.85;}
 .btn-primary{background:var(--purple);color:#fff;}
 .btn-secondary{background:var(--surface);border:0.5px solid var(--border);color:var(--text-muted);}
@@ -137,19 +150,41 @@ body.light .accept-btn{color:#2d1b4e;}
 .empty-sub{font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.6;}
 .empty-btn{padding:12px 24px;border-radius:13px;background:var(--purple);color:#fff;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;display:inline-block;}
 
-/* TOAST */
-.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:#4ade80;color:#0b0118;padding:11px 24px;border-radius:20px;font-size:13px;font-weight:500;display:none;z-index:300;white-space:nowrap;}
+.mode-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);min-height:44px;}
+body.light .mode-btn{background:#f0eeff;color:var(--purple);}
 
-/* TAB BAR */
-.tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--tab-bg);border-top:0.5px solid var(--border);display:flex;padding:8px 0 14px;z-index:100;}
-.app-legal-footer{text-align:center;padding:20px 16px 96px;font-size:10px;color:var(--text-faint);line-height:1.75;}
+/* TOAST */
+.toast{position:fixed;bottom:calc(88px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%);background:#4ade80;color:#0b0118;padding:12px 18px;border-radius:20px;font-size:13px;font-weight:500;display:none;z-index:300;white-space:normal;max-width:min(92vw,340px);text-align:center;line-height:1.45;}
+
+.app-legal-footer{text-align:center;padding:20px 16px calc(96px + env(safe-area-inset-bottom, 0px));font-size:10px;color:var(--text-faint);line-height:1.75;}
 .app-legal-footer a{color:var(--purple-light);text-decoration:none;}
 body.light .app-legal-footer a{color:var(--purple);}
-.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;}
-.tab-icon{font-size:22px;color:var(--text-faint);}
-.tab-lbl{font-size:10px;color:var(--text-faint);}
-.tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:var(--purple-light);}
-body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color:var(--purple);}
+
+@media (max-width: 480px) {
+  .nav{padding:10px 12px;gap:8px;}
+  .nav-brand .nav-logo{font-size:1.05rem;}
+  .nav-brand .nav-role{display:none;}
+  .nav-title{font-size:14px;}
+  .mode-btn{padding:8px 10px;font-size:10px;}
+  .tabs-wrap{padding:0 6px;}
+  .tab-btn{padding:11px 11px;font-size:12px;}
+  .content{padding:12px 14px;}
+  .task-card{padding:12px;border-radius:14px;margin-bottom:8px;}
+  .tc-title{font-size:14px;line-height:1.45;}
+  .tc-badge{font-size:8px;padding:3px 7px;}
+  .tc-meta{font-size:10px;line-height:1.5;}
+  .action-row{gap:6px;}
+  .action-row .act-btn{flex:1 1 calc(50% - 6px);min-width:0;padding:10px 8px;font-size:11px;line-height:1.3;}
+  .action-row .act-btn[style*="pointer-events:none"]{flex:1 1 100%;}
+  .applicant-row{align-items:flex-start;}
+  .applicant-row .app-price{margin-left:0;width:100%;}
+  .applicant-actions .accept-btn,.applicant-actions .decline-btn{min-height:44px;flex:1 1 auto;}
+  .empty-state{padding:40px 16px;}
+  .confirm-overlay{align-items:flex-end;padding:0;}
+  .confirm-overlay.open .confirm-box{border-radius:20px 20px 0 0;max-width:100%;padding-bottom:calc(22px + env(safe-area-inset-bottom, 0px));}
+  .confirm-btns{flex-direction:column-reverse;}
+  .confirm-cancel,.confirm-ok{width:100%;min-height:48px;}
+}
 </style>
 <link rel="stylesheet" href="qg-brand.css">
 </head>
@@ -162,12 +197,14 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
     <span class="nav-role">POSTER</span>
   </div>
   <div class="nav-title">My Tasks</div>
-  <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
+  <div class="nav-right">
+    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
+  </div>
 </nav>
 
 <div class="tabs-wrap">
   <button class="tab-btn active" id="tabPosted" onclick="showTab('posted',this)">Posted</button>
-  <button class="tab-btn" id="tabApplied" onclick="showTab('applied',this)">Applied</button>
+  <button class="tab-btn" id="tabApplied" onclick="showTab('applied',this)" title="Jobs you applied to (Tasker mode)">Applied</button>
   <button class="tab-btn" id="tabInprogress" onclick="showTab('inprogress',this)">In Progress</button>
   <button class="tab-btn" id="tabCompleted" onclick="showTab('completed',this)">Completed</button>
 </div>
@@ -205,10 +242,9 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <script src="qg-utils.js"></script>
 <script src="qg-config.js"></script>
-<script src="supabase-db.js"></script>
-<link rel="stylesheet" href="qg-stripe.css">
-<script src="qg-stripe.js"></script>
-<script src="qg-nav.js"></script>
+<script src="supabase-db.js?v=20260725b"></script>
+<script src="qg-stripe.js?v=20260725"></script>
+<script src="qg-nav.js?v=20260725"></script>
 <script src="qg-pwa.js?v=4"></script>
 <script src="qg-notifications.js"></script>
 <script src="qg-push.js?v=1"></script>
@@ -281,7 +317,7 @@ function enforceModeTab() {
 
 function syncRoleTabs() {
   var userId = window._currentUser ? window._currentUser.uid : null;
-  var hasPosted = userId && allTasks.some(function(t){ return getField(t, 'POSTED_BY') === userId; });
+  var hasPosted = userId && allTasks.some(function (t) { return taskBelongsToPoster(t, userId); });
   var hasApps = userId && allApplications.some(function(a){ return getField(a, 'WORKER_ID') === userId; });
   if (typeof applyMyTasksTabsForMode === 'function') {
     applyMyTasksTabsForMode({ hasPosted: hasPosted, hasApps: hasApps });
@@ -612,8 +648,12 @@ function buildReviewHref(task, acceptedApp) {
 
 async function loadData(){
   var userId = window._currentUser ? window._currentUser.uid : null;
-  if (!userId) return;
+  if (!userId) {
+    renderTabLoading();
+    return;
+  }
 
+  renderTabLoading();
   var params = new URLSearchParams(window.location.search);
   var preferInProgress = params.get('paid') === '1' || params.get('tab') === 'inprogress';
   try {
@@ -630,11 +670,19 @@ async function loadData(){
     if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('tasks');
   }
 
-  if (typeof window.QG_handlePaymentReturn === 'function') {
-    if (await window.QG_handlePaymentReturn()) preferInProgress = true;
+  try {
+    if (typeof window.QG_handlePaymentReturn === 'function') {
+      if (await window.QG_handlePaymentReturn()) preferInProgress = true;
+    }
+  } catch (payRetErr) {
+    console.warn('Payment return handling failed:', payRetErr);
   }
-  if (typeof window.QG_syncPendingPayments === 'function') {
-    await window.QG_syncPendingPayments(userId);
+  try {
+    if (typeof window.QG_syncPendingPayments === 'function') {
+      await window.QG_syncPendingPayments(userId);
+    }
+  } catch (syncErr) {
+    console.warn('Pending payment sync failed:', syncErr);
   }
 
   try {
@@ -663,6 +711,18 @@ async function loadData(){
     var bundle = results[0];
     var freshTasks = bundle && Array.isArray(bundle.tasks) ? bundle.tasks : [];
     var freshApps = bundle && Array.isArray(bundle.applications) ? bundle.applications : [];
+    if (userId && !freshTasks.length && typeof fetchAllTasksFresh === 'function') {
+      try {
+        var scanned = await fetchAllTasksFresh();
+        freshTasks = (scanned || []).filter(function (t) {
+          return typeof taskPostedByUser === 'function'
+            ? taskPostedByUser(t, userId)
+            : String(t.posted_by || t.POSTED_BY || '') === String(userId);
+        });
+      } catch (scanErr) {
+        console.warn('My Tasks poster scan fallback failed:', scanErr);
+      }
+    }
     if (!bundle) {
       var tasksPromise = typeof fetchAllTasksFresh === 'function'
         ? fetchAllTasksFresh()
@@ -712,7 +772,15 @@ async function loadData(){
   applyExpandFromUrl();
   syncRoleTabs();
   syncTabButtons();
-  renderTab();
+  try {
+    renderTab();
+  } catch (renderErr) {
+    console.error('My Tasks render failed:', renderErr);
+    var tabEl = document.getElementById('tabContent');
+    if (tabEl) {
+      tabEl.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Could not load this page</div><div class="empty-sub">Hard refresh the app. If it keeps happening, run supabase/launch-stabilize.sql in Supabase.</div><button type="button" class="empty-btn" onclick="location.reload()">Refresh</button></div>';
+    }
+  }
   var tabEl = document.getElementById('tabContent');
   if (tabEl) tabEl.removeAttribute('aria-busy');
 
@@ -839,6 +907,19 @@ function taskStatus(row) {
   return String(getField(row, 'STATUS') || 'open').toLowerCase();
 }
 
+function taskBelongsToPoster(t, userId) {
+  if (typeof taskPostedByUser === 'function') return taskPostedByUser(t, userId);
+  return String(getField(t, 'POSTED_BY') || '') === String(userId || '');
+}
+
+function tasksForPoster(userId, statusFilter) {
+  return allTasks.filter(function (t) {
+    if (!taskBelongsToPoster(t, userId)) return false;
+    if (!statusFilter) return true;
+    return taskStatus(t) === statusFilter;
+  });
+}
+
 document.getElementById('tabContent').addEventListener('click', function(e) {
   var acceptBtn = e.target.closest('.accept-btn');
   if (acceptBtn && acceptBtn.hasAttribute('data-app-id')) {
@@ -934,7 +1015,21 @@ document.getElementById('tabContent').addEventListener('click', function(e) {
 
 function showToast(msg, color){
   var t = document.getElementById('toast');
-  t.textContent = msg;
+  if (!t) return;
+  if (msg != null && typeof msg === 'object') {
+    if (typeof formatSupabaseActionError === 'function') {
+      msg = formatSupabaseActionError('complete action', msg.error || msg.message || msg);
+    } else if (typeof window.QG_formatPayError === 'function') {
+      msg = window.QG_formatPayError(msg);
+    } else {
+      msg = msg.message || msg.error || 'Something went wrong — refresh and try again';
+      if (typeof msg === 'object') msg = 'Something went wrong — refresh and try again';
+    }
+  }
+  if (msg === '[object Object]' || msg == null || msg === '') {
+    msg = 'Something went wrong — refresh and try again';
+  }
+  t.textContent = String(msg);
   t.style.background = color || '#4ade80';
   t.style.color = color ? '#fff' : '#0b0118';
   t.style.display = 'block';
@@ -1057,21 +1152,32 @@ async function reloadMyTasksData() {
 window.showTab = function(tab, btn){
   activeTab = typeof normalizeMyTasksTab === 'function' ? normalizeMyTasksTab(tab) : tab;
   document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
-  if (btn) btn.classList.add('active');
+  if (btn && btn.id && TAB_IDS[activeTab] === btn.id) btn.classList.add('active');
   else syncTabButtons();
   if (window.history && window.history.replaceState) {
     var url = new URL(window.location.href);
-    url.searchParams.set('tab', tab);
+    url.searchParams.set('tab', activeTab);
     window.history.replaceState({}, '', url.pathname + url.search);
   }
   renderTab();
 };
+
+function renderTabLoading() {
+  var content = document.getElementById('tabContent');
+  if (!content) return;
+  content.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Loading your tasks…</div><div class="empty-sub">One moment</div></div>';
+}
 
 function renderTab(){
   enforceModeTab();
   syncTabButtons();
   var userId = window._currentUser ? window._currentUser.uid : null;
   var content = document.getElementById('tabContent');
+  if (!content) return;
+  if (!userId) {
+    renderTabLoading();
+    return;
+  }
   var isWorker = typeof isWorkerMode === 'function' && isWorkerMode();
   var isPoster = typeof isPosterMode === 'function' && isPosterMode();
 
@@ -1085,14 +1191,20 @@ function renderTab(){
       }) : '';
       return;
     }
-    var myTasks = allTasks.filter(function(t){ return getField(t,'POSTED_BY') === userId && taskStatus(t) === 'open'; });
-    var inProgPosted = allTasks.filter(function(t){ return getField(t,'POSTED_BY') === userId && taskStatus(t) === 'in_progress'; });
+    var myTasks = tasksForPoster(userId, 'open');
+    var inProgPosted = tasksForPoster(userId, 'in_progress');
+    var anyPosted = tasksForPoster(userId, null);
     if(!myTasks.length){
       var movedLink = inProgPosted.length
         ? '<p class="empty-sub" style="margin-top:10px">Accepted tasks move to <strong>In Progress</strong> — you have ' + inProgPosted.length + ' active.</p>' +
           '<button type="button" class="empty-btn" onclick="showTab(\'inprogress\',document.getElementById(\'tabInprogress\'))">View In Progress →</button>'
-        : '';
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">Post a task in Poster mode. When you accept a tasker, the job moves to In Progress — not here.</div>' + movedLink + '<a class="empty-btn" href="posttask.html">Post a task</a></div>';
+        : (anyPosted.length
+          ? '<p class="empty-sub" style="margin-top:10px">Your posting may be under <strong>In Progress</strong> or <strong>Completed</strong>.</p>' +
+            '<button type="button" class="empty-btn" onclick="showTab(\'inprogress\',document.getElementById(\'tabInprogress\'))">Check In Progress →</button>'
+          : '');
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">Post a task in Poster mode. When you accept a tasker, the job moves to In Progress — not here.</div>' + movedLink +
+        '<a class="empty-btn" href="posttask.html">Post a task</a>' +
+        '<button type="button" class="empty-btn btn-secondary" style="margin-top:8px;background:var(--surface);color:var(--text-muted);border:1px solid var(--border)" onclick="typeof loadData===\'function\'&&loadData()">↻ Refresh list</button></div>';
       return;
     }
     content.innerHTML = myTasks.map(function(t){
@@ -1232,7 +1344,7 @@ function renderTab(){
   else if(activeTab === 'inprogress'){
     var inProg;
     if (isPoster) {
-      inProg = allTasks.filter(function(t){ return getField(t,'POSTED_BY') === userId && taskStatus(t) === 'in_progress'; });
+      inProg = tasksForPoster(userId, 'in_progress');
     } else {
       inProg = allTasks.filter(function(t){
         return taskStatus(t) === 'in_progress' && allApplications.some(function(a){
@@ -1247,9 +1359,7 @@ function renderTab(){
           ? 'After you accept a tasker, pay to unlock chat — then coordinate here until the job is done.'
           : 'After you accept a tasker from Posted, the job appears here.')
         : 'When a poster accepts you, the job shows here. Switch to Tasker mode on Profile if you were browsing as a poster.';
-      var openPosted = isPoster ? allTasks.filter(function(t){
-        return getField(t,'POSTED_BY') === userId && taskStatus(t) === 'open';
-      }).length : 0;
+      var openPosted = tasksForPoster(userId, 'open').length;
       var postedLink = openPosted > 0 && isPoster
         ? '<button type="button" class="empty-btn" onclick="showTab(\'posted\',document.getElementById(\'tabPosted\'))">Review ' + openPosted + ' open posting' + (openPosted !== 1 ? 's' : '') + ' →</button>'
         : '';
@@ -1291,7 +1401,7 @@ function renderTab(){
         } else if (taskPaid) {
           payAction = '<span class="act-btn btn-secondary" style="opacity:0.9;cursor:default;pointer-events:none">✓ Paid · chat unlocked</span>';
         } else {
-          payAction = '<button type="button" class="act-btn btn-primary" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks" data-pay-amount="'+escAttr(String(getField(t,'BUDGET')))+'" data-pay-title="'+escAttr(getField(t,'TITLE'))+'">💳 Pay &amp; unlock chat</button>' +
+          payAction = '<button type="button" class="act-btn btn-primary" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks" data-pay-amount="'+escAttr(String(getField(t,'BUDGET')))+'" data-pay-title="'+escAttr(getField(t,'TITLE'))+'">💳 Pay to unlock</button>' +
             '<button type="button" class="act-btn btn-secondary" data-sync-pay-task="'+escAttr(taskId)+'" title="Paid in Stripe but still locked? Tap to sync">↻ Sync payment</button>';
         }
       }
@@ -1320,7 +1430,7 @@ function renderTab(){
     if (isPoster) {
       done = allTasks.filter(function(t){
         var st = taskStatus(t);
-        return (st === 'completed' || st === 'cancelled' || st === 'expired') && getField(t,'POSTED_BY') === userId;
+        return (st === 'completed' || st === 'cancelled' || st === 'expired') && taskBelongsToPoster(t, userId);
       });
     } else {
       done = allTasks.filter(function(t){
@@ -1561,8 +1671,21 @@ window.openChatWithWorker = async function(taskId, workerId){
     return;
   }
 
+  if (typeof window.QG_syncPendingPayments === 'function') {
+    await window.QG_syncPendingPayments(userId);
+  }
   if (typeof window.QG_refreshPaymentState === 'function') {
     await window.QG_refreshPaymentState(taskId);
+  }
+
+  if (typeof window.qgShowGlobalLoading === 'function') {
+    window.qgShowGlobalLoading('Opening chat…');
+  }
+
+  var existingConv = await getConversationForTask(taskId, posterId, workerId);
+  if (existingConv && existingConv.conv_id) {
+    window.location.href = 'chat.html?conv=' + encodeURIComponent(String(existingConv.conv_id));
+    return;
   }
 
   if (isPaymentGatedChat() && typeof ensureChatReadyForTask === 'function') {
@@ -1572,6 +1695,7 @@ window.openChatWithWorker = async function(taskId, workerId){
       return;
     }
     if (ready.error === 'not_paid') {
+      if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
       showToast('Pay first to unlock chat', '#f59e0b');
       if (String(posterId) === String(userId) && typeof window.QG_openPayModal === 'function') {
         window.QG_openPayModal(taskId, userId, { returnPage: 'mytasks', title: getField(task, 'TITLE') });
@@ -1579,6 +1703,7 @@ window.openChatWithWorker = async function(taskId, workerId){
       return;
     }
     if (ready.error === 'self_task') {
+      if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
       showToast('Same account as tasker — use two logins to test pay + chat', '#ef4444');
       return;
     }
@@ -1591,6 +1716,7 @@ window.openChatWithWorker = async function(taskId, workerId){
     return;
   }
 
+  if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
   showToast('No chat thread yet — check Messages', '#f59e0b');
   setTimeout(function(){ window.location.href = 'messages.html'; }, 1200);
 };
@@ -1599,11 +1725,11 @@ window.openChatForTask = async function(taskId){
   var userId = window._currentUser ? window._currentUser.uid : null;
   if(!userId) return;
 
-  if (typeof window.QG_refreshPaymentState === 'function') {
-    await window.QG_refreshPaymentState(taskId);
-  }
   if (typeof window.QG_syncPendingPayments === 'function') {
     await window.QG_syncPendingPayments(userId);
+  }
+  if (typeof window.QG_refreshPaymentState === 'function') {
+    await window.QG_refreshPaymentState(taskId);
   }
 
   var task = allTasks.find(function(t){ return String(getField(t,'TASK_ID')) === String(taskId); });
@@ -1920,6 +2046,13 @@ window.confirmCancelInProgress = function(taskId) {
     });
   });
 };
+
+(function initMyTasksTabsEarly() {
+  if (typeof applyMyTasksTabsForMode === 'function') applyMyTasksTabsForMode();
+  pickDefaultTab();
+  syncTabButtons();
+  if (typeof renderTabLoading === 'function') renderTabLoading();
+})();
 </script>
 
 <script type="module">
@@ -1947,12 +2080,24 @@ onAuthStateChanged(auth, function (user) {
   clearTimeout(redirectTimeout);
   if (!user) { window.location.href = 'login.html'; return; }
   window._currentUser = user;
+  function bootMyTasks() {
+    if (typeof window.loadData === 'function') {
+      window.loadData().catch(function (err) {
+        console.error('loadData failed:', err);
+        if (typeof renderTabLoading === 'function') renderTabLoading();
+        if (typeof showToast === 'function') {
+          showToast('Could not load tasks — pull to refresh or hard refresh the page', '#ef4444');
+        }
+      });
+    }
+  }
   if (typeof syncCurrentUserProfile === 'function') {
-    syncCurrentUserProfile(user).then(function () {
-      if (typeof window.loadData === 'function') window.loadData();
+    syncCurrentUserProfile(user).then(bootMyTasks).catch(function (err) {
+      console.warn('Profile sync failed:', err);
+      bootMyTasks();
     });
-  } else if (typeof window.loadData === 'function') {
-    window.loadData();
+  } else {
+    bootMyTasks();
   }
 });
 </script>

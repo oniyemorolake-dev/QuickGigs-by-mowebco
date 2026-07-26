@@ -467,7 +467,24 @@ async function lockConversationsForTask(taskId) {
 }
 
 async function getTasksByUser(userId) {
-  return await sbGetTasksList('posted_by=eq.' + encodeURIComponent(String(userId)), 50);
+  userId = String(userId || '');
+  if (!userId) return [];
+  var rows = await sbGetTasksList('posted_by=eq.' + encodeURIComponent(userId), 100);
+  if (rows && rows.length) return rows;
+  // Some rows may have been saved before posted_by normalization — scan open tasks
+  try {
+    var all = await sbGetTasksList(null, 200);
+    return (all || []).filter(function (t) {
+      return String(t.posted_by || t.POSTED_BY || '') === userId;
+    });
+  } catch (e) {
+    return rows || [];
+  }
+}
+
+function taskPostedByUser(task, userId) {
+  if (!task || !userId) return false;
+  return String(task.posted_by || task.POSTED_BY || '') === String(userId);
 }
 
 /** My Tasks — poster listings + worker jobs (avoids loading entire tasks table). */
@@ -502,6 +519,19 @@ async function fetchMyTasksBundle(userId) {
     console.warn('fetchMyTasksBundle posted tasks failed:', e);
   }
 
+  if (!Object.keys(taskMap).length) {
+    try {
+      var fallbackTasks = typeof fetchAllTasksFresh === 'function'
+        ? await fetchAllTasksFresh()
+        : await sbGetTasksList(null, 200);
+      (fallbackTasks || []).forEach(function (row) {
+        if (taskPostedByUser(row, userId)) addTask(row);
+      });
+    } catch (e2) {
+      console.warn('fetchMyTasksBundle fallback task scan failed:', e2);
+    }
+  }
+
   var workerApps = [];
   try {
     workerApps = typeof getApplicationsByWorker === 'function'
@@ -526,6 +556,22 @@ async function fetchMyTasksBundle(userId) {
     try {
       addTask(await getTaskById(tid));
     } catch (e) {}
+  }
+
+  if (Object.keys(taskMap).length && !Object.keys(appMap).length) {
+    try {
+      var allApps = typeof fetchAllApplicationsFresh === 'function'
+        ? await fetchAllApplicationsFresh()
+        : await sbGetOrThrow('applications', null, 'created_at.desc', 200);
+      var taskIds = {};
+      Object.keys(taskMap).forEach(function (k) { taskIds[k] = true; });
+      (allApps || []).forEach(function (a) {
+        var appTaskId = String(a.task_id || a.TASK_ID || '');
+        if (taskIds[appTaskId]) addApp(a);
+      });
+    } catch (e3) {
+      console.warn('fetchMyTasksBundle poster applications fallback failed:', e3);
+    }
   }
 
   return {
@@ -1892,7 +1938,23 @@ async function updateApplicationStatus(appId, status, opts) {
 }
 
 function formatSupabaseActionError(action, err) {
-  var msg = String(err || '');
+  var msg = '';
+  if (err == null || err === '') msg = '';
+  else if (typeof err === 'string') msg = err;
+  else if (err instanceof Error) msg = err.message || '';
+  else if (typeof err === 'object') {
+    if (typeof err.message === 'string' && err.message) msg = err.message;
+    else if (typeof err.error === 'string' && err.error) msg = err.error;
+    else if (typeof err.details === 'string' && err.details) msg = err.details;
+    else if (typeof err.code === 'string' && err.code) msg = err.code;
+    else {
+      try {
+        var raw = JSON.stringify(err);
+        if (raw && raw !== '{}') msg = raw;
+      } catch (e) { msg = ''; }
+    }
+  } else msg = String(err);
+  if (msg === '[object Object]') msg = '';
   var lower = msg.toLowerCase();
   if (lower.indexOf('401') >= 0 || lower.indexOf('403') >= 0 || lower.indexOf('42501') >= 0 || lower.indexOf('row-level') >= 0) {
     return 'Could not ' + action + ' — run supabase/beta-setup-all.sql in Supabase SQL Editor, then refresh.';
@@ -2522,6 +2584,7 @@ window.getAllTasks = getAllTasks;
 window.fetchTasksWithCache = fetchTasksWithCache;
 window.fetchAllTasksFresh = fetchAllTasksFresh;
 window.fetchMyTasksBundle = fetchMyTasksBundle;
+window.taskPostedByUser = taskPostedByUser;
 window.mergeTaskLists = mergeTaskLists;
 window.mergeApplicationLists = mergeApplicationLists;
 window.fetchAllApplicationsFresh = fetchAllApplicationsFresh;

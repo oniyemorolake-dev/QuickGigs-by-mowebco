@@ -106,11 +106,19 @@
     options = options || {};
     var isWorker = isWorkerMode();
 
+    document.documentElement.setAttribute('data-qg-mode', isWorker ? 'worker' : 'poster');
+
     var postedEl = document.getElementById('tabPosted');
     var appliedEl = document.getElementById('tabApplied');
     // Poster = post & hire only. Tasker = apply & work only.
-    if (postedEl) postedEl.style.display = isWorker ? 'none' : '';
-    if (appliedEl) appliedEl.style.display = isWorker ? '' : 'none';
+    if (postedEl) {
+      postedEl.hidden = isWorker;
+      postedEl.style.display = isWorker ? 'none' : '';
+    }
+    if (appliedEl) {
+      appliedEl.hidden = !isWorker;
+      appliedEl.style.display = isWorker ? '' : 'none';
+    }
 
     var titleEl = document.querySelector('.nav-title');
     if (titleEl) titleEl.textContent = isWorker ? 'My Jobs' : 'My Tasks';

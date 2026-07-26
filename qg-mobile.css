@@ -141,6 +141,25 @@ body.qg-page-chat {
   .bubble {
     max-width: 85%;
   }
+  .confirm-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .confirm-overlay.open .confirm-box {
+    border-radius: 20px 20px 0 0;
+    max-width: 100%;
+    width: 100%;
+    padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  }
+  .confirm-btns {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+  .confirm-cancel,
+  .confirm-ok {
+    width: 100%;
+    min-height: 48px;
+  }
 }
 
 .app-avatar,
