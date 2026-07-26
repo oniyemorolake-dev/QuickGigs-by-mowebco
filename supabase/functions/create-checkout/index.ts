@@ -284,7 +284,6 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const taskId = String(body.task_id || '').trim();
     const posterId = String(body.poster_id || '').trim();
-    const returnPage = String(body.return_page || 'payment').toLowerCase();
     if (!taskId || !posterId) return json({ ok: false, error: 'missing_task_or_poster' }, 400);
 
     const supabase = createClient(supabaseUrl, serviceKey);
@@ -353,16 +352,6 @@ Deno.serve(async (req) => {
 
     const workerConnectId = workerUser?.stripe_connect_id || '';
     const title = String(getField(task, 'title') || 'QuickGigs task');
-    const siteUrl = (Deno.env.get('SITE_URL') || 'https://quickgigs.ca').replace(/\/$/, '');
-
-    const returnConv = String(body.return_conv || '').trim();
-    const convQs = returnConv ? `conv=${encodeURIComponent(returnConv)}&` : '';
-    let returnUrl =
-      `${siteUrl}/chat.html?${convQs}paid=1&task=${encodeURIComponent(paymentTaskId)}&session_id={CHECKOUT_SESSION_ID}`;
-    if (returnPage === 'mytasks' || returnPage === 'payment') {
-      returnUrl =
-        `${siteUrl}/chat.html?paid=1&task=${encodeURIComponent(paymentTaskId)}&session_id={CHECKOUT_SESSION_ID}`;
-    }
 
     const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
 
@@ -373,7 +362,6 @@ Deno.serve(async (req) => {
         ui_mode: 'embedded',
         redirect_on_completion: 'never',
         currency: 'cad',
-        return_url: returnUrl,
         line_items: [
           {
             price_data: {
