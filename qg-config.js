@@ -1,7 +1,8 @@
 // QuickGigs — platform rules (single place to change launch behaviour)
 window.QG_CONFIG = {
   // When chat unlocks: 'payment' (launch) | 'accept' (beta) | 'apply' (internal testing only)
-  chatUnlockAfter: 'payment',
+  // TEMP: 'accept' until Stripe pay→held is reliable in your test flow. Flip back to 'payment' for launch.
+  chatUnlockAfter: 'accept',
   // Set true ONLY after Supabase Auth → Firebase is enabled AND rls-secure.sql is applied
   supabaseFirebaseAuth: false,
   blockOffPlatformContact: true,

@@ -247,9 +247,9 @@ body.light .app-legal-footer a{color:var(--purple);}
 
 <script src="qg-utils.js"></script>
 <script src="qg-polish.js?v=20260726c"></script>
-<script src="qg-config.js?v=20260726j"></script>
-<script src="supabase-db.js?v=20260726j"></script>
-<script src="qg-stripe.js?v=20260726j"></script>
+<script src="qg-config.js?v=20260726k"></script>
+<script src="supabase-db.js?v=20260726k"></script>
+<script src="qg-stripe.js?v=20260726k"></script>
 <script src="qg-nav.js?v=20260725"></script>
 <script src="qg-pwa.js?v=4"></script>
 <script src="qg-notifications.js"></script>
@@ -1528,10 +1528,11 @@ function renderTab(){
             '<button type="button" class="act-btn btn-secondary" data-sync-pay-task="'+escAttr(taskId)+'" title="Paid in Stripe but still locked? Tap to sync">↻ Sync payment</button>';
         }
       }
+      var chatNeedsPay = isPosterTask && isPaymentGatedChat() && !taskPaid && !selfTask;
       var messageBtn = isPosterTask
-        ? (taskPaid
-          ? '<button class="act-btn btn-primary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')">💬 Message</button>'
-          : '<button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')" title="Pay first to unlock chat">💬 Message</button>')
+        ? (chatNeedsPay
+          ? '<button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')" title="Pay first to unlock chat">💬 Message</button>'
+          : '<button class="act-btn btn-primary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')">💬 Message</button>')
         : '';
       var posterActions = isPosterTask
         ? payAction +
