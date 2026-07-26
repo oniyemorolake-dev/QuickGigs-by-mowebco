@@ -66,19 +66,44 @@ Deno.serve(async (req) => {
     .eq('task_id', taskId)
     .eq('poster_id', posterId);
 
-  const { data: convs } = await supabase
-    .from('conversations')
-    .select('conv_id')
-    .eq('task_id', taskId)
-    .eq('poster_id', posterId)
-    .eq('worker_id', workerId)
-    .limit(1);
+  const taskIdKeys = (val: string): (string | number)[] => {
+    const keys: (string | number)[] = [val];
+    if (/^\d+$/.test(val)) keys.push(parseInt(val, 10));
+    return keys;
+  };
 
-  if (convs && convs[0]?.conv_id) {
+  let convId: string | null = null;
+  for (const key of taskIdKeys(taskId)) {
+    const { data: convs } = await supabase
+      .from('conversations')
+      .select('conv_id')
+      .eq('task_id', key)
+      .eq('poster_id', posterId)
+      .eq('worker_id', workerId)
+      .limit(1);
+    if (convs && convs[0]?.conv_id) {
+      convId = convs[0].conv_id;
+      break;
+    }
+  }
+
+  if (!convId) {
+    const { data: byPair } = await supabase
+      .from('conversations')
+      .select('conv_id')
+      .eq('poster_id', posterId)
+      .eq('worker_id', workerId)
+      .in('status', ['in_progress', 'application'])
+      .order('created_at', { ascending: false })
+      .limit(1);
+    convId = byPair?.[0]?.conv_id || null;
+  }
+
+  if (convId) {
     await supabase
       .from('conversations')
       .update({ is_unlocked: true, status: 'in_progress' })
-      .eq('conv_id', convs[0].conv_id);
+      .eq('conv_id', convId);
   }
 
   return new Response(JSON.stringify({ ok: true, task_id: taskId }), {

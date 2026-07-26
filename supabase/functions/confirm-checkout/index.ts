@@ -56,6 +56,25 @@ async function unlockConversation(
       return convs[0].conv_id;
     }
   }
+
+  // Conversations may use legacy numeric task_id while payments use UUID
+  const { data: byPair } = await supabase
+    .from('conversations')
+    .select('conv_id')
+    .eq('poster_id', posterId)
+    .eq('worker_id', workerId)
+    .in('status', ['in_progress', 'application'])
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (byPair && byPair[0]?.conv_id) {
+    await supabase
+      .from('conversations')
+      .update({ is_unlocked: true, status: 'in_progress' })
+      .eq('conv_id', byPair[0].conv_id);
+    return byPair[0].conv_id;
+  }
+
   return null;
 }
 

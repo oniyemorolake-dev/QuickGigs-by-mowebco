@@ -1362,7 +1362,10 @@ async function forceUnlockConversationForTask(conv, taskStatus) {
   if (rule === 'payment') {
     var taskId = conv.task_id || conv.TASK_ID;
     if (taskId && typeof getPaymentByTask === 'function') {
-      var payment = await getPaymentByTask(taskId);
+      var payment = await getPaymentByTask(taskId, {
+        posterId: conv.poster_id,
+        workerId: conv.worker_id
+      });
       var pst = payment && String(payment.status || '').toLowerCase();
       if (pst === 'held' || pst === 'paid' || pst === 'completed') {
         var patch = { is_unlocked: true, status: 'in_progress' };
@@ -2211,13 +2214,8 @@ async function submitReview(reviewData) {
   return result;
 }
 
-async function getPaymentByTask(taskId) {
-  var tid = String(taskId);
-  var results = await sbGet('payments', 'task_id=eq.' + encodeURIComponent(tid), 'created_at.desc', 20);
-  if ((!results || !results.length) && tid !== String(parseInt(tid, 10))) {
-    results = await sbGet('payments', 'task_id=eq.' + encodeURIComponent(String(parseInt(tid, 10))), 'created_at.desc', 20);
-  }
-  if (!results || !results.length) return null;
+function pickBestPaymentRow(rows) {
+  if (!rows || !rows.length) return null;
   var rank = function (p) {
     var st = String(p.status || '').toLowerCase();
     if (st === 'paid' || st === 'completed') return 4;
@@ -2225,9 +2223,53 @@ async function getPaymentByTask(taskId) {
     if (st === 'pending') return 1;
     return 0;
   };
-  var best = results[0];
-  for (var i = 1; i < results.length; i++) {
-    if (rank(results[i]) > rank(best)) best = results[i];
+  var best = rows[0];
+  for (var i = 1; i < rows.length; i++) {
+    if (rank(rows[i]) > rank(best)) best = rows[i];
+  }
+  return best;
+}
+
+async function getPaymentByTask(taskId, options) {
+  options = options || {};
+  var ids = [];
+  function addId(v) {
+    if (v == null || v === '') return;
+    var s = String(v);
+    if (ids.indexOf(s) === -1) ids.push(s);
+    var n = parseInt(v, 10);
+    if (!isNaN(n) && ids.indexOf(String(n)) === -1) ids.push(String(n));
+  }
+  addId(taskId);
+  if (typeof getTaskById === 'function') {
+    var task = await getTaskById(taskId);
+    if (task) {
+      addId(task.task_id);
+      addId(task.TASK_ID);
+    }
+  }
+  var best = null;
+  var rank = function (p) {
+    var st = String(p.status || '').toLowerCase();
+    if (st === 'paid' || st === 'completed') return 4;
+    if (st === 'held') return 3;
+    if (st === 'pending') return 1;
+    return 0;
+  };
+  for (var i = 0; i < ids.length; i++) {
+    var results = await sbGet('payments', 'task_id=eq.' + encodeURIComponent(ids[i]), 'created_at.desc', 20);
+    var row = pickBestPaymentRow(results);
+    if (row && (!best || rank(row) > rank(best))) best = row;
+  }
+  if (!best && options.posterId && options.workerId) {
+    var byPair = await sbGet(
+      'payments',
+      'poster_id=eq.' + encodeURIComponent(options.posterId) +
+        '&worker_id=eq.' + encodeURIComponent(options.workerId),
+      'created_at.desc',
+      20
+    );
+    best = pickBestPaymentRow(byPair);
   }
   return best;
 }

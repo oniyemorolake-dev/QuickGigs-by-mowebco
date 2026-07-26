@@ -317,7 +317,35 @@ Deno.serve(async (req) => {
       getField(app, 'task_id') || taskId,
     );
 
-    const paidKeys = relationTaskKeys(task, paymentTaskId);
+    let storageTaskId = paymentTaskId;
+    for (const key of relationTaskKeys(task, paymentTaskId)) {
+      const { data: convs } = await supabase
+        .from('conversations')
+        .select('task_id')
+        .eq('task_id', key)
+        .eq('poster_id', posterId)
+        .eq('worker_id', workerId)
+        .limit(1);
+      if (convs && convs[0]?.task_id != null) {
+        storageTaskId = String(convs[0].task_id);
+        break;
+      }
+    }
+    if (storageTaskId === paymentTaskId) {
+      const { data: byPair } = await supabase
+        .from('conversations')
+        .select('task_id')
+        .eq('poster_id', posterId)
+        .eq('worker_id', workerId)
+        .in('status', ['in_progress', 'application'])
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (byPair && byPair[0]?.task_id != null) {
+        storageTaskId = String(byPair[0].task_id);
+      }
+    }
+
+    const paidKeys = relationTaskKeys(task, storageTaskId);
     let alreadyPaid = false;
     for (const key of paidKeys) {
       const { data: existingPayments } = await supabase
@@ -378,7 +406,7 @@ Deno.serve(async (req) => {
         payment_intent_data: {
           metadata: {
             project: 'quickgigs',
-            task_id: paymentTaskId,
+            task_id: storageTaskId,
             poster_id: posterId,
             worker_id: workerId,
             worker_connect_id: workerConnectId || '',
@@ -386,7 +414,7 @@ Deno.serve(async (req) => {
         },
         metadata: {
           project: 'quickgigs',
-          task_id: paymentTaskId,
+          task_id: storageTaskId,
           poster_id: posterId,
           worker_id: workerId,
         },
@@ -401,7 +429,7 @@ Deno.serve(async (req) => {
     }
 
     const paymentRow = {
-      task_id: paymentTaskId,
+      task_id: storageTaskId,
       poster_id: posterId,
       worker_id: workerId,
       amount,

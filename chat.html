@@ -224,7 +224,7 @@ onAuthStateChanged(auth, (user) => {
 <link rel="stylesheet" href="qg-trust.css">
 <script src="qg-utils.js"></script>
 <script src="qg-config.js"></script>
-<script src="supabase-db.js?v=20260725f"></script>
+<script src="supabase-db.js?v=20260725i"></script>
 <script src="qg-site.js"></script>
 <script src="qg-stripe.js?v=20260725g"></script>
 <script src="qg-lightbox.js?v=1"></script>
@@ -468,7 +468,10 @@ async function initChat(){
     }
     var taskAlreadyPaid = false;
     if (currentConv.task_id && typeof getPaymentByTask === 'function') {
-      var payRow = await getPaymentByTask(currentConv.task_id);
+      var payRow = await getPaymentByTask(currentConv.task_id, {
+        posterId: currentConv.poster_id,
+        workerId: currentConv.worker_id
+      });
       var paySt = payRow && String(payRow.status || '').toLowerCase();
       taskAlreadyPaid = paySt === 'held' || paySt === 'paid' || paySt === 'completed';
     }
