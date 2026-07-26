@@ -200,10 +200,13 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceKey);
 
     const { task, error: taskErr } = await fetchTaskRow(supabase, taskId);
-    if (taskErr) {
-      return json({ ok: false, error: 'task_lookup_failed', details: errorMessage(taskErr) }, 500);
+    if (!task) {
+      return json({
+        ok: false,
+        error: 'task_not_found',
+        details: taskErr ? errorMessage(taskErr) : undefined,
+      }, 404);
     }
-    if (!task) return json({ ok: false, error: 'task_not_found' }, 404);
 
     const postedBy = String(getField(task, 'posted_by') || '');
     if (postedBy !== posterId) return json({ ok: false, error: 'not_task_poster' }, 403);
