@@ -808,6 +808,7 @@ function buildTaskIdFilters(taskId, taskRow) {
     if (v == null || v === '') return;
     var s = String(v);
     if (ids.indexOf(s) === -1) ids.push(s);
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)) return;
     var n = parseInt(v, 10);
     if (!isNaN(n) && ids.indexOf(String(n)) === -1) ids.push(String(n));
   }
@@ -815,21 +816,14 @@ function buildTaskIdFilters(taskId, taskRow) {
   if (taskRow) {
     addId(taskRow.task_id);
     addId(taskRow.TASK_ID);
-    addId(taskRow.id);
-    addId(taskRow.ID);
   }
   var filters = [];
   var seen = {};
   ids.forEach(function (raw) {
     var enc = encodeURIComponent(raw);
-    ['task_id=eq.' + enc, 'id=eq.' + enc].forEach(function (f) {
+    ['task_id=eq.' + enc].forEach(function (f) {
       if (!seen[f]) { seen[f] = true; filters.push(f); }
     });
-    if (raw !== enc) {
-      ['task_id=eq.' + raw, 'id=eq.' + raw].forEach(function (f) {
-        if (!seen[f]) { seen[f] = true; filters.push(f); }
-      });
-    }
   });
   return filters;
 }
@@ -839,9 +833,9 @@ function buildTaskIdOrFilter(taskId, taskRow) {
   var parts = [];
   var seen = {};
   singles.forEach(function (f) {
-    var m = f.match(/^(task_id|id)=eq\.(.+)$/);
+    var m = f.match(/^task_id=eq\.(.+)$/);
     if (!m) return;
-    var piece = m[1] + '.eq.' + m[2];
+    var piece = 'task_id.eq.' + m[1];
     if (!seen[piece]) { seen[piece] = true; parts.push(piece); }
   });
   if (!parts.length) return null;

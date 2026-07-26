@@ -88,30 +88,117 @@ function relationTaskKeys(task: Record<string, unknown> | null, inputTaskId: str
   return keys;
 }
 
-async function fetchTaskRow(supabase: ReturnType<typeof createClient>, taskId: string) {
-  type Attempt = { col: 'id' | 'task_id'; val: string | number };
-  const attempts: Attempt[] = [];
+function findAcceptedApp(rows: unknown[] | null | undefined) {
+  return (rows || []).find((row) =>
+    String(getField(row as Record<string, unknown>, 'status') || '').toLowerCase() === 'accepted'
+  ) as Record<string, unknown> | undefined;
+}
 
-  if (isNumericId(taskId)) {
-    attempts.push({ col: 'id', val: parseInt(taskId, 10) });
+function canonicalTaskId(task: Record<string, unknown>): string {
+  return String(getField(task, 'task_id') || getField(task, 'id') || '');
+}
+
+async function findAcceptedAppForTaskUuid(
+  supabase: ReturnType<typeof createClient>,
+  taskUuid: string,
+) {
+  if (!taskUuid) return null;
+  const { data, error } = await supabase.from('applications').select('*').eq('task_id', taskUuid);
+  if (error) return null;
+  return findAcceptedApp(data) || null;
+}
+
+async function matchInProgressTaskByWorker(
+  supabase: ReturnType<typeof createClient>,
+  tasks: Record<string, unknown>[],
+  workerId: string,
+) {
+  for (const t of tasks) {
+    const uuid = canonicalTaskId(t);
+    if (!uuid) continue;
+    const accepted = await findAcceptedAppForTaskUuid(supabase, uuid);
+    if (accepted && String(getField(accepted, 'worker_id') || '') === workerId) return t;
   }
+  return null;
+}
+
+async function fetchInProgressPosterTasks(
+  supabase: ReturnType<typeof createClient>,
+  posterId: string,
+) {
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('posted_by', posterId)
+    .eq('status', 'in_progress');
+  if (error) return { tasks: [] as Record<string, unknown>[], error };
+  return { tasks: (data || []) as Record<string, unknown>[], error: null };
+}
+
+async function fetchTaskRow(
+  supabase: ReturnType<typeof createClient>,
+  taskId: string,
+  posterId: string,
+) {
   if (isUuidLike(taskId)) {
-    attempts.push({ col: 'task_id', val: taskId });
-  }
-  if (!attempts.length) {
-    attempts.push({ col: 'task_id', val: taskId });
+    const { data, error } = await supabase.from('tasks').select('*').eq('task_id', taskId).limit(1);
+    if (data && data[0]) return { task: data[0] as Record<string, unknown>, error: null };
+    if (error) return { task: null, error };
   }
 
-  let lastErr: unknown = null;
-  for (const attempt of attempts) {
-    const { data, error } = await supabase.from('tasks').select('*').eq(attempt.col, attempt.val).limit(1);
-    if (error) {
-      lastErr = error;
-      continue;
+  const legacyKeys = relationTaskKeys(null, taskId);
+  const { tasks: inProgress, error: listErr } = await fetchInProgressPosterTasks(supabase, posterId);
+
+  if (listErr) return { task: null, error: listErr };
+
+  for (const key of legacyKeys) {
+    const { data: convs } = await supabase
+      .from('conversations')
+      .select('*')
+      .eq('task_id', key)
+      .eq('poster_id', posterId)
+      .limit(5);
+    for (const conv of convs || []) {
+      const workerId = String(getField(conv as Record<string, unknown>, 'worker_id') || '');
+      const matched = await matchInProgressTaskByWorker(supabase, inProgress, workerId);
+      if (matched) return { task: matched, error: null };
     }
-    if (data && data[0]) return { task: data[0] as Record<string, unknown>, error: null };
   }
-  return { task: null, error: lastErr };
+
+  for (const key of legacyKeys) {
+    const { data: apps, error: appErr } = await supabase.from('applications').select('*').eq('task_id', key);
+    if (appErr) continue;
+    const accepted = findAcceptedApp(apps);
+    if (!accepted) continue;
+    const workerId = String(getField(accepted, 'worker_id') || '');
+    const matched = await matchInProgressTaskByWorker(supabase, inProgress, workerId);
+    if (matched) return { task: matched, error: null };
+    const appTaskId = String(getField(accepted, 'task_id') || '');
+    if (isUuidLike(appTaskId)) {
+      const { data } = await supabase.from('tasks').select('*').eq('task_id', appTaskId).limit(1);
+      if (data && data[0]) return { task: data[0] as Record<string, unknown>, error: null };
+    }
+  }
+
+  const eligible: Record<string, unknown>[] = [];
+  for (const t of inProgress) {
+    const uuid = canonicalTaskId(t);
+    if (uuid && await findAcceptedAppForTaskUuid(supabase, uuid)) eligible.push(t);
+  }
+  if (eligible.length === 1) return { task: eligible[0], error: null };
+
+  for (const t of inProgress) {
+    const uuid = canonicalTaskId(t);
+    if (legacyKeys.some((k) => String(k) === uuid)) return { task: t, error: null };
+  }
+
+  if (!isNumericId(taskId) && !isUuidLike(taskId)) {
+    const { data, error } = await supabase.from('tasks').select('*').eq('task_id', taskId).limit(1);
+    if (data && data[0]) return { task: data[0] as Record<string, unknown>, error: null };
+    if (error) return { task: null, error };
+  }
+
+  return { task: null, error: null };
 }
 
 async function fetchAcceptedApp(
@@ -119,18 +206,21 @@ async function fetchAcceptedApp(
   task: Record<string, unknown>,
   inputTaskId: string,
 ) {
+  const taskUuid = canonicalTaskId(task);
+  if (taskUuid) {
+    const byUuid = await findAcceptedAppForTaskUuid(supabase, taskUuid);
+    if (byUuid) return { app: byUuid, error: null };
+  }
+
   const keys = relationTaskKeys(task, inputTaskId);
   let lastErr: unknown = null;
-
   for (const key of keys) {
     const { data, error } = await supabase.from('applications').select('*').eq('task_id', key);
     if (error) {
       lastErr = error;
       continue;
     }
-    const accepted = (data || []).find((row) =>
-      String(getField(row as Record<string, unknown>, 'status') || '').toLowerCase() === 'accepted'
-    );
+    const accepted = findAcceptedApp(data);
     if (accepted) return { app: accepted as Record<string, unknown>, error: null };
   }
   return { app: null, error: lastErr };
@@ -199,7 +289,7 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    const { task, error: taskErr } = await fetchTaskRow(supabase, taskId);
+    const { task, error: taskErr } = await fetchTaskRow(supabase, taskId, posterId);
     if (!task) {
       return json({
         ok: false,
@@ -224,8 +314,8 @@ Deno.serve(async (req) => {
     if (!workerId) return json({ ok: false, error: 'worker_missing' }, 400);
     if (workerId === posterId) return json({ ok: false, error: 'cannot_pay_self' }, 400);
 
-    const paymentTaskId = String(
-      getField(app, 'task_id') || getField(task, 'id') || getField(task, 'task_id') || taskId,
+    const paymentTaskId = canonicalTaskId(task) || String(
+      getField(app, 'task_id') || taskId,
     );
 
     const paidKeys = relationTaskKeys(task, paymentTaskId);
