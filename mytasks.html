@@ -266,8 +266,12 @@ body.light .app-legal-footer a{color:var(--purple);}
 <script defer src="qg-confetti.js?v=1"></script>
 <script defer src="qg-disputes.js?v=20260716d"></script>
 <script>
-var navActive = (typeof isWorkerMode === 'function' && isWorkerMode()) ? 'jobs' : 'tasks';
-renderQuickGigsTabBar(navActive);
+function paintMyTasksTabBar() {
+  var navActive = (typeof isWorkerMode === 'function' && isWorkerMode()) ? 'jobs' : 'tasks';
+  if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar(navActive);
+}
+paintMyTasksTabBar();
+document.addEventListener('DOMContentLoaded', paintMyTasksTabBar);
 </script>
 <script>
 var activeTab = 'posted';
@@ -765,169 +769,182 @@ async function loadData(){
     if (sessionStorage.getItem('qg-payment-tab') === 'inprogress') preferInProgress = true;
   } catch (e) {}
 
-  if (tabParam === 'applied' || params.get('mode') === 'worker') {
-    if (typeof setSessionMode === 'function') setSessionMode('worker');
-    if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('jobs');
-    activeTab = tabParam === 'inprogress' || tabParam === 'completed' ? tabParam : 'applied';
-  } else if (tabParam === 'posted' || sessionStorage.getItem('qg-just-posted') === '1') {
-    if (typeof setSessionMode === 'function') setSessionMode('poster');
-    try { sessionStorage.removeItem('qg-just-posted'); } catch (e) {}
-    activeTab = 'posted';
-    if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('tasks');
-  } else if (preferInProgress) {
-    activeTab = 'inprogress';
-    if (typeof setSessionMode === 'function') setSessionMode('poster');
-    if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('tasks');
-  } else if (tabParam === 'inprogress' || tabParam === 'completed') {
-    // Keep current poster/tasker mode — do not flip roles
-    activeTab = tabParam;
-    if (typeof renderQuickGigsTabBar === 'function') {
-      renderQuickGigsTabBar(typeof isWorkerMode === 'function' && isWorkerMode() ? 'jobs' : 'tasks');
-    }
-  }
-
-  // Show cached tasks immediately — never block UI on payment sync
-  var cached = typeof readTasksCache === 'function' ? readTasksCache(true) : null;
-  if (cached && cached.length) {
-    allTasks = cached;
-    if (preferInProgress) activeTab = 'inprogress';
-    else pickDefaultTab();
-    applyExpandFromUrl();
-    syncRoleTabs();
-    syncTabButtons();
-    renderTab();
-  }
-
-  (async function runPaymentSyncInBackground() {
-    try {
-      if (typeof window.QG_handlePaymentReturn === 'function') {
-        await withTimeout(window.QG_handlePaymentReturn(), 8000, false);
-      }
-    } catch (payRetErr) {
-      console.warn('Payment return handling failed:', payRetErr);
-    }
-    try {
-      if (typeof window.QG_syncPendingPayments === 'function') {
-        await withTimeout(window.QG_syncPendingPayments(userId), 8000, null);
-      }
-    } catch (syncErr) {
-      console.warn('Pending payment sync failed:', syncErr);
-    }
-  })();
-
   try {
-    var bundlePromise = typeof fetchMyTasksBundle === 'function'
-      ? (typeof withTimeout === 'function'
-        ? withTimeout(fetchMyTasksBundle(userId), 12000, { tasks: [], applications: [] })
-        : fetchMyTasksBundle(userId))
-      : Promise.resolve(null);
-    var namesPromise = typeof getUsersNameMap === 'function'
-      ? withTimeout(getUsersNameMap(), 8000, {})
-      : Promise.resolve({});
-    var avatarsPromise = typeof getUsersAvatarMap === 'function'
-      ? withTimeout(getUsersAvatarMap(), 8000, {})
-      : Promise.resolve({});
-
-    var results = await Promise.all([bundlePromise, namesPromise, avatarsPromise]);
-    var bundle = results[0];
-    var freshTasks = bundle && Array.isArray(bundle.tasks) ? bundle.tasks : [];
-    var freshApps = bundle && Array.isArray(bundle.applications) ? bundle.applications : [];
-    if (userId && !freshTasks.length && typeof fetchAllTasksFresh === 'function') {
-      try {
-        var scanned = await withTimeout(fetchAllTasksFresh(), 8000, []);
-        freshTasks = (scanned || []).filter(function (t) {
-          return typeof taskPostedByUser === 'function'
-            ? taskPostedByUser(t, userId)
-            : String(t.posted_by || t.POSTED_BY || '') === String(userId);
-        });
-      } catch (scanErr) {
-        console.warn('My Tasks poster scan fallback failed:', scanErr);
-      }
-    }
-    if (!bundle) {
-      var tasksPromise = typeof fetchAllTasksFresh === 'function'
-        ? withTimeout(fetchAllTasksFresh(), 8000, [])
-        : (typeof getAllTasks === 'function' ? getAllTasks() : Promise.resolve([]));
-      var appsPromise = typeof fetchAllApplicationsFresh === 'function'
-        ? withTimeout(fetchAllApplicationsFresh(), 8000, [])
-        : (typeof getAllApplications === 'function' ? getAllApplications() : Promise.resolve([]));
-      var legacy = await Promise.all([tasksPromise, appsPromise]);
-      freshTasks = Array.isArray(legacy[0]) ? legacy[0] : [];
-      freshApps = Array.isArray(legacy[1]) ? legacy[1] : [];
-    }
-    allTasks = typeof mergeTaskLists === 'function'
-      ? mergeTaskLists(allTasks, freshTasks)
-      : (freshTasks.length ? freshTasks : allTasks);
-    allApplications = typeof mergeApplicationLists === 'function'
-      ? mergeApplicationLists(allApplications, freshApps)
-      : (freshApps.length ? freshApps : allApplications);
-    if (typeof writeTasksCache === 'function') writeTasksCache(allTasks);
-    if (typeof writeAppsCache === 'function') writeAppsCache(allApplications);
-    userNames = results[1] || {};
-    userAvatars = results[2] || {};
-    // Don't block the page on Stripe sync — buttons must stay clickable
-    try { await refreshPaymentMap(userId); } catch (ePay) {}
-    syncInProgressPaymentState(userId).then(function () {
-      try { if (activeTab === 'inprogress') renderTab(); } catch (e) {}
-    }).catch(function (payMapErr) {
-      console.warn('Payment map sync failed:', payMapErr);
-    });
-    Promise.all([
-      hydrateApplicantAvatars(),
-      hydrateMissingNames()
-    ]).then(function () {
-      try { renderTab(); } catch (e) {}
-    }).catch(function () {});
-  } catch (err) {
-    console.warn('My Tasks load failed:', err);
-    var fallbackTasks = typeof readTasksCache === 'function' ? readTasksCache(true) : null;
-    if (fallbackTasks && fallbackTasks.length && !allTasks.length) allTasks = fallbackTasks;
-  }
-
-  if (typeof isSupabaseUsingStaleCache === 'function' && isSupabaseUsingStaleCache()) {
-    showToast('Showing saved tasks — reconnect or run tasks-my-tasks-fix.sql if this persists', '#f59e0b');
-  }
-  if (!allTasks.length && !allApplications.length && userId) {
-    showToast('No tasks loaded — tap Refresh list or hard refresh the page', '#f59e0b');
-  }
-
-  try {
-    if (sessionStorage.getItem('qg-just-completed')) {
-      activeTab = 'completed';
+    if (tabParam === 'applied' || params.get('mode') === 'worker') {
+      if (typeof setSessionMode === 'function') setSessionMode('worker');
+      if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('jobs');
+      activeTab = tabParam === 'inprogress' || tabParam === 'completed' ? tabParam : 'applied';
+    } else if (tabParam === 'posted' || sessionStorage.getItem('qg-just-posted') === '1') {
+      if (typeof setSessionMode === 'function') setSessionMode('poster');
+      try { sessionStorage.removeItem('qg-just-posted'); } catch (e) {}
+      activeTab = 'posted';
+      if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('tasks');
     } else if (preferInProgress) {
       activeTab = 'inprogress';
-      // Payment return only — stay poster for that flow
       if (typeof setSessionMode === 'function') setSessionMode('poster');
-    } else if (tabParam === 'applied' || tabParam === 'posted' || tabParam === 'inprogress' || tabParam === 'completed') {
-      activeTab = typeof normalizeMyTasksTab === 'function' ? normalizeMyTasksTab(tabParam) : tabParam;
-    } else {
-      pickDefaultTab();
+      if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('tasks');
+    } else if (tabParam === 'inprogress' || tabParam === 'completed') {
+      // Keep current poster/tasker mode — do not flip roles
+      activeTab = tabParam;
+      if (typeof renderQuickGigsTabBar === 'function') {
+        renderQuickGigsTabBar(typeof isWorkerMode === 'function' && isWorkerMode() ? 'jobs' : 'tasks');
+      }
     }
-  } catch (tabErr) {
-    if (preferInProgress) activeTab = 'inprogress';
-    else pickDefaultTab();
-  }
-  applyExpandFromUrl();
-  syncRoleTabs();
-  syncTabButtons();
-  try {
-    renderTab();
-  } catch (renderErr) {
-    console.error('My Tasks render failed:', renderErr);
-    var tabEl = document.getElementById('tabContent');
-    if (tabEl) {
-      tabEl.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Could not load this page</div><div class="empty-sub">Hard refresh the app. If it keeps happening, run supabase/launch-stabilize.sql in Supabase.</div><button type="button" class="empty-btn" onclick="location.reload()">Refresh</button></div>';
-    }
-  }
-  var tabEl = document.getElementById('tabContent');
-  if (tabEl) tabEl.removeAttribute('aria-busy');
 
-  var expandTarget = new URLSearchParams(window.location.search).get('expand');
-  if (expandTarget) {
-    setTimeout(function () {
-      var panel = document.getElementById(taskDomId(expandTarget));
-      if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 150);
+    // Show cached tasks immediately — never block UI on payment sync
+    var cached = typeof readTasksCache === 'function' ? readTasksCache(true) : null;
+    if (cached && cached.length) {
+      allTasks = Array.isArray(cached) ? cached : [];
+      if (preferInProgress) activeTab = 'inprogress';
+      else pickDefaultTab();
+      applyExpandFromUrl();
+      syncRoleTabs();
+      syncTabButtons();
+      renderTab();
+    }
+
+    (async function runPaymentSyncInBackground() {
+      try {
+        if (typeof window.QG_handlePaymentReturn === 'function') {
+          await withTimeout(window.QG_handlePaymentReturn(), 8000, false);
+        }
+      } catch (payRetErr) {
+        console.warn('Payment return handling failed:', payRetErr);
+      }
+      try {
+        if (typeof window.QG_syncPendingPayments === 'function') {
+          await withTimeout(window.QG_syncPendingPayments(userId), 8000, null);
+        }
+      } catch (syncErr) {
+        console.warn('Pending payment sync failed:', syncErr);
+      }
+    })();
+
+    try {
+      var bundlePromise = typeof fetchMyTasksBundle === 'function'
+        ? (typeof withTimeout === 'function'
+          ? withTimeout(fetchMyTasksBundle(userId), 12000, { tasks: [], applications: [] })
+          : fetchMyTasksBundle(userId))
+        : Promise.resolve(null);
+      var namesPromise = typeof getUsersNameMap === 'function'
+        ? (typeof withTimeout === 'function' ? withTimeout(getUsersNameMap(), 8000, {}) : getUsersNameMap().catch(function () { return {}; }))
+        : Promise.resolve({});
+      var avatarsPromise = typeof getUsersAvatarMap === 'function'
+        ? (typeof withTimeout === 'function' ? withTimeout(getUsersAvatarMap(), 8000, {}) : getUsersAvatarMap().catch(function () { return {}; }))
+        : Promise.resolve({});
+
+      var results = await Promise.all([bundlePromise, namesPromise, avatarsPromise]);
+      var bundle = results[0];
+      var freshTasks = bundle && Array.isArray(bundle.tasks) ? bundle.tasks : [];
+      var freshApps = bundle && Array.isArray(bundle.applications) ? bundle.applications : [];
+      if (userId && !freshTasks.length && typeof fetchAllTasksFresh === 'function') {
+        try {
+          var scanned = await withTimeout(fetchAllTasksFresh(), 8000, []);
+          freshTasks = (scanned || []).filter(function (t) {
+            return typeof taskPostedByUser === 'function'
+              ? taskPostedByUser(t, userId)
+              : String(t.posted_by || t.POSTED_BY || '') === String(userId);
+          });
+        } catch (scanErr) {
+          console.warn('My Tasks poster scan fallback failed:', scanErr);
+        }
+      }
+      if (!bundle) {
+        var tasksPromise = typeof fetchAllTasksFresh === 'function'
+          ? withTimeout(fetchAllTasksFresh(), 8000, [])
+          : (typeof getAllTasks === 'function' ? getAllTasks() : Promise.resolve([]));
+        var appsPromise = typeof fetchAllApplicationsFresh === 'function'
+          ? withTimeout(fetchAllApplicationsFresh(), 8000, [])
+          : (typeof getAllApplications === 'function' ? getAllApplications() : Promise.resolve([]));
+        var legacy = await Promise.all([tasksPromise, appsPromise]);
+        freshTasks = Array.isArray(legacy[0]) ? legacy[0] : [];
+        freshApps = Array.isArray(legacy[1]) ? legacy[1] : [];
+      }
+      if (!Array.isArray(allTasks)) allTasks = [];
+      if (!Array.isArray(allApplications)) allApplications = [];
+      allTasks = typeof mergeTaskLists === 'function'
+        ? mergeTaskLists(allTasks, freshTasks)
+        : (freshTasks.length ? freshTasks : allTasks);
+      allApplications = typeof mergeApplicationLists === 'function'
+        ? mergeApplicationLists(allApplications, freshApps)
+        : (freshApps.length ? freshApps : allApplications);
+      if (!Array.isArray(allTasks)) allTasks = [];
+      if (!Array.isArray(allApplications)) allApplications = [];
+      if (typeof writeTasksCache === 'function') writeTasksCache(allTasks);
+      if (typeof writeAppsCache === 'function') writeAppsCache(allApplications);
+      userNames = results[1] || {};
+      userAvatars = results[2] || {};
+      // Don't block the page on Stripe sync — buttons must stay clickable
+      try { await refreshPaymentMap(userId); } catch (ePay) {}
+      syncInProgressPaymentState(userId).then(function () {
+        try { if (activeTab === 'inprogress') renderTab(); } catch (e) {}
+      }).catch(function (payMapErr) {
+        console.warn('Payment map sync failed:', payMapErr);
+      });
+      Promise.all([
+        hydrateApplicantAvatars(),
+        hydrateMissingNames()
+      ]).then(function () {
+        try { renderTab(); } catch (e) {}
+      }).catch(function () {});
+    } catch (err) {
+      console.warn('My Tasks load failed:', err);
+      var fallbackTasks = typeof readTasksCache === 'function' ? readTasksCache(true) : null;
+      if (fallbackTasks && fallbackTasks.length && (!allTasks || !allTasks.length)) allTasks = fallbackTasks;
+      if (!Array.isArray(allTasks)) allTasks = [];
+      if (!Array.isArray(allApplications)) allApplications = [];
+    }
+
+    if (typeof isSupabaseUsingStaleCache === 'function' && isSupabaseUsingStaleCache()) {
+      showToast('Showing saved tasks — reconnect or run tasks-my-tasks-fix.sql if this persists', '#f59e0b');
+    }
+
+    try {
+      if (sessionStorage.getItem('qg-just-completed')) {
+        activeTab = 'completed';
+      } else if (preferInProgress) {
+        activeTab = 'inprogress';
+        // Payment return only — stay poster for that flow
+        if (typeof setSessionMode === 'function') setSessionMode('poster');
+      } else if (tabParam === 'applied' || tabParam === 'posted' || tabParam === 'inprogress' || tabParam === 'completed') {
+        activeTab = typeof normalizeMyTasksTab === 'function' ? normalizeMyTasksTab(tabParam) : tabParam;
+      } else {
+        pickDefaultTab();
+      }
+    } catch (tabErr) {
+      if (preferInProgress) activeTab = 'inprogress';
+      else pickDefaultTab();
+    }
+    try { applyExpandFromUrl(); } catch (e1) {}
+    try { syncRoleTabs(); } catch (e2) {}
+    try { syncTabButtons(); } catch (e3) {}
+    try {
+      renderTab();
+    } catch (renderErr) {
+      console.error('My Tasks render failed:', renderErr);
+      renderTabLoadError('Hard refresh the app. If it keeps happening, run supabase/launch-stabilize.sql in Supabase.');
+      return;
+    }
+    var tabEl = document.getElementById('tabContent');
+    if (tabEl) tabEl.removeAttribute('aria-busy');
+
+    var expandTarget = new URLSearchParams(window.location.search).get('expand');
+    if (expandTarget) {
+      setTimeout(function () {
+        var panel = document.getElementById(taskDomId(expandTarget));
+        if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 150);
+    }
+  } catch (fatalErr) {
+    console.error('My Tasks loadData fatal:', fatalErr);
+    if (!Array.isArray(allTasks)) allTasks = [];
+    if (!Array.isArray(allApplications)) allApplications = [];
+    try {
+      if (allTasks.length || allApplications.length) renderTab();
+      else renderTabLoadError();
+    } catch (e) {
+      renderTabLoadError();
+    }
   }
 }
 window.loadData = loadData;
@@ -1051,6 +1068,7 @@ function taskBelongsToPoster(t, userId) {
 }
 
 function tasksForPoster(userId, statusFilter) {
+  if (!Array.isArray(allTasks)) allTasks = [];
   return allTasks.filter(function (t) {
     if (!taskBelongsToPoster(t, userId)) return false;
     if (!statusFilter) return true;
@@ -1330,7 +1348,22 @@ window.showTab = function(tab, btn){
 function renderTabLoading() {
   var content = document.getElementById('tabContent');
   if (!content) return;
+  content.setAttribute('aria-busy', 'true');
   content.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Loading your tasks…</div><div class="empty-sub">One moment</div></div>';
+}
+
+function renderTabLoadError(msg) {
+  var content = document.getElementById('tabContent');
+  if (!content) return;
+  content.removeAttribute('aria-busy');
+  content.innerHTML =
+    '<div class="empty-state">' +
+    '<div class="empty-icon">⚠️</div>' +
+    '<div class="empty-title">Could not load tasks</div>' +
+    '<div class="empty-sub">' + (msg || 'Check your connection, then try again. If this keeps happening, hard refresh the page.') + '</div>' +
+    '<button type="button" class="empty-btn" onclick="typeof loadData===\'function\'&&loadData()">↻ Refresh list</button>' +
+    '<button type="button" class="empty-btn btn-secondary" style="margin-top:8px;background:var(--surface);color:var(--text-muted);border:1px solid var(--border)" onclick="location.reload()">Hard refresh</button>' +
+    '</div>';
 }
 
 function renderTab(){
@@ -2392,13 +2425,24 @@ onAuthStateChanged(auth, function (user) {
     if (typeof window.loadData === 'function') {
       window.loadData().catch(function (err) {
         console.error('loadData failed:', err);
-        if (typeof renderTab === 'function') {
-          try { renderTab(); } catch (e) {}
+        try {
+          if (typeof renderTabLoadError === 'function') renderTabLoadError();
+          else if (typeof renderTab === 'function') renderTab();
+        } catch (e) {
+          var el = document.getElementById('tabContent');
+          if (el) {
+            el.innerHTML = '<div class="empty-state"><div class="empty-title">Could not load tasks</div><button type="button" class="empty-btn" onclick="location.reload()">Hard refresh</button></div>';
+          }
         }
         if (typeof showToast === 'function') {
-          showToast('Could not load tasks — tap Refresh list or hard refresh', '#ef4444');
+          showToast('Could not load tasks — tap Refresh list', '#ef4444');
         }
       });
+    } else {
+      var el = document.getElementById('tabContent');
+      if (el) {
+        el.innerHTML = '<div class="empty-state"><div class="empty-title">Could not load tasks</div><button type="button" class="empty-btn" onclick="location.reload()">Hard refresh</button></div>';
+      }
     }
   }
   if (typeof syncCurrentUserProfile === 'function') {

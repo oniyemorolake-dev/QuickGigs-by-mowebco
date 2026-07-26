@@ -747,8 +747,14 @@ function taskPostedByUser(task, userId) {
 }
 
 function withTimeout(promise, ms, fallback) {
+  // Must absorb rejections — otherwise Promise.race rejects immediately and
+  // the timeout fallback never applies (My Tasks stuck on "Loading…").
+  var guarded = Promise.resolve(promise).catch(function (err) {
+    console.warn('withTimeout: promise rejected, using fallback', err);
+    return fallback;
+  });
   return Promise.race([
-    Promise.resolve(promise),
+    guarded,
     new Promise(function (resolve) {
       setTimeout(function () { resolve(fallback); }, ms);
     })
