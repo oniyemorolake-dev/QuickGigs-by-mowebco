@@ -253,11 +253,48 @@ Deno.serve(async (req) => {
     for (const row of pendingRows || []) {
       if (workerIdHint && String(row.worker_id || '') !== workerIdHint) continue;
       const sid = String(row.stripe_id || '');
-      if (!sid.startsWith('cs_')) continue;
       try {
-        const session = await stripe.checkout.sessions.retrieve(sid);
-        const marked = await markSessionHeld(supabase, stripe, session);
-        if (marked) recovered.push(marked);
+        if (sid.startsWith('cs_')) {
+          const session = await stripe.checkout.sessions.retrieve(sid);
+          const marked = await markSessionHeld(supabase, stripe, session);
+          if (marked) recovered.push(marked);
+          continue;
+        }
+        // Pending row already has payment_intent id — promote if Stripe says succeeded
+        if (sid.startsWith('pi_')) {
+          const pi = await stripe.paymentIntents.retrieve(sid);
+          if (pi.status === 'succeeded') {
+            const taskId = String(row.task_id || '');
+            const workerId = String(row.worker_id || workerIdHint || '');
+            if (taskId && workerId) {
+              const held = await upsertHeldPayment(supabase, {
+                taskId,
+                posterId,
+                workerId,
+                amount: Number(row.amount || 0),
+                stripeId: sid,
+                sessionId: sid,
+              });
+              if (held) {
+                const convId = await unlockConversation(
+                  supabase,
+                  taskId,
+                  posterId,
+                  workerId,
+                  isNumericId(taskIdHint) ? taskIdHint : '',
+                );
+                recovered.push({
+                  payment_id: held.payment_id,
+                  task_id: String(held.task_id || taskId),
+                  status: String(held.status || 'held'),
+                  poster_id: posterId,
+                  worker_id: workerId,
+                  conv_id: convId,
+                });
+              }
+            }
+          }
+        }
       } catch (err) {
         console.warn('sync-payment pending confirm failed:', sid, err);
       }
@@ -265,11 +302,13 @@ Deno.serve(async (req) => {
 
     // 2) Scan recent Stripe checkout sessions for this poster (recovers missing DB rows)
     try {
-      const listed = await stripe.checkout.sessions.list({ limit: 40 });
+      const listed = await stripe.checkout.sessions.list({ limit: 100 });
       for (const session of listed.data || []) {
-        if (String(session.metadata?.poster_id || '') !== posterId) continue;
+        const metaPoster = String(session.metadata?.poster_id || '');
+        if (metaPoster && metaPoster !== posterId) continue;
+        // Also accept sessions with no metadata poster if we already have a pending row for this cs_
+        if (!metaPoster) continue;
         if (workerIdHint && String(session.metadata?.worker_id || '') !== workerIdHint) continue;
-        // Prefer poster(+worker) match; task hint is optional (UI may send legacy id)
         const marked = await markSessionHeld(supabase, stripe, session);
         if (marked) recovered.push(marked);
       }

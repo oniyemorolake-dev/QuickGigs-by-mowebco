@@ -247,9 +247,9 @@ body.light .app-legal-footer a{color:var(--purple);}
 
 <script src="qg-utils.js"></script>
 <script src="qg-polish.js?v=20260726c"></script>
-<script src="qg-config.js?v=20260726i"></script>
-<script src="supabase-db.js?v=20260726h"></script>
-<script src="qg-stripe.js?v=20260726i"></script>
+<script src="qg-config.js?v=20260726j"></script>
+<script src="supabase-db.js?v=20260726j"></script>
+<script src="qg-stripe.js?v=20260726j"></script>
 <script src="qg-nav.js?v=20260725"></script>
 <script src="qg-pwa.js?v=4"></script>
 <script src="qg-notifications.js"></script>
@@ -426,23 +426,49 @@ async function refreshPaymentMap(userId) {
 
 async function syncInProgressPaymentState(userId) {
   if (!userId || !window.QG_CONFIG || !window.QG_CONFIG.paymentsEnabled) return;
-  if (typeof window.QG_syncPendingPayments === 'function') {
-    if (typeof withTimeout === 'function') {
-      await withTimeout(window.QG_syncPendingPayments(userId), 4000, null);
-    } else {
-      await window.QG_syncPendingPayments(userId);
-    }
-  }
-  // Rebuild map AFTER pending→held sync so Pay/Message reflect real state
-  await refreshPaymentMap(userId);
-  if (typeof getPaymentByTask !== 'function') return;
   var inProgress = allTasks.filter(function (t) {
     return taskStatus(t) === 'in_progress' && String(getField(t, 'POSTED_BY')) === String(userId);
   });
+  var workerHint = '';
+  var taskHint = inProgress[0] ? String(getField(inProgress[0], 'TASK_ID') || '') : '';
+  if (taskHint && typeof findAcceptedApplication === 'function') {
+    var acc = findAcceptedApplication(taskHint);
+    if (acc) workerHint = String(getField(acc, 'WORKER_ID') || '');
+  }
+
+  // Recover paid Stripe sessions → held rows (even if local map is empty)
+  var serverSync = null;
+  if (typeof window.QG_syncPayment === 'function') {
+    try {
+      serverSync = typeof withTimeout === 'function'
+        ? await withTimeout(window.QG_syncPayment(userId, { taskId: taskHint, workerId: workerHint }), 10000, null)
+        : await window.QG_syncPayment(userId, { taskId: taskHint, workerId: workerHint });
+    } catch (e) {
+      console.warn('QG_syncPayment failed:', e);
+    }
+  } else if (typeof window.QG_syncPendingPayments === 'function') {
+    try {
+      serverSync = typeof withTimeout === 'function'
+        ? await withTimeout(window.QG_syncPendingPayments(userId, { taskId: taskHint, workerId: workerHint }), 10000, null)
+        : await window.QG_syncPendingPayments(userId, { taskId: taskHint, workerId: workerHint });
+    } catch (e2) {
+      console.warn('QG_syncPendingPayments failed:', e2);
+    }
+  }
+
+  await refreshPaymentMap(userId);
+
+  if (serverSync && serverSync.ok && serverSync.payment) {
+    var aliasIds = inProgress.map(function (t) { return String(getField(t, 'TASK_ID') || ''); });
+    if (serverSync.task_id) aliasIds.push(String(serverSync.task_id));
+    indexPaymentRow(serverSync.payment, aliasIds);
+  }
+
+  if (typeof getPaymentByTask !== 'function') return;
   for (var i = 0; i < inProgress.length; i++) {
     var tid = String(getField(inProgress[i], 'TASK_ID'));
     var accepted = typeof findAcceptedApplication === 'function' ? findAcceptedApplication(tid) : null;
-    var workerId = accepted ? String(getField(accepted, 'WORKER_ID') || '') : '';
+    var workerId = accepted ? String(getField(accepted, 'WORKER_ID') || '') : workerHint;
     var payCached = paymentByTaskId[tid];
     if (!workerId && payCached && payCached.worker_id) workerId = String(payCached.worker_id);
     try {
@@ -1836,6 +1862,22 @@ window.openChatWithWorker = async function(taskId, workerId){
 
   if (isPaymentGatedChat() && typeof ensureChatReadyForTask === 'function') {
     var ready = await ensureChatReadyForTask(taskId, userId);
+    if ((!ready || !ready.ok) && ready && ready.error === 'not_paid' && typeof window.QG_syncPayment === 'function') {
+      try {
+        var recovered = await window.QG_syncPayment(userId, {
+          taskId: String(taskId),
+          workerId: String(workerId || '')
+        });
+        if (recovered && recovered.ok) {
+          if (recovered.payment && typeof indexPaymentRow === 'function') {
+            indexPaymentRow(recovered.payment, [String(taskId), String(recovered.task_id || '')]);
+          }
+          ready = await ensureChatReadyForTask(taskId, userId, { skipSync: true });
+        }
+      } catch (recoverErr) {
+        console.warn('Payment recover before chat failed:', recoverErr);
+      }
+    }
     if (ready.ok && ready.conv_id) {
       window.location.href = 'chat.html?conv=' + encodeURIComponent(ready.conv_id);
       return;
@@ -1846,10 +1888,7 @@ window.openChatWithWorker = async function(taskId, workerId){
         return;
       }
       if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
-      showToast('Pay first to unlock chat', '#f59e0b');
-      if (String(posterId) === String(userId) && typeof window.QG_openPayModal === 'function') {
-        window.QG_openPayModal(taskId, userId, { returnPage: 'mytasks', title: getField(task, 'TITLE') });
-      }
+      showToast('Payment not linked yet — tap Sync payment (do not pay twice)', '#f59e0b');
       return;
     }
     if (ready.error === 'self_task') {
