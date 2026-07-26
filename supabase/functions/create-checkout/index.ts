@@ -231,28 +231,31 @@ async function upsertPendingPayment(
   row: Record<string, unknown>,
 ) {
   const taskId = String(row.task_id || '');
-  const keys = relationTaskKeys(null, taskId);
+  const posterId = String(row.poster_id || '');
+  const workerId = String(row.worker_id || '');
   let existing: { payment_id?: string }[] | null = null;
-  let findErr: unknown = null;
 
-  for (const key of keys.length ? keys : [taskId]) {
-    const res = await supabase
+  if (posterId && workerId) {
+    const byPair = await supabase
       .from('payments')
       .select('payment_id')
-      .eq('task_id', key)
+      .eq('poster_id', posterId)
+      .eq('worker_id', workerId)
       .eq('status', 'pending')
       .limit(1);
-    if (res.error) {
-      findErr = res.error;
-      continue;
-    }
-    if (res.data && res.data.length) {
-      existing = res.data;
-      break;
-    }
+    if (byPair.data && byPair.data.length) existing = byPair.data;
   }
 
-  if (findErr && !existing) return { ok: false, error: errorMessage(findErr) };
+  if ((!existing || !existing.length) && isUuidLike(taskId)) {
+    const byTask = await supabase
+      .from('payments')
+      .select('payment_id')
+      .eq('task_id', taskId)
+      .eq('status', 'pending')
+      .limit(1);
+    if (byTask.error) return { ok: false, error: errorMessage(byTask.error) };
+    if (byTask.data && byTask.data.length) existing = byTask.data;
+  }
 
   if (existing && existing[0]?.payment_id) {
     const { error: updErr } = await supabase
@@ -261,6 +264,10 @@ async function upsertPendingPayment(
       .eq('payment_id', existing[0].payment_id);
     if (updErr) return { ok: false, error: errorMessage(updErr) };
     return { ok: true };
+  }
+
+  if (!isUuidLike(taskId)) {
+    return { ok: false, error: 'payments.task_id requires a UUID' };
   }
 
   const { error: insErr } = await supabase.from('payments').insert(row);
@@ -313,53 +320,38 @@ Deno.serve(async (req) => {
     if (!workerId) return json({ ok: false, error: 'worker_missing' }, 400);
     if (workerId === posterId) return json({ ok: false, error: 'cannot_pay_self' }, 400);
 
+    // payments.task_id is UUID in production — never store legacy numeric conversation ids
     const paymentTaskId = canonicalTaskId(task) || String(
-      getField(app, 'task_id') || taskId,
+      (isUuidLike(String(getField(app, 'task_id') || ''))
+        ? getField(app, 'task_id')
+        : '') || (isUuidLike(taskId) ? taskId : ''),
     );
-
-    let storageTaskId = paymentTaskId;
-    for (const key of relationTaskKeys(task, paymentTaskId)) {
-      const { data: convs } = await supabase
-        .from('conversations')
-        .select('task_id')
-        .eq('task_id', key)
-        .eq('poster_id', posterId)
-        .eq('worker_id', workerId)
-        .limit(1);
-      if (convs && convs[0]?.task_id != null) {
-        storageTaskId = String(convs[0].task_id);
-        break;
-      }
-    }
-    if (storageTaskId === paymentTaskId) {
-      const { data: byPair } = await supabase
-        .from('conversations')
-        .select('task_id')
-        .eq('poster_id', posterId)
-        .eq('worker_id', workerId)
-        .in('status', ['in_progress', 'application'])
-        .order('created_at', { ascending: false })
-        .limit(1);
-      if (byPair && byPair[0]?.task_id != null) {
-        storageTaskId = String(byPair[0].task_id);
-      }
+    if (!paymentTaskId || !isUuidLike(paymentTaskId)) {
+      return json({
+        ok: false,
+        error: 'task_uuid_missing',
+        details: 'Could not resolve UUID task_id for payment row',
+      }, 400);
     }
 
-    const paidKeys = relationTaskKeys(task, storageTaskId);
-    let alreadyPaid = false;
-    for (const key of paidKeys) {
-      const { data: existingPayments } = await supabase
-        .from('payments')
-        .select('payment_id')
-        .eq('task_id', key)
-        .in('status', ['held', 'completed', 'paid'])
-        .limit(1);
-      if (existingPayments && existingPayments.length) {
-        alreadyPaid = true;
-        break;
-      }
+    // Already paid? Match by poster+worker (reliable) then UUID task_id
+    const { data: pairPaid } = await supabase
+      .from('payments')
+      .select('payment_id,status')
+      .eq('poster_id', posterId)
+      .eq('worker_id', workerId)
+      .in('status', ['held', 'completed', 'paid'])
+      .limit(1);
+    if (pairPaid && pairPaid.length) {
+      return json({ ok: false, error: 'already_paid' }, 409);
     }
-    if (alreadyPaid) {
+    const { data: uuidPaid } = await supabase
+      .from('payments')
+      .select('payment_id')
+      .eq('task_id', paymentTaskId)
+      .in('status', ['held', 'completed', 'paid'])
+      .limit(1);
+    if (uuidPaid && uuidPaid.length) {
       return json({ ok: false, error: 'already_paid' }, 409);
     }
 
@@ -406,17 +398,19 @@ Deno.serve(async (req) => {
         payment_intent_data: {
           metadata: {
             project: 'quickgigs',
-            task_id: storageTaskId,
+            task_id: paymentTaskId,
             poster_id: posterId,
             worker_id: workerId,
             worker_connect_id: workerConnectId || '',
+            legacy_task_id: isNumericId(taskId) ? taskId : '',
           },
         },
         metadata: {
           project: 'quickgigs',
-          task_id: storageTaskId,
+          task_id: paymentTaskId,
           poster_id: posterId,
           worker_id: workerId,
+          legacy_task_id: isNumericId(taskId) ? taskId : '',
         },
       });
     } catch (stripeErr) {
@@ -429,7 +423,7 @@ Deno.serve(async (req) => {
     }
 
     const paymentRow = {
-      task_id: storageTaskId,
+      task_id: paymentTaskId,
       poster_id: posterId,
       worker_id: workerId,
       amount,

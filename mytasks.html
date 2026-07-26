@@ -248,8 +248,8 @@ body.light .app-legal-footer a{color:var(--purple);}
 <script src="qg-utils.js"></script>
 <script src="qg-polish.js?v=20260726c"></script>
 <script src="qg-config.js?v=20260726b"></script>
-<script src="supabase-db.js?v=20260726c"></script>
-<script src="qg-stripe.js?v=20260725g"></script>
+<script src="supabase-db.js?v=20260726d"></script>
+<script src="qg-stripe.js?v=20260726d"></script>
 <script src="qg-nav.js?v=20260725"></script>
 <script src="qg-pwa.js?v=4"></script>
 <script src="qg-notifications.js"></script>
@@ -260,7 +260,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 (function(){document.querySelectorAll('#qgReportOverlay,#qgDisputeOverlay,.qg-report-overlay').forEach(function(n){n.remove()});})();
 </script>
 <script src="qg-report.js?v=20260716d"></script>
-<script src="qg-stats.js"></script>
+<script src="qg-stats.js?v=20260726d"></script>
 <script src="qg-confetti.js?v=1"></script>
 <script src="qg-disputes.js?v=20260716d"></script>
 <script>
@@ -357,21 +357,31 @@ function isTaskPaid(taskId) {
     })();
 }
 
+function indexPaymentRow(p, extraKeys) {
+  if (!p) return;
+  var keys = [];
+  function addKey(v) {
+    if (v == null || v === '') return;
+    var s = String(v);
+    if (keys.indexOf(s) === -1) keys.push(s);
+  }
+  addKey(p.task_id || p.TASK_ID);
+  (extraKeys || []).forEach(addKey);
+  keys.forEach(function (key) {
+    var cur = paymentByTaskId[key];
+    if (!cur || paymentStatusRank(p) > paymentStatusRank(cur)) {
+      paymentByTaskId[key] = p;
+    }
+  });
+}
+
 async function refreshPaymentMap(userId) {
   paymentByTaskId = {};
   if (!userId || !window.QG_CONFIG || !window.QG_CONFIG.paymentsEnabled) return;
   if (typeof getPaymentsForUser !== 'function') return;
   try {
     var rows = await getPaymentsForUser(userId, 'poster');
-    (rows || []).forEach(function (p) {
-      var tid = p.task_id || p.TASK_ID;
-      if (!tid) return;
-      var key = String(tid);
-      var cur = paymentByTaskId[key];
-      if (!cur || paymentStatusRank(p) > paymentStatusRank(cur)) {
-        paymentByTaskId[key] = p;
-      }
-    });
+    (rows || []).forEach(function (p) { indexPaymentRow(p); });
   } catch (e) {
     console.warn('Payment map load failed:', e);
   }
@@ -392,14 +402,16 @@ async function syncInProgressPaymentState(userId) {
   });
   for (var i = 0; i < inProgress.length; i++) {
     var tid = String(getField(inProgress[i], 'TASK_ID'));
+    var accepted = typeof findAcceptedApplication === 'function' ? findAcceptedApplication(tid) : null;
+    var workerId = accepted ? String(getField(accepted, 'WORKER_ID') || '') : '';
     try {
-      var row = await getPaymentByTask(tid);
-      if (row) {
-        var cur = paymentByTaskId[tid];
-        if (!cur || paymentStatusRank(row) > paymentStatusRank(cur)) {
-          paymentByTaskId[tid] = row;
-        }
-      }
+      var row = await getPaymentByTask(tid, {
+        posterId: userId,
+        workerId: workerId,
+        actorId: userId,
+        actorRole: 'poster'
+      });
+      if (row) indexPaymentRow(row, [tid]);
     } catch (e) {}
   }
 }

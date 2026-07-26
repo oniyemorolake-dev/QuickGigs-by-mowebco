@@ -668,9 +668,13 @@ async function completeTaskViaServer(taskId, actorId, options) {
 }
 
 async function getConversationsForTask(taskId) {
-  var filters = buildTaskIdFilters(taskId, null).filter(function (f) {
-    return f.indexOf('task_id=eq.') === 0;
-  });
+  // conversations.task_id is BIGINT — only query with numeric ids
+  var filters = [];
+  var raw = String(taskId || '');
+  if (/^\d+$/.test(raw)) {
+    filters.push('task_id=eq.' + encodeURIComponent(raw));
+  }
+  // If UI has UUID, find via applications/payments context is handled elsewhere
   for (var i = 0; i < filters.length; i++) {
     var convs = await sbGet('conversations', filters[i]);
     if (convs && convs.length) return convs;
@@ -2555,25 +2559,14 @@ function pickBestPaymentRow(rows) {
   return best;
 }
 
+function isUuidLikeId(val) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    String(val || '').trim()
+  );
+}
+
 async function getPaymentByTask(taskId, options) {
   options = options || {};
-  var ids = [];
-  function addId(v) {
-    if (v == null || v === '') return;
-    var s = String(v);
-    if (ids.indexOf(s) === -1) ids.push(s);
-    var n = parseInt(v, 10);
-    if (!isNaN(n) && ids.indexOf(String(n)) === -1) ids.push(String(n));
-  }
-  addId(taskId);
-  if (typeof getTaskById === 'function') {
-    var task = await getTaskById(taskId);
-    if (task) {
-      addId(task.task_id);
-      addId(task.TASK_ID);
-    }
-  }
-  var best = null;
   var rank = function (p) {
     var st = String(p.status || '').toLowerCase();
     if (st === 'paid' || st === 'completed') return 4;
@@ -2581,12 +2574,10 @@ async function getPaymentByTask(taskId, options) {
     if (st === 'pending') return 1;
     return 0;
   };
-  for (var i = 0; i < ids.length; i++) {
-    var results = await sbGet('payments', 'task_id=eq.' + encodeURIComponent(ids[i]), 'created_at.desc', 20);
-    var row = pickBestPaymentRow(results);
-    if (row && (!best || rank(row) > rank(best))) best = row;
-  }
-  if (!best && options.posterId && options.workerId) {
+  var best = null;
+
+  // Prefer poster+worker lookup — payments.task_id is UUID in production; UI often has legacy numeric ids
+  if (options.posterId && options.workerId) {
     var byPair = await sbGet(
       'payments',
       'poster_id=eq.' + encodeURIComponent(options.posterId) +
@@ -2595,9 +2586,45 @@ async function getPaymentByTask(taskId, options) {
       20
     );
     best = pickBestPaymentRow(byPair);
+    if (best) return best;
+  }
+
+  if (options.posterId && typeof getPaymentsForUser === 'function') {
+    var posterPays = await getPaymentsForUser(options.posterId, 'poster');
+    var filtered = (posterPays || []).filter(function (p) {
+      if (options.workerId && String(p.worker_id) !== String(options.workerId)) return false;
+      return true;
+    });
+    best = pickBestPaymentRow(filtered);
+    if (best && options.workerId) return best;
+  }
+
+  var ids = [];
+  function addId(v) {
+    if (v == null || v === '') return;
+    var s = String(v);
+    // Live payments.task_id is UUID — never query it with bare integers like "668"
+    if (!isUuidLikeId(s) && /^\d+$/.test(s)) return;
+    if (ids.indexOf(s) === -1) ids.push(s);
+  }
+  addId(taskId);
+  if (typeof getTaskById === 'function') {
+    var task = await getTaskById(taskId, {
+      posterId: options.posterId,
+      workerId: options.workerId
+    });
+    if (task) {
+      addId(task.task_id);
+      addId(task.TASK_ID);
+    }
+  }
+  for (var i = 0; i < ids.length; i++) {
+    var results = await sbGet('payments', 'task_id=eq.' + encodeURIComponent(ids[i]), 'created_at.desc', 20);
+    var row = pickBestPaymentRow(results);
+    if (row && (!best || rank(row) > rank(best))) best = row;
   }
   if (!best && options.actorId && typeof getPaymentsForUser === 'function') {
-    var userRows = await getPaymentsForUser(options.actorId, options.actorRole || 'worker');
+    var userRows = await getPaymentsForUser(options.actorId, options.actorRole || 'poster');
     var pairRows = (userRows || []).filter(function (p) {
       if (options.posterId && String(p.poster_id) !== String(options.posterId)) return false;
       if (options.workerId && String(p.worker_id) !== String(options.workerId)) return false;

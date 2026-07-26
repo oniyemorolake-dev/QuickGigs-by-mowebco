@@ -39,8 +39,8 @@
       return { completionRate: null, responseRate: null, completedCount: 0, reviewCount: 0, avgRating: null };
     }
 
-    var apps = await sbGet('applications', 'worker_id=eq.' + encodeURIComponent(userId) + '&select=status,created_at,updated_at');
-    var posted = await sbGet('tasks', 'poster_id=eq.' + encodeURIComponent(userId) + '&select=status');
+    var apps = await sbGet('applications', 'worker_id=eq.' + encodeURIComponent(userId) + '&select=status,created_at');
+    var posted = await sbGet('tasks', 'posted_by=eq.' + encodeURIComponent(userId) + '&select=status');
     var reviews = await sbGet('reviews', 'reviewee_id=eq.' + encodeURIComponent(userId) + '&select=rating');
 
     var workerApps = Array.isArray(apps) ? apps : [];

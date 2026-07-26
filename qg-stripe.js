@@ -601,10 +601,16 @@
     return { ok: true, already_paid: true };
   }
 
-  async function taskHasHeldPayment(taskId) {
+  async function taskHasHeldPayment(taskId, opts) {
     if (!taskId || typeof getPaymentByTask !== 'function') return false;
+    opts = opts || {};
     try {
-      var row = await getPaymentByTask(taskId);
+      var row = await getPaymentByTask(taskId, {
+        posterId: opts.posterId || '',
+        workerId: opts.workerId || '',
+        actorId: opts.posterId || opts.actorId || '',
+        actorRole: 'poster'
+      });
       var st = row && String(row.status || '').toLowerCase();
       return st === 'held' || st === 'paid' || st === 'completed';
     } catch (e) {
@@ -767,7 +773,15 @@
     _overlayEl.classList.add('open');
     document.body.style.overflow = 'hidden';
 
-    if (await taskHasHeldPayment(taskId)) {
+    var workerHint = options.workerId || '';
+    if (!workerHint && typeof findAcceptedApplication === 'function') {
+      try {
+        var acc = findAcceptedApplication(taskId);
+        if (acc && typeof getField === 'function') workerHint = String(getField(acc, 'WORKER_ID') || '');
+        else if (acc) workerHint = String(acc.worker_id || acc.WORKER_ID || '');
+      } catch (e) {}
+    }
+    if (await taskHasHeldPayment(taskId, { posterId: posterId, workerId: workerHint })) {
       setModalAlreadyPaid(taskId, options);
       return { ok: true, already_paid: true };
     }
