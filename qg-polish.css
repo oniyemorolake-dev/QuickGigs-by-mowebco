@@ -1,0 +1,113 @@
+/* QuickGigs — shared polish (mobile, light mode, motion). Safe additive layer. */
+
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes shimmer { 0% { background-position: -200px 0; } 100% { background-position: calc(200px + 100%) 0; } }
+
+body {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  overscroll-behavior: none;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  animation: fadeIn 0.3s ease;
+}
+
+button, .task-card, .nav-item, .tab-item, .act-btn, .stat-card, .action-card, .sec, .mini-card, .chk, .skill-toggle, .cat-chip, .mpill {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+button:active, .task-card:active, .tab-item:active, .act-btn:active, .empty-btn:active, .save-btn:active {
+  transform: scale(0.97);
+  opacity: 0.85;
+}
+
+input, textarea, select {
+  font-size: 16px;
+  -webkit-appearance: none;
+  appearance: none;
+  touch-action: manipulation;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--purple-light, #9b6fc4);
+  box-shadow: 0 0 0 3px rgba(107,63,160,0.15);
+}
+
+.tab-bar {
+  padding-bottom: calc(14px + env(safe-area-inset-bottom));
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: rgba(11,1,24,0.85);
+  border-bottom: 0.5px solid rgba(200,168,233,0.1);
+  transition: background 0.25s;
+}
+
+body.light .nav {
+  background: rgba(250,250,254,0.88);
+}
+
+.task-card, .stat-card, .action-card, .sec, .mini-card, .review-card, .notif-item {
+  border-radius: 18px;
+  border: 0.5px solid rgba(200,168,233,0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.task-card:hover, .stat-card:hover, .action-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(200,168,233,0.25);
+  box-shadow: 0 8px 32px rgba(107,63,160,0.15);
+}
+
+.modal-overlay { animation: fadeIn 0.2s ease; }
+.modal, .bottom-sheet { animation: slideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+.tc-badge, .status-pill, .role-pill, .skill, .tag, .wbadge, .badge, .cat-chip, .mpill {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.btn-primary, .save-btn, .empty-btn, .submit-btn, .accept-btn, .modal-confirm.purple {
+  background: linear-gradient(135deg, #6b3fa0, #9b6fc4);
+  border: none;
+  box-shadow: 0 4px 15px rgba(107,63,160,0.3);
+  transition: box-shadow 0.2s ease, transform 0.1s ease;
+}
+
+.btn-primary:hover, .save-btn:hover, .empty-btn:hover {
+  box-shadow: 0 6px 20px rgba(107,63,160,0.45);
+  transform: translateY(-1px);
+}
+
+body.light .task-card, body.light .stat-card, body.light .action-card, body.light .mini-card, body.light .review-card {
+  background: #fff;
+  border-color: #f0eeff;
+  box-shadow: 0 2px 12px rgba(107,63,160,0.06);
+}
+
+body.light .task-card:hover {
+  box-shadow: 0 6px 24px rgba(107,63,160,0.12);
+}
+
+img[loading="lazy"] {
+  content-visibility: auto;
+}

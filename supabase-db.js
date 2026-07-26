@@ -2290,6 +2290,7 @@ async function completeTask(taskId, actorId, options) {
   if (!taskId) return { success: false, error: 'Missing task id' };
 
   try {
+    console.log('[completeTask] start', { taskId: taskId, actorId: actorId, options: options });
     var ctx = typeof resolveTaskContext === 'function'
       ? await resolveTaskContext(taskId, actorId, options)
       : { taskId: taskId, canonicalTaskId: taskId, ids: [taskId], accepted: null, posterId: '', workerId: '' };
@@ -2297,6 +2298,14 @@ async function completeTask(taskId, actorId, options) {
     if (options.posterId && !ctx.posterId) ctx.posterId = String(options.posterId);
     if (options.workerId && !ctx.workerId) ctx.workerId = String(options.workerId);
     if (options.taskRow && !ctx.task) ctx.task = options.taskRow;
+    console.log('[completeTask] context', {
+      canonicalTaskId: ctx.canonicalTaskId,
+      posterId: ctx.posterId,
+      workerId: ctx.workerId,
+      ids: ctx.ids,
+      hasTask: !!ctx.task,
+      hasAccepted: !!ctx.accepted
+    });
 
     var serverResult = await completeTaskViaServer(taskId, actorId, {
       posterId: ctx.posterId || options.posterId || '',
@@ -2306,6 +2315,7 @@ async function completeTask(taskId, actorId, options) {
         ? ctx.canonicalTaskId
         : ''
     });
+    console.log('[completeTask] serverResult', serverResult);
 
     if (!serverResult.success) {
       var idsToTry = (ctx.ids && ctx.ids.length) ? ctx.ids.slice() : [taskId];

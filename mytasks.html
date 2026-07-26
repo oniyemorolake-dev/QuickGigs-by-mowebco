@@ -2,6 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com">
+<meta name="theme-color" content="#6b3fa0">
+<link rel="stylesheet" href="qg-polish.css?v=20260726c">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — My Tasks</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -241,8 +246,9 @@ body.light .app-legal-footer a{color:var(--purple);}
 <nav class="tab-bar" id="qgTabBar"></nav>
 
 <script src="qg-utils.js"></script>
+<script src="qg-polish.js?v=20260726c"></script>
 <script src="qg-config.js?v=20260726b"></script>
-<script src="supabase-db.js?v=20260726b"></script>
+<script src="supabase-db.js?v=20260726c"></script>
 <script src="qg-stripe.js?v=20260725g"></script>
 <script src="qg-nav.js?v=20260725"></script>
 <script src="qg-pwa.js?v=4"></script>
@@ -1567,10 +1573,8 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
   if(!appStatus.success){
     console.error('Accept failed:', appStatus.error);
     setAcceptLoading(acceptBtn, false);
-    var acceptMsg = typeof formatSupabaseActionError === 'function'
-      ? formatSupabaseActionError('accept', appStatus.error)
-      : 'Could not accept — run supabase/tasks-beta-fix.sql in Supabase SQL Editor, then refresh.';
-    showToast(acceptMsg, '#ef4444');
+    console.error('FULL acceptApplicant failure:', JSON.stringify(appStatus));
+    showToast('Could not accept: ' + String(appStatus.error || 'unknown_error'), '#ef4444');
     return;
   }
 
@@ -1817,8 +1821,10 @@ window.openChatForTask = async function(taskId){
 };
 
 window.markComplete = async function(taskId, btn){
+  console.log('BUTTON CLICKED — markComplete fired', taskId);
   taskId = String(taskId);
   if (btn) { btn.disabled = true; btn.textContent = 'Completing…'; }
+  if (typeof haptic === 'function') haptic(12);
   var userId = window._currentUser ? window._currentUser.uid : '';
   if (!userId) {
     if (btn) { btn.disabled = false; btn.textContent = '✓ Mark complete'; }
@@ -1829,6 +1835,10 @@ window.markComplete = async function(taskId, btn){
   var acceptedApp = typeof findAcceptedApplication === 'function' ? findAcceptedApplication(taskId) : null;
   var posterId = taskRow ? String(getField(taskRow, 'POSTED_BY') || '') : '';
   var workerId = acceptedApp ? String(getField(acceptedApp, 'WORKER_ID') || '') : '';
+  console.log('markComplete called with taskId:', taskId, 'userId:', userId);
+  console.log('completeFn exists:', typeof completeTask === 'function');
+  console.log('taskRow found:', taskRow);
+  console.log('acceptedApp found:', acceptedApp);
   var completeOpts = {
     taskRow: taskRow || null,
     acceptedApp: acceptedApp || null,
@@ -1841,10 +1851,11 @@ window.markComplete = async function(taskId, btn){
   var result;
   try {
     result = await completeFn(taskId);
+    console.log('completeTask result:', JSON.stringify(result));
   } catch (completeErr) {
     console.error('markComplete threw:', completeErr);
     if (btn) { btn.disabled = false; btn.textContent = '✓ Mark complete'; }
-    showToast('Could not mark complete — ' + (completeErr.message || 'refresh and try again'), '#ef4444');
+    showToast('Could not mark complete: ' + (completeErr.message || 'refresh and try again'), '#ef4444');
     return;
   }
   if (!result || !result.success) {
@@ -1853,11 +1864,8 @@ window.markComplete = async function(taskId, btn){
     if (result && result.release && result.release.error && errCode === 'unknown_error') {
       errCode = result.release.error;
     }
-    // Show the real server error — do not hide behind SQL-setup copy
-    var msg = 'Could not mark complete — ' + String(errCode);
-    if (msg.length > 160) msg = msg.slice(0, 160) + '…';
-    showToast(msg, '#ef4444');
-    console.error('markComplete failed:', result);
+    console.error('FULL markComplete failure:', JSON.stringify(result));
+    showToast('Could not mark complete: ' + String(errCode), '#ef4444');
     return;
   }
   if (result.release && result.release.ok && !result.release.skipped && !result.release.already) {
@@ -1911,7 +1919,24 @@ window.markComplete = async function(taskId, btn){
     }
   }
 
-  await loadData();
+  // Reload, but keep local completed status if the fetch is stale
+  try {
+    await loadData();
+  } catch (reloadErr) {
+    console.warn('Post-complete reload skipped:', reloadErr);
+  }
+  allTasks.forEach(function(t) {
+    if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, 'completed');
+  });
+  allApplications.forEach(function(a) {
+    if (String(getField(a, 'TASK_ID')) === taskId) {
+      var st = String(getField(a, 'STATUS')).toLowerCase();
+      if (st === 'accepted' || st === 'completed' || st === 'in_progress') setRowStatus(a, 'completed');
+    }
+  });
+  activeTab = 'completed';
+  syncTabButtons();
+  renderTab();
 };
 
 window.declineApplicant = async function(taskId, appId, declineBtn) {
@@ -1933,10 +1958,8 @@ window.declineApplicant = async function(taskId, appId, declineBtn) {
       declineBtn.disabled = false;
       declineBtn.textContent = 'Decline';
     }
-    var declineMsg = typeof formatSupabaseActionError === 'function'
-      ? formatSupabaseActionError('decline applicant', result.error)
-      : 'Could not decline applicant — run supabase/tasks-beta-fix.sql in Supabase, then refresh.';
-    showToast(declineMsg, '#ef4444');
+    console.error('FULL declineApplicant failure:', JSON.stringify(result));
+    showToast('Could not decline: ' + String(result.error || 'unknown_error'), '#ef4444');
     return;
   }
   allApplications.forEach(function(a) {
@@ -2016,10 +2039,8 @@ window.confirmCancelPosting = function(taskId) {
       if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
       var result = await cancelTask(taskId);
       if (!result.success) {
-        var cancelMsg = typeof formatSupabaseActionError === 'function'
-          ? formatSupabaseActionError('cancel posting', result.error)
-          : (result.error || 'Could not cancel posting — run supabase/beta-setup-all.sql in Supabase, then refresh.');
-        showToast(cancelMsg, '#ef4444');
+        console.error('FULL cancelPosting failure:', JSON.stringify(result));
+        showToast('Could not cancel posting: ' + String(result.error || 'unknown_error'), '#ef4444');
         return;
       }
       allTasks.forEach(function(t) {
@@ -2062,10 +2083,8 @@ window.confirmChangeTasker = function(taskId) {
         ? await releaseAcceptedTasker(taskId, String(appId))
         : { success: false };
       if (!result.success) {
-        var changeMsg = typeof formatSupabaseActionError === 'function'
-          ? formatSupabaseActionError('change tasker', result.error)
-          : (result.error || 'Could not change tasker — refresh and try again');
-        showToast(changeMsg, '#ef4444');
+        console.error('FULL changeTasker failure:', JSON.stringify(result));
+        showToast('Could not change tasker: ' + String(result.error || 'unknown_error'), '#ef4444');
         return;
       }
       allTasks.forEach(function(t) {
@@ -2116,10 +2135,8 @@ window.confirmCancelInProgress = function(taskId) {
             showToast('Already paid out — use Dispute or contact support', '#f59e0b');
             return;
           }
-          var cancelMsg = typeof formatSupabaseActionError === 'function'
-            ? formatSupabaseActionError('cancel task', result.error)
-            : (result.error || 'Could not cancel task — refresh and try again.');
-          showToast(cancelMsg, '#ef4444');
+          console.error('FULL cancelInProgress failure:', JSON.stringify(result));
+          showToast('Could not cancel task: ' + String(result.error || 'unknown_error'), '#ef4444');
           return;
         }
         allTasks.forEach(function(t) {
