@@ -37,6 +37,14 @@ function canonicalTaskId(task: Record<string, unknown>): string {
   return String(getField(task, 'task_id') || getField(task, 'id') || '');
 }
 
+function paymentRank(status: unknown): number {
+  const st = String(status || '').toLowerCase();
+  if (st === 'paid' || st === 'completed') return 4;
+  if (st === 'held') return 3;
+  if (st === 'pending') return 1;
+  return 0;
+}
+
 type Sb = ReturnType<typeof createClient>;
 
 async function loadTaskByAnyId(supabase: Sb, taskKey: string) {
@@ -45,6 +53,11 @@ async function loadTaskByAnyId(supabase: Sb, taskKey: string) {
   if (!isUuidLike(taskKey) && isNumericId(taskKey)) return null;
   const { data } = await supabase.from('tasks').select('*').eq('task_id', taskKey).limit(1);
   return data?.[0] ? data[0] as Record<string, unknown> : null;
+}
+
+async function taskFromPaymentUuid(supabase: Sb, payTid: string) {
+  if (!isUuidLike(payTid)) return null;
+  return await loadTaskByAnyId(supabase, payTid);
 }
 
 async function resolveTask(
@@ -59,8 +72,23 @@ async function resolveTask(
     if (direct) return direct;
   }
 
-  const posterId = hintPosterId || actorId;
-  const workerId = hintWorkerId;
+  let posterId = hintPosterId || actorId;
+  let workerId = hintWorkerId;
+
+  // 0) Conversation on legacy bigint → get poster/worker, then payment UUID
+  if (isNumericId(inputTaskId)) {
+    const { data: convs } = await supabase
+      .from('conversations')
+      .select('poster_id,worker_id,task_id,status')
+      .eq('task_id', parseInt(inputTaskId, 10))
+      .limit(5);
+    for (const conv of convs || []) {
+      const cPoster = String(getField(conv as Record<string, unknown>, 'poster_id') || '');
+      const cWorker = String(getField(conv as Record<string, unknown>, 'worker_id') || '');
+      if (cPoster) posterId = posterId || cPoster;
+      if (cWorker) workerId = workerId || cWorker;
+    }
+  }
 
   // 1) Payment row for poster+worker → UUID task_id
   if (posterId && workerId) {
@@ -71,56 +99,74 @@ async function resolveTask(
       .eq('worker_id', workerId)
       .order('created_at', { ascending: false })
       .limit(10);
-    for (const p of pays || []) {
+    const sorted = (pays || []).slice().sort((a, b) =>
+      paymentRank(getField(b as Record<string, unknown>, 'status')) -
+      paymentRank(getField(a as Record<string, unknown>, 'status'))
+    );
+    for (const p of sorted) {
       const tid = String(getField(p as Record<string, unknown>, 'task_id') || '');
-      if (isUuidLike(tid)) {
-        const t = await loadTaskByAnyId(supabase, tid);
-        if (t) return t;
-      }
+      const t = await taskFromPaymentUuid(supabase, tid);
+      if (t) return t;
     }
   }
 
-  // 2) Conversation (legacy bigint) → poster/worker → poster in_progress tasks
-  if (isNumericId(inputTaskId)) {
-    const { data: convs } = await supabase
-      .from('conversations')
-      .select('poster_id,worker_id,task_id')
-      .eq('task_id', parseInt(inputTaskId, 10))
-      .limit(5);
-    for (const conv of convs || []) {
-      const cPoster = String(getField(conv as Record<string, unknown>, 'poster_id') || posterId);
-      const cWorker = String(getField(conv as Record<string, unknown>, 'worker_id') || workerId);
-      const found = await resolvePosterInProgress(supabase, cPoster, cWorker);
-      if (found) return found;
+  // 1b) Payment by poster only (when worker unknown)
+  if (posterId && !workerId) {
+    const { data: pays } = await supabase
+      .from('payments')
+      .select('task_id,status,worker_id')
+      .eq('poster_id', posterId)
+      .order('created_at', { ascending: false })
+      .limit(20);
+    const sorted = (pays || []).slice().sort((a, b) =>
+      paymentRank(getField(b as Record<string, unknown>, 'status')) -
+      paymentRank(getField(a as Record<string, unknown>, 'status'))
+    );
+    for (const p of sorted) {
+      const tid = String(getField(p as Record<string, unknown>, 'task_id') || '');
+      const t = await taskFromPaymentUuid(supabase, tid);
+      if (!t) continue;
+      const st = String(getField(t, 'status') || '').toLowerCase();
+      if (st === 'in_progress' || st === 'completed') return t;
     }
   }
 
-  // 3) Accepted applications for worker (task_id may be legacy or UUID)
+  // 2) Poster in_progress (+ worker match)
+  if (posterId) {
+    const found = await resolvePosterInProgress(supabase, posterId, workerId, inputTaskId);
+    if (found) return found;
+  }
+
+  // 3) Accepted applications for worker
   if (workerId) {
     const { data: apps } = await supabase
       .from('applications')
       .select('*')
       .eq('worker_id', workerId)
-      .eq('status', 'accepted');
+      .in('status', ['accepted', 'completed']);
     for (const app of apps || []) {
       const appTaskId = String(getField(app as Record<string, unknown>, 'task_id') || '');
       if (isUuidLike(appTaskId)) {
         const t = await loadTaskByAnyId(supabase, appTaskId);
         if (t && (!posterId || String(getField(t, 'posted_by') || '') === posterId)) return t;
       }
+      // Legacy app task_id: use poster in_progress
+      if (posterId && (appTaskId === inputTaskId || isNumericId(appTaskId))) {
+        const found = await resolvePosterInProgress(supabase, posterId, workerId, inputTaskId);
+        if (found) return found;
+      }
     }
-  }
-
-  // 4) Poster in_progress (+ optional worker match via apps/conversations)
-  if (posterId) {
-    const found = await resolvePosterInProgress(supabase, posterId, workerId);
-    if (found) return found;
   }
 
   return null;
 }
 
-async function resolvePosterInProgress(supabase: Sb, posterId: string, workerId: string) {
+async function resolvePosterInProgress(
+  supabase: Sb,
+  posterId: string,
+  workerId: string,
+  inputTaskId: string,
+) {
   if (!posterId) return null;
   const { data: posterTasks } = await supabase
     .from('tasks')
@@ -130,6 +176,7 @@ async function resolvePosterInProgress(supabase: Sb, posterId: string, workerId:
 
   const rows = (posterTasks || []) as Record<string, unknown>[];
   if (!rows.length) {
+    // Already completed is OK (idempotent)
     const { data: done } = await supabase
       .from('tasks')
       .select('*')
@@ -137,62 +184,72 @@ async function resolvePosterInProgress(supabase: Sb, posterId: string, workerId:
       .eq('status', 'completed')
       .order('created_at', { ascending: false })
       .limit(5);
-    return (done && done[0]) ? done[0] as Record<string, unknown> : null;
+    if (!done || !done.length) return null;
+    if (workerId) {
+      for (const t of done as Record<string, unknown>[]) {
+        const tid = canonicalTaskId(t);
+        const { data: apps } = await supabase
+          .from('applications')
+          .select('worker_id')
+          .eq('task_id', tid)
+          .eq('worker_id', workerId)
+          .limit(1);
+        if (apps && apps.length) return t;
+      }
+    }
+    return done.length === 1 ? done[0] as Record<string, unknown> : null;
   }
+
   if (rows.length === 1) return rows[0];
-  if (!workerId) return rows[0];
+
+  // Prefer payment UUID match
+  if (workerId) {
+    const { data: pay } = await supabase
+      .from('payments')
+      .select('task_id')
+      .eq('poster_id', posterId)
+      .eq('worker_id', workerId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    const payTid = pay?.[0] ? String(getField(pay[0] as Record<string, unknown>, 'task_id') || '') : '';
+    if (isUuidLike(payTid)) {
+      const t = rows.find((r) => canonicalTaskId(r) === payTid);
+      if (t) return t;
+      const loaded = await loadTaskByAnyId(supabase, payTid);
+      if (loaded) return loaded;
+    }
+  }
 
   for (const t of rows) {
     const tid = canonicalTaskId(t);
-    // Match accepted app on UUID
-    if (tid) {
-      const { data: apps } = await supabase
-        .from('applications')
-        .select('worker_id,status')
-        .eq('task_id', tid)
-        .eq('status', 'accepted')
-        .limit(5);
-      if ((apps || []).some((a) => String(getField(a as Record<string, unknown>, 'worker_id') || '') === workerId)) {
-        return t;
-      }
+    if (!tid || !workerId) continue;
+    const { data: apps } = await supabase
+      .from('applications')
+      .select('worker_id,status')
+      .eq('task_id', tid)
+      .eq('status', 'accepted')
+      .limit(5);
+    if ((apps || []).some((a) => String(getField(a as Record<string, unknown>, 'worker_id') || '') === workerId)) {
+      return t;
     }
-    // Match conversation by poster+worker (legacy id on conv)
+  }
+
+  // Ambiguous: do not guess the wrong task
+  if (!workerId && rows.length > 1) return null;
+  if (workerId) {
+    // Last resort: conversation pair → any single in_progress (already tried payment)
     const { data: convs } = await supabase
       .from('conversations')
-      .select('conv_id')
+      .select('task_id')
       .eq('poster_id', posterId)
       .eq('worker_id', workerId)
       .in('status', ['in_progress', 'application'])
       .limit(1);
-    if (convs && convs.length) {
-      // Prefer the in-progress task that is "current" — if multiple poster tasks, pick first with payment
-      const { data: pay } = await supabase
-        .from('payments')
-        .select('task_id')
-        .eq('poster_id', posterId)
-        .eq('worker_id', workerId)
-        .order('created_at', { ascending: false })
-        .limit(1);
-      const payTid = pay?.[0] ? String(getField(pay[0] as Record<string, unknown>, 'task_id') || '') : '';
-      if (payTid && payTid === tid) return t;
-    }
+    if (convs && convs.length && rows.length === 1) return rows[0];
   }
 
-  // Fallback: payment UUID for this pair
-  const { data: pay } = await supabase
-    .from('payments')
-    .select('task_id')
-    .eq('poster_id', posterId)
-    .eq('worker_id', workerId)
-    .order('created_at', { ascending: false })
-    .limit(1);
-  const payTid = pay?.[0] ? String(getField(pay[0] as Record<string, unknown>, 'task_id') || '') : '';
-  if (isUuidLike(payTid)) {
-    const t = await loadTaskByAnyId(supabase, payTid);
-    if (t) return t;
-  }
-
-  return rows[0];
+  void inputTaskId;
+  return rows.length === 1 ? rows[0] : null;
 }
 
 async function markTaskCompleted(supabase: Sb, task: Record<string, unknown>) {
@@ -235,13 +292,6 @@ async function completeApps(
       .eq('worker_id', workerId)
       .eq('status', 'accepted');
   }
-
-  // Also by worker only for this poster task when app task_id is legacy
-  await supabase
-    .from('applications')
-    .update({ status: 'completed' })
-    .eq('worker_id', workerId)
-    .eq('status', 'accepted');
 }
 
 async function lockChats(supabase: Sb, posterId: string, workerId: string, inputTaskId: string) {
@@ -324,6 +374,16 @@ Deno.serve(async (req) => {
         .eq('status', 'accepted')
         .limit(1);
       workerId = apps?.[0] ? String(getField(apps[0] as Record<string, unknown>, 'worker_id') || '') : '';
+    }
+    if (!workerId && posterId) {
+      const { data: pays } = await supabase
+        .from('payments')
+        .select('worker_id')
+        .eq('poster_id', posterId)
+        .eq('task_id', canonicalTaskId(task))
+        .order('created_at', { ascending: false })
+        .limit(1);
+      workerId = pays?.[0] ? String(getField(pays[0] as Record<string, unknown>, 'worker_id') || '') : '';
     }
     if (!workerId && posterId) {
       const { data: convs } = await supabase

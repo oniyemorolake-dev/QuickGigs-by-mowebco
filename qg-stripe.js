@@ -663,8 +663,12 @@
           if (tid && seenTasks[tid]) continue;
           seenTasks[tid] = true;
           var sid = String(pending[i].stripe_id || '');
-          if (!sid) continue;
-          await confirmCheckoutSession(sid);
+          // Only checkout sessions can be confirmed; pi_ ids are already captured
+          if (!sid || sid.indexOf('cs_') !== 0) continue;
+          var confirmed = await confirmCheckoutSession(sid);
+          if (confirmed && confirmed.ok === false && confirmed.error === 'payment_not_complete') {
+            console.warn('Pending session not paid yet:', sid);
+          }
         }
       } catch (e) {
         console.warn('syncPendingPaymentsForPoster failed:', e);
@@ -878,14 +882,19 @@
         if (typeof window.QG_refreshPaymentState === 'function') {
           await window.QG_refreshPaymentState(syncTaskId);
         }
-        if (typeof loadData === 'function') await loadData();
+        var synced = typeof isTaskPaid === 'function' && isTaskPaid(syncTaskId);
+        if (typeof activeTab !== 'undefined') activeTab = 'inprogress';
+        if (typeof syncTabButtons === 'function') syncTabButtons();
+        if (typeof renderTab === 'function') renderTab();
+        else if (typeof loadData === 'function') await loadData();
         if (typeof showToast === 'function') {
-          var synced = typeof isTaskPaid === 'function' && isTaskPaid(syncTaskId);
           showToast(
-            synced ? 'Payment synced — tap Message' : 'No completed payment found — use a second tasker account',
+            synced ? 'Payment synced — tap Message' : 'No completed payment found yet — finish Pay to unlock first',
             synced ? '#4ade80' : '#f59e0b'
           );
         }
+        syncBtn.disabled = false;
+        syncBtn.textContent = '↻ Sync payment';
       })();
       return;
     }

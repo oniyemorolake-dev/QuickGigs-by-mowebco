@@ -248,8 +248,8 @@ body.light .app-legal-footer a{color:var(--purple);}
 <script src="qg-utils.js"></script>
 <script src="qg-polish.js?v=20260726c"></script>
 <script src="qg-config.js?v=20260726b"></script>
-<script src="supabase-db.js?v=20260726g"></script>
-<script src="qg-stripe.js?v=20260726d"></script>
+<script src="supabase-db.js?v=20260726h"></script>
+<script src="qg-stripe.js?v=20260726h"></script>
 <script src="qg-nav.js?v=20260725"></script>
 <script src="qg-pwa.js?v=4"></script>
 <script src="qg-notifications.js"></script>
@@ -381,6 +381,36 @@ function indexPaymentRow(p, extraKeys) {
   });
 }
 
+function aliasPaymentsToUiTaskIds(userId, rows) {
+  var pays = rows || [];
+  function isPaidRow(p) {
+    if (!p) return false;
+    return typeof isPaymentStatusComplete === 'function'
+      ? isPaymentStatusComplete(p.status)
+      : ['held', 'paid', 'completed'].indexOf(String(p.status || '').toLowerCase()) >= 0;
+  }
+  var inProgIds = (allTasks || []).filter(function (t) {
+    return taskStatus(t) === 'in_progress' && String(getField(t, 'POSTED_BY')) === String(userId);
+  }).map(function (t) { return String(getField(t, 'TASK_ID') || ''); }).filter(Boolean);
+
+  pays.forEach(function (p) {
+    var workerId = String(p.worker_id || '');
+    var extra = [];
+    if (workerId) {
+      (allApplications || []).forEach(function (a) {
+        if (String(getField(a, 'WORKER_ID') || '') !== workerId) return;
+        var st = String(getField(a, 'STATUS') || '').toLowerCase();
+        if (st !== 'accepted' && st !== 'completed' && st !== 'in_progress') return;
+        var atid = String(getField(a, 'TASK_ID') || '');
+        if (atid) extra.push(atid);
+      });
+    }
+    // One in-progress job + paid/held payment → UI id must unlock Pay/Message
+    if (isPaidRow(p) && inProgIds.length === 1) extra.push(inProgIds[0]);
+    if (extra.length) indexPaymentRow(p, extra);
+  });
+}
+
 async function refreshPaymentMap(userId) {
   paymentByTaskId = {};
   if (!userId || !window.QG_CONFIG || !window.QG_CONFIG.paymentsEnabled) return;
@@ -388,6 +418,7 @@ async function refreshPaymentMap(userId) {
   try {
     var rows = await getPaymentsForUser(userId, 'poster');
     (rows || []).forEach(function (p) { indexPaymentRow(p); });
+    aliasPaymentsToUiTaskIds(userId, rows || []);
   } catch (e) {
     console.warn('Payment map load failed:', e);
   }
@@ -397,11 +428,13 @@ async function syncInProgressPaymentState(userId) {
   if (!userId || !window.QG_CONFIG || !window.QG_CONFIG.paymentsEnabled) return;
   if (typeof window.QG_syncPendingPayments === 'function') {
     if (typeof withTimeout === 'function') {
-      await withTimeout(window.QG_syncPendingPayments(userId), 2000, null);
+      await withTimeout(window.QG_syncPendingPayments(userId), 4000, null);
     } else {
       await window.QG_syncPendingPayments(userId);
     }
   }
+  // Rebuild map AFTER pending→held sync so Pay/Message reflect real state
+  await refreshPaymentMap(userId);
   if (typeof getPaymentByTask !== 'function') return;
   var inProgress = allTasks.filter(function (t) {
     return taskStatus(t) === 'in_progress' && String(getField(t, 'POSTED_BY')) === String(userId);
@@ -410,6 +443,8 @@ async function syncInProgressPaymentState(userId) {
     var tid = String(getField(inProgress[i], 'TASK_ID'));
     var accepted = typeof findAcceptedApplication === 'function' ? findAcceptedApplication(tid) : null;
     var workerId = accepted ? String(getField(accepted, 'WORKER_ID') || '') : '';
+    var payCached = paymentByTaskId[tid];
+    if (!workerId && payCached && payCached.worker_id) workerId = String(payCached.worker_id);
     try {
       var row = await getPaymentByTask(tid, {
         posterId: userId,
@@ -789,8 +824,13 @@ async function loadData(){
     if (typeof writeAppsCache === 'function') writeAppsCache(allApplications);
     userNames = results[1] || {};
     userAvatars = results[2] || {};
-    refreshPaymentMap(userId).catch(function () {});
-    syncInProgressPaymentState(userId).catch(function () {});
+    // Must finish BEFORE render so Pay→Message unlock is visible
+    try {
+      await withTimeout(syncInProgressPaymentState(userId), 6000, null);
+    } catch (payMapErr) {
+      console.warn('Payment map sync failed:', payMapErr);
+      try { await refreshPaymentMap(userId); } catch (e2) {}
+    }
     Promise.all([
       hydrateApplicantAvatars(),
       hydrateMissingNames()
@@ -1448,6 +1488,9 @@ function renderTab(){
           : '');
       var selfTask = isPosterTask && workerId && String(workerId) === String(userId);
       var taskPaid = isPosterTask && isTaskPaid(taskId);
+      if (!workerId && paymentByTaskId[String(taskId)] && paymentByTaskId[String(taskId)].worker_id) {
+        workerId = String(paymentByTaskId[String(taskId)].worker_id);
+      }
       var payAction = '';
       if (isPosterTask && isPaymentGatedChat()) {
         if (selfTask) {
@@ -1459,9 +1502,14 @@ function renderTab(){
             '<button type="button" class="act-btn btn-secondary" data-sync-pay-task="'+escAttr(taskId)+'" title="Paid in Stripe but still locked? Tap to sync">↻ Sync payment</button>';
         }
       }
+      var messageBtn = isPosterTask
+        ? (taskPaid
+          ? '<button class="act-btn btn-primary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')">💬 Message</button>'
+          : '<button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')" title="Pay first to unlock chat">💬 Message</button>')
+        : '';
       var posterActions = isPosterTask
         ? payAction +
-          '<button class="act-btn btn-secondary" onclick="openChatForTask('+JSON.stringify(String(taskId))+')"'+(taskPaid ? '' : (isPaymentGatedChat() ? ' title="Pay first to unlock chat"' : ''))+'>💬 Message</button>' +
+          messageBtn +
           '<button class="act-btn btn-success" onclick="markComplete('+JSON.stringify(String(taskId))+', this)">✓ Mark complete</button>' +
           '<button class="act-btn btn-primary" onclick="confirmChangeTasker('+JSON.stringify(String(taskId))+')">↩ Change tasker</button>' +
           '<button class="act-btn btn-danger" data-cancel-inprogress="'+escAttr(taskId)+'">✕ Cancel task</button>'
@@ -1826,6 +1874,7 @@ window.openChatWithWorker = async function(taskId, workerId){
 window.openChatForTask = async function(taskId){
   var userId = window._currentUser ? window._currentUser.uid : null;
   if(!userId) return;
+  taskId = String(taskId);
 
   if (typeof window.QG_syncPendingPayments === 'function') {
     if (typeof withTimeout === 'function') {
@@ -1838,24 +1887,27 @@ window.openChatForTask = async function(taskId){
     await window.QG_refreshPaymentState(taskId);
   }
 
-  var task = allTasks.find(function(t){ return String(getField(t,'TASK_ID')) === String(taskId); });
+  var task = allTasks.find(function(t){ return String(getField(t,'TASK_ID')) === taskId; });
   if(!task) {
     showToast('Task not found — refresh and try again', '#ef4444');
     return;
   }
 
   var posterId = getField(task, 'POSTED_BY');
-  if (posterId === userId) {
+  if (String(posterId) === String(userId)) {
     var acceptedApp = findAcceptedApplication(taskId);
-    if (acceptedApp) {
-      await openChatWithWorker(taskId, getField(acceptedApp, 'WORKER_ID'));
-      return;
+    var workerId = acceptedApp ? getField(acceptedApp, 'WORKER_ID') : '';
+    if (!workerId && paymentByTaskId[taskId] && paymentByTaskId[taskId].worker_id) {
+      workerId = paymentByTaskId[taskId].worker_id;
     }
-    var pendingApp = allApplications.find(function(a){
-      return String(getField(a,'TASK_ID')) === String(taskId);
-    });
-    if (pendingApp) {
-      await openChatWithWorker(taskId, getField(pendingApp, 'WORKER_ID'));
+    if (!workerId) {
+      var pendingApp = allApplications.find(function(a){
+        return String(getField(a,'TASK_ID')) === taskId;
+      });
+      if (pendingApp) workerId = getField(pendingApp, 'WORKER_ID');
+    }
+    if (workerId) {
+      await openChatWithWorker(taskId, workerId);
       return;
     }
   } else {
@@ -1885,7 +1937,6 @@ window.markComplete = async function(taskId, btn){
   var payRow = paymentByTaskId[taskId];
   if (!workerId && payRow && payRow.worker_id) workerId = String(payRow.worker_id);
   if (!posterId && payRow && payRow.poster_id) posterId = String(payRow.poster_id);
-  // Resolve worker via conversation when app task_id is UUID and UI shows legacy id
   if (!workerId && posterId && typeof getConversationsForUser === 'function') {
     try {
       var convs = await getConversationsForUser(posterId);
@@ -1894,26 +1945,23 @@ window.markComplete = async function(taskId, btn){
         var cSt = String(c.status || '').toLowerCase();
         return (cTid === taskId || (payRow && String(payRow.task_id) === cTid)) &&
           (cSt === 'in_progress' || cSt === 'application' || cSt === 'completed');
+      }) || (convs || []).find(function (c) {
+        return String(c.poster_id || '') === posterId &&
+          String(c.status || '').toLowerCase() === 'in_progress';
       });
-      if (!matchConv) {
-        matchConv = (convs || []).find(function (c) {
-          return String(c.poster_id || '') === posterId &&
-            String(c.status || '').toLowerCase() === 'in_progress';
-        });
-      }
       if (matchConv && matchConv.worker_id) workerId = String(matchConv.worker_id);
     } catch (convErr) {
       console.warn('markComplete conv lookup failed:', convErr);
     }
   }
-  if (!workerId && typeof getPaymentByTask === 'function' && posterId) {
+  if (typeof getPaymentByTask === 'function' && posterId) {
     try {
       payRow = await getPaymentByTask(taskId, {
         posterId: posterId,
         workerId: workerId,
         actorId: userId,
         actorRole: 'poster'
-      });
+      }) || payRow;
       if (payRow) {
         indexPaymentRow(payRow, [taskId]);
         if (payRow.worker_id) workerId = String(payRow.worker_id);
@@ -1922,22 +1970,70 @@ window.markComplete = async function(taskId, btn){
       console.warn('markComplete payment lookup failed:', payErr);
     }
   }
-  console.log('markComplete called with taskId:', taskId, 'userId:', userId);
-  console.log('completeFn exists:', typeof completeTask === 'function');
-  console.log('taskRow found:', taskRow);
-  console.log('acceptedApp found:', acceptedApp, 'workerId:', workerId, 'posterId:', posterId);
+  var canonicalTaskId = '';
+  if (payRow && payRow.task_id && /^[0-9a-f]{8}-/i.test(String(payRow.task_id))) {
+    canonicalTaskId = String(payRow.task_id);
+  } else if (taskRow && /^[0-9a-f]{8}-/i.test(String(getField(taskRow, 'TASK_ID') || ''))) {
+    canonicalTaskId = String(getField(taskRow, 'TASK_ID'));
+  }
+  console.log('markComplete resolved', {
+    taskId: taskId,
+    userId: userId,
+    posterId: posterId,
+    workerId: workerId,
+    canonicalTaskId: canonicalTaskId,
+    hasTaskRow: !!taskRow,
+    hasPay: !!payRow
+  });
+
   var completeOpts = {
     taskRow: taskRow || null,
     acceptedApp: acceptedApp || null,
     posterId: posterId || userId,
-    workerId: workerId
+    workerId: workerId,
+    canonicalTaskId: canonicalTaskId
   };
-  var completeFn = typeof completeTask === 'function'
-    ? function(id) { return completeTask(id, userId, completeOpts); }
-    : function(id) { return updateTaskStatus(id, 'completed'); };
   var result;
   try {
-    result = await completeFn(taskId);
+    // Prefer edge function with explicit UUID when known
+    if (typeof completeTaskViaServer === 'function') {
+      var serverFirst = await completeTaskViaServer(taskId, userId, {
+        posterId: completeOpts.posterId,
+        workerId: completeOpts.workerId,
+        canonicalTaskId: canonicalTaskId
+      });
+      console.log('completeTaskViaServer first:', JSON.stringify(serverFirst));
+      if (serverFirst && serverFirst.success) {
+        result = {
+          success: true,
+          task_id: serverFirst.task_id || canonicalTaskId || taskId,
+          release: { ok: true, skipped: true },
+          pendingPayout: false,
+          payoutFailed: false
+        };
+        // Best-effort payout (never block Completed UI)
+        if (typeof releaseTaskPayout === 'function') {
+          try {
+            result.release = await releaseTaskPayout(result.task_id, userId, {
+              posterId: completeOpts.posterId,
+              workerId: completeOpts.workerId
+            });
+            result.pendingPayout = !!(result.release && result.release.error === 'worker_payout_setup_required');
+            result.payoutFailed = !!(result.release && !result.release.ok && !result.release.skipped && !result.pendingPayout);
+          } catch (e) {
+            result.release = { ok: false, error: e.message || String(e) };
+            result.payoutFailed = true;
+          }
+        }
+      }
+    }
+    if (!result || !result.success) {
+      if (typeof completeTask === 'function') {
+        result = await completeTask(taskId, userId, completeOpts);
+      } else {
+        result = await updateTaskStatus(canonicalTaskId || taskId, 'completed', completeOpts);
+      }
+    }
     console.log('completeTask result:', JSON.stringify(result));
   } catch (completeErr) {
     console.error('markComplete threw:', completeErr);

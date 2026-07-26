@@ -537,10 +537,21 @@ async function resolveTaskContext(taskId, actorId, options) {
         });
       } catch (e) { cachedPayment = null; }
     }
-    if (cachedPayment && cachedPayment.task_id && isUuidLikeId(String(cachedPayment.task_id))) {
-      cachedCanonical = String(cachedPayment.task_id);
-      var uuidTask = await getTaskById(cachedCanonical, { _depth: 1 });
-      if (uuidTask) cachedTask = uuidTask;
+    if (cachedPayment) {
+      if (cachedPayment.worker_id && !cachedWorkerId) {
+        cachedWorkerId = String(cachedPayment.worker_id);
+      }
+      if (cachedPayment.poster_id && !cachedPosterId) {
+        cachedPosterId = String(cachedPayment.poster_id);
+      }
+      if (cachedPayment.task_id && isUuidLikeId(String(cachedPayment.task_id))) {
+        cachedCanonical = String(cachedPayment.task_id);
+        var uuidTask = await getTaskById(cachedCanonical, { _depth: 1 });
+        if (uuidTask) cachedTask = uuidTask;
+      }
+    }
+    if (options.canonicalTaskId && isUuidLikeId(String(options.canonicalTaskId))) {
+      cachedCanonical = String(options.canonicalTaskId);
     }
     var cachedIds = [taskId, cachedCanonical];
     if (cachedAccepted) {
@@ -1051,10 +1062,9 @@ function buildTaskIdFilters(taskId, taskRow) {
   function addId(v) {
     if (v == null || v === '') return;
     var s = String(v);
+    // tasks.task_id is UUID — never PATCH with bare integers like "668"
+    if (/^\d+$/.test(s) && !/^[0-9a-f]{8}-/i.test(s)) return;
     if (ids.indexOf(s) === -1) ids.push(s);
-    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)) return;
-    var n = parseInt(v, 10);
-    if (!isNaN(n) && ids.indexOf(String(n)) === -1) ids.push(String(n));
   }
   addId(taskId);
   if (taskRow) {
@@ -1065,9 +1075,8 @@ function buildTaskIdFilters(taskId, taskRow) {
   var seen = {};
   ids.forEach(function (raw) {
     var enc = encodeURIComponent(raw);
-    ['task_id=eq.' + enc].forEach(function (f) {
-      if (!seen[f]) { seen[f] = true; filters.push(f); }
-    });
+    var f = 'task_id=eq.' + enc;
+    if (!seen[f]) { seen[f] = true; filters.push(f); }
   });
   return filters;
 }
@@ -3123,6 +3132,7 @@ window.declineApplication = declineApplication;
 window.cancelTask = cancelTask;
 window.adminRemoveTaskWithReason = adminRemoveTaskWithReason;
 window.completeTask = completeTask;
+window.completeTaskViaServer = completeTaskViaServer;
 window.resolveTaskContext = resolveTaskContext;
 window.releaseAcceptedTasker = releaseAcceptedTasker;
 window.declinePendingApplicationsForTask = declinePendingApplicationsForTask;
