@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="qg-polish.css?v=20260726c">
 <link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
+<link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — Browse Tasks in Canada</title>
 <meta name="description" content="Browse everyday tasks and gigs on QuickGigs — Canada's task marketplace, available coast to coast.">
@@ -298,13 +299,28 @@ body.light .app-legal-footer a{color:var(--purple);}
       <option value="month">This month</option>
     </select>
     <select class="sort-sel" id="sortSel" onchange="applyFilters()" aria-label="Sort tasks">
-      <option value="newest">Newest first</option>
-      <option value="oldest">Oldest first</option>
-      <option value="nearest">Nearest first</option>
-      <option value="pay">Highest pay</option>
+      <option value="newest">Newest</option>
+      <option value="pay">Budget high to low</option>
+      <option value="pay_low">Budget low to high</option>
+      <option value="deadline">Closest deadline</option>
+      <option value="nearest">Nearest</option>
+      <option value="oldest">Oldest</option>
     </select>
   </div>
 </div>
+<div class="qg-budget-row">
+  <div class="qg-budget-labels"><span id="budgetMinLabel">$20</span><span id="budgetMaxLabel">$300+</span></div>
+  <div class="qg-dual-range" aria-label="Budget range">
+    <input type="range" id="budgetMin" min="20" max="300" value="20" step="5" aria-label="Minimum budget">
+    <input type="range" id="budgetMax" min="20" max="300" value="300" step="5" aria-label="Maximum budget">
+  </div>
+  <div class="qg-budget-chips" id="budgetChips">
+    <button type="button" class="qg-bchip" data-budget="under50">Under $50</button>
+    <button type="button" class="qg-bchip" data-budget="50to100">$50–100</button>
+    <button type="button" class="qg-bchip" data-budget="100plus">$100+</button>
+  </div>
+</div>
+<div class="qg-active-filters" id="activeFilters" aria-label="Active filters"></div>
 <div class="cards-area" id="cardsArea">
   <div class="loading-state"><div class="loading-spinner">⏳</div><div class="loading-txt">Loading tasks near you...</div></div>
 </div>
@@ -388,6 +404,7 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-polish.js?v=20260726c"></script>
 <script src="qg-ux.js?v=20260726ux" defer></script>
 <script src="qg-bigtech.js?v=20260726bt" defer></script>
+<script src="qg-wave2.js?v=20260726w2" defer></script>
 <script defer src="qg-config.js"></script>
 <script defer src="qg-categories.js"></script>
 <script defer src="supabase-db.js"></script>
@@ -434,6 +451,7 @@ function normaliseTask(row){
   };
 }
 var allTasks=[],activeMode='all',activeCat='all',activeTask=null;
+var budgetMinVal=20,budgetMaxVal=300,budgetPreset='';
 var appliedTaskIds = {};
 var userNames={};
 var dbSubmitApplication = window.submitApplication;
@@ -644,6 +662,56 @@ function renderCardPhotoHero(t) {
     '<span class="tc-photo-cat-badge"><span aria-hidden="true">'+t.icon+'</span> '+esc(t.catLabel)+'</span></div>';
 }
 
+function persistBrowseState(){
+  if (typeof qgSaveBrowseFilters !== 'function') return;
+  qgSaveBrowseFilters({
+    mode: activeMode, cat: activeCat,
+    sort: (document.getElementById('sortSel')||{}).value,
+    date: (document.getElementById('dateFilter')||{}).value,
+    loc: (document.getElementById('locationFilter')||{}).value,
+    budgetMin: budgetMinVal, budgetMax: budgetMaxVal, budgetPreset: budgetPreset,
+    search: (document.getElementById('searchInput')||{}).value
+  });
+}
+function renderActiveFilters(){
+  var host=document.getElementById('activeFilters');
+  if(!host) return;
+  var chips=[];
+  if(activeMode!=='all') chips.push({key:'mode',label:'Mode: '+activeMode});
+  if(activeCat!=='all') chips.push({key:'cat',label:'Category: '+activeCat});
+  if(budgetPreset==='under50') chips.push({key:'budget',label:'Under $50'});
+  else if(budgetPreset==='50to100') chips.push({key:'budget',label:'$50–100'});
+  else if(budgetPreset==='100plus') chips.push({key:'budget',label:'$100+'});
+  else if(budgetMinVal>20||budgetMaxVal<300) chips.push({key:'budget',label:'$'+budgetMinVal+'–$'+budgetMaxVal});
+  var dateFilter=(document.getElementById('dateFilter')||{}).value;
+  if(dateFilter&&dateFilter!=='any') chips.push({key:'date',label:'Posted: '+dateFilter});
+  if(!chips.length){ host.innerHTML=''; return; }
+  host.innerHTML=chips.map(function(c){
+    return '<button type="button" class="qg-af-chip" data-clear="'+c.key+'" aria-label="Remove '+esc(c.label)+'">'+esc(c.label)+' ×</button>';
+  }).join('')+'<button type="button" class="qg-af-clear" id="clearAllFilters">Clear all</button>';
+  host.querySelectorAll('[data-clear]').forEach(function(btn){
+    btn.onclick=function(){
+      var k=btn.getAttribute('data-clear');
+      if(k==='mode'){ activeMode='all'; document.querySelectorAll('.mpill').forEach(function(p,i){ p.className=i===0?'mpill active-all':'mpill'; }); }
+      if(k==='cat'){ activeCat='all'; document.querySelectorAll('.cpill').forEach(function(p){ p.classList.remove('cat-active'); }); }
+      if(k==='budget'){ budgetMinVal=20; budgetMaxVal=300; budgetPreset=''; syncBudgetUI(); }
+      if(k==='date'&&document.getElementById('dateFilter')) document.getElementById('dateFilter').value='any';
+      renderCards();
+    };
+  });
+  var clear=document.getElementById('clearAllFilters');
+  if(clear) clear.onclick=function(){ if(typeof clearFilters==='function') clearFilters(); else location.href='browsetask.html'; };
+}
+function syncBudgetUI(){
+  var a=document.getElementById('budgetMin'), b=document.getElementById('budgetMax');
+  if(a) a.value=budgetMinVal; if(b) b.value=budgetMaxVal;
+  var ml=document.getElementById('budgetMinLabel'), xl=document.getElementById('budgetMaxLabel');
+  if(ml) ml.textContent='$'+budgetMinVal;
+  if(xl) xl.textContent=budgetMaxVal>=300?'$300+':('$'+budgetMaxVal);
+  document.querySelectorAll('.qg-bchip').forEach(function(c){
+    c.classList.toggle('active', c.getAttribute('data-budget')===budgetPreset);
+  });
+}
 function renderCards(){
   var search=(document.getElementById('searchInput').value||'').toLowerCase().trim();
   var locFilter=(document.getElementById('locationFilter').value||'').trim();
@@ -656,6 +724,12 @@ function renderCards(){
     if (activeCat!=='all'&&t.cat!==activeCat) return false;
     if (!taskMatchesLocation(t, locFilter, window._nearMeOnly)) return false;
     if (!taskMatchesDateRange(t, dateFilter)) return false;
+    var price=Number(t.price)||0;
+    if(price < budgetMinVal) return false;
+    if(budgetMaxVal < 300 && price > budgetMaxVal) return false;
+    if(budgetPreset==='under50' && price>=50) return false;
+    if(budgetPreset==='50to100' && (price<50||price>100)) return false;
+    if(budgetPreset==='100plus' && price<100) return false;
     if (!search) return true;
     var hay = (t.title+' '+t.catLabel+' '+t.desc+' '+(t.posterName||'')+' '+(t.location||'')).toLowerCase();
     return hay.indexOf(search) >= 0;
@@ -664,11 +738,23 @@ function renderCards(){
     filtered = sortTasksByProximity(filtered, locFilter || (typeof getUserLocation==='function'?getUserLocation():''));
   } else if (sortVal === 'pay') {
     filtered = filtered.slice().sort(function(a,b){ return (b.price||0)-(a.price||0); });
+  } else if (sortVal === 'pay_low') {
+    filtered = filtered.slice().sort(function(a,b){ return (a.price||0)-(b.price||0); });
+  } else if (sortVal === 'deadline') {
+    filtered = filtered.slice().sort(function(a,b){
+      var aw = a.when ? parseTaskTimestamp(a.when) : Infinity;
+      var bw = b.when ? parseTaskTimestamp(b.when) : Infinity;
+      if (aw === Infinity && a.createdAt) aw = parseTaskTimestamp(a.createdAt);
+      if (bw === Infinity && b.createdAt) bw = parseTaskTimestamp(b.createdAt);
+      return aw - bw;
+    });
   } else if (sortVal === 'oldest') {
     filtered = filtered.slice().sort(function(a,b){ return parseTaskTimestamp(a.createdAt)-parseTaskTimestamp(b.createdAt); });
   } else {
     filtered = filtered.slice().sort(function(a,b){ return parseTaskTimestamp(b.createdAt)-parseTaskTimestamp(a.createdAt); });
   }
+  persistBrowseState();
+  renderActiveFilters();
   var scopeLabel = locFilter
     ? locFilter.split(',')[0].trim()
     : (window._nearMeOnly && window.getUserCityLabel ? window.getUserCityLabel() : '');
@@ -687,27 +773,20 @@ function renderCards(){
   }
   if(!filtered.length){area.innerHTML='<div class="empty-state"><div class="empty-emoji">🔍</div><p class="empty-txt">'+(allTasks.length===0?'No tasks posted yet — be the first!':'No tasks match this filter')+'</p>'+(allTasks.length===0?'<a class="empty-btn" href="posttask.html" style="display:inline-block;margin-top:14px;padding:12px 20px;border-radius:12px;background:var(--purple);color:#fff;text-decoration:none">Post a task →</a>':'<button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.reload()">Reset browse</button>')+'</div>';return;}
   area.innerHTML=filtered.map(function(t){
-    var desc = (t.desc || '').trim();
-    var descHtml = desc ? '<p class="tc-desc">'+esc(desc)+'</p>' : '<p class="tc-desc is-empty"></p>';
     var loc = formatLocationDisplay(t.location);
-    var whenPart = t.when ? ' · 🕐 '+esc(t.when) : '';
-    var posterLabel = (t.posterId && typeof profileNameLink === 'function')
-      ? profileNameLink(t.posterName, t.posterId)
-      : esc(t.posterName);
     var shareBtn = typeof shareButtonHtml === 'function' ? shareButtonHtml('task', t.id, t.title) : '';
     var saveBtn = typeof bookmarkButtonHtml === 'function' ? bookmarkButtonHtml(t.id) : '';
-    var reportBtn = typeof reportButtonHtml === 'function' ? reportButtonHtml('task', t.id, t.title) : '';
     var hasPhoto = t.photoUrls && t.photoUrls[0];
     var photoHero = renderCardPhotoHero(t);
     var cardClass = 'task-card' + (hasPhoto ? ' has-photo' : '');
     var iconHtml = hasPhoto ? '' : renderCardIcon(t);
+    // Progressive disclosure: essentials only on card; details live in modal
     return '<div class="'+cardClass+'" data-task-id="'+esc(String(t.id))+'">'+
       photoHero+
       '<div class="tc-body">'+
-      '<div class="tc-top"><div class="tc-left">'+iconHtml+'<div class="tc-meta"><p class="tc-cat">'+esc(t.catLabel)+'</p><p class="tc-title">'+esc(t.title)+'</p></div></div>'+getBadge(t.mode,t)+'</div>'+
-      descHtml+
-      '<div class="tc-bottom"><div><div class="tc-price">'+esc(t.priceLabel)+(typeof qgNewPillHtml==='function'?qgNewPillHtml(t.createdAt||t.created_at):'')+'</div><div class="tc-info">👤 '+posterLabel+' · 📍 '+esc(loc)+whenPart+' · '+esc(t.posted||'Posted recently')+(t.applicants>0?' · '+t.applicants+' applied':'')+'</div>'+
-      '<div class="qg-action-row">'+saveBtn+shareBtn+reportBtn+'</div></div>'+
+      '<div class="tc-top"><div class="tc-left">'+iconHtml+'<div class="tc-meta"><p class="tc-title">'+esc(t.title)+'</p></div></div>'+getBadge(t.mode,t)+'</div>'+
+      '<div class="tc-bottom"><div><div class="tc-price">'+esc(t.priceLabel)+(typeof qgNewPillHtml==='function'?qgNewPillHtml(t.createdAt||t.created_at):'')+'</div><div class="tc-info">📍 '+esc(loc)+' · '+esc(t.posted||'Posted recently')+'</div>'+
+      '<div class="qg-action-row">'+saveBtn+shareBtn+'</div></div>'+
       '<button class="apply-btn '+getBtnClass(t.mode)+'" onclick="openModal(\''+t.id+'\',event)">'+getBtnLabel(t.mode)+'</button></div></div></div>';
   }).join('');
   if (typeof bindShareTriggers === 'function') {
@@ -720,14 +799,64 @@ function renderCards(){
   if (typeof bindQgPhotoLightbox === 'function') bindQgPhotoLightbox(document.body);
 }
 
-window.setMode=function(el,mode){document.querySelectorAll('.mpill').forEach(function(p){p.className='mpill';});activeMode=mode;el.className='mpill active-'+mode;renderCards();};
-window.setCat=function(el,cat){document.querySelectorAll('.cpill').forEach(function(p){p.classList.remove('cat-active');});el.classList.add('cat-active');activeCat=cat;renderCards();};
+window.setMode=function(el,mode){document.querySelectorAll('.mpill').forEach(function(p){p.className='mpill';});activeMode=mode;el.className='mpill active-'+mode;if(typeof haptic==='function')haptic(10);renderCards();};
+window.setCat=function(el,cat){document.querySelectorAll('.cpill').forEach(function(p){p.classList.remove('cat-active');});el.classList.add('cat-active');activeCat=cat;if(typeof haptic==='function')haptic(10);renderCards();};
 window.applyFilters=renderCards;
+window.clearFilters=function(){
+  activeMode='all'; activeCat='all'; budgetMinVal=20; budgetMaxVal=300; budgetPreset='';
+  document.querySelectorAll('.mpill').forEach(function(p,i){ p.className=i===0?'mpill active-all':'mpill'; });
+  document.querySelectorAll('.cpill').forEach(function(p){ p.classList.remove('cat-active'); });
+  if(document.getElementById('dateFilter')) document.getElementById('dateFilter').value='any';
+  if(document.getElementById('locationFilter')) document.getElementById('locationFilter').value='';
+  if(document.getElementById('searchInput')) document.getElementById('searchInput').value='';
+  if(document.getElementById('sortSel')) document.getElementById('sortSel').value='newest';
+  syncBudgetUI(); renderCards();
+};
+(function initBudgetControls(){
+  var a=document.getElementById('budgetMin'), b=document.getElementById('budgetMax');
+  function onRange(){
+    budgetMinVal=Math.min(Number(a.value), Number(b.value));
+    budgetMaxVal=Math.max(Number(a.value), Number(b.value));
+    budgetPreset='';
+    syncBudgetUI(); renderCards();
+  }
+  if(a&&b){ a.addEventListener('input', onRange); b.addEventListener('input', onRange); }
+  document.querySelectorAll('.qg-bchip').forEach(function(chip){
+    chip.onclick=function(){
+      budgetPreset=chip.getAttribute('data-budget');
+      if(budgetPreset==='under50'){ budgetMinVal=20; budgetMaxVal=49; }
+      else if(budgetPreset==='50to100'){ budgetMinVal=50; budgetMaxVal=100; }
+      else if(budgetPreset==='100plus'){ budgetMinVal=100; budgetMaxVal=300; }
+      if(typeof haptic==='function') haptic(10);
+      syncBudgetUI(); renderCards();
+    };
+  });
+  // Restore persisted filters
+  var saved = typeof qgLoadBrowseFilters==='function' ? qgLoadBrowseFilters() : null;
+  if(saved){
+    if(saved.mode) activeMode=saved.mode;
+    if(saved.cat) activeCat=saved.cat;
+    if(saved.sort&&document.getElementById('sortSel')) document.getElementById('sortSel').value=saved.sort;
+    if(saved.date&&document.getElementById('dateFilter')) document.getElementById('dateFilter').value=saved.date;
+    if(saved.loc&&document.getElementById('locationFilter')) document.getElementById('locationFilter').value=saved.loc;
+    if(saved.search&&document.getElementById('searchInput')) document.getElementById('searchInput').value=saved.search;
+    if(saved.budgetMin!=null) budgetMinVal=saved.budgetMin;
+    if(saved.budgetMax!=null) budgetMaxVal=saved.budgetMax;
+    if(saved.budgetPreset) budgetPreset=saved.budgetPreset;
+    document.querySelectorAll('.mpill').forEach(function(p){
+      p.className='mpill'+(p.getAttribute('onclick')&&p.getAttribute('onclick').indexOf("'"+activeMode+"'")>=0?' active-'+activeMode:'');
+    });
+    if(activeMode==='all'){ var first=document.querySelector('.mpill'); if(first) first.className='mpill active-all'; }
+  }
+  syncBudgetUI();
+})();
 
 window.openModal=async function(id,e){
   e.stopPropagation();
   activeTask=allTasks.find(function(t){return String(t.id)===String(id);});
   if(!activeTask)return;
+  if (typeof qgTrackTaskView === 'function') qgTrackTaskView(activeTask);
+  if (typeof haptic === 'function') haptic(10);
   if(isOwnPostedTask(activeTask)){
     showToast('This is your own posting. Switch to Poster mode → My Tasks to manage applicants.', '#f59e0b');
     return;
@@ -745,7 +874,10 @@ window.openModal=async function(id,e){
   var sub = (activeTask.budgetNegotiable ? 'Budget: Around ' : 'Budget: ') + activeTask.priceLabel + ' · ' + activeTask.location;
   if (activeTask.when) sub += ' · 🕐 ' + activeTask.when;
   if (activeTask.requiresPhotos) sub += ' · 📷 Photo updates requested';
+  if (activeTask.desc) sub += '\n\n' + activeTask.desc;
+  if (activeTask.posterName) sub += '\nPosted by ' + activeTask.posterName;
   document.getElementById('modalSub').textContent=sub;
+  document.getElementById('modalSub').style.whiteSpace='pre-wrap';
   var offerInput = document.getElementById('offerPrice');
   offerInput.value=activeTask.price;
   offerInput.readOnly = !activeTask.budgetNegotiable;

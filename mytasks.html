@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="qg-polish.css?v=20260726c">
 <link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
+<link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — My Tasks</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -251,6 +252,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 <script defer src="qg-polish.js?v=20260726c"></script>
 <script src="qg-ux.js?v=20260726ux" defer></script>
 <script src="qg-bigtech.js?v=20260726bt" defer></script>
+<script src="qg-wave2.js?v=20260726w2" defer></script>
 <script defer src="qg-config.js?v=20260726m"></script>
 <script defer src="supabase-db.js?v=20260726m"></script>
 <script defer src="qg-stripe.js?v=20260726m"></script>
@@ -1196,6 +1198,24 @@ document.getElementById('tabContent').addEventListener('click', function(e) {
     e.preventDefault();
     confirmRepostTask(repostBtn.getAttribute('data-repost-task'));
   }
+  var postAgainBtn = e.target.closest('[data-post-again]');
+  if (postAgainBtn) {
+    e.preventDefault();
+    var againId = postAgainBtn.getAttribute('data-post-again');
+    var againTask = allTasks.find(function(t){ return String(getField(t,'TASK_ID')) === String(againId); });
+    if (againTask) {
+      try {
+        sessionStorage.setItem('qg-repost-draft', JSON.stringify({
+          title: getField(againTask, 'TITLE'),
+          description: getField(againTask, 'DESCRIPTION') || againTask.description || '',
+          budget: getField(againTask, 'BUDGET'),
+          location: getField(againTask, 'LOCATION'),
+          category: getField(againTask, 'CATEGORY')
+        }));
+      } catch (err) {}
+      window.location.href = 'posttask.html';
+    }
+  }
 });
 
 function showToast(msg, color){
@@ -1702,7 +1722,9 @@ function renderTab(){
         ? '<div class="action-row"><button type="button" class="act-btn btn-primary" data-repost-task="'+escAttr(getField(t,'TASK_ID'))+'">↻ Repost task</button></div>'
         : isCancelled
         ? ''
-        : '<div class="action-row"><a class="act-btn btn-review" href="'+reviewHref+'">⭐ Leave a review</a></div>';
+        : '<div class="action-row"><a class="act-btn btn-review" href="'+reviewHref+'">⭐ Leave a review</a>' +
+          (isPoster ? '<button type="button" class="act-btn btn-secondary" data-post-again="'+escAttr(getField(t,'TASK_ID'))+'">↻ Post again</button>' : '') +
+          '</div>';
       return '<div class="task-card'+(isCancelled || isExpired ?' is-faded':'')+'">'+
         '<div class="tc-top"><div class="tc-left">'+profileTapIcon(otherUid, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">'+otherLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div>'+badge+'</div>'+
         (typeof qgTaskTimelineHtml === 'function' && !isCancelled && !isExpired ? qgTaskTimelineHtml('completed') : '')+
@@ -1885,6 +1907,8 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
     }
   } else {
     if (acceptBtn && typeof qgMicroConfirm === 'function') qgMicroConfirm(acceptBtn);
+    if (typeof qgCelebrate === 'function') qgCelebrate({ count: 36 });
+    if (typeof haptic === 'function') haptic([15, 30, 15]);
     showToast('Accepted ' + workerName + '! Moved to In Progress 💬');
   }
   setTimeout(function () { loadData(); }, 100);
@@ -2156,6 +2180,8 @@ window.markComplete = async function(taskId, btn){
   }
   showCompletedUi(result.task_id || canonicalTaskId || taskId);
   if (btn && typeof qgMicroConfirm === 'function') qgMicroConfirm(btn);
+  if (typeof qgCelebrate === 'function') qgCelebrate({ count: 40 });
+  if (typeof haptic === 'function') haptic([15, 30, 15]);
 
   if (typeof notifyTaskCompleted === 'function') {
     try {

@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="qg-polish.css?v=20260726c">
 <link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
+<link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — Chat</title>
 <script src="qg-brand-init.js"></script>
@@ -233,6 +234,7 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-polish.js?v=20260726c"></script>
 <script src="qg-ux.js?v=20260726ux" defer></script>
 <script src="qg-bigtech.js?v=20260726bt" defer></script>
+<script src="qg-wave2.js?v=20260726w2" defer></script>
 <script defer src="qg-config.js"></script>
 <script defer src="supabase-db.js?v=20260725j"></script>
 <script defer src="qg-site.js"></script>
@@ -704,6 +706,8 @@ function showLockedState(isCompleted, isCancelled, taskAlreadyPaid){
 async function refreshMessages(){
   if(!convId) return;
   var rows = await getMessagesForConversation(convId);
+  var prevLen = messages.length;
+  var wasNear = isNearBottom();
   messages = (rows || []).map(function(m){
     return {
       id: m.message_id,
@@ -711,43 +715,83 @@ async function refreshMessages(){
       text: m.body,
       senderIsPoster: currentConv && m.sender_id === currentConv.poster_id,
       time: formatMessageTime(m.created_at),
-      date: formatMessageDate(m.created_at)
+      date: formatMessageDate(m.created_at),
+      ts: m.created_at ? new Date(m.created_at).getTime() : 0
     };
   });
   renderMessages();
-  scrollToBottom();
+  if (wasNear || messages.length <= prevLen) scrollToBottom();
+  else if (messages.length > prevLen) {
+    var pill = document.getElementById('qgNewMsgPill');
+    if (pill) pill.classList.add('show');
+  }
 }
 
 function renderMessages(){
   var scroll = document.getElementById('chatScroll');
   var lastDate = '';
   var html = '';
-  messages.forEach(function(m){
+  var prevFrom = '';
+  var prevTs = 0;
+  messages.forEach(function(m, idx){
     if(m.date !== lastDate){
       html += '<div class="date-divider">'+m.date+'</div>';
       lastDate = m.date;
+      prevFrom = '';
+      prevTs = 0;
     }
     var isMe = m.from === 'me';
-    html += '<div class="bubble-row '+(isMe?'mine':'theirs')+'">' +
+    var ts = m.ts || 0;
+    var grouped = prevFrom === m.from && prevTs && (ts - prevTs) < 120000;
+    html += '<div class="bubble-row '+(isMe?'mine':'theirs')+(grouped?' grouped':'')+'">' +
       '<div class="bubble">'+renderMessageBubble(m.text, { senderIsPoster: m.senderIsPoster })+'</div>' +
-      '<div class="bubble-time">'+m.time+'</div>' +
+      '<div class="bubble-time">'+m.time+(isMe?' <span class="bubble-check" aria-label="Delivered">✓</span>':'')+'</div>' +
     '</div>';
+    prevFrom = m.from;
+    prevTs = ts;
   });
+  var typing = document.getElementById('typingBubble');
+  if (!typing) {
+    html += '<div class="typing-bubble" id="typingBubble" aria-live="polite">typing…</div>';
+  }
   scroll.innerHTML = html;
+  if (!document.getElementById('qgNewMsgPill')) {
+    var pill = document.createElement('button');
+    pill.type = 'button';
+    pill.id = 'qgNewMsgPill';
+    pill.className = 'qg-new-msg-pill';
+    pill.setAttribute('aria-label', 'Jump to new messages');
+    pill.textContent = '↓ New messages';
+    pill.onclick = function(){ scrollToBottom(); pill.classList.remove('show'); };
+    var wrap = scroll.parentNode;
+    if (wrap) {
+      if (getComputedStyle(wrap).position === 'static') wrap.style.position = 'relative';
+      wrap.appendChild(pill);
+    }
+  }
+}
+
+function isNearBottom(){
+  var scroll = document.getElementById('chatScroll');
+  if (!scroll) return true;
+  return (scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight) < 80;
 }
 
 function scrollToBottom(){
   var scroll = document.getElementById('chatScroll');
   scroll.scrollTop = scroll.scrollHeight;
+  var pill = document.getElementById('qgNewMsgPill');
+  if (pill) pill.classList.remove('show');
 }
 
 // ── INPUT HANDLING ─────────────────────────────────────
 var fraudDetected = false;
 
+var _typingTimer = null;
 window.handleInput = function(el){
-  // Auto-resize textarea
+  // Auto-resize textarea (max ~4 lines)
   el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+  el.style.height = Math.min(el.scrollHeight, 96) + 'px';
 
   var val = el.value.trim();
   var sendBtn = document.getElementById('sendBtn');
@@ -765,7 +809,16 @@ window.handleInput = function(el){
     fraudInline.style.display = 'none';
     sendBtn.disabled = !val;
   }
+  if (val && typeof qgSetTypingFlag === 'function' && convId && currentUserId) {
+    clearTimeout(_typingTimer);
+    _typingTimer = setTimeout(function(){ qgSetTypingFlag(convId, currentUserId); }, 350);
+  }
 };
+// Presence-lite typing poll (no-ops if column missing)
+setInterval(function(){
+  if (!convId || !currentUserId) return;
+  if (typeof qgPollTyping === 'function') qgPollTyping(convId, currentUserId, document.getElementById('typingBubble'));
+}, 4000);
 
 window.handleKey = function(e){
   // Send on Enter (not Shift+Enter)

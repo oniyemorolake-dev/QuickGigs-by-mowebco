@@ -18,6 +18,7 @@
 
   window.qgBurstConfetti = function (opts) {
     opts = opts || {};
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     injectStyles();
 
     var root = document.createElement('div');
@@ -26,7 +27,7 @@
     document.body.appendChild(root);
 
     var colors = opts.colors || ['#6b3fa0', '#9b6fc4', '#c8a8e9', '#fbbf24', '#4ade80', '#ffffff'];
-    var count = opts.count || 72;
+    var count = opts.count || 36;
 
     for (var i = 0; i < count; i++) {
       var piece = document.createElement('div');

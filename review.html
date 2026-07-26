@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="qg-polish.css?v=20260726c">
 <link rel="stylesheet" href="qg-ux.css?v=20260726ux">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
+<link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — Leave a Review</title>
 <script src="qg-brand-init.js"></script>
@@ -260,6 +261,7 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-polish.js?v=20260726c"></script>
 <script src="qg-ux.js?v=20260726ux" defer></script>
 <script src="qg-bigtech.js?v=20260726bt" defer></script>
+<script src="qg-wave2.js?v=20260726w2" defer></script>
 <script defer src="supabase-db.js"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
@@ -278,7 +280,7 @@ applyTheme();
 // ── STATE ──────────────────────────────────────────────
 var currentRating = 0;
 var selectedTags  = [];
-var saveReviewToDb = window.submitReview;
+// Resolve at call time — supabase-db.js is deferred and not ready at parse
 
 function reviewErrorMessage(err) {
   var code = String(err || '');
@@ -402,7 +404,9 @@ window.submitReviewForm = async function(){
   submitBtn.textContent = 'Submitting...';
 
   try {
-    var result = await saveReviewToDb({
+    var saveFn = window.submitReview || window.saveReviewToDb;
+    if (typeof saveFn !== 'function') throw new Error('saveReviewToDb is not a function');
+    var result = await saveFn({
       task_id:        taskId,
       reviewer_id:    window._currentUser.uid,
       reviewee_id:    revieweeId,
