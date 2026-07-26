@@ -235,7 +235,7 @@ body{padding-bottom:76px;}
 <link rel="stylesheet" href="qg-brand.css">
 </head>
 <body class="theme-posttask">
-<script defer src="qg-theme.js"></script>
+<script src="qg-theme.js"></script>
 <script defer src="qg-location.js"></script>
 <script defer src="qg-nav.js"></script>
 <script>if (typeof setSessionMode === 'function') setSessionMode('poster');</script>
@@ -508,7 +508,14 @@ onAuthStateChanged(auth, function(user) {
 <script>
 var isDark = localStorage.getItem('qg-mode') !== 'light';
 function applyTheme() {
-  window.QG_applyTheme(isDark, 'modeBtn', true);
+  // Must not throw — a crash here stops selectMode / handleSubmit from registering
+  if (typeof window.QG_applyTheme === 'function') {
+    window.QG_applyTheme(isDark, 'modeBtn', true);
+  } else {
+    document.body.className = (isDark ? 'dark' : 'light') + ' theme-posttask';
+    var btn = document.getElementById('modeBtn');
+    if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+  }
 }
 window.toggleMode = function() {
   isDark = !isDark;
@@ -548,8 +555,15 @@ function applyLocationDefaults() {
   }
   updateHint(city);
 }
-initUserLocation().then(applyLocationDefaults);
-applyLocationDefaults();
+function bootPostTaskLocation() {
+  if (typeof initUserLocation === 'function') {
+    initUserLocation().then(applyLocationDefaults).catch(function () { applyLocationDefaults(); });
+  } else {
+    applyLocationDefaults();
+  }
+}
+bootPostTaskLocation();
+document.addEventListener('DOMContentLoaded', bootPostTaskLocation);
 initScheduleDefaults();
 
 function isoDateLocal(d) {
