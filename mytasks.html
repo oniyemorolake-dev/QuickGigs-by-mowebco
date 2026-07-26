@@ -242,7 +242,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 
 <script src="qg-utils.js"></script>
 <script src="qg-config.js"></script>
-<script src="supabase-db.js?v=20260725m"></script>
+<script src="supabase-db.js?v=20260726a"></script>
 <script src="qg-stripe.js?v=20260725g"></script>
 <script src="qg-nav.js?v=20260725"></script>
 <script src="qg-pwa.js?v=4"></script>
@@ -1820,10 +1820,25 @@ window.markComplete = async function(taskId, btn){
   taskId = String(taskId);
   if (btn) { btn.disabled = true; btn.textContent = 'Completing…'; }
   var userId = window._currentUser ? window._currentUser.uid : '';
+  var taskRow = allTasks.find(function(t){ return String(getField(t,'TASK_ID')) === taskId; });
+  var acceptedApp = typeof findAcceptedApplication === 'function' ? findAcceptedApplication(taskId) : null;
+  var completeOpts = {
+    taskRow: taskRow || null,
+    acceptedApp: acceptedApp || null,
+    workerId: acceptedApp ? getField(acceptedApp, 'WORKER_ID') : ''
+  };
   var completeFn = typeof completeTask === 'function'
-    ? function(id) { return completeTask(id, userId); }
+    ? function(id) { return completeTask(id, userId, completeOpts); }
     : function(id) { return updateTaskStatus(id, 'completed'); };
-  var result = await completeFn(taskId);
+  var result;
+  try {
+    result = await completeFn(taskId);
+  } catch (completeErr) {
+    console.error('markComplete threw:', completeErr);
+    if (btn) { btn.disabled = false; btn.textContent = '✓ Mark complete'; }
+    showToast('Could not mark complete — ' + (completeErr.message || 'refresh and try again'), '#ef4444');
+    return;
+  }
   if (!result.success) {
     if (btn) { btn.disabled = false; btn.textContent = '✓ Mark complete'; }
     var errCode = result.error;

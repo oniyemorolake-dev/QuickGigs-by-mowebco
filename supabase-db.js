@@ -512,16 +512,71 @@ async function getTaskById(taskId, options) {
   return null;
 }
 
-async function resolveTaskContext(taskId, actorId) {
+async function resolveTaskContext(taskId, actorId, options) {
+  options = options || {};
   taskId = String(taskId || '');
   actorId = String(actorId || '');
+
+  if (options.taskRow) {
+    var cachedTask = normalizeTaskRow(options.taskRow);
+    var cachedPosterId = String(cachedTask.posted_by || cachedTask.POSTED_BY || '');
+    var cachedWorkerId = options.workerId ? String(options.workerId) : '';
+    var cachedAccepted = options.acceptedApp ? normalizeApplicationRow(options.acceptedApp) : null;
+    if (cachedAccepted) {
+      cachedWorkerId = String(cachedAccepted.worker_id || cachedAccepted.WORKER_ID || cachedWorkerId);
+    }
+    var cachedCanonical = String(getTaskRowId(cachedTask) || taskId);
+    var cachedIds = [taskId, cachedCanonical];
+    if (cachedAccepted) {
+      var atid = cachedAccepted.task_id || cachedAccepted.TASK_ID;
+      if (atid != null && cachedIds.indexOf(String(atid)) === -1) cachedIds.push(String(atid));
+    }
+    return {
+      taskId: taskId,
+      canonicalTaskId: cachedCanonical,
+      task: cachedTask,
+      posterId: cachedPosterId,
+      workerId: cachedWorkerId,
+      accepted: cachedAccepted,
+      payment: null,
+      ids: cachedIds
+    };
+  }
+
   var apps = typeof getApplicationsByTask === 'function' ? await getApplicationsByTask(taskId) : [];
   var accepted = (apps || []).find(function (a) {
     return String(a.status || a.STATUS || '').toLowerCase() === 'accepted';
   });
   var workerId = accepted ? String(accepted.worker_id || accepted.WORKER_ID || '') : '';
-  var task = await getTaskById(taskId, { posterId: actorId, workerId: workerId, actorId: actorId });
-  var posterId = task ? String(task.posted_by || task.POSTED_BY || '') : '';
+  var posterId = '';
+
+  if (accepted && actorId) {
+    if (String(accepted.worker_id || accepted.WORKER_ID || '') === actorId) {
+      workerId = actorId;
+    }
+  }
+
+  var task = await getTaskById(taskId, { posterId: posterId, workerId: workerId, actorId: actorId });
+  if (task) posterId = String(task.posted_by || task.POSTED_BY || '');
+
+  if (!task && posterId) {
+    task = await getTaskById(taskId, { posterId: posterId, workerId: workerId });
+  }
+  if (!task && workerId) {
+    task = await getTaskById(taskId, { workerId: workerId });
+    if (task) posterId = String(task.posted_by || task.POSTED_BY || posterId);
+  }
+  if (!task && actorId) {
+    task = await getTaskById(taskId, { posterId: actorId, workerId: workerId });
+    if (task) posterId = String(task.posted_by || task.POSTED_BY || actorId);
+    else {
+      task = await getTaskById(taskId, { workerId: actorId });
+      if (task) {
+        posterId = String(task.posted_by || task.POSTED_BY || '');
+        workerId = actorId;
+      }
+    }
+  }
 
   if (!accepted && actorId) {
     var workerApps = typeof getApplicationsByWorker === 'function'
@@ -534,14 +589,7 @@ async function resolveTaskContext(taskId, actorId) {
     if (accepted) workerId = String(accepted.worker_id || accepted.WORKER_ID || actorId);
   }
 
-  if (!task && actorId) {
-    task = await getTaskById(taskId, {
-      posterId: posterId || actorId,
-      workerId: workerId,
-      actorId: actorId
-    });
-  }
-  if (task && !posterId) posterId = String(task.posted_by || task.POSTED_BY || '');
+  if (!posterId && task) posterId = String(task.posted_by || task.POSTED_BY || '');
 
   var payment = typeof getPaymentByTask === 'function'
     ? await getPaymentByTask(taskId, { posterId: posterId, workerId: workerId, actorId: actorId })
@@ -578,6 +626,38 @@ async function resolveTaskContext(taskId, actorId) {
     payment: payment,
     ids: ids
   };
+}
+
+async function completeTaskViaServer(taskId, actorId, options) {
+  options = options || {};
+  var cfg = window.QG_CONFIG || {};
+  var url = cfg.completeTaskUrl ||
+    'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/complete-task';
+  if (typeof getSupabaseHeaders !== 'function') {
+    return { ok: false, success: false, error: 'auth_not_ready' };
+  }
+  try {
+    var headers = await getSupabaseHeaders();
+    var body = {
+      task_id: String(taskId),
+      actor_id: String(actorId || '')
+    };
+    if (options.posterId) body.poster_id = String(options.posterId);
+    if (options.workerId) body.worker_id = String(options.workerId);
+    if (options.canonicalTaskId) body.canonical_task_id = String(options.canonicalTaskId);
+    var res = await fetch(url, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(body)
+    });
+    var data = {};
+    try { data = await res.json(); } catch (e) { data = { ok: false, success: false, error: 'Invalid response' }; }
+    if (!res.ok && data.ok !== false) data.ok = false;
+    if (data.success == null) data.success = !!data.ok;
+    return data;
+  } catch (err) {
+    return { ok: false, success: false, error: err.message || String(err) };
+  }
 }
 
 async function getConversationsForTask(taskId) {
@@ -2181,82 +2261,99 @@ async function adminRemoveTaskWithReason(taskId, reason) {
 }
 
 /** Mark task + accepted application completed — releases escrow payout when payment is held. */
-async function completeTask(taskId, actorId) {
+async function completeTask(taskId, actorId, options) {
+  options = options || {};
   taskId = String(taskId);
   actorId = String(actorId || '');
   if (!taskId) return { success: false, error: 'Missing task id' };
 
-  var ctx = typeof resolveTaskContext === 'function'
-    ? await resolveTaskContext(taskId, actorId)
-    : { taskId: taskId, canonicalTaskId: taskId, ids: [taskId], accepted: null, posterId: '', workerId: '' };
-
-  var idsToTry = (ctx.ids && ctx.ids.length) ? ctx.ids.slice() : [taskId];
-  if (ctx.canonicalTaskId && idsToTry.indexOf(String(ctx.canonicalTaskId)) === -1) {
-    idsToTry.unshift(String(ctx.canonicalTaskId));
-  }
-
-  var taskResult = { success: false, error: 'Could not update task — refresh and try again' };
-  for (var i = 0; i < idsToTry.length; i++) {
-    taskResult = await updateTaskStatus(idsToTry[i], 'completed', {
-      taskRow: ctx.task,
-      posterId: ctx.posterId,
-      workerId: ctx.workerId
-    });
-    if (taskResult.success) break;
-  }
-  if (!taskResult.success) return taskResult;
-
-  var accepted = ctx.accepted;
-  if (!accepted && typeof getApplicationsByTask === 'function') {
-    for (var j = 0; j < idsToTry.length; j++) {
-      var apps = await getApplicationsByTask(idsToTry[j]);
-      accepted = (apps || []).find(function (a) {
-        return String(a.status || a.STATUS || '').toLowerCase() === 'accepted';
-      });
-      if (accepted) break;
-    }
-  }
-  if (accepted) {
-    var appId = accepted.app_id || accepted.APP_ID || accepted.id;
-    var appWorkerId = accepted.worker_id || accepted.WORKER_ID;
-    var appTaskId = accepted.task_id || accepted.TASK_ID || idsToTry[0];
-    await updateApplicationStatus(appId, 'completed', {
-      taskId: appTaskId,
-      workerId: appWorkerId
-    });
-  }
-
-  if (typeof lockConversationsForTask === 'function') {
-    for (var k = 0; k < idsToTry.length; k++) {
-      await lockConversationsForTask(idsToTry[k]);
-    }
-  }
-  invalidateTasksCache();
-  mergeTaskInCache(taskId, { status: 'completed', STATUS: 'completed' });
-  if (ctx.canonicalTaskId && String(ctx.canonicalTaskId) !== String(taskId)) {
-    mergeTaskInCache(ctx.canonicalTaskId, { status: 'completed', STATUS: 'completed' });
-  }
-
-  var release = { ok: true, skipped: true };
-  var releaseId = ctx.canonicalTaskId || idsToTry[0] || taskId;
   try {
-    release = await releaseTaskPayout(releaseId, actorId, {
+    var ctx = typeof resolveTaskContext === 'function'
+      ? await resolveTaskContext(taskId, actorId, options)
+      : { taskId: taskId, canonicalTaskId: taskId, ids: [taskId], accepted: null, posterId: '', workerId: '' };
+
+    var serverResult = await completeTaskViaServer(taskId, actorId, {
       posterId: ctx.posterId,
-      workerId: ctx.workerId
+      workerId: ctx.workerId,
+      canonicalTaskId: ctx.canonicalTaskId
     });
-  } catch (releaseErr) {
-    release = { ok: false, error: releaseErr.message || String(releaseErr) };
+
+    if (!serverResult.success) {
+      var idsToTry = (ctx.ids && ctx.ids.length) ? ctx.ids.slice() : [taskId];
+      if (ctx.canonicalTaskId && idsToTry.indexOf(String(ctx.canonicalTaskId)) === -1) {
+        idsToTry.unshift(String(ctx.canonicalTaskId));
+      }
+
+      var taskResult = { success: false, error: serverResult.error || 'Could not update task — refresh and try again' };
+      for (var i = 0; i < idsToTry.length; i++) {
+        taskResult = await updateTaskStatus(idsToTry[i], 'completed', {
+          taskRow: ctx.task,
+          posterId: ctx.posterId,
+          workerId: ctx.workerId
+        });
+        if (taskResult.success) break;
+      }
+      if (!taskResult.success) return taskResult;
+
+      var accepted = ctx.accepted;
+      if (!accepted && typeof getApplicationsByTask === 'function') {
+        for (var j = 0; j < idsToTry.length; j++) {
+          var apps = await getApplicationsByTask(idsToTry[j]);
+          accepted = (apps || []).find(function (a) {
+            return String(a.status || a.STATUS || '').toLowerCase() === 'accepted';
+          });
+          if (accepted) break;
+        }
+      }
+      if (accepted) {
+        var appId = accepted.app_id || accepted.APP_ID || accepted.id;
+        var appWorkerId = accepted.worker_id || accepted.WORKER_ID;
+        var appTaskId = accepted.task_id || accepted.TASK_ID || idsToTry[0];
+        await updateApplicationStatus(appId, 'completed', {
+          taskId: appTaskId,
+          workerId: appWorkerId
+        });
+      }
+
+      if (typeof lockConversationsForTask === 'function') {
+        for (var k = 0; k < idsToTry.length; k++) {
+          try { await lockConversationsForTask(idsToTry[k]); } catch (lockErr) {}
+        }
+      }
+    } else if (typeof lockConversationsForTask === 'function') {
+      try { await lockConversationsForTask(serverResult.task_id || ctx.canonicalTaskId || taskId); } catch (lockErr2) {}
+    }
+
+    invalidateTasksCache();
+    mergeTaskInCache(taskId, { status: 'completed', STATUS: 'completed' });
+    if (ctx.canonicalTaskId && String(ctx.canonicalTaskId) !== String(taskId)) {
+      mergeTaskInCache(ctx.canonicalTaskId, { status: 'completed', STATUS: 'completed' });
+    }
+
+    var release = { ok: true, skipped: true };
+    var releaseId = (serverResult && serverResult.task_id) || ctx.canonicalTaskId || taskId;
+    try {
+      release = await releaseTaskPayout(releaseId, actorId, {
+        posterId: ctx.posterId,
+        workerId: ctx.workerId
+      });
+    } catch (releaseErr) {
+      release = { ok: false, error: releaseErr.message || String(releaseErr) };
+    }
+
+    var pendingPayout = !!(release && release.error === 'worker_payout_setup_required');
+    var payoutFailed = !!(release && !release.ok && !release.skipped && !pendingPayout);
+
+    return {
+      success: true,
+      release: release,
+      pendingPayout: pendingPayout,
+      payoutFailed: payoutFailed
+    };
+  } catch (err) {
+    console.error('completeTask failed:', err);
+    return { success: false, error: err.message || String(err) };
   }
-
-  var pendingPayout = !!(release && release.error === 'worker_payout_setup_required');
-  var payoutFailed = !!(release && !release.ok && !release.skipped && !pendingPayout);
-
-  return {
-    success: true,
-    release: release,
-    pendingPayout: pendingPayout,
-    payoutFailed: payoutFailed
-  };
 }
 
 /** Poster releases current tasker — task reopens for other applicants. */

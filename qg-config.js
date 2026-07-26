@@ -26,6 +26,7 @@ window.QG_CONFIG = {
   syncConnectUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/sync-connect-status',
   connectLinkUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-connect-link',
   releasePayoutUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/release-payout',
+  completeTaskUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/complete-task',
   platformFeePercent: 25,
   adminEmail: 'mowebsiteco@gmail.com'
 };
