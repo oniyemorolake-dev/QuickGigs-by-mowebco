@@ -217,12 +217,12 @@
       '<button type="button" class="qg-stripe-action-btn" id="qgStripeOpenChatBtn">Open chat</button>' +
       '<button type="button" class="qg-stripe-action-btn qg-stripe-action-secondary" onclick="window.QG_closePayModal&&window.QG_closePayModal()">Stay here</button>'
     );
-    var openBtn = document.getElementById('qgStripeOpenChatBtn');
+      var openBtn = document.getElementById('qgStripeOpenChatBtn');
     if (openBtn) {
       openBtn.onclick = function () {
         openBtn.disabled = true;
         openBtn.textContent = 'Opening…';
-        finishAlreadyPaid(taskId, options);
+        goToChatAfterPayment(taskId, '', options);
       };
     }
   }
@@ -329,19 +329,76 @@
     return false;
   }
 
-  async function navigateToChatForTask(taskId, sessionId) {
+  function buildChatPayReturnUrl(taskId, sessionId, convId) {
+    if (convId) return 'chat.html?conv=' + encodeURIComponent(String(convId));
+    var qs = 'paid=1&task=' + encodeURIComponent(String(taskId || ''));
+    if (sessionId) qs += '&session_id=' + encodeURIComponent(String(sessionId));
+    return 'chat.html?' + qs;
+  }
+
+  async function goToChatAfterPayment(taskId, sessionId, options) {
+    options = options || {};
+    taskId = String(taskId || '');
+    sessionId = String(sessionId || '');
+    closePayModal();
+    if (typeof window.qgShowGlobalLoading === 'function') {
+      window.qgShowGlobalLoading('Opening chat…');
+    }
+
+    if (options.returnPage === 'chat' && options.returnConv) {
+      window.location.replace(buildChatPayReturnUrl('', '', options.returnConv));
+      return true;
+    }
+
+    if (options.returnConv) {
+      window.location.replace(buildChatPayReturnUrl('', '', options.returnConv));
+      return true;
+    }
+
+    var navigated = false;
+    try {
+      var navPromise = navigateToChatForTask(taskId, sessionId, { skipLoading: true });
+      if (typeof withTimeout === 'function') {
+        navigated = await withTimeout(navPromise, 8000, false);
+      } else {
+        navigated = await navPromise;
+      }
+    } catch (e) {
+      console.warn('goToChatAfterPayment navigate failed:', e);
+    }
+    if (navigated) return true;
+
+    if (taskId) {
+      window.location.replace(buildChatPayReturnUrl(taskId, sessionId));
+      return true;
+    }
+    if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
+    return false;
+  }
+
+  async function navigateToChatForTask(taskId, sessionId, opts) {
+    opts = opts || {};
     if (!taskId) return false;
     if (typeof ensureChatReadyForTask === 'function' && window._currentUser) {
       try {
         var ready = await ensureChatReadyForTask(taskId, window._currentUser.uid, {
           sessionId: sessionId || ''
         });
-        if (ready.ok && ready.conv_id) {
-          closePayModal();
-          if (typeof window.qgShowGlobalLoading === 'function') {
+        var readyConv = ready && ready.conv_id;
+        if (ready.ok && readyConv) {
+          if (!opts.skipLoading) closePayModal();
+          if (!opts.skipLoading && typeof window.qgShowGlobalLoading === 'function') {
             window.qgShowGlobalLoading('Opening chat…');
           }
-          window.location.replace('chat.html?conv=' + encodeURIComponent(String(ready.conv_id)));
+          window.location.replace('chat.html?conv=' + encodeURIComponent(String(readyConv)));
+          return true;
+        }
+        if (readyConv && ready.error === 'not_paid') {
+          if (!opts.skipLoading) closePayModal();
+          if (!opts.skipLoading && typeof window.qgShowGlobalLoading === 'function') {
+            window.qgShowGlobalLoading('Opening chat…');
+          }
+          window.location.replace('chat.html?conv=' + encodeURIComponent(String(readyConv)));
           return true;
         }
       } catch (e) {
@@ -362,11 +419,11 @@
       if (typeof getConversationForTask !== 'function') return false;
       var conv = await getConversationForTask(taskId, posterId, workerId);
       if (conv && conv.conv_id) {
-        closePayModal();
-        if (typeof window.qgShowGlobalLoading === 'function') {
+        if (!opts.skipLoading) closePayModal();
+        if (!opts.skipLoading && typeof window.qgShowGlobalLoading === 'function') {
           window.qgShowGlobalLoading('Opening chat…');
         }
-        window.location.href = 'chat.html?conv=' + encodeURIComponent(String(conv.conv_id));
+        window.location.replace('chat.html?conv=' + encodeURIComponent(String(conv.conv_id)));
         return true;
       }
     } catch (e) {
@@ -427,10 +484,10 @@
       showToast('Payment confirmed — opening chat', '#4ade80');
     }
     if (options.returnPage === 'chat' && options.returnConv) {
-      window.location.href = 'chat.html?conv=' + encodeURIComponent(String(options.returnConv));
+      window.location.replace(buildChatPayReturnUrl('', '', options.returnConv));
       return { ok: true, already_paid: true };
     }
-    if (await navigateToChatForTask(taskId)) {
+    if (await goToChatAfterPayment(taskId, '', options)) {
       return { ok: true, already_paid: true };
     }
     if (typeof loadData === 'function') loadData();
@@ -450,27 +507,25 @@
 
   async function confirmAndUnlockTask(taskId, sessionId, options) {
     options = options || {};
+    taskId = String(taskId || '');
+    sessionId = String(sessionId || '');
+    if (typeof window.qgShowGlobalLoading === 'function') {
+      window.qgShowGlobalLoading('Payment received — opening chat…');
+    }
     if (sessionId) {
       await confirmCheckoutSession(sessionId);
     }
     if (taskId) {
-      await waitForPaymentHeld(taskId, sessionId ? 8000 : 4000);
+      await waitForPaymentHeld(taskId, sessionId ? 10000 : 6000);
       await tryUnlockChatAfterPayment(taskId);
       if (typeof window.QG_refreshPaymentState === 'function') {
         await window.QG_refreshPaymentState(taskId);
       }
     }
-    closePayModal();
     if (typeof showToast === 'function') {
       showToast('Payment accepted — opening chat', '#4ade80');
     }
-    if (options.returnPage === 'chat' && options.returnConv) {
-      window.location.href = 'chat.html?conv=' + encodeURIComponent(String(options.returnConv));
-      return;
-    }
-    if (await navigateToChatForTask(taskId, sessionId)) return;
-    if (typeof loadData === 'function') loadData();
-    if (typeof renderTab === 'function') renderTab();
+    await goToChatAfterPayment(taskId, sessionId, options);
   }
 
   async function syncPendingPaymentsForPoster(userId) {
@@ -535,7 +590,13 @@
 
     cleanPaymentReturnParams();
 
-    if (taskId && await navigateToChatForTask(taskId, sessionId)) {
+    if (await navigateToChatForTask(taskId, sessionId)) {
+      sessionStorage.setItem(handledKey, 'done');
+      return true;
+    }
+
+    if (taskId) {
+      window.location.replace(buildChatPayReturnUrl(taskId, sessionId));
       sessionStorage.setItem(handledKey, 'done');
       return true;
     }
@@ -577,7 +638,11 @@
     }
 
     if (typeof window.QG_syncPendingPayments === 'function') {
-      await window.QG_syncPendingPayments(posterId);
+      if (typeof withTimeout === 'function') {
+        await withTimeout(window.QG_syncPendingPayments(posterId), 4000, null);
+      } else {
+        await window.QG_syncPendingPayments(posterId);
+      }
     }
     if (typeof window.QG_refreshPaymentState === 'function') {
       await window.QG_refreshPaymentState(taskId);
@@ -739,5 +804,7 @@
   window.QG_syncConnectStatus = syncConnectStatus;
   window.QG_syncPendingPayments = syncPendingPaymentsForPoster;
   window.QG_navigateToChatForTask = navigateToChatForTask;
+  window.QG_goToChatAfterPayment = goToChatAfterPayment;
+  window.QG_buildChatPayReturnUrl = buildChatPayReturnUrl;
   window.QG_formatPayError = formatPayError;
 })();

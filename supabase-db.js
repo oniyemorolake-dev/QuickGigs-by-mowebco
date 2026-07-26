@@ -2263,8 +2263,14 @@ async function ensureChatReadyForTask(taskId, actorId, options) {
   taskId = String(taskId || '');
   if (!taskId) return { ok: false, error: 'missing_task' };
 
-  if (typeof window.QG_syncPendingPayments === 'function' && actorId) {
-    await window.QG_syncPendingPayments(actorId);
+  if (options.sessionId && typeof window.QG_confirmCheckoutSession === 'function') {
+    await window.QG_confirmCheckoutSession(options.sessionId);
+  } else if (typeof window.QG_syncPendingPayments === 'function' && actorId) {
+    if (typeof withTimeout === 'function') {
+      await withTimeout(window.QG_syncPendingPayments(actorId), 5000, null);
+    } else {
+      await window.QG_syncPendingPayments(actorId);
+    }
   }
 
   var task = typeof getTaskById === 'function' ? await getTaskById(taskId) : null;
@@ -2290,7 +2296,18 @@ async function ensureChatReadyForTask(taskId, actorId, options) {
   if (!paid && typeof window.QG_waitForPaymentHeld === 'function') {
     paid = await window.QG_waitForPaymentHeld(taskId, options.sessionId ? 10000 : 6000);
   }
-  if (!paid) return { ok: false, error: 'not_paid', posterId: posterId, workerId: workerId };
+  if (!paid) {
+    var convExisting = typeof getConversationForTask === 'function'
+      ? await getConversationForTask(taskId, posterId, workerId)
+      : null;
+    return {
+      ok: false,
+      error: 'not_paid',
+      posterId: posterId,
+      workerId: workerId,
+      conv_id: convExisting && convExisting.conv_id ? convExisting.conv_id : undefined
+    };
+  }
 
   var conv = typeof getConversationForTask === 'function'
     ? await getConversationForTask(taskId, posterId, workerId)

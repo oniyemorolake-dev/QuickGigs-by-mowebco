@@ -242,8 +242,8 @@ body.light .app-legal-footer a{color:var(--purple);}
 
 <script src="qg-utils.js"></script>
 <script src="qg-config.js"></script>
-<script src="supabase-db.js?v=20260725c"></script>
-<script src="qg-stripe.js?v=20260725"></script>
+<script src="supabase-db.js?v=20260725d"></script>
+<script src="qg-stripe.js?v=20260725d"></script>
 <script src="qg-nav.js?v=20260725"></script>
 <script src="qg-pwa.js?v=4"></script>
 <script src="qg-notifications.js"></script>
@@ -1648,16 +1648,22 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
     activeTab = 'inprogress';
     syncTabButtons();
     renderTab();
+    setAcceptLoading(acceptBtn, false);
     var payAmount = getField(app, 'PRICE') || getField(task, 'BUDGET');
-    setTimeout(function () {
-      if (typeof window.QG_openPayModal === 'function') {
-        window.QG_openPayModal(taskId, userId, {
-          returnPage: 'mytasks',
-          amount: payAmount,
-          title: getField(task, 'TITLE') || 'Pay to unlock chat'
-        });
-      }
-    }, 500);
+    var payConvId = convResult.data && convResult.data.conv_id ? String(convResult.data.conv_id) : '';
+    if (typeof window.QG_openPayModal === 'function') {
+      window.QG_openPayModal(taskId, userId, {
+        returnPage: 'mytasks',
+        returnConv: payConvId,
+        amount: payAmount,
+        title: getField(task, 'TITLE') || 'Pay to unlock chat'
+      }).catch(function (err) {
+        console.error('Pay modal failed:', err);
+        showToast('Could not open payment — tap Pay on this task', '#ef4444');
+      });
+    } else {
+      showToast('Payment module not loaded — refresh the page', '#ef4444');
+    }
   } else {
     showToast('Accepted ' + workerName + '! Moved to In Progress 💬');
   }
@@ -1714,6 +1720,10 @@ window.openChatWithWorker = async function(taskId, workerId){
       return;
     }
     if (ready.error === 'not_paid') {
+      if (ready.conv_id) {
+        window.location.href = 'chat.html?conv=' + encodeURIComponent(String(ready.conv_id));
+        return;
+      }
       if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
       showToast('Pay first to unlock chat', '#f59e0b');
       if (String(posterId) === String(userId) && typeof window.QG_openPayModal === 'function') {

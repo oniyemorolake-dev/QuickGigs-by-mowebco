@@ -224,9 +224,9 @@ onAuthStateChanged(auth, (user) => {
 <link rel="stylesheet" href="qg-trust.css">
 <script src="qg-utils.js"></script>
 <script src="qg-config.js"></script>
-<script src="supabase-db.js"></script>
+<script src="supabase-db.js?v=20260725d"></script>
 <script src="qg-site.js"></script>
-<script src="qg-stripe.js"></script>
+<script src="qg-stripe.js?v=20260725d"></script>
 <script src="qg-lightbox.js?v=1"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
@@ -307,6 +307,17 @@ async function initChat(){
   var sessionFromUrl = payParams.get('session_id') || '';
 
   if (paidReturn && taskFromUrl && !convId) {
+    var paidBootKey = 'qg-paid-boot-' + taskFromUrl + '-' + (sessionFromUrl || '1');
+    if (sessionStorage.getItem(paidBootKey) === 'stuck') {
+      if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
+      if (typeof showToast === 'function') {
+        showToast('Payment received — open Messages or tap Pay again to sync', '#f59e0b');
+      }
+      window.location.replace('mytasks.html?tab=inprogress&task=' + encodeURIComponent(taskFromUrl));
+      return;
+    }
+    try { sessionStorage.setItem(paidBootKey, 'busy'); } catch (e) {}
+
     if (typeof window.qgShowGlobalLoading === 'function') {
       window.qgShowGlobalLoading('Payment confirmed — opening chat…');
     }
@@ -314,26 +325,53 @@ async function initChat(){
       await window.QG_confirmCheckoutSession(sessionFromUrl);
     }
     if (typeof window.QG_syncPendingPayments === 'function') {
-      await window.QG_syncPendingPayments(currentUserId);
+      if (typeof withTimeout === 'function') {
+        await withTimeout(window.QG_syncPendingPayments(currentUserId), 5000, null);
+      } else {
+        await window.QG_syncPendingPayments(currentUserId);
+      }
     }
     if (typeof window.QG_waitForPaymentHeld === 'function') {
-      await window.QG_waitForPaymentHeld(taskFromUrl, 10000);
+      await window.QG_waitForPaymentHeld(taskFromUrl, 8000);
     }
     if (typeof ensureChatReadyForTask === 'function') {
       var boot = await ensureChatReadyForTask(taskFromUrl, currentUserId, { sessionId: sessionFromUrl });
-      if (boot.ok && boot.conv_id) {
+      if (boot.conv_id) {
+        try { sessionStorage.removeItem(paidBootKey); } catch (e) {}
         window.location.replace('chat.html?conv=' + encodeURIComponent(String(boot.conv_id)));
         return;
       }
     }
+    if (typeof getTaskById === 'function' && typeof getApplicationsByTask === 'function' && typeof getConversationForTask === 'function') {
+      var payTask = await getTaskById(taskFromUrl);
+      if (payTask) {
+        var payPoster = payTask.posted_by || payTask.POSTED_BY;
+        var payApps = await getApplicationsByTask(taskFromUrl);
+        var payAccepted = (payApps || []).find(function (a) {
+          return String(a.status || a.STATUS || '').toLowerCase() === 'accepted';
+        });
+        if (payAccepted) {
+          var payWorker = payAccepted.worker_id || payAccepted.WORKER_ID;
+          var payConv = await getConversationForTask(taskFromUrl, payPoster, payWorker);
+          if (payConv && payConv.conv_id) {
+            try { sessionStorage.removeItem(paidBootKey); } catch (e) {}
+            window.location.replace('chat.html?conv=' + encodeURIComponent(String(payConv.conv_id)));
+            return;
+          }
+        }
+      }
+    }
     if (typeof window.QG_navigateToChatForTask === 'function' &&
         await window.QG_navigateToChatForTask(taskFromUrl, sessionFromUrl)) {
+      try { sessionStorage.removeItem(paidBootKey); } catch (e) {}
       return;
     }
+    try { sessionStorage.setItem(paidBootKey, 'stuck'); } catch (e) {}
+    if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
     if (typeof showToast === 'function') {
       showToast('Payment received — finishing setup…', '#f59e0b');
     }
-    window.location.href = 'mytasks.html?tab=inprogress&task=' + encodeURIComponent(taskFromUrl);
+    window.location.replace('mytasks.html?tab=inprogress&task=' + encodeURIComponent(taskFromUrl));
     return;
   }
 
