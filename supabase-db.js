@@ -1954,7 +1954,13 @@ function formatSupabaseActionError(action, err) {
   if (lower.indexOf('no matching row') >= 0) {
     return 'Could not ' + action + ' — refresh the page and try again.';
   }
-  if (msg && msg.length < 100) return 'Could not ' + action + ' — ' + msg;
+  if (msg && msg.length < 120) return 'Could not ' + action + ' — ' + msg;
+  if (msg.indexOf('worker_payout_setup_required') >= 0) {
+    return 'Task marked complete, but the tasker must set up Stripe payouts in Profile before funds release.';
+  }
+  if (msg.indexOf('task_not_found') >= 0) {
+    return 'Could not ' + action + ' — task not found. Hard refresh and try again.';
+  }
   return 'Could not ' + action + ' — run supabase/tasks-beta-fix.sql in Supabase SQL Editor, then refresh.';
 }
 
@@ -2037,28 +2043,49 @@ async function completeTask(taskId, actorId) {
   taskId = String(taskId);
   if (!taskId) return { success: false, error: 'Missing task id' };
 
-  var release = await releaseTaskPayout(taskId, actorId);
+  var task = typeof getTaskById === 'function' ? await getTaskById(taskId) : null;
+  var apps = typeof getApplicationsByTask === 'function' ? await getApplicationsByTask(taskId) : [];
+  var accepted = (apps || []).find(function (a) {
+    return String(a.status || a.STATUS || '').toLowerCase() === 'accepted';
+  });
+  var posterId = task ? String(task.posted_by || task.POSTED_BY || '') : '';
+  var workerId = accepted ? String(accepted.worker_id || accepted.WORKER_ID || '') : '';
+  var releaseTaskId = taskId;
+  if (typeof getPaymentByTask === 'function') {
+    var payRow = await getPaymentByTask(taskId, {
+      posterId: posterId,
+      workerId: workerId,
+      actorId: actorId
+    });
+    if (payRow && payRow.task_id != null) releaseTaskId = String(payRow.task_id);
+  }
+
+  var release = await releaseTaskPayout(releaseTaskId, actorId, {
+    posterId: posterId,
+    workerId: workerId
+  });
+  var pendingPayout = false;
   if (!release.ok && !release.skipped) {
-    var releaseErr = release.error || 'payout_release_failed';
-    if (releaseErr === 'worker_payout_setup_required') {
-      releaseErr = 'Tasker must set up payouts in Profile before funds can be released';
+    if (release.error === 'worker_payout_setup_required') {
+      pendingPayout = true;
+    } else {
+      var releaseErr = release.error || 'payout_release_failed';
+      if (releaseErr === 'worker_payout_setup_required') {
+        releaseErr = 'Tasker must set up payouts in Profile before funds can be released';
+      }
+      return { success: false, error: releaseErr, release: release };
     }
-    return { success: false, error: releaseErr, release: release };
   }
 
   var taskResult = await updateTaskStatus(taskId, 'completed');
   if (!taskResult.success) return taskResult;
 
-  var apps = await getApplicationsByTask(taskId);
-  var accepted = (apps || []).find(function (a) {
-    return String(a.status || a.STATUS || '').toLowerCase() === 'accepted';
-  });
   if (accepted) {
     var appId = accepted.app_id || accepted.APP_ID || accepted.id;
-    var workerId = accepted.worker_id || accepted.WORKER_ID;
+    var appWorkerId = accepted.worker_id || accepted.WORKER_ID;
     await updateApplicationStatus(appId, 'completed', {
       taskId: taskId,
-      workerId: workerId
+      workerId: appWorkerId
     });
   }
 
@@ -2067,7 +2094,7 @@ async function completeTask(taskId, actorId) {
   }
   invalidateTasksCache();
   mergeTaskInCache(taskId, { status: 'completed', STATUS: 'completed' });
-  return { success: true, release: release };
+  return { success: true, release: release, pendingPayout: pendingPayout };
 }
 
 /** Poster releases current tasker — task reopens for other applicants. */
@@ -2453,15 +2480,20 @@ async function refundTaskPayment(taskId, actorId) {
   }
 }
 
-async function releaseTaskPayout(taskId, actorId) {
+async function releaseTaskPayout(taskId, actorId, options) {
+  options = options || {};
   var cfg = window.QG_CONFIG || {};
   if (!cfg.paymentsEnabled) return { ok: true, skipped: true };
 
-  var payment = await getPaymentByTask(taskId);
+  var payment = await getPaymentByTask(taskId, {
+    posterId: options.posterId,
+    workerId: options.workerId,
+    actorId: actorId
+  });
   if (!payment) return { ok: true, skipped: true };
 
   var st = String(payment.status || '').toLowerCase();
-  if (st === 'paid') return { ok: true, already: true };
+  if (st === 'paid' || st === 'completed') return { ok: true, already: true };
   if (st !== 'held') return { ok: true, skipped: true };
 
   if (typeof getSupabaseHeaders !== 'function') {
@@ -2476,13 +2508,18 @@ async function releaseTaskPayout(taskId, actorId) {
       method: 'POST',
       headers: headers,
       body: JSON.stringify({
-        task_id: String(taskId),
-        actor_id: String(actorId || '')
+        task_id: String(payment.task_id || taskId),
+        actor_id: String(actorId || ''),
+        poster_id: String(options.posterId || payment.poster_id || ''),
+        worker_id: String(options.workerId || payment.worker_id || '')
       })
     });
     var data = {};
     try { data = await res.json(); } catch (e) { data = { ok: false, error: 'Invalid response' }; }
     if (!res.ok && data.ok !== false) data.ok = false;
+    if (data.error && typeof data.error === 'object') {
+      data.error = data.error.message || data.error.error || JSON.stringify(data.error);
+    }
     return data;
   } catch (err) {
     console.error('releaseTaskPayout failed:', err);

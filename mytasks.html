@@ -242,7 +242,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 
 <script src="qg-utils.js"></script>
 <script src="qg-config.js"></script>
-<script src="supabase-db.js?v=20260725j"></script>
+<script src="supabase-db.js?v=20260725k"></script>
 <script src="qg-stripe.js?v=20260725g"></script>
 <script src="qg-nav.js?v=20260725"></script>
 <script src="qg-pwa.js?v=4"></script>
@@ -1834,6 +1834,8 @@ window.markComplete = async function(taskId, btn){
   }
   if (result.release && result.release.ok && !result.release.skipped && !result.release.already) {
     showToast('Payout sent to tasker (75/25 split)', '#4ade80');
+  } else if (result.pendingPayout) {
+    showToast('Task complete — payout waits until tasker sets up Stripe in Profile', '#f59e0b');
   }
   allTasks.forEach(function(t) {
     if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, 'completed');
