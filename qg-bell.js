@@ -177,8 +177,17 @@
   }
 
   async function openNotification(id, link) {
-    if (id && typeof markNotificationRead === 'function') {
+    if (id && typeof markNotificationRead === 'function' && String(id).indexOf('app-') !== 0) {
       await markNotificationRead(id);
+    }
+    if (id) {
+      try {
+        var read = readLocalNotifRead();
+        if (read.indexOf(String(id)) < 0) {
+          read.push(String(id));
+          localStorage.setItem('qg-notif-read', JSON.stringify(read.slice(-200)));
+        }
+      } catch (e) {}
     }
     closeBellPanel();
     await refreshNotifications();
@@ -192,14 +201,97 @@
     if (uid && typeof markAllNotificationsRead === 'function') {
       await markAllNotificationsRead(uid);
     }
+    try {
+      var read = readLocalNotifRead();
+      notifications.forEach(function (n) {
+        var id = String(n.id || '');
+        if (id && read.indexOf(id) < 0) read.push(id);
+      });
+      localStorage.setItem('qg-notif-read', JSON.stringify(read.slice(-200)));
+    } catch (e) {}
     await refreshNotifications();
+  }
+
+  function readLocalNotifRead() {
+    try {
+      var raw = localStorage.getItem('qg-notif-read');
+      var arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
+  }
+
+  function derivedFromCache(uid) {
+    var out = [];
+    try {
+      var tasksRaw = sessionStorage.getItem('qg-tasks-cache') || sessionStorage.getItem('qg-tasks-cache-v1');
+      var appsRaw = sessionStorage.getItem('qg-apps-cache-v1');
+      var tasks = [];
+      var apps = [];
+      if (tasksRaw) {
+        var tp = JSON.parse(tasksRaw);
+        tasks = Array.isArray(tp) ? tp : (tp && tp.items) || [];
+      }
+      if (appsRaw) {
+        var ap = JSON.parse(appsRaw);
+        apps = Array.isArray(ap) ? ap : (ap && ap.items) || [];
+      }
+      var read = readLocalNotifRead();
+      var myIds = {};
+      tasks.forEach(function (t) {
+        if (String(t.posted_by || t.POSTED_BY || '') !== String(uid)) return;
+        var id = t.task_id != null ? t.task_id : (t.TASK_ID != null ? t.TASK_ID : t.id);
+        if (id != null) myIds[String(id)] = t.title || t.TITLE || 'your task';
+      });
+      apps.forEach(function (a) {
+        var tid = String(a.task_id || a.TASK_ID || '');
+        var st = String(a.status || a.STATUS || 'pending').toLowerCase();
+        var aid = String(a.app_id || a.APP_ID || a.id || tid + ':' + (a.worker_id || ''));
+        if (myIds[tid] && st === 'pending') {
+          var id1 = 'app-recv-' + aid;
+          out.push({
+            id: id1,
+            title: 'New applicant',
+            body: 'Someone applied to “' + myIds[tid] + '”',
+            created_at: a.created_at || a.CREATED_AT || new Date().toISOString(),
+            link: 'mytasks.html?tab=posted&expand=' + encodeURIComponent(tid),
+            read_at: read.indexOf(id1) >= 0 ? new Date().toISOString() : null
+          });
+        }
+        if (String(a.worker_id || a.WORKER_ID || '') === String(uid) && st === 'accepted') {
+          var id2 = 'app-acc-' + aid;
+          out.push({
+            id: id2,
+            title: 'Application accepted',
+            body: 'You were accepted — open My Jobs to continue',
+            created_at: a.updated_at || a.created_at || a.CREATED_AT || new Date().toISOString(),
+            link: 'mytasks.html?tab=applied&mode=worker',
+            read_at: read.indexOf(id2) >= 0 ? new Date().toISOString() : null
+          });
+        }
+      });
+    } catch (e) {}
+    return out;
   }
 
   async function refreshNotifications() {
     var uid = window._currentUser && window._currentUser.uid;
-    if (!uid || typeof fetchUserNotifications !== 'function') return;
+    if (!uid) return;
     try {
-      notifications = await fetchUserNotifications(uid, 40);
+      var server = [];
+      if (typeof fetchUserNotifications === 'function') {
+        server = await fetchUserNotifications(uid, 40);
+      }
+      if (!Array.isArray(server)) server = [];
+      var derived = derivedFromCache(uid);
+      var seen = {};
+      notifications = server.concat(derived).filter(function (n) {
+        var id = String(n.id || n.notification_id || '');
+        if (!id || seen[id]) return false;
+        seen[id] = true;
+        return true;
+      }).sort(function (a, b) {
+        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      }).slice(0, 40);
       var unread = notifications.filter(function (n) { return !n.read_at; }).length;
       updateBadge(unread);
       if (open) renderList();

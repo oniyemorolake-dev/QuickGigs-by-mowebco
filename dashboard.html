@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://www.gstatic.com">
 <link rel="stylesheet" href="qg-polish.css?v=20260726c">
 <link rel="stylesheet" href="qg-ux.css?v=20260726ux">
+<link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — Dashboard</title>
 <link rel="manifest" href="/manifest.json?v=4">
@@ -208,6 +209,8 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <!-- ACTION CARDS -->
 <div class="actions" id="actionsGrid"></div>
+
+<div id="dashActivity" class="qg-page-wide"></div>
 
 <div id="dashConnectBanner" style="display:none"></div>
 
@@ -422,13 +425,17 @@ function getTimeGreeting(){
   return 'Good evening';
 }
 
-function renderGreeting(){
+function renderGreeting(contextOpts){
   var name = window._userName || '';
-  var city = window.getUserCityLabel ? window.getUserCityLabel() : 'Calgary';
-  document.getElementById('greetName').textContent = getTimeGreeting() + (name ? ', ' + name : '') + ' 👋';
-  var sub = isPoster
-    ? 'Your hiring hub · ' + city
-    : 'Your gig board · ' + city;
+  var first = String(name || '').trim().split(/\s+/)[0] || '';
+  document.getElementById('greetName').textContent = getTimeGreeting() + (first ? ', ' + first : '') + ' 👋';
+  var sub = 'Ready to get something done today?';
+  if (contextOpts && typeof qgContextualGreetingLine === 'function') {
+    sub = qgContextualGreetingLine(contextOpts);
+  } else if (contextOpts) {
+    if (contextOpts.pendingApplications > 0) sub = 'You have ' + contextOpts.pendingApplications + ' application' + (contextOpts.pendingApplications === 1 ? '' : 's') + ' waiting';
+    else if (contextOpts.inProgress > 0) sub = 'You have a task in progress';
+  }
   document.getElementById('greetSub').textContent = sub;
   updateModeTag();
   updateAvatarMenuSwitchLabel();
@@ -517,7 +524,6 @@ function renderAll(){
     sessionMode = getSessionMode();
     isPoster = sessionMode !== 'worker';
   }
-  renderGreeting();
   var userId = dashData.userId;
   var myPosted = userId ? dashData.posted.filter(function(t){ return taskField(t, 'posted_by') === userId; }) : [];
   var myOpenPosted = myPosted.filter(function(t){ return taskField(t, 'status') === 'open'; });
@@ -527,6 +533,19 @@ function renderAll(){
   var applicantCount = userId ? dashData.apps.filter(function(a){
     return myPosted.some(function(t){ return String(taskField(t, 'id')) === String(appField(a, 'task_id')); });
   }).length : 0;
+  var pendingApplicantsOnMine = 0;
+  myOpenPosted.forEach(function (t) {
+    pendingApplicantsOnMine += dashData.apps.filter(function (a) {
+      return String(appField(a, 'task_id')) === String(taskField(t, 'id')) &&
+        String(appField(a, 'status') || 'pending').toLowerCase() === 'pending';
+    }).length;
+  });
+  var pendingWorkerApps = myApps.filter(function (a) {
+    return String(appField(a, 'status') || 'pending').toLowerCase() === 'pending';
+  }).length;
+  var inProgressCount = isPoster
+    ? myPosted.filter(function (t) { return taskField(t, 'status') === 'in_progress'; }).length
+    : 0;
   var totalSpent = myPosted.reduce(function(s, t){ return s + (parseFloat(taskField(t, 'budget')) || 0); }, 0);
   var posterPayments = (dashData.payments || []).filter(function(p) {
     return String(p.poster_id || p.POSTER_ID || '') === String(userId);
@@ -544,6 +563,22 @@ function renderAll(){
       return String(appField(a, 'task_id')) === String(taskField(t, 'id'));
     });
   }).length : 0;
+  if (!isPoster) inProgressCount = myInProgressWorker;
+
+  renderGreeting({
+    pendingApplications: isPoster ? pendingApplicantsOnMine : pendingWorkerApps,
+    inProgress: inProgressCount
+  });
+
+  var activityEl = document.getElementById('dashActivity');
+  if (activityEl && typeof qgBuildActivityFeed === 'function') {
+    activityEl.innerHTML = qgBuildActivityFeed({
+      userId: userId,
+      tasks: dashData.posted || [],
+      apps: dashData.apps || [],
+      reviews: dashData.reviews || []
+    });
+  }
 
   var workerPayments = (dashData.payments || []).filter(function(p) {
     return String(p.worker_id || p.WORKER_ID || '') === String(userId);
@@ -712,5 +747,6 @@ document.addEventListener('click', function(e) {
 </script>
 <script defer src="qg-polish.js?v=20260726c"></script>
 <script src="qg-ux.js?v=20260726ux" defer></script>
+<script src="qg-bigtech.js?v=20260726bt" defer></script>
 </body>
 </html>

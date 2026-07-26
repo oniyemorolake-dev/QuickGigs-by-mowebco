@@ -8,6 +8,7 @@
 <meta name="theme-color" content="#6b3fa0">
 <link rel="stylesheet" href="qg-polish.css?v=20260726c">
 <link rel="stylesheet" href="qg-ux.css?v=20260726ux">
+<link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — Browse Tasks in Canada</title>
 <meta name="description" content="Browse everyday tasks and gigs on QuickGigs — Canada's task marketplace, available coast to coast.">
@@ -386,6 +387,7 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-utils.js"></script>
 <script defer src="qg-polish.js?v=20260726c"></script>
 <script src="qg-ux.js?v=20260726ux" defer></script>
+<script src="qg-bigtech.js?v=20260726bt" defer></script>
 <script defer src="qg-config.js"></script>
 <script defer src="qg-categories.js"></script>
 <script defer src="supabase-db.js"></script>
@@ -704,7 +706,7 @@ function renderCards(){
       '<div class="tc-body">'+
       '<div class="tc-top"><div class="tc-left">'+iconHtml+'<div class="tc-meta"><p class="tc-cat">'+esc(t.catLabel)+'</p><p class="tc-title">'+esc(t.title)+'</p></div></div>'+getBadge(t.mode,t)+'</div>'+
       descHtml+
-      '<div class="tc-bottom"><div><div class="tc-price">'+esc(t.priceLabel)+'</div><div class="tc-info">👤 '+posterLabel+' · 📍 '+esc(loc)+whenPart+' · '+esc(t.posted)+(t.applicants>0?' · '+t.applicants+' applied':'')+'</div>'+
+      '<div class="tc-bottom"><div><div class="tc-price">'+esc(t.priceLabel)+(typeof qgNewPillHtml==='function'?qgNewPillHtml(t.createdAt||t.created_at):'')+'</div><div class="tc-info">👤 '+posterLabel+' · 📍 '+esc(loc)+whenPart+' · '+esc(t.posted||'Posted recently')+(t.applicants>0?' · '+t.applicants+' applied':'')+'</div>'+
       '<div class="qg-action-row">'+saveBtn+shareBtn+reportBtn+'</div></div>'+
       '<button class="apply-btn '+getBtnClass(t.mode)+'" onclick="openModal(\''+t.id+'\',event)">'+getBtnLabel(t.mode)+'</button></div></div></div>';
   }).join('');
@@ -878,6 +880,7 @@ window.submitApplication=async function(){
     btn.textContent='Send application';btn.disabled=false;
     return;
   }
+  if (typeof qgMicroConfirm === 'function') qgMicroConfirm(btn);
   closeModal();
   btn.textContent='Send application';btn.disabled=false;
   if (activeTask && activeTask.id) {

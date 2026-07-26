@@ -208,7 +208,7 @@
   document.head.appendChild(menuScript);
 
   var bellScript = document.createElement('script');
-  bellScript.src = 'qg-bell.js?v=2';
+  bellScript.src = 'qg-bell.js?v=3';
   bellScript.defer = true;
   document.head.appendChild(bellScript);
 

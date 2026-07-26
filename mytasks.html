@@ -8,6 +8,7 @@
 <meta name="theme-color" content="#6b3fa0">
 <link rel="stylesheet" href="qg-polish.css?v=20260726c">
 <link rel="stylesheet" href="qg-ux.css?v=20260726ux">
+<link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QuickGigs — My Tasks</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -249,6 +250,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 <script defer src="qg-utils.js"></script>
 <script defer src="qg-polish.js?v=20260726c"></script>
 <script src="qg-ux.js?v=20260726ux" defer></script>
+<script src="qg-bigtech.js?v=20260726bt" defer></script>
 <script defer src="qg-config.js?v=20260726m"></script>
 <script defer src="supabase-db.js?v=20260726m"></script>
 <script defer src="qg-stripe.js?v=20260726m"></script>
@@ -1228,6 +1230,9 @@ window.showConfirm = function(opts) {
   var okBtn = document.getElementById('confirmOkBtn');
   okBtn.textContent = opts.confirmLabel || 'Confirm';
   okBtn.classList.toggle('is-neutral', !!opts.neutral);
+  var danger = !!opts.danger || /cancel|decline|withdraw|delete|remove|unassign/i.test(opts.confirmLabel || opts.title || '');
+  okBtn.classList.toggle('is-danger', danger);
+  okBtn.setAttribute('data-no-enter', danger ? '1' : '0');
   document.getElementById('confirmOverlay').classList.add('open');
 };
 
@@ -1451,12 +1456,19 @@ function renderTab(){
           ? shareButtonHtml('task', taskId, getField(t,'TITLE')).replace('↗ Share', 'Share your task')
           : '<button type="button" class="act-btn qg-share-trigger" data-share-kind="task" data-share-id="'+escAttr(taskId)+'" data-share-label="'+escAttr(getField(t,'TITLE'))+'">Share your task</button>')
         : '';
+      var timeline = typeof qgTaskTimelineHtml === 'function'
+        ? qgTaskTimelineHtml(hasAccepted ? 'accepted' : 'open')
+        : '';
+      var shareIcon = typeof shareButtonHtml === 'function'
+        ? shareButtonHtml('task', taskId, getField(t,'TITLE'))
+        : '';
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-open">● Open</span></div>'+
+        timeline +
         '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · '+esc(formatTaskBudgetMeta(t))+(postedLabel ? ' · Posted '+esc(postedLabel) : '')+'</div>'+
         '<button type="button" class="tc-applicants-toggle'+(isOpen?' open':'')+'" data-applicants-toggle="'+escAttr(taskId)+'" data-applicant-count="'+escAttr(pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : ''))+'" data-applicant-names="'+escAttr(namePreview + (pendingApps.length > 3 ? '…' : ''))+'">👥 '+esc(toggleLabel)+'</button>'+
         '<div class="applicants-panel'+(isOpen?' open':'')+'" id="'+taskDomId(taskId)+'">'+appHtml+'</div>'+
-        '<div class="action-row">'+shareEmpty+'<button type="button" class="act-btn btn-danger" data-cancel-posting="'+escAttr(taskId)+'">✕ Cancel posting</button></div>'+
+        '<div class="action-row">'+shareEmpty+shareIcon+'<button type="button" class="act-btn btn-danger" data-cancel-posting="'+escAttr(taskId)+'">✕ Cancel posting</button></div>'+
       '</div>';
     }).join('');
   }
@@ -1630,7 +1642,8 @@ function renderTab(){
         : '';
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left">'+iconHtml+'<div><div class="tc-cat">'+roleLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-progress">⏳ In progress</span></div>'+
-        '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+'</div>'+
+        (typeof qgTaskTimelineHtml === 'function' ? qgTaskTimelineHtml('in_progress') : '')+
+        '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+' CAD</div>'+
         '<div class="qg-action-row">'+disputeBtn+reportBtns+'</div>'+
         '<div class="action-row">' + posterActions + workerActions + '</div>'+
       '</div>';
@@ -1692,7 +1705,8 @@ function renderTab(){
         : '<div class="action-row"><a class="act-btn btn-review" href="'+reviewHref+'">⭐ Leave a review</a></div>';
       return '<div class="task-card'+(isCancelled || isExpired ?' is-faded':'')+'">'+
         '<div class="tc-top"><div class="tc-left">'+profileTapIcon(otherUid, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">'+otherLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div>'+badge+'</div>'+
-        '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+'</div>'+
+        (typeof qgTaskTimelineHtml === 'function' && !isCancelled && !isExpired ? qgTaskTimelineHtml('completed') : '')+
+        '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+' CAD</div>'+
         '<div class="qg-action-row">'+disputeBtn+reportBtns+'</div>'+
         actions+
       '</div>';
@@ -1870,6 +1884,7 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
       showToast('Payment module not loaded — refresh the page', '#ef4444');
     }
   } else {
+    if (acceptBtn && typeof qgMicroConfirm === 'function') qgMicroConfirm(acceptBtn);
     showToast('Accepted ' + workerName + '! Moved to In Progress 💬');
   }
   setTimeout(function () { loadData(); }, 100);
@@ -2140,6 +2155,7 @@ window.markComplete = async function(taskId, btn){
     return;
   }
   showCompletedUi(result.task_id || canonicalTaskId || taskId);
+  if (btn && typeof qgMicroConfirm === 'function') qgMicroConfirm(btn);
 
   if (typeof notifyTaskCompleted === 'function') {
     try {
@@ -2177,49 +2193,78 @@ window.declineApplicant = async function(taskId, appId, declineBtn) {
   }
   var app = allApplications.find(function(a){ return String(getField(a, 'APP_ID')) === appId; });
   var workerId = app ? getField(app, 'WORKER_ID') : '';
-  if (declineBtn) {
-    declineBtn.disabled = true;
-    declineBtn.textContent = 'Declining…';
-  }
-  var result = await declineApplication(appId, { taskId: taskId, workerId: workerId });
-  if (!result.success) {
-    if (declineBtn) {
-      declineBtn.disabled = false;
-      declineBtn.textContent = 'Decline';
-    }
-    console.error('FULL declineApplicant failure:', JSON.stringify(result));
-    showToast('Could not decline: ' + String(result.error || 'unknown_error'), '#ef4444');
-    return;
-  }
+  var prevStatus = app ? (getField(app, 'STATUS') || 'pending') : 'pending';
+  // Optimistic UI + undo window
   allApplications.forEach(function(a) {
     if (String(getField(a, 'APP_ID')) === appId ||
         (String(getField(a, 'TASK_ID')) === taskId && String(getField(a, 'WORKER_ID')) === String(workerId))) {
       setRowStatus(a, 'declined');
     }
   });
-  showToast('Applicant declined');
+  if (declineBtn) {
+    declineBtn.disabled = true;
+    declineBtn.textContent = 'Declined';
+    if (typeof qgMicroConfirm === 'function') qgMicroConfirm(declineBtn);
+  }
   renderTab();
+  var doDecline = async function () {
+    var result = await declineApplication(appId, { taskId: taskId, workerId: workerId });
+    if (!result.success) {
+      allApplications.forEach(function(a) {
+        if (String(getField(a, 'APP_ID')) === appId) setRowStatus(a, prevStatus);
+      });
+      renderTab();
+      showToast('Could not decline: ' + String(result.error || 'unknown_error'), '#ef4444');
+    }
+  };
+  if (typeof qgUndoAction === 'function') {
+    qgUndoAction('Applicant declined — Undo', doDecline, function () {
+      allApplications.forEach(function(a) {
+        if (String(getField(a, 'APP_ID')) === appId) setRowStatus(a, prevStatus);
+      });
+      renderTab();
+    });
+  } else {
+    await doDecline();
+    showToast('Applicant declined');
+  }
 };
 
 window.confirmWithdrawApplication = function(appId) {
   showConfirm({
     title: 'Withdraw application?',
-    message: 'Your offer will be removed and the poster will no longer see you as an applicant. You can apply again later if the task is still open.',
+    message: 'Your offer will be removed from this task. You can undo for a few seconds after confirming.',
     confirmLabel: 'Withdraw',
+    danger: true,
     onConfirm: async function() {
       var app = allApplications.find(function(a){ return String(getField(a, 'APP_ID')) === String(appId); });
       var taskId = app ? getField(app, 'TASK_ID') : '';
       var workerId = window._currentUser ? window._currentUser.uid : (app ? getField(app, 'WORKER_ID') : '');
-      var result = await cancelApplication(String(appId), { taskId: taskId, workerId: workerId });
-      if (!result.success) {
-        var withdrawMsg = typeof formatSupabaseActionError === 'function'
-          ? formatSupabaseActionError('withdraw application', result.error)
-          : 'Could not withdraw — run supabase/tasks-beta-fix.sql in Supabase, then refresh.';
-        showToast(withdrawMsg, '#ef4444');
-        return;
+      var prevStatus = app ? (getField(app, 'STATUS') || 'pending') : 'pending';
+      if (app) setRowStatus(app, 'cancelled');
+      renderTab();
+      var doWithdraw = async function () {
+        var result = await cancelApplication(String(appId), { taskId: taskId, workerId: workerId });
+        if (!result.success) {
+          if (app) setRowStatus(app, prevStatus);
+          renderTab();
+          var withdrawMsg = typeof formatSupabaseActionError === 'function'
+            ? formatSupabaseActionError('withdraw application', result.error)
+            : 'Could not withdraw — try again.';
+          showToast(withdrawMsg, '#ef4444');
+          return;
+        }
+        loadData();
+      };
+      if (typeof qgUndoAction === 'function') {
+        qgUndoAction('Application withdrawn — Undo', doWithdraw, function () {
+          if (app) setRowStatus(app, prevStatus);
+          renderTab();
+        });
+      } else {
+        await doWithdraw();
+        showToast('Application withdrawn');
       }
-      showToast('Application withdrawn');
-      loadData();
     }
   });
 };
@@ -2262,25 +2307,46 @@ window.confirmCancelPosting = function(taskId) {
   var title = task ? getField(task, 'TITLE') : 'this task';
   showConfirm({
     title: 'Cancel posting?',
-    message: '“' + title + '” will be removed from browse and all pending applicants will be notified. This cannot be undone.',
+    message: '“' + title + '” will be removed from browse and pending applicants will be notified. You can Undo for 5 seconds after confirming.',
     confirmLabel: 'Cancel posting',
+    danger: true,
     onConfirm: async function() {
-      if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
-      var result = await cancelTask(taskId);
-      if (!result.success) {
-        console.error('FULL cancelPosting failure:', JSON.stringify(result));
-        showToast('Could not cancel posting: ' + String(result.error || 'unknown_error'), '#ef4444');
-        return;
-      }
+      var prevStatus = task ? (getField(task, 'STATUS') || 'open') : 'open';
       allTasks.forEach(function(t) {
         if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, 'cancelled');
       });
-      if (typeof mergeTaskInCache === 'function') mergeTaskInCache(taskId, { status: 'cancelled' });
       activeTab = 'completed';
       syncTabButtons();
       renderTab();
-      showToast('Posting cancelled');
-      await loadData();
+      var doCancel = async function () {
+        if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
+        var result = await cancelTask(taskId);
+        if (!result.success) {
+          allTasks.forEach(function(t) {
+            if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, prevStatus);
+          });
+          activeTab = 'posted';
+          syncTabButtons();
+          renderTab();
+          showToast('Could not cancel posting: ' + String(result.error || 'unknown_error'), '#ef4444');
+          return;
+        }
+        if (typeof mergeTaskInCache === 'function') mergeTaskInCache(taskId, { status: 'cancelled' });
+        await loadData();
+      };
+      if (typeof qgUndoAction === 'function') {
+        qgUndoAction('Posting cancelled — Undo', doCancel, function () {
+          allTasks.forEach(function(t) {
+            if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, prevStatus);
+          });
+          activeTab = 'posted';
+          syncTabButtons();
+          renderTab();
+        });
+      } else {
+        await doCancel();
+        showToast('Posting cancelled');
+      }
     }
   });
 };
