@@ -2271,7 +2271,43 @@ async function getPaymentByTask(taskId, options) {
     );
     best = pickBestPaymentRow(byPair);
   }
+  if (!best && options.actorId && typeof getPaymentsForUser === 'function') {
+    var userRows = await getPaymentsForUser(options.actorId, options.actorRole || 'worker');
+    var pairRows = (userRows || []).filter(function (p) {
+      if (options.posterId && String(p.poster_id) !== String(options.posterId)) return false;
+      if (options.workerId && String(p.worker_id) !== String(options.workerId)) return false;
+      return true;
+    });
+    best = pickBestPaymentRow(pairRows);
+  }
   return best;
+}
+
+async function syncConversationUnlock(convId, actorId) {
+  var cfg = window.QG_CONFIG || {};
+  var url = cfg.confirmCheckoutUrl ||
+    'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/confirm-checkout';
+  if (!convId || typeof getSupabaseHeaders !== 'function') {
+    return { ok: false, error: 'missing_conv_or_auth' };
+  }
+  try {
+    var headers = await getSupabaseHeaders();
+    var res = await fetch(url, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({
+        conv_id: String(convId),
+        actor_id: String(actorId || '')
+      })
+    });
+    var data = {};
+    try { data = await res.json(); } catch (e) { data = { ok: false, error: 'Invalid response' }; }
+    if (!res.ok && data.ok !== false) data.ok = false;
+    return data;
+  } catch (err) {
+    console.error('syncConversationUnlock failed:', err);
+    return { ok: false, error: err.message || String(err) };
+  }
 }
 
 function isPaymentStatusComplete(status) {
@@ -2711,6 +2747,7 @@ window.submitReview = submitReview;
 window.readReviewsCache = readReviewsCache;
 window.mergeReviewInCache = mergeReviewInCache;
 window.getPaymentByTask = getPaymentByTask;
+window.syncConversationUnlock = syncConversationUnlock;
 window.getPaymentsForUser = getPaymentsForUser;
 window.isTaskPaymentComplete = isTaskPaymentComplete;
 window.isPaymentStatusComplete = isPaymentStatusComplete;

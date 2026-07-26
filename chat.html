@@ -224,7 +224,7 @@ onAuthStateChanged(auth, (user) => {
 <link rel="stylesheet" href="qg-trust.css">
 <script src="qg-utils.js"></script>
 <script src="qg-config.js"></script>
-<script src="supabase-db.js?v=20260725i"></script>
+<script src="supabase-db.js?v=20260725j"></script>
 <script src="qg-site.js"></script>
 <script src="qg-stripe.js?v=20260725g"></script>
 <script src="qg-lightbox.js?v=1"></script>
@@ -436,6 +436,18 @@ async function initChat(){
     return;
   }
 
+  if (!justPaid && typeof syncConversationUnlock === 'function') {
+    try {
+      var syncUnlock = await syncConversationUnlock(convId, currentUserId);
+      if (syncUnlock && syncUnlock.ok && syncUnlock.unlocked) {
+        var syncedConv = await getConversation(convId);
+        if (syncedConv) currentConv = syncedConv;
+      }
+    } catch (syncErr) {
+      console.warn('Chat unlock sync skipped:', syncErr);
+    }
+  }
+
   if (justPaid) {
     runBackgroundUnlock(currentConv, sessionFromUrl);
     clearJustPaidConv(convId);
@@ -451,6 +463,7 @@ async function initChat(){
   var taskStatus = '';
   var isCompleted = convStatus === 'completed';
   var isCancelled = false;
+  var paymentVerified = false;
 
   var chatOpen = justPaid || (typeof parseConversationUnlocked === 'function'
     ? parseConversationUnlocked(currentConv)
@@ -470,13 +483,16 @@ async function initChat(){
     if (currentConv.task_id && typeof getPaymentByTask === 'function') {
       var payRow = await getPaymentByTask(currentConv.task_id, {
         posterId: currentConv.poster_id,
-        workerId: currentConv.worker_id
+        workerId: currentConv.worker_id,
+        actorId: currentUserId,
+        actorRole: isPoster ? 'poster' : 'worker'
       });
       var paySt = payRow && String(payRow.status || '').toLowerCase();
       taskAlreadyPaid = paySt === 'held' || paySt === 'paid' || paySt === 'completed';
     }
     if (taskAlreadyPaid) {
       chatOpen = true;
+      paymentVerified = true;
       currentConv.is_unlocked = true;
       if (typeof unlockChatForTask === 'function') {
         unlockChatForTask(currentConv.task_id, currentConv.poster_id, currentConv.worker_id).catch(function () {});
@@ -499,7 +515,7 @@ async function initChat(){
 
   if(isCompleted) currentConv.is_unlocked = false;
 
-  if(!currentConv.is_unlocked && !justPaid){
+  if(!currentConv.is_unlocked && !justPaid && !paymentVerified){
     showLockedState(isCompleted, isCancelled, false);
     if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
     deferChatEnrichment(currentConv, otherUid, otherName, isPoster);

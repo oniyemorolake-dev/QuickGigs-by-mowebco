@@ -176,7 +176,7 @@ onAuthStateChanged(auth, (user) => {
 
 <script src="qg-utils.js"></script>
 <script src="qg-config.js"></script>
-<script src="supabase-db.js?v=20260725i"></script>
+<script src="supabase-db.js?v=20260725j"></script>
 <script src="qg-notifications.js"></script>
 <script src="qg-push.js?v=1"></script>
 <script>
@@ -276,12 +276,12 @@ async function loadConversations(){
   try {
     var rows = await getConversationsForUser(userId);
     var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept';
-    if (rule === 'payment' && typeof unlockChatForTask === 'function') {
+    if (rule === 'payment' && typeof syncConversationUnlock === 'function') {
       var hadLocked = false;
       await Promise.all((rows || []).map(function (c) {
         if (c.is_unlocked) return Promise.resolve();
         hadLocked = true;
-        return unlockChatForTask(c.task_id, c.poster_id, c.worker_id).catch(function () {});
+        return syncConversationUnlock(c.conv_id, userId).catch(function () {});
       }));
       if (hadLocked) {
         rows = await getConversationsForUser(userId);

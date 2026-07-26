@@ -933,6 +933,14 @@
   window.QG_confirmCheckoutSession = confirmCheckoutSession;
   window.QG_syncConnectStatus = syncConnectStatus;
   window.QG_syncPendingPayments = syncPendingPaymentsForPoster;
+
+  async function syncChatUnlock(convId, actorId) {
+    if (typeof syncConversationUnlock === 'function') {
+      return await syncConversationUnlock(convId, actorId);
+    }
+    return { ok: false, error: 'sync_not_available' };
+  }
+  window.QG_syncChatUnlock = syncChatUnlock;
   window.QG_navigateToChatForTask = navigateToChatForTask;
   window.QG_goToChatAfterPayment = goToChatAfterPayment;
   window.QG_buildChatPayReturnUrl = buildChatPayReturnUrl;
