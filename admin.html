@@ -10,7 +10,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>QuickGigs — Admin Console</title>
-<link rel="stylesheet" href="qg-admin.css?v=1">
+<link rel="stylesheet" href="qg-admin.css?v=2">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -206,6 +206,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="nav-section">Management</div>
     <button class="nav-item" onclick="showSection('users',this)"><span class="nav-icon">👥</span>Users</button>
     <button class="nav-item" onclick="showSection('tasks',this)"><span class="nav-icon">📋</span>Tasks</button>
+    <button class="nav-item" onclick="showSection('moderation',this)"><span class="nav-icon">🛡</span>Moderation</button>
     <button class="nav-item" onclick="showSection('disputes',this)"><span class="nav-icon">🚨</span>Disputes <span class="nav-badge" id="disputeBadge">0</span></button>
     <button class="nav-item" onclick="showSection('reports',this)"><span class="nav-icon">🚩</span>Reports <span class="nav-badge" id="reportBadge">0</span></button>
     <button class="nav-item" onclick="showSection('waitlist',this)"><span class="nav-icon">📬</span>Waitlist</button>
@@ -213,6 +214,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="nav-section">Security</div>
     <button class="nav-item" onclick="showSection('security',this)"><span class="nav-icon">🔒</span>Security Log</button>
     <button class="nav-item" onclick="showSection('fraud',this)"><span class="nav-icon">🚫</span>Fraud Alerts</button>
+    <button class="nav-item" onclick="showSection('audit',this)"><span class="nav-icon">📝</span>Audit</button>
     <div class="nav-section">Settings</div>
     <button class="nav-item" onclick="showSection('settings',this)"><span class="nav-icon">⚙️</span>Platform Settings</button>
   </nav>
@@ -226,9 +228,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
 </aside>
 
+<div class="admin-sidebar-backdrop" id="adminSidebarBackdrop" onclick="toggleAdminSidebar()"></div>
 <main class="main">
   <div class="topbar">
-    <div><div class="page-title" id="pageTitle">Dashboard Overview</div><div class="page-sub" id="pageSub"></div></div>
+    <div style="display:flex;align-items:flex-start;gap:10px">
+      <button type="button" class="admin-menu-btn" id="adminMenuBtn" onclick="toggleAdminSidebar()" aria-label="Open menu">☰</button>
+      <div><div class="page-title" id="pageTitle">Dashboard Overview</div><div class="page-sub" id="pageSub"></div></div>
+    </div>
     <div class="topbar-right">
       <div class="health-score"><span class="health-label">Platform health</span><span class="health-val">87</span><span style="font-size:13px">/ 100</span></div>
       <button class="notif-btn" onclick="toggleNotifs()">🔔<div class="notif-dot"></div></button>
@@ -243,6 +249,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
   <!-- OVERVIEW -->
   <div id="section-overview">
+    <div class="mini-card" style="margin-bottom:14px">
+      <div class="mc-title">Today <span class="mc-sub">Since midnight</span></div>
+      <div class="today-strip" id="todaySnapshot"></div>
+    </div>
+    <div class="mini-card" style="margin-bottom:14px">
+      <div class="mc-title">Signups · last 7 days <span class="mc-sub">Cohort</span></div>
+      <div class="cohort-wrap" id="cohortChart"></div>
+      <div class="activation-line" id="activationRate">—</div>
+    </div>
     <div class="stats-grid">
       <div class="stat-card"><div class="stat-accent accent-purple"></div><div class="stat-header"><span class="stat-icon">👥</span><span class="trend trend-up" id="userTrend">Loading</span></div><div class="stat-val c-purple" id="statUsers">—</div><div class="stat-label">Total users</div><div class="stat-sub" id="statUsersSub"></div><div class="mini-chart" id="chartUsers"></div></div>
       <div class="stat-card"><div class="stat-accent accent-green"></div><div class="stat-header"><span class="stat-icon">📋</span><span class="trend trend-up" id="taskTrend">Loading</span></div><div class="stat-val" id="statTasks">—</div><div class="stat-label">Tasks posted</div><div class="stat-sub" id="statTasksSub"></div><div class="mini-chart" id="chartTasks"></div></div>
@@ -287,9 +302,26 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <!-- DISPUTES -->
   <div id="section-disputes" style="display:none">
     <div class="table-card">
-      <div class="table-header"><div><span class="table-title">Disputes</span><span class="table-count" id="disputesCount"></span></div><div class="table-actions"><input class="search-bar" placeholder="🔍 Search disputes..." oninput="filterDisputes(this.value)"></div></div>
+      <div class="table-header"><div><span class="table-title">Disputes</span><span class="table-count" id="disputesCount"></span></div><div class="table-actions"><input class="search-bar" placeholder="🔍 Search disputes..." oninput="filterDisputes(this.value)"><button class="action-pill pill-export" onclick="exportCSV('disputes')">↓ Export CSV</button></div></div>
       <div class="col-row g-disputes"><div class="col-h">Task</div><div class="col-h">Reason</div><div class="col-h">Opened by</div><div class="col-h">Status</div><div class="col-h">Opened</div><div class="col-h" style="text-align:right">Actions</div></div>
       <div id="disputesBody"></div>
+    </div>
+  </div>
+
+  <!-- TASK MODERATION -->
+  <div id="section-moderation" style="display:none">
+    <div class="table-card">
+      <div class="table-header"><div><span class="table-title">Task moderation</span><span class="table-count" id="moderationCount"></span></div><div class="table-actions"><span style="font-size:11px;color:var(--text-faint)">Flagged words first · last 24h</span></div></div>
+      <div class="col-row g-tasks"><div class="col-h"></div><div class="col-h">Task</div><div class="col-h">Location</div><div class="col-h">Budget</div><div class="col-h">Category</div><div class="col-h">Status</div><div class="col-h" style="text-align:right">Actions</div></div>
+      <div id="moderationBody"></div>
+    </div>
+  </div>
+
+  <!-- AUDIT -->
+  <div id="section-audit" style="display:none">
+    <div class="table-card">
+      <div class="table-header"><div><span class="table-title">Admin audit log</span><span class="table-count" id="auditCount"></span></div><div class="table-actions"><button class="action-pill pill-export" onclick="exportCSV('audit')">↓ Export audit</button></div></div>
+      <div id="auditBody" style="padding:0 20px"></div>
     </div>
   </div>
 
@@ -335,10 +367,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div id="section-waitlist" style="display:none">
     <div class="mini-card" style="margin-bottom:14px">
       <div class="mc-title">Import waitlist emails</div>
-      <p style="font-size:12px;color:var(--text-faint);margin-bottom:10px;line-height:1.5">Paste emails one per line (or comma-separated). Duplicates are skipped automatically.</p>
+      <p style="font-size:12px;color:var(--text-faint);margin-bottom:10px;line-height:1.5">Paste your waitlist once (one per line or comma-separated). Saved to localStorage <code>qg-waitlist</code> and synced to Supabase when available.</p>
       <textarea class="admin-import-box" id="waitlistImport" placeholder="friend@gmail.com&#10;beta.user@outlook.com"></textarea>
-      <button type="button" class="action-pill pill-export" onclick="adminImportWaitlist()">Import emails</button>
+      <button type="button" class="action-pill pill-export" onclick="adminSaveLocalWaitlist()">Save &amp; cross-reference</button>
     </div>
+    <div id="waitlistCrossref" class="admin-wl-stats" style="margin-bottom:14px"></div>
     <div id="waitlistStats" class="admin-wl-stats"></div>
     <div class="table-card">
       <div class="table-header"><div><span class="table-title">Waitlist</span><span class="table-count" id="waitlistCount"></span></div><button class="action-pill pill-export" onclick="exportWaitlistCSV()">↓ Export CSV</button></div>
@@ -380,7 +413,38 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);margin:0 0 12px"><input type="checkbox" id="bannerSoftClose"> <strong>Soft close</strong> — hide sign-up &amp; block post/browse</label>
       <p style="font-size:11px;color:var(--text-faint);margin:0 0 12px;line-height:1.5">First time? Run <code style="font-size:10px">supabase/soft-close.sql</code> in Supabase SQL Editor. Preview the closed homepage in an incognito window (or log out) — your admin account bypasses soft close on app pages.</p>
       <button type="button" class="admin-drawer-btn primary" onclick="adminSaveBanner()">Save &amp; publish banner</button>
+      <!-- ADMIN-TODO: move announcement to a shared Supabase settings row so all browsers receive it (platform_banner when available) -->
       <p id="bannerDbStatus" style="font-size:11px;color:var(--text-faint);margin-top:10px;line-height:1.5"></p>
+    </div>
+    <div class="mini-card" style="margin-bottom:14px">
+      <div class="mc-title">Platform controls</div>
+      <p style="font-size:12px;color:var(--text-faint);margin-bottom:12px;line-height:1.5">Editable limits used by the console. <!-- ADMIN-TODO: persist to Supabase platform_settings row --> Stored in localStorage until a settings table exists.</p>
+      <div style="display:grid;gap:12px;grid-template-columns:1fr 1fr">
+        <div class="admin-field"><label>Min task budget (CAD)</label><input id="ctlMinBudget" type="number" min="0" step="1" value="20"></div>
+        <div class="admin-field"><label>Max posts per day</label><input id="ctlMaxPosts" type="number" min="1" step="1" value="10"></div>
+      </div>
+      <button type="button" class="admin-drawer-btn primary" style="margin-top:12px" onclick="adminSavePlatformControls()">Save controls</button>
+    </div>
+    <div class="mini-card" style="margin-bottom:14px">
+      <div class="mc-title">Data export</div>
+      <p style="font-size:12px;color:var(--text-faint);margin-bottom:12px;line-height:1.5">Download CSVs for users, tasks, applications, and reviews in sequence.</p>
+      <button type="button" class="action-pill pill-export" onclick="adminFullBackup()">↓ Full backup</button>
+      <button type="button" class="action-pill pill-export" onclick="exportCSV('disputes')">↓ Disputes</button>
+      <button type="button" class="action-pill pill-export" onclick="exportCSV('security')">↓ Security log</button>
+    </div>
+    <div class="mini-card admin-danger-card" style="margin-bottom:14px">
+      <div class="mc-title">Danger zone</div>
+      <p style="font-size:12px;color:var(--text-faint);margin-bottom:12px;line-height:1.5">Requires typing <strong>CONFIRM</strong> before applying. <!-- ADMIN-TODO: enforce maintenance / signup pause server-side --></p>
+      <div style="display:grid;gap:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:0.5px solid var(--border2)">
+          <div><div style="font-size:13px;font-weight:500">Signups paused</div><div style="font-size:11px;color:var(--text-faint);margin-top:2px">Block new account creation</div></div>
+          <input type="checkbox" id="ctlSignupsPaused" onchange="adminToggleDanger('signupsPaused')">
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 0">
+          <div><div style="font-size:13px;font-weight:500">Maintenance mode</div><div style="font-size:11px;color:var(--text-faint);margin-top:2px">Show maintenance state site-wide</div></div>
+          <input type="checkbox" id="ctlMaintenance" onchange="adminToggleDanger('maintenanceMode')">
+        </div>
+      </div>
     </div>
     <div class="mini-card" style="margin-bottom:14px">
       <div class="mc-title">Platform fees</div>
@@ -460,7 +524,7 @@ window.doLogout = function() { signOut(auth).then(function(){ window.location.hr
 <script src="supabase-db.js"></script>
 <script src="qg-notifications.js"></script>
 <script src="qg-stats.js"></script>
-<script src="qg-admin.js?v=6"></script>
+<script src="qg-admin.js?v=7"></script>
 <script>
 var SB_HEADERS = window.SB_HEADERS;
 var users=[],tasks=[],disputes=[],reports=[],applications=[],adminNotes=[],adminActions=[],waitlist=[],payments=[],selectedUsers=[],pendingFn=null,currentSection='overview';
@@ -482,8 +546,10 @@ async function initAdmin(){
   document.getElementById('pageSub').textContent=new Date().toLocaleDateString('en-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' · Admin Console';
   await loadData();
   renderOverview();
+  if(typeof renderTodaySnapshot==='function') renderTodaySnapshot();
+  if(typeof renderCohortChart==='function') renderCohortChart();
   renderNotifications();
-  setInterval(async function(){ await loadData(); if(currentSection==='overview') renderOverview(); },60000);
+  setInterval(async function(){ await loadData(); if(currentSection==='overview'){ renderOverview(); if(typeof renderTodaySnapshot==='function') renderTodaySnapshot(); if(typeof renderCohortChart==='function') renderCohortChart(); } },60000);
 }
 
 async function loadAdminMeta(){
@@ -540,6 +606,15 @@ async function loadData(){
     window.payments = payments;
     window.applications = applications;
     window.waitlist = waitlist;
+    window.disputes = disputes;
+    window.reports = reports;
+    window.adminActions = adminActions;
+    if(typeof sbGet==='function'){
+      try{
+        var rev=await sbGet('reviews',null,'created_at.desc',300);
+        window.reviews=Array.isArray(rev)?rev:[];
+      }catch(re){ window.reviews=window.reviews||[]; }
+    }
   }catch(e){
     console.warn('Admin load failed',e);
   }
@@ -718,7 +793,8 @@ function renderDisputes(data){
     var reason=(d.reason||d.details||'—').substring(0,60);
     var who=d.opened_by_email||d.opened_by_id||'—';
     var when=d.created_at?new Date(d.created_at).toLocaleDateString('en-CA'):'—';
-    return '<div class="data-row g-disputes"><div class="user-cell"><div><div class="u-name">'+title+'</div></div></div><div class="cell">'+reason+'</div><div class="cell">'+who+'</div><div class="cell"><span class="status-pill '+sc+'">'+sl+'</span></div><div class="cell">'+when+'</div><div class="act-btns"><button class="act-btn btn-view" onclick="showToast(\'Review in Supabase or email support\',\'amber\')">Review</button></div></div>';
+    var did=String(d.dispute_id||d.id||'');
+    return '<div class="data-row g-disputes"><div class="user-cell"><div><div class="u-name">'+title+'</div></div></div><div class="cell">'+reason+'</div><div class="cell">'+who+'</div><div class="cell"><span class="status-pill '+sc+'">'+sl+'</span></div><div class="cell">'+when+'</div><div class="act-btns"><button class="act-btn btn-view" onclick="viewDispute(\''+did.replace(/'/g,'')+'\')">Review</button>'+((d.status||'open')==='open'?'<button class="act-btn btn-resolve" onclick="resolveDispute(\''+did.replace(/'/g,'')+'\')">Resolve</button>':'')+'</div></div>';
   }).join('');
 }
 
@@ -751,18 +827,22 @@ window.showSection=function(section,btn){
   document.querySelectorAll('.nav-item').forEach(function(el){el.classList.remove('active');});
   if(btn) btn.classList.add('active');
   currentSection=section;
-  var titles={overview:'Dashboard Overview',users:'Beta users / waitlist',tasks:'Task Management',disputes:'Dispute Center',reports:'User reports',waitlist:'Waitlist management',security:'Security Log',fraud:'Fraud Alerts',analytics:'Analytics',revenue:'Revenue',settings:'Platform Settings'};
+  window.currentSection=section;
+  var titles={overview:'Dashboard Overview',users:'Beta users / waitlist',tasks:'Task Management',moderation:'Task moderation',disputes:'Dispute Center',reports:'User reports',waitlist:'Waitlist management',security:'Security Log',fraud:'Fraud Alerts',audit:'Audit log',analytics:'Analytics',revenue:'Revenue',settings:'Platform Settings'};
   document.getElementById('pageTitle').textContent=titles[section]||section;
   if(section==='users') renderUsers(users);
   if(section==='tasks') renderTasks(tasks);
+  if(section==='moderation'&&typeof renderModerationQueue==='function') renderModerationQueue();
   if(section==='disputes') renderDisputes();
   if(section==='reports') renderReports();
-  if(section==='waitlist') renderWaitlist();
+  if(section==='waitlist'){ renderWaitlist(); if(typeof renderLocalWaitlistCrossref==='function') renderLocalWaitlistCrossref(); }
   if(section==='security') renderSecurityLog();
   if(section==='fraud') renderFraudLog();
+  if(section==='audit'&&typeof renderAuditLog==='function') renderAuditLog();
   if(section==='analytics') renderAnalytics();
   if(section==='revenue') renderRevenue();
-  if(section==='settings') loadPlatformBannerForm();
+  if(section==='settings'){ loadPlatformBannerForm(); if(typeof loadPlatformControls==='function') loadPlatformControls(); }
+  if(section==='overview'){ if(typeof renderTodaySnapshot==='function') renderTodaySnapshot(); if(typeof renderCohortChart==='function') renderCohortChart(); }
 };
 
 window.selectAll=function(cb){document.querySelectorAll('#usersBody .checkbox').forEach(function(c){c.checked=cb.checked;});updateBulk();};
@@ -790,8 +870,8 @@ window.bulkAction=function(action){
 window.viewUser=function(id){openUserDrawer(id);};
 window.viewTask=function(id){openTaskDrawer(id);};
 window.removeTask=function(id){openTaskDrawer(id);};
-window.viewDispute=function(id){var d=disputes.find(function(x){return x.id===id;});if(!d) return;openModal('Dispute — '+d.task,'Review this dispute and add resolution notes.','<div style="display:grid;gap:12px"><div><div class="modal-label">Poster</div><div class="modal-value">'+d.poster+'</div></div><div><div class="modal-label">Worker</div><div class="modal-value">'+d.worker+'</div></div><div><div class="modal-label">Reason</div><div class="modal-value">'+d.reason+'</div></div></div>','Close','purple',function(){},true);};
-window.resolveDispute=function(id){var d=disputes.find(function(x){return x.id===id;});if(!d) return;openModal('Resolve dispute','Mark dispute as resolved?','','Mark resolved','success',async function(){if(typeof sbUpdate==='function') await sbUpdate('disputes',{status:'resolved',resolved_at:new Date().toISOString()},'dispute_id=eq.'+encodeURIComponent(String(d.dispute_id||d.id)));d.status='resolved';renderDisputes();var open=disputes.filter(function(x){return (x.status||'open')==='open';}).length;document.getElementById('statDisputes').textContent=open;document.getElementById('disputeBadge').textContent=open;if(open===0){document.getElementById('alertBanner').style.display='none';}showToast('Dispute resolved','green');},true);};
+window.viewDispute=function(id){var d=disputes.find(function(x){return String(x.dispute_id||x.id)===String(id);});if(!d) return;openModal('Dispute — '+(d.task_title||d.task||d.task_id||'Task'),'Review this dispute and add resolution notes.','<div style="display:grid;gap:12px"><div><div class="modal-label">Opened by</div><div class="modal-value">'+(d.opened_by_email||d.opened_by_id||d.poster||'—')+'</div></div><div><div class="modal-label">Reason</div><div class="modal-value">'+(d.reason||d.details||'—')+'</div></div></div>','Close','purple',function(){},true);};
+window.resolveDispute=function(id){var d=disputes.find(function(x){return String(x.dispute_id||x.id)===String(id);});if(!d) return;openModal('Resolve dispute','Mark dispute as resolved?','','Mark resolved','success',async function(){if(typeof sbUpdate==='function') await sbUpdate('disputes',{status:'resolved',resolved_at:new Date().toISOString()},'dispute_id=eq.'+encodeURIComponent(String(d.dispute_id||d.id)));d.status='resolved';renderDisputes();var open=disputes.filter(function(x){return (x.status||'open')==='open';}).length;document.getElementById('statDisputes').textContent=open;document.getElementById('disputeBadge').textContent=open;if(open===0){document.getElementById('alertBanner').style.display='none';}showToast('Dispute resolved','green');},true);};
 
 function renderNotifications(){
   var notifs=[{title:'🚨 Open dispute',text:'Box braids task — Priya N. vs Sarah K.',time:'2hr ago',unread:true},{title:'🚨 Open dispute',text:'Moving task — Marcus L. vs David T.',time:'5hr ago',unread:true},{title:'🚫 Fraud attempt',text:'Phone sharing blocked — James O.',time:'2hr ago',unread:true},{title:'👤 New signup',text:'Priya N. joined as Both',time:'1 day ago',unread:false},{title:'⚠️ Warning issued',text:'Aisha M. received a warning',time:'2 days ago',unread:false}];
@@ -819,7 +899,11 @@ window.confirmAction=async function(){
 };
 
 function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(type||'green');t.style.display='block';setTimeout(function(){t.style.display='none';},3000);}
+window.showToast=showToast;
+window.openModal=openModal;
 window.toggleNotifs=function(){document.getElementById('notifPanel').classList.toggle('open');};
+window.currentSection=currentSection;
 </script>
+<script src="qg-admin-power.js?v=1"></script>
 </body>
 </html>

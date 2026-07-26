@@ -180,7 +180,7 @@
           (st === 'banned'
             ? '<button type="button" class="admin-drawer-btn success" onclick="adminUnbanUser()">Unban</button>'
             : '<button type="button" class="admin-drawer-btn danger" onclick="adminBanUser()">Ban user</button>') +
-          (u.firebase_uid ? '<a class="admin-drawer-btn ghost" href="profile.html?user=' + encodeURIComponent(u.firebase_uid) + '" target="_blank" rel="noopener">Open profile ↗</a>' : '') +
+          (u.firebase_uid ? '<a class="admin-drawer-btn ghost" href="profile.html?user=' + encodeURIComponent(u.firebase_uid) + '" target="_blank" rel="noopener">View public profile</a>' : '') +
         '</div>' +
       '</div>';
 
