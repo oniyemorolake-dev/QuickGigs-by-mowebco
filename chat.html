@@ -193,8 +193,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <div class="task-photo-strip" id="taskPhotoStrip"></div>
 
 <!-- FRAUD WARNING BAR -->
-<div class="fraud-bar">
-  ⚠️ Keep all communication and payments on QuickGigs. Share task or progress photos here — no IDs or personal documents.
+<div class="fraud-bar">Keep all communication and payments on QuickGigs. Share task or progress photos here — no IDs or personal documents.
 </div>
 
 <!-- CHAT AREA -->
@@ -834,10 +833,13 @@ function renderMessages(){
     }
     var isMe = m.from === 'me';
     var ts = m.ts || 0;
+    var next = messages[idx + 1];
+    var nextSame = next && next.from === m.from && next.date === m.date && next.ts && (next.ts - ts) < 120000;
     var grouped = prevFrom === m.from && prevTs && (ts - prevTs) < 120000;
-    html += '<div class="bubble-row '+(isMe?'mine':'theirs')+(grouped?' grouped':'')+'">' +
+    var showTime = !nextSame;
+    html += '<div class="bubble-row '+(isMe?'mine':'theirs')+(grouped?' grouped':'')+(showTime?' show-time':'')+'">' +
       '<div class="bubble">'+renderMessageBubble(m.text, { senderIsPoster: m.senderIsPoster })+'</div>' +
-      '<div class="bubble-time">'+m.time+(isMe?' <span class="bubble-check" aria-label="Delivered">✓</span>':'')+'</div>' +
+      (showTime ? '<div class="bubble-time">'+m.time+(isMe?' <span class="bubble-check" aria-label="Delivered">✓</span>':'')+'</div>' : '') +
     '</div>';
     prevFrom = m.from;
     prevTs = ts;
@@ -869,9 +871,18 @@ function isNearBottom(){
   return (scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight) < 80;
 }
 
+function markChatTimeGroups(){
+  var rows=document.querySelectorAll('#chatScroll .bubble-row');
+  rows.forEach(function(row,i){
+    var next=rows[i+1];
+    var show=!next || next.classList.contains('mine')!==row.classList.contains('mine');
+    row.classList.toggle('show-time', show);
+  });
+}
 function scrollToBottom(){
   var scroll = document.getElementById('chatScroll');
   scroll.scrollTop = scroll.scrollHeight;
+  if(typeof markChatTimeGroups==='function') markChatTimeGroups();
   var pill = document.getElementById('qgNewMsgPill');
   if (pill) pill.classList.remove('show');
 }

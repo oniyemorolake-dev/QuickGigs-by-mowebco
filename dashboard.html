@@ -403,7 +403,7 @@ window.onQuickGigsModeChange = function() {
 function updateAvatarMenuSwitchLabel() {
   var el = document.getElementById('avatarMenuSwitch');
   if (!el) return;
-  el.textContent = isPoster ? '💼 Switch to Tasker' : '📋 Switch to Poster';
+  el.textContent = isPoster ? 'Switch to Tasker' : 'Switch to Poster';
 }
 
 function updateModeTag() {
@@ -411,7 +411,7 @@ function updateModeTag() {
   if (!tag) return;
   var posterNow = (typeof getMode === 'function' ? getMode() : (isPoster ? 'poster' : 'tasker')) === 'poster';
   isPoster = posterNow;
-  tag.textContent = posterNow ? '📋 Poster mode' : '🛠 Tasker mode';
+  tag.textContent = posterNow ? 'Poster mode' : 'Tasker mode';
   tag.className = 'mode-tag ' + (posterNow ? 'tag-poster' : 'tag-worker');
 }
 
@@ -621,23 +621,24 @@ function renderAll(){
   }, 0);
   var earnedLabel = totalEarned > 0 ? '$' + totalEarned.toFixed(0) : (pendingEarned > 0 ? '$' + pendingEarned.toFixed(0) + ' pending' : '—');
 
+  var ico = function(name){ return typeof qgIcon==='function' ? qgIcon(name,{size:20}) : ''; };
   var stats = isPoster
     ? [
-        {icon:'📋', val: String(myPosted.length), cls:'', lbl:'Tasks posted', href:'mytasks.html?tab=posted'},
-        {icon:'👥', val: String(applicantCount), cls:'purple', lbl:'Applicants', href:'mytasks.html?tab=posted&applicants=1'},
-        {icon:'✅', val: String(myCompleted.length), cls:'', lbl:'Completed', href:'mytasks.html?tab=completed'},
-        {icon:'💸', val: totalPaidDisplay, cls:'green', lbl:'Paid via QuickGigs', sub: paidSubLabel, href:'profile.html#payments'}
+        {icon:'clipboard', val: String(myPosted.length), cls:'', lbl:'Tasks posted', href:'mytasks.html?tab=posted'},
+        {icon:'users', val: String(applicantCount), cls:'purple', lbl:'Applicants', href:'mytasks.html?tab=posted&applicants=1'},
+        {icon:'checkCircle', val: String(myCompleted.length), cls:'', lbl:'Completed', href:'mytasks.html?tab=completed'},
+        {icon:'dollar', val: totalPaidDisplay, cls:'green', lbl:'Paid via QuickGigs', sub: paidSubLabel, href:'profile.html#payments'}
       ]
     : [
-        {icon:'📨', val: String(myApps.length), cls:'', lbl:'Applications', href:'mytasks.html?tab=applied'},
-        {icon:'✅', val: String(myAcceptedApps.length), cls:'purple', lbl:'Jobs accepted', href:'mytasks.html?tab=applied'},
-        {icon:'⏳', val: String(myInProgressWorker), cls:'', lbl:'In progress', href:'mytasks.html?tab=inprogress'},
-        {icon:'💰', val: earnedLabel, cls:'green', lbl:'Total earned', href:'profile.html#payments'}
+        {icon:'inbox', val: String(myApps.length), cls:'', lbl:'Applications', href:'mytasks.html?tab=applied'},
+        {icon:'checkCircle', val: String(myAcceptedApps.length), cls:'purple', lbl:'Jobs accepted', href:'mytasks.html?tab=applied'},
+        {icon:'clock', val: String(myInProgressWorker), cls:'', lbl:'In progress', href:'mytasks.html?tab=inprogress'},
+        {icon:'dollar', val: earnedLabel, cls:'green', lbl:'Total earned', href:'profile.html#payments'}
       ];
 
   document.getElementById('statsGrid').innerHTML = stats.map(function(s){
     return '<a class="stat-card stat-card-link" href="'+s.href+'">' +
-      '<div class="stat-icon">'+s.icon+'</div>' +
+      '<div class="stat-icon">'+ico(s.icon)+'</div>' +
       '<div class="stat-val '+s.cls+'">'+s.val+'</div>' +
       '<div class="stat-lbl">'+s.lbl+'</div>' +
       (s.sub ? '<div class="stat-sub">'+s.sub+'</div>' : '') +
@@ -651,23 +652,23 @@ function renderAll(){
 
   var actions = isPoster
     ? [
-        {icon:'➕',title:'Post a task',desc:'Need something done?',href:'posttask.html',cls:'primary'},
-        {icon:'👥',title:'Find taskers',desc:'Browse skilled taskers near you',href:'workers.html',cls:'secondary'},
-        {icon:'📂',title:'Review applicants',desc:'See who applied to your tasks',href:'mytasks.html?tab=posted',cls:'secondary'}
+        {icon:'plus',title:'Post a task',desc:'Need something done?',href:'posttask.html',cls:'primary'},
+        {icon:'users',title:'Find taskers',desc:'Browse skilled taskers near you',href:'workers.html',cls:'secondary'},
+        {icon:'folder',title:'Review applicants',desc:'See who applied to your tasks',href:'mytasks.html?tab=posted',cls:'secondary'}
       ]
     : [
-        {icon:'🔍',title:'Browse tasks',desc:'Find tasks near you',href:'browsetask.html',cls:'primary'},
-        {icon:'📂',title:'Categories',desc:'Explore tasks by skill type',href:'categories.html',cls:'secondary'},
-        {icon:'💼',title:'My tasks',desc:'Applications & active work',href:'mytasks.html?tab=applied&mode=worker',cls:'secondary'}
+        {icon:'search',title:'Browse tasks',desc:'Find tasks near you',href:'browsetask.html',cls:'primary'},
+        {icon:'list',title:'Categories',desc:'Explore tasks by skill type',href:'categories.html',cls:'secondary'},
+        {icon:'briefcase',title:'My tasks',desc:'Applications & active work',href:'mytasks.html?tab=applied&mode=worker',cls:'secondary'}
       ];
   document.getElementById('actionsGrid').innerHTML = actions.map(function(a){
-    return '<a class="action-card '+a.cls+'" href="'+a.href+'"><div class="action-icon">'+a.icon+'</div><div class="action-title">'+a.title+'</div><div class="action-desc">'+a.desc+'</div></a>';
+    return '<a class="action-card '+a.cls+'" href="'+a.href+'"><div class="action-icon">'+ico(a.icon)+'</div><div class="action-title">'+a.title+'</div><div class="action-desc">'+a.desc+'</div></a>';
   }).join('') +
     (window.QG_CONFIG && !window.QG_CONFIG.paymentsEnabled
-      ? '<div class="action-card secondary" style="grid-column:1/-1;cursor:default;opacity:0.92"><div class="action-icon">💳</div><div class="action-title">Payments coming at launch</div><div class="action-desc">Escrow and Stripe checkout ship with public launch — beta uses accept-to-chat flow.</div></div>'
+      ? '<div class="action-card secondary" style="grid-column:1/-1;cursor:default;opacity:0.92"><div class="action-icon">'+ico('creditCard')+'</div><div class="action-title">Payments coming at launch</div><div class="action-desc">Escrow and Stripe checkout ship with public launch — beta uses accept-to-chat flow.</div></div>'
       : '') +
-    '<button type="button" class="action-card secondary" style="grid-column:1/-1;margin-top:2px;border:none;width:100%;text-align:left;font:inherit;color:inherit" onclick="typeof promptQuickGigsInstall===\'function\'&&promptQuickGigsInstall()"><div class="action-icon">📲</div><div class="action-title">Add to Home Screen</div><div class="action-desc">Install QuickGigs on iPhone (Safari Share menu) or Android</div></button>' +
-    '<a class="action-card secondary" href="feedback.html" style="grid-column:1/-1;margin-top:2px"><div class="action-icon">🐛</div><div class="action-title">Beta feedback</div><div class="action-desc">Report a bug or share an idea — we read every message</div></a>';
+    '<button type="button" class="action-card secondary" style="grid-column:1/-1;margin-top:2px;border:none;width:100%;text-align:left;font:inherit;color:inherit" onclick="typeof promptQuickGigsInstall===\'function\'&&promptQuickGigsInstall()"><div class="action-icon">'+ico('smartphone')+'</div><div class="action-title">Add to Home Screen</div><div class="action-desc">Install QuickGigs on iPhone (Safari Share menu) or Android</div></button>' +
+    '<a class="action-card secondary" href="feedback.html" style="grid-column:1/-1;margin-top:2px"><div class="action-icon">'+ico('bug')+'</div><div class="action-title">Beta feedback</div><div class="action-desc">Report a bug or share an idea — we read every message</div></a>';
 
   var paySection = document.getElementById('paymentHistorySection');
   var payList = document.getElementById('paymentHistoryList');
@@ -721,13 +722,13 @@ function renderAll(){
         var taskId = taskField(t, 'id');
         var taskHref = 'mytasks.html?tab=posted' + (appsOnTask ? '&expand=' + encodeURIComponent(String(taskId)) : '');
         return '<a class="task-row" href="'+taskHref+'" style="text-decoration:none">' +
-          '<div class="task-dot" style="background:rgba(107,63,160,0.2)">📋</div>' +
+          '<div class="task-dot" style="background:rgba(107,63,160,0.2)">'+ico('clipboard')+'</div>' +
           '<div class="task-info"><div class="task-name">'+String(taskField(t,'title')).replace(/</g,'&lt;')+'</div><div class="task-meta">Open · $'+taskField(t,'budget')+(appsOnTask ? ' · '+appsOnTask+' applicant'+(appsOnTask!==1?'s':'') : '')+'</div></div>' +
           '<div class="task-right"><div class="task-price">Review</div></div>' +
         '</a>';
       }).join('');
     } else {
-      html = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-txt">No open tasks yet — post one in under a minute</div><a class="empty-btn" href="posttask.html">Post a task</a></div>';
+      html = '<div class="empty"><div class="empty-icon">'+ico('clipboard')+'</div><div class="empty-txt">No open tasks yet — post one in under a minute</div><a class="empty-btn" href="posttask.html">Post a task</a></div>';
     }
   } else {
     sectionTitle.textContent = 'Tasks near you';
@@ -740,20 +741,21 @@ function renderAll(){
         var mode = taskField(t, 'mode') || 'standard';
         var badge = mode === 'quick' ? 'badge-quick' : mode === 'recurring' ? 'badge-recurring' : 'badge-standard';
         var badgeLabel = mode === 'quick' ? '⚡ Quick' : mode === 'recurring' ? '🔄 Recurring' : 'Standard';
+        var pin = typeof qgIcon==='function' ? '<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>' : '';
         return '<a class="task-row" href="browsetask.html" style="text-decoration:none">' +
-          '<div class="task-dot" style="background:rgba(74,222,128,0.15)">💼</div>' +
-          '<div class="task-info"><div class="task-name">'+String(taskField(t,'title')).replace(/</g,'&lt;')+'</div><div class="task-meta">📍 '+(typeof formatLocationDisplay==='function'?formatLocationDisplay(taskField(t,'location')||city):String(taskField(t,'location')||city))+'</div></div>' +
+          '<div class="task-dot" style="background:rgba(74,222,128,0.15)">'+ico('briefcase')+'</div>' +
+          '<div class="task-info"><div class="task-name">'+String(taskField(t,'title')).replace(/</g,'&lt;')+'</div><div class="task-meta">'+pin+(typeof formatLocationDisplay==='function'?formatLocationDisplay(taskField(t,'location')||city):String(taskField(t,'location')||city))+'</div></div>' +
           '<div class="task-right"><div class="task-price">$'+taskField(t,'budget')+'</div><span class="task-badge '+badge+'">'+badgeLabel+'</span></div>' +
         '</a>';
       }).join('');
     } else {
-      html = '<div class="empty"><div class="empty-icon">🔍</div><div class="empty-txt">No tasks nearby yet — post one or widen your area</div><a class="empty-btn" href="browsetask.html">Browse all tasks</a></div>';
+      html = '<div class="empty"><div class="empty-icon">'+ico('search')+'</div><div class="empty-txt">No tasks nearby yet — post one or widen your area</div><a class="empty-btn" href="browsetask.html">Browse all tasks</a></div>';
     }
     if (myPosted.length) {
       html += '<div style="margin-top:16px"></div><div class="section-hdr"><span class="section-title">Tasks you posted</span><a class="see-all" href="mytasks.html?tab=posted">See all</a></div>';
       html += myOpenPosted.slice(0, 2).map(function(t){
         return '<a class="task-row" href="mytasks.html?tab=posted" style="text-decoration:none">' +
-          '<div class="task-dot" style="background:rgba(107,63,160,0.2)">📋</div>' +
+          '<div class="task-dot" style="background:rgba(107,63,160,0.2)">'+ico('clipboard')+'</div>' +
           '<div class="task-info"><div class="task-name">'+String(taskField(t,'title')).replace(/</g,'&lt;')+'</div><div class="task-meta">You posted · $'+taskField(t,'budget')+'</div></div></a>';
       }).join('');
     }

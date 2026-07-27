@@ -21,12 +21,18 @@
   font-family: 'DM Sans', sans-serif;
   font-style: normal;
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
   color: #c8a8e9 !important;
-  line-height: 1;
-  display: inline-block;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(107, 63, 160, 0.2);
+  border: 0.5px solid rgba(200, 168, 233, 0.22);
+  white-space: nowrap;
 }
 
 /* Same dark header on every app page */
@@ -48,15 +54,15 @@ body.light .nav-brand .nav-role {
   color: #6b3fa0 !important;
 }
 
-/* Never show logo without role label */
+/* Never show logo without role · beta lockup */
 .nav-brand .nav-role:empty::before {
-  content: 'POSTER';
+  content: 'Poster · Beta';
 }
 
 html[data-qg-mode="worker"] .nav-brand .nav-role:empty::before {
-  content: 'TASKER';
+  content: 'Tasker · Beta';
 }
 
 html[data-qg-mode="poster"] .nav-brand .nav-role:empty::before {
-  content: 'POSTER';
+  content: 'Poster · Beta';
 }

@@ -650,12 +650,12 @@
       var st = String(t.status || t.STATUS || '').toLowerCase();
       var title = taskTitleOf(t);
       var created = taskCreatedOf(t);
-      events.push({ at: created, icon: '📋', text: 'You posted “' + title + '”' });
+      events.push({ at: created, icon: 'clipboard', text: 'You posted “' + title + '”' });
       if (st === 'in_progress' || st === 'completed') {
-        events.push({ at: t.updated_at || created, icon: '🤝', text: 'Task accepted — “' + title + '”' });
+        events.push({ at: t.updated_at || created, icon: 'handshake', text: 'Task accepted — “' + title + '”' });
       }
       if (st === 'completed') {
-        events.push({ at: t.completed_at || t.updated_at || created, icon: '✅', text: 'Completed “' + title + '”' });
+        events.push({ at: t.completed_at || t.updated_at || created, icon: 'checkCircle', text: 'Completed “' + title + '”' });
       }
     });
     apps.forEach(function (a) {
@@ -663,20 +663,20 @@
       var st = String(a.status || a.STATUS || 'pending').toLowerCase();
       var created = a.created_at || a.CREATED_AT;
       if (String(a.worker_id || a.WORKER_ID || '') === String(userId)) {
-        events.push({ at: created, icon: '📨', text: 'You applied to a task' });
-        if (st === 'accepted') events.push({ at: a.updated_at || created, icon: '🎉', text: 'Your application was accepted' });
+        events.push({ at: created, icon: 'inbox', text: 'You applied to a task' });
+        if (st === 'accepted') events.push({ at: a.updated_at || created, icon: 'party', text: 'Your application was accepted' });
       } else {
         var mine = tasks.some(function (t) {
           return String(taskIdOf(t)) === String(tid) && String(t.posted_by || t.POSTED_BY || '') === String(userId);
         });
-        if (mine) events.push({ at: created, icon: '👥', text: 'New application received' });
+        if (mine) events.push({ at: created, icon: 'users', text: 'New application received' });
       }
     });
     (reviews || []).forEach(function (r) {
       if (String(r.reviewee_id || r.REVIEWE_ID || r.reviewee || '') !== String(userId)) return;
       events.push({
         at: r.created_at || r.CREATED_AT,
-        icon: '⭐',
+        icon: 'star',
         text: 'You received a review' + (r.rating || r.RATING ? ' (' + (r.rating || r.RATING) + '★)' : '')
       });
     });
@@ -691,7 +691,8 @@
     }
     return '<div class="qg-activity-card"><div class="qg-activity-title">Recent activity</div>' +
       events.map(function (e) {
-        return '<div class="qg-activity-row"><div class="qg-activity-ico" aria-hidden="true">' + e.icon + '</div>' +
+        var ico = typeof window.qgIcon === 'function' ? window.qgIcon(e.icon, { size: 16 }) : '';
+        return '<div class="qg-activity-row"><div class="qg-activity-ico" aria-hidden="true">' + ico + '</div>' +
           '<div><div class="qg-activity-text">' + esc(e.text) + '</div>' +
           '<div class="qg-activity-time" title="' + esc(new Date(e.at).toLocaleString('en-CA')) + '">' + esc(ago(e.at) || '') + '</div></div></div>';
       }).join('') + '</div>';

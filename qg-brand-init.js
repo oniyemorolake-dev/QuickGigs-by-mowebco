@@ -46,7 +46,7 @@
   }
 
   function roleLabel(mode) {
-    return (mode || getMode()) === 'tasker' ? 'TASKER' : 'POSTER';
+    return (mode || getMode()) === 'tasker' ? 'Tasker · Beta' : 'Poster · Beta';
   }
 
   // CSS still uses worker|poster on data-qg-mode
@@ -87,6 +87,42 @@
     link.rel = 'stylesheet';
     link.href = 'qg-light-nav.css';
     document.head.appendChild(link);
+  }
+
+  if (!document.getElementById('qg-refine-css')) {
+    var refine = document.createElement('link');
+    refine.id = 'qg-refine-css';
+    refine.rel = 'stylesheet';
+    refine.href = 'qg-refine.css?v=1';
+    document.head.appendChild(refine);
+  }
+
+  // Sync load so qgIcon is available before deferred page scripts run
+  if (!document.querySelector('script[src*="qg-icons.js"]') && typeof window.qgIcon !== 'function') {
+    try {
+      document.write('<script src="qg-icons.js?v=1"><\\/script>');
+    } catch (eWrite) {
+      var icons = document.createElement('script');
+      icons.src = 'qg-icons.js?v=1';
+      document.head.appendChild(icons);
+    }
+  }
+
+  function markPageClass() {
+    var page = (location.pathname.split('/').pop() || '').toLowerCase();
+    var map = {
+      'dashboard.html': 'page-dashboard',
+      'mytasks.html': 'page-mytasks',
+      'messages.html': 'page-messages',
+      'chat.html': 'page-chat',
+      'browsetask.html': 'page-browse'
+    };
+    if (map[page]) document.body.classList.add(map[page]);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', markPageClass);
+  } else {
+    markPageClass();
   }
 
   if (!document.getElementById('qg-analytics-loader') && !document.querySelector('script[src*="qg-analytics"]')) {

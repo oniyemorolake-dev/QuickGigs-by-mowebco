@@ -97,18 +97,8 @@
   }
 
   function ensureBetaPill() {
-    var brand = document.querySelector('.nav-brand, .nav .nav-logo, .signup-logo, .nav-logo');
-    if (!brand) return;
-    if (document.querySelector('.nav-beta-pill')) return;
-    var pill = document.createElement('span');
-    pill.className = 'nav-beta-pill';
-    pill.textContent = 'Beta';
-    pill.setAttribute('title', 'QuickGigs is in beta — features may change');
-    if (brand.classList && brand.classList.contains('nav-brand')) brand.appendChild(pill);
-    else if (brand.parentNode) {
-      var wrap = brand.closest('.nav-brand') || brand.parentNode;
-      wrap.appendChild(pill);
-    }
+    // Beta is merged into .nav-role as "Poster · Beta" / "Tasker · Beta" (qg-brand-init)
+    document.querySelectorAll('.nav-beta-pill').forEach(function (el) { el.remove(); });
   }
 
   function ensureTrustFooter() {

@@ -583,13 +583,13 @@ function renderApplicantAction(a, taskId, task) {
   if (status === 'accepted') {
     if (isPaymentGatedChat()) {
       if (typeof isTaskPaid === 'function' && isTaskPaid(taskId)) {
-        return '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border)" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">💬 Chat</button>' +
+        return '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border)" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">Chat</button>' +
           '<span class="accept-status">✓ Accepted · Paid</span>';
       }
       return '<button type="button" class="accept-btn" style="background:var(--purple);color:#fff" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks">💳 Pay to unlock chat</button>' +
         '<span class="accept-status">✓ Accepted</span>';
     }
-    return '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border)" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">💬 Chat</button>' +
+    return '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border)" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">Chat</button>' +
       '<span class="accept-status">✓ Accepted</span>';
   }
   if (status === 'declined') return '<span class="accept-status declined">Not selected</span>';
@@ -615,7 +615,7 @@ function renderApplicantAction(a, taskId, task) {
   }
 
   var chatBtn = isPaymentGatedChat() ? '' :
-    '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border);margin-right:6px" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">💬 Chat</button>';
+    '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border);margin-right:6px" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">Chat</button>';
   var acceptDisabled = neg.counterBy ? ' disabled title="Resolve the counter-offer first"' : '';
   return negoHtml +
     '<div class="applicant-actions">' +
@@ -1414,7 +1414,7 @@ function renderTabLoading() {
   var content = document.getElementById('tabContent');
   if (!content) return;
   content.setAttribute('aria-busy', 'true');
-  content.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Loading your tasks…</div><div class="empty-sub">One moment</div></div>';
+  content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('clock',{size:24}):'')+'</div><div class="empty-title">Loading your tasks…</div><div class="empty-sub">One moment</div></div>';
 }
 
 function renderTabLoadError(msg) {
@@ -1423,7 +1423,7 @@ function renderTabLoadError(msg) {
   content.removeAttribute('aria-busy');
   content.innerHTML =
     '<div class="empty-state">' +
-    '<div class="empty-icon">⚠️</div>' +
+    '<div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('alert',{size:24}):'')+'</div>' +
     '<div class="empty-title">Could not load tasks</div>' +
     '<div class="empty-sub">' + (msg || 'Check your connection, then try again. If this keeps happening, hard refresh the page.') + '</div>' +
     '<button type="button" class="empty-btn" onclick="typeof loadData===\'function\'&&loadData()">↻ Refresh list</button>' +
@@ -1465,7 +1465,7 @@ function renderTab(){
           ? '<p class="empty-sub" style="margin-top:10px">Your posting may be under <strong>In Progress</strong> or <strong>Completed</strong>.</p>' +
             '<button type="button" class="empty-btn" onclick="showTab(\'inprogress\',document.getElementById(\'tabInprogress\'))">Check In Progress →</button>'
           : '');
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">Post a task in Poster mode. When you accept a tasker, the task moves to In Progress — not here.</div>' + movedLink +
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('clipboard',{size:24}):'')+'</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">Post a task in Poster mode. When you accept a tasker, the task moves to In Progress — not here.</div>' + movedLink +
         '<a class="empty-btn" href="posttask.html">Post a task</a>' +
         '<button type="button" class="empty-btn btn-secondary" style="margin-top:8px;background:var(--surface);color:var(--text-muted);border:1px solid var(--border)" onclick="typeof loadData===\'function\'&&loadData()">↻ Refresh list</button></div>';
       return;
@@ -1525,8 +1525,8 @@ function renderTab(){
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-open">● Open</span></div>'+
         timeline +
-        '<div class="tc-meta">📍 '+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' · <span class="tc-meta-price">'+esc(formatTaskBudgetMeta(t))+'</span>'+(postedLabel ? ' · Posted '+esc(postedLabel) : '')+'</div>'+
-        '<button type="button" class="tc-applicants-toggle'+(isOpen?' open':'')+'" data-applicants-toggle="'+escAttr(taskId)+'" data-applicant-count="'+escAttr(pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : ''))+'" data-applicant-names="'+escAttr(namePreview + (pendingApps.length > 3 ? '…' : ''))+'">👥 '+esc(toggleLabel)+'</button>'+
+        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' · <span class="tc-meta-price">'+esc(formatTaskBudgetMeta(t))+'</span>'+(postedLabel ? ' · Posted '+esc(postedLabel) : '')+'</div>'+
+        '<button type="button" class="tc-applicants-toggle'+(isOpen?' open':'')+'" data-applicants-toggle="'+escAttr(taskId)+'" data-applicant-count="'+escAttr(pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : ''))+'" data-applicant-names="'+escAttr(namePreview + (pendingApps.length > 3 ? '…' : ''))+'">'+esc(toggleLabel)+'</button>'+
         '<div class="applicants-panel'+(isOpen?' open':'')+'" id="'+taskDomId(taskId)+'">'+appHtml+'</div>'+
         '<div class="action-row">'+shareEmpty+shareIcon+'<button type="button" class="act-btn btn-danger" data-cancel-posting="'+escAttr(taskId)+'">✕ Cancel posting</button></div>'+
       '</div>';
@@ -1551,7 +1551,7 @@ function renderTab(){
       return sa - sb;
     });
     if(!myApps.length){
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">📨</div><div class="empty-title">No applications yet</div><div class="empty-sub">Browse tasks near you and apply to start earning.</div><a class="empty-btn" href="browsetask.html">Browse tasks</a></div>';
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('inbox',{size:24}):'')+'</div><div class="empty-title">No applications yet</div><div class="empty-sub">Browse tasks near you and apply to start earning.</div><a class="empty-btn" href="browsetask.html">Browse tasks</a></div>';
       return;
     }
     content.innerHTML = myApps.map(function(a){
@@ -1589,7 +1589,7 @@ function renderTab(){
         }
         actions = '<div class="action-row">';
         if (!isPaymentGatedChat()) {
-          actions += '<button class="act-btn btn-secondary" onclick="openChatForTask('+taskIdStr+')">💬 Message poster</button>';
+          actions += '<button class="act-btn btn-secondary" onclick="openChatForTask('+taskIdStr+')">Message poster</button>';
         } else {
           actions += '<span class="tc-meta" style="margin:0">Chat opens after the poster accepts you and pays</span>';
         }
@@ -1602,7 +1602,7 @@ function renderTab(){
         }
       } else if (appStatus === 'accepted') {
         if (!isPaymentGatedChat()) {
-          actions = '<div class="action-row"><button class="act-btn btn-secondary" onclick="openChatForTask('+taskIdStr+')">💬 Message poster</button></div>';
+          actions = '<div class="action-row"><button class="act-btn btn-secondary" onclick="openChatForTask('+taskIdStr+')">Message poster</button></div>';
         } else {
           actions = '<div class="action-row"><span class="tc-meta" style="margin:0">Waiting for poster payment to unlock chat</span></div>';
         }
@@ -1638,7 +1638,7 @@ function renderTab(){
       var postedLink = openPosted > 0 && isPoster
         ? '<button type="button" class="empty-btn" onclick="showTab(\'posted\',document.getElementById(\'tabPosted\'))">Review ' + openPosted + ' open posting' + (openPosted !== 1 ? 's' : '') + ' →</button>'
         : '';
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Nothing in progress</div><div class="empty-sub">' + emptySub + '</div>' +
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('clock',{size:24}):'')+'</div><div class="empty-title">Nothing in progress</div><div class="empty-sub">' + emptySub + '</div>' +
         postedLink +
         (isPoster ? '' : '<a class="empty-btn" href="browsetask.html">Browse tasks</a>') +
         '</div>';
@@ -1686,8 +1686,8 @@ function renderTab(){
       var chatNeedsPay = isPosterTask && isPaymentGatedChat() && !taskPaid && !selfTask;
       var messageBtn = isPosterTask
         ? (chatNeedsPay
-          ? '<button type="button" class="act-btn btn-secondary" data-open-chat-task="'+escAttr(taskId)+'" title="Pay first to unlock chat">💬 Message</button>'
-          : '<button type="button" class="act-btn btn-primary" data-open-chat-task="'+escAttr(taskId)+'">💬 Message</button>')
+          ? '<button type="button" class="act-btn btn-secondary" data-open-chat-task="'+escAttr(taskId)+'" title="Pay first to unlock chat">Message</button>'
+          : '<button type="button" class="act-btn btn-primary" data-open-chat-task="'+escAttr(taskId)+'">Message</button>')
         : '';
       var posterActions = isPosterTask
         ? payAction +
@@ -1697,13 +1697,13 @@ function renderTab(){
           '<button type="button" class="act-btn btn-danger" data-cancel-inprogress="'+escAttr(taskId)+'">✕ Cancel task</button>'
         : '';
       var workerActions = !isPosterTask
-        ? '<button type="button" class="act-btn btn-secondary" data-open-chat-task="'+escAttr(taskId)+'">💬 Message poster</button>' +
+        ? '<button type="button" class="act-btn btn-secondary" data-open-chat-task="'+escAttr(taskId)+'">Message poster</button>' +
           '<button type="button" class="act-btn btn-success" data-mark-complete="'+escAttr(taskId)+'">✓ Mark complete</button>'
         : '';
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left">'+iconHtml+'<div><div class="tc-cat">'+roleLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-progress">⏳ In progress</span></div>'+
         (typeof qgTaskTimelineHtml === 'function' ? qgTaskTimelineHtml('in_progress') : '')+
-        '<div class="tc-meta">📍 '+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' · <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
+        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' · <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
         '<div class="qg-action-row">'+disputeBtn+reportBtns+'</div>'+
         '<div class="action-row">' + posterActions + workerActions + '</div>'+
       '</div>';
@@ -1727,10 +1727,10 @@ function renderTab(){
       });
     }
     if(!done.length){
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No completed tasks yet</div><div class="empty-sub">'+(isPoster?'Completed, cancelled, and expired postings appear here. Expired tasks can be reposted with one tap.':'Completed or cancelled tasks will appear here.')+'</div>'+(isPoster?'<a class="empty-btn" href="posttask.html">Post a task →</a>':'<a class="empty-btn" href="browsetask.html">Browse tasks →</a>')+'</div>';
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('checkCircle',{size:24}):'')+'</div><div class="empty-title">No completed tasks yet</div><div class="empty-sub">'+(isPoster?'Completed, cancelled, and expired postings appear here. Expired tasks can be reposted with one tap.':'Completed or cancelled tasks will appear here.')+'</div>'+(isPoster?'<a class="empty-btn" href="posttask.html">Post a task →</a>':'<a class="empty-btn" href="browsetask.html">Browse tasks →</a>')+'</div>';
       return;
     }
-    content.innerHTML = '<div class="hint-box" style="background:rgba(107,63,160,0.12);border:1px solid rgba(200,168,233,0.2);border-radius:14px;padding:14px;margin-bottom:14px;font-size:13px;line-height:1.55;color:var(--text-muted);">⭐ <strong>Please leave a review</strong> on completed jobs — honest feedback helps QuickGigs stay safe for everyone.</div>' +
+    content.innerHTML = '<div class="hint-box" style="background:rgba(107,63,160,0.12);border:1px solid rgba(200,168,233,0.2);border-radius:14px;padding:14px;margin-bottom:14px;font-size:13px;line-height:1.55;color:var(--text-muted);"><strong>Please leave a review</strong> on completed jobs — honest feedback helps QuickGigs stay safe for everyone.</div>' +
     done.map(function(t){
       var cat = getCat(t);
       var st = taskStatus(t);
@@ -1762,13 +1762,13 @@ function renderTab(){
         ? '<div class="action-row"><button type="button" class="act-btn btn-primary" data-repost-task="'+escAttr(getField(t,'TASK_ID'))+'">↻ Repost task</button></div>'
         : isCancelled
         ? ''
-        : '<div class="action-row"><a class="act-btn btn-review" href="'+reviewHref+'">⭐ Leave a review</a>' +
+        : '<div class="action-row"><a class="act-btn btn-review" href="'+reviewHref+'">Leave a review</a>' +
           (isPoster ? '<button type="button" class="act-btn btn-secondary" data-post-again="'+escAttr(getField(t,'TASK_ID'))+'">↻ Post again</button>' : '') +
           '</div>';
       return '<div class="task-card'+(isCancelled || isExpired ?' is-faded':'')+'">'+
         '<div class="tc-top"><div class="tc-left">'+profileTapIcon(otherUid, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">'+otherLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div>'+badge+'</div>'+
         (typeof qgTaskTimelineHtml === 'function' && !isCancelled && !isExpired ? qgTaskTimelineHtml('completed') : '')+
-        '<div class="tc-meta">📍 '+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' · <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
+        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' · <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
         '<div class="qg-action-row">'+disputeBtn+reportBtns+'</div>'+
         actions+
       '</div>';
@@ -1777,6 +1777,9 @@ function renderTab(){
 
   if (typeof bindDisputeTriggers === 'function') bindDisputeTriggers(content);
   if (typeof bindReportTriggers === 'function') bindReportTriggers(content);
+  if (activeTab === 'posted' && typeof isPosterMode === 'function' && isPosterMode() && content.querySelector('.task-card') && !content.querySelector('.qg-ghost-card')) {
+    content.insertAdjacentHTML('beforeend', '<a class="qg-ghost-card" href="posttask.html">'+(typeof qgIcon==='function'?qgIcon('plus',{size:18}):'')+' Post another task</a>');
+  }
   if (typeof bindShareTriggers === 'function') {
     bindShareTriggers(content, function (id) {
       return (allTasks || []).find(function (t) {

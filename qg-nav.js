@@ -2,18 +2,23 @@
 (function () {
   var NAV = {
     poster: [
-      { id: 'home', href: 'dashboard.html', icon: '🏠', label: 'Home' },
-      { id: 'post', href: 'posttask.html', icon: '➕', label: 'Post' },
-      { id: 'tasks', href: 'mytasks.html?tab=posted', icon: '📋', label: 'My Tasks' },
-      { id: 'messages', href: 'messages.html', icon: '💬', label: 'Messages' }
+      { id: 'home', href: 'dashboard.html', icon: 'home', label: 'Home' },
+      { id: 'post', href: 'posttask.html', icon: 'plus', label: 'Post' },
+      { id: 'tasks', href: 'mytasks.html?tab=posted', icon: 'clipboard', label: 'My Tasks' },
+      { id: 'messages', href: 'messages.html', icon: 'message', label: 'Messages' }
     ],
     worker: [
-      { id: 'home', href: 'dashboard.html', icon: '🏠', label: 'Home' },
-      { id: 'browse', href: 'browsetask.html', icon: '🔍', label: 'Browse' },
-      { id: 'jobs', href: 'mytasks.html?tab=applied', icon: '💼', label: 'My Jobs' },
-      { id: 'messages', href: 'messages.html', icon: '💬', label: 'Messages' }
+      { id: 'home', href: 'dashboard.html', icon: 'home', label: 'Home' },
+      { id: 'browse', href: 'browsetask.html', icon: 'search', label: 'Browse' },
+      { id: 'jobs', href: 'mytasks.html?tab=applied', icon: 'briefcase', label: 'My Jobs' },
+      { id: 'messages', href: 'messages.html', icon: 'message', label: 'Messages' }
     ]
   };
+
+  function navIconHtml(name) {
+    if (typeof window.qgIcon === 'function') return window.qgIcon(name, { size: 22 });
+    return '';
+  }
 
   function normalizeMode(mode) {
     if (mode === 'worker' || mode === 'tasker') return 'tasker';
@@ -109,7 +114,7 @@
       document.querySelectorAll('.nav-role').forEach(function (el) { el.textContent = label; });
     }
     document.querySelectorAll('[data-qg-mode-tag]').forEach(function (el) {
-      el.textContent = isWorkerMode() ? '🛠 Tasker mode' : '📋 Poster mode';
+      el.textContent = isWorkerMode() ? 'Tasker mode' : 'Poster mode';
       el.classList.toggle('tag-worker', isWorkerMode());
       el.classList.toggle('tag-poster', !isWorkerMode());
     });
@@ -134,12 +139,18 @@
         ? '<span class="tab-unread-badge" id="qgMsgUnreadBadge" aria-hidden="true"></span>'
         : '';
       return '<a class="' + cls + '" href="' + item.href + '" aria-label="' + item.label + '">' +
-        '<span class="tab-icon" aria-hidden="true">' + item.icon + '</span>' +
+        '<span class="tab-icon" aria-hidden="true">' + navIconHtml(item.icon) + '</span>' +
         unreadBadge +
         '<span class="tab-lbl">' + item.label + '</span></a>';
     }).join('');
     applyRoleTheme();
     refreshMessagesUnreadBadge();
+    // Icons may load after nav — refresh once if needed
+    if (typeof window.qgIcon !== 'function') {
+      setTimeout(function () {
+        if (typeof window.qgIcon === 'function') renderQuickGigsTabBar(activeId);
+      }, 50);
+    }
   }
 
   function refreshMessagesUnreadBadge() {
@@ -210,8 +221,11 @@
     opts = opts || {};
     var targetMode = opts.targetMode === 'poster' ? 'poster' : 'tasker';
     var label = targetMode === 'tasker' ? 'Tasker' : 'Poster';
+    var ico = typeof window.qgIcon === 'function'
+      ? window.qgIcon(opts.iconName || 'refresh', { size: 24 })
+      : '';
     return '<div class="empty-state" style="text-align:center;padding:48px 20px">' +
-      '<div class="empty-icon">' + (opts.icon || '🔄') + '</div>' +
+      '<div class="empty-icon">' + ico + '</div>' +
       '<div class="empty-title">' + (opts.title || ('Switch to ' + label + ' mode')) + '</div>' +
       '<div class="empty-sub">' + (opts.sub || '') + '</div>' +
       '<button type="button" class="empty-btn" onclick="typeof switchRoleMode===\'function\'&&switchRoleMode()">Switch to ' + label + ' mode</button>' +

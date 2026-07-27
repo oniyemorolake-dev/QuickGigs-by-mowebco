@@ -243,7 +243,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 <div class="search-wrap">
   <form class="search-form" autocomplete="off" onsubmit="return false" role="search">
     <div class="search-box">
-      <span class="search-icon" aria-hidden="true">🔍</span>
+      <span class="search-icon" aria-hidden="true"><svg class="qg-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
       <label class="sr-only" for="searchInput">Search tasks</label>
       <input class="search-input" id="searchInput" type="text" name="qg-browse-q"
         placeholder="Search tasks…"
@@ -256,7 +256,7 @@ body.light .app-legal-footer a{color:var(--purple);}
   <div class="location-filter-row">
     <span class="loc-filter-label" id="locationFilterLabel">Filter by location</span>
     <div class="location-filter-box">
-      <span aria-hidden="true">📍</span>
+      <span aria-hidden="true" class="meta-pin"><svg class="qg-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
       <label class="sr-only" for="locationFilter">Filter by location</label>
       <input class="location-filter-input" id="locationFilter" type="text" name="qg-browse-loc"
         placeholder="City or province (optional)"
@@ -789,14 +789,14 @@ function renderCards(){
     : countTxt;
   var area=document.getElementById('cardsArea');
   if (!filtered.length && (locFilter || window._nearMeOnly || dateFilter !== 'any') && allTasks.length) {
-    area.innerHTML='<div class="empty-state"><div class="empty-emoji">📍</div><p class="empty-txt">No tasks match your filters — try clearing location, date, or search</p><button type="button" class="empty-btn" onclick="if(typeof clearFilters===\'function\')clearFilters();else location.reload()">Clear filters</button></div>';
+    area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('mapPin',{size:24}):'')+'</div><p class="empty-txt">No tasks match your filters — try clearing location, date, or search</p><button type="button" class="empty-btn" onclick="if(typeof clearFilters===\'function\')clearFilters();else location.reload()">Clear filters</button></div>';
     return;
   }
   if(!filtered.length && activeMode==='saved'){
-    area.innerHTML='<div class="empty-state"><div class="empty-emoji">★</div><p class="empty-txt">No saved tasks yet — tap ☆ Save on any task to bookmark it here.</p><button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.href=\'browsetask.html\'">Browse open tasks →</button></div>';
+    area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('star',{size:24}):'')+'</div><p class="empty-txt">No saved tasks yet — tap ☆ Save on any task to bookmark it here.</p><button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.href=\'browsetask.html\'">Browse open tasks →</button></div>';
     return;
   }
-  if(!filtered.length){area.innerHTML='<div class="empty-state"><div class="empty-emoji">🔍</div><p class="empty-txt">'+(allTasks.length===0?'No open tasks yet — post the first one':'No tasks match this filter')+'</p>'+(allTasks.length===0?'<a class="empty-btn" href="posttask.html" style="display:inline-block;margin-top:14px;padding:12px 20px;border-radius:12px;background:var(--purple);color:#fff;text-decoration:none">Post a task →</a>':'<button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.reload()">Reset browse</button>')+'</div>';return;}
+  if(!filtered.length){area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('search',{size:24}):'')+'</div><p class="empty-txt">'+(allTasks.length===0?'No open tasks yet — post the first one':'No tasks match this filter')+'</p>'+(allTasks.length===0?'<a class="empty-btn" href="posttask.html" style="display:inline-block;margin-top:14px;padding:12px 20px;border-radius:12px;background:var(--purple);color:#fff;text-decoration:none">Post a task →</a>':'<button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.reload()">Reset browse</button>')+'</div>';return;}
   area.innerHTML=filtered.map(function(t){
     var loc = formatLocationDisplay(t.location);
     var shareBtn = typeof shareButtonHtml === 'function' ? shareButtonHtml('task', t.id, t.title) : '';
@@ -810,7 +810,7 @@ function renderCards(){
       photoHero+
       '<div class="tc-body">'+
       '<div class="tc-top"><div class="tc-left">'+iconHtml+'<div class="tc-meta"><p class="tc-title">'+esc(t.title)+'</p></div></div>'+getBadge(t.mode,t)+'</div>'+
-      '<div class="tc-bottom"><div><div class="tc-price">'+esc(t.priceLabel)+(typeof qgNewPillHtml==='function'?qgNewPillHtml(t.createdAt||t.created_at):'')+'</div><div class="tc-info">📍 '+esc(loc)+' · '+esc(t.posted||'Posted recently')+'</div>'+
+      '<div class="tc-bottom"><div><div class="tc-price">'+esc(t.priceLabel)+(typeof qgNewPillHtml==='function'?qgNewPillHtml(t.createdAt||t.created_at):'')+'</div><div class="tc-info">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(loc)+' · '+esc(t.posted||'Posted recently')+'</div>'+
       '<div class="qg-action-row">'+saveBtn+shareBtn+'</div></div>'+
       '<button class="apply-btn '+getBtnClass(t.mode)+'" onclick="openModal(\''+t.id+'\',event)">'+getBtnLabel(t.mode)+'</button></div></div></div>';
   }).join('');

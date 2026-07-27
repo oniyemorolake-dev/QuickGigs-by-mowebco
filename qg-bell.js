@@ -77,7 +77,8 @@
     bellBtn.id = 'qgBellBtn';
     bellBtn.setAttribute('aria-label', 'Notifications');
     bellBtn.setAttribute('aria-expanded', 'false');
-    bellBtn.innerHTML = '🔔<span class="qg-bell-dot" id="qgBellDot" hidden aria-hidden="true"></span>';
+    bellBtn.innerHTML = (typeof window.qgIcon === 'function' ? window.qgIcon('bell', { size: 20 }) : '') +
+      '<span class="qg-bell-dot" id="qgBellDot" hidden aria-hidden="true"></span>';
     bellBtn.addEventListener('click', function (e) {
       e.stopPropagation();
       toggleBellPanel();
@@ -150,7 +151,8 @@
   function renderList() {
     if (!panelBody) return;
     if (!notifications.length) {
-      panelBody.innerHTML = '<div class="qg-bell-empty">🔔 No notifications yet.<br>Applies, hires, messages, and completions show up here.</div>';
+      var emptyIco = typeof window.qgIcon === 'function' ? window.qgIcon('bell', { size: 24 }) : '';
+      panelBody.innerHTML = '<div class="qg-bell-empty"><div class="empty-icon" style="margin:0 auto 12px">'+emptyIco+'</div>No notifications yet.<br>Applies, hires, messages, and completions show up here.</div>';
       return;
     }
     panelBody.innerHTML = notifications.map(function (n) {
