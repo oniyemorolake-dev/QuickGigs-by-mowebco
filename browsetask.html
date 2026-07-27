@@ -874,7 +874,9 @@ window.openModal=async function(id,e){
   if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
   if (typeof getMode === 'function' && getMode() === 'poster') {
     if (!confirm('You are in Poster mode. Switch to Tasker mode to apply for tasks?')) return;
-    if (typeof setSessionMode === 'function') setSessionMode('worker');
+    if (typeof setMode === 'function') setMode('tasker');
+    else if (typeof setSessionMode === 'function') setSessionMode('worker');
+    if (typeof applyRoleTheme === 'function') applyRoleTheme();
     else if (typeof setMode === 'function' && setMode.length <= 1) setMode('tasker');
     else localStorage.setItem('qg-mode', 'tasker');
   }
@@ -946,7 +948,9 @@ window.handleOverlayClick=function(e){if(e.target===document.getElementById('mod
 window.submitApplication=async function(){
   if (typeof getMode === 'function' && getMode() === 'poster') {
     if (!confirm('You are in Poster mode. Switch to Tasker mode to apply for tasks?')) return;
-    if (typeof setSessionMode === 'function') setSessionMode('worker');
+    if (typeof setMode === 'function') setMode('tasker');
+    else if (typeof setSessionMode === 'function') setSessionMode('worker');
+    if (typeof applyRoleTheme === 'function') applyRoleTheme();
     else if (typeof setMode === 'function' && setMode.length <= 1) setMode('tasker');
     else localStorage.setItem('qg-mode', 'tasker');
   }
