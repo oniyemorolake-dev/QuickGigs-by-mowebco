@@ -32,8 +32,8 @@
 <link rel="stylesheet" href="qg-role-theme.css">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
 <link rel="stylesheet" href="qg-features.css?v=20260716c">
-<script src="qg-brand-init.js"></script>
 <script src="qg-theme.js"></script>
+<script src="qg-brand-init.js"></script>
 <script>document.documentElement.setAttribute('data-qg-mode','worker');</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -370,7 +370,6 @@ body.light .app-legal-footer a{color:var(--purple);}
 <script defer src="qg-menu.js?v=2"></script>
 <script defer src="qg-lightbox.js?v=1"></script>
 <script>
-if (typeof setSessionMode === 'function') setSessionMode('worker');
 renderQuickGigsTabBar('browse');
 </script>
 
@@ -470,7 +469,7 @@ var budgetMinVal=20,budgetMaxVal=300,budgetPreset='';
 var appliedTaskIds = {};
 var userNames={};
 var dbSubmitApplication = window.submitApplication;
-var isDark=localStorage.getItem('qg-mode')!=='light';
+var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
 window._nearMeOnly=false;
 
 function taskMatchesLocation(task, filterLoc, nearMeOnly) {
@@ -872,7 +871,13 @@ window.clearFilters=function(){
 })();
 
 window.openModal=async function(id,e){
-  e.stopPropagation();
+  if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+  if (typeof getMode === 'function' && getMode() === 'poster') {
+    if (!confirm('You are in Poster mode. Switch to Tasker mode to apply for tasks?')) return;
+    if (typeof setSessionMode === 'function') setSessionMode('worker');
+    else if (typeof setMode === 'function' && setMode.length <= 1) setMode('tasker');
+    else localStorage.setItem('qg-mode', 'tasker');
+  }
   activeTask=allTasks.find(function(t){return String(t.id)===String(id);});
   if(!activeTask)return;
   if (typeof qgTrackTaskView === 'function') qgTrackTaskView(activeTask);
@@ -939,6 +944,12 @@ window.closeModal=function(){
 window.handleOverlayClick=function(e){if(e.target===document.getElementById('modalOverlay'))closeModal();};
 
 window.submitApplication=async function(){
+  if (typeof getMode === 'function' && getMode() === 'poster') {
+    if (!confirm('You are in Poster mode. Switch to Tasker mode to apply for tasks?')) return;
+    if (typeof setSessionMode === 'function') setSessionMode('worker');
+    else if (typeof setMode === 'function' && setMode.length <= 1) setMode('tasker');
+    else localStorage.setItem('qg-mode', 'tasker');
+  }
   var price=document.getElementById('offerPrice').value;
   var msg=window.sanitizeInput(document.getElementById('offerMsg').value, 1000);
   var avail=window.sanitizeInput(document.getElementById('offerAvail').value, 120);
@@ -1048,15 +1059,21 @@ window.submitApplication=async function(){
 };
 
 window.reloadBrowseTasks = loadTasks;
-window.toggleMode=function(){isDark=!isDark;applyTheme();};
+window.toggleMode=function(){
+  isDark=!isDark;
+  if (typeof QG_setThemeDark === 'function') QG_setThemeDark(isDark);
+  else localStorage.setItem('qg-theme', isDark ? 'dark' : 'light');
+  applyTheme();
+};
 function applyTheme(){
   if (typeof window.QG_applyTheme === 'function') window.QG_applyTheme(isDark,'modeBtn',false);
   else {
     document.body.className = isDark ? '' : 'light';
     var btn = document.getElementById('modeBtn');
     if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+    if (typeof QG_setThemeDark === 'function') QG_setThemeDark(isDark);
+    else localStorage.setItem('qg-theme', isDark ? 'dark' : 'light');
   }
-  localStorage.setItem('qg-mode',isDark?'dark':'light');
 }
 applyTheme();
 initUserLocation().then(function(){

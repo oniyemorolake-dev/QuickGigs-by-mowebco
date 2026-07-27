@@ -29,6 +29,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-role-theme.css">
+<script src="qg-theme.js"></script>
 <script src="qg-brand-init.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -145,8 +146,12 @@ body.light .app-legal-footer a{color:var(--purple);}
     <span class="nav-role">POSTER</span>
   </div>
   <div class="nav-title">Messages</div>
-  <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
+  <div class="nav-right" style="display:flex;gap:8px;align-items:center">
+    <button type="button" class="mode-btn" onclick="typeof switchRoleMode==='function'&&switchRoleMode()">Switch mode</button>
+    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
+  </div>
 </nav>
+<div style="padding:8px 16px 0"><span class="mode-tag" data-qg-mode-tag>📋 Poster mode</span></div>
 
 <div class="search-wrap">
   <div class="search-box">
@@ -209,14 +214,19 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-push.js?v=1"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
-var isDark = localStorage.getItem('qg-mode') !== 'light';
+var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
 function applyTheme(){
-  document.body.className = isDark ? '' : 'light';
-  document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark';
+  if (typeof QG_applyTheme === 'function') QG_applyTheme(isDark, 'modeBtn', false);
+  else {
+    document.body.className = isDark ? '' : 'light';
+    var b = document.getElementById('modeBtn');
+    if (b) b.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+  }
 }
 window.toggleTheme = function(){
   isDark = !isDark;
-  localStorage.setItem('qg-mode', isDark ? 'dark' : 'light');
+  if (typeof QG_setThemeDark === 'function') QG_setThemeDark(isDark);
+  else localStorage.setItem('qg-theme', isDark ? 'dark' : 'light');
   applyTheme();
 };
 applyTheme();
@@ -263,15 +273,19 @@ function countUnread(conv, userId){
 }
 
 function mapConversation(conv, userId){
-  var isPoster = conv.poster_id === userId;
-  var otherUid = isPoster ? conv.worker_id : conv.poster_id;
-  var otherName = isPoster ? (conv.worker_name || 'Tasker') : (conv.poster_name || 'Poster');
+  var iAmPoster = String(conv.poster_id) === String(userId);
+  var otherUid = iAmPoster ? conv.worker_id : conv.poster_id;
+  var otherName = iAmPoster ? (conv.worker_name || 'Tasker') : (conv.poster_name || 'Poster');
   if (typeof isGenericDisplayName === 'function') {
-    if (isGenericDisplayName(otherName)) otherName = isPoster ? 'Tasker' : 'Poster';
+    if (isGenericDisplayName(otherName)) otherName = iAmPoster ? 'Tasker' : 'Poster';
   }
   var cat = (conv.task_category || 'other').toLowerCase();
   return {
     id: conv.conv_id,
+    posterId: conv.poster_id,
+    workerId: conv.worker_id,
+    myRole: iAmPoster ? 'poster' : 'tasker',
+    rolePill: iAmPoster ? "You're the poster" : "You're the tasker",
     otherUid: otherUid,
     name: otherName,
     initials: otherName.charAt(0).toUpperCase(),
@@ -286,6 +300,13 @@ function mapConversation(conv, userId){
     paid: conv.is_unlocked,
     locked: !conv.is_unlocked
   };
+}
+
+function conversationsForCurrentMode(list) {
+  var mode = typeof getMode === 'function' ? getMode() : 'poster';
+  return (list || []).filter(function (c) {
+    return mode === 'tasker' ? c.myRole === 'tasker' : c.myRole === 'poster';
+  });
 }
 
 async function loadConversations(){
@@ -321,9 +342,10 @@ async function loadConversations(){
     var enriched = typeof enrichConversationNames === 'function'
       ? await Promise.all((rows || []).map(function(c) { return enrichConversationNames(c); }))
       : (rows || []);
-    conversations = enriched.map(function(c){ return mapConversation(c, userId); });
+    conversations = conversationsForCurrentMode(enriched.map(function(c){ return mapConversation(c, userId); }));
     filtered = conversations.slice();
     renderContent();
+    if (typeof applyRoleTheme === 'function') applyRoleTheme();
     if (typeof isSupabaseUsingStaleCache === 'function' && isSupabaseUsingStaleCache()) {
       showStaleDataBanner();
     }
@@ -337,18 +359,26 @@ async function loadConversations(){
 }
 
 window.loadConversations = loadConversations;
+window.onQuickGigsModeChange = function () {
+  if (typeof loadConversations === 'function') loadConversations();
+  else window.location.reload();
+};
 
 function renderContent(){
   var content = document.getElementById('mainContent');
 
   // No conversations at all
   if(!conversations.length){
+    var taskerEmpty = typeof getMode === 'function' && getMode() === 'tasker';
     content.innerHTML =
       '<div class="empty-state">' +
         '<div class="empty-icon">💬</div>' +
-        '<div class="empty-title">No messages yet</div>' +
-        '<div class="empty-sub">Apply to a task to start a conversation, or accept an applicant from My Tasks.</div>' +
-        '<a class="empty-btn" href="browsetask.html">Browse tasks</a>' +
+        '<div class="empty-title">No ' + (taskerEmpty ? 'tasker' : 'poster') + ' messages yet</div>' +
+        '<div class="empty-sub">' + (taskerEmpty
+          ? 'Apply to a task — chats with posters show up here in Tasker mode.'
+          : 'Accept an applicant from My Tasks — chats with taskers show up here in Poster mode.') + '</div>' +
+        '<a class="empty-btn" href="' + (taskerEmpty ? 'browsetask.html' : 'mytasks.html?tab=posted') + '">' +
+          (taskerEmpty ? 'Browse tasks' : 'My posted tasks') + '</a>' +
       '</div>';
     return;
   }
@@ -404,6 +434,7 @@ function renderConvItem(c){
     '<div class="conv-info">' +
       '<div class="conv-name"><a href="'+profileHref+'" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none">'+esc(c.name)+'</a></div>' +
       '<div class="conv-task">'+c.taskIcon+' '+esc(c.taskName)+'</div>' +
+      '<div class="conv-role-pill" style="font-size:10px;color:rgba(200,168,233,0.75);margin-top:2px">'+esc(c.rolePill || '')+'</div>' +
       '<div class="conv-preview'+(c.unread>0?' unread':'')+'">'+esc(c.lastMessage)+'</div>' +
     '</div>' +
     '<div class="conv-right">' +

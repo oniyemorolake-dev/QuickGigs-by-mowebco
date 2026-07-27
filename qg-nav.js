@@ -1,64 +1,93 @@
-// QuickGigs — role-based navigation (poster vs worker)
+// QuickGigs — role-based navigation (poster vs tasker). Canonical mode: localStorage qg-mode.
 (function () {
   var NAV = {
     poster: [
-      { id: 'home', href: 'dashboard.html?mode=poster', icon: '🏠', label: 'Home' },
+      { id: 'home', href: 'dashboard.html', icon: '🏠', label: 'Home' },
       { id: 'post', href: 'posttask.html', icon: '➕', label: 'Post' },
-      { id: 'tasks', href: 'mytasks.html?tab=posted&mode=poster', icon: '📋', label: 'My Tasks' },
+      { id: 'tasks', href: 'mytasks.html?tab=posted', icon: '📋', label: 'My Tasks' },
       { id: 'messages', href: 'messages.html', icon: '💬', label: 'Messages' }
     ],
     worker: [
-      { id: 'home', href: 'dashboard.html?mode=worker', icon: '🏠', label: 'Home' },
+      { id: 'home', href: 'dashboard.html', icon: '🏠', label: 'Home' },
       { id: 'browse', href: 'browsetask.html', icon: '🔍', label: 'Browse' },
-      { id: 'jobs', href: 'mytasks.html?tab=applied&mode=worker', icon: '💼', label: 'My Jobs' },
+      { id: 'jobs', href: 'mytasks.html?tab=applied', icon: '💼', label: 'My Jobs' },
       { id: 'messages', href: 'messages.html', icon: '💬', label: 'Messages' }
     ]
   };
 
   function normalizeMode(mode) {
-    return mode === 'worker' ? 'worker' : 'poster';
+    if (mode === 'worker' || mode === 'tasker') return 'tasker';
+    return 'poster';
   }
 
-  function getSessionMode() {
-    var params = new URLSearchParams(window.location.search);
-    var fromUrl = params.get('mode');
-    if (fromUrl) {
-      // Persist so Tasker → My Jobs doesn't flip back to Poster on next click
-      var normalized = normalizeMode(fromUrl);
-      try { localStorage.setItem('qg-session-mode', normalized); } catch (e) {}
-      return normalized;
+  /** Canonical role mode: 'poster' | 'tasker' — only default lives here */
+  function getMode() {
+    try {
+      var raw = localStorage.getItem('qg-mode');
+      if (raw === 'light' || raw === 'dark') {
+        try {
+          if (!localStorage.getItem('qg-theme')) localStorage.setItem('qg-theme', raw);
+        } catch (e1) {}
+        raw = null;
+      }
+      if (raw === 'tasker' || raw === 'worker') return 'tasker';
+      if (raw === 'poster') return 'poster';
+      var legacy = localStorage.getItem('qg-session-mode') || localStorage.getItem('qg-role');
+      var migrated = normalizeMode(legacy);
+      try { localStorage.setItem('qg-mode', migrated); } catch (e2) {}
+      return migrated;
+    } catch (e) {
+      return 'poster';
     }
-    var stored = localStorage.getItem('qg-session-mode') || localStorage.getItem('qg-role');
-    return normalizeMode(stored);
   }
 
-  function setSessionMode(mode) {
-    mode = normalizeMode(mode);
-    localStorage.setItem('qg-session-mode', mode);
+  function setMode(m) {
+    var mode = normalizeMode(m);
+    try {
+      localStorage.setItem('qg-mode', mode);
+      localStorage.setItem('qg-session-mode', mode === 'tasker' ? 'worker' : 'poster');
+      localStorage.setItem('qg-role', mode === 'tasker' ? 'worker' : 'poster');
+    } catch (e) {}
     return mode;
   }
 
+  // Legacy API — do not read URL (that was resetting mode on navigation)
+  function getSessionMode() {
+    return getMode() === 'tasker' ? 'worker' : 'poster';
+  }
+
+  function setSessionMode(mode) {
+    setMode(mode);
+    return getSessionMode();
+  }
+
   function isWorkerMode() {
-    return getSessionMode() === 'worker';
+    return getMode() === 'tasker';
   }
 
   function isPosterMode() {
-    return !isWorkerMode();
+    return getMode() === 'poster';
+  }
+
+  function cssMode() {
+    return isWorkerMode() ? 'worker' : 'poster';
   }
 
   function switchRoleMode() {
-    var next = isWorkerMode() ? 'poster' : 'worker';
-    setSessionMode(next);
-    window.location.href = 'dashboard.html?mode=' + next;
+    var next = isWorkerMode() ? 'poster' : 'tasker';
+    setMode(next);
+    applyRoleTheme();
+    document.dispatchEvent(new CustomEvent('qg-mode-changed', { detail: { mode: next } }));
+    if (typeof window.onQuickGigsModeChange === 'function') {
+      try { window.onQuickGigsModeChange(next); return; } catch (e) {}
+    }
+    // Stay on the same page — re-render via reload (no dashboard redirect)
+    window.location.reload();
   }
 
   function getThemeMode() {
-    if (typeof window.QG_getBrandMode === 'function') return window.QG_getBrandMode();
-    var path = (window.location.pathname || '').toLowerCase();
-    var page = path.split('/').pop() || '';
-    if (page === 'browsetask.html' || page === 'browsetask') return 'worker';
-    if (page === 'posttask.html' || page === 'posttask') return 'poster';
-    return getSessionMode();
+    // Visual chrome follows stored role only — never invent mode from page path
+    return cssMode();
   }
 
   function applyNavBrand() {
@@ -76,13 +105,18 @@
     });
     if (typeof window.QG_applyRoleLabels === 'function') window.QG_applyRoleLabels();
     else {
-      var label = getThemeMode() === 'worker' ? 'TASKER' : 'POSTER';
+      var label = isWorkerMode() ? 'TASKER' : 'POSTER';
       document.querySelectorAll('.nav-role').forEach(function (el) { el.textContent = label; });
     }
+    document.querySelectorAll('[data-qg-mode-tag]').forEach(function (el) {
+      el.textContent = isWorkerMode() ? '🛠 Tasker mode' : '📋 Poster mode';
+      el.classList.toggle('tag-worker', isWorkerMode());
+      el.classList.toggle('tag-poster', !isWorkerMode());
+    });
   }
 
   function applyRoleTheme() {
-    var mode = getThemeMode();
+    var mode = cssMode();
     document.body.classList.toggle('qg-mode-worker', mode === 'worker');
     document.body.classList.toggle('qg-mode-poster', mode === 'poster');
     document.documentElement.setAttribute('data-qg-mode', mode);
@@ -115,9 +149,13 @@
     var user = window._currentUser;
     if (!user || typeof getConversationsForUser !== 'function') return;
     getConversationsForUser(user.uid).then(function (rows) {
+      var tasker = isWorkerMode();
       var n = 0;
       (rows || []).forEach(function (conv) {
-        var lastRead = user.uid === conv.poster_id ? conv.poster_last_read_at : conv.worker_last_read_at;
+        var iAmPoster = String(conv.poster_id) === String(user.uid);
+        if (tasker && iAmPoster) return;
+        if (!tasker && !iAmPoster) return;
+        var lastRead = iAmPoster ? conv.poster_last_read_at : conv.worker_last_read_at;
         if (!lastRead || (conv.last_message_at && new Date(conv.last_message_at) > new Date(lastRead))) n += 1;
       });
       if (n > 0) {
@@ -144,7 +182,6 @@
 
     var postedEl = document.getElementById('tabPosted');
     var appliedEl = document.getElementById('tabApplied');
-    // Poster = post & hire only. Tasker = apply & work only.
     if (postedEl) {
       postedEl.hidden = isWorker;
       postedEl.style.display = isWorker ? 'none' : '';
@@ -155,7 +192,7 @@
     }
 
     var titleEl = document.querySelector('.nav-title');
-    if (titleEl) titleEl.textContent = isWorker ? 'My Jobs' : 'My Tasks';
+    if (titleEl) titleEl.textContent = isWorker ? 'My gigs' : 'My posted tasks';
   }
 
   function defaultMyTasksTab() {
@@ -171,8 +208,8 @@
 
   function roleGateHtml(opts) {
     opts = opts || {};
-    var targetMode = opts.targetMode === 'poster' ? 'poster' : 'worker';
-    var label = targetMode === 'worker' ? 'Tasker' : 'Poster';
+    var targetMode = opts.targetMode === 'poster' ? 'poster' : 'tasker';
+    var label = targetMode === 'tasker' ? 'Tasker' : 'Poster';
     return '<div class="empty-state" style="text-align:center;padding:48px 20px">' +
       '<div class="empty-icon">' + (opts.icon || '🔄') + '</div>' +
       '<div class="empty-title">' + (opts.title || ('Switch to ' + label + ' mode')) + '</div>' +
@@ -181,6 +218,8 @@
       '</div>';
   }
 
+  window.getMode = getMode;
+  window.setMode = setMode;
   window.getSessionMode = getSessionMode;
   window.setSessionMode = setSessionMode;
   window.isWorkerMode = isWorkerMode;
@@ -203,7 +242,7 @@
   document.head.appendChild(mobileScript);
 
   var menuScript = document.createElement('script');
-  menuScript.src = 'qg-menu.js?v=3';
+  menuScript.src = 'qg-menu.js?v=4';
   menuScript.defer = true;
   document.head.appendChild(menuScript);
 

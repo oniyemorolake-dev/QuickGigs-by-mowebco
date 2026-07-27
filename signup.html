@@ -229,6 +229,7 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 <script defer src="supabase-db.js"></script>
 <script defer src="qg-announcement.js?v=5"></script>
 <script defer src="qg-notifications.js"></script>
+<script src="qg-theme.js"></script>
 <script>
 attachPasswordToggle('password');
 attachPasswordToggle('confirmPassword');
@@ -414,7 +415,7 @@ var STEP_META = [
 ];
 var STEP_TOTAL = STEP_META.length;
 
-var signupDark = localStorage.getItem('qg-mode') !== 'light';
+var signupDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
 function applySignupTheme() {
   document.body.classList.toggle('light', !signupDark);
   var btn = document.getElementById('signupThemeBtn');
@@ -422,7 +423,8 @@ function applySignupTheme() {
 }
 window.toggleSignupTheme = function() {
   signupDark = !signupDark;
-  localStorage.setItem('qg-mode', signupDark ? 'dark' : 'light');
+  if (typeof QG_setThemeDark === 'function') QG_setThemeDark(signupDark);
+  else localStorage.setItem('qg-theme', signupDark ? 'dark' : 'light');
   applySignupTheme();
 };
 applySignupTheme();
@@ -610,6 +612,8 @@ document.getElementById('submitBtn').onclick = async function() {
 
     localStorage.setItem('qg-role', account.role);
     localStorage.setItem('qg-session-mode', account.role === 'worker' ? 'worker' : 'poster');
+    if (typeof setMode === 'function') setMode(account.role === 'worker' ? 'tasker' : 'poster');
+    else localStorage.setItem('qg-mode', account.role === 'worker' ? 'tasker' : 'poster');
 
     okMsg.textContent = identity.account_status === 'pending_guardian'
       ? 'Account created Ask your parent to check their email to approve. Redirecting…'

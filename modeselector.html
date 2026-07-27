@@ -134,7 +134,7 @@ body.light .earn .choice-icon{background:#ede9ff;}
     <div class="greeting-sub">What are you here to do today?<br>You can always switch later.</div>
   </div>
 
-  <a class="choice-card hire" href="dashboard.html?mode=poster" onclick="setMode('poster')">
+  <a class="choice-card hire" href="dashboard.html" onclick="chooseRoleMode('poster')">
     <div class="choice-icon">📋</div>
     <div class="choice-text">
       <div class="choice-title">I need help</div>
@@ -143,7 +143,7 @@ body.light .earn .choice-icon{background:#ede9ff;}
     <div class="choice-arrow">→</div>
   </a>
 
-  <a class="choice-card earn" href="dashboard.html?mode=worker" onclick="setMode('worker')">
+  <a class="choice-card earn" href="dashboard.html" onclick="chooseRoleMode('tasker')">
     <div class="choice-icon">💼</div>
     <div class="choice-text">
       <div class="choice-title">I want to earn</div>
@@ -152,7 +152,7 @@ body.light .earn .choice-icon{background:#ede9ff;}
     <div class="choice-arrow">→</div>
   </a>
 
-  <a class="both-link" href="dashboard.html?mode=poster" onclick="setMode('poster')">I want to do both — start as poster →</a>
+  <a class="both-link" href="dashboard.html" onclick="chooseRoleMode('poster')">I want to do both — start as poster →</a>
 </div>
 
 <script type="module">
@@ -183,26 +183,36 @@ onAuthStateChanged(auth, (user) => {
   const firstName = name.split(' ')[0];
   document.getElementById('greetingHi').textContent = 'Hey ' + firstName + ' 👋';
 
-  // If they only signed up as poster or worker, skip this screen
-  const role = localStorage.getItem('qg-role');
-  if (role === 'poster') { window.location.href = 'dashboard.html?mode=poster'; }
-  if (role === 'worker') { window.location.href = 'dashboard.html?mode=worker'; }
+  // Skip only when signup already locked a preferred role (do not invent a default skip)
+  const signupRole = localStorage.getItem('qg-role');
+  if (signupRole === 'poster' || signupRole === 'worker') {
+    if (typeof setMode === 'function') setMode(signupRole === 'worker' ? 'tasker' : 'poster');
+    window.location.href = 'dashboard.html';
+  }
 });
 </script>
-
+<script src="qg-theme.js"></script>
+<script src="qg-brand-init.js"></script>
 <script>
-function setMode(mode) {
-  localStorage.setItem('qg-session-mode', mode);
-}
+window.chooseRoleMode = function(mode) {
+  if (typeof setMode === 'function') setMode(mode);
+  else {
+    var m = (mode === 'worker' || mode === 'tasker') ? 'tasker' : 'poster';
+    localStorage.setItem('qg-mode', m);
+    localStorage.setItem('qg-session-mode', m === 'tasker' ? 'worker' : 'poster');
+    localStorage.setItem('qg-role', m === 'tasker' ? 'worker' : 'poster');
+  }
+};
 
-var isDark = localStorage.getItem('qg-mode') !== 'light';
+var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : true;
 function applyTheme() {
   document.body.className = isDark ? '' : 'light';
   document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark';
 }
 window.toggleMode = function() {
   isDark = !isDark;
-  localStorage.setItem('qg-mode', isDark ? 'dark' : 'light');
+  if (typeof QG_setThemeDark === 'function') QG_setThemeDark(isDark);
+  else localStorage.setItem('qg-theme', isDark ? 'dark' : 'light');
   applyTheme();
 };
 applyTheme();

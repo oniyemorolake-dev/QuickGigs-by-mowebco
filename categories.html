@@ -26,7 +26,7 @@ body.light .mode-btn{background:#f0eeff;color:#6b3fa0;}
 <body>
 <script src="qg-theme.js"></script>
 <nav class="nav">
-  <a class="back-link" href="dashboard.html?mode=worker" aria-label="Back to dashboard">← Home</a>
+  <a class="back-link" href="dashboard.html" aria-label="Back to dashboard">← Home</a>
   <div class="nav-brand"><span class="nav-logo">QuickGigs</span></div>
   <div class="nav-right">
     <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
@@ -51,17 +51,17 @@ body.light .mode-btn{background:#f0eeff;color:#6b3fa0;}
 <script src="qg-pwa.js?v=4"></script>
 <script src="supabase-db.js"></script>
 <script>
-if (typeof setSessionMode === 'function') setSessionMode('worker');
 renderQuickGigsTabBar('browse');
 
-var isDark = localStorage.getItem('qg-mode') !== 'light';
+var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
 function applyTheme() {
   if (typeof window.QG_applyTheme === 'function') window.QG_applyTheme(isDark, 'modeBtn', false);
   else document.body.className = isDark ? '' : 'light';
 }
 window.toggleTheme = function () {
   isDark = !isDark;
-  localStorage.setItem('qg-mode', isDark ? 'dark' : 'light');
+  if (typeof QG_setThemeDark === 'function') QG_setThemeDark(isDark);
+  else localStorage.setItem('qg-theme', isDark ? 'dark' : 'light');
   applyTheme();
 };
 applyTheme();

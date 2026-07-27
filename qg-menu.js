@@ -96,10 +96,11 @@
   }
 
   function roleLabel() {
+    if (typeof getMode === 'function') return getMode() === 'tasker' ? 'Tasker' : 'Poster';
     if (typeof isWorkerMode === 'function' && isWorkerMode()) return 'Tasker';
     if (typeof isPosterMode === 'function' && isPosterMode()) return 'Poster';
-    var mode = localStorage.getItem('qg-session-mode') || localStorage.getItem('qg-role');
-    return mode === 'worker' ? 'Tasker' : 'Poster';
+    var mode = localStorage.getItem('qg-mode') || localStorage.getItem('qg-session-mode') || localStorage.getItem('qg-role');
+    return (mode === 'worker' || mode === 'tasker') ? 'Tasker' : 'Poster';
   }
 
   function themeLabel() {
@@ -123,7 +124,7 @@
     sections.push({
       label: 'Go to',
       items: [
-        { type: 'link', href: 'dashboard.html?mode=' + mode, icon: '🏠', label: 'Home' },
+        { type: 'link', href: 'dashboard.html', icon: '🏠', label: 'Home' },
         worker
           ? { type: 'link', href: 'browsetask.html', icon: '🔍', label: 'Browse tasks' }
           : { type: 'link', href: 'posttask.html', icon: '➕', label: 'Post a task' },
@@ -194,11 +195,10 @@
       }
     ];
 
-    if (localStorage.getItem('qg-role') || localStorage.getItem('qg-session-mode')) {
-      var m = localStorage.getItem('qg-session-mode') || localStorage.getItem('qg-role') || 'poster';
+    if (localStorage.getItem('qg-mode') || localStorage.getItem('qg-role') || localStorage.getItem('qg-session-mode')) {
       sections[0].items.unshift({
         type: 'link',
-        href: 'dashboard.html?mode=' + (m === 'worker' ? 'worker' : 'poster'),
+        href: 'dashboard.html',
         icon: '🏠',
         label: 'Go to dashboard'
       });

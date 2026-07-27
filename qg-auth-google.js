@@ -42,7 +42,7 @@
   window.qgGetDashboardRedirect = function () {
     return typeof getDashboardUrl === 'function'
       ? getDashboardUrl()
-      : ('dashboard.html?mode=' + (localStorage.getItem('qg-session-mode') || localStorage.getItem('qg-role') || 'poster'));
+      : 'dashboard.html';
   };
 
   window.qgUserNeedsOnboarding = function (dbUser) {

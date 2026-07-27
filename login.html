@@ -113,10 +113,11 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 <script defer src="supabase-db.js"></script>
 <script defer src="qg-announcement.js?v=5"></script>
 <script defer src="qg-cookies.js"></script>
+<script src="qg-theme.js"></script>
 <script>
 attachPasswordToggle('password');
 
-var authDark = localStorage.getItem('qg-mode') !== 'light';
+var authDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
 function applyAuthTheme() {
   document.body.classList.toggle('light', !authDark);
   var btn = document.getElementById('authThemeBtn');
@@ -124,7 +125,8 @@ function applyAuthTheme() {
 }
 window.toggleAuthTheme = function() {
   authDark = !authDark;
-  localStorage.setItem('qg-mode', authDark ? 'dark' : 'light');
+  if (typeof QG_setThemeDark === 'function') QG_setThemeDark(authDark);
+  else localStorage.setItem('qg-theme', authDark ? 'dark' : 'light');
   applyAuthTheme();
 };
 applyAuthTheme();
@@ -212,9 +214,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     await signInWithEmailAndPassword(auth, email, password);
     if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'email' });
     submitBtn.textContent = 'Opening dashboard…';
-    var dest = typeof getDashboardUrl === 'function'
-      ? getDashboardUrl()
-      : ('dashboard.html?mode=' + (localStorage.getItem('qg-session-mode') || localStorage.getItem('qg-role') || 'poster'));
+    var dest = typeof getDashboardUrl === 'function' ? getDashboardUrl() : 'dashboard.html';
     window.location.replace(dest);
   } catch (error) {
     var message = 'Invalid email or password. Try again.';

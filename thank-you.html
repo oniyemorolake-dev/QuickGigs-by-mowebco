@@ -34,8 +34,9 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 (function () {
   var params = new URLSearchParams(window.location.search);
   var mode = params.get('mode') === 'worker' ? 'worker' : 'poster';
+  if (typeof setMode === 'function') setMode(mode === 'worker' ? 'tasker' : 'poster');
   var link = document.getElementById('dashLink');
-  if (link) link.href = 'dashboard.html?mode=' + mode;
+  if (link) link.href = 'dashboard.html';
 
   if (typeof qgTrackEvent === 'function') {
     qgTrackEvent('sign_up', { method: 'email', role: mode });

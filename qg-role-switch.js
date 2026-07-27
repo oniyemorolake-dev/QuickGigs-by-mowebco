@@ -1,16 +1,20 @@
 /* QuickGigs — poster / tasker role switch (Profile + quick actions) */
 (function () {
   function getCurrentMode() {
-    return typeof getSessionMode === 'function' ? getSessionMode() : 'poster';
+    if (typeof getMode === 'function') return getMode();
+    if (typeof getSessionMode === 'function') {
+      return getSessionMode() === 'worker' ? 'tasker' : 'poster';
+    }
+    return 'poster';
   }
 
-  function isPosterMode() {
-    return getCurrentMode() !== 'worker';
+  function isPosterModeLocal() {
+    return getCurrentMode() !== 'tasker';
   }
 
   function showRoleToast(mode) {
-    var label = mode === 'worker' ? 'Tasker' : 'Poster';
-    var msg = mode === 'worker'
+    var label = mode === 'tasker' || mode === 'worker' ? 'Tasker' : 'Poster';
+    var msg = (mode === 'tasker' || mode === 'worker')
       ? "You're in Tasker mode — browse tasks and apply."
       : "You're in Poster mode — post tasks and hire.";
     if (typeof showToast === 'function') showToast(msg);
@@ -26,7 +30,7 @@
         name: user.displayName || (user.email ? user.email.split('@')[0] : ''),
         email: user.email || '',
         firebase_uid: user.uid,
-        role: mode === 'worker' ? 'worker' : 'poster'
+        role: (mode === 'tasker' || mode === 'worker') ? 'worker' : 'poster'
       });
     } catch (e) {
       console.warn('Role sync skipped:', e);
@@ -35,41 +39,50 @@
 
   async function setQuickGigsMode(mode, options) {
     options = options || {};
-    mode = mode === 'worker' ? 'worker' : 'poster';
+    mode = (mode === 'worker' || mode === 'tasker') ? 'tasker' : 'poster';
     var current = getCurrentMode();
     if (mode === current && !options.force) return { changed: false, mode: mode };
 
-    if (typeof setSessionMode === 'function') setSessionMode(mode);
-    else localStorage.setItem('qg-session-mode', mode);
-    localStorage.setItem('qg-role', mode);
+    if (typeof setMode === 'function') setMode(mode);
+    else if (typeof setSessionMode === 'function') setSessionMode(mode === 'tasker' ? 'worker' : 'poster');
+    else {
+      localStorage.setItem('qg-mode', mode);
+      localStorage.setItem('qg-session-mode', mode === 'tasker' ? 'worker' : 'poster');
+      localStorage.setItem('qg-role', mode === 'tasker' ? 'worker' : 'poster');
+    }
 
     await persistRoleToDb(mode);
 
     if (typeof applyRoleTheme === 'function') applyRoleTheme();
     if (typeof renderQuickGigsTabBar === 'function') {
       var active = document.querySelector('.tab-item.active');
-      var activeId = active && active.getAttribute('aria-label')
-        ? active.getAttribute('aria-label').toLowerCase()
-        : 'home';
-      if (activeId.indexOf('browse') >= 0) activeId = 'browse';
-      else if (activeId.indexOf('post') >= 0) activeId = 'post';
-      else if (activeId.indexOf('task') >= 0 || activeId.indexOf('job') >= 0) activeId = 'tasks';
-      else if (activeId.indexOf('message') >= 0) activeId = 'messages';
-      else activeId = 'home';
-      renderQuickGigsTabBar(activeId === 'home' ? 'home' : activeId);
+      var activeId = 'home';
+      if (active) {
+        var label = (active.getAttribute('aria-label') || '').toLowerCase();
+        if (label.indexOf('browse') >= 0) activeId = 'browse';
+        else if (label.indexOf('post') >= 0 && label.indexOf('poster') < 0) activeId = 'post';
+        else if (label.indexOf('job') >= 0) activeId = 'jobs';
+        else if (label.indexOf('task') >= 0) activeId = mode === 'tasker' ? 'jobs' : 'tasks';
+        else if (label.indexOf('message') >= 0) activeId = 'messages';
+      }
+      renderQuickGigsTabBar(activeId);
     }
 
     document.dispatchEvent(new CustomEvent('qg-mode-changed', { detail: { mode: mode } }));
 
     if (options.toast !== false) showRoleToast(mode);
 
+    // Prefer staying on the current page (user requirement). Only redirect if asked.
     if (options.redirect === 'dashboard') {
-      window.location.href = 'dashboard.html?mode=' + mode;
+      window.location.href = 'dashboard.html';
       return { changed: true, mode: mode };
     }
-    if (options.redirect === 'reload') {
+    if (options.redirect === 'reload' || options.reload) {
       window.location.reload();
       return { changed: true, mode: mode };
+    }
+    if (typeof window.onQuickGigsModeChange === 'function') {
+      try { window.onQuickGigsModeChange(mode); } catch (e) {}
     }
     return { changed: true, mode: mode };
   }
@@ -79,7 +92,7 @@
     var el = document.getElementById(containerId);
     if (!el) return;
     var mode = getCurrentMode();
-    var isWorker = mode === 'worker';
+    var isWorker = mode === 'tasker';
 
     el.innerHTML =
       '<div class="qg-role-flip" role="group" aria-label="Switch between Poster and Tasker mode">' +
@@ -90,7 +103,7 @@
             '<span class="qg-role-flip-label">I need help</span>' +
             '<span class="qg-role-flip-desc">Post & hire</span>' +
           '</button>' +
-          '<button type="button" class="qg-role-flip-opt' + (isWorker ? ' active' : '') + '" data-mode="worker" aria-pressed="' + isWorker + '">' +
+          '<button type="button" class="qg-role-flip-opt' + (isWorker ? ' active' : '') + '" data-mode="tasker" aria-pressed="' + isWorker + '">' +
             '<span class="qg-role-flip-icon">💼</span>' +
             '<span class="qg-role-flip-label">I\'m available</span>' +
             '<span class="qg-role-flip-desc">Browse & apply</span>' +
@@ -103,7 +116,7 @@
     el.querySelectorAll('.qg-role-flip-opt').forEach(function (btn) {
       btn.onclick = function () {
         var next = btn.getAttribute('data-mode');
-        setQuickGigsMode(next, { toast: true }).then(function () {
+        setQuickGigsMode(next, { toast: true, reload: true }).then(function () {
           renderRoleFlip(containerId, options);
         });
       };
@@ -154,7 +167,7 @@
             '<strong>' + workerInProg + ' active task' + (workerInProg !== 1 ? 's' : '') + '</strong>' +
             '<span>Check messages and mark complete when you\'re done</span>' +
           '</span>' +
-          '<span class="dash-hero-cta">My tasks →</span></a>';
+          '<span class="dash-hero-cta">My gigs →</span></a>';
       } else if (nearby > 0) {
         html = '<a class="dash-hero dash-hero-primary" href="browsetask.html">' +
           '<span class="dash-hero-emoji">🔍</span>' +
@@ -176,7 +189,8 @@
 
     return html +
       '<p class="dash-hero-switch">Using QuickGigs as a ' + (isPoster ? 'Poster' : 'Tasker') +
-      '? <a href="profile.html#roleSwitch">Switch mode in Profile</a></p>';
+      '? <button type="button" class="dash-hero-switch-btn" onclick="typeof switchRoleMode===\'function\'&&switchRoleMode()">' +
+      'Switch to ' + (isPoster ? 'Tasker' : 'Poster') + ' mode</button></p>';
   }
 
   window.getQuickGigsMode = getCurrentMode;

@@ -36,8 +36,8 @@
 <link rel="stylesheet" href="qg-layout.css">
 <link rel="stylesheet" href="qg-role-theme.css">
 <link rel="stylesheet" href="qg-features.css?v=20260716">
-<script src="qg-brand-init.js"></script>
 <script src="qg-theme.js"></script>
+<script src="qg-brand-init.js"></script>
 <script defer src="qg-pwa.js?v=4"></script>
 <link rel="stylesheet" href="qg-cookies.css">
 <link rel="stylesheet" href="qg-menu.css?v=2">
@@ -214,7 +214,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <!-- GREETING + SMART HERO -->
 <div id="guardianBanner" style="display:none"></div>
 <div class="greeting qg-page-wide">
-  <div class="mode-tag tag-poster" id="modeTag">📋 Poster mode</div>
+  <div class="mode-tag tag-poster" id="modeTag" data-qg-mode-tag>📋 Poster mode</div>
   <div class="greet-name" id="greetName">Good evening 👋</div>
   <div class="greet-sub" id="greetSub">Welcome back to QuickGigs</div>
   <div id="dashHero"></div>
@@ -298,8 +298,8 @@ onAuthStateChanged(auth, async (user) => {
 
   function applyDbUserAfterLogin(dbUser) {
     if (dbUser && dbUser.role) {
+      // Profile role is account metadata — do NOT overwrite workspace qg-mode
       localStorage.setItem('qg-role', dbUser.role);
-      if (typeof setSessionMode === 'function') setSessionMode(dbUser.role);
       if (typeof applyRoleTheme === 'function') applyRoleTheme();
     }
     if (typeof isAccountPendingGuardian === 'function' && isAccountPendingGuardian(dbUser)) {
@@ -346,7 +346,7 @@ onAuthStateChanged(auth, async (user) => {
 <script defer src="qg-role-switch.js"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
-var isDark = localStorage.getItem('qg-mode') !== 'light';
+var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
 function applyTheme(){
   if (typeof window.QG_applyTheme === 'function') window.QG_applyTheme(isDark, 'modeBtn', false);
   else {
@@ -357,43 +357,46 @@ function applyTheme(){
 }
 window.toggleTheme = function(){
   isDark = !isDark;
-  localStorage.setItem('qg-mode', isDark ? 'dark' : 'light');
+  if (typeof QG_setThemeDark === 'function') QG_setThemeDark(isDark);
+  else localStorage.setItem('qg-theme', isDark ? 'dark' : 'light');
   applyTheme();
 };
 applyTheme();
 
-// ── MODE (poster / worker) ─────────────────────────────
-var params = new URLSearchParams(window.location.search);
-var sessionMode = params.get('mode') || localStorage.getItem('qg-session-mode') || localStorage.getItem('qg-role') || 'poster';
-if (typeof setSessionMode === 'function') sessionMode = setSessionMode(sessionMode);
-else {
-  sessionMode = sessionMode === 'worker' ? 'worker' : 'poster';
-  localStorage.setItem('qg-session-mode', sessionMode);
-}
-var isPoster = sessionMode === 'poster';
+// ── MODE (poster / tasker) — never set from URL; only getMode/setMode ──
+var isPoster = (typeof getMode === 'function' ? getMode() : 'poster') === 'poster';
 var dashData = { posted: [], apps: [], payments: [], userId: null };
 
 window.switchMode = function(){
   if (typeof switchRoleMode === 'function') switchRoleMode();
-  else window.location.href = 'dashboard.html?mode=' + (isPoster ? 'worker' : 'poster');
+  else if (typeof setMode === 'function') {
+    setMode(isPoster ? 'tasker' : 'poster');
+    window.location.reload();
+  }
 };
 
 window.setDashboardMode = function(mode) {
+  var next = (mode === 'worker' || mode === 'tasker') ? 'tasker' : 'poster';
   if (typeof setQuickGigsMode === 'function') {
-    setQuickGigsMode(mode === 'worker' ? 'worker' : 'poster', { redirect: 'dashboard', toast: true });
-  } else {
-    window.location.href = 'dashboard.html?mode=' + (mode === 'worker' ? 'worker' : 'poster');
+    setQuickGigsMode(next, { toast: true, reload: true });
+  } else if (typeof setMode === 'function') {
+    setMode(next);
+    window.location.reload();
   }
 };
 
 window.quickSwitchFromMenu = function() {
-  var next = isPoster ? 'worker' : 'poster';
+  var next = isPoster ? 'tasker' : 'poster';
   document.getElementById('avatarMenu').style.display = 'none';
   if (typeof setQuickGigsMode === 'function') {
-    setQuickGigsMode(next, { redirect: 'dashboard', toast: true });
-  } else {
-    window.location.href = 'dashboard.html?mode=' + next;
+    setQuickGigsMode(next, { toast: true, reload: true });
+  } else if (typeof switchRoleMode === 'function') {
+    switchRoleMode();
   }
+};
+
+window.onQuickGigsModeChange = function() {
+  window.location.reload();
 };
 
 function updateAvatarMenuSwitchLabel() {
@@ -405,8 +408,10 @@ function updateAvatarMenuSwitchLabel() {
 function updateModeTag() {
   var tag = document.getElementById('modeTag');
   if (!tag) return;
-  tag.textContent = isPoster ? '📋 Poster mode' : '💼 Tasker mode';
-  tag.className = 'mode-tag ' + (isPoster ? 'tag-poster' : 'tag-worker');
+  var posterNow = (typeof getMode === 'function' ? getMode() : (isPoster ? 'poster' : 'tasker')) === 'poster';
+  isPoster = posterNow;
+  tag.textContent = posterNow ? '📋 Poster mode' : '🛠 Tasker mode';
+  tag.className = 'mode-tag ' + (posterNow ? 'tag-poster' : 'tag-worker');
 }
 
 function taskField(row, key) {
@@ -542,9 +547,10 @@ function renderDashboardHero(userId) {
 }
 
 function renderAll(){
-  if (typeof getSessionMode === 'function') {
-    sessionMode = getSessionMode();
-    isPoster = sessionMode !== 'worker';
+  if (typeof getMode === 'function') {
+    isPoster = getMode() === 'poster';
+  } else if (typeof getSessionMode === 'function') {
+    isPoster = getSessionMode() !== 'worker';
   }
   var userId = dashData.userId;
   var myPosted = userId ? dashData.posted.filter(function(t){ return taskField(t, 'posted_by') === userId; }) : [];

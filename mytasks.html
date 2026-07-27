@@ -35,12 +35,13 @@
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
 <link rel="stylesheet" href="qg-features.css?v=20260716c">
 <link rel="stylesheet" href="qg-stripe.css">
-<script src="qg-brand-init.js"></script>
 <script src="qg-theme.js"></script>
+<script src="qg-brand-init.js"></script>
 <script>
 (function () {
-  var mode = localStorage.getItem('qg-session-mode');
-  document.documentElement.setAttribute('data-qg-mode', mode === 'worker' ? 'worker' : 'poster');
+  var mode = (typeof getMode === 'function' ? getMode() : localStorage.getItem('qg-mode')) === 'tasker' ? 'worker' : 'poster';
+  if (localStorage.getItem('qg-session-mode') === 'worker' && localStorage.getItem('qg-mode') !== 'poster') mode = 'worker';
+  document.documentElement.setAttribute('data-qg-mode', mode);
 })();
 </script>
 <style>
@@ -176,6 +177,10 @@ body.light .accept-btn{color:#2d1b4e;}
 
 .mode-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);min-height:44px;}
 body.light .mode-btn{background:#f0eeff;color:var(--purple);}
+.mode-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border-radius:20px;margin-bottom:10px;}
+.tag-poster{background:rgba(107,63,160,0.25);color:var(--lavender);}
+body.light .tag-poster{background:#ede9ff;color:var(--purple);}
+.tag-worker{background:rgba(107,63,160,0.2);color:var(--lavender);}
 
 /* TOAST */
 .toast{position:fixed;bottom:calc(88px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%);background:#4ade80;color:#0b0118;padding:12px 18px;border-radius:20px;font-size:13px;font-weight:500;display:none;z-index:300;white-space:normal;max-width:min(92vw,340px);text-align:center;line-height:1.45;}
@@ -219,11 +224,13 @@ body.light .app-legal-footer a{color:var(--purple);}
     <span class="nav-logo">QuickGigs</span>
     <span class="nav-role">POSTER</span>
   </div>
-  <div class="nav-title">My Tasks</div>
+  <div class="nav-title">My posted tasks</div>
   <div class="nav-right">
+    <button type="button" class="mode-btn" id="roleSwitchBtn" onclick="typeof switchRoleMode==='function'&&switchRoleMode()">Switch mode</button>
     <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
   </div>
 </nav>
+<div style="padding:8px 16px 0"><span class="mode-tag tag-poster" data-qg-mode-tag>📋 Poster mode</span></div>
 
 <div class="tabs-wrap">
   <button class="tab-btn active" id="tabPosted" onclick="showTab('posted',this)">Posted</button>
@@ -301,7 +308,7 @@ var userAvatars = {};
 var workerVerifiedMap = {};
 var expandedApplicantTasks = {};
 var paymentByTaskId = {};
-var isDark = localStorage.getItem('qg-mode') !== 'light';
+var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
 var TAB_IDS = { posted: 'tabPosted', applied: 'tabApplied', inprogress: 'tabInprogress', completed: 'tabCompleted' };
 
 function applyTheme(){
@@ -312,7 +319,12 @@ function applyTheme(){
     if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
   }
 }
-window.toggleTheme = function(){ isDark = !isDark; localStorage.setItem('qg-mode', isDark?'dark':'light'); applyTheme(); };
+window.toggleTheme = function(){
+  isDark = !isDark;
+  if (typeof QG_setThemeDark === 'function') QG_setThemeDark(isDark);
+  else localStorage.setItem('qg-theme', isDark ? 'dark' : 'light');
+  applyTheme();
+};
 applyTheme();
 
 function pickDefaultTab() {
@@ -797,25 +809,20 @@ async function loadData(){
   } catch (e) {}
 
   try {
-    if (tabParam === 'applied' || params.get('mode') === 'worker') {
-      if (typeof setSessionMode === 'function') setSessionMode('worker');
-      if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('jobs');
-      activeTab = tabParam === 'inprogress' || tabParam === 'completed' ? tabParam : 'applied';
-    } else if (tabParam === 'posted' || sessionStorage.getItem('qg-just-posted') === '1') {
-      if (typeof setSessionMode === 'function') setSessionMode('poster');
-      try { sessionStorage.removeItem('qg-just-posted'); } catch (e) {}
-      activeTab = 'posted';
-      if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('tasks');
-    } else if (preferInProgress) {
+    // Never flip stored mode from URL/tab/payment — only pick a valid tab for current mode
+    try {
+      if (sessionStorage.getItem('qg-just-posted') === '1') sessionStorage.removeItem('qg-just-posted');
+    } catch (e) {}
+    if (preferInProgress) {
       activeTab = 'inprogress';
-      if (typeof setSessionMode === 'function') setSessionMode('poster');
-      if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('tasks');
-    } else if (tabParam === 'inprogress' || tabParam === 'completed') {
-      // Keep current poster/tasker mode — do not flip roles
-      activeTab = tabParam;
-      if (typeof renderQuickGigsTabBar === 'function') {
-        renderQuickGigsTabBar(typeof isWorkerMode === 'function' && isWorkerMode() ? 'jobs' : 'tasks');
-      }
+    } else if (tabParam) {
+      activeTab = typeof normalizeMyTasksTab === 'function' ? normalizeMyTasksTab(tabParam) : tabParam;
+    } else {
+      pickDefaultTab();
+    }
+    if (typeof paintMyTasksTabBar === 'function') paintMyTasksTabBar();
+    else if (typeof renderQuickGigsTabBar === 'function') {
+      renderQuickGigsTabBar(typeof isWorkerMode === 'function' && isWorkerMode() ? 'jobs' : 'tasks');
     }
 
     // Show cached tasks immediately — never block UI on payment sync
@@ -931,8 +938,6 @@ async function loadData(){
         activeTab = 'completed';
       } else if (preferInProgress) {
         activeTab = 'inprogress';
-        // Payment return only — stay poster for that flow
-        if (typeof setSessionMode === 'function') setSessionMode('poster');
       } else if (tabParam === 'applied' || tabParam === 'posted' || tabParam === 'inprogress' || tabParam === 'completed') {
         activeTab = typeof normalizeMyTasksTab === 'function' ? normalizeMyTasksTab(tabParam) : tabParam;
       } else {
@@ -975,6 +980,16 @@ async function loadData(){
   }
 }
 window.loadData = loadData;
+window.onQuickGigsModeChange = function () {
+  var isWorker = typeof isWorkerMode === 'function' && isWorkerMode();
+  var switchBtn = document.getElementById('roleSwitchBtn');
+  if (switchBtn) switchBtn.textContent = isWorker ? 'Switch to Poster' : 'Switch to Tasker';
+  if (typeof normalizeMyTasksTab === 'function') activeTab = normalizeMyTasksTab(activeTab);
+  try { syncRoleTabs(); } catch (e) {}
+  try { paintMyTasksTabBar(); } catch (e) {}
+  try { syncTabButtons(); } catch (e) {}
+  try { renderTab(); } catch (e) {}
+};
 window.QG_refreshPaymentState = async function(taskId) {
   var uid = window._currentUser ? window._currentUser.uid : null;
   if (uid) {

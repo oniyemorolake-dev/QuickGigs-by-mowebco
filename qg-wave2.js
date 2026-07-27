@@ -545,7 +545,7 @@
         window.qgRenderRecentlyViewed('dashRecent');
         window.qgRenderStreak('dashStreak');
         var isWorker = (typeof isWorkerMode === 'function' && isWorkerMode()) ||
-          localStorage.getItem('qg-session-mode') === 'worker';
+          (typeof getMode === 'function' ? getMode() === 'tasker' : localStorage.getItem('qg-mode') === 'tasker' || localStorage.getItem('qg-session-mode') === 'worker');
         if (isWorker) window.qgRenderSuggested('dashSuggested');
       });
     }

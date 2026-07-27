@@ -1,24 +1,61 @@
-/* QuickGigs — set mode + nav role label before paint */
+/* QuickGigs — set mode + nav role label before paint (no URL/page forced flips) */
 (function () {
+  function normalizeRoleMode(m) {
+    if (m === 'worker' || m === 'tasker') return 'tasker';
+    if (m === 'poster') return 'poster';
+    return null;
+  }
+
+  function migrateRoleIntoQgMode() {
+    try {
+      var raw = localStorage.getItem('qg-mode');
+      // Theme leftover — qg-theme.js migrates this; treat as unset for role
+      if (raw === 'light' || raw === 'dark') raw = null;
+      var normalized = normalizeRoleMode(raw);
+      if (normalized) return normalized;
+      var old = localStorage.getItem('qg-session-mode') || localStorage.getItem('qg-role');
+      normalized = normalizeRoleMode(old) || 'poster';
+      localStorage.setItem('qg-mode', normalized);
+      return normalized;
+    } catch (e) {
+      return 'poster';
+    }
+  }
+
   function getMode() {
-    var p = new URLSearchParams(window.location.search);
-    var fromUrl = p.get('mode');
-    if (fromUrl === 'worker' || fromUrl === 'poster') return fromUrl;
-    var path = (window.location.pathname || '').toLowerCase();
-    var page = path.split('/').pop() || '';
-    if (page === 'browsetask.html' || page === 'browsetask') return 'worker';
-    if (page === 'posttask.html' || page === 'posttask') return 'poster';
-    if (page === 'workers.html' || page === 'workers') return 'poster';
-    var stored = localStorage.getItem('qg-session-mode') || localStorage.getItem('qg-role');
-    return stored === 'worker' ? 'worker' : 'poster';
+    try {
+      var raw = localStorage.getItem('qg-mode');
+      if (raw === 'light' || raw === 'dark') return migrateRoleIntoQgMode();
+      var n = normalizeRoleMode(raw);
+      if (n) return n;
+      return migrateRoleIntoQgMode();
+    } catch (e) {
+      return 'poster';
+    }
+  }
+
+  function setMode(m) {
+    var mode = normalizeRoleMode(m) || 'poster';
+    try {
+      localStorage.setItem('qg-mode', mode);
+      // Keep legacy keys in sync for older code paths (worker = tasker)
+      localStorage.setItem('qg-session-mode', mode === 'tasker' ? 'worker' : 'poster');
+      localStorage.setItem('qg-role', mode === 'tasker' ? 'worker' : 'poster');
+    } catch (e) {}
+    return mode;
   }
 
   function roleLabel(mode) {
-    return mode === 'worker' ? 'TASKER' : 'POSTER';
+    return (mode || getMode()) === 'tasker' ? 'TASKER' : 'POSTER';
+  }
+
+  // CSS still uses worker|poster on data-qg-mode
+  function cssMode(mode) {
+    return (mode || getMode()) === 'tasker' ? 'worker' : 'poster';
   }
 
   var mode = getMode();
-  document.documentElement.setAttribute('data-qg-mode', mode);
+  document.documentElement.setAttribute('data-qg-mode', cssMode(mode));
 
   function applyRoleLabels() {
     document.querySelectorAll('.nav-role').forEach(function (el) {
@@ -32,7 +69,9 @@
     applyRoleLabels();
   }
 
-  window.QG_getBrandMode = getMode;
+  window.getMode = getMode;
+  window.setMode = setMode;
+  window.QG_getBrandMode = function () { return cssMode(getMode()); };
   window.QG_applyRoleLabels = applyRoleLabels;
 
   if (!document.querySelector('link[href*="qg-chrome.css"]')) {

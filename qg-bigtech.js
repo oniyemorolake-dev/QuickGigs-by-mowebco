@@ -507,7 +507,7 @@
           title: 'Application accepted',
           body: 'You were accepted — open My Jobs to continue',
           created_at: a.updated_at || a.created_at || a.CREATED_AT,
-          link: 'mytasks.html?tab=applied&mode=worker',
+          link: 'mytasks.html?tab=applied',
           read_at: read.indexOf('app-acc-' + aid) >= 0 ? '1' : null
         });
       }

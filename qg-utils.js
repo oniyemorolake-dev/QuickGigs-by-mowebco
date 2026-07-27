@@ -110,11 +110,12 @@ function attachPasswordToggle(inputId) {
 }
 
 function getDashboardUrl(roleOverride) {
-  var role = roleOverride || localStorage.getItem('qg-role') || localStorage.getItem('qg-session-mode') || 'poster';
-  var mode = role === 'worker' ? 'worker' : 'poster';
-  if (typeof setSessionMode === 'function') setSessionMode(mode);
-  else localStorage.setItem('qg-session-mode', mode);
-  return 'dashboard.html?mode=' + mode;
+  // Do not overwrite stored mode when building a link — only setMode if an override is explicit
+  if (roleOverride != null && roleOverride !== '') {
+    if (typeof setMode === 'function') setMode(roleOverride);
+    else if (typeof setSessionMode === 'function') setSessionMode(roleOverride);
+  }
+  return 'dashboard.html';
 }
 
 window.attachPasswordToggle = attachPasswordToggle;

@@ -236,13 +236,13 @@ body{padding-bottom:76px;}
 </head>
 <body class="theme-posttask">
 <script src="qg-theme.js"></script>
+<script src="qg-brand-init.js"></script>
 <script defer src="qg-location.js"></script>
 <script defer src="qg-nav.js"></script>
-<script>if (typeof setSessionMode === 'function') setSessionMode('poster');</script>
 
 <!-- NAV -->
 <nav class="nav">
-  <a class="back-btn" href="dashboard.html?mode=poster">← Dashboard</a>
+  <a class="back-btn" href="dashboard.html">← Dashboard</a>
   <div class="nav-brand">
     <span class="nav-logo">QuickGigs</span>
     <span class="nav-role">POSTER</span>
@@ -253,6 +253,10 @@ body{padding-bottom:76px;}
 <!-- MAIN FORM -->
 <div class="content" id="formContent">
 
+  <div id="postModeBanner" class="hint-box" style="display:none;margin-bottom:16px">
+    <span style="font-size:16px">📋</span>
+    <p class="hint-text">Posting a task switches you to poster mode. <button type="button" class="error-skip-btn" style="margin-left:8px" onclick="switchToPosterForPost()">Switch to poster now</button></p>
+  </div>
   <span class="step-pill">📝 Post a task</span>
   <p class="page-title">What do you need done?</p>
   <p class="page-sub">Takes less than 60 seconds to post</p>
@@ -433,8 +437,8 @@ body{padding-bottom:76px;}
   <div class="success-icon">🎉</div>
   <p class="success-title">Task posted</p>
   <p class="success-sub">Your task is live under <strong>My Tasks → Posted</strong> (Poster mode). Browse only shows other people's tasks — not your own.</p>
-  <button class="success-btn" onclick="window.location.href='mytasks.html?tab=posted&mode=poster'">View in My Tasks</button>
-  <button class="success-btn" style="margin-left:8px;background:rgba(255,255,255,0.1)" onclick="window.location.href='dashboard.html?mode=poster'">Back to dashboard</button>
+  <button class="success-btn" onclick="window.location.href='mytasks.html?tab=posted'">View in My Tasks</button>
+  <button class="success-btn" style="margin-left:8px;background:rgba(255,255,255,0.1)" onclick="window.location.href='dashboard.html'">Back to dashboard</button>
 </div>
 
 <script defer src="qg-utils.js"></script>
@@ -506,7 +510,7 @@ onAuthStateChanged(auth, function(user) {
 </script>
 
 <script>
-var isDark = localStorage.getItem('qg-mode') !== 'light';
+var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : true;
 function applyTheme() {
   // Must not throw — a crash here stops selectMode / handleSubmit from registering
   if (typeof window.QG_applyTheme === 'function') {
@@ -519,7 +523,8 @@ function applyTheme() {
 }
 window.toggleMode = function() {
   isDark = !isDark;
-  localStorage.setItem('qg-mode', isDark ? 'dark' : 'light');
+  if (typeof QG_setThemeDark === 'function') QG_setThemeDark(isDark);
+  else localStorage.setItem('qg-theme', isDark ? 'dark' : 'light');
   applyTheme();
 };
 applyTheme();
@@ -1030,7 +1035,9 @@ window.handleSubmit = async function(skipPhotos) {
   var result = await postTask(taskData);
 
   if (result.success) {
-    if (typeof setSessionMode === 'function') setSessionMode('poster');
+    // Flip to poster only on successful post — never on mere page visit
+    if (typeof setMode === 'function') setMode('poster');
+    else if (typeof setSessionMode === 'function') setSessionMode('poster');
     try { sessionStorage.setItem('qg-just-posted', '1'); } catch (e) {}
     if (typeof window.qgClearPostDraft === 'function') window.qgClearPostDraft();
     try {
@@ -1057,8 +1064,23 @@ window.handleSubmit = async function(skipPhotos) {
 
 <nav class="tab-bar" id="qgTabBar"></nav>
 <script>
-if (typeof setSessionMode === 'function') setSessionMode('poster');
 renderQuickGigsTabBar('post');
+(function () {
+  function refreshPostModeBanner() {
+    var banner = document.getElementById('postModeBanner');
+    if (!banner) return;
+    var mode = typeof getMode === 'function' ? getMode() : 'poster';
+    banner.style.display = mode === 'tasker' ? 'flex' : 'none';
+  }
+  window.switchToPosterForPost = function () {
+    if (typeof setMode === 'function') setMode('poster');
+    else if (typeof setSessionMode === 'function') setSessionMode('poster');
+    if (typeof applyRoleTheme === 'function') applyRoleTheme();
+    refreshPostModeBanner();
+  };
+  refreshPostModeBanner();
+  document.addEventListener('qg-mode-changed', refreshPostModeBanner);
+})();
 </script>
 <script defer src="qg-help.js?v=20260726seo"></script>
 </body>

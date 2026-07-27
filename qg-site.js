@@ -59,13 +59,16 @@
   };
 
   window.initTrustPageTheme = function () {
-    var isDark = localStorage.getItem('qg-mode') !== 'light';
+    var isDark = typeof QG_isDarkTheme === 'function'
+      ? QG_isDarkTheme()
+      : (localStorage.getItem('qg-theme') !== 'light');
     document.body.classList.toggle('light', !isDark);
     var btn = document.getElementById('modeBtn');
     if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
     window.toggleTheme = function () {
       isDark = !isDark;
-      localStorage.setItem('qg-mode', isDark ? 'dark' : 'light');
+      if (typeof QG_setThemeDark === 'function') QG_setThemeDark(isDark);
+      else localStorage.setItem('qg-theme', isDark ? 'dark' : 'light');
       document.body.classList.toggle('light', !isDark);
       if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
     };

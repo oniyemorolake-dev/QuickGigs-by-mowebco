@@ -745,7 +745,7 @@
     try { sessionStorage.setItem('qg-payment-tab', 'inprogress'); } catch (e) {}
 
     if (typeof activeTab !== 'undefined') activeTab = 'inprogress';
-    if (typeof setSessionMode === 'function') setSessionMode('poster');
+    // Payment is a poster action — do not silently rewrite global mode here
 
     if (sessionId) {
       confirmCheckoutSession(sessionId).catch(function () {});
