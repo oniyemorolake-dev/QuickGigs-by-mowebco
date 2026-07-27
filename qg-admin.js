@@ -168,7 +168,7 @@
         (notes.length ? notes.map(function (n) {
           return '<div class="admin-note-item">' + esc(n.body) + '<div class="admin-note-time">' +
             (n.created_at ? new Date(n.created_at).toLocaleString('en-CA') : '') + '</div></div>';
-        }).join('') : '<div style="font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:8px">No notes yet.</div>') +
+        }).join('') : '<div style="font-size:12px;color:rgba(255,255,255,0.62);margin-bottom:8px">No notes yet.</div>') +
         '<div class="admin-field"><label>Add note</label><textarea id="admNewNote" placeholder="Internal note — only visible in admin"></textarea></div>' +
       '</div>' +
       '<div class="admin-drawer-section"><div class="admin-drawer-section-title">Actions</div>' +
@@ -235,7 +235,7 @@
           return '<div class="admin-applicant-row"><span>' + esc(wname) +
             (a.price || a.PRICE ? ' · $' + (a.price || a.PRICE) : '') +
             '</span><span class="status-pill s-' + (st === 'accepted' ? 'progress' : st === 'completed' ? 'done' : 'posted') + '">' + st + '</span></div>';
-        }).join('') : '<div style="font-size:12px;color:rgba(255,255,255,0.35)">No applications yet.</div>') +
+        }).join('') : '<div style="font-size:12px;color:rgba(255,255,255,0.62)">No applications yet.</div>') +
       '</div>' +
       '<div class="admin-drawer-section"><div class="admin-drawer-section-title">Actions</div>' +
         '<div class="admin-drawer-actions">' +
@@ -524,7 +524,7 @@
     if (!el) return;
     var actions = (window.adminActions || []).slice(0, 50);
     if (!actions.length) {
-      el.innerHTML = '<div style="padding:24px;text-align:center;color:rgba(255,255,255,0.35);font-size:13px">Admin actions will appear here once you edit users or tasks.</div>';
+      el.innerHTML = '<div style="padding:24px;text-align:center;color:rgba(255,255,255,0.62);font-size:13px">Admin actions will appear here once you edit users or tasks.</div>';
       return;
     }
     el.innerHTML = actions.map(function (a) {
@@ -576,7 +576,7 @@
       return String(b.time || '').localeCompare(String(a.time || ''));
     });
     if (!items.length) {
-      el.innerHTML = '<div style="padding:24px;text-align:center;color:rgba(255,255,255,0.35);font-size:13px">No fraud alerts right now.</div>';
+      el.innerHTML = '<div style="padding:24px;text-align:center;color:rgba(255,255,255,0.62);font-size:13px">No fraud alerts right now.</div>';
       return;
     }
     el.innerHTML = items.slice(0, 40).map(function (e) {

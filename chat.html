@@ -21,8 +21,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
-<link rel="stylesheet" href="qg-polish.css?v=20260726seo">
-<link rel="stylesheet" href="qg-ux.css?v=20260726ux">
+<link rel="stylesheet" href="qg-polish.css?v=20260726contrast">
+<link rel="stylesheet" href="qg-ux.css?v=20260726contrast">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -36,8 +36,8 @@
   --surface:rgba(255,255,255,0.04);
   --border:rgba(200,168,233,0.1);
   --text:#fff;
-  --text-muted:rgba(255,255,255,0.35);
-  --text-faint:rgba(255,255,255,0.22);
+  --text-muted:rgba(255,255,255,0.68);
+  --text-faint:rgba(255,255,255,0.62);
   --purple:#6b3fa0;
   --purple-light:#9b6fc4;
   --lavender:#c8a8e9;
@@ -48,22 +48,22 @@
   --bubble-mine:#6b3fa0;
   --bubble-theirs:rgba(255,255,255,0.07);
   --bubble-theirs-text:rgba(255,255,255,0.88);
-  --time-color:rgba(255,255,255,0.25);
+  --time-color:rgba(255,255,255,0.55);
 }
 body.light{
   --bg:#fafafe;
   --surface:#fff;
   --border:#f0eeff;
   --text:#2d1b4e;
-  --text-muted:#5a5a72;
-  --text-faint:#9ca3af;
+  --text-muted:#6b6580;
+  --text-faint:#6b6580;
   --nav-bg:#fff;
   --tab-bg:#fff;
   --input-bg:#f0eeff;
   --input-border:#e8e2ff;
   --bubble-theirs:#fff;
   --bubble-theirs-text:#2d1b4e;
-  --time-color:#9ca3af;
+  --time-color:#6b6580;
   --lavender:#6b3fa0;
 }
 
@@ -113,7 +113,8 @@ body.light .fraud-bar{background:#fffbeb;color:#92400e;border-color:#fde68a;}
 .bubble-row.mine .bubble{background:var(--bubble-mine);color:#fff;border-bottom-right-radius:5px;}
 body.light .bubble-row.mine .bubble{color:#2d1b4e;}
 .bubble-row.theirs .bubble{background:var(--bubble-theirs);color:var(--bubble-theirs-text);border-bottom-left-radius:5px;border:0.5px solid var(--border);}
-.bubble-time{font-size:10px;color:var(--time-color);margin-top:4px;padding:0 2px;}
+.bubble-time{font-size:11px;color:var(--time-color);margin-top:4px;padding:0 2px;}
+.bubble-check{font-size:11px;color:var(--time-color);}
 
 /* BLOCKED MESSAGE */
 .blocked-msg{background:rgba(239,68,68,0.1);border:0.5px solid rgba(239,68,68,0.25);border-radius:12px;padding:10px 14px;font-size:12px;color:#ef4444;line-height:1.5;margin:0 0 6px;}

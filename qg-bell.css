@@ -149,7 +149,7 @@ body.light .qg-bell-title {
 .qg-bell-empty {
   text-align: center;
   padding: 48px 16px;
-  color: var(--text-muted, rgba(255, 255, 255, 0.45));
+  color: var(--text-muted, rgba(255, 255, 255, 0.62));
   font-size: 13px;
   line-height: 1.55;
 }
@@ -193,13 +193,21 @@ body.light .qg-bell-item-title {
 .qg-bell-item-body {
   font-size: 12px;
   line-height: 1.5;
-  color: var(--text-muted, rgba(255, 255, 255, 0.55));
+  color: rgba(255, 255, 255, 0.65);
+}
+
+body.light .qg-bell-item-body {
+  color: #6b6580;
 }
 
 .qg-bell-item-time {
-  font-size: 10px;
-  color: var(--text-faint, rgba(255, 255, 255, 0.35));
+  font-size: 11px;
+  color: var(--text-faint, rgba(255, 255, 255, 0.62));
   margin-top: 6px;
+}
+
+body.light .qg-bell-item-time {
+  color: #6b6580;
 }
 
 body.qg-bell-open {

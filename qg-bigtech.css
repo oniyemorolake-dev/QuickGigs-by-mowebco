@@ -81,7 +81,7 @@ body.light .qg-activity-time { color: rgba(45, 27, 78, 0.5); }
   flex: 1; min-width: 70px; text-align: center; font-size: 11px;
   color: rgba(255, 255, 255, 0.4); position: relative; padding-top: 10px;
 }
-body.light .qg-post-step { color: rgba(45, 27, 78, 0.4); }
+body.light .qg-post-step { color: #6b6580; }
 .qg-post-step::before {
   content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 4px;
   border-radius: 4px; background: rgba(255, 255, 255, 0.12);
@@ -102,9 +102,9 @@ body.light .qg-budget-guide { color: rgba(45, 27, 78, 0.6); }
 }
 .qg-tl-step {
   flex: 1; min-width: 64px; text-align: center; font-size: 10px;
-  color: rgba(255, 255, 255, 0.35); position: relative; padding-top: 18px;
+  color:rgba(255,255,255,0.62); position: relative; padding-top: 18px;
 }
-body.light .qg-tl-step { color: rgba(45, 27, 78, 0.4); }
+body.light .qg-tl-step { color: #6b6580; }
 .qg-tl-step::before {
   content: ''; width: 12px; height: 12px; border-radius: 50%;
   background: rgba(255, 255, 255, 0.15); border: 2px solid rgba(200, 168, 233, 0.2);

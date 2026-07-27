@@ -11,8 +11,8 @@ body.qg-mode-worker {
   --border: rgba(200, 168, 233, 0.16);
   --border-hover: #c8a8e9;
   --text: #fff;
-  --text-muted: rgba(255, 255, 255, 0.4);
-  --text-faint: rgba(255, 255, 255, 0.25);
+  --text-muted: rgba(255, 255, 255, 0.68);
+  --text-faint: rgba(255, 255, 255, 0.62);
   --nav-bg: #120828;
   --tab-bg: #120828;
   --card-bg: rgba(255, 255, 255, 0.05);
@@ -32,8 +32,8 @@ body.light.qg-mode-worker {
   --border: #e8e2ff;
   --border-hover: #9b6fc4;
   --text: #2d1b4e;
-  --text-muted: #5a5a72;
-  --text-faint: #9ca3af;
+  --text-muted: #6b6580;
+  --text-faint: #6b6580;
   --nav-bg: #fff;
   --tab-bg: #fff;
   --card-bg: #fff;

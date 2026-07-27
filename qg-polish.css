@@ -195,10 +195,10 @@ body.light .qg-help-panel { background: #fff; color: #1a0a3d; }
 }
 .qg-help-q[aria-expanded="true"] { color: var(--purple-light, #9b6fc4); }
 .qg-help-a {
-  font-size: 12px; line-height: 1.55; color: var(--text-muted, rgba(255,255,255,0.55));
+  font-size: 12px; line-height: 1.55; color: var(--text-muted, rgba(255,255,255,0.68));
   padding: 0 4px 10px;
 }
-body.light .qg-help-a { color: #6b7280; }
+body.light .qg-help-a { color: #6b6580; }
 .qg-help-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; padding-top: 10px; border-top: 0.5px solid var(--border, rgba(200,168,233,0.12)); }
 .qg-help-link {
   font-size: 12px; font-weight: 500; color: var(--purple-light, #9b6fc4); text-decoration: none;

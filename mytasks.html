@@ -21,8 +21,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
-<link rel="stylesheet" href="qg-polish.css?v=20260726seo">
-<link rel="stylesheet" href="qg-ux.css?v=20260726ux">
+<link rel="stylesheet" href="qg-polish.css?v=20260726contrast">
+<link rel="stylesheet" href="qg-ux.css?v=20260726contrast">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -33,7 +33,7 @@
 <link rel="stylesheet" href="qg-mobile.css">
 <link rel="stylesheet" href="qg-menu.css?v=3">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
-<link rel="stylesheet" href="qg-features.css?v=20260716c">
+<link rel="stylesheet" href="qg-features.css?v=20260726contrast">
 <link rel="stylesheet" href="qg-stripe.css">
 <script src="qg-theme.js"></script>
 <script src="qg-brand-init.js"></script>
@@ -48,13 +48,13 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
   --bg:#0b0118;--surface:rgba(255,255,255,0.04);--border:rgba(200,168,233,0.1);
-  --text:#fff;--text-muted:rgba(255,255,255,0.35);--text-faint:rgba(255,255,255,0.22);
+  --text:#fff;--text-muted:rgba(255,255,255,0.68);--text-faint:rgba(255,255,255,0.62);
   --purple:#6b3fa0;--purple-light:#9b6fc4;--lavender:#c8a8e9;
   --nav-bg:#0b0118;--tab-bg:#0e021f;--card-bg:rgba(255,255,255,0.04);
 }
 body.light{
   --bg:#fafafe;--surface:#fff;--border:#f0eeff;--text:#2d1b4e;
-  --text-muted:#5a5a72;--text-faint:#9ca3af;--nav-bg:#fff;--tab-bg:#fff;
+  --text-muted:#6b6580;--text-faint:#6b6580;--nav-bg:#fff;--tab-bg:#fff;
   --card-bg:#fff;--lavender:#6b3fa0;
 }
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh;min-height:100dvh;transition:background 0.25s,color 0.25s;overflow-x:hidden;}
@@ -97,6 +97,8 @@ body.light .badge-open{background:#ede9ff;color:var(--purple);}
 .badge-progress{background:rgba(251,191,36,0.15);color:#d97706;}
 .badge-done{background:rgba(74,222,128,0.12);color:#16a34a;}
 .tc-meta{font-size:11px;color:var(--text-faint);margin-bottom:10px;}
+.tc-meta-price{color:#4ade80;font-weight:500;}
+body.light .tc-meta-price{color:#16a34a;}
 .tc-bottom{display:flex;align-items:center;justify-content:space-between;}
 .tc-price{font-size:15px;font-weight:500;color:var(--text);}
 .tc-applicants{font-size:11px;color:var(--purple-light);margin-top:8px;}
@@ -1523,7 +1525,7 @@ function renderTab(){
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-open">● Open</span></div>'+
         timeline +
-        '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · '+esc(formatTaskBudgetMeta(t))+(postedLabel ? ' · Posted '+esc(postedLabel) : '')+'</div>'+
+        '<div class="tc-meta">📍 '+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' · <span class="tc-meta-price">'+esc(formatTaskBudgetMeta(t))+'</span>'+(postedLabel ? ' · Posted '+esc(postedLabel) : '')+'</div>'+
         '<button type="button" class="tc-applicants-toggle'+(isOpen?' open':'')+'" data-applicants-toggle="'+escAttr(taskId)+'" data-applicant-count="'+escAttr(pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : ''))+'" data-applicant-names="'+escAttr(namePreview + (pendingApps.length > 3 ? '…' : ''))+'">👥 '+esc(toggleLabel)+'</button>'+
         '<div class="applicants-panel'+(isOpen?' open':'')+'" id="'+taskDomId(taskId)+'">'+appHtml+'</div>'+
         '<div class="action-row">'+shareEmpty+shareIcon+'<button type="button" class="act-btn btn-danger" data-cancel-posting="'+escAttr(taskId)+'">✕ Cancel posting</button></div>'+
@@ -1701,7 +1703,7 @@ function renderTab(){
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left">'+iconHtml+'<div><div class="tc-cat">'+roleLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-progress">⏳ In progress</span></div>'+
         (typeof qgTaskTimelineHtml === 'function' ? qgTaskTimelineHtml('in_progress') : '')+
-        '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+' CAD</div>'+
+        '<div class="tc-meta">📍 '+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' · <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
         '<div class="qg-action-row">'+disputeBtn+reportBtns+'</div>'+
         '<div class="action-row">' + posterActions + workerActions + '</div>'+
       '</div>';
@@ -1766,7 +1768,7 @@ function renderTab(){
       return '<div class="task-card'+(isCancelled || isExpired ?' is-faded':'')+'">'+
         '<div class="tc-top"><div class="tc-left">'+profileTapIcon(otherUid, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">'+otherLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div>'+badge+'</div>'+
         (typeof qgTaskTimelineHtml === 'function' && !isCancelled && !isExpired ? qgTaskTimelineHtml('completed') : '')+
-        '<div class="tc-meta">📍 '+esc(getField(t,'LOCATION'))+' · $'+getField(t,'BUDGET')+' CAD</div>'+
+        '<div class="tc-meta">📍 '+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' · <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
         '<div class="qg-action-row">'+disputeBtn+reportBtns+'</div>'+
         actions+
       '</div>';

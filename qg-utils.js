@@ -37,6 +37,21 @@ function formatPersonName(name) {
 
 window.formatPersonName = formatPersonName;
 
+/** Display-only location capitalization — e.g. "calgary, ab" → "Calgary, AB" (does not mutate stored data). */
+function formatLocationDisplay(loc) {
+  if (!loc) return '';
+  return String(loc).trim().split(',').map(function (part) {
+    part = part.trim();
+    if (!part) return part;
+    if (/^[a-zA-Z]{2}$/.test(part)) return part.toUpperCase();
+    return part.replace(/\b([a-zA-Z])([a-zA-Z]*)/g, function (_m, first, rest) {
+      return first.toUpperCase() + rest.toLowerCase();
+    });
+  }).filter(Boolean).join(', ');
+}
+
+window.formatLocationDisplay = formatLocationDisplay;
+
 function formatRelativeTime(iso) {
   if (!iso) return 'Recently';
   var then = new Date(iso);

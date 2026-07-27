@@ -225,7 +225,7 @@
   padding: 10px 18px calc(14px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid #f0eeff;
   font-size: 11px;
-  color: #9ca3af;
+  color:#6b6580;
   text-align: center;
   line-height: 1.45;
   flex-shrink: 0;

@@ -381,25 +381,101 @@ body.light .qg-hint-banner {
   margin-top: 10px;
   font-size: 13px;
   line-height: 1.45;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.62);
 }
-body.light .qg-beta-free-note { color: rgba(45, 27, 78, 0.6); }
+body.light .qg-beta-free-note { color: #6b6580; }
 
 .qg-field-hint,
 .field-hint.qg-field-hint {
   font-size: 12px;
   line-height: 1.5;
   margin: 4px 0 8px;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.62);
 }
 body.light .qg-field-hint,
-body.light .field-hint.qg-field-hint { color: rgba(45, 27, 78, 0.6); }
+body.light .field-hint.qg-field-hint { color: #6b6580; }
 
-/* Raise ultra-faint informational text */
+/* Contrast / readability pass — informational muted text floor */
 :root, body {
-  --text-faint: rgba(255, 255, 255, 0.45);
+  --text-muted: rgba(255, 255, 255, 0.68);
+  --text-faint: rgba(255, 255, 255, 0.62);
+  --time-color: rgba(255, 255, 255, 0.55);
+  --desc-color: rgba(255, 255, 255, 0.62);
+  --info-color: rgba(255, 255, 255, 0.62);
+  --results-color: rgba(255, 255, 255, 0.62);
+  --empty-color: rgba(200, 168, 233, 0.78);
+  --read-preview: rgba(255, 255, 255, 0.62);
+  --pill-inactive-color: rgba(255, 255, 255, 0.62);
+  --cat-inactive-color: rgba(255, 255, 255, 0.62);
 }
-body.light { --text-faint: rgba(45, 27, 78, 0.45); }
+body.light {
+  --text-muted: #6b6580;
+  --text-faint: #6b6580;
+  --time-color: #6b6580;
+  --desc-color: #6b6580;
+  --info-color: #6b6580;
+  --results-color: #8a84a0;
+  --empty-color: #6b6580;
+  --read-preview: #6b6580;
+  --pill-inactive-color: #6b6580;
+  --cat-inactive-color: #6b6580;
+}
+
+/* Chat timestamps + read receipts */
+.bubble-time,
+.bubble-check,
+.date-divider {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+}
+body.light .bubble-time,
+body.light .bubble-check,
+body.light .date-divider {
+  color: #6b6580;
+}
+
+/* Notification panel body (titles stay as-is) */
+.qg-bell-item-body {
+  color: rgba(255, 255, 255, 0.65);
+}
+body.light .qg-bell-item-body {
+  color: #6b6580;
+}
+.qg-bell-item-time,
+.qg-bell-empty {
+  color: rgba(255, 255, 255, 0.62);
+}
+body.light .qg-bell-item-time,
+body.light .qg-bell-empty {
+  color: #6b6580;
+}
+
+/* Task card price stands out in meta / price row */
+.tc-price,
+.tc-meta-price,
+.task-price {
+  color: #4ade80;
+  font-weight: 500;
+}
+body.light .tc-price,
+body.light .tc-meta-price,
+body.light .task-price {
+  color: #16a34a;
+  font-weight: 500;
+}
+.tc-meta {
+  color: rgba(255, 255, 255, 0.62);
+}
+body.light .tc-meta {
+  color: #6b6580;
+}
+.tc-info {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 11px;
+}
+body.light .tc-info {
+  color: #6b6580;
+}
 
 .empty-state .empty-btn { margin-top: 14px; }
 

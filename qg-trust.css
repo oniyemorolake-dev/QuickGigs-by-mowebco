@@ -1,6 +1,6 @@
 /* QuickGigs — trust / legal info pages + cookie banner */
-:root{--bg:#0b0118;--border:rgba(200,168,233,0.1);--text:#fff;--text-muted:rgba(255,255,255,0.55);--purple:#6b3fa0;--purple-light:#9b6fc4;--lavender:#c8a8e9;--nav-bg:#0b0118;}
-body.light{--bg:#fafafe;--border:#f0eeff;--text:#1a0a3d;--text-muted:#6b7280;--nav-bg:#fff;--lavender:#6b3fa0;}
+:root{--bg:#0b0118;--border:rgba(200,168,233,0.1);--text:#fff;--text-muted:rgba(255,255,255,0.68);--text-faint:rgba(255,255,255,0.62);--purple:#6b3fa0;--purple-light:#9b6fc4;--lavender:#c8a8e9;--nav-bg:#0b0118;}
+body.light{--bg:#fafafe;--border:#f0eeff;--text:#1a0a3d;--text-muted:#6b6580;--text-faint:#6b6580;--nav-bg:#fff;--lavender:#6b3fa0;}
 body.trust-page{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background 0.25s,color 0.25s;}
 .trust-page .nav{position:sticky;top:0;z-index:50;background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;}
 .trust-page .nav-logo{font-family:'Playfair Display',serif;font-style:italic;font-size:1.25rem;color:var(--lavender);}

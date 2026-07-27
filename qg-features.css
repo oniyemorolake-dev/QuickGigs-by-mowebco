@@ -249,7 +249,7 @@ body.light .qg-dispute-overlay .qg-report-kicker {
 .qg-report-sub {
   font-size: 13px;
   line-height: 1.55;
-  color: var(--text-muted, rgba(255, 255, 255, 0.5));
+  color: var(--text-muted, rgba(255, 255, 255, 0.68));
   margin: 0;
   max-width: 340px;
   margin-left: auto;
@@ -304,7 +304,7 @@ body.light .qg-report-target {
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--text-faint, rgba(255, 255, 255, 0.35));
+  color: var(--text-faint, rgba(255, 255, 255, 0.62));
   margin-bottom: 2px;
 }
 
@@ -331,7 +331,7 @@ body.light .qg-report-target-text strong {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--text-faint, rgba(255, 255, 255, 0.35));
+  color: var(--text-faint, rgba(255, 255, 255, 0.62));
   margin-bottom: 10px;
 }
 
@@ -458,7 +458,7 @@ body.light .qg-report-textarea {
   bottom: 10px;
   right: 14px;
   font-size: 10px;
-  color: var(--text-faint, rgba(255, 255, 255, 0.35));
+  color: var(--text-faint, rgba(255, 255, 255, 0.62));
   pointer-events: none;
 }
 
@@ -917,7 +917,7 @@ body.light .qg-dispute-steps {
 .qg-dispute-note {
   font-size: 11px;
   line-height: 1.55;
-  color: var(--text-faint, rgba(255, 255, 255, 0.35));
+  color: var(--text-faint, rgba(255, 255, 255, 0.62));
   margin: 0 0 12px;
 }
 
@@ -985,7 +985,7 @@ body.light .dash-hero-primary {
   display: block;
   font-size: 12px;
   line-height: 1.45;
-  color: var(--text-muted, rgba(255, 255, 255, 0.5));
+  color: var(--text-muted, rgba(255, 255, 255, 0.68));
 }
 
 .dash-hero-cta {
@@ -998,7 +998,7 @@ body.light .dash-hero-primary {
 .dash-hero-switch {
   margin-top: 10px;
   font-size: 11px;
-  color: var(--text-faint, rgba(255, 255, 255, 0.35));
+  color: var(--text-faint, rgba(255, 255, 255, 0.62));
   line-height: 1.5;
 }
 
@@ -1072,7 +1072,7 @@ body.light .qg-role-flip-track {
   background: transparent;
   cursor: pointer;
   font-family: 'DM Sans', sans-serif;
-  color: var(--text-muted, rgba(255, 255, 255, 0.45));
+  color: var(--text-muted, rgba(255, 255, 255, 0.68));
   transition: color 0.25s, transform 0.2s;
 }
 
@@ -1125,7 +1125,7 @@ body.light .qg-role-flip-opt.active {
   font-size: 11px;
   line-height: 1.5;
   text-align: center;
-  color: var(--text-faint, rgba(255, 255, 255, 0.35));
+  color: var(--text-faint, rgba(255, 255, 255, 0.62));
 }
 
 /* Payment history */
@@ -1150,7 +1150,7 @@ body.light .qg-role-flip-opt.active {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.pay-history-meta { font-size: 11px; color: var(--text-faint, rgba(255,255,255,0.35)); margin-top: 3px; }
+.pay-history-meta { font-size: 11px; color: var(--text-faint, rgba(255,255,255,0.62)); margin-top: 3px; }
 .pay-history-right { text-align: right; flex-shrink: 0; }
 .pay-history-amt { font-size: 15px; font-weight: 600; color: var(--text, #fff); }
 .pay-history-st {
@@ -1169,7 +1169,7 @@ body.light .qg-role-flip-opt.active {
   text-align: center;
   padding: 28px 16px;
   font-size: 13px;
-  color: var(--text-muted, rgba(255,255,255,0.45));
+  color: var(--text-muted, rgba(255,255,255,0.68));
   line-height: 1.55;
   border: 0.5px dashed var(--border, rgba(200,168,233,0.15));
   border-radius: 14px;
