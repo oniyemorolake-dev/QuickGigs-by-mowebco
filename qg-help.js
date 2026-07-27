@@ -71,8 +71,28 @@
     else openPanel();
   }
 
+  function bindComposerFocusHide(root) {
+    if (PAGE !== 'chat.html') return;
+    document.documentElement.setAttribute('data-qg-page', 'chat');
+    document.body.classList.add('page-chat');
+    var input = document.getElementById('msgInput');
+    if (!input) return;
+    var sync = function () {
+      root.classList.toggle('is-composer-focused', document.activeElement === input);
+    };
+    input.addEventListener('focus', sync);
+    input.addEventListener('blur', function () {
+      setTimeout(sync, 0);
+    });
+    sync();
+  }
+
   function mount() {
     if (document.getElementById('qgHelpRoot')) return;
+    if (PAGE === 'messages.html') {
+      document.documentElement.setAttribute('data-qg-page', 'messages');
+      document.body.classList.add('page-messages');
+    }
     var root = document.createElement('div');
     root.id = 'qgHelpRoot';
     root.className = 'qg-help-root';
@@ -122,6 +142,8 @@
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') closePanel();
     });
+
+    bindComposerFocusHide(root);
   }
 
   if (document.readyState === 'loading') {

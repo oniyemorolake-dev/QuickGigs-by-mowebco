@@ -1775,13 +1775,24 @@ async function getMessagesForConversation(convId) {
   return await sbGet('messages', 'conv_id=eq.' + encodeURIComponent(convId), 'created_at.asc');
 }
 
-async function sendChatMessage(convId, senderId, body) {
+async function sendChatMessage(convId, senderId, body, recentTexts) {
   if (isChatImageBody(body)) {
     var imgUrl = parseChatImageUrl(body);
     if (!isAllowedChatImageUrl(imgUrl)) {
       return { success: false, error: 'invalid_image', blocked: true };
     }
-  } else if (typeof containsOffPlatformContact === 'function' && containsOffPlatformContact(body)) {
+  } else if (typeof analyzeOffPlatformContact === 'function') {
+    var fraudCheck = analyzeOffPlatformContact(body, recentTexts || []);
+    if (fraudCheck.blocked) {
+      return {
+        success: false,
+        error: 'off_platform_contact',
+        blocked: true,
+        reason: fraudCheck.reason || 'pattern',
+        message: fraudCheck.message || ''
+      };
+    }
+  } else if (typeof containsOffPlatformContact === 'function' && containsOffPlatformContact(body, recentTexts || [])) {
     return { success: false, error: 'off_platform_contact', blocked: true };
   }
 

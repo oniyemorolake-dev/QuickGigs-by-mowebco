@@ -541,6 +541,19 @@
     var el = document.getElementById('fraudLog');
     if (!el) return;
     var items = [];
+    (window.adminActions || []).forEach(function (a) {
+      if (String(a.action_type || '') !== 'fraud_contact_attempt') return;
+      var d = a.detail || {};
+      var who = d.user_id || a.target_id || '';
+      var why = d.reason || 'contact';
+      var n = d.violation ? (' #' + d.violation) : '';
+      items.push({
+        text: 'Contact sharing attempt' + n + ' (' + why + ')' + (who ? ' · user ' + who : '') +
+          (d.preview ? ' — "' + String(d.preview).slice(0, 40) + '"' : ''),
+        time: a.created_at,
+        kind: 'fraud'
+      });
+    });
     (window.users || []).forEach(function (u) {
       if (isTempEmail(u.email)) {
         items.push({ text: 'Temp email signup: ' + (u.email || ''), user: u.name, time: u.created_at });
@@ -559,14 +572,18 @@
         items.push({ text: wid + ' has ' + count + ' applications (high volume)', user: a.worker_name || '', time: a.created_at });
       }
     });
+    items.sort(function (a, b) {
+      return String(b.time || '').localeCompare(String(a.time || ''));
+    });
     if (!items.length) {
       el.innerHTML = '<div style="padding:24px;text-align:center;color:rgba(255,255,255,0.35);font-size:13px">No fraud alerts right now.</div>';
       return;
     }
-    el.innerHTML = items.slice(0, 30).map(function (e) {
-      return '<div class="sec-item"><span class="sec-type sec-blocked">⚠ Alert</span>' +
+    el.innerHTML = items.slice(0, 40).map(function (e) {
+      var badge = e.kind === 'fraud' ? '🚫 Contact' : '⚠ Alert';
+      return '<div class="sec-item"><span class="sec-type sec-blocked">' + badge + '</span>' +
         '<div class="sec-text">' + esc(e.text) + '</div>' +
-        '<div class="sec-time">' + (e.time ? new Date(e.time).toLocaleDateString('en-CA') : '') + '</div></div>';
+        '<div class="sec-time">' + (e.time ? new Date(e.time).toLocaleString('en-CA') : '') + '</div></div>';
     }).join('');
   }
 

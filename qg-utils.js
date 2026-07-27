@@ -128,13 +128,18 @@ var FRAUD_PATTERNS = [
   /\b\d{10,11}\b/,
   /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/,
   /\+\d[\d\s\-]{8,}/,
-  /\b(?:call me|text me|whatsapp|wa\.me|telegram|tgm|tele\.gram|snapchat|snap me|instagram|insta\.gram|facebook|fb\.com|discord|signal app|viber)\b/i,
+  /\b(?:instagram|insta|ig|snapchat|snap|telegram|tgm|tg|whatsapp|wa|tiktok|wa\.me|tele\.gram|insta\.gram|facebook|fb\.com|discord|signal(?:\s+app)?|viber)\b/i,
+  /\b(?:call\s+me|text\s+me|snap\s+me|dm\s+me|message\s+me\s+on)\b/i,
   /\b(?:venmo|cash\s?app|e[\-\s]?transfer|interac|paypal|zelle|etransfer)\b/i,
-  /\b(?:my\s+number|reach\s+me\s+at|contact\s+me\s+at|dm\s+me|message\s+me\s+on)\b/i,
+  /\b(?:my\s+number|reach\s+me\s+at|contact\s+me\s+at)\b/i,
   /\b(?:four|five|six|seven|eight|nine)\s+(?:zero|one|two|three|four|five|six|seven|eight|nine)\b/i,
   /@[a-zA-Z0-9._]{3,}/,
-  /\b[a-z]{2,6}\.[a-z]{2,6}\b/i
+  // Dotted obfuscation (e.g. tgm.rlk) — not a real public TLD URL
+  /\b(?!www\b)[a-z]{2,8}\.(?!com|org|net|edu|gov|ca|io|co|me|app|dev|uk|us|info|biz|html?|js|css)[a-z]{2,8}\b/i
 ];
+
+var FRAUD_PHONE_RE = /\d{10,}/;
+var FRAUD_EMAIL_RE = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/;
 
 function digitsOnly(str) {
   return String(str || '').replace(/\D/g, '');
@@ -149,42 +154,132 @@ function stripForDigitCheck(text) {
     .trim();
 }
 
+/** Strip spaces + punctuation for cross-message phone/email scans. */
+function stripSpacePunct(text) {
+  return String(text || '').replace(/[^a-zA-Z0-9@.+-]/g, '');
+}
+
 function isPureDigitChunk(text) {
   var val = stripForDigitCheck(text);
   return /^\d{2,6}$/.test(val);
-}
-
-function containsOffPlatformContact(text, recentTexts) {
-  if (!text) return false;
-  if (window.QG_CONFIG && window.QG_CONFIG.blockOffPlatformContact === false) return false;
-  var val = stripForDigitCheck(String(text).trim());
-  if (!val) return false;
-
-  if (FRAUD_PATTERNS.some(function(p) { return p.test(val); })) return true;
-
-  // Split-phone trick: only pure digit chunks (e.g. "587", "990", "8645") in a row
-  if (isPureDigitChunk(val)) {
-    if (val.length >= 7) return true;
-    if (recentTexts && recentTexts.length) {
-      var digitParts = recentTexts
-        .map(stripForDigitCheck)
-        .filter(isPureDigitChunk)
-        .slice(-4)
-        .concat([val]);
-      if (digitParts.length >= 2 && digitParts.join('').length >= 10) return true;
-    }
-  }
-
-  return false;
 }
 
 function getOffPlatformWarning() {
   return 'You can\'t share phone numbers, emails, or off-platform payment details on QuickGigs. Keep everything here until payment is complete.';
 }
 
+function getDigitsOnlyWarning() {
+  return 'Numbers only messages aren\'t allowed — describe the task instead';
+}
+
+function getOffPlatformStrongWarning() {
+  return 'Sharing contact info violates our terms and can lead to a ban';
+}
+
+/**
+ * Analyze text (+ optional previous sender messages) for off-platform contact.
+ * @returns {{ blocked: boolean, reason?: string, message?: string }}
+ */
+function analyzeOffPlatformContact(text, recentTexts) {
+  if (!text) return { blocked: false };
+  if (window.QG_CONFIG && window.QG_CONFIG.blockOffPlatformContact === false) {
+    return { blocked: false };
+  }
+  var val = stripForDigitCheck(String(text).trim());
+  if (!val) return { blocked: false };
+
+  var recent = (recentTexts || []).slice(-4).map(function (t) {
+    return stripForDigitCheck(String(t || ''));
+  }).filter(Boolean);
+  var combined = recent.concat([val]).join('');
+  var compact = stripSpacePunct(combined);
+  var allDigits = digitsOnly(combined);
+
+  // (a) Current + previous 4 messages (spaces/punct stripped) — phone / email across sends
+  if (FRAUD_PHONE_RE.test(allDigits) || FRAUD_EMAIL_RE.test(compact)) {
+    return {
+      blocked: true,
+      reason: 'split_contact',
+      message: getOffPlatformWarning()
+    };
+  }
+
+  // (b) Short all-digit messages — not sent, except while a pure digit-chunk trail is
+  // still under 10 digits (so "587" → "990" → "8645" is blocked by (a) on the third).
+  if (/^\d{2,6}$/.test(val)) {
+    var lastRecent = recent.length ? recent[recent.length - 1] : '';
+    var continuingTrail = !recent.length || isPureDigitChunk(lastRecent);
+    if (continuingTrail) return { blocked: false };
+    return {
+      blocked: true,
+      reason: 'digits_only',
+      message: getDigitsOnlyWarning()
+    };
+  }
+
+  if (/^\d{7,}$/.test(val)) {
+    return {
+      blocked: true,
+      reason: 'digits',
+      message: getOffPlatformWarning()
+    };
+  }
+
+  if (FRAUD_PATTERNS.some(function (p) { return p.test(val); })) {
+    return {
+      blocked: true,
+      reason: 'pattern',
+      message: getOffPlatformWarning()
+    };
+  }
+
+  if (FRAUD_PATTERNS.some(function (p) { return p.test(compact) || p.test(combined); })) {
+    return {
+      blocked: true,
+      reason: 'split_pattern',
+      message: getOffPlatformWarning()
+    };
+  }
+
+  return { blocked: false };
+}
+
+function containsOffPlatformContact(text, recentTexts) {
+  return analyzeOffPlatformContact(text, recentTexts).blocked;
+}
+
+/** Log a fraud / contact-sharing attempt for the admin Security Log + Fraud Alerts. */
+function logFraudContactEvent(detail) {
+  detail = detail || {};
+  try {
+    if (typeof sbPost === 'function') {
+      sbPost('admin_actions', {
+        admin_email: 'system@quickgigs',
+        action_type: 'fraud_contact_attempt',
+        target_type: detail.convId ? 'conversation' : 'user',
+        target_id: String(detail.convId || detail.userId || ''),
+        detail: {
+          user_id: detail.userId || '',
+          conv_id: detail.convId || '',
+          reason: detail.reason || '',
+          violation: detail.violation || 1,
+          preview: String(detail.preview || '').slice(0, 80),
+          body: (detail.reason || 'contact') + ' attempt' +
+            (detail.violation ? ' (#' + detail.violation + ')' : '')
+        }
+      }).catch(function () {});
+    }
+  } catch (e) { /* non-blocking */ }
+}
+
+window.analyzeOffPlatformContact = analyzeOffPlatformContact;
 window.containsOffPlatformContact = containsOffPlatformContact;
 window.containsFraud = containsOffPlatformContact;
 window.getOffPlatformWarning = getOffPlatformWarning;
+window.getDigitsOnlyWarning = getDigitsOnlyWarning;
+window.getOffPlatformStrongWarning = getOffPlatformStrongWarning;
+window.logFraudContactEvent = logFraudContactEvent;
+window.isPureDigitChunk = isPureDigitChunk;
 
 var AVATAR_GRADIENTS = [
   'linear-gradient(135deg,#6b3fa0,#c8a8e9)',

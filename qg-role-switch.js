@@ -187,10 +187,13 @@
       }
     }
 
+    var switchLabel = isPoster
+      ? 'Want to earn instead? Switch to tasker →'
+      : 'Need something done? Switch to poster →';
     return html +
-      '<p class="dash-hero-switch">Using QuickGigs as a ' + (isPoster ? 'Poster' : 'Tasker') +
-      '? <button type="button" class="dash-hero-switch-btn" onclick="typeof switchRoleMode===\'function\'&&switchRoleMode()">' +
-      'Switch to ' + (isPoster ? 'Tasker' : 'Poster') + ' mode</button></p>';
+      '<p class="dash-hero-switch">' +
+      '<button type="button" class="dash-hero-switch-btn" onclick="typeof switchRoleMode===\'function\'&&switchRoleMode()">' +
+      switchLabel + '</button></p>';
   }
 
   window.getQuickGigsMode = getCurrentMode;

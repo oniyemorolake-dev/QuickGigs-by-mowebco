@@ -124,6 +124,7 @@ body.light .tag-poster{background:#ede9ff;color:var(--purple);}
 .stat-val.purple{color:var(--lavender);}
 body.light .stat-val.purple{color:var(--purple);}
 .stat-lbl{font-size:11px;color:var(--text-faint);}
+.stat-sub{font-size:10px;color:var(--text-faint);opacity:0.85;margin-top:2px;}
 
 /* ACTION CARDS */
 .actions{padding:0 20px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
@@ -574,16 +575,15 @@ function renderAll(){
   var inProgressCount = isPoster
     ? myPosted.filter(function (t) { return taskField(t, 'status') === 'in_progress'; }).length
     : 0;
-  var totalSpent = myPosted.reduce(function(s, t){ return s + (parseFloat(taskField(t, 'budget')) || 0); }, 0);
   var posterPayments = (dashData.payments || []).filter(function(p) {
     return String(p.poster_id || p.POSTER_ID || '') === String(userId);
   });
   var posterPaySums = typeof QG_sumPayments === 'function'
     ? QG_sumPayments(posterPayments, { role: 'poster' })
     : { held: 0, paid: 0 };
-  var totalPaidDisplay = posterPaySums.paid > 0
-    ? '$' + posterPaySums.paid.toFixed(0)
-    : (posterPaySums.held > 0 ? '$' + posterPaySums.held.toFixed(0) + ' in escrow' : '$' + totalSpent);
+  var paidTotal = posterPaySums.paid || 0;
+  var totalPaidDisplay = '$' + (paidTotal > 0 ? paidTotal.toFixed(0) : '0');
+  var paidSubLabel = paidTotal > 0 ? '' : 'Payments launch soon';
 
   var myInProgressWorker = userId ? dashData.posted.filter(function(t){
     if (taskField(t, 'status') !== 'in_progress') return false;
@@ -626,7 +626,7 @@ function renderAll(){
         {icon:'📋', val: String(myPosted.length), cls:'', lbl:'Tasks posted', href:'mytasks.html?tab=posted'},
         {icon:'👥', val: String(applicantCount), cls:'purple', lbl:'Applicants', href:'mytasks.html?tab=posted&applicants=1'},
         {icon:'✅', val: String(myCompleted.length), cls:'', lbl:'Completed', href:'mytasks.html?tab=completed'},
-        {icon:'💸', val: totalPaidDisplay, cls:'green', lbl:'Paid via QuickGigs', href:'profile.html#payments'}
+        {icon:'💸', val: totalPaidDisplay, cls:'green', lbl:'Paid via QuickGigs', sub: paidSubLabel, href:'profile.html#payments'}
       ]
     : [
         {icon:'📨', val: String(myApps.length), cls:'', lbl:'Applications', href:'mytasks.html?tab=applied'},
@@ -639,7 +639,9 @@ function renderAll(){
     return '<a class="stat-card stat-card-link" href="'+s.href+'">' +
       '<div class="stat-icon">'+s.icon+'</div>' +
       '<div class="stat-val '+s.cls+'">'+s.val+'</div>' +
-      '<div class="stat-lbl">'+s.lbl+'</div></a>';
+      '<div class="stat-lbl">'+s.lbl+'</div>' +
+      (s.sub ? '<div class="stat-sub">'+s.sub+'</div>' : '') +
+      '</a>';
   }).join('');
 
   applyDashboardRoleTheme();

@@ -154,6 +154,18 @@ img[loading="lazy"] {
 
 /* Help widget — bottom-left (opposite typical back-to-top) */
 .qg-help-root { position: fixed; left: 16px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); z-index: 90; }
+/* Chat + inbox: sit above composer / tab bar so it never covers the last bubble or rows */
+body.page-chat .qg-help-root,
+body.page-messages .qg-help-root,
+html[data-qg-page="chat"] .qg-help-root,
+html[data-qg-page="messages"] .qg-help-root {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 140px);
+}
+.qg-help-root.is-composer-focused {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
 .qg-help-fab {
   width: 44px; height: 44px; border-radius: 50%; border: none; cursor: pointer;
   background: linear-gradient(135deg, #6b3fa0, #9b6fc4); color: #fff;

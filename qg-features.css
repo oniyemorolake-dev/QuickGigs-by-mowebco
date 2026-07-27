@@ -1002,13 +1002,21 @@ body.light .dash-hero-primary {
   line-height: 1.5;
 }
 
-.dash-hero-switch a {
+.dash-hero-switch a,
+.dash-hero-switch-btn {
   color: var(--purple-light, #9b6fc4);
   text-decoration: none;
   font-weight: 500;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
 }
 
-.dash-hero-switch a:hover {
+.dash-hero-switch a:hover,
+.dash-hero-switch-btn:hover {
   text-decoration: underline;
 }
 

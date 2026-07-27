@@ -281,17 +281,92 @@ var currentUserId = null;
 var chatIsPoster = false;
 var chatLightboxBound = false;
 
-// ── FRAUD DETECTION (shared rules in qg-utils.js) ────────
-
-function containsFraud(text){
-  var recent = getRecentMyTexts();
-  return typeof containsOffPlatformContact === 'function'
-    ? containsOffPlatformContact(text, recent)
-    : false;
-}
+// ?? FRAUD DETECTION (shared rules in qg-utils.js) ????????
 
 function getRecentMyTexts(){
-  return messages.filter(function(m){ return m.from === 'me'; }).slice(-5).map(function(m){ return m.text; });
+  return messages.filter(function(m){ return m.from === 'me'; }).slice(-4).map(function(m){ return m.text; });
+}
+
+function analyzeFraud(text){
+  var recent = getRecentMyTexts();
+  if (typeof analyzeOffPlatformContact === 'function') {
+    return analyzeOffPlatformContact(text, recent);
+  }
+  if (typeof containsOffPlatformContact === 'function' && containsOffPlatformContact(text, recent)) {
+    return { blocked: true, reason: 'pattern', message: typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : '' };
+  }
+  return { blocked: false };
+}
+
+function containsFraud(text){
+  return analyzeFraud(text).blocked;
+}
+
+function fraudViolationKey(){
+  return 'qg-fraud-violations:' + (convId || 'none');
+}
+
+function getFraudViolationCount(){
+  try { return parseInt(sessionStorage.getItem(fraudViolationKey()) || '0', 10) || 0; }
+  catch (e) { return 0; }
+}
+
+function bumpFraudViolation(){
+  var n = getFraudViolationCount() + 1;
+  try { sessionStorage.setItem(fraudViolationKey(), String(n)); } catch (e) {}
+  return n;
+}
+
+function showFraudStrongModal(){
+  var existing = document.getElementById('fraudStrongModal');
+  if (existing) existing.remove();
+  var msg = typeof getOffPlatformStrongWarning === 'function'
+    ? getOffPlatformStrongWarning()
+    : 'Sharing contact info violates our terms and can lead to a ban';
+  var wrap = document.createElement('div');
+  wrap.id = 'fraudStrongModal';
+  wrap.setAttribute('role', 'dialog');
+  wrap.setAttribute('aria-modal', 'true');
+  wrap.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;padding:24px;';
+  wrap.innerHTML =
+    '<div style="max-width:340px;width:100%;background:var(--card-bg,#150830);color:var(--text,#fff);border:0.5px solid rgba(239,68,68,0.35);border-radius:16px;padding:22px 20px;font-family:DM Sans,sans-serif;box-shadow:0 16px 48px rgba(0,0,0,0.45)">' +
+      '<div style="font-size:15px;font-weight:600;margin-bottom:10px;color:#ef4444">Terms warning</div>' +
+      '<div style="font-size:13px;line-height:1.55;opacity:0.9;margin-bottom:18px">' + (typeof escapeHtml === 'function' ? escapeHtml(msg) : msg) + '</div>' +
+      '<button type="button" id="fraudStrongOk" style="width:100%;padding:12px;border:none;border-radius:10px;background:#ef4444;color:#fff;font:600 14px DM Sans,sans-serif;cursor:pointer">I understand</button>' +
+    '</div>';
+  document.body.appendChild(wrap);
+  document.getElementById('fraudStrongOk').onclick = function(){ wrap.remove(); };
+  wrap.addEventListener('click', function(e){ if (e.target === wrap) wrap.remove(); });
+}
+
+function handleFraudBlock(check, preview){
+  check = check || {};
+  var msg = check.message || (typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : 'Message blocked.');
+  var fraudInline = document.getElementById('fraudInline');
+  var warnEl = document.getElementById('fraudInlineText');
+  if (fraudInline) fraudInline.style.display = 'block';
+  if (warnEl) warnEl.textContent = msg;
+
+  if (check.reason === 'digits_only') {
+    if (typeof showToast === 'function') showToast(msg, '#f59e0b');
+    return;
+  }
+
+  var count = bumpFraudViolation();
+  if (typeof logFraudContactEvent === 'function') {
+    logFraudContactEvent({
+      userId: currentUserId,
+      convId: convId,
+      reason: check.reason || 'contact',
+      violation: count,
+      preview: preview || ''
+    });
+  }
+  if (count >= 2) {
+    showFraudStrongModal();
+  } else if (typeof showToast === 'function') {
+    showToast(msg, '#f59e0b');
+  }
 }
 
 async function loadTaskPhotos(taskId){
@@ -813,12 +888,12 @@ window.handleInput = function(el){
   var sendBtn = document.getElementById('sendBtn');
   var fraudInline = document.getElementById('fraudInline');
 
-  // Check for fraud patterns
-  if(containsFraud(val)){
+  var check = val ? analyzeFraud(val) : { blocked: false };
+  if(check.blocked){
     fraudDetected = true;
     fraudInline.style.display = 'block';
     var warnEl = document.getElementById('fraudInlineText');
-    if (warnEl && typeof getOffPlatformWarning === 'function') warnEl.textContent = getOffPlatformWarning();
+    if (warnEl) warnEl.textContent = check.message || (typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : '');
     sendBtn.disabled = true;
   } else {
     fraudDetected = false;
@@ -851,20 +926,28 @@ window.sendMessage = async function(){
   var text = window.sanitizeInput(input.value.trim(), 2000);
   if(!text || fraudDetected || !currentConv || !currentConv.is_unlocked) return;
 
-  if(containsFraud(text)){
-    document.getElementById('fraudInline').style.display = 'block';
+  var check = analyzeFraud(text);
+  if(check.blocked){
+    handleFraudBlock(check, text);
+    fraudDetected = true;
+    document.getElementById('sendBtn').disabled = true;
     return;
   }
 
   var sendBtn = document.getElementById('sendBtn');
   sendBtn.disabled = true;
 
-  var result = await sendChatMessage(convId, currentUserId, text);
+  var recent = getRecentMyTexts();
+  var result = typeof sendChatMessage === 'function'
+    ? await sendChatMessage(convId, currentUserId, text, recent)
+    : { success: false };
   if(!result.success){
     if (result.blocked || result.error === 'off_platform_contact') {
-      document.getElementById('fraudInline').style.display = 'block';
-      var warnEl = document.getElementById('fraudInlineText');
-      if (warnEl && typeof getOffPlatformWarning === 'function') warnEl.textContent = getOffPlatformWarning();
+      handleFraudBlock({
+        blocked: true,
+        reason: result.reason || 'pattern',
+        message: result.message || (typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : '')
+      }, text);
     } else {
       showToast('Could not send message. Try again.', '#ef4444');
     }
