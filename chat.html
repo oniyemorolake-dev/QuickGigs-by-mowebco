@@ -446,7 +446,10 @@ ensureChatChrome();
 var CAT_ICONS = {home:'🏠',errands:'🚗',tutoring:'🎓',beauty:'💇',moving:'🚚',cooking:'🍳',tech:'💻',care:'👶',gardening:'🌿',events:'🎉',trades:'🔧',other:'📦'};
 var CAT_BG = {home:'rgba(107,63,160,0.2)',errands:'rgba(251,191,36,0.15)',tutoring:'rgba(74,222,128,0.1)',beauty:'rgba(200,168,233,0.15)',moving:'rgba(107,63,160,0.2)',cooking:'rgba(251,191,36,0.12)',tech:'rgba(107,63,160,0.2)',care:'rgba(74,222,128,0.1)',gardening:'rgba(74,222,128,0.08)',events:'rgba(200,168,233,0.15)',trades:'rgba(107,63,160,0.2)',other:'rgba(255,255,255,0.06)'};
 
-var convId = new URLSearchParams(window.location.search).get('conv');
+var _qgChatParams = new URLSearchParams(window.location.search);
+var convId = _qgChatParams.get('conv');
+var taskIdFromUrl = _qgChatParams.get('task') || '';
+var withUidFromUrl = _qgChatParams.get('with') || '';
 var currentConv = null;
 var messages = [];
 var pollTimer = null;
@@ -1041,6 +1044,36 @@ async function initChat(){
     }
     window.location.replace('mytasks.html?tab=inprogress&task=' + encodeURIComponent(taskFromUrl));
     return;
+  }
+
+  // Resolve thread when opened as chat.html?task=&with= (firebase_uid) without conv
+  if (!convId && (taskIdFromUrl || withUidFromUrl) && typeof getConversationForTask === 'function') {
+    try {
+      var peer = withUidFromUrl || '';
+      var resolved = null;
+      if (taskIdFromUrl && peer) {
+        resolved = await getConversationForTask(taskIdFromUrl, currentUserId, peer);
+        if (!resolved) resolved = await getConversationForTask(taskIdFromUrl, peer, currentUserId);
+      }
+      if (!resolved && typeof getConversationsForUser === 'function') {
+        var inbox = await getConversationsForUser(currentUserId);
+        resolved = (inbox || []).find(function (c) {
+          if (taskIdFromUrl && String(c.task_id) !== String(taskIdFromUrl)) return false;
+          if (!peer) return true;
+          return String(c.poster_id) === String(peer) || String(c.worker_id) === String(peer);
+        }) || null;
+      }
+      if (resolved && resolved.conv_id) {
+        convId = String(resolved.conv_id);
+        try {
+          var u = new URL(window.location.href);
+          u.searchParams.set('conv', convId);
+          window.history.replaceState({}, '', u.pathname + '?' + u.searchParams.toString());
+        } catch (eHist) {}
+      }
+    } catch (resolveErr) {
+      console.warn('[QuickGigs chat] task/with resolve failed:', resolveErr);
+    }
   }
 
   if(!convId){

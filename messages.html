@@ -118,7 +118,8 @@ body.light .empty-btn{color:#2d1b4e;}
 /* SECTION LABEL */
 .section-label{padding:14px 20px 8px;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);}
 
-/* CONVERSATION ITEM — button card (never an <a>, never purple link text) */
+/* CONVERSATION ITEM — <a> card (real href; never purple browser-link look) */
+a.conv-item,
 button.conv-item,
 .conv-item{
   display:flex!important;
@@ -143,6 +144,13 @@ button.conv-item,
   -webkit-tap-highlight-color:transparent;
   touch-action:manipulation;
   transition:background 0.15s;
+}
+a.conv-item:link,
+a.conv-item:visited,
+a.conv-item:hover,
+a.conv-item:active{
+  color:var(--text)!important;
+  text-decoration:none!important;
 }
 .conv-item *,
 .conv-item *::before,
@@ -345,12 +353,12 @@ function showMessagesBootError(msg) {
 window.showMessagesBootError = showMessagesBootError;
 </script>
 
-<script defer src="qg-utils.js?v=20260729msgui2"></script>
-<script defer src="qg-polish.js?v=20260729msgui2"></script>
+<script defer src="qg-utils.js?v=20260729msgnav3"></script>
+<script defer src="qg-polish.js?v=20260729msgnav3"></script>
 <script src="qg-ux.js?v=20260729chat1" defer></script>
-<script src="qg-bigtech.js?v=20260729msgui2" defer></script>
-<script src="qg-wave2.js?v=20260729msgui2" defer></script>
-<script defer src="qg-config.js?v=20260729msgui2"></script>
+<script src="qg-bigtech.js?v=20260729msgnav3" defer></script>
+<script src="qg-wave2.js?v=20260729msgnav3" defer></script>
+<script defer src="qg-config.js?v=20260729msgnav3"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="supabase-db.js?v=20260729chat1"></script>
 <script defer src="qg-notifications.js"></script>
@@ -554,6 +562,7 @@ function mapConversation(conv, userId){
   return {
     id: conv.conv_id,
     conv_id: conv.conv_id,
+    taskId: conv.task_id,
     posterId: conv.poster_id,
     workerId: conv.worker_id,
     myRole: iAmPoster ? 'poster' : 'tasker',
@@ -752,145 +761,79 @@ function renderContent(){
 }
 
 /**
- * ROOT CAUSE (select text / context menu instead of open):
- * Nested text/avatars inside the row remained selectable, so tap/long-press
- * triggered selection + callout instead of activating the <a href="chat.html?conv=…">.
- * Fix: user-select:none + pointer-events:none on children (outer row is sole hit
- * target), touch-action:manipulation, and immediate navigate on touchend/click.
+ * ROOT CAUSE (URL stays on messages.html):
+ * messages.html ~958 rendered a <button type="button"> with only data-href —
+ * no real href. Navigation was 100% JS. A touchend filter + document handler
+ * that skipped wired rows often meant the tap never called location.assign.
+ * FIX: real <a href="chat.html?conv=&task=&with="> so the browser navigates
+ * even if every handler fails; handlers only reinforce navigation.
  */
-function findConvRowFromEventTarget(start) {
-  var el = start;
-  if (el && el.nodeType === 3) el = el.parentElement || el.parentNode;
-  while (el && el !== document.body && el !== document.documentElement) {
-    if (el.nodeType === 1 && el.classList && el.classList.contains('conv-item')) {
-      return el;
-    }
-    el = el.parentElement || el.parentNode;
-  }
-  return null;
-}
-
-function chatThreadHref(convId) {
+function chatThreadHref(convId, taskId, otherUid) {
   var id = String(convId || '').trim();
   if (!id || id === 'undefined' || id === 'null') return '';
-  return 'chat.html?conv=' + encodeURIComponent(id);
+  var href = 'chat.html?conv=' + encodeURIComponent(id);
+  if (taskId != null && String(taskId) !== '') {
+    href += '&task=' + encodeURIComponent(String(taskId));
+  }
+  if (otherUid) {
+    href += '&with=' + encodeURIComponent(String(otherUid));
+  }
+  return href;
 }
 
-function openConversationThread(convId) {
-  var href = chatThreadHref(convId);
+function openConversationThread(convId, taskId, otherUid) {
+  var href = chatThreadHref(convId, taskId, otherUid);
   if (!href) {
     console.warn('[QuickGigs messages] missing conv id');
     if (typeof showToast === 'function') showToast('Conversation not found — refresh Messages.', '#f59e0b');
     return false;
   }
   console.info('[QuickGigs messages] navigate', href);
-  window.__qgPendingChatHref = href;
-  try {
-    window.location.assign(href);
-  } catch (e1) {
-    try { window.location.href = href; } catch (e2) {
-      console.error('[QuickGigs messages] navigate failed:', e2);
-      if (typeof showToast === 'function') showToast('Could not open chat.', '#ef4444');
-      return false;
-    }
-  }
-  setTimeout(function () {
-    if (window.__qgPendingChatHref !== href) return;
-    var stillMessages = /messages\.html/i.test(window.location.pathname || '') ||
-      /(^|\/)messages\/?$/i.test(window.location.pathname || '');
-    if (!stillMessages) return;
-    console.error('[QuickGigs messages] still on messages after navigate attempt', href);
-    if (typeof showToast === 'function') {
-      showToast('Could not open chat. Hard-refresh, then tap again.', '#ef4444');
-    } else {
-      alert('Could not open chat.\n' + href);
-    }
-  }, 900);
+  window.location.href = href;
   return true;
 }
 
 function goConversationFromRow(row, ev) {
   if (!row) return false;
   var id = row.getAttribute('data-open-conv') || '';
-  var href = row.getAttribute('data-href') || row.getAttribute('href') || '';
-  if ((!href || href === '#' || href.indexOf('javascript:') === 0) && id) {
-    href = chatThreadHref(id);
-  }
-  if (ev) {
-    try { ev.preventDefault(); } catch (eP) {}
-    try { ev.stopPropagation(); } catch (eS) {}
-  }
-  // Clear any accidental text selection so tap never “sticks” as highlight
-  try {
-    var sel = window.getSelection && window.getSelection();
-    if (sel && sel.removeAllRanges) sel.removeAllRanges();
-  } catch (eSel) {}
-
-  if (!id && !href) {
-    console.error('[QuickGigs messages] row missing conv id', row);
+  var taskId = row.getAttribute('data-task-id') || '';
+  var otherUid = row.getAttribute('data-with') || '';
+  var href = row.getAttribute('href') || row.getAttribute('data-href') ||
+    chatThreadHref(id, taskId, otherUid);
+  if (!href) {
     if (typeof showToast === 'function') {
       showToast('Conversation missing an id — refresh Messages.', '#ef4444');
     }
     return false;
   }
-  if (id) return openConversationThread(id);
-  window.location.assign(href);
+  // Let the <a> navigate natively when possible; force assign for buttons / blocked defaults.
+  if (ev && row.tagName === 'A' && href.indexOf('chat.html') === 0) {
+    // Still force — some mobile browsers select text instead of activating.
+    try { ev.preventDefault(); } catch (e1) {}
+  } else if (ev) {
+    try { ev.preventDefault(); } catch (e2) {}
+  }
+  try {
+    var sel = window.getSelection && window.getSelection();
+    if (sel && sel.removeAllRanges) sel.removeAllRanges();
+  } catch (e3) {}
+  window.location.href = href;
   return true;
 }
 
 function wireConversationRows(root) {
   root = root || document.getElementById('mainContent');
   if (!root) return;
-  var rows = root.querySelectorAll('.conv-item');
+  var rows = root.querySelectorAll('.conv-item[data-open-conv], a.conv-item');
   for (var i = 0; i < rows.length; i++) {
     (function (row) {
       if (row.getAttribute('data-qg-wired') === '1') return;
       row.setAttribute('data-qg-wired', '1');
-      if (!row.getAttribute('role')) row.setAttribute('role', 'link');
-      // buttons already focusable; ensure role for a11y on div fallbacks
-      if (row.tagName !== 'BUTTON' && !row.hasAttribute('tabindex')) row.setAttribute('tabindex', '0');
-
-      var touchStart = null;
-      var navigatedFromTouch = false;
-
-      row.addEventListener('touchstart', function (ev) {
-        navigatedFromTouch = false;
-        var t = ev.changedTouches && ev.changedTouches[0];
-        touchStart = t ? { x: t.clientX, y: t.clientY, at: Date.now() } : null;
-      }, { passive: true });
-
-      // Immediate navigate on quick tap — don’t wait for click (avoids select/callout).
-      row.addEventListener('touchend', function (ev) {
-        if (!touchStart) return;
-        var t = ev.changedTouches && ev.changedTouches[0];
-        if (!t) return;
-        var dx = Math.abs(t.clientX - touchStart.x);
-        var dy = Math.abs(t.clientY - touchStart.y);
-        var dt = Date.now() - touchStart.at;
-        touchStart = null;
-        // Ignore scrolls / long-press (>450ms can be callout)
-        if (dx > 14 || dy > 14 || dt > 450) return;
-        navigatedFromTouch = true;
-        goConversationFromRow(row, ev);
-      }, { passive: false });
-
       row.addEventListener('click', function (ev) {
-        if (navigatedFromTouch) {
-          navigatedFromTouch = false;
-          try { ev.preventDefault(); } catch (e) {}
-          return;
-        }
         goConversationFromRow(row, ev);
-      }, true);
-
-      row.addEventListener('contextmenu', function (ev) {
-        try { ev.preventDefault(); } catch (e) {}
       });
-
       row.addEventListener('keydown', function (ev) {
-        if (ev.key === 'Enter' || ev.key === ' ') {
-          goConversationFromRow(row, ev);
-        }
+        if (ev.key === 'Enter' || ev.key === ' ') goConversationFromRow(row, ev);
       });
     })(rows[i]);
   }
@@ -901,18 +844,23 @@ function bindMessagesListClicks() {
   window._qgMsgClickDocBound = true;
   document.addEventListener('click', function (e) {
     try {
+      var t = e.target;
+      if (t && t.nodeType === 3) t = t.parentElement;
+      var row = t && t.closest ? t.closest('.conv-item') : null;
+      if (!row) {
+        var el = t;
+        while (el && el !== document.body) {
+          if (el.classList && el.classList.contains('conv-item')) { row = el; break; }
+          el = el.parentElement;
+        }
+      }
+      if (!row) return;
       var root = document.getElementById('mainContent');
-      if (!root) return;
-      var row = findConvRowFromEventTarget(e.target);
-      if (!row || !root.contains(row)) return;
-      // Prefer the per-row wiring when present
-      if (row.getAttribute('data-qg-wired') === '1') return;
+      if (root && !root.contains(row)) return;
       goConversationFromRow(row, e);
     } catch (tapErr) {
       console.error('[QuickGigs messages] tap failed:', tapErr);
-      if (typeof showToast === 'function') {
-        showToast('Could not open chat — try again.', '#ef4444');
-      }
+      if (typeof showToast === 'function') showToast('Could not open chat — try again.', '#ef4444');
     }
   }, true);
 }
@@ -935,7 +883,9 @@ window.qgOpenConvRow = function (el, evt) {
 
 function renderConvItem(c){
   var convId = c && (c.id || c.conv_id) ? String(c.id || c.conv_id) : '';
-  var threadHref = chatThreadHref(convId);
+  var taskId = c && (c.taskId != null ? c.taskId : c.task_id);
+  var otherUid = c && c.otherUid ? String(c.otherUid) : '';
+  var threadHref = chatThreadHref(convId, taskId, otherUid);
   var avatarInner = typeof renderUserAvatarHtml === 'function'
     ? renderUserAvatarHtml(c.name, c.avatarUrl, { className: 'conv-avatar', gradient: c.avatarBg, size: 56 })
     : ('<div class="conv-avatar" style="background:'+c.avatarBg+'">'+esc(c.initials)+'</div>');
@@ -946,19 +896,24 @@ function renderConvItem(c){
     );
   }
   if (!threadHref) {
-    return '<div class="conv-item" role="link" tabindex="0" aria-disabled="true" style="opacity:0.65" data-open-conv="">' +
-      '<div class="conv-avatar-link" style="flex-shrink:0">' + avatarInner + '</div>' +
+    return '<div class="conv-item" aria-disabled="true" style="opacity:0.65" data-open-conv="">' +
+      '<div class="conv-avatar-link">' + avatarInner + '</div>' +
       '<div class="conv-info">' +
         '<div class="conv-name">'+esc(c.name)+'</div>' +
         '<div class="conv-task">'+c.taskIcon+' '+esc(c.taskName)+'</div>' +
         '<div class="conv-preview">Conversation unavailable — refresh</div>' +
       '</div></div>';
   }
-  // BUTTON card — not <a> (avoids purple link styling + nested-link breakups)
-  return '<button type="button" class="conv-item" data-href="'+esc(threadHref)+'" data-open-conv="'+esc(convId)+'" aria-label="Open chat with '+esc(c.name)+' about '+esc(c.taskName)+'">' +
-    '<span class="conv-avatar-link" aria-hidden="true">' +
-    avatarInner +
-    '</span>' +
+  // REAL anchor href — browser navigates even if JS handlers fail.
+  // Example: chat.html?conv=UUID&task=TASK_ID&with=FIREBASE_UID
+  return '<a class="conv-item" href="'+esc(threadHref)+'"' +
+    ' data-href="'+esc(threadHref)+'"' +
+    ' data-open-conv="'+esc(convId)+'"' +
+    ' data-task-id="'+esc(String(taskId == null ? '' : taskId))+'"' +
+    ' data-with="'+esc(otherUid)+'"' +
+    ' draggable="false"' +
+    ' aria-label="Open chat with '+esc(c.name)+' about '+esc(c.taskName)+'">' +
+    '<span class="conv-avatar-link" aria-hidden="true">' + avatarInner + '</span>' +
     '<div class="conv-info">' +
       '<div class="conv-name">'+esc(c.name)+'</div>' +
       '<div class="conv-task">'+c.taskIcon+' '+esc(c.taskName)+'</div>' +
@@ -969,7 +924,7 @@ function renderConvItem(c){
       '<div class="conv-time">'+esc(c.time)+'</div>' +
       (c.unread > 0 ? '<div class="conv-badge">'+c.unread+'</div>' : getStatusLabel(c.status)) +
     '</div>' +
-  '</button>';
+  '</a>';
 }
 
 function getStatusLabel(status){
