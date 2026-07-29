@@ -51,6 +51,8 @@ async function refreshSupabaseAuth() {
 var SELECT_TASKS_BROWSE = 'task_id,title,budget,location,lat,lng,task_mode,status,created_at,category,description,posted_by,poster_name,budget_negotiable,photo_urls,scheduled_label,requires_photos,rate_type,is_recurring,hourly_rate,frequency,est_hours';
 /** Detail includes precise_address for post-accept reveal — public cards use BROWSE (no precise_address). */
 var SELECT_TASKS_DETAIL = SELECT_TASKS_BROWSE + ',scheduled_at,precise_address';
+/** Dashboard first paint — no description/photos/geo (smaller cellular payload). */
+var SELECT_TASKS_DASH = 'task_id,title,budget,location,task_mode,status,created_at,category,posted_by,budget_negotiable';
 var SELECT_APPLICATIONS = 'app_id,task_id,worker_id,worker_name,message,price,status,created_at,counter_price,counter_by,counter_round,last_counter_at';
 var SELECT_MESSAGES = 'message_id,conv_id,sender_id,body,created_at';
 var SELECT_CONVERSATIONS = 'conv_id,task_id,poster_id,worker_id,poster_name,worker_name,task_title,task_category,status,is_unlocked,last_message,last_message_at,created_at,poster_last_read_at,worker_last_read_at';
@@ -606,46 +608,71 @@ async function fetchAllTasksFresh(opts) {
 }
 
 /**
- * Dashboard first paint — parallel, scoped, paginated (no select=*, no full-table dumps).
- * Returns { tasks, apps, payments, myTaskIds }.
- * Poster applicant rows are deferred (opts.includePosterApps !== true) so first paint
- * is a single Promise.all wave on cellular.
+ * Dashboard first paint — role-scoped, parallel, paginated (.range 0–19).
+ * No select=*. Payments skipped while QG_CONFIG.paymentsEnabled is false.
+ * Returns { tasks, apps, payments, myTaskIds, needWorkerPosted }.
+ *
+ * Poster critical: 1 query (my tasks). Open marketplace + own apps deferred.
+ * Worker critical: 2 queries in parallel (open tasks + my apps). Own posted deferred.
+ * Poster applicant rows stay deferred (opts.includePosterApps).
  */
 async function fetchDashboardBootstrap(userId, role, opts) {
   opts = opts || {};
   userId = String(userId || currentActorId() || '');
   var page = DASHBOARD_PAGE_SIZE;
+  var range = [0, page - 1];
+  var isWorker = role === 'worker';
+  var paymentsOn = !!(window.QG_CONFIG && window.QG_CONFIG.paymentsEnabled);
   if (!userId) {
-    return { tasks: [], apps: [], payments: [], myTaskIds: [] };
+    return { tasks: [], apps: [], payments: [], myTaskIds: [], needWorkerPosted: false };
   }
 
-  var myTasksP = sbGet(
-    'tasks',
-    withSelect('posted_by=eq.' + encodeURIComponent(userId), SELECT_TASKS_BROWSE),
-    'created_at.desc',
-    page
-  );
-  var openTasksP = sbGet(
-    'tasks',
-    withSelect('status=eq.open', SELECT_TASKS_BROWSE),
-    'created_at.desc',
-    page
-  );
-  var myAppsP = sbGet(
-    'applications',
-    withSelect('worker_id=eq.' + encodeURIComponent(userId), SELECT_APPLICATIONS),
-    'created_at.desc',
-    page
-  );
-  var paymentsP = typeof getPaymentsForUser === 'function'
-    ? getPaymentsForUser(userId, role === 'worker' ? 'worker' : 'poster', { limit: page })
-    : Promise.resolve([]);
+  var myTasks = [];
+  var openTasks = [];
+  var myApps = [];
+  var payments = [];
 
-  var first = await Promise.all([myTasksP, openTasksP, myAppsP, paymentsP]);
-  var myTasks = (first[0] || []).map(normalizeTaskRow);
-  var openTasks = (first[1] || []).map(normalizeTaskRow);
-  var myApps = (first[2] || []).map(normalizeApplicationRow);
-  var payments = Array.isArray(first[3]) ? first[3] : [];
+  if (isWorker) {
+    var workerWave = [
+      sbGet(
+        'tasks',
+        withSelect('status=eq.open', SELECT_TASKS_DASH),
+        'created_at.desc',
+        page,
+        { range: range }
+      ),
+      sbGet(
+        'applications',
+        withSelect('worker_id=eq.' + encodeURIComponent(userId), SELECT_APPLICATIONS),
+        'created_at.desc',
+        page,
+        { range: range }
+      )
+    ];
+    if (paymentsOn && typeof getPaymentsForUser === 'function') {
+      workerWave.push(getPaymentsForUser(userId, 'worker', { limit: page }));
+    }
+    var wFirst = await Promise.all(workerWave);
+    openTasks = (wFirst[0] || []).map(normalizeTaskRow);
+    myApps = (wFirst[1] || []).map(normalizeApplicationRow);
+    if (paymentsOn) payments = Array.isArray(wFirst[2]) ? wFirst[2] : [];
+  } else {
+    var posterWave = [
+      sbGet(
+        'tasks',
+        withSelect('posted_by=eq.' + encodeURIComponent(userId), SELECT_TASKS_DASH),
+        'created_at.desc',
+        page,
+        { range: range }
+      )
+    ];
+    if (paymentsOn && typeof getPaymentsForUser === 'function') {
+      posterWave.push(getPaymentsForUser(userId, 'poster', { limit: page }));
+    }
+    var pFirst = await Promise.all(posterWave);
+    myTasks = (pFirst[0] || []).map(normalizeTaskRow);
+    if (paymentsOn) payments = Array.isArray(pFirst[1]) ? pFirst[1] : [];
+  }
 
   var taskIds = [];
   myTasks.forEach(function (t) {
@@ -660,7 +687,8 @@ async function fetchDashboardBootstrap(userId, role, opts) {
       'applications',
       withSelect('task_id=in.(' + postgrestInList(chunk) + ')', SELECT_APPLICATIONS),
       'created_at.desc',
-      page
+      page,
+      { range: range }
     );
     posterApps = (posterApps || []).map(normalizeApplicationRow);
   }
@@ -685,7 +713,28 @@ async function fetchDashboardBootstrap(userId, role, opts) {
     writeTasksCache(tasks);
     writeAppsCache(apps);
   } catch (e) {}
-  return { tasks: tasks, apps: apps, payments: payments, myTaskIds: taskIds };
+  return {
+    tasks: tasks,
+    apps: apps,
+    payments: payments,
+    myTaskIds: taskIds,
+    needWorkerPosted: isWorker
+  };
+}
+
+/** Background: tasks the worker themselves posted (dashboard secondary section). */
+async function fetchWorkerPostedTasks(userId) {
+  userId = String(userId || '');
+  if (!userId) return [];
+  var page = DASHBOARD_PAGE_SIZE;
+  var rows = await sbGet(
+    'tasks',
+    withSelect('posted_by=eq.' + encodeURIComponent(userId), SELECT_TASKS_DASH),
+    'created_at.desc',
+    page,
+    { range: [0, page - 1] }
+  );
+  return (rows || []).map(normalizeTaskRow);
 }
 
 /** Second-wave: applications on the current user's posted tasks (poster dashboard). */
@@ -696,7 +745,8 @@ async function fetchPosterAppsForTasks(taskIds) {
     'applications',
     withSelect('task_id=in.(' + postgrestInList(ids) + ')', SELECT_APPLICATIONS),
     'created_at.desc',
-    DASHBOARD_PAGE_SIZE
+    DASHBOARD_PAGE_SIZE,
+    { range: [0, DASHBOARD_PAGE_SIZE - 1] }
   );
   return (rows || []).map(normalizeApplicationRow);
 }
@@ -4166,6 +4216,7 @@ window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
 window.getSupabaseHeaders = getSupabaseHeaders;
 window.refreshSupabaseAuth = refreshSupabaseAuth;
 window.SELECT_TASKS_BROWSE = SELECT_TASKS_BROWSE;
+window.SELECT_TASKS_DASH = SELECT_TASKS_DASH;
 window.SELECT_TASKS_DETAIL = SELECT_TASKS_DETAIL;
 window.SELECT_APPLICATIONS = SELECT_APPLICATIONS;
 window.SELECT_USERS_PUBLIC = SELECT_USERS_PUBLIC;
@@ -4189,6 +4240,7 @@ window.fetchTasksWithCache = fetchTasksWithCache;
 window.fetchAllTasksFresh = fetchAllTasksFresh;
 window.fetchDashboardBootstrap = fetchDashboardBootstrap;
 window.fetchPosterAppsForTasks = fetchPosterAppsForTasks;
+window.fetchWorkerPostedTasks = fetchWorkerPostedTasks;
 window.fetchMyTasksBundle = fetchMyTasksBundle;
 window.taskPostedByUser = taskPostedByUser;
 window.withTimeout = withTimeout;

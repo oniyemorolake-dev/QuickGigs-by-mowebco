@@ -112,12 +112,12 @@ body.light .login-progress-spinner{border-color:rgba(107,63,160,0.2);border-top-
   </div>
 </div>
 
-<script defer src="qg-utils.js?v=20260728perf2"></script>
+<script defer src="qg-utils.js?v=20260728perf3"></script>
 <script defer src="qg-config.js?v=20260728msg1"></script>
 <script defer src="qg-analytics.js"></script>
-<script defer src="qg-auth-google.js"></script>
-<script defer src="supabaseClient.js?v=20260728perf2"></script>
-<script defer src="supabase-db.js?v=20260728perf2"></script>
+<script defer src="qg-auth-google.js?v=20260728perf3"></script>
+<script defer src="supabaseClient.js?v=20260728perf3"></script>
+<script defer src="supabase-db.js?v=20260728perf3"></script>
 <script defer src="qg-cookies.js"></script>
 <script defer src="qg-theme.js"></script>
 <script>
@@ -176,11 +176,13 @@ async function beginFreshCredentialLogin() {
     try { sessionStorage.clear(); } catch (e) {}
   }
   window._currentUser = null;
+  // Skip signOut wait when already signed out — saves ~250–700ms on cold login.
+  if (!auth.currentUser) return;
   try {
     var signOutP = auth.signOut();
     await Promise.race([
       signOutP,
-      new Promise(function (resolve) { setTimeout(resolve, 700); })
+      new Promise(function (resolve) { setTimeout(resolve, 250); })
     ]);
   } catch (e2) {}
 }
@@ -206,18 +208,33 @@ async function finishGoogleLogin(user) {
   else window._currentUser = user;
   showLoginProgress('Signing you in…');
   prefetchDashboard();
+  markPendingProfileSync();
 
-  // Wait briefly for shared DB helpers on cold start (cellular + home-screen).
-  var gateWait = 0;
-  while (typeof getUserLoginGate !== 'function' && typeof getUserByFirebaseUid !== 'function' && gateWait < 40) {
-    await new Promise(function (r) { setTimeout(r, 50); });
-    gateWait++;
+  // Returning users: 0 Supabase queries — route from local onboarding cache.
+  if (typeof qgIsOnboardingDoneCached === 'function' && qgIsOnboardingDoneCached(user.uid)) {
+    if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'google' });
+    showLoginProgress('Opening dashboard…');
+    window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
+    return;
   }
 
-  // Critical path: ONE light user read (ban + onboarding). Profile upsert runs on dashboard.
-  var existing = typeof getUserLoginGate === 'function'
-    ? await getUserLoginGate(user.uid)
-    : (typeof getUserByFirebaseUid === 'function' ? await getUserByFirebaseUid(user.uid, { self: true }) : null);
+  // First-time / unknown: ONE light gate if helpers are already loaded (no long wait).
+  var gateReady = typeof getUserLoginGate === 'function' || typeof getUserByFirebaseUid === 'function';
+  if (!gateReady) {
+    var gateWait = 0;
+    while (!gateReady && gateWait < 8) {
+      await new Promise(function (r) { setTimeout(r, 40); });
+      gateWait++;
+      gateReady = typeof getUserLoginGate === 'function' || typeof getUserByFirebaseUid === 'function';
+    }
+  }
+
+  var existing = null;
+  if (typeof getUserLoginGate === 'function') {
+    existing = await getUserLoginGate(user.uid);
+  } else if (typeof getUserByFirebaseUid === 'function') {
+    existing = await getUserByFirebaseUid(user.uid, { self: true });
+  }
 
   if (existing && existing.status === 'banned') {
     if (typeof clearQgUserScopedStorage === 'function') clearQgUserScopedStorage();
@@ -231,15 +248,15 @@ async function finishGoogleLogin(user) {
     return;
   }
 
-  // Do NOT start sync before navigation — it fights the redirect on cellular.
-  markPendingProfileSync();
-
   if (existing && typeof qgUserNeedsOnboarding === 'function' && !qgUserNeedsOnboarding(existing)) {
+    if (typeof qgMarkOnboardingDone === 'function') qgMarkOnboardingDone(user.uid);
     if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'google' });
     showLoginProgress('Opening dashboard…');
     window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
     return;
   }
+
+  // No profile / incomplete onboarding (or helpers timed out) → finish signup.
   showLoginProgress('Almost there…');
   window.location.replace('signup.html?oauth=continue');
 }

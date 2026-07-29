@@ -280,11 +280,12 @@ body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#ee
 
 <!-- TAB BAR -->
 <nav class="tab-bar" id="qgTabBar"></nav>
-<script defer src="qg-utils.js?v=20260728perf2"></script>
+<script defer src="qg-utils.js?v=20260728perf3"></script>
 <script defer src="qg-nav.js"></script>
 <script defer src="qg-menu.js?v=20260727auth2"></script>
-<script defer src="supabaseClient.js?v=20260728perf2"></script>
-<script defer src="supabase-db.js?v=20260728perf2"></script>
+<script defer src="qg-auth-google.js?v=20260728perf3"></script>
+<script defer src="supabaseClient.js?v=20260728perf3"></script>
+<script defer src="supabase-db.js?v=20260728perf3"></script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
@@ -336,9 +337,13 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById('avatarEl').textContent = firstName.charAt(0).toUpperCase();
   var hint = document.getElementById('dashLoadHint');
   if (hint) hint.textContent = 'Loading your tasks…';
+  // First paint data — do not await profile sync.
   loadDashboardData(live.uid);
 
   function applyDbUserAfterLogin(dbUser) {
+    if (dbUser && dbUser.date_of_birth && typeof qgMarkOnboardingDone === 'function') {
+      qgMarkOnboardingDone(live.uid);
+    }
     if (dbUser && dbUser.role) {
       // Profile role is account metadata — do NOT overwrite workspace qg-mode
       localStorage.setItem('qg-role', dbUser.role);
@@ -361,6 +366,28 @@ onAuthStateChanged(auth, async (user) => {
       enforceBanOnLogin(live);
     }
   }
+
+  // Light gate in parallel with dashboard fetch (ban + onboarding) — not on critical render path.
+  function runEarlyLoginGate() {
+    var run = function () {
+      if (typeof getUserLoginGate !== 'function') return;
+      getUserLoginGate(live.uid).then(function (gateUser) {
+        if (!gateUser) return;
+        if (gateUser.status === 'banned') {
+          applyDbUserAfterLogin(gateUser);
+          return;
+        }
+        if (typeof qgUserNeedsOnboarding === 'function' && qgUserNeedsOnboarding(gateUser)) {
+          window.location.replace('signup.html?oauth=continue');
+          return;
+        }
+        applyDbUserAfterLogin(gateUser);
+      }).catch(function () {});
+    };
+    if (typeof getUserLoginGate === 'function') run();
+    else setTimeout(run, 120);
+  }
+  runEarlyLoginGate();
 
   // Background profile sync AFTER first paint — never blocks dashboard render.
   function runDeferredProfileSync() {
@@ -555,7 +582,7 @@ async function loadDashboardData(userId) {
     try {
       var role = isPoster ? 'poster' : 'worker';
       if (typeof fetchDashboardBootstrap === 'function') {
-        // First paint: one parallel wave (4 queries). Poster apps load after render.
+        // First paint: role-scoped parallel wave (poster 1 / worker 2). No payments while offline.
         var boot = await fetchDashboardBootstrap(userId, role, { includePosterApps: false });
         dashData.posted = Array.isArray(boot.tasks) ? boot.tasks : [];
         dashData.apps = Array.isArray(boot.apps) ? boot.apps : [];
@@ -586,17 +613,34 @@ async function loadDashboardData(userId) {
             renderAll();
           }).catch(function () {});
         }
+        if (boot.needWorkerPosted && typeof fetchWorkerPostedTasks === 'function') {
+          fetchWorkerPostedTasks(userId).then(function (posted) {
+            if (!posted || !posted.length) return;
+            var map = {};
+            (dashData.posted || []).forEach(function (t) {
+              var id = String(taskField(t, 'id') || '');
+              if (id) map[id] = t;
+            });
+            posted.forEach(function (t) {
+              var id = String(taskField(t, 'id') || '');
+              if (id) map[id] = t;
+            });
+            dashData.posted = Object.keys(map).map(function (k) { return map[k]; });
+            try { if (typeof writeTasksCache === 'function') writeTasksCache(dashData.posted); } catch (e) {}
+            renderAll();
+          }).catch(function () {});
+        }
         return;
       } else {
         var headers = typeof getSupabaseHeaders === 'function'
           ? await getSupabaseHeaders()
           : window.SUPABASE_HEADERS;
         var res = await Promise.all([
-          fetchAllTasksFresh({ limit: 20, select: (typeof SELECT_TASKS_BROWSE !== 'undefined' ? SELECT_TASKS_BROWSE : undefined) }),
+          fetchAllTasksFresh({ limit: 20, select: (typeof SELECT_TASKS_DASH !== 'undefined' ? SELECT_TASKS_DASH : (typeof SELECT_TASKS_BROWSE !== 'undefined' ? SELECT_TASKS_BROWSE : undefined)) }),
           typeof fetchApplicationsForActor === 'function'
             ? fetchApplicationsForActor(userId)
             : Promise.resolve([]),
-          typeof getPaymentsForUser === 'function'
+          (window.QG_CONFIG && window.QG_CONFIG.paymentsEnabled && typeof getPaymentsForUser === 'function')
             ? getPaymentsForUser(userId, role, { limit: 20 })
             : Promise.resolve([])
         ]);

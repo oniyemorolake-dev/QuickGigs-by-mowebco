@@ -50,6 +50,16 @@
     return !dbUser.date_of_birth;
   };
 
+  window.qgMarkOnboardingDone = function (uid) {
+    if (!uid) return;
+    try { localStorage.setItem('qg-onboarding-done:' + String(uid), '1'); } catch (e) {}
+  };
+
+  window.qgIsOnboardingDoneCached = function (uid) {
+    if (!uid) return false;
+    try { return localStorage.getItem('qg-onboarding-done:' + String(uid)) === '1'; } catch (e) { return false; }
+  };
+
   window.qgInitOAuthSignupFields = function (user) {
     var nameEl = document.getElementById('name');
     var emailEl = document.getElementById('email');
