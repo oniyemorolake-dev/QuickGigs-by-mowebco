@@ -42,30 +42,52 @@
     } catch (e) {}
   }
 
-  try {
-    var light = !isDarkTheme();
+  /** Apply without wiping role/page classes (never assign body.className wholesale). */
+  function paintTheme(isDark) {
+    var light = !isDark;
+    try {
+      document.documentElement.classList.toggle('light', light);
+      document.documentElement.classList.toggle('dark', !light);
+      document.documentElement.setAttribute('data-qg-theme', light ? 'light' : 'dark');
+    } catch (eHtml) {}
+
     var body = document.body;
-    if (body) {
-      if (body.classList.contains('theme-posttask')) {
-        body.className = (light ? 'light' : 'dark') + ' theme-posttask';
-      } else {
-        body.className = light ? 'light' : '';
-      }
+    if (!body) return;
+
+    if (body.classList.contains('theme-posttask')) {
+      body.classList.toggle('light', light);
+      body.classList.toggle('dark', !light);
+    } else {
+      body.classList.toggle('light', light);
+      body.classList.remove('dark');
     }
+  }
+
+  // Early paint — works in <head> before <body> exists (html.light / data-qg-theme)
+  try {
+    paintTheme(isDarkTheme());
   } catch (e) {}
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () {
+      paintTheme(isDarkTheme());
+    });
+  }
 
   window.QG_isDarkTheme = isDarkTheme;
   window.QG_setThemeDark = setThemePref;
   window.QG_getThemePref = getThemePref;
+  window.QG_paintTheme = paintTheme;
 
   window.QG_applyTheme = function (isDark, modeBtnId, posttaskStyle) {
     setThemePref(!!isDark);
     var body = document.body;
-    if (posttaskStyle) {
-      body.className = (isDark ? 'dark' : 'light') + ' theme-posttask';
-    } else {
-      body.className = isDark ? '' : 'light';
+    if (body && posttaskStyle) {
+      body.classList.add('theme-posttask');
+    } else if (body) {
+      body.classList.remove('theme-posttask');
     }
+    paintTheme(!!isDark);
     var btn = modeBtnId ? document.getElementById(modeBtnId) : null;
     if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
   };

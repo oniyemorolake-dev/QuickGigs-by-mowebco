@@ -85,7 +85,7 @@
     var link = document.createElement('link');
     link.id = 'qg-light-nav-css';
     link.rel = 'stylesheet';
-    link.href = 'qg-light-nav.css';
+    link.href = 'qg-light-nav.css?v=20260728msgtheme';
     document.head.appendChild(link);
   }
 

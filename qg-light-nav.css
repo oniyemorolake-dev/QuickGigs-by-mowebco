@@ -1,5 +1,15 @@
 /* QuickGigs — light mode nav + toggle contrast (readable on all pages) */
 
+/* Early paint: qg-theme.js sets html.light before body exists */
+html.light {
+  color-scheme: light;
+  background: #fafafe;
+}
+html.light body {
+  background: var(--bg, #fafafe);
+  color: var(--text, #2d1b4e);
+}
+
 body.light .nav {
   background: #ffffff !important;
   border-bottom: 1px solid #e8e2ff !important;

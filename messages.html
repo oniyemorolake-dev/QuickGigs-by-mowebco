@@ -28,8 +28,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="qg-role-theme.css">
-<script src="qg-theme.js"></script>
+<link rel="stylesheet" href="qg-role-theme.css?v=20260728msgtheme">
+<script src="qg-theme.js?v=20260728msgtheme"></script>
 <script src="qg-brand-init.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -144,13 +144,15 @@ body.light .locked-banner{background:#f5f2ff;border-color:#e8e2ff;}
 .locked-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px;}
 .locked-sub{font-size:12px;color:var(--text-muted);line-height:1.5;}
 
-/* TAB BAR */
-.tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--tab-bg);border-top:0.5px solid var(--border);display:flex;padding:8px 0 14px;z-index:100;transition:background 0.25s;}
+/* TAB BAR — always visible (empty state only fills #mainContent) */
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--tab-bg);border-top:0.5px solid var(--border);display:flex!important;padding:8px 0 14px;z-index:100;transition:background 0.25s;visibility:visible!important;opacity:1!important;pointer-events:auto;min-height:56px;}
 .tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;text-decoration:none;}
-.tab-icon{font-size:22px;color:var(--text-faint);transition:color 0.15s;}
+.tab-icon{font-size:22px;color:var(--text-faint);transition:color 0.15s;line-height:1;}
 .tab-lbl{font-size:10px;color:var(--text-faint);transition:color 0.15s;}
 .tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:var(--purple-light);}
 body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color:var(--purple);}
+body.page-messages #qgTabBar,
+body[data-qg-page="messages"] #qgTabBar{display:flex!important;}
 .app-legal-footer{text-align:center;padding:20px 16px 96px;font-size:10px;color:var(--text-faint);line-height:1.75;}
 .app-legal-footer a{color:var(--purple-light);text-decoration:none;}
 body.light .app-legal-footer a{color:var(--purple);}
@@ -160,14 +162,14 @@ body.light .app-legal-footer a{color:var(--purple);}
 <body class="page-messages" data-qg-page="messages">
 
 <nav class="nav" id="messagesHeader">
-  <a class="back-btn" href="dashboard.html" id="messagesBackBtn" aria-label="Back">
+  <a class="back-btn" href="dashboard.html" id="messagesBackBtn" aria-label="Back to dashboard">
     <span class="back-arrow" aria-hidden="true">←</span>
     <span class="back-label">Back</span>
   </a>
   <div class="nav-title">Messages</div>
   <div class="nav-right" style="display:flex;gap:8px;align-items:center">
     <button type="button" class="mode-btn" onclick="typeof switchRoleMode==='function'&&switchRoleMode()">Switch mode</button>
-    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
+    <button type="button" class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
   </div>
 </nav>
 <div style="padding:8px 16px 0"><span class="mode-tag" data-qg-mode-tag>📋 Poster mode</span></div>
@@ -184,16 +186,44 @@ body.light .app-legal-footer a{color:var(--purple);}
 <div id="mainContent"></div>
 
 <footer class="app-legal-footer site-footer" id="siteFooter"></footer>
-<nav class="tab-bar" id="qgTabBar" aria-label="Main"></nav>
+<!-- Shared bottom nav (qg-nav.js) — outside #mainContent so empty/list never removes it -->
+<nav class="tab-bar" id="qgTabBar" data-qg-nav-active="messages" aria-label="Main"></nav>
 <script defer src="qg-site.js"></script>
-<script defer src="qg-nav.js"></script>
+<script defer src="qg-nav.js?v=20260728msgtheme"></script>
 <script>
-function paintMessagesTabBar() {
-  if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('messages');
-}
-paintMessagesTabBar();
-document.addEventListener('DOMContentLoaded', paintMessagesTabBar);
-window.addEventListener('load', paintMessagesTabBar);
+(function () {
+  function paintMessagesTabBar() {
+    if (typeof renderQuickGigsTabBar === 'function') {
+      renderQuickGigsTabBar('messages');
+      return true;
+    }
+    return false;
+  }
+  window.paintMessagesTabBar = paintMessagesTabBar;
+  function ensureMessagesTabBar() {
+    if (paintMessagesTabBar()) return;
+    var tries = 0;
+    var t = setInterval(function () {
+      tries += 1;
+      if (paintMessagesTabBar() || tries > 40) clearInterval(t);
+    }, 50);
+  }
+  ensureMessagesTabBar();
+  document.addEventListener('DOMContentLoaded', ensureMessagesTabBar);
+  window.addEventListener('load', ensureMessagesTabBar);
+
+  var back = document.getElementById('messagesBackBtn');
+  if (back) {
+    back.addEventListener('click', function (e) {
+      try {
+        if (window.history.length > 1 && document.referrer && /quickgigs|localhost|127\.0\.0\.1/i.test(document.referrer)) {
+          e.preventDefault();
+          window.history.back();
+        }
+      } catch (err) {}
+    });
+  }
+})();
 </script>
 
 <script type="module">
@@ -243,15 +273,20 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-notifications.js"></script>
 <script defer src="qg-push.js?v=1"></script>
 <script>
-// ── THEME ──────────────────────────────────────────────
+// ── THEME (shared qg-theme.js — storage key: localStorage qg-theme) ──
 var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
 function applyTheme(){
   if (typeof QG_applyTheme === 'function') QG_applyTheme(isDark, 'modeBtn', false);
   else {
-    document.body.className = isDark ? '' : 'light';
+    // Fallback: toggle only — never wipe page/role classes
+    document.documentElement.classList.toggle('light', !isDark);
+    document.body.classList.toggle('light', !isDark);
     var b = document.getElementById('modeBtn');
     if (b) b.textContent = isDark ? '☀️ Light' : '🌙 Dark';
   }
+  // Re-assert page + role chrome after theme paint
+  document.body.classList.add('page-messages');
+  if (typeof applyRoleTheme === 'function') applyRoleTheme();
 }
 window.toggleTheme = function(){
   isDark = !isDark;
@@ -260,6 +295,11 @@ window.toggleTheme = function(){
   applyTheme();
 };
 applyTheme();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', applyTheme);
+} else {
+  applyTheme();
+}
 
 var conversations = [];
 var filtered = [];
@@ -379,6 +419,11 @@ async function loadConversations(){
     if (typeof paintMessagesTabBar === 'function') paintMessagesTabBar();
     else if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('messages');
     if (typeof applyRoleTheme === 'function') applyRoleTheme();
+    // Keep light/dark in sync after role chrome mutates classes
+    if (typeof applyTheme === 'function') applyTheme();
+    else if (typeof QG_paintTheme === 'function' && typeof QG_isDarkTheme === 'function') {
+      QG_paintTheme(QG_isDarkTheme());
+    }
     if (typeof isSupabaseUsingStaleCache === 'function' && isSupabaseUsingStaleCache()) {
       showStaleDataBanner();
     }

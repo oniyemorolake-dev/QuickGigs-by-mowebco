@@ -3,8 +3,9 @@
 /* ══════════════════════════════════════════════════════
    TASKER — same palette, slightly deeper bg
    ══════════════════════════════════════════════════════ */
-html[data-qg-mode="worker"],
-body.qg-mode-worker {
+/* Dark tasker tokens — never apply when light theme is active (html.light / body.light) */
+html[data-qg-mode="worker"]:not(.light),
+body.qg-mode-worker:not(.light) {
   --bg: #0e061c;
   --surface: rgba(255, 255, 255, 0.05);
   --surface-hover: rgba(107, 63, 160, 0.14);
@@ -24,6 +25,7 @@ body.qg-mode-worker {
   --role-accent-soft: rgba(107, 63, 160, 0.22);
 }
 
+html.light[data-qg-mode="worker"],
 html[data-qg-mode="worker"] body.light,
 body.light.qg-mode-worker {
   --bg: #f8f6ff;
