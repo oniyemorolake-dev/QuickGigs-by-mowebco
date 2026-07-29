@@ -137,18 +137,60 @@ function formatTitle(str) {
 window.formatTitle = formatTitle;
 
 /**
- * Unified relative time: <1h "Xm ago", <24h "Xh ago", <7d "Xd ago", else "Mon D".
+ * Parse Supabase/Postgres timestamps as real instants.
+ * Naive "YYYY-MM-DD HH:MM:SS" / "YYYY-MM-DDTHH:MM:SS" (no Z/offset) is treated as UTC —
+ * otherwise JS uses local time and Western Canada clocks see a "future" stamp → "0m ago".
+ */
+function parseQgTimestamp(input) {
+  if (input == null || input === '') return NaN;
+  if (input instanceof Date) {
+    var dt = input.getTime();
+    return isNaN(dt) ? NaN : dt;
+  }
+  if (typeof input === 'number') {
+    if (!isFinite(input)) return NaN;
+    // Unix seconds vs milliseconds
+    return input < 1e12 ? Math.round(input * 1000) : Math.round(input);
+  }
+  var s = String(input).trim();
+  if (!s) return NaN;
+  // "2026-07-27 14:00:00" or "2026-07-27T14:00:00" (no zone) → UTC
+  if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(\.\d+)?$/.test(s)) {
+    s = s.replace(' ', 'T');
+    if (s.charAt(s.length - 1) !== 'Z') s += 'Z';
+  } else if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}/.test(s)) {
+    s = s.replace(' ', 'T');
+  }
+  var t = Date.parse(s);
+  return isNaN(t) ? NaN : t;
+}
+
+window.parseQgTimestamp = parseQgTimestamp;
+
+/**
+ * Unified relative time: <1m "Just now", <1h "Xm ago", <24h "Xh ago", <7d "Xd ago", else "Mon D".
+ * Always based on an absolute timestamp (typically tasks.created_at), never "now" or updated_at.
  */
 function timeAgo(date) {
-  if (!date) return '';
-  var then = new Date(date);
-  if (isNaN(then.getTime())) return '';
-  var s = (Date.now() - then.getTime()) / 1000;
+  if (date == null || date === '') return '';
+  var thenMs = typeof parseQgTimestamp === 'function' ? parseQgTimestamp(date) : new Date(date).getTime();
+  if (isNaN(thenMs)) return '';
+  var s = (Date.now() - thenMs) / 1000;
+  // Small clock skew / UTC-vs-local misparse residual — not a real future post
+  if (s < 0 && s > -120) s = 0;
+  // Larger "future" usually means bad zone parse; try forcing UTC once
+  if (s < -120 && typeof date === 'string' && date.indexOf('Z') < 0 && date.indexOf('+') < 0) {
+    var retry = Date.parse(String(date).trim().replace(' ', 'T') + 'Z');
+    if (!isNaN(retry)) {
+      s = (Date.now() - retry) / 1000;
+    }
+  }
   if (s < 0) s = 0;
+  if (s < 60) return 'Just now';
   if (s < 3600) return Math.floor(s / 60) + 'm ago';
   if (s < 86400) return Math.floor(s / 3600) + 'h ago';
   if (s < 604800) return Math.floor(s / 86400) + 'd ago';
-  return then.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
+  return new Date(thenMs).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
 }
 
 window.timeAgo = timeAgo;
@@ -168,8 +210,13 @@ function formatRelativeTime(iso) {
 
 window.formatRelativeTime = formatRelativeTime;
 
+/** Post-time label for cards — "Posted 30m ago" (time), never "away" (distance). */
 function formatPostedTime(iso) {
-  return formatRelativeTime(iso);
+  var rel = timeAgo(iso);
+  if (!rel) return 'Posted recently';
+  if (rel === 'Just now') return 'Posted just now';
+  if (/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/i.test(rel)) return 'Posted ' + rel;
+  return 'Posted ' + rel;
 }
 
 window.formatPostedTime = formatPostedTime;

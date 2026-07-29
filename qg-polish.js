@@ -38,11 +38,17 @@
   // Prefer shared qg-utils timeAgo; keep a matching fallback if utils is late
   if (typeof window.timeAgo !== 'function') {
     window.timeAgo = function (dateStr) {
-      if (!dateStr) return '';
-      var then = new Date(dateStr);
+      if (dateStr == null || dateStr === '') return '';
+      var raw = String(dateStr).trim();
+      if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(\.\d+)?$/.test(raw)) {
+        raw = raw.replace(' ', 'T') + 'Z';
+      }
+      var then = new Date(raw);
       if (isNaN(then.getTime())) return '';
       var s = (Date.now() - then.getTime()) / 1000;
+      if (s < 0 && s > -120) s = 0;
       if (s < 0) s = 0;
+      if (s < 60) return 'Just now';
       if (s < 3600) return Math.floor(s / 60) + 'm ago';
       if (s < 86400) return Math.floor(s / 3600) + 'h ago';
       if (s < 604800) return Math.floor(s / 86400) + 'd ago';

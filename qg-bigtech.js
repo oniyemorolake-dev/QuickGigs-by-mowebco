@@ -661,7 +661,9 @@
   /* ── New pill helper for browse ── */
   window.qgIsNewTask = function (createdAt) {
     if (!createdAt) return false;
-    var t = new Date(createdAt).getTime();
+    var t = typeof window.parseQgTimestamp === 'function'
+      ? window.parseQgTimestamp(createdAt)
+      : new Date(createdAt).getTime();
     if (isNaN(t)) return false;
     return (Date.now() - t) < 24 * 60 * 60 * 1000;
   };

@@ -540,12 +540,12 @@ onAuthStateChanged(auth, (user) => {
 });
 </script>
 
-<script defer src="qg-utils.js?v=20260728applym1"></script>
+<script defer src="qg-utils.js?v=20260728timeago1"></script>
 <script defer src="feeBreakdown.js?v=20260727fee1"></script>
 <script defer src="contentModeration.js?v=20260727cm1"></script>
-<script defer src="qg-polish.js?v=20260726e"></script>
+<script defer src="qg-polish.js?v=20260728timeago1"></script>
 <script src="qg-ux.js?v=20260726ux" defer></script>
-<script src="qg-bigtech.js?v=20260726bt" defer></script>
+<script src="qg-bigtech.js?v=20260728timeago1" defer></script>
 <script src="qg-wave2.js?v=20260726w2" defer></script>
 <script defer src="qg-config.js?v=20260726e"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
@@ -582,9 +582,8 @@ function normaliseTask(row){
     location:row.LOCATION||row.location||'Calgary, AB',
     when: row.scheduled_label || row.SCHEDULED_LABEL || '',
     createdAt: row.created_at || row.CREATED_AT || '',
-    posted: typeof formatRelativeTime === 'function'
-      ? formatRelativeTime(row.created_at || row.CREATED_AT)
-      : 'Recently',
+    // Computed at render from createdAt — do not bake a stale relative string here
+    posted: '',
     applicants:0,
     status:(row.STATUS||row.status||'open').toLowerCase(),
     posterId:posterUid,
@@ -712,8 +711,23 @@ function taskMatchesLocation(task, filterLoc, nearMeOnly) {
 
 function parseTaskTimestamp(iso) {
   if (!iso) return 0;
+  if (typeof parseQgTimestamp === 'function') {
+    var ms = parseQgTimestamp(iso);
+    return isNaN(ms) ? 0 : ms;
+  }
   var t = Date.parse(iso);
   return isNaN(t) ? 0 : t;
+}
+
+function postedLabelForTask(t) {
+  var created = (t && (t.createdAt || t.created_at || t.CREATED_AT)) || '';
+  if (typeof formatPostedTime === 'function') return formatPostedTime(created);
+  if (typeof formatRelativeTime === 'function') {
+    var rel = formatRelativeTime(created);
+    if (!rel || rel === 'Recently') return 'Posted recently';
+    return /^posted\b/i.test(rel) ? rel : ('Posted ' + rel);
+  }
+  return 'Posted recently';
 }
 
 function taskMatchesDateRange(task, range) {
@@ -1056,6 +1070,11 @@ function renderCards(){
     var hasPhoto = !!(t.photoUrls && t.photoUrls[0]);
     var mediaHtml = renderCardMedia(t);
     var cardClass = 'task-card' + (hasPhoto ? ' has-photo' : ' no-photo');
+    var postedLbl = postedLabelForTask(t);
+    var distLbl = (t._distanceKm != null && typeof formatDistanceKm === 'function')
+      ? formatDistanceKm(t._distanceKm)
+      : '';
+    var metaBits = [loc, distLbl, postedLbl].filter(Boolean);
     // eBay-style: large media left, details + actions right (same height with/without photo)
     return '<div class="'+cardClass+'" data-task-id="'+esc(String(t.id))+'">'+
       mediaHtml +
@@ -1069,7 +1088,7 @@ function renderCards(){
         '<div class="tc-bottom">'+
           '<div style="min-width:0;flex:1">'+
             '<div class="tc-price">'+esc(t.priceLabel)+(typeof qgNewPillHtml==='function'?qgNewPillHtml(t.createdAt||t.created_at):'')+'</div>'+
-            '<div class="tc-info">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(loc)+' · '+esc(t.posted||'Posted recently')+'</div>'+
+            '<div class="tc-info">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(metaBits.join(' · '))+'</div>'+
             '<div class="qg-action-row">'+saveBtn+shareBtn+'</div>'+
           '</div>'+
           '<button type="button" class="apply-btn '+getBtnClass(t.mode)+'" onclick="openModal(\''+esc(String(t.id))+'\',event)">'+getBtnLabel(t.mode)+'</button>'+
