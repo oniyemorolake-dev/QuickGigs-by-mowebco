@@ -75,8 +75,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .nav-center{flex:1;min-width:0;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none;color:inherit;}
 .nav-center:hover .nav-name{text-decoration:underline;text-underline-offset:3px;}
 .nav-avatar-row{display:flex;align-items:center;justify-content:center;gap:8px;max-width:100%;}
-.nav-chat-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#fff;flex-shrink:0;background-size:cover;background-position:center;}
+.nav-chat-avatar{
+  width:32px;height:32px;min-width:32px;min-height:32px;max-width:32px;max-height:32px;
+  border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#fff;
+  flex-shrink:0;background-size:cover;background-position:center;overflow:hidden;box-sizing:border-box;
+}
 .nav-chat-avatar.has-photo{color:transparent;}
+.nav-chat-avatar img{
+  width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;
+  object-fit:cover;display:block;border-radius:inherit;
+}
 .nav-name{font-size:15px;font-weight:500;color:var(--text);}
 .nav-sub{font-size:11px;color:var(--text-muted);}
 .nav-right{display:flex;align-items:center;gap:6px;flex-shrink:0;}
@@ -154,7 +162,7 @@ body.light .blocked-msg{background:#fef2f2;border-color:#fecaca;color:#dc2626;}
 /* INPUT AREA */
 .input-area{background:var(--nav-bg);border-top:0.5px solid var(--border);padding:12px 18px calc(12px + env(safe-area-inset-bottom, 0px));display:flex;align-items:flex-end;gap:10px;flex-shrink:0;transition:background 0.25s;}
 .task-photo-strip{display:none;flex-wrap:wrap;gap:8px;padding:10px 18px;background:var(--nav-bg);border-bottom:0.5px solid var(--border);flex-shrink:0;}
-.task-photo-strip img{width:64px;height:64px;object-fit:cover;border-radius:10px;border:0.5px solid var(--border);}
+.task-photo-strip img{width:64px;height:64px;min-width:64px;min-height:64px;max-width:64px;max-height:64px;object-fit:cover;border-radius:10px;border:0.5px solid var(--border);display:block;}
 .task-photo-label{font-size:10px;color:var(--text-muted);width:100%;}
 .input-wrap{flex:1;background:var(--input-bg);border:0.5px solid var(--input-border);border-radius:20px;padding:10px 16px;transition:border-color 0.2s;}
 .input-wrap:focus-within{border-color:var(--purple-light);}
@@ -168,7 +176,7 @@ body.light .send-btn{color:#2d1b4e;}
 .attach-btn{width:42px;height:42px;border-radius:50%;background:var(--input-bg);border:0.5px solid var(--input-border);cursor:pointer;display:none;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
 .attach-btn.visible{display:flex;}
 .attach-btn:disabled{opacity:0.4;cursor:not-allowed;}
-.bubble-image{max-width:220px;border-radius:14px;display:block;cursor:pointer;}
+.bubble-image{max-width:min(220px,72vw);max-height:280px;width:auto;height:auto;object-fit:cover;border-radius:14px;display:block;cursor:pointer;}
 .bubble-image-caption{font-size:10px;color:var(--text-muted);margin-top:4px;}
 
 /* FRAUD WARNING INLINE */
@@ -293,7 +301,7 @@ onAuthStateChanged(auth, (user) => {
 
 <link rel="stylesheet" href="qg-stripe.css">
 <link rel="stylesheet" href="qg-trust.css">
-<script defer src="qg-utils.js?v=20260728welcome1"></script>
+<script defer src="qg-utils.js?v=20260729avatar1"></script>
 <script defer src="contentModeration.js?v=20260727cm1"></script>
 <script defer src="qg-polish.js?v=20260728xss1"></script>
 <script src="qg-ux.js?v=20260728blank2" defer></script>
@@ -575,7 +583,7 @@ async function loadTaskPhotos(taskId){
       var safe = typeof safeMediaUrl === 'function' ? safeMediaUrl(url)
         : (typeof safeUrl === 'function' ? safeUrl(url) : '');
       if (!safe) return '';
-      return '<img src="'+window.escapeHtml(safe)+'" alt="Task reference photo">';
+      return '<img src="'+window.escapeHtml(safe)+'" alt="Task reference photo" loading="lazy" decoding="async" width="64" height="64">';
     }).join('');
 }
 
@@ -879,7 +887,7 @@ function deferChatEnrichment(conv, otherUid, otherName, isPoster) {
       var otherAvatar = await getUserAvatarUrl(otherUid);
       var chatAvatarEl = document.getElementById('chatAvatar');
       if (chatAvatarEl && typeof renderUserAvatarHtml === 'function') {
-        var avatarHtml = renderUserAvatarHtml(name, otherAvatar, { className: 'nav-chat-avatar' });
+        var avatarHtml = renderUserAvatarHtml(name, otherAvatar, { className: 'nav-chat-avatar', size: 32 });
         chatAvatarEl.outerHTML = avatarHtml.replace('class="nav-chat-avatar"', 'class="nav-chat-avatar" id="chatAvatar"');
       }
     }
@@ -1274,7 +1282,7 @@ function renderMessageBubble(text, opts) {
     if (url) {
       var caption = opts.senderIsPoster ? 'Reference photo' : 'Progress photo';
       var escUrl = window.escapeHtml(url);
-      return '<img class="bubble-image qg-modal-photo-tap" src="'+escUrl+'" alt="'+window.escapeHtml(caption)+'" data-photo="'+escUrl+'" data-photo-caption="'+window.escapeHtml(caption)+'">' +
+      return '<img class="bubble-image qg-modal-photo-tap" src="'+escUrl+'" alt="'+window.escapeHtml(caption)+'" loading="lazy" decoding="async" data-photo="'+escUrl+'" data-photo-caption="'+window.escapeHtml(caption)+'">' +
         '<div class="bubble-image-caption">'+window.escapeHtml(caption)+'</div>';
     }
   }

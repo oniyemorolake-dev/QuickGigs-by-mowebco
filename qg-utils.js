@@ -726,10 +726,12 @@ function renderUserAvatarHtml(name, avatarUrl, opts) {
   var photo = safeMediaUrl(avatarUrl);
   var size = Number(opts.size) || 40;
   if (photo) {
-    // Remote avatars: lazy + async decode + intrinsic size hints
-    return '<div class="' + cls + ' has-photo" title="' + label + '" aria-label="' + label + '" style="overflow:hidden">' +
+    // Remote avatars: lazy + async decode + intrinsic size hints.
+    // Inline max dimensions so flex parents (messages list) can't expand to intrinsic photo size.
+    var box = 'width:' + size + 'px;height:' + size + 'px;min-width:' + size + 'px;min-height:' + size + 'px;max-width:' + size + 'px;max-height:' + size + 'px;overflow:hidden;flex-shrink:0;box-sizing:border-box;';
+    return '<div class="' + cls + ' has-photo" title="' + label + '" aria-label="' + label + '" style="' + box + '">' +
       '<img src="' + escAttr(photo) + '" alt="" loading="lazy" decoding="async" width="' + size + '" height="' + size + '" ' +
-      'style="width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit">' +
+      'style="width:100%;height:100%;max-width:100%;max-height:100%;object-fit:cover;display:block;border-radius:inherit">' +
       '</div>';
   }
   var bg = opts.gradient || avatarGradientForName(name);
