@@ -12,7 +12,7 @@
     } catch (e) { /* ignore */ }
   }
   purgeStaleReportDom();
-  if (document.readyState === 'loading') {
+  if (document && document.readyState === 'loading' && document.addEventListener) {
     document.addEventListener('DOMContentLoaded', purgeStaleReportDom);
   }
 
@@ -121,34 +121,38 @@
 
     document.body.appendChild(overlay);
 
-    overlay.addEventListener('click', function (e) {
+    if (overlay && overlay.addEventListener) overlay.addEventListener('click', function (e) {
       if (e.target === overlay) closeReportModal();
     });
 
-    document.getElementById('qgReportClose').onclick = closeReportModal;
-    document.getElementById('qgReportCancel').onclick = closeReportModal;
+    var closeBtn = document.getElementById('qgReportClose');
+    var cancelBtn = document.getElementById('qgReportCancel');
+    if (closeBtn) closeBtn.onclick = closeReportModal;
+    if (cancelBtn) cancelBtn.onclick = closeReportModal;
 
-    document.getElementById('qgReportReasons').addEventListener('click', function (e) {
-      var btn = e.target.closest('.qg-report-reason');
+    var reasons = document.getElementById('qgReportReasons');
+    if (reasons && reasons.addEventListener) reasons.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('.qg-report-reason') : null;
       if (!btn) return;
       selectReason(btn.getAttribute('data-value'));
     });
 
     var reasonSelect = document.getElementById('qgReportReasonSelect');
-    if (reasonSelect) {
+    if (reasonSelect && reasonSelect.addEventListener) {
       reasonSelect.addEventListener('change', function () {
         selectReason(reasonSelect.value);
       });
     }
 
     var detailsEl = document.getElementById('qgReportDetails');
-    detailsEl.addEventListener('input', updateCharCount);
+    if (detailsEl && detailsEl.addEventListener) detailsEl.addEventListener('input', updateCharCount);
 
-    document.addEventListener('keydown', function (e) {
+    if (document && document.addEventListener) document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && overlay.classList.contains('open')) closeReportModal();
     });
 
-    document.getElementById('qgReportSubmit').onclick = submitReport;
+    var submit = document.getElementById('qgReportSubmit');
+    if (submit) submit.onclick = submitReport;
 
     return overlay;
   }
@@ -183,13 +187,15 @@
     currentContext = ctx || {};
     var el = ensureOverlay();
 
-    var targetName = ctx.targetLabel || ctx.targetType || 'content';
-    document.getElementById('qgReportTargetName').textContent = targetName;
-    document.getElementById('qgReportSub').textContent =
+    var targetName = currentContext.targetLabel || currentContext.targetType || 'content';
+    var targetNameEl = document.getElementById('qgReportTargetName');
+    var subEl = document.getElementById('qgReportSub');
+    if (targetNameEl) targetNameEl.textContent = targetName;
+    if (subEl) subEl.textContent =
       'Our team reviews every report. You will not be visible to the person you report.';
 
     var detailsEl = document.getElementById('qgReportDetails');
-    detailsEl.value = '';
+    if (detailsEl) detailsEl.value = String(currentContext.initialDetail || '').slice(0, 1000);
     selectReason(REASONS[0].value);
     updateCharCount();
 
@@ -224,6 +230,7 @@
     var submitBtn = document.getElementById('qgReportSubmit');
     var reasonSel = document.getElementById('qgReportReasonSelect');
     if (reasonSel && reasonSel.value) selectedReason = reasonSel.value;
+    if (!detailsEl || !submitBtn) return;
     submitBtn.disabled = true;
     submitBtn.textContent = 'Sending…';
 
@@ -232,6 +239,10 @@
       : (rawType === 'task' ? 'task' : '');
     var targetId = String(currentContext.targetId || '');
     var detail = (detailsEl.value || '').trim();
+    var requiredContext = String(currentContext.initialDetail || '').trim();
+    if (requiredContext && detail.indexOf(requiredContext) !== 0) {
+      detail = (requiredContext + (detail ? '\n\nUser details:\n' + detail : '')).slice(0, 1000);
+    }
     var row = {
       reporter_id: user.uid,
       target_type: targetType,
@@ -278,7 +289,7 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', purgeStaleReportDom);
+  if (document && document.addEventListener) document.addEventListener('DOMContentLoaded', purgeStaleReportDom);
 
   function reportButtonHtml(targetType, targetId, targetLabel) {
     var attr = typeof escAttr === 'function' ? escAttr : function (s) {

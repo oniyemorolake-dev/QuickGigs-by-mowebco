@@ -100,7 +100,7 @@
   // Sync load so qgIcon is available before deferred page scripts run
   if (!document.querySelector('script[src*="qg-icons.js"]') && typeof window.qgIcon !== 'function') {
     try {
-      document.write('<script src="qg-icons.js?v=1"><\\/script>');
+      document.write('<script src="qg-icons.js?v=1"><\/script>');
     } catch (eWrite) {
       var icons = document.createElement('script');
       icons.src = 'qg-icons.js?v=1';
