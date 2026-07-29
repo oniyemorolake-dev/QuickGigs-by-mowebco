@@ -2,7 +2,7 @@
 (function () {
   var DISMISS_KEY = 'qg-pwa-dismissed';
   var IOS_DISMISS_KEY = 'qg-ios-install-dismissed';
-  var SHEET_VER = '6';
+  var SHEET_VER = '90';
 
   function assetUrl(path) {
     try {
@@ -92,6 +92,22 @@
     if (!('serviceWorker' in navigator)) return;
     window.addEventListener('load', function () {
       navigator.serviceWorker.register(assetUrl('/sw.js?v=' + SHEET_VER)).then(function (reg) {
+        // Activate new SW immediately so HTML/JS updates are not stuck waiting
+        function askSkipWaiting(worker) {
+          if (worker) {
+            try { worker.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {}
+          }
+        }
+        if (reg.waiting) askSkipWaiting(reg.waiting);
+        reg.addEventListener('updatefound', function () {
+          var w = reg.installing;
+          if (!w) return;
+          w.addEventListener('statechange', function () {
+            if (w.state === 'installed' && navigator.serviceWorker.controller) {
+              askSkipWaiting(w);
+            }
+          });
+        });
         reg.update();
       }).catch(function (err) {
         console.warn('SW registration failed:', err);

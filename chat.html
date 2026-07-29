@@ -449,7 +449,7 @@ var CAT_BG = {home:'rgba(107,63,160,0.2)',errands:'rgba(251,191,36,0.15)',tutori
 var _qgChatParams = new URLSearchParams(window.location.search);
 var convId = _qgChatParams.get('conv');
 var taskIdFromUrl = _qgChatParams.get('task') || '';
-var withUidFromUrl = _qgChatParams.get('with') || '';
+var withUidFromUrl = _qgChatParams.get('peer') || _qgChatParams.get('with') || '';
 var currentConv = null;
 var messages = [];
 var pollTimer = null;
@@ -1046,7 +1046,7 @@ async function initChat(){
     return;
   }
 
-  // Resolve thread when opened as chat.html?task=&with= (firebase_uid) without conv
+  // Resolve thread when opened as chat.html?task=&peer= (firebase_uid) without conv
   if (!convId && (taskIdFromUrl || withUidFromUrl) && typeof getConversationForTask === 'function') {
     try {
       var peer = withUidFromUrl || '';
@@ -1068,11 +1068,13 @@ async function initChat(){
         try {
           var u = new URL(window.location.href);
           u.searchParams.set('conv', convId);
+          if (taskIdFromUrl) u.searchParams.set('task', taskIdFromUrl);
+          if (peer) u.searchParams.set('peer', peer);
           window.history.replaceState({}, '', u.pathname + '?' + u.searchParams.toString());
         } catch (eHist) {}
       }
     } catch (resolveErr) {
-      console.warn('[QuickGigs chat] task/with resolve failed:', resolveErr);
+      console.warn('[QuickGigs chat] task/peer resolve failed:', resolveErr);
     }
   }
 

@@ -757,34 +757,30 @@ function renderContent(){
   }
 
   content.innerHTML = html;
-  wireConversationRows(content);
 }
 
 /**
- * ROOT CAUSE (URL stays on messages.html):
- * messages.html ~958 rendered a <button type="button"> with only data-href —
- * no real href. Navigation was 100% JS. A touchend filter + document handler
- * that skipped wired rows often meant the tap never called location.assign.
- * FIX: real <a href="chat.html?conv=&task=&with="> so the browser navigates
- * even if every handler fails; handlers only reinforce navigation.
+ * Conversation open URL — real <a href>, not a JS-only button.
+ * Primary: chat.html?task=<taskId>&peer=<firebase_uid>
+ * Also include &conv= when known so chat can load without an extra lookup.
  */
 function chatThreadHref(convId, taskId, otherUid) {
+  var task = taskId != null && String(taskId) !== '' ? String(taskId) : '';
+  var peer = otherUid ? String(otherUid) : '';
   var id = String(convId || '').trim();
-  if (!id || id === 'undefined' || id === 'null') return '';
-  var href = 'chat.html?conv=' + encodeURIComponent(id);
-  if (taskId != null && String(taskId) !== '') {
-    href += '&task=' + encodeURIComponent(String(taskId));
-  }
-  if (otherUid) {
-    href += '&with=' + encodeURIComponent(String(otherUid));
-  }
-  return href;
+  if (!task && !id) return '';
+  var href = 'chat.html?';
+  var parts = [];
+  if (task) parts.push('task=' + encodeURIComponent(task));
+  if (peer) parts.push('peer=' + encodeURIComponent(peer));
+  if (id && id !== 'undefined' && id !== 'null') parts.push('conv=' + encodeURIComponent(id));
+  return href + parts.join('&');
 }
 
 function openConversationThread(convId, taskId, otherUid) {
   var href = chatThreadHref(convId, taskId, otherUid);
   if (!href) {
-    console.warn('[QuickGigs messages] missing conv id');
+    console.warn('[QuickGigs messages] missing task/conv id');
     if (typeof showToast === 'function') showToast('Conversation not found — refresh Messages.', '#f59e0b');
     return false;
   }
@@ -793,93 +789,13 @@ function openConversationThread(convId, taskId, otherUid) {
   return true;
 }
 
-function goConversationFromRow(row, ev) {
-  if (!row) return false;
-  var id = row.getAttribute('data-open-conv') || '';
-  var taskId = row.getAttribute('data-task-id') || '';
-  var otherUid = row.getAttribute('data-with') || '';
-  var href = row.getAttribute('href') || row.getAttribute('data-href') ||
-    chatThreadHref(id, taskId, otherUid);
-  if (!href) {
-    if (typeof showToast === 'function') {
-      showToast('Conversation missing an id — refresh Messages.', '#ef4444');
-    }
-    return false;
-  }
-  // Let the <a> navigate natively when possible; force assign for buttons / blocked defaults.
-  if (ev && row.tagName === 'A' && href.indexOf('chat.html') === 0) {
-    // Still force — some mobile browsers select text instead of activating.
-    try { ev.preventDefault(); } catch (e1) {}
-  } else if (ev) {
-    try { ev.preventDefault(); } catch (e2) {}
-  }
-  try {
-    var sel = window.getSelection && window.getSelection();
-    if (sel && sel.removeAllRanges) sel.removeAllRanges();
-  } catch (e3) {}
-  window.location.href = href;
-  return true;
-}
-
-function wireConversationRows(root) {
-  root = root || document.getElementById('mainContent');
-  if (!root) return;
-  var rows = root.querySelectorAll('.conv-item[data-open-conv], a.conv-item');
-  for (var i = 0; i < rows.length; i++) {
-    (function (row) {
-      if (row.getAttribute('data-qg-wired') === '1') return;
-      row.setAttribute('data-qg-wired', '1');
-      row.addEventListener('click', function (ev) {
-        goConversationFromRow(row, ev);
-      });
-      row.addEventListener('keydown', function (ev) {
-        if (ev.key === 'Enter' || ev.key === ' ') goConversationFromRow(row, ev);
-      });
-    })(rows[i]);
-  }
-}
-
-function bindMessagesListClicks() {
-  if (window._qgMsgClickDocBound) return;
-  window._qgMsgClickDocBound = true;
-  document.addEventListener('click', function (e) {
-    try {
-      var t = e.target;
-      if (t && t.nodeType === 3) t = t.parentElement;
-      var row = t && t.closest ? t.closest('.conv-item') : null;
-      if (!row) {
-        var el = t;
-        while (el && el !== document.body) {
-          if (el.classList && el.classList.contains('conv-item')) { row = el; break; }
-          el = el.parentElement;
-        }
-      }
-      if (!row) return;
-      var root = document.getElementById('mainContent');
-      if (root && !root.contains(row)) return;
-      goConversationFromRow(row, e);
-    } catch (tapErr) {
-      console.error('[QuickGigs messages] tap failed:', tapErr);
-      if (typeof showToast === 'function') showToast('Could not open chat — try again.', '#ef4444');
-    }
-  }, true);
-}
-bindMessagesListClicks();
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', function () {
-    bindMessagesListClicks();
-    wireConversationRows();
-  });
-} else {
-  wireConversationRows();
-}
+// No click preventDefault — the row IS a real <a href>. Native navigation must win.
+function wireConversationRows() { /* no-op: real anchors */ }
+function bindMessagesListClicks() { /* no-op: real anchors */ }
 
 window.openConversationThread = openConversationThread;
 window.chatThreadHref = chatThreadHref;
 window.wireConversationRows = wireConversationRows;
-window.qgOpenConvRow = function (el, evt) {
-  return goConversationFromRow(el, evt);
-};
 
 function renderConvItem(c){
   var convId = c && (c.id || c.conv_id) ? String(c.id || c.conv_id) : '';
@@ -896,7 +812,7 @@ function renderConvItem(c){
     );
   }
   if (!threadHref) {
-    return '<div class="conv-item" aria-disabled="true" style="opacity:0.65" data-open-conv="">' +
+    return '<div class="conv-item" aria-disabled="true" style="opacity:0.65">' +
       '<div class="conv-avatar-link">' + avatarInner + '</div>' +
       '<div class="conv-info">' +
         '<div class="conv-name">'+esc(c.name)+'</div>' +
@@ -904,15 +820,13 @@ function renderConvItem(c){
         '<div class="conv-preview">Conversation unavailable — refresh</div>' +
       '</div></div>';
   }
-  // REAL anchor href — browser navigates even if JS handlers fail.
-  // Example: chat.html?conv=UUID&task=TASK_ID&with=FIREBASE_UID
+  // Plain real link wrapping the whole row — no JS required to open chat.
+  // Exact shape: <a class="conv-item" href="chat.html?task=…&peer=…&conv=…">…</a>
   return '<a class="conv-item" href="'+esc(threadHref)+'"' +
-    ' data-href="'+esc(threadHref)+'"' +
-    ' data-open-conv="'+esc(convId)+'"' +
     ' data-task-id="'+esc(String(taskId == null ? '' : taskId))+'"' +
-    ' data-with="'+esc(otherUid)+'"' +
-    ' draggable="false"' +
-    ' aria-label="Open chat with '+esc(c.name)+' about '+esc(c.taskName)+'">' +
+    ' data-peer="'+esc(otherUid)+'"' +
+    ' data-open-conv="'+esc(convId)+'"' +
+    ' draggable="false">' +
     '<span class="conv-avatar-link" aria-hidden="true">' + avatarInner + '</span>' +
     '<div class="conv-info">' +
       '<div class="conv-name">'+esc(c.name)+'</div>' +
