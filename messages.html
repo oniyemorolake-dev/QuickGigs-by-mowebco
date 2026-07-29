@@ -118,10 +118,25 @@ body.light .empty-btn{color:#2d1b4e;}
 /* SECTION LABEL */
 .section-label{padding:14px 20px 8px;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);}
 
-/* CONVERSATION ITEM */
-.conv-item{display:flex;align-items:center;gap:14px;padding:14px 20px;cursor:pointer;transition:background 0.15s;text-decoration:none;color:inherit;}
+/* CONVERSATION ITEM — whole card is one tap target (never text-select / callout) */
+.conv-item{
+  display:flex;align-items:center;gap:14px;padding:14px 20px;
+  cursor:pointer;transition:background 0.15s;text-decoration:none;color:inherit;
+  -webkit-user-select:none;user-select:none;
+  -webkit-touch-callout:none;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+.conv-item *,
+.conv-item *::before,
+.conv-item *::after{
+  -webkit-user-select:none!important;user-select:none!important;
+  -webkit-touch-callout:none;
+  pointer-events:none; /* clicks always hit the outer <a>, not nested text */
+}
 .conv-item:hover{background:var(--surface-hover);}
 .conv-item:visited{color:inherit;}
+.conv-item:active{background:var(--surface-hover);}
 .conv-item+.conv-item{border-top:0.5px solid var(--border);}
 .conv-avatar-link{flex-shrink:0;width:56px;height:56px;display:block;}
 .conv-avatar{
@@ -135,6 +150,7 @@ body.light .empty-btn{color:#2d1b4e;}
 .conv-avatar img{
   width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;
   object-fit:cover;display:block;border-radius:inherit;
+  -webkit-user-drag:none;user-drag:none;pointer-events:none;
 }
 body.light .conv-avatar{color:#2d1b4e;}
 .unread-dot{width:10px;height:10px;border-radius:50%;background:var(--purple-light);position:absolute;top:1px;right:1px;border:2px solid var(--nav-bg);z-index:1;}
@@ -679,17 +695,14 @@ function renderContent(){
 }
 
 /**
- * ROOT CAUSE (messages tap no-op):
- * Production used Element.closest('a.conv-item[data-open-conv], .conv-item[data-open-conv]')
- * — selector *lists* throw SyntaxError on some mobile WebViews. An exception mid-click
- * cancels the native <a href> navigation → URL never leaves messages.html.
- * Also: listening only on #mainContent was orphaned when chrome recreated that node,
- * while other handlers called preventDefault. Fix: wire each row in capture phase +
- * parent walk (no comma closest), force location.href, visible error if still here.
+ * ROOT CAUSE (select text / context menu instead of open):
+ * Nested text/avatars inside the row remained selectable, so tap/long-press
+ * triggered selection + callout instead of activating the <a href="chat.html?conv=…">.
+ * Fix: user-select:none + pointer-events:none on children (outer row is sole hit
+ * target), touch-action:manipulation, and immediate navigate on touchend/click.
  */
 function findConvRowFromEventTarget(start) {
   var el = start;
-  // Text nodes don't have classList / closest
   if (el && el.nodeType === 3) el = el.parentElement || el.parentNode;
   while (el && el !== document.body && el !== document.documentElement) {
     if (el.nodeType === 1 && el.classList && el.classList.contains('conv-item')) {
@@ -716,15 +729,14 @@ function openConversationThread(convId) {
   console.info('[QuickGigs messages] navigate', href);
   window.__qgPendingChatHref = href;
   try {
-    window.location.href = href;
+    window.location.assign(href);
   } catch (e1) {
-    try { window.location.assign(href); } catch (e2) {
+    try { window.location.href = href; } catch (e2) {
       console.error('[QuickGigs messages] navigate failed:', e2);
       if (typeof showToast === 'function') showToast('Could not open chat.', '#ef4444');
       return false;
     }
   }
-  // If navigation is blocked (overlay / SW / WebView), surface it — never silent.
   setTimeout(function () {
     if (window.__qgPendingChatHref !== href) return;
     var stillMessages = /messages\.html/i.test(window.location.pathname || '') ||
@@ -751,6 +763,12 @@ function goConversationFromRow(row, ev) {
     try { ev.preventDefault(); } catch (eP) {}
     try { ev.stopPropagation(); } catch (eS) {}
   }
+  // Clear any accidental text selection so tap never “sticks” as highlight
+  try {
+    var sel = window.getSelection && window.getSelection();
+    if (sel && sel.removeAllRanges) sel.removeAllRanges();
+  } catch (eSel) {}
+
   if (!id && !href) {
     console.error('[QuickGigs messages] row missing conv id', row);
     if (typeof showToast === 'function') {
@@ -759,7 +777,7 @@ function goConversationFromRow(row, ev) {
     return false;
   }
   if (id) return openConversationThread(id);
-  window.location.href = href;
+  window.location.assign(href);
   return true;
 }
 
@@ -773,10 +791,44 @@ function wireConversationRows(root) {
       row.setAttribute('data-qg-wired', '1');
       if (!row.getAttribute('role')) row.setAttribute('role', 'link');
       if (!row.hasAttribute('tabindex')) row.setAttribute('tabindex', '0');
-      // Capture on the row itself — fires before any bubbling preventDefault.
+
+      var touchStart = null;
+      var navigatedFromTouch = false;
+
+      row.addEventListener('touchstart', function (ev) {
+        navigatedFromTouch = false;
+        var t = ev.changedTouches && ev.changedTouches[0];
+        touchStart = t ? { x: t.clientX, y: t.clientY, at: Date.now() } : null;
+      }, { passive: true });
+
+      // Immediate navigate on quick tap — don’t wait for click (avoids select/callout).
+      row.addEventListener('touchend', function (ev) {
+        if (!touchStart) return;
+        var t = ev.changedTouches && ev.changedTouches[0];
+        if (!t) return;
+        var dx = Math.abs(t.clientX - touchStart.x);
+        var dy = Math.abs(t.clientY - touchStart.y);
+        var dt = Date.now() - touchStart.at;
+        touchStart = null;
+        // Ignore scrolls / long-press (>450ms can be callout)
+        if (dx > 14 || dy > 14 || dt > 450) return;
+        navigatedFromTouch = true;
+        goConversationFromRow(row, ev);
+      }, { passive: false });
+
       row.addEventListener('click', function (ev) {
+        if (navigatedFromTouch) {
+          navigatedFromTouch = false;
+          try { ev.preventDefault(); } catch (e) {}
+          return;
+        }
         goConversationFromRow(row, ev);
       }, true);
+
+      row.addEventListener('contextmenu', function (ev) {
+        try { ev.preventDefault(); } catch (e) {}
+      });
+
       row.addEventListener('keydown', function (ev) {
         if (ev.key === 'Enter' || ev.key === ' ') {
           goConversationFromRow(row, ev);
@@ -789,13 +841,14 @@ function wireConversationRows(root) {
 function bindMessagesListClicks() {
   if (window._qgMsgClickDocBound) return;
   window._qgMsgClickDocBound = true;
-  // Capture-phase document backup (survives #mainContent recreate).
   document.addEventListener('click', function (e) {
     try {
       var root = document.getElementById('mainContent');
       if (!root) return;
       var row = findConvRowFromEventTarget(e.target);
       if (!row || !root.contains(row)) return;
+      // Prefer the per-row wiring when present
+      if (row.getAttribute('data-qg-wired') === '1') return;
       goConversationFromRow(row, e);
     } catch (tapErr) {
       console.error('[QuickGigs messages] tap failed:', tapErr);
@@ -829,15 +882,13 @@ function renderConvItem(c){
     ? renderUserAvatarHtml(c.name, c.avatarUrl, { className: 'conv-avatar', gradient: c.avatarBg, size: 56 })
     : ('<div class="conv-avatar" style="background:'+c.avatarBg+'">'+esc(c.initials)+'</div>');
   if (c.unread > 0 && avatarInner.indexOf('unread-dot') < 0) {
-    // Insert unread dot before the closing wrapper — avoid splitting nested markup
     avatarInner = avatarInner.replace(
       /(<\/div>\s*)$/,
       '<div class="unread-dot" aria-hidden="true"></div>$1'
     );
   }
-  // Real <a href> so open works without inline JS and never targets payments.
   if (!threadHref) {
-    return '<div class="conv-item" role="link" tabindex="0" aria-disabled="true" style="opacity:0.65;cursor:pointer" data-open-conv="">' +
+    return '<div class="conv-item" role="link" tabindex="0" aria-disabled="true" style="opacity:0.65" data-open-conv="">' +
       '<div class="conv-avatar-link" style="flex-shrink:0">' + avatarInner + '</div>' +
       '<div class="conv-info">' +
         '<div class="conv-name">'+esc(c.name)+'</div>' +
@@ -845,8 +896,9 @@ function renderConvItem(c){
         '<div class="conv-preview">Conversation unavailable — refresh</div>' +
       '</div></div>';
   }
-  return '<a class="conv-item" href="'+esc(threadHref)+'" data-href="'+esc(threadHref)+'" data-open-conv="'+esc(convId)+'">' +
-    '<span class="conv-avatar-link" style="flex-shrink:0;pointer-events:none">' +
+  // Single <a> hit target — children are pointer-events:none via CSS
+  return '<a class="conv-item" href="'+esc(threadHref)+'" data-href="'+esc(threadHref)+'" data-open-conv="'+esc(convId)+'" draggable="false">' +
+    '<span class="conv-avatar-link" style="flex-shrink:0" aria-hidden="true">' +
     avatarInner +
     '</span>' +
     '<div class="conv-info">' +
