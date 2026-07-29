@@ -118,8 +118,8 @@ body.light .empty-btn{color:#2d1b4e;}
 /* SECTION LABEL */
 .section-label{padding:14px 20px 8px;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);}
 
-/* CONVERSATION ITEM — one div card (restored from pre-63cf595 working pattern).
-   Never wrap the row in <a>: nested profile/outer anchors became purple stacked links. */
+/* CONVERSATION ITEM — one real <a> wrapping the whole card (native navigation). */
+a.conv-item,
 .conv-item{
   display:flex;
   align-items:center;
@@ -129,10 +129,28 @@ body.light .empty-btn{color:#2d1b4e;}
   user-select:none;
   -webkit-user-select:none;
   -webkit-touch-callout:none;
+  -webkit-tap-highlight-color:transparent;
   touch-action:manipulation;
   transition:background 0.15s;
   text-decoration:none;
   color:inherit;
+  box-sizing:border-box;
+  width:100%;
+}
+a.conv-item:link,
+a.conv-item:visited,
+a.conv-item:hover,
+a.conv-item:active{
+  color:inherit;
+  text-decoration:none;
+}
+/* Children must not steal taps from the outer <a> */
+a.conv-item > *,
+a.conv-item *{
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-select:none;
+  text-decoration:none;
 }
 .conv-item:hover{background:var(--surface-hover);}
 .conv-item+.conv-item{border-top:0.5px solid var(--border);}
@@ -727,83 +745,26 @@ function renderContent(){
   }
 
   content.innerHTML = html;
-  wireConversationRows(content);
 }
 
 /**
- * Restored from working era (b12b970 / pre-63cf595): one div card → location.href.
- * URL includes task + peer (firebase uid) + conv when known.
+ * Native navigation target for a conversation row.
+ * Only task + peer (other party's firebase_uid) — chat.html resolves the thread.
  */
-function chatThreadHref(convId, taskId, otherUid) {
+function chatThreadHref(taskId, otherUid) {
   var task = taskId != null && String(taskId) !== '' ? String(taskId) : '';
   var peer = otherUid ? String(otherUid) : '';
-  var id = String(convId || '').trim();
-  if (!task && !id) return '';
-  var parts = [];
-  if (task) parts.push('task=' + encodeURIComponent(task));
-  if (peer) parts.push('peer=' + encodeURIComponent(peer));
-  if (id && id !== 'undefined' && id !== 'null') parts.push('conv=' + encodeURIComponent(id));
-  return 'chat.html?' + parts.join('&');
+  if (!task || !peer) return '';
+  return 'chat.html?task=' + encodeURIComponent(task) + '&peer=' + encodeURIComponent(peer);
 }
 
-function openConversationThread(convId, taskId, otherUid) {
-  var href = chatThreadHref(convId, taskId, otherUid);
-  if (!href) {
-    console.warn('[QuickGigs messages] missing task/conv id');
-    if (typeof showToast === 'function') showToast('Conversation not found — refresh Messages.', '#f59e0b');
-    return false;
-  }
-  console.info('[QuickGigs messages] navigate', href);
-  window.location.href = href;
-  return true;
-}
-
-function goConversationFromRow(row) {
-  if (!row) return false;
-  var href = row.getAttribute('data-href') || '';
-  if (!href) {
-    href = chatThreadHref(
-      row.getAttribute('data-open-conv'),
-      row.getAttribute('data-task-id'),
-      row.getAttribute('data-peer')
-    );
-  }
-  if (!href) return false;
-  window.location.href = href;
-  return true;
-}
-
-function wireConversationRows(root) {
-  root = root || document.getElementById('mainContent');
-  if (!root) return;
-  var rows = root.querySelectorAll('.conv-item[data-href]');
-  for (var i = 0; i < rows.length; i++) {
-    (function (row) {
-      if (row.getAttribute('data-qg-wired') === '1') return;
-      row.setAttribute('data-qg-wired', '1');
-      row.addEventListener('click', function () {
-        goConversationFromRow(row);
-      });
-      row.addEventListener('keydown', function (ev) {
-        if (ev.key === 'Enter' || ev.key === ' ') {
-          try { ev.preventDefault(); } catch (e) {}
-          goConversationFromRow(row);
-        }
-      });
-    })(rows[i]);
-  }
-}
-
-window.openConversationThread = openConversationThread;
 window.chatThreadHref = chatThreadHref;
-window.wireConversationRows = wireConversationRows;
-window.goConversationFromRow = goConversationFromRow;
 
 function renderConvItem(c){
-  var convId = c && (c.id || c.conv_id) ? String(c.id || c.conv_id) : '';
   var taskId = c && (c.taskId != null ? c.taskId : c.task_id);
+  // peer = the OTHER participant (not me): mapConversation sets otherUid from worker_id or poster_id
   var otherUid = c && c.otherUid ? String(c.otherUid) : '';
-  var threadHref = chatThreadHref(convId, taskId, otherUid);
+  var threadHref = chatThreadHref(taskId, otherUid);
   var avatarInner = typeof renderUserAvatarHtml === 'function'
     ? renderUserAvatarHtml(c.name, c.avatarUrl, { className: 'conv-avatar', gradient: c.avatarBg, size: 46 })
     : ('<div class="conv-avatar" style="background:'+c.avatarBg+'">'+esc(c.initials)+'</div>');
@@ -822,15 +783,10 @@ function renderConvItem(c){
         '<div class="conv-preview">Conversation unavailable — refresh</div>' +
       '</div></div>';
   }
-  // ONE tappable card — same model as b12b970 (div + navigate), no nested <a>.
-  // Inline onclick kept as backup; wireConversationRows also binds click/keyboard.
-  var safeHref = String(threadHref).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-  return '<div class="conv-item" role="link" tabindex="0"' +
-    ' data-href="'+esc(threadHref)+'"' +
-    ' data-task-id="'+esc(String(taskId == null ? '' : taskId))+'"' +
-    ' data-peer="'+esc(otherUid)+'"' +
-    ' data-open-conv="'+esc(convId)+'"' +
-    ' onclick="window.location.href=\''+safeHref+'\'">' +
+  // ONE real <a> around the whole card — browser navigates without JS.
+  return '<a class="conv-item" href="'+esc(threadHref)+'"' +
+    ' data-task-id="'+esc(String(taskId))+'"' +
+    ' data-peer="'+esc(otherUid)+'">' +
     '<div class="conv-avatar-link">' + avatarInner + '</div>' +
     '<div class="conv-info">' +
       '<div class="conv-name">'+esc(c.name)+'</div>' +
@@ -842,7 +798,7 @@ function renderConvItem(c){
       '<div class="conv-time">'+esc(c.time)+'</div>' +
       (c.unread > 0 ? '<div class="conv-badge">'+c.unread+'</div>' : getStatusLabel(c.status)) +
     '</div>' +
-  '</div>';
+  '</a>';
 }
 
 function getStatusLabel(status){
