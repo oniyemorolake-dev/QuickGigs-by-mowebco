@@ -21,16 +21,16 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
-<link rel="stylesheet" href="qg-polish.css?v=20260727msgnav">
-<link rel="stylesheet" href="qg-ux.css?v=20260728blank1">
-<link rel="stylesheet" href="qg-chrome.css?v=20260729tap1">
+<link rel="stylesheet" href="qg-polish.css?v=20260729card1">
+<link rel="stylesheet" href="qg-ux.css?v=20260729card1">
+<link rel="stylesheet" href="qg-chrome.css?v=20260729card1">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="qg-role-theme.css?v=20260728msgtheme">
-<script src="qg-theme.js?v=20260728msgtheme"></script>
+<link rel="stylesheet" href="qg-role-theme.css?v=20260729card1">
+<script src="qg-theme.js?v=20260729card1"></script>
 <script src="qg-brand-init.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -118,65 +118,73 @@ body.light .empty-btn{color:#2d1b4e;}
 /* SECTION LABEL */
 .section-label{padding:14px 20px 8px;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);}
 
-/* CONVERSATION ITEM — one real <a> wrapping the whole card (native navigation). */
+/* CONVERSATION ITEM — one real <a> card. !important beats qg-ux / UA link styles.
+   Do NOT set pointer-events:none on children — that blocks taps on iOS/Android. */
+body.page-messages a.conv-item,
 a.conv-item,
 .conv-item{
-  display:flex;
-  align-items:center;
-  gap:14px;
-  padding:14px 20px;
-  cursor:pointer;
-  user-select:none;
-  -webkit-user-select:none;
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  gap:14px!important;
+  padding:14px 20px!important;
+  margin:0!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+  cursor:pointer!important;
+  user-select:none!important;
+  -webkit-user-select:none!important;
   -webkit-touch-callout:none;
   -webkit-tap-highlight-color:transparent;
   touch-action:manipulation;
-  transition:background 0.15s;
-  text-decoration:none;
-  color:inherit;
-  box-sizing:border-box;
-  width:100%;
+  text-decoration:none!important;
+  color:var(--text)!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
 }
+body.page-messages a.conv-item:link,
+body.page-messages a.conv-item:visited,
+body.page-messages a.conv-item:hover,
+body.page-messages a.conv-item:active,
 a.conv-item:link,
 a.conv-item:visited,
 a.conv-item:hover,
 a.conv-item:active{
-  color:inherit;
-  text-decoration:none;
+  color:var(--text)!important;
+  text-decoration:none!important;
 }
-/* Children must not steal taps from the outer <a> */
-a.conv-item > *,
+body.page-messages a.conv-item *,
 a.conv-item *{
-  pointer-events:none;
-  user-select:none;
-  -webkit-user-select:none;
-  text-decoration:none;
+  text-decoration:none!important;
+  -webkit-user-select:none!important;
+  user-select:none!important;
 }
-.conv-item:hover{background:var(--surface-hover);}
-.conv-item+.conv-item{border-top:0.5px solid var(--border);}
-.conv-avatar-link{flex-shrink:0;display:block;width:46px;height:46px;}
+.conv-item:hover{background:var(--surface-hover)!important;}
+.conv-item+.conv-item{border-top:0.5px solid var(--border)!important;}
+.conv-avatar-link{flex:0 0 46px!important;width:46px!important;height:46px!important;display:block!important;}
 .conv-avatar{
-  width:46px;height:46px;min-width:46px;min-height:46px;
-  border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:16px;font-weight:500;color:#fff;flex-shrink:0;position:relative;
-  background-size:cover;background-position:center;overflow:hidden;box-sizing:border-box;
+  width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;
+  border-radius:50%!important;display:flex!important;align-items:center!important;justify-content:center!important;
+  font-size:16px!important;font-weight:500!important;color:#fff!important;flex-shrink:0!important;position:relative!important;
+  background-size:cover!important;background-position:center!important;overflow:hidden!important;box-sizing:border-box!important;
 }
-.conv-avatar.has-photo{color:transparent;}
+.conv-avatar.has-photo{color:transparent!important;}
 .conv-avatar img{
-  width:100%;height:100%;max-width:100%;max-height:100%;
-  object-fit:cover;display:block;border-radius:inherit;-webkit-user-drag:none;
+  width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;
+  object-fit:cover!important;display:block!important;border-radius:inherit!important;-webkit-user-drag:none;
 }
-body.light .conv-avatar{color:#2d1b4e;}
+body.light .conv-avatar{color:#2d1b4e!important;}
 .unread-dot{width:10px;height:10px;border-radius:50%;background:var(--purple-light);position:absolute;top:1px;right:1px;border:2px solid var(--nav-bg);z-index:1;}
-.conv-info{flex:1;min-width:0;}
-.conv-name{font-size:14px;font-weight:500;color:var(--text);margin-bottom:2px;}
-.conv-task{font-size:11px;color:var(--purple-light);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-body.light .conv-task{color:var(--purple);}
-.conv-role-pill{font-size:10px;color:rgba(200,168,233,0.75);margin-top:2px;}
-.conv-preview{font-size:12px;color:var(--read-preview);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.conv-preview.unread{color:var(--unread-preview);font-weight:500;}
-.conv-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}
-.conv-time{font-size:11px;color:var(--text-faint);}
+.conv-info{flex:1 1 auto!important;min-width:0!important;}
+.conv-name{font-size:14px!important;font-weight:500!important;color:var(--text)!important;margin:0 0 2px!important;text-decoration:none!important;}
+.conv-task{font-size:11px!important;color:var(--purple-light)!important;margin:0 0 3px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none!important;}
+body.light .conv-task{color:var(--purple)!important;}
+.conv-role-pill{font-size:10px!important;color:rgba(200,168,233,0.75)!important;margin-top:2px!important;text-decoration:none!important;}
+.conv-preview{font-size:12px!important;color:var(--read-preview)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none!important;}
+.conv-preview.unread{color:var(--unread-preview)!important;font-weight:500!important;}
+.conv-right{display:flex!important;flex-direction:column!important;align-items:flex-end!important;gap:5px!important;flex-shrink:0!important;}
+.conv-time{font-size:11px!important;color:var(--text-faint)!important;text-decoration:none!important;}
 .conv-badge{background:var(--purple);color:#fff;font-size:10px;font-weight:500;border-radius:20px;padding:2px 7px;min-width:20px;text-align:center;}
 body.light .conv-badge{color:#2d1b4e;}
 
@@ -783,8 +791,10 @@ function renderConvItem(c){
         '<div class="conv-preview">Conversation unavailable — refresh</div>' +
       '</div></div>';
   }
-  // ONE real <a> around the whole card — browser navigates without JS.
+  // ONE real <a> around the whole card — inline flex so layout can't lose to other CSS.
+  var rowStyle = 'display:flex!important;flex-direction:row!important;align-items:center!important;gap:14px;padding:14px 20px;width:100%;box-sizing:border-box;text-decoration:none!important;color:inherit!important;cursor:pointer;-webkit-user-select:none;user-select:none;';
   return '<a class="conv-item" href="'+esc(threadHref)+'"' +
+    ' style="'+rowStyle+'"' +
     ' data-task-id="'+esc(String(taskId))+'"' +
     ' data-peer="'+esc(otherUid)+'">' +
     '<div class="conv-avatar-link">' + avatarInner + '</div>' +
