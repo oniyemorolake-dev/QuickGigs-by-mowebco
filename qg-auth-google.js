@@ -45,9 +45,13 @@
       : 'dashboard.html';
   };
 
+  /**
+   * True only when there is NO users row for this Firebase uid.
+   * Missing date_of_birth / incomplete profile must NOT count as "new" —
+   * that wrongly sent long-time users to signup.html after login.
+   */
   window.qgUserNeedsOnboarding = function (dbUser) {
-    if (!dbUser) return true;
-    return !dbUser.date_of_birth;
+    return !dbUser;
   };
 
   window.qgMarkOnboardingDone = function (uid) {

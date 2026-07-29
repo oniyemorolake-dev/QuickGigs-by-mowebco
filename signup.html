@@ -223,10 +223,10 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 <script src="qg-wave2.js?v=20260726w2" defer></script>
 <script defer src="qg-config.js"></script>
 <script defer src="qg-analytics.js"></script>
-<script defer src="qg-auth-google.js?v=20260728perf3"></script>
+<script defer src="qg-auth-google.js?v=20260728fix1"></script>
 <script defer src="qg-onboarding.js?v=2"></script>
 <script defer src="qg-cookies.js"></script>
-<script defer src="supabase-db.js"></script>
+<script defer src="supabase-db.js?v=20260728fix1"></script>
 <script defer src="qg-announcement.js?v=5"></script>
 <script defer src="qg-notifications.js"></script>
 <script src="qg-theme.js"></script>
@@ -283,7 +283,10 @@ async function beginOAuthSignup(user) {
 async function finishGoogleSignup(user) {
   var errorMsg = document.getElementById('errorMsg');
   var okMsg = document.getElementById('okMsg');
-  var existing = typeof getUserByFirebaseUid === 'function' ? await getUserByFirebaseUid(user.uid) : null;
+  // Lookup by firebase_uid (Auth uid) — never users.user_id UUID.
+  var existing = typeof getUserByFirebaseUid === 'function'
+    ? await getUserByFirebaseUid(user.uid, { self: true })
+    : (typeof getUserLoginGate === 'function' ? await getUserLoginGate(user.uid) : null);
 
   if (existing && existing.status === 'banned') {
     await auth.signOut();
@@ -293,7 +296,9 @@ async function finishGoogleSignup(user) {
     return;
   }
 
-  if (existing && typeof qgUserNeedsOnboarding === 'function' && !qgUserNeedsOnboarding(existing)) {
+  // Existing row for this firebase_uid → dashboard (not the signup wizard).
+  if (existing) {
+    if (typeof qgMarkOnboardingDone === 'function') qgMarkOnboardingDone(user.uid);
     if (typeof syncCurrentUserProfile === 'function') await syncCurrentUserProfile(user);
     if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'google' });
     window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
@@ -396,8 +401,11 @@ onAuthStateChanged(auth, async function(user) {
   if (!user) return;
   var params = new URLSearchParams(window.location.search);
   if (params.get('oauth') !== 'continue') return;
-  var existing = typeof getUserByFirebaseUid === 'function' ? await getUserByFirebaseUid(user.uid) : null;
-  if (existing && typeof qgUserNeedsOnboarding === 'function' && !qgUserNeedsOnboarding(existing)) {
+  var existing = typeof getUserByFirebaseUid === 'function'
+    ? await getUserByFirebaseUid(user.uid, { self: true })
+    : (typeof getUserLoginGate === 'function' ? await getUserLoginGate(user.uid) : null);
+  if (existing) {
+    if (typeof qgMarkOnboardingDone === 'function') qgMarkOnboardingDone(user.uid);
     window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
     return;
   }

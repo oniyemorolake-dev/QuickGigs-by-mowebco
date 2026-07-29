@@ -1795,20 +1795,33 @@ async function syncCurrentUserProfile(firebaseUser, opts) {
   return result;
 }
 
-/** One-shot login gate: status + onboarding fields only (never blocks on profile PATCH). */
+/** One-shot login gate: status + routing fields. Lookup is ALWAYS by firebase_uid. */
 async function getUserLoginGate(firebaseUid) {
   if (!firebaseUid) return null;
+  var filter = 'firebase_uid=eq.' + encodeURIComponent(String(firebaseUid));
   try {
-    var rows = await sbGet(
+    var rows = await sbGetOrThrow(
       'users',
-      withSelect('firebase_uid=eq.' + encodeURIComponent(String(firebaseUid)), SELECT_USERS_LOGIN_GATE),
+      withSelect(filter, SELECT_USERS_LOGIN_GATE),
       null,
       1
     );
     return (rows && rows[0]) || null;
   } catch (err) {
-    console.warn('getUserLoginGate failed:', err);
-    return null;
+    // Optional columns (guardian_*, date_of_birth) missing → still detect existing users.
+    console.warn('getUserLoginGate full select failed, using minimal:', err && err.message);
+    try {
+      var minimal = await sbGet(
+        'users',
+        withSelect(filter, 'firebase_uid,status,role,account_status'),
+        null,
+        1
+      );
+      return (minimal && minimal[0]) || null;
+    } catch (err2) {
+      console.warn('getUserLoginGate failed:', err2);
+      return null;
+    }
   }
 }
 

@@ -283,9 +283,9 @@ body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#ee
 <script defer src="qg-utils.js?v=20260728perf3"></script>
 <script defer src="qg-nav.js"></script>
 <script defer src="qg-menu.js?v=20260727auth2"></script>
-<script defer src="qg-auth-google.js?v=20260728perf3"></script>
+<script defer src="qg-auth-google.js?v=20260728fix1"></script>
 <script defer src="supabaseClient.js?v=20260728perf3"></script>
-<script defer src="supabase-db.js?v=20260728perf3"></script>
+<script defer src="supabase-db.js?v=20260728fix1"></script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
@@ -341,7 +341,7 @@ onAuthStateChanged(auth, async (user) => {
   loadDashboardData(live.uid);
 
   function applyDbUserAfterLogin(dbUser) {
-    if (dbUser && dbUser.date_of_birth && typeof qgMarkOnboardingDone === 'function') {
+    if (dbUser && typeof qgMarkOnboardingDone === 'function') {
       qgMarkOnboardingDone(live.uid);
     }
     if (dbUser && dbUser.role) {
@@ -367,20 +367,14 @@ onAuthStateChanged(auth, async (user) => {
     }
   }
 
-  // Light gate in parallel with dashboard fetch (ban + onboarding) — not on critical render path.
+  // Light gate in parallel with dashboard fetch — ban only. Never bounce existing
+  // users (row by firebase_uid) to signup for missing DOB / profile fields.
   function runEarlyLoginGate() {
     var run = function () {
       if (typeof getUserLoginGate !== 'function') return;
       getUserLoginGate(live.uid).then(function (gateUser) {
         if (!gateUser) return;
-        if (gateUser.status === 'banned') {
-          applyDbUserAfterLogin(gateUser);
-          return;
-        }
-        if (typeof qgUserNeedsOnboarding === 'function' && qgUserNeedsOnboarding(gateUser)) {
-          window.location.replace('signup.html?oauth=continue');
-          return;
-        }
+        if (typeof qgMarkOnboardingDone === 'function') qgMarkOnboardingDone(live.uid);
         applyDbUserAfterLogin(gateUser);
       }).catch(function () {});
     };

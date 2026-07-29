@@ -115,9 +115,9 @@ body.light .login-progress-spinner{border-color:rgba(107,63,160,0.2);border-top-
 <script defer src="qg-utils.js?v=20260728perf3"></script>
 <script defer src="qg-config.js?v=20260728msg1"></script>
 <script defer src="qg-analytics.js"></script>
-<script defer src="qg-auth-google.js?v=20260728perf3"></script>
+<script defer src="qg-auth-google.js?v=20260728fix1"></script>
 <script defer src="supabaseClient.js?v=20260728perf3"></script>
-<script defer src="supabase-db.js?v=20260728perf3"></script>
+<script defer src="supabase-db.js?v=20260728fix1"></script>
 <script defer src="qg-cookies.js"></script>
 <script defer src="qg-theme.js"></script>
 <script>
@@ -210,7 +210,7 @@ async function finishGoogleLogin(user) {
   prefetchDashboard();
   markPendingProfileSync();
 
-  // Returning users: 0 Supabase queries — route from local onboarding cache.
+  // Returning users: 0 Supabase queries — route from local account cache.
   if (typeof qgIsOnboardingDoneCached === 'function' && qgIsOnboardingDoneCached(user.uid)) {
     if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'google' });
     showLoginProgress('Opening dashboard…');
@@ -218,17 +218,15 @@ async function finishGoogleLogin(user) {
     return;
   }
 
-  // First-time / unknown: ONE light gate if helpers are already loaded (no long wait).
-  var gateReady = typeof getUserLoginGate === 'function' || typeof getUserByFirebaseUid === 'function';
-  if (!gateReady) {
-    var gateWait = 0;
-    while (!gateReady && gateWait < 8) {
-      await new Promise(function (r) { setTimeout(r, 40); });
-      gateWait++;
-      gateReady = typeof getUserLoginGate === 'function' || typeof getUserByFirebaseUid === 'function';
-    }
+  // Wait for DB helpers (cold start / cellular). Prefer accurate firebase_uid lookup
+  // over racing to signup — a timeout must not invent a "new" user.
+  var gateWait = 0;
+  while (typeof getUserLoginGate !== 'function' && typeof getUserByFirebaseUid !== 'function' && gateWait < 50) {
+    await new Promise(function (r) { setTimeout(r, 40); });
+    gateWait++;
   }
 
+  // CRITICAL: lookup by firebase_uid only (Auth uid), never users.user_id UUID.
   var existing = null;
   if (typeof getUserLoginGate === 'function') {
     existing = await getUserLoginGate(user.uid);
@@ -248,7 +246,8 @@ async function finishGoogleLogin(user) {
     return;
   }
 
-  if (existing && typeof qgUserNeedsOnboarding === 'function' && !qgUserNeedsOnboarding(existing)) {
+  // Row found by firebase_uid → existing account → dashboard (DOB optional).
+  if (existing) {
     if (typeof qgMarkOnboardingDone === 'function') qgMarkOnboardingDone(user.uid);
     if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'google' });
     showLoginProgress('Opening dashboard…');
@@ -256,7 +255,13 @@ async function finishGoogleLogin(user) {
     return;
   }
 
-  // No profile / incomplete onboarding (or helpers timed out) → finish signup.
+  // No users row for this firebase_uid → genuine new Google account → finish signup.
+  // If helpers never loaded, still prefer dashboard over a false "new user" signup loop.
+  if (typeof getUserLoginGate !== 'function' && typeof getUserByFirebaseUid !== 'function') {
+    showLoginProgress('Opening dashboard…');
+    window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
+    return;
+  }
   showLoginProgress('Almost there…');
   window.location.replace('signup.html?oauth=continue');
 }
