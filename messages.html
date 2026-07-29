@@ -759,14 +759,22 @@ applyTheme();
 
   function mapMessageRow(m) {
     var sender = m.sender_id || m.SENDER_ID || '';
-    var text = m.message || m.MESSAGE || m.text || '';
+    // Data layer stores message text in `body` (SELECT_MESSAGES) — not message/text.
+    var text = m.body != null ? m.body
+      : (m.BODY != null ? m.BODY
+        : (m.message != null ? m.message
+          : (m.MESSAGE != null ? m.MESSAGE
+            : (m.text != null ? m.text : ''))));
+    text = String(text == null ? '' : text);
     var created = m.created_at || m.CREATED_AT || '';
     var isSystem = !!(m.is_system || m.IS_SYSTEM || sender === 'system');
     return {
       from: isSystem ? 'system' : (String(sender) === String(currentUserId) ? 'me' : 'them'),
-      text: text, isSystem: isSystem,
+      text: text,
+      isSystem: isSystem,
       ts: created ? new Date(created).getTime() : 0,
-      date: formatDateLabel(created), clock: formatClock(created)
+      date: formatDateLabel(created),
+      clock: formatClock(created)
     };
   }
 

@@ -2,7 +2,7 @@
  * HTML + JS/CSS: network-first (never serve stale app shell when online).
  * Static assets only: logo + manifest. Old caches are wiped on activate.
  */
-var CACHE_NAME = 'quickgigs-v96-msgint';
+var CACHE_NAME = 'quickgigs-v97-bubble';
 var OFFLINE_FALLBACK = '/dashboard.html';
 
 var STATIC_ASSETS = [
