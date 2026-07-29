@@ -39,7 +39,9 @@ body.page-chat > main#main {
 body.qg-page-chat > #main.qg-main .chat-scroll,
 body.page-chat > #main.qg-main .chat-scroll,
 body.qg-page-chat > main#main .chat-scroll,
-body.page-chat > main#main .chat-scroll {
+body.page-chat > main#main .chat-scroll,
+body.qg-page-chat #chatScroll,
+body.page-chat #chatScroll {
   flex: 1 1 auto;
   min-height: 0;
 }

@@ -105,15 +105,26 @@
       )) ||
       !!document.getElementById('chatScroll');
 
-    var host = null;
+    // Chat is a flex column (nav / banner / #chatScroll / composer). Never reparent
+    // or mark #chatScroll as #main — that collapsed the thread to a blank viewport.
     if (isChatPage) {
-      host = document.getElementById('chatScroll') || document.querySelector('.chat-scroll');
-    } else {
-      // Prefer explicit ids — never use a broad querySelector list (document-order
-      // can pick a stray <main> / .content and skip #mainContent).
-      host = document.getElementById('mainContent') ||
-        document.querySelector('main[role="main"], [role="main"].qg-main, .page-content, .page-wrap');
+      if (!document.getElementById('main')) {
+        var chatAnchor = document.createElement('span');
+        chatAnchor.id = 'main';
+        chatAnchor.setAttribute('tabindex', '-1');
+        chatAnchor.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)';
+        document.body.insertBefore(chatAnchor, document.body.firstChild);
+      }
+      var scrollEl = document.getElementById('chatScroll');
+      if (scrollEl) {
+        scrollEl.classList.remove('qg-main');
+        if (scrollEl.getAttribute('role') === 'main') scrollEl.setAttribute('role', 'log');
+      }
+      return;
     }
+
+    var host = document.getElementById('mainContent') ||
+      document.querySelector('main[role="main"], [role="main"].qg-main, .page-content, .page-wrap');
 
     if (host) {
       if (!host.getAttribute('role')) host.setAttribute('role', 'main');

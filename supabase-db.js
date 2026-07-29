@@ -2445,12 +2445,23 @@ async function getMessagesForConversation(convId, opts) {
   opts = opts || {};
   var me = currentActorId(opts);
   if (!me && opts.actorId) me = String(opts.actorId);
-  if (!me) {
+  // trusted: true — caller already verified party (e.g. chat initChat). Avoid a second
+  // getConversation that can fail and silently return [] (blank thread).
+  var trusted = !!(opts.trusted || opts.skipPartyCheck);
+  if (!me && !trusted) {
     console.warn('[QuickGigs] getMessagesForConversation: no actor id');
     return [];
   }
-  var conv = await getConversation(convId, { actorId: me });
-  if (!conv || !userIsConversationParty(conv, me)) return [];
+  if (!trusted) {
+    var conv = await getConversation(convId, { actorId: me });
+    if (!conv || !userIsConversationParty(conv, me)) {
+      console.error('[QuickGigs] getMessagesForConversation: party check failed', {
+        convId: convId,
+        actorId: me
+      });
+      return [];
+    }
+  }
   return await sbGet(
     'messages',
     withSelect('conv_id=eq.' + encodeURIComponent(convId), SELECT_MESSAGES),
