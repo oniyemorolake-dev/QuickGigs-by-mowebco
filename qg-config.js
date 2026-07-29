@@ -1,7 +1,8 @@
 // QuickGigs — platform rules (single place to change launch behaviour)
 window.QG_CONFIG = {
   // When chat unlocks: 'payment' (launch) | 'accept' (beta) | 'apply' (internal testing only)
-  // TEMP: 'accept' until Stripe pay→held is reliable in your test flow. Flip back to 'payment' for launch.
+  // When Stripe is live, restore the escrow-gated contact rule — chat unlocks only after
+  // escrow is funded. Currently gated on acceptance because payments are off.
   chatUnlockAfter: 'accept',
   // Set true ONLY after Supabase Auth → Firebase is enabled AND rls-secure.sql is applied
   supabaseFirebaseAuth: false,
@@ -18,7 +19,8 @@ window.QG_CONFIG = {
   ga4ConversionLabel: '',
   // P2 — trust & moderation
   autoBanAfterWarnings: 3,
-  paymentsEnabled: true,
+  // Stripe / escrow — OFF while disconnected. Flip true + chatUnlockAfter:'payment' for launch.
+  paymentsEnabled: false,
   // Paste pk_test_... for testing (must match sk_test_ in Supabase secrets — not pk_live_ until launch)
   stripePublishableKey: 'pk_test_51Tlh7hCPjV7Oq67QZsRZgVeZMY0AgYDwl0YgOtV33gXPdDhJF7tMzw0BfjTZkVE3hcIXkhsx6XNJZCM1lSTVpfk200OajLTBz9',
   createCheckoutUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-checkout',
@@ -62,33 +64,59 @@ window.QG_CONFIG = {
   }
 };
 
-// Returns whether a new conversation should start unlocked.
-window.resolveChatUnlockedOnCreate = function(stage) {
+/**
+ * True only when chat must wait for escrow/payment.
+ * When Stripe is live, restore the escrow-gated contact rule — chat unlocks only after
+ * escrow is funded. Currently gated on acceptance because payments are off.
+ */
+window.isChatPaymentGated = function () {
+  var c = window.QG_CONFIG || {};
+  if (!c.paymentsEnabled) return false;
+  return c.chatUnlockAfter === 'payment';
+};
+
+window.getChatUnlockRule = function () {
+  // When payments are disconnected, force accept-mode unlock regardless of stale values.
+  if (window.isChatPaymentGated && window.isChatPaymentGated()) return 'payment';
   var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept';
+  if (rule === 'payment' && !(window.QG_CONFIG && window.QG_CONFIG.paymentsEnabled)) return 'accept';
+  return rule || 'accept';
+};
+
+// Returns whether a new conversation should start unlocked.
+window.resolveChatUnlockedOnCreate = function (stage) {
+  var rule = typeof window.getChatUnlockRule === 'function'
+    ? window.getChatUnlockRule()
+    : ((window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept');
   if (rule === 'apply') return true;
   if (rule === 'accept' && (stage === 'in_progress' || stage === 'accepted')) return true;
   return false;
 };
 
-/** Beta: unlock chat when task is accepted even if conv row still says "application". */
-window.shouldUnlockChatNow = function(convStatus, taskStatus) {
-  var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept';
+/** Unlock chat when tasker is accepted (payments off) or after escrow (payments on). */
+window.shouldUnlockChatNow = function (convStatus, taskStatus) {
+  var rule = typeof window.getChatUnlockRule === 'function'
+    ? window.getChatUnlockRule()
+    : ((window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept');
   if (rule === 'apply') return (convStatus || '').toLowerCase() !== 'completed';
   if (rule === 'accept') {
     var cs = (convStatus || '').toLowerCase();
     var ts = (taskStatus || '').toLowerCase();
     if (cs === 'completed') return false;
     if (cs === 'in_progress' || cs === 'accepted') return true;
-    if (ts === 'in_progress') return true;
+    if (ts === 'in_progress' || ts === 'accepted') return true;
     // Opening an existing thread from Messages — unlock unless clearly closed.
     if (cs !== 'completed' && ts !== 'cancelled') return true;
     return false;
   }
+  // payment rule: only unlock when caller verified held escrow (or is_unlocked already)
   return false;
 };
 
-window.getChatLockMessage = function(isPoster) {
-  var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept';
+window.getChatLockMessage = function (isPoster) {
+  var rule = typeof window.getChatUnlockRule === 'function'
+    ? window.getChatUnlockRule()
+    : ((window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept');
   if (rule === 'payment') {
     return isPoster
       ? 'Chat unlocks after you accept a worker and complete payment through QuickGigs. This keeps everyone protected and stops off-platform deals.'
@@ -100,8 +128,10 @@ window.getChatLockMessage = function(isPoster) {
   return 'Chat is open for this task.';
 };
 
-window.getMessagesBannerCopy = function() {
-  var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept';
+window.getMessagesBannerCopy = function () {
+  var rule = typeof window.getChatUnlockRule === 'function'
+    ? window.getChatUnlockRule()
+    : ((window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept');
   if (rule === 'payment') {
     return {
       title: 'Chat locked until payment',
@@ -116,6 +146,8 @@ window.getMessagesBannerCopy = function() {
   }
   return {
     title: 'Chat opens after acceptance',
-    sub: 'Once a worker is accepted, you can coordinate details here. Payments still required before work begins.'
+    // When Stripe is live, restore the escrow-gated contact rule — chat unlocks only after
+    // escrow is funded. Currently gated on acceptance because payments are off.
+    sub: 'Once a worker is accepted, you can message each other here. Escrow payment is paused while payments are offline.'
   };
 };

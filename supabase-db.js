@@ -2206,7 +2206,11 @@ function parseConversationUnlocked(conv) {
 
 async function forceUnlockConversationForTask(conv, taskStatus) {
   if (!conv || !conv.conv_id) return { success: false, error: 'No conversation' };
-  var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept';
+  // When Stripe is live, restore the escrow-gated contact rule — chat unlocks only after
+  // escrow is funded. Currently gated on acceptance because payments are off.
+  var rule = typeof window.getChatUnlockRule === 'function'
+    ? window.getChatUnlockRule()
+    : ((window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept');
 
   if (parseConversationUnlocked(conv) && String(conv.status || '').toLowerCase() !== 'application') {
     return { success: true, conv: conv };
@@ -2254,6 +2258,8 @@ async function forceUnlockConversationForTask(conv, taskStatus) {
     return { success: parseConversationUnlocked(conv), conv: conv, skipped: !parseConversationUnlocked(conv) };
   }
 
+  // When Stripe is live, restore the escrow-gated contact rule — chat unlocks only after
+  // escrow is funded. Currently gated on acceptance because payments are off.
   var convStatus = String(conv.status || '').toLowerCase();
   var ts = String(taskStatus || '').toLowerCase();
   if (parseConversationUnlocked(conv) && convStatus !== 'application') {
@@ -2371,12 +2377,13 @@ async function sendChatMessage(convId, senderId, body, recentTexts, fraudOpts) {
     console.warn('Block check skipped:', blockErr);
   }
   var opts = fraudOpts || { convId: convId, senderId: senderId };
+  var isSystem = typeof isSystemChatBody === 'function' && isSystemChatBody(body);
   if (isChatImageBody(body)) {
     var imgUrl = parseChatImageUrl(body);
     if (!isAllowedChatImageUrl(imgUrl)) {
       return { success: false, error: 'invalid_image', blocked: true };
     }
-  } else if (typeof analyzeOffPlatformContact === 'function') {
+  } else if (!isSystem && typeof analyzeOffPlatformContact === 'function') {
     var fraudCheck = analyzeOffPlatformContact(body, recentTexts || [], opts);
     if (fraudCheck.blocked) {
       // Hard match → admin moderation queue (reports + admin_actions) via shared logger
@@ -2397,7 +2404,7 @@ async function sendChatMessage(convId, senderId, body, recentTexts, fraudOpts) {
         logged: true
       };
     }
-  } else if (typeof containsOffPlatformContact === 'function' && containsOffPlatformContact(body, recentTexts || [], opts)) {
+  } else if (!isSystem && typeof containsOffPlatformContact === 'function' && containsOffPlatformContact(body, recentTexts || [], opts)) {
     if (typeof logFraudContactEvent === 'function') {
       logFraudContactEvent({ userId: senderId, convId: convId, reason: 'contact', preview: body });
     }
@@ -2411,7 +2418,7 @@ async function sendChatMessage(convId, senderId, body, recentTexts, fraudOpts) {
   }
 
   // Content safety first-pass (threats / adult) — lists live in contentModeration.js
-  if (!isChatImageBody(body) && typeof moderateText === 'function') {
+  if (!isSystem && !isChatImageBody(body) && typeof moderateText === 'function') {
     var modCheck = moderateText(body);
     if (modCheck.blocked) {
       if (typeof logModerationAttempt === 'function') {
@@ -2443,14 +2450,28 @@ async function sendChatMessage(convId, senderId, body, recentTexts, fraudOpts) {
   });
   if (!result.success) return result;
 
+  var preview = isSystem
+    ? (typeof parseSystemChatBody === 'function' ? parseSystemChatBody(body) : body)
+    : (isChatImageBody(body) ? '📷 Photo' : body);
+
   await sbUpdate('conversations', {
-    last_message:    isChatImageBody(body) ? '📷 Photo' : body,
+    last_message:    preview,
     last_message_at: new Date().toISOString()
   }, 'conv_id=eq.' + encodeURIComponent(convId));
 
-  notifyChatRecipientAsync(convId, senderId, isChatImageBody(body) ? '📷 Photo' : body);
+  if (!isSystem) {
+    notifyChatRecipientAsync(convId, senderId, preview);
+  }
 
   return result;
+}
+
+/** Inline system event in the thread (no schema change — body prefix ⟦QG⟧). */
+async function sendSystemChatMessage(convId, senderId, text) {
+  var body = typeof buildSystemChatBody === 'function'
+    ? buildSystemChatBody(text)
+    : ('⟦QG⟧' + String(text || '').trim());
+  return await sendChatMessage(convId, senderId, body, [], { convId: convId, senderId: senderId });
 }
 
 function notifyChatRecipientAsync(convId, senderId, preview) {
@@ -4231,6 +4252,7 @@ window.parseConversationUnlocked = parseConversationUnlocked;
 window.updateConversation = updateConversation;
 window.getMessagesForConversation = getMessagesForConversation;
 window.sendChatMessage = sendChatMessage;
+window.sendSystemChatMessage = sendSystemChatMessage;
 window.markConversationRead = markConversationRead;
 window.getApplicationsByTask = getApplicationsByTask;
 window.getApplicationsByWorker = getApplicationsByWorker;

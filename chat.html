@@ -98,6 +98,14 @@ body.light .chat-hdr-btn{background:#fef2f2;border-color:#fecaca;color:#b91c1c;}
 .status-open{background:rgba(251,191,36,0.12);color:#d97706;}
 .status-cancelled{background:rgba(239,68,68,0.12);color:#ef4444;}
 
+/* QUICK ACTIONS (in-chat marketplace) */
+.chat-actions{display:none;flex-wrap:wrap;gap:8px;padding:8px 18px;background:var(--nav-bg);border-bottom:0.5px solid var(--border);flex-shrink:0;}
+.chat-actions.is-visible{display:flex;}
+.chat-action-btn{padding:7px 12px;border-radius:999px;border:0.5px solid var(--border);background:rgba(107,63,160,0.18);color:var(--text);font:500 11px 'DM Sans',sans-serif;cursor:pointer;white-space:nowrap;}
+.chat-action-btn:hover{border-color:var(--purple-light);}
+.chat-action-btn:disabled{opacity:0.45;cursor:not-allowed;}
+body.light .chat-action-btn{background:#ede9ff;color:var(--purple);}
+
 /* ONE-TIME SAFETY BANNER */
 .safety-banner{display:none;background:rgba(107,63,160,0.14);border-bottom:0.5px solid rgba(200,168,233,0.22);padding:10px 14px 10px 18px;font-size:12px;color:var(--lavender);line-height:1.45;flex-shrink:0;align-items:flex-start;gap:10px;}
 .safety-banner.is-visible{display:flex;}
@@ -127,7 +135,17 @@ body.light .fraud-bar{background:#fffbeb;color:#92400e;border-color:#fde68a;}
 body.light .bubble-row.mine .bubble{color:#2d1b4e;}
 .bubble-row.theirs .bubble{background:var(--bubble-theirs);color:var(--bubble-theirs-text);border-bottom-left-radius:5px;border:0.5px solid var(--border);}
 .bubble-time{font-size:11px;color:var(--time-color);margin-top:4px;padding:0 2px;}
-.bubble-check{font-size:11px;color:var(--time-color);}
+.bubble-check{font-size:11px;color:var(--time-color);letter-spacing:-0.04em;}
+.bubble-check.is-read{color:#4ade80;}
+body.light .bubble-check.is-read{color:#16a34a;}
+
+/* SYSTEM EVENT IN THREAD */
+.sys-msg{align-self:center;max-width:90%;text-align:center;font-size:11px;line-height:1.45;color:var(--text-muted);padding:6px 12px;margin:2px 0;border-radius:999px;background:rgba(107,63,160,0.12);border:0.5px solid rgba(200,168,233,0.18);}
+body.light .sys-msg{background:#f0eeff;border-color:#e8e2ff;color:#5b21b6;}
+
+/* TYPING */
+.typing-bubble{display:none;align-self:flex-start;font-size:11px;color:var(--text-faint);padding:4px 8px;margin-top:2px;}
+.typing-bubble.show{display:block;}
 
 /* BLOCKED MESSAGE */
 .blocked-msg{background:rgba(239,68,68,0.1);border:0.5px solid rgba(239,68,68,0.25);border-radius:12px;padding:10px 14px;font-size:12px;color:#ef4444;line-height:1.5;margin:0 0 6px;}
@@ -207,6 +225,9 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <div class="task-photo-strip" id="taskPhotoStrip"></div>
 
+<!-- In-chat marketplace actions (accept / agree price / complete) -->
+<div class="chat-actions" id="chatQuickActions" aria-label="Task actions"></div>
+
 <!-- ONE-TIME SAFETY BANNER (new conversations) -->
 <div class="safety-banner" id="chatSafetyBanner" role="status">
   <span class="safety-banner-text">Keep chat and payment on QuickGigs — off-platform deals aren't protected.</span>
@@ -218,8 +239,9 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <!-- INPUT -->
 <div class="input-area">
-  <input type="file" id="chatPhotoInput" accept="image/*" style="display:none" onchange="sendChatImage(this)">
-  <button type="button" class="attach-btn" id="attachBtn" onclick="document.getElementById('chatPhotoInput').click()" aria-label="Send photo in chat" title="Share a job or progress photo — no IDs or personal documents">📷</button>
+  <!-- Image attach hidden until backend moderation is ready -->
+  <input type="file" id="chatPhotoInput" accept="image/*" style="display:none" disabled aria-hidden="true">
+  <button type="button" class="attach-btn" id="attachBtn" hidden disabled aria-hidden="true" title="Photo sharing coming soon">📷</button>
   <div style="flex:1">
     <div class="input-wrap">
       <textarea class="msg-input" id="msgInput" placeholder="Type a message..." rows="1" enterkeyhint="send" autocomplete="off" autocorrect="on" oninput="handleInput(this)" onkeydown="handleKey(event)"></textarea>
@@ -277,9 +299,12 @@ onAuthStateChanged(auth, (user) => {
 <script src="qg-ux.js?v=20260726ux" defer></script>
 <script src="qg-bigtech.js?v=20260726bt" defer></script>
 <script src="qg-wave2.js?v=20260726w2" defer></script>
-<script defer src="qg-config.js?v=20260728msg1"></script>
+<script defer src="qg-config.js?v=20260728chataccept1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
-<script defer src="supabase-db.js?v=20260728msg1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/dist/umd/supabase.min.js" defer></script>
+<script defer src="supabaseClient.js"></script>
+<script defer src="supabase-db.js?v=20260728chatux1"></script>
+<script defer src="qg-chat-realtime.js?v=20260728chatux1"></script>
 <script defer src="qg-site.js"></script>
 <script defer src="qg-stripe.js?v=20260725g"></script>
 <script defer src="qg-lightbox.js?v=1"></script>
@@ -316,6 +341,11 @@ var chatIsPoster = false;
 var chatLightboxBound = false;
 var chatOtherUid = '';
 var chatOtherName = '';
+var chatTaskRow = null;
+var chatAcceptedApp = null;
+var peerLastReadAt = null;
+var _typingHideTimer = null;
+var _realtimeMode = 'poll';
 
 // ── FRAUD + CONTENT MODERATION (shared rules) ──────────
 
@@ -643,8 +673,192 @@ async function hydratePinnedTask(conv, isPoster, otherName, otherUid) {
   if (conv && conv.task_id && typeof getTaskById === 'function') {
     try { taskRow = await getTaskById(conv.task_id); } catch (e) { taskRow = null; }
   }
+  chatTaskRow = taskRow;
   renderChatHeaderFromConv(conv, isPoster, otherName, otherUid, taskRow);
+  await loadChatQuickActions(conv, taskRow, isPoster);
   return taskRow;
+}
+
+async function loadChatQuickActions(conv, taskRow, isPoster) {
+  var bar = document.getElementById('chatQuickActions');
+  if (!bar || !conv || !conv.is_unlocked) {
+    if (bar) { bar.classList.remove('is-visible'); bar.innerHTML = ''; }
+    return;
+  }
+  var taskId = conv.task_id;
+  var st = String((taskRow && (taskRow.status || taskRow.STATUS)) || conv.status || '').toLowerCase();
+  var html = '';
+  chatAcceptedApp = null;
+
+  if (taskId && typeof getApplicationsByTask === 'function') {
+    try {
+      var apps = await getApplicationsByTask(taskId, {
+        posterId: conv.poster_id,
+        asPoster: !!isPoster
+      });
+      chatAcceptedApp = (apps || []).find(function (a) {
+        return String(a.status || a.STATUS || '').toLowerCase() === 'accepted' &&
+          String(a.worker_id || a.WORKER_ID || '') === String(conv.worker_id);
+      }) || null;
+      if (!chatAcceptedApp) {
+        chatAcceptedApp = (apps || []).find(function (a) {
+          return String(a.worker_id || a.WORKER_ID || '') === String(conv.worker_id);
+        }) || null;
+      }
+    } catch (eApps) {}
+  }
+
+  var price = chatAcceptedApp && typeof getEffectiveApplicationPrice === 'function'
+    ? getEffectiveApplicationPrice(chatAcceptedApp)
+    : (conv.task_budget != null ? Number(conv.task_budget) : (taskRow && (taskRow.budget || taskRow.BUDGET)));
+  price = Math.round(Number(price) || 0);
+
+  var pendingCounter = chatAcceptedApp && typeof hasPendingApplicationCounter === 'function'
+    ? hasPendingApplicationCounter(chatAcceptedApp)
+    : false;
+  var neg = chatAcceptedApp && typeof parseNegotiationFields === 'function'
+    ? parseNegotiationFields(chatAcceptedApp)
+    : null;
+
+  if (pendingCounter && neg && neg.counterBy) {
+    var iAmWaiting = (isPoster && neg.counterBy === 'worker') || (!isPoster && neg.counterBy === 'poster');
+    if (iAmWaiting) {
+      html += '<button type="button" class="chat-action-btn" id="chatActAcceptOffer">Accept offer $' +
+        window.escapeHtml(String(neg.counterPrice)) + '</button>';
+    }
+  }
+
+  if (st === 'in_progress' || st === 'accepted' || st === 'open') {
+    if (price > 0) {
+      html += '<button type="button" class="chat-action-btn" id="chatActAgreePrice">Agree price $' +
+        window.escapeHtml(String(price)) + '</button>';
+    }
+  }
+
+  if ((st === 'in_progress' || st === 'accepted') && isPoster) {
+    html += '<button type="button" class="chat-action-btn" id="chatActComplete">Mark complete</button>';
+  }
+
+  if (!html) {
+    bar.classList.remove('is-visible');
+    bar.innerHTML = '';
+    return;
+  }
+  bar.innerHTML = html;
+  bar.classList.add('is-visible');
+
+  var agreeBtn = document.getElementById('chatActAgreePrice');
+  if (agreeBtn) {
+    agreeBtn.onclick = function () { chatAgreePrice(price); };
+  }
+  var completeBtn = document.getElementById('chatActComplete');
+  if (completeBtn) {
+    completeBtn.onclick = function () { chatMarkComplete(); };
+  }
+  var acceptBtn = document.getElementById('chatActAcceptOffer');
+  if (acceptBtn) {
+    acceptBtn.onclick = function () { chatAcceptCounterOffer(); };
+  }
+}
+
+async function postSystemEvent(text) {
+  if (!convId || !currentUserId || typeof sendSystemChatMessage !== 'function') return;
+  var res = await sendSystemChatMessage(convId, currentUserId, text);
+  if (res && res.success) await refreshMessages({ forceScroll: true });
+  else if (typeof showToast === 'function') showToast('Could not post update', '#f59e0b');
+}
+
+async function chatAgreePrice(amount) {
+  amount = Math.round(Number(amount) || 0);
+  if (!amount || !currentConv) return;
+  var btn = document.getElementById('chatActAgreePrice');
+  if (btn) btn.disabled = true;
+  try {
+    if (chatAcceptedApp && typeof patchApplicationFields === 'function') {
+      var appId = chatAcceptedApp.app_id || chatAcceptedApp.APP_ID || chatAcceptedApp.id;
+      await patchApplicationFields(appId, { price: amount }, {
+        taskId: currentConv.task_id,
+        workerId: currentConv.worker_id
+      });
+    }
+    await postSystemEvent('Price agreed: $' + amount);
+    if (typeof showToast === 'function') showToast('Price agreed: $' + amount);
+    await loadChatQuickActions(currentConv, chatTaskRow, chatIsPoster);
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('Could not agree price', '#ef4444');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function chatMarkComplete() {
+  if (!currentConv || !currentConv.task_id || !currentUserId) return;
+  var ok = window.confirm('Mark this task complete? Both of you can leave a review after.');
+  if (!ok) return;
+  var btn = document.getElementById('chatActComplete');
+  if (btn) btn.disabled = true;
+  try {
+    var result = typeof completeTask === 'function'
+      ? await completeTask(currentConv.task_id, currentUserId, {
+          posterId: currentConv.poster_id,
+          workerId: currentConv.worker_id,
+          taskRow: chatTaskRow
+        })
+      : { success: false };
+    if (!result || !result.success) {
+      if (typeof showToast === 'function') showToast((result && result.error) || 'Could not complete task', '#ef4444');
+      return;
+    }
+    await postSystemEvent('Task marked complete');
+    if (chatTaskRow) {
+      chatTaskRow.status = 'completed';
+      chatTaskRow.STATUS = 'completed';
+    }
+    currentConv.status = 'completed';
+    renderChatHeaderFromConv(currentConv, chatIsPoster, chatOtherName, chatOtherUid, chatTaskRow);
+    await loadChatQuickActions(currentConv, chatTaskRow, chatIsPoster);
+    if (typeof showToast === 'function') showToast('Task completed');
+    if (typeof window.openReviewPrompt === 'function') {
+      try { window.openReviewPrompt(currentConv.task_id); } catch (eR) {}
+    }
+  } catch (err) {
+    if (typeof showToast === 'function') showToast('Could not complete task', '#ef4444');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function chatAcceptCounterOffer() {
+  if (!chatAcceptedApp || !currentConv || !currentUserId) return;
+  var appId = chatAcceptedApp.app_id || chatAcceptedApp.APP_ID || chatAcceptedApp.id;
+  var neg = typeof parseNegotiationFields === 'function' ? parseNegotiationFields(chatAcceptedApp) : {};
+  var amount = neg.counterPrice;
+  var btn = document.getElementById('chatActAcceptOffer');
+  if (btn) btn.disabled = true;
+  try {
+    var result;
+    if (chatIsPoster && typeof posterRespondToCounter === 'function') {
+      result = await posterRespondToCounter(appId, currentUserId, 'accept', {
+        taskId: currentConv.task_id,
+        workerId: currentConv.worker_id
+      });
+    } else if (!chatIsPoster && typeof workerRespondToCounter === 'function') {
+      result = await workerRespondToCounter(appId, currentUserId, 'accept', null, {
+        taskId: currentConv.task_id
+      });
+    }
+    if (!result || !result.success) {
+      if (typeof showToast === 'function') showToast('Could not accept offer', '#ef4444');
+      return;
+    }
+    await postSystemEvent('Offer accepted' + (amount != null ? (': $' + amount) : ''));
+    if (typeof showToast === 'function') showToast('Offer accepted');
+    await loadChatQuickActions(currentConv, chatTaskRow, chatIsPoster);
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('Could not accept offer', '#ef4444');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 function deferChatEnrichment(conv, otherUid, otherName, isPoster) {
@@ -751,9 +965,14 @@ async function initChat(){
     return;
   }
 
-  // Match product config (qg-config chatUnlockAfter: 'accept'). Never default to payment.
-  var unlockRule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept';
-  var paymentGated = unlockRule === 'payment';
+  // When Stripe is live, restore the escrow-gated contact rule — chat unlocks only after
+  // escrow is funded. Currently gated on acceptance because payments are off.
+  var unlockRule = typeof window.getChatUnlockRule === 'function'
+    ? window.getChatUnlockRule()
+    : ((window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept');
+  var paymentGated = typeof window.isChatPaymentGated === 'function'
+    ? window.isChatPaymentGated()
+    : unlockRule === 'payment';
 
   // Accept / apply mode: unlock on open — never send the user into a pay wall.
   // syncConversationUnlock hits confirm-checkout (payment) — only use it when payment-gated.
@@ -913,18 +1132,7 @@ async function initChat(){
 
   if (messagesPromise) {
     var rows = await messagesPromise;
-    messages = (rows || []).map(function(m){
-      return {
-        id: m.message_id,
-        from: m.sender_id === currentUserId ? 'me' : 'them',
-        text: m.body,
-        senderIsPoster: currentConv && m.sender_id === currentConv.poster_id,
-        time: formatMessageTime(m.created_at),
-        clock: formatMessageClock(m.created_at),
-        date: formatMessageDate(m.created_at),
-        ts: m.created_at ? new Date(m.created_at).getTime() : 0
-      };
-    });
+    messages = (rows || []).map(mapMessageRow);
     renderMessages();
     scrollToBottom();
   } else {
@@ -932,11 +1140,20 @@ async function initChat(){
   }
 
   maybeShowSafetyBanner(convId, messages.length);
-  setupChatImageAttach();
+  // Photo attach deferred until backend moderation is ready
+  var attachBtn = document.getElementById('attachBtn');
+  if (attachBtn) {
+    attachBtn.hidden = true;
+    attachBtn.classList.remove('visible');
+  }
   ensureChatLightbox();
-  pollTimer = setInterval(refreshMessages, 4000);
+  startChatRealtime();
   if (typeof markConversationRead === 'function') {
     markConversationRead(convId, currentUserId, currentConv.poster_id).catch(function () {});
+  }
+  updatePeerReadFromConv(currentConv);
+  if (typeof refreshMessagesUnreadBadge === 'function') {
+    setTimeout(function () { refreshMessagesUnreadBadge(); }, 400);
   }
   if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
   deferChatEnrichment(currentConv, otherUid, otherName, isPoster);
@@ -944,19 +1161,12 @@ async function initChat(){
 window.initChat = initChat;
 
 function setupChatImageAttach() {
+  // Intentionally no-op: photo attach waits for backend moderation.
   var attachBtn = document.getElementById('attachBtn');
-  if (!attachBtn) return;
-  var posterOnly = !!(window.QG_CONFIG && window.QG_CONFIG.posterOnlyChatImages);
-  var show = posterOnly ? chatIsPoster : true;
-  attachBtn.classList.toggle('visible', show);
-  if (posterOnly) {
-    attachBtn.title = 'Share a reference photo of what needs doing (posters only). No IDs or personal documents.';
-    attachBtn.setAttribute('aria-label', 'Send reference photo (posters only)');
-  } else {
-    attachBtn.title = chatIsPoster
-      ? 'Share a reference photo — what needs doing. No IDs or personal documents.'
-      : 'Share a progress photo. No IDs or personal documents.';
-    attachBtn.setAttribute('aria-label', 'Send photo in chat');
+  if (attachBtn) {
+    attachBtn.hidden = true;
+    attachBtn.classList.remove('visible');
+    attachBtn.disabled = true;
   }
 }
 
@@ -1071,7 +1281,9 @@ function showLockedState(isCompleted, isCancelled, taskAlreadyPaid){
     }
   } else if (!isCompleted && isPoster && currentConv && currentConv.task_id && !taskAlreadyPaid) {
     // Only offer Stripe pay when explicitly payment-gated — never when config is missing/accept.
-    var payGatedUi = !!(window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter === 'payment');
+    var payGatedUi = typeof window.isChatPaymentGated === 'function'
+      ? window.isChatPaymentGated()
+      : !!(window.QG_CONFIG && window.QG_CONFIG.paymentsEnabled && window.QG_CONFIG.chatUnlockAfter === 'payment');
     if (payGatedUi) {
       actionHtml = '<button type="button" class="locked-action locked-pay-btn" data-pay-task="'+String(currentConv.task_id)+'" data-pay-return="chat" data-pay-conv="'+String(convId)+'">💳 Pay & unlock chat</button>';
     } else {
@@ -1090,38 +1302,144 @@ function showLockedState(isCompleted, isCancelled, taskAlreadyPaid){
     '</div>';
 }
 
-async function refreshMessages(){
+function updatePeerReadFromConv(conv) {
+  if (!conv || !currentUserId) return;
+  var iAmPoster = String(conv.poster_id) === String(currentUserId);
+  peerLastReadAt = iAmPoster ? (conv.worker_last_read_at || null) : (conv.poster_last_read_at || null);
+}
+
+function mapMessageRow(m) {
+  var body = m.body || '';
+  var isSys = typeof isSystemChatBody === 'function' && isSystemChatBody(body);
+  return {
+    id: m.message_id || m.id,
+    from: isSys ? 'system' : (m.sender_id === currentUserId ? 'me' : 'them'),
+    text: isSys && typeof parseSystemChatBody === 'function' ? parseSystemChatBody(body) : body,
+    rawBody: body,
+    isSystem: isSys,
+    senderId: m.sender_id,
+    senderIsPoster: currentConv && m.sender_id === currentConv.poster_id,
+    time: formatMessageTime(m.created_at),
+    clock: formatMessageClock(m.created_at),
+    date: formatMessageDate(m.created_at),
+    ts: m.created_at ? new Date(m.created_at).getTime() : 0,
+    createdAt: m.created_at
+  };
+}
+
+function receiptForMine(m) {
+  if (!m || !m.createdAt) return { cls: '', label: 'Sent', mark: '✓' };
+  if (peerLastReadAt) {
+    var readMs = new Date(peerLastReadAt).getTime();
+    var msgMs = new Date(m.createdAt).getTime();
+    if (!isNaN(readMs) && !isNaN(msgMs) && readMs >= msgMs - 500) {
+      return { cls: ' is-read', label: 'Read', mark: '✓✓' };
+    }
+  }
+  return { cls: '', label: 'Delivered', mark: '✓' };
+}
+
+function startChatRealtime() {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+  if (typeof qgUnsubscribeChat === 'function') qgUnsubscribeChat();
+
+  var sub = typeof qgSubscribeChat === 'function'
+    ? qgSubscribeChat({
+        convId: convId,
+        pollMs: 4000,
+        softPollMs: 22000,
+        pollFn: function () { refreshMessages(); },
+        onMessage: function (row) {
+          if (!row) return;
+          var id = row.message_id || row.id;
+          if (id && messages.some(function (m) { return String(m.id) === String(id); })) return;
+          var mapped = mapMessageRow(row);
+          messages.push(mapped);
+          messages.sort(function (a, b) { return (a.ts || 0) - (b.ts || 0); });
+          var wasNear = isNearBottom();
+          renderMessages();
+          if (wasNear || mapped.from === 'me' || mapped.isSystem) scrollToBottom();
+          if (mapped.from === 'them' && typeof markConversationRead === 'function') {
+            markConversationRead(convId, currentUserId, currentConv && currentConv.poster_id).catch(function () {});
+          }
+          if (typeof refreshMessagesUnreadBadge === 'function') refreshMessagesUnreadBadge();
+        },
+        onConvUpdate: function (row) {
+          if (!row) return;
+          currentConv = Object.assign({}, currentConv || {}, row);
+          updatePeerReadFromConv(currentConv);
+          renderMessages();
+          var by = row.typing_by || row.TYPING_BY;
+          var at = row.typing_at || row.TYPING_AT;
+          showTypingBubble(by, at);
+        },
+        onTyping: function (payload) {
+          if (!payload) return;
+          if (String(payload.userId) === String(currentUserId)) return;
+          showTypingBubble(payload.userId, payload.at || Date.now());
+        }
+      })
+    : null;
+
+  _realtimeMode = (sub && sub.mode) || 'poll';
+  if (_realtimeMode === 'poll' && !pollTimer) {
+    pollTimer = setInterval(function () { refreshMessages(); }, 4000);
+  }
+}
+
+function showTypingBubble(by, at) {
+  var el = document.getElementById('typingBubble');
+  if (!el) return;
+  if (!by || String(by) === String(currentUserId)) {
+    el.classList.remove('show');
+    return;
+  }
+  var age = Date.now() - new Date(at).getTime();
+  if (isNaN(age) || age < 0 || age > 6000) {
+    el.classList.remove('show');
+    return;
+  }
+  el.classList.add('show');
+  clearTimeout(_typingHideTimer);
+  _typingHideTimer = setTimeout(function () { el.classList.remove('show'); }, 5500);
+}
+
+async function refreshMessages(opts){
+  opts = opts || {};
   if(!convId) return;
   var rows = await getMessagesForConversation(convId);
   var prevLen = messages.length;
   var wasNear = isNearBottom();
-  messages = (rows || []).map(function(m){
-    return {
-      id: m.message_id,
-      from: m.sender_id === currentUserId ? 'me' : 'them',
-      text: m.body,
-      senderIsPoster: currentConv && m.sender_id === currentConv.poster_id,
-      time: formatMessageTime(m.created_at),
-      clock: formatMessageClock(m.created_at),
-      date: formatMessageDate(m.created_at),
-      ts: m.created_at ? new Date(m.created_at).getTime() : 0
-    };
-  });
+  messages = (rows || []).map(mapMessageRow);
+  if (currentConv) updatePeerReadFromConv(currentConv);
   renderMessages();
-  if (wasNear || messages.length <= prevLen) scrollToBottom();
+  if (opts.forceScroll || wasNear || messages.length <= prevLen) scrollToBottom();
   else if (messages.length > prevLen) {
     var pill = document.getElementById('qgNewMsgPill');
     if (pill) pill.classList.add('show');
+  }
+  if (typeof markConversationRead === 'function' && currentUserId && currentConv) {
+    markConversationRead(convId, currentUserId, currentConv.poster_id).catch(function () {});
   }
 }
 
 function renderMessages(){
   var scroll = document.getElementById('chatScroll');
+  if (!scroll) return;
   var lastDate = '';
   var html = '';
   var prevFrom = '';
   var prevTs = 0;
   messages.forEach(function(m, idx){
+    if (m.isSystem || m.from === 'system') {
+      html += '<div class="sys-msg" role="status">'+window.escapeHtml(m.text)+'</div>';
+      prevFrom = '';
+      prevTs = 0;
+      return;
+    }
     if(m.date !== lastDate){
       html += '<div class="date-divider">'+window.escapeHtml(m.date)+'</div>';
       lastDate = m.date;
@@ -1131,22 +1449,26 @@ function renderMessages(){
     var isMe = m.from === 'me';
     var ts = m.ts || 0;
     var next = messages[idx + 1];
+    while (next && (next.isSystem || next.from === 'system')) {
+      idx += 1;
+      next = messages[idx + 1];
+    }
     var nextSame = next && next.from === m.from && next.date === m.date && next.ts && (next.ts - ts) < 120000;
     var grouped = prevFrom === m.from && prevTs && (ts - prevTs) < 120000;
     var showTime = !nextSame;
     var timeLabel = window.escapeHtml(m.time || '');
     var clockTitle = window.escapeHtml(m.clock || m.time || '');
+    var receipt = isMe ? receiptForMine(m) : null;
     html += '<div class="bubble-row '+(isMe?'mine':'theirs')+(grouped?' grouped':'')+(showTime?' show-time':'')+'">' +
       '<div class="bubble">'+renderMessageBubble(m.text, { senderIsPoster: m.senderIsPoster })+'</div>' +
-      (showTime ? '<div class="bubble-time" title="'+clockTitle+'">'+timeLabel+(isMe?' <span class="bubble-check" aria-label="Delivered">✓</span>':'')+'</div>' : '') +
+      (showTime ? '<div class="bubble-time" title="'+clockTitle+'">'+timeLabel+
+        (receipt ? ' <span class="bubble-check'+receipt.cls+'" aria-label="'+receipt.label+'">'+receipt.mark+'</span>' : '') +
+      '</div>' : '') +
     '</div>';
     prevFrom = m.from;
     prevTs = ts;
   });
-  var typing = document.getElementById('typingBubble');
-  if (!typing) {
-    html += '<div class="typing-bubble" id="typingBubble" aria-live="polite">typing…</div>';
-  }
+  html += '<div class="typing-bubble" id="typingBubble" aria-live="polite">typing…</div>';
   scroll.innerHTML = html;
   if (!document.getElementById('qgNewMsgPill')) {
     var pill = document.createElement('button');
@@ -1216,16 +1538,19 @@ window.handleInput = function(el){
     fraudInline.style.display = 'none';
     sendBtn.disabled = !val;
   }
-  if (val && typeof qgSetTypingFlag === 'function' && convId && currentUserId) {
+  if (val && convId && currentUserId) {
     clearTimeout(_typingTimer);
-    _typingTimer = setTimeout(function(){ qgSetTypingFlag(convId, currentUserId); }, 350);
+    _typingTimer = setTimeout(function(){
+      if (typeof qgBroadcastTyping === 'function') qgBroadcastTyping(convId, currentUserId);
+      else if (typeof qgSetTypingFlag === 'function') qgSetTypingFlag(convId, currentUserId);
+    }, 280);
   }
 };
-// Presence-lite typing poll (no-ops if column missing)
+// Typing via Realtime broadcast (+ REST fallback inside qgBroadcastTyping)
 setInterval(function(){
   if (!convId || !currentUserId) return;
   if (typeof qgPollTyping === 'function') qgPollTyping(convId, currentUserId, document.getElementById('typingBubble'));
-}, 4000);
+}, 5000);
 
 window.handleKey = function(e){
   // Send on Enter (not Shift+Enter)
@@ -1299,6 +1624,10 @@ window.sendMessage = async function(){
 
 window.addEventListener('beforeunload', function(){
   if(pollTimer) clearInterval(pollTimer);
+  if (typeof qgUnsubscribeChat === 'function') qgUnsubscribeChat();
+});
+window.addEventListener('pagehide', function(){
+  if (typeof qgUnsubscribeChat === 'function') qgUnsubscribeChat();
 });
 </script>
 <script defer src="qg-help.js?v=20260726seo"></script>

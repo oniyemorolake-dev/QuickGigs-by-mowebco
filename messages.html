@@ -267,9 +267,9 @@ onAuthStateChanged(auth, (user) => {
 <script src="qg-ux.js?v=20260726ux" defer></script>
 <script src="qg-bigtech.js?v=20260726bt" defer></script>
 <script src="qg-wave2.js?v=20260726w2" defer></script>
-<script defer src="qg-config.js?v=20260728msg1"></script>
+<script defer src="qg-config.js?v=20260728chataccept1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
-<script defer src="supabase-db.js?v=20260728msg1"></script>
+<script defer src="supabase-db.js?v=20260728chataccept1"></script>
 <script defer src="qg-notifications.js"></script>
 <script defer src="qg-push.js?v=1"></script>
 <script>
@@ -395,7 +395,9 @@ async function loadConversations(){
 
   try {
     var rows = await getConversationsForUser(userId);
-    var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept';
+    var rule = typeof window.getChatUnlockRule === 'function'
+      ? window.getChatUnlockRule()
+      : ((window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept');
     if (rule === 'payment' && typeof syncConversationUnlock === 'function') {
       var hadLocked = false;
       await Promise.all((rows || []).map(function (c) {
@@ -404,6 +406,20 @@ async function loadConversations(){
         return syncConversationUnlock(c.conv_id, userId).catch(function () {});
       }));
       if (hadLocked) {
+        rows = await getConversationsForUser(userId);
+      }
+    } else if (rule === 'accept' && typeof forceUnlockConversationForTask === 'function') {
+      // When Stripe is live, restore the escrow-gated contact rule — chat unlocks only after
+      // escrow is funded. Currently gated on acceptance because payments are off.
+      var unlockedAny = false;
+      await Promise.all((rows || []).map(function (c) {
+        if (c.is_unlocked && String(c.status || '').toLowerCase() !== 'application') {
+          return Promise.resolve();
+        }
+        unlockedAny = true;
+        return forceUnlockConversationForTask(c, 'in_progress').catch(function () {});
+      }));
+      if (unlockedAny) {
         rows = await getConversationsForUser(userId);
       }
     }
@@ -464,6 +480,7 @@ function renderContent(){
   // Banner — only when chat is payment-gated
   var html = '';
   var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept';
+  if (typeof window.getChatUnlockRule === 'function') rule = window.getChatUnlockRule();
   if (rule === 'payment') {
     var bannerCopy = typeof getMessagesBannerCopy === 'function' ? getMessagesBannerCopy() : {
       title: 'Chat locked until payment',

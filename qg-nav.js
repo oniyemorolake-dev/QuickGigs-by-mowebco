@@ -166,6 +166,14 @@
         var iAmPoster = String(conv.poster_id) === String(user.uid);
         if (tasker && iAmPoster) return;
         if (!tasker && !iAmPoster) return;
+        // Active chat thread — treat as read
+        try {
+          var openConv = new URLSearchParams(window.location.search).get('conv');
+          if (openConv && String(openConv) === String(conv.conv_id) &&
+              /chat\.html$/i.test(location.pathname.split('/').pop() || '')) {
+            return;
+          }
+        } catch (eOpen) {}
         var lastRead = iAmPoster ? conv.poster_last_read_at : conv.worker_last_read_at;
         if (!lastRead || (conv.last_message_at && new Date(conv.last_message_at) > new Date(lastRead))) n += 1;
       });
@@ -180,6 +188,14 @@
       }
     }).catch(function () {});
   }
+
+  // Refresh badge when returning to the tab / focusing the app
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) refreshMessagesUnreadBadge();
+  });
+  window.addEventListener('focus', function () {
+    refreshMessagesUnreadBadge();
+  });
 
   function initRoleThemeEarly() {
     applyRoleTheme();
