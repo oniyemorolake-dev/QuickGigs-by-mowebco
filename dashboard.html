@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
 <link rel="stylesheet" href="qg-polish.css?v=20260726contrast">
-<link rel="stylesheet" href="qg-ux.css?v=20260726contrast">
+<link rel="stylesheet" href="qg-ux.css?v=20260728welcome1">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -280,7 +280,7 @@ body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#ee
 
 <!-- TAB BAR -->
 <nav class="tab-bar" id="qgTabBar"></nav>
-<script defer src="qg-utils.js?v=20260728perf3"></script>
+<script defer src="qg-utils.js?v=20260728welcome1"></script>
 <script defer src="qg-nav.js"></script>
 <script defer src="qg-menu.js?v=20260727auth2"></script>
 <script defer src="qg-auth-google.js?v=20260728fix1"></script>
@@ -358,8 +358,22 @@ onAuthStateChanged(auth, async (user) => {
         var link = pending.consentUrl || ('https://quickgigs.ca/parent-consent.html?token=' + (dbUser.guardian_consent_token || ''));
         banner.style.display = 'block';
         banner.className = 'guardian-banner qg-page-wide';
-        banner.innerHTML = '<strong>⏳ Waiting for parent approval</strong>You can browse, but posting and applying are paused until ' +
-          String(email).replace(/</g, '') + ' approves. <a href="' + link.replace(/"/g, '') + '" target="_blank" rel="noopener">Open consent link</a>';
+        var safeLink = typeof safeUrl === 'function' ? safeUrl(link) : '';
+        banner.textContent = '';
+        var strong = document.createElement('strong');
+        strong.textContent = '⏳ Waiting for parent approval';
+        banner.appendChild(strong);
+        banner.appendChild(document.createTextNode(
+          'You can browse, but posting and applying are paused until ' + String(email) + ' approves. '
+        ));
+        if (safeLink) {
+          var a = document.createElement('a');
+          a.href = safeLink;
+          a.target = '_blank';
+          a.rel = 'noopener';
+          a.textContent = 'Open consent link';
+          banner.appendChild(a);
+        }
       }
     }
     if (dbUser && dbUser.status === 'banned' && typeof enforceBanOnLogin === 'function') {
@@ -704,6 +718,11 @@ function renderDashboardHero(userId) {
 }
 
 function renderAll(){
+  function dashEsc(s) {
+    return typeof escapeHtml === 'function' ? escapeHtml(s)
+      : (typeof qgEsc === 'function' ? qgEsc(s)
+        : String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+  }
   if (typeof getMode === 'function') {
     isPoster = getMode() === 'poster';
   } else if (typeof getSessionMode === 'function') {
@@ -879,7 +898,7 @@ function renderAll(){
         var taskHref = 'mytasks.html?tab=posted' + (appsOnTask ? '&expand=' + encodeURIComponent(String(taskId)) : '');
         return '<a class="task-row" href="'+taskHref+'" style="text-decoration:none">' +
           '<div class="task-dot" style="background:rgba(107,63,160,0.2)">'+ico('clipboard')+'</div>' +
-          '<div class="task-info"><div class="task-name">'+String(taskField(t,'title')).replace(/</g,'&lt;')+'</div><div class="task-meta">Open · $'+taskField(t,'budget')+(appsOnTask ? ' · '+appsOnTask+' applicant'+(appsOnTask!==1?'s':'') : '')+'</div></div>' +
+          '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title'))+'</div><div class="task-meta">Open · $'+dashEsc(taskField(t,'budget'))+(appsOnTask ? ' · '+appsOnTask+' applicant'+(appsOnTask!==1?'s':'') : '')+'</div></div>' +
           '<div class="task-right"><div class="task-price">Review</div></div>' +
         '</a>';
       }).join('');
@@ -898,10 +917,11 @@ function renderAll(){
         var badge = mode === 'quick' ? 'badge-quick' : mode === 'recurring' ? 'badge-recurring' : 'badge-standard';
         var badgeLabel = mode === 'quick' ? '⚡ Quick' : mode === 'recurring' ? '🔄 Recurring' : 'Standard';
         var pin = typeof qgIcon==='function' ? '<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>' : '';
+        var locTxt = typeof formatLocationDisplay==='function'?formatLocationDisplay(taskField(t,'location')||city):String(taskField(t,'location')||city);
         return '<a class="task-row" href="browsetask.html" style="text-decoration:none">' +
           '<div class="task-dot" style="background:rgba(74,222,128,0.15)">'+ico('briefcase')+'</div>' +
-          '<div class="task-info"><div class="task-name">'+String(taskField(t,'title')).replace(/</g,'&lt;')+'</div><div class="task-meta">'+pin+(typeof formatLocationDisplay==='function'?formatLocationDisplay(taskField(t,'location')||city):String(taskField(t,'location')||city))+'</div></div>' +
-          '<div class="task-right"><div class="task-price">$'+taskField(t,'budget')+'</div><span class="task-badge '+badge+'">'+badgeLabel+'</span></div>' +
+          '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title'))+'</div><div class="task-meta">'+pin+dashEsc(locTxt)+'</div></div>' +
+          '<div class="task-right"><div class="task-price">$'+dashEsc(taskField(t,'budget'))+'</div><span class="task-badge '+badge+'">'+badgeLabel+'</span></div>' +
         '</a>';
       }).join('');
     } else {
@@ -912,7 +932,7 @@ function renderAll(){
       html += myOpenPosted.slice(0, 2).map(function(t){
         return '<a class="task-row" href="mytasks.html?tab=posted" style="text-decoration:none">' +
           '<div class="task-dot" style="background:rgba(107,63,160,0.2)">'+ico('clipboard')+'</div>' +
-          '<div class="task-info"><div class="task-name">'+String(taskField(t,'title')).replace(/</g,'&lt;')+'</div><div class="task-meta">You posted · $'+taskField(t,'budget')+'</div></div></a>';
+          '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title'))+'</div><div class="task-meta">You posted · $'+dashEsc(taskField(t,'budget'))+'</div></div></a>';
       }).join('');
     }
   }
@@ -949,10 +969,10 @@ document.addEventListener('click', function(e) {
   }
 });
 </script>
-<script defer src="qg-polish.js?v=20260726c"></script>
-<script src="qg-ux.js?v=20260726ux" defer></script>
-<script src="qg-bigtech.js?v=20260726bt" defer></script>
-<script src="qg-wave2.js?v=20260726w2" defer></script>
+<script defer src="qg-polish.js?v=20260728xss1"></script>
+<script src="qg-ux.js?v=20260728welcome1" defer></script>
+<script src="qg-bigtech.js?v=20260728xss1" defer></script>
+<script src="qg-wave2.js?v=20260728xss1" defer></script>
 <script defer src="qg-help.js?v=20260726seo"></script>
 </body>
 </html>

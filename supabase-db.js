@@ -55,7 +55,11 @@ var SELECT_TASKS_DETAIL = SELECT_TASKS_BROWSE + ',scheduled_at,precise_address';
 var SELECT_TASKS_DASH = 'task_id,title,budget,location,task_mode,status,created_at,category,posted_by,budget_negotiable';
 var SELECT_APPLICATIONS = 'app_id,task_id,worker_id,worker_name,message,price,status,created_at,counter_price,counter_by,counter_round,last_counter_at';
 var SELECT_MESSAGES = 'message_id,conv_id,sender_id,body,created_at';
-var SELECT_CONVERSATIONS = 'conv_id,task_id,poster_id,worker_id,poster_name,worker_name,task_title,task_category,status,is_unlocked,last_message,last_message_at,created_at,poster_last_read_at,worker_last_read_at';
+/** Core conversation columns — always available after messaging.sql. */
+var SELECT_CONVERSATIONS_CORE =
+  'conv_id,task_id,poster_id,worker_id,poster_name,worker_name,task_title,task_category,status,is_unlocked,last_message,last_message_at,created_at';
+/** Full select — last_read cols added later for receipts; fall back to CORE if missing. */
+var SELECT_CONVERSATIONS = SELECT_CONVERSATIONS_CORE + ',poster_last_read_at,worker_last_read_at';
 var SELECT_PAYMENTS = 'payment_id,task_id,poster_id,worker_id,amount,platform_fee,worker_payout,status,stripe_id,transfer_id,created_at,completed_at';
 var SELECT_REVIEWS = 'review_id,task_id,reviewer_id,reviewee_id,rating,review_comment,reviewer_name,task_title,tags,created_at';
 /**
@@ -2167,16 +2171,25 @@ async function getConversationsForUser(userId) {
   var controller = new AbortController();
   var timeoutId = setTimeout(function () { controller.abort(); }, 8000);
   try {
-    var url = SUPABASE_URL + '/rest/v1/conversations?select=' + encodeURIComponent(SELECT_CONVERSATIONS);
-    url += '&order=last_message_at.desc.nullslast,created_at.desc';
-    url += '&or=(poster_id.eq.' + encodeURIComponent(userId) + ',worker_id.eq.' + encodeURIComponent(userId) + ')';
-    var headers = await getSupabaseHeaders();
-    var res = await fetch(url, { method: 'GET', headers: headers, signal: controller.signal });
-    if (!res.ok) {
-      var errText = await res.text();
-      throw new Error('GET conversations failed: ' + res.status + ' ' + errText);
+    async function fetchWithSelect(selectCols) {
+      var url = SUPABASE_URL + '/rest/v1/conversations?select=' + encodeURIComponent(selectCols);
+      url += '&order=last_message_at.desc.nullslast,created_at.desc';
+      url += '&or=(poster_id.eq.' + encodeURIComponent(userId) + ',worker_id.eq.' + encodeURIComponent(userId) + ')';
+      var headers = await getSupabaseHeaders();
+      var res = await fetch(url, { method: 'GET', headers: headers, signal: controller.signal });
+      if (!res.ok) {
+        var errText = await res.text();
+        throw new Error('GET conversations failed: ' + res.status + ' ' + errText);
+      }
+      return await res.json();
     }
-    var rows = await res.json();
+    var rows;
+    try {
+      rows = await fetchWithSelect(SELECT_CONVERSATIONS);
+    } catch (fullErr) {
+      console.warn('getConversationsForUser full select failed, using CORE:', fullErr && fullErr.message);
+      rows = await fetchWithSelect(SELECT_CONVERSATIONS_CORE);
+    }
     writeConversationsCache(userId, rows || []);
     window._supabaseUsingStaleCache = false;
     return rows;
@@ -2200,16 +2213,21 @@ function normalizeTaskId(taskId) {
 
 async function getConversation(convId, opts) {
   opts = opts || {};
+  if (!convId) return null;
   var me = currentActorId(opts);
   if (!me && opts.actorId) me = String(opts.actorId);
-  if (!me) return null;
-  var results = await sbGet(
-    'conversations',
-    withSelect('conv_id=eq.' + encodeURIComponent(convId), SELECT_CONVERSATIONS)
-  );
-  var conv = results[0] || null;
+  var filter = 'conv_id=eq.' + encodeURIComponent(String(convId));
+  var rows = null;
+  try {
+    rows = await sbGetOrThrow('conversations', withSelect(filter, SELECT_CONVERSATIONS), null, 1);
+  } catch (fullErr) {
+    console.warn('getConversation full select failed, using CORE:', fullErr && fullErr.message);
+    rows = await sbGet('conversations', withSelect(filter, SELECT_CONVERSATIONS_CORE), null, 1);
+  }
+  var conv = (rows && rows[0]) || null;
   if (!conv) return null;
-  if (String(conv.poster_id) !== me && String(conv.worker_id) !== me) {
+  // If actor id is not ready yet, still return the row — caller validates party.
+  if (me && String(conv.poster_id) !== me && String(conv.worker_id) !== me) {
     return null;
   }
   return conv;
@@ -2349,6 +2367,15 @@ async function forceUnlockConversationForTask(conv, taskStatus) {
       clearConversationFraudBuffers(conv.conv_id, conv.poster_id, conv.worker_id);
     }
     return { success: true, conv: Object.assign({}, conv, { is_unlocked: true }) };
+  }
+  // Accept-mode: PATCH may fail (RLS / column) but parties must still chat while payments are off.
+  if (rule !== 'payment') {
+    console.warn('forceUnlockConversationForTask PATCH failed — opening chat client-side:', result && result.error);
+    return {
+      success: true,
+      conv: Object.assign({}, conv, { is_unlocked: true, status: patch.status || conv.status }),
+      unverified: true
+    };
   }
   return { success: false, error: result.error, conv: conv };
 }

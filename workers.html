@@ -81,7 +81,7 @@ onAuthStateChanged(auth, function (user) {
 
 <script src="qg-nav.js"></script>
 <script src="qg-config.js"></script>
-<script src="qg-utils.js"></script>
+<script src="qg-utils.js?v=20260728welcome1"></script>
 <script src="qg-categories.js"></script>
 <script src="qg-location.js"></script>
 <script src="qg-pwa.js?v=4"></script>
@@ -109,7 +109,9 @@ var allWorkers = [];
 var activeSkill = 'all';
 
 function esc(s) {
-  return typeof escapeHtml === 'function' ? escapeHtml(s) : String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  return typeof escapeHtml === 'function' ? escapeHtml(s)
+    : (typeof qgEsc === 'function' ? qgEsc(s)
+      : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'));
 }
 
 function buildSkillFilters() {
@@ -208,7 +210,8 @@ window.renderWorkers = function () {
   el.innerHTML = list.map(function (w) {
     var initial = esc((w.name || 'T').charAt(0).toUpperCase());
     var avatarCls = w.avatar ? 'qg-worker-avatar has-photo' : 'qg-worker-avatar';
-    var avatarStyle = w.avatar ? ' style="background-image:url(' + esc(w.avatar) + ')"' : '';
+    var cssUrl = typeof safeCssUrl === 'function' ? safeCssUrl(w.avatar) : '';
+    var avatarStyle = cssUrl ? ' style="background-image:' + cssUrl + '"' : '';
     var trust = typeof renderTrustBadges === 'function' ? renderTrustBadges(w.stats) : '';
     var skillHtml = (w.skills || []).slice(0, 4).map(function (s) {
       return '<span class="qg-worker-skill">' + esc(s) + '</span>';

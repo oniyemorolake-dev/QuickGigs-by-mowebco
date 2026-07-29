@@ -70,12 +70,22 @@
     window.showEmptyState = function (containerId, icon, title, sub) {
       var el = document.getElementById(containerId);
       if (!el) return;
-      el.innerHTML =
-        '<div style="text-align:center;padding:60px 20px;animation:fadeIn 0.3s ease">' +
-        '<div style="font-size:48px;margin-bottom:16px">' + (icon || '🔍') + '</div>' +
-        '<div style="font-size:16px;font-weight:500;color:var(--text);margin-bottom:8px">' + (title || 'Nothing here yet') + '</div>' +
-        '<div style="font-size:14px;color:var(--text-muted);line-height:1.6">' + (sub || 'Check back soon') + '</div>' +
-        '</div>';
+      el.textContent = '';
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'text-align:center;padding:60px 20px;animation:fadeIn 0.3s ease';
+      var iconEl = document.createElement('div');
+      iconEl.style.cssText = 'font-size:48px;margin-bottom:16px';
+      iconEl.textContent = icon || '🔍';
+      var titleEl = document.createElement('div');
+      titleEl.style.cssText = 'font-size:16px;font-weight:500;color:var(--text);margin-bottom:8px';
+      titleEl.textContent = title || 'Nothing here yet';
+      var subEl = document.createElement('div');
+      subEl.style.cssText = 'font-size:14px;color:var(--text-muted);line-height:1.6';
+      subEl.textContent = sub || 'Check back soon';
+      wrap.appendChild(iconEl);
+      wrap.appendChild(titleEl);
+      wrap.appendChild(subEl);
+      el.appendChild(wrap);
     };
   }
 

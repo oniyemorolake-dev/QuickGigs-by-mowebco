@@ -208,11 +208,56 @@
     });
   }
 
+  function welcomeTourStorageKey(uid) {
+    return 'qg-welcome-tour:' + String(uid || '');
+  }
+
+  function hasSeenWelcomeTour(uid) {
+    if (!uid) return false;
+    try {
+      if (localStorage.getItem(welcomeTourStorageKey(uid)) === '1') return true;
+      // Legacy device-wide flag — migrate to uid-scoped so login clears don't reset it.
+      if (localStorage.getItem('qg-onboarded') === '1') {
+        localStorage.setItem(welcomeTourStorageKey(uid), '1');
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  function markWelcomeTourDone(uid) {
+    if (!uid) return;
+    try {
+      localStorage.setItem(welcomeTourStorageKey(uid), '1');
+      localStorage.setItem('qg-onboarded', '1');
+    } catch (e) {}
+  }
+
   function initOnboarding() {
     if (PAGE !== 'dashboard.html') return;
-    try {
-      if (localStorage.getItem('qg-onboarded') === '1') return;
-    } catch (e) { return; }
+    if (document.getElementById('qgOnboardOverlay')) return;
+
+    var tries = 0;
+    function attempt() {
+      var uid = '';
+      try {
+        if (typeof getCurrentUserId === 'function') uid = getCurrentUserId() || '';
+        if (!uid && window._currentUser && window._currentUser.uid) uid = String(window._currentUser.uid);
+        if (!uid && window._auth && window._auth.currentUser) uid = String(window._auth.currentUser.uid);
+      } catch (eUid) {}
+      if (!uid) {
+        if (tries++ < 50) {
+          setTimeout(attempt, 100);
+        }
+        return;
+      }
+      if (hasSeenWelcomeTour(uid)) return;
+      showWelcomeTour(uid);
+    }
+    attempt();
+  }
+
+  function showWelcomeTour(uid) {
     if (document.getElementById('qgOnboardOverlay')) return;
     var steps = [
       { title: 'Post a task or browse tasks', sub: 'Posters describe what they need. Taskers find work nearby and apply.' },
@@ -226,6 +271,13 @@
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
     overlay.setAttribute('aria-labelledby', 'qgOnboardTitle');
+
+    function dismiss() {
+      markWelcomeTourDone(uid);
+      overlay.classList.remove('open');
+      overlay.remove();
+    }
+
     function render() {
       var last = i >= steps.length - 1;
       overlay.innerHTML =
@@ -234,19 +286,19 @@
         '<div class="qg-onboard-title" id="qgOnboardTitle">' + steps[i].title + '</div>' +
         '<div class="qg-onboard-sub">' + steps[i].sub + '</div>' +
         '<button type="button" class="qg-onboard-btn" id="qgOnboardNext">' + (last ? 'Got it' : 'Next') + '</button>' +
+        '<button type="button" class="qg-onboard-skip" id="qgOnboardSkip">Skip</button>' +
         '</div>';
       var btn = document.getElementById('qgOnboardNext');
+      var skip = document.getElementById('qgOnboardSkip');
       if (btn) btn.focus();
       if (btn) btn.onclick = function () {
-        if (last) {
-          try { localStorage.setItem('qg-onboarded', '1'); } catch (e2) {}
-          overlay.classList.remove('open');
-          overlay.remove();
-        } else {
+        if (last) dismiss();
+        else {
           i += 1;
           render();
         }
       };
+      if (skip) skip.onclick = function () { dismiss(); };
     }
     document.body.appendChild(overlay);
     render();

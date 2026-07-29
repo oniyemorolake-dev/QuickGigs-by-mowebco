@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
 <link rel="stylesheet" href="qg-polish.css?v=20260726contrast">
-<link rel="stylesheet" href="qg-ux.css?v=20260726contrast">
+<link rel="stylesheet" href="qg-ux.css?v=20260728welcome1">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -495,7 +495,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 <script defer src="qg-site.js"></script>
 <script defer src="qg-nav.js"></script>
 <script defer src="qg-menu.js?v=2"></script>
-<script defer src="qg-lightbox.js?v=1"></script>
+<script defer src="qg-lightbox.js?v=20260728xss1"></script>
 <script>
 renderQuickGigsTabBar('browse');
 </script>
@@ -540,13 +540,13 @@ onAuthStateChanged(auth, (user) => {
 });
 </script>
 
-<script defer src="qg-utils.js?v=20260728timeago1"></script>
+<script defer src="qg-utils.js?v=20260728welcome1"></script>
 <script defer src="feeBreakdown.js?v=20260727fee1"></script>
 <script defer src="contentModeration.js?v=20260727cm1"></script>
-<script defer src="qg-polish.js?v=20260728timeago1"></script>
-<script src="qg-ux.js?v=20260726ux" defer></script>
-<script src="qg-bigtech.js?v=20260728timeago1" defer></script>
-<script src="qg-wave2.js?v=20260726w2" defer></script>
+<script defer src="qg-polish.js?v=20260728xss1"></script>
+<script src="qg-ux.js?v=20260728welcome1" defer></script>
+<script src="qg-bigtech.js?v=20260728xss1" defer></script>
+<script src="qg-wave2.js?v=20260728xss1" defer></script>
 <script defer src="qg-config.js?v=20260726e"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="qg-categories.js"></script>
@@ -559,7 +559,11 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-report.js?v=20260716d"></script>
 <script defer src="qg-stats.js"></script>
 <script>
-function esc(s){return window.escapeHtml(s);}
+function esc(s){
+  return typeof escapeHtml === 'function' ? escapeHtml(s)
+    : (typeof qgEsc === 'function' ? qgEsc(s)
+      : String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+}
 var CAT_MAP = window.QG_CAT_MAP || {};
 function normaliseTask(row){
   var catInfo=getCatInfo(row.CATEGORY||row.category);
@@ -866,7 +870,11 @@ function getDemoTasks(){
   ];
 }
 
-function esc(s){return window.escapeHtml(s);}
+function esc(s){
+  return typeof escapeHtml === 'function' ? escapeHtml(s)
+    : (typeof qgEsc === 'function' ? qgEsc(s)
+      : String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+}
 function getBadge(m,t){
   var modeBadge='';
   if(m==='quick')modeBadge='<span class="tc-badge badge-quick">⚡ Quick</span>';
@@ -926,15 +934,25 @@ function renderCardMedia(t) {
       '</div>';
   }
   if (hasPhoto) {
-    var photosJson = esc(JSON.stringify(urls));
-    var raw = String(urls[0] || '');
-    var src = esc(browseThumbUrl(raw, 480));
-    var fallbackAttr = (src !== esc(raw)) ? ' data-fallback="'+esc(raw)+'" onerror="if(this.dataset.fallback){this.src=this.dataset.fallback;delete this.dataset.fallback;this.onerror=null;}"' : '';
-    return '<div class="tc-media tc-photo-tappable" role="button" tabindex="0" aria-label="View task photos — tap to enlarge" data-photos="'+photosJson+'" data-photo-caption="'+esc(t.title)+'">' +
-      '<div class="tc-media-inner">' +
-        '<img class="tc-media-img" src="'+src+'" alt="'+esc(t.title)+' photo" loading="lazy" decoding="async" width="168" height="168"'+fallbackAttr+'>' +
-      '</div>' + dots +
-    '</div>';
+    var safeUrls = urls.map(function (u) {
+      return typeof safeMediaUrl === 'function' ? safeMediaUrl(u)
+        : (typeof safeUrl === 'function' ? safeUrl(u) : '');
+    }).filter(Boolean);
+    if (!safeUrls.length) {
+      // fall through to placeholder
+    } else {
+      var photosJson = esc(JSON.stringify(safeUrls));
+      var raw = String(safeUrls[0] || '');
+      var thumb = browseThumbUrl(raw, 480);
+      var src = esc(typeof safeMediaUrl === 'function' ? (safeMediaUrl(thumb) || raw) : thumb);
+      var fallbackSafe = esc(raw);
+      var fallbackAttr = (src !== fallbackSafe) ? ' data-fallback="'+fallbackSafe+'" onerror="if(this.dataset.fallback){this.src=this.dataset.fallback;delete this.dataset.fallback;this.onerror=null;}"' : '';
+      return '<div class="tc-media tc-photo-tappable" role="button" tabindex="0" aria-label="View task photos — tap to enlarge" data-photos="'+photosJson+'" data-photo-caption="'+esc(t.title)+'">' +
+        '<div class="tc-media-inner">' +
+          '<img class="tc-media-img" src="'+src+'" alt="'+esc(t.title)+' photo" loading="lazy" decoding="async" width="168" height="168"'+fallbackAttr+'>' +
+        '</div>' + dots +
+      '</div>';
+    }
   }
   return '<div class="tc-media" aria-hidden="true">' +
     '<div class="tc-media-inner tc-media-placeholder" style="background:'+esc(t.iconBg || 'rgba(107,63,160,0.2)')+'">' +
@@ -1444,9 +1462,15 @@ window.openModal=async function(id,e){
   var photoWrap = document.getElementById('modalPhotoWrap');
   if (activeTask.photoUrls && activeTask.photoUrls.length) {
     photoWrap.style.display='block';
-    photoWrap.innerHTML = '<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Reference photos — tap to enlarge</div><div style="display:flex;gap:8px;overflow-x:auto;align-items:center;">' +
-      activeTask.photoUrls.map(function(url, i){ return '<img class="qg-modal-photo-tap" src="'+esc(url)+'" alt="Task photo" data-photos="'+esc(JSON.stringify(activeTask.photoUrls))+'" data-photo-index="'+i+'" data-photo-caption="'+esc(activeTask.title)+'" style="width:auto;max-width:100%;height:auto;max-height:160px;object-fit:contain;border-radius:10px;border:0.5px solid var(--border);flex-shrink:0;cursor:zoom-in;">'; }).join('') +
-      '</div>';
+    var safePhotos = activeTask.photoUrls.map(function(url){
+      return typeof safeMediaUrl === 'function' ? safeMediaUrl(url)
+        : (typeof safeUrl === 'function' ? safeUrl(url) : '');
+    }).filter(Boolean);
+    photoWrap.innerHTML = safePhotos.length
+      ? ('<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Reference photos — tap to enlarge</div><div style="display:flex;gap:8px;overflow-x:auto;align-items:center;">' +
+      safePhotos.map(function(url, i){ return '<img class="qg-modal-photo-tap" src="'+esc(url)+'" alt="Task photo" data-photos="'+esc(JSON.stringify(safePhotos))+'" data-photo-index="'+i+'" data-photo-caption="'+esc(activeTask.title)+'" style="width:auto;max-width:100%;height:auto;max-height:160px;object-fit:contain;border-radius:10px;border:0.5px solid var(--border);flex-shrink:0;cursor:zoom-in;">'; }).join('') +
+      '</div>')
+      : '';
   } else {
     photoWrap.style.display='none';
     photoWrap.innerHTML='';

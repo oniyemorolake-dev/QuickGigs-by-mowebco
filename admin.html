@@ -529,7 +529,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div class="toast" id="toast"></div>
 
 <script defer src="qg-config.js"></script>
-<script defer src="qg-utils.js?v=20260727auth2"></script>
+<script defer src="qg-utils.js?v=20260728welcome1"></script>
 <script defer src="supabaseClient.js?v=20260727perf"></script>
 <script defer src="supabase-db.js?v=20260727perf"></script>
 <script defer src="qg-admin-gate.js?v=20260727admin1"></script>
@@ -640,7 +640,7 @@ window.doLogout = function () {
 };
 </script>
 
-<script src="qg-polish.js?v=20260726c"></script>
+<script src="qg-polish.js?v=20260728xss1"></script>
 <script src="qg-notifications.js"></script>
 <script src="qg-stats.js"></script>
 <script src="qg-admin.js?v=7"></script>
@@ -849,19 +849,27 @@ function renderMiniChart(id,data,color){
   }).join('');
 }
 
+function adminEsc(s){
+  return typeof escapeHtml === 'function' ? escapeHtml(s)
+    : String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function adminEscAttr(s){
+  return typeof escAttr === 'function' ? escAttr(s) : adminEsc(s).replace(/\r?\n/g,' ');
+}
+
 function renderActivity(){
   var items=[{dot:'#4ade80',text:'Sarah K. completed Deep clean apartment',time:'2m ago'},{dot:'#9b6fc4',text:'New user signed up — Priya N.',time:'15m ago'},{dot:'#ef4444',text:'Dispute opened — Box braids task',time:'1hr ago'},{dot:'#fbbf24',text:'Contact share attempt blocked in chat',time:'2hr ago'},{dot:'#4ade80',text:'James O. applied to 2 tasks',time:'3hr ago'},{dot:'#9b6fc4',text:'Task posted — Math tutor Grade 10',time:'4hr ago'}];
-  document.getElementById('activityFeed').innerHTML=items.map(function(i){return '<div class="activity-item"><div class="act-dot" style="background:'+i.dot+'"></div><div class="act-content"><div class="act-text">'+i.text+'</div><div class="act-time">'+i.time+'</div></div></div>';}).join('');
+  document.getElementById('activityFeed').innerHTML=items.map(function(i){return '<div class="activity-item"><div class="act-dot" style="background:'+i.dot+'"></div><div class="act-content"><div class="act-text">'+adminEsc(i.text)+'</div><div class="act-time">'+adminEsc(i.time)+'</div></div></div>';}).join('');
 }
 
 function renderCategories(){
   var cats=[{label:'🚗 Errands',pct:90,val:'4'},{label:'🏠 Home',pct:70,val:'3'},{label:'🎓 Tutoring',pct:50,val:'2'},{label:'💇 Beauty',pct:35,val:'1'},{label:'💻 Tech',pct:25,val:'1'},{label:'👶 Care',pct:25,val:'1'}];
-  document.getElementById('categoryChart').innerHTML=cats.map(function(c){return '<div class="bar-item"><div class="bar-label">'+c.label+'</div><div class="bar-track"><div class="bar-fill" style="width:'+c.pct+'%"></div></div><div class="bar-val">'+c.val+' tasks</div></div>';}).join('');
+  document.getElementById('categoryChart').innerHTML=cats.map(function(c){return '<div class="bar-item"><div class="bar-label">'+adminEsc(c.label)+'</div><div class="bar-track"><div class="bar-fill" style="width:'+c.pct+'%"></div></div><div class="bar-val">'+adminEsc(c.val)+' tasks</div></div>';}).join('');
 }
 
 function renderRecentSignups(){
   var colors=['linear-gradient(135deg,#6b3fa0,#c8a8e9)','linear-gradient(135deg,#16a34a,#4ade80)','linear-gradient(135deg,#d97706,#fbbf24)','linear-gradient(135deg,#0ea5e9,#7dd3fc)'];
-  document.getElementById('recentSignups').innerHTML=users.slice(0,5).map(function(u,i){return '<div class="activity-item"><div style="width:28px;height:28px;border-radius:50%;background:'+colors[i%colors.length]+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0;">'+u.name.charAt(0)+'</div><div class="act-content"><div class="act-text">'+u.name+' · '+u.role+'</div><div class="act-time">'+u.email+'</div></div></div>';}).join('');
+  document.getElementById('recentSignups').innerHTML=users.slice(0,5).map(function(u,i){return '<div class="activity-item"><div style="width:28px;height:28px;border-radius:50%;background:'+colors[i%colors.length]+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0;">'+adminEsc((u.name||'?').charAt(0))+'</div><div class="act-content"><div class="act-text">'+adminEsc(u.name)+' · '+adminEsc(u.role)+'</div><div class="act-time">'+adminEsc(u.email)+'</div></div></div>';}).join('');
 }
 
 function renderUsers(data){
@@ -881,8 +889,19 @@ function renderUsers(data){
     var joined=u.created_at?new Date(u.created_at).toLocaleDateString('en-CA'):'—';
     var tempTag=typeof isTempEmail==='function'&&isTempEmail(u.email)?' <span class="admin-temp-email">temp</span>':'';
     var posted=tasks.filter(function(t){return String(t.posted_by||t.POSTED_BY||'')===String(uid);}).length;
-    return '<div class="data-row g-users" onclick="openUserDrawer(\''+String(uid).replace(/'/g,'')+'\')"><input type="checkbox" class="checkbox" value="'+uid+'" onchange="updateBulk()" onclick="event.stopPropagation()"><div class="user-cell"><div class="u-av" style="background:'+colors[i%colors.length]+'">'+name.charAt(0)+'</div><div><div class="u-name">'+name+tempTag+'</div><div class="u-meta">Joined '+joined+'</div></div></div><div class="cell">'+email+'</div><div class="cell"><span class="role-pill '+rc+'">'+role+'</span></div><div class="cell">'+posted+' posted</div><div class="cell"><span class="status-pill '+sc+'">'+sl+'</span></div><div class="act-btns"><button type="button" class="act-btn btn-view" onclick="event.stopPropagation();openUserDrawer(\''+String(uid).replace(/'/g,'')+'\')">Open</button></div></div>';
+    var uidAttr=adminEscAttr(uid);
+    return '<div class="data-row g-users" data-uid="'+uidAttr+'"><input type="checkbox" class="checkbox" value="'+uidAttr+'" onchange="updateBulk()" onclick="event.stopPropagation()"><div class="user-cell"><div class="u-av" style="background:'+colors[i%colors.length]+'">'+adminEsc(name.charAt(0))+'</div><div><div class="u-name">'+adminEsc(name)+tempTag+'</div><div class="u-meta">Joined '+adminEsc(joined)+'</div></div></div><div class="cell">'+adminEsc(email)+'</div><div class="cell"><span class="role-pill '+rc+'">'+adminEsc(role)+'</span></div><div class="cell">'+posted+' posted</div><div class="cell"><span class="status-pill '+sc+'">'+sl+'</span></div><div class="act-btns"><button type="button" class="act-btn btn-view" data-open-user="'+uidAttr+'">Open</button></div></div>';
   }).join('');
+  var usersBody=document.getElementById('usersBody');
+  if(usersBody && !usersBody._qgXssBound){
+    usersBody._qgXssBound=true;
+    usersBody.addEventListener('click',function(e){
+      var btn=e.target.closest('[data-open-user]');
+      var row=e.target.closest('[data-uid]');
+      var id=btn?btn.getAttribute('data-open-user'):(row&&!e.target.closest('input')?row.getAttribute('data-uid'):null);
+      if(id && typeof openUserDrawer==='function'){ e.stopPropagation(); openUserDrawer(id); }
+    });
+  }
 }
 
 window.filterUsers=function(q){renderUsers(!q?users:users.filter(function(u){var hay=((u.name||'')+' '+(u.email||'')).toLowerCase();return hay.indexOf(q.toLowerCase())>=0;}));};
@@ -896,11 +915,22 @@ function renderTasks(data){
     var sc=st==='completed'?'s-done':st==='in_progress'?'s-progress':st==='expired'?'s-expired':st==='cancelled'?'s-banned':'s-posted';
     var sl=st==='in_progress'?'In progress':st.charAt(0).toUpperCase()+st.slice(1);
     var appCount=applications.filter(function(a){return String(a.task_id||a.TASK_ID||'')===tid;}).length;
-    return '<div class="data-row g-tasks" onclick="openTaskDrawer(\''+tid.replace(/'/g,'')+'\')"><div></div><div class="user-cell"><div><div class="u-name">'+t.title+'</div><div class="u-meta">'+appCount+' applicant'+(appCount!==1?'s':'')+' · '+new Date(t.created_at).toLocaleDateString('en-CA',{month:'short',day:'numeric'})+'</div></div></div><div class="cell">'+(t.poster_name||t.posted_by||'—')+'</div><div class="cell">$'+t.budget+'</div><div class="cell">'+(t.task_mode||'standard')+'</div><div class="cell"><span class="status-pill '+sc+'">'+sl+'</span></div><div class="act-btns"><button type="button" class="act-btn btn-view" onclick="event.stopPropagation();openTaskDrawer(\''+tid.replace(/'/g,'')+'\')">Open</button></div></div>';
+    var tidAttr=adminEscAttr(tid);
+    return '<div class="data-row g-tasks" data-tid="'+tidAttr+'"><div></div><div class="user-cell"><div><div class="u-name">'+adminEsc(t.title)+'</div><div class="u-meta">'+appCount+' applicant'+(appCount!==1?'s':'')+' · '+adminEsc(new Date(t.created_at).toLocaleDateString('en-CA',{month:'short',day:'numeric'}))+'</div></div></div><div class="cell">'+adminEsc(t.poster_name||t.posted_by||'—')+'</div><div class="cell">$'+adminEsc(t.budget)+'</div><div class="cell">'+adminEsc(t.task_mode||'standard')+'</div><div class="cell"><span class="status-pill '+sc+'">'+adminEsc(sl)+'</span></div><div class="act-btns"><button type="button" class="act-btn btn-view" data-open-task="'+tidAttr+'">Open</button></div></div>';
   }).join('');
+  var tasksBody=document.getElementById('tasksBody');
+  if(tasksBody && !tasksBody._qgXssBound){
+    tasksBody._qgXssBound=true;
+    tasksBody.addEventListener('click',function(e){
+      var btn=e.target.closest('[data-open-task]');
+      var row=e.target.closest('[data-tid]');
+      var id=btn?btn.getAttribute('data-open-task'):(row?row.getAttribute('data-tid'):null);
+      if(id && typeof openTaskDrawer==='function'){ e.stopPropagation(); openTaskDrawer(id); }
+    });
+  }
 }
 
-window.filterTasks=function(q){renderTasks(!q?tasks:tasks.filter(function(t){return t.title.toLowerCase().includes(q.toLowerCase())||t.posted_by.toLowerCase().includes(q.toLowerCase());}));};
+window.filterTasks=function(q){renderTasks(!q?tasks:tasks.filter(function(t){return String(t.title||'').toLowerCase().includes(q.toLowerCase())||String(t.posted_by||'').toLowerCase().includes(q.toLowerCase());}));};
 
 function renderDisputes(data){
   data=data||disputes;
@@ -911,12 +941,23 @@ function renderDisputes(data){
     var sc=(d.status||'open')==='open'?'s-open':'s-resolved';
     var sl=(d.status||'open')==='open'?'⚠ Open':'✓ Resolved';
     var title=d.task_title||d.task_id||'Task';
-    var reason=(d.reason||d.details||'—').substring(0,60);
+    var reason=String(d.reason||d.details||'—').substring(0,60);
     var who=d.opened_by_email||d.opened_by_id||'—';
     var when=d.created_at?new Date(d.created_at).toLocaleDateString('en-CA'):'—';
     var did=String(d.dispute_id||d.id||'');
-    return '<div class="data-row g-disputes"><div class="user-cell"><div><div class="u-name">'+title+'</div></div></div><div class="cell">'+reason+'</div><div class="cell">'+who+'</div><div class="cell"><span class="status-pill '+sc+'">'+sl+'</span></div><div class="cell">'+when+'</div><div class="act-btns"><button class="act-btn btn-view" onclick="viewDispute(\''+did.replace(/'/g,'')+'\')">Review</button>'+((d.status||'open')==='open'?'<button class="act-btn btn-resolve" onclick="resolveDispute(\''+did.replace(/'/g,'')+'\')">Resolve</button>':'')+'</div></div>';
+    var didAttr=adminEscAttr(did);
+    return '<div class="data-row g-disputes"><div class="user-cell"><div><div class="u-name">'+adminEsc(title)+'</div></div></div><div class="cell">'+adminEsc(reason)+'</div><div class="cell">'+adminEsc(who)+'</div><div class="cell"><span class="status-pill '+sc+'">'+sl+'</span></div><div class="cell">'+adminEsc(when)+'</div><div class="act-btns"><button class="act-btn btn-view" data-view-dispute="'+didAttr+'">Review</button>'+((d.status||'open')==='open'?'<button class="act-btn btn-resolve" data-resolve-dispute="'+didAttr+'">Resolve</button>':'')+'</div></div>';
   }).join('');
+  var dispBody=document.getElementById('disputesBody');
+  if(dispBody && !dispBody._qgXssBound){
+    dispBody._qgXssBound=true;
+    dispBody.addEventListener('click',function(e){
+      var v=e.target.closest('[data-view-dispute]');
+      var r=e.target.closest('[data-resolve-dispute]');
+      if(v && typeof viewDispute==='function') viewDispute(v.getAttribute('data-view-dispute'));
+      if(r && typeof resolveDispute==='function') resolveDispute(r.getAttribute('data-resolve-dispute'));
+    });
+  }
 }
 
 window.filterDisputes=function(q){var list=!q?disputes:disputes.filter(function(d){var h=(d.task_title||'')+(d.reason||'')+(d.details||'');return h.toLowerCase().indexOf(q.toLowerCase())>=0;});renderDisputes(list);};
@@ -991,7 +1032,7 @@ window.bulkAction=function(action){
 window.viewUser=function(id){openUserDrawer(id);};
 window.viewTask=function(id){openTaskDrawer(id);};
 window.removeTask=function(id){openTaskDrawer(id);};
-window.viewDispute=function(id){var d=disputes.find(function(x){return String(x.dispute_id||x.id)===String(id);});if(!d) return;openModal('Dispute — '+(d.task_title||d.task||d.task_id||'Task'),'Review this dispute and add resolution notes.','<div style="display:grid;gap:12px"><div><div class="modal-label">Opened by</div><div class="modal-value">'+(d.opened_by_email||d.opened_by_id||d.poster||'—')+'</div></div><div><div class="modal-label">Reason</div><div class="modal-value">'+(d.reason||d.details||'—')+'</div></div></div>','Close','purple',function(){},true);};
+window.viewDispute=function(id){var d=disputes.find(function(x){return String(x.dispute_id||x.id)===String(id);});if(!d) return;openModal('Dispute — '+(d.task_title||d.task||d.task_id||'Task'),'Review this dispute and add resolution notes.','<div style="display:grid;gap:12px"><div><div class="modal-label">Opened by</div><div class="modal-value">'+adminEsc(d.opened_by_email||d.opened_by_id||d.poster||'—')+'</div></div><div><div class="modal-label">Reason</div><div class="modal-value">'+adminEsc(d.reason||d.details||'—')+'</div></div></div>','Close','purple',function(){},true);};
 window.resolveDispute=function(id){var d=disputes.find(function(x){return String(x.dispute_id||x.id)===String(id);});if(!d) return;openModal('Resolve dispute','Mark dispute as resolved?','','Mark resolved','success',async function(){if(typeof sbUpdate==='function') await sbUpdate('disputes',{status:'resolved',resolved_at:new Date().toISOString()},'dispute_id=eq.'+encodeURIComponent(String(d.dispute_id||d.id)));d.status='resolved';renderDisputes();var open=disputes.filter(function(x){return (x.status||'open')==='open';}).length;document.getElementById('statDisputes').textContent=open;document.getElementById('disputeBadge').textContent=open;if(open===0){document.getElementById('alertBanner').style.display='none';}showToast('Dispute resolved','green');},true);};
 
 function renderNotifications(){

@@ -282,7 +282,9 @@
 
   function reportButtonHtml(targetType, targetId, targetLabel) {
     var attr = typeof escAttr === 'function' ? escAttr : function (s) {
-      return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/\r?\n/g, ' ');
     };
     var safeLabel = attr(targetLabel || '');
     return '<button type="button" class="qg-chip-btn is-danger qg-report-trigger" ' +
@@ -314,7 +316,9 @@
   function blockButtonHtml(userId, userName) {
     if (!userId) return '';
     var attr = typeof escAttr === 'function' ? escAttr : function (s) {
-      return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/\r?\n/g, ' ');
     };
     var safeName = attr(userName || 'this user');
     return '<button type="button" class="qg-chip-btn is-danger qg-block-trigger" ' +

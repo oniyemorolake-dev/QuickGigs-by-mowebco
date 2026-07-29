@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
 <link rel="stylesheet" href="qg-polish.css?v=20260727msgnav">
-<link rel="stylesheet" href="qg-ux.css?v=20260726contrast">
+<link rel="stylesheet" href="qg-ux.css?v=20260728welcome1">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -262,14 +262,14 @@ onAuthStateChanged(auth, (user) => {
 });
 </script>
 
-<script defer src="qg-utils.js"></script>
-<script defer src="qg-polish.js?v=20260726c"></script>
-<script src="qg-ux.js?v=20260726ux" defer></script>
-<script src="qg-bigtech.js?v=20260726bt" defer></script>
-<script src="qg-wave2.js?v=20260726w2" defer></script>
-<script defer src="qg-config.js?v=20260728chataccept1"></script>
+<script defer src="qg-utils.js?v=20260728welcome1"></script>
+<script defer src="qg-polish.js?v=20260728xss1"></script>
+<script src="qg-ux.js?v=20260728welcome1" defer></script>
+<script src="qg-bigtech.js?v=20260728xss1" defer></script>
+<script src="qg-wave2.js?v=20260728xss1" defer></script>
+<script defer src="qg-config.js?v=20260728chatopen2"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
-<script defer src="supabase-db.js?v=20260728chataccept1"></script>
+<script defer src="supabase-db.js?v=20260728chatopen2"></script>
 <script defer src="qg-notifications.js"></script>
 <script defer src="qg-push.js?v=1"></script>
 <script>
@@ -313,7 +313,11 @@ var AVATAR_GRADIENTS = [
   'linear-gradient(135deg,#2563eb,#60a5fa)'
 ];
 
-function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc(s){
+  return typeof escapeHtml === 'function' ? escapeHtml(s)
+    : (typeof qgEsc === 'function' ? qgEsc(s)
+      : String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+}
 
 function avatarGradient(name){
   var n = 0;
@@ -374,10 +378,10 @@ function mapConversation(conv, userId){
 }
 
 function conversationsForCurrentMode(list) {
-  var mode = typeof getMode === 'function' ? getMode() : 'poster';
-  return (list || []).filter(function (c) {
-    return mode === 'tasker' ? c.myRole === 'tasker' : c.myRole === 'poster';
-  });
+  // Show ALL threads for this firebase_uid. Filtering by poster/tasker mode hid
+  // accepted chats when the user was in the "other" workspace mode — felt like
+  // Messages "wouldn't open". Role pill still labels each row.
+  return (list || []).slice();
 }
 
 async function loadConversations(){
@@ -463,16 +467,13 @@ function renderContent(){
 
   // No conversations at all
   if(!conversations.length){
-    var taskerEmpty = typeof getMode === 'function' && getMode() === 'tasker';
     content.innerHTML =
       '<div class="empty-state">' +
         '<div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('message',{size:24}):'')+'</div>' +
-        '<div class="empty-title">No ' + (taskerEmpty ? 'tasker' : 'poster') + ' messages yet</div>' +
-        '<div class="empty-sub">' + (taskerEmpty
-          ? 'Apply to a task — chats with posters show up here in Tasker mode.'
-          : 'Accept an applicant from My Tasks — chats with taskers show up here in Poster mode.') + '</div>' +
-        '<a class="empty-btn" href="' + (taskerEmpty ? 'browsetask.html' : 'mytasks.html?tab=posted') + '">' +
-          (taskerEmpty ? 'Browse tasks' : 'My posted tasks') + '</a>' +
+        '<div class="empty-title">No messages yet</div>' +
+        '<div class="empty-sub">Accept an applicant (Poster) or get accepted on a task (Tasker) — chats show up here for both sides.</div>' +
+        '<a class="empty-btn" href="mytasks.html">Go to My Tasks</a>' +
+        '<a class="empty-btn" href="browsetask.html" style="margin-top:10px;display:inline-block">Browse tasks</a>' +
       '</div>';
     return;
   }
@@ -513,19 +514,35 @@ function renderContent(){
 }
 
 // Profile chips inside thread links — stop navigation to chat, go to profile instead.
-(function bindMessagesProfileClicks() {
+// Also: backup open for rows if the <a href> is blocked by an overlay / JS error.
+(function bindMessagesListClicks() {
   var root = document.getElementById('mainContent');
-  if (!root || root._qgProfileBound) return;
-  root._qgProfileBound = true;
+  if (!root || root._qgMsgClickBound) return;
+  root._qgMsgClickBound = true;
   root.addEventListener('click', function (e) {
     var chip = e.target.closest('[data-profile-href]');
-    if (!chip || !root.contains(chip)) return;
-    var href = chip.getAttribute('data-profile-href') || '';
-    var safe = typeof safeUrl === 'function' ? safeUrl(href) : href;
-    if (!safe) return;
-    e.preventDefault();
-    e.stopPropagation();
-    window.location.href = safe;
+    if (chip && root.contains(chip)) {
+      var href = chip.getAttribute('data-profile-href') || '';
+      var safe = typeof safeUrl === 'function' ? safeUrl(href) : href;
+      if (!safe) return;
+      e.preventDefault();
+      e.stopPropagation();
+      window.location.href = safe;
+      return;
+    }
+    var row = e.target.closest('a.conv-item[data-open-conv]');
+    if (!row || !root.contains(row)) return;
+    var convId = row.getAttribute('data-open-conv') || '';
+    var hrefChat = row.getAttribute('href') || '';
+    if (!convId || !hrefChat || hrefChat === '#' || hrefChat.indexOf('chat.html') < 0) {
+      e.preventDefault();
+      console.error('[QuickGigs messages] tap blocked — missing conv id', { convId: convId, href: hrefChat });
+      if (typeof showToast === 'function') {
+        showToast('Could not open chat — refresh Messages and try again.', '#ef4444');
+      }
+      return;
+    }
+    // Let the browser follow the real <a href="chat.html?conv=…"> — do not preventDefault.
   });
 })();
 

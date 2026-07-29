@@ -20,8 +20,9 @@
   var typingEnabled = null; // null=unknown, false=disabled, true=ok
 
   function esc(s) {
+    if (typeof window.escapeHtml === 'function') return window.escapeHtml(s);
     return String(s == null ? '' : s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
   function idle(fn) {
     if (typeof requestIdleCallback === 'function') requestIdleCallback(fn, { timeout: 1200 });

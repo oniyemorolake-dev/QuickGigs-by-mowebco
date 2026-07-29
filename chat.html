@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
 <link rel="stylesheet" href="qg-polish.css?v=20260726contrast">
-<link rel="stylesheet" href="qg-ux.css?v=20260726contrast">
+<link rel="stylesheet" href="qg-ux.css?v=20260728welcome1">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -293,21 +293,21 @@ onAuthStateChanged(auth, (user) => {
 
 <link rel="stylesheet" href="qg-stripe.css">
 <link rel="stylesheet" href="qg-trust.css">
-<script defer src="qg-utils.js"></script>
+<script defer src="qg-utils.js?v=20260728welcome1"></script>
 <script defer src="contentModeration.js?v=20260727cm1"></script>
-<script defer src="qg-polish.js?v=20260726c"></script>
-<script src="qg-ux.js?v=20260726ux" defer></script>
-<script src="qg-bigtech.js?v=20260726bt" defer></script>
-<script src="qg-wave2.js?v=20260726w2" defer></script>
-<script defer src="qg-config.js?v=20260728chataccept1"></script>
+<script defer src="qg-polish.js?v=20260728xss1"></script>
+<script src="qg-ux.js?v=20260728welcome1" defer></script>
+<script src="qg-bigtech.js?v=20260728xss1" defer></script>
+<script src="qg-wave2.js?v=20260728xss1" defer></script>
+<script defer src="qg-config.js?v=20260728chatopen2"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/dist/umd/supabase.min.js" defer></script>
 <script defer src="supabaseClient.js"></script>
-<script defer src="supabase-db.js?v=20260728chatux1"></script>
+<script defer src="supabase-db.js?v=20260728chatopen2"></script>
 <script defer src="qg-chat-realtime.js?v=20260728chatux1"></script>
 <script defer src="qg-site.js"></script>
 <script defer src="qg-stripe.js?v=20260725g"></script>
-<script defer src="qg-lightbox.js?v=1"></script>
+<script defer src="qg-lightbox.js?v=20260728xss1"></script>
 <script defer src="qg-report.js?v=20260727chat1"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
@@ -572,7 +572,10 @@ async function loadTaskPhotos(taskId){
   strip.style.display = 'flex';
   strip.innerHTML = '<span class="task-photo-label">Reference photos (what needs doing)</span>' +
     urls.map(function(url){
-      return '<img src="'+window.escapeHtml(url)+'" alt="Task reference photo">';
+      var safe = typeof safeMediaUrl === 'function' ? safeMediaUrl(url)
+        : (typeof safeUrl === 'function' ? safeUrl(url) : '');
+      if (!safe) return '';
+      return '<img src="'+window.escapeHtml(safe)+'" alt="Task reference photo">';
     }).join('');
 }
 
@@ -958,10 +961,33 @@ async function initChat(){
     await new Promise(function (r) { setTimeout(r, 120); });
     currentConv = await getConversation(convId, actorOpts);
   }
-  if(!currentConv ||
-     (String(currentConv.poster_id) !== String(currentUserId) &&
-      String(currentConv.worker_id) !== String(currentUserId))){
-    window.location.href = 'messages.html';
+  if (!currentConv) {
+    // Last resort: list-scoped fetch (same firebase_uid filter as Messages inbox)
+    try {
+      if (typeof getConversationsForUser === 'function') {
+        var inbox = await getConversationsForUser(currentUserId);
+        currentConv = (inbox || []).find(function (c) {
+          return String(c.conv_id) === String(convId);
+        }) || null;
+      }
+    } catch (listErr) {
+      console.warn('Chat inbox fallback failed:', listErr);
+    }
+  }
+  if (!currentConv) {
+    console.error('[QuickGigs chat] conversation not found', { convId: convId, uid: currentUserId });
+    showChatLoadError('Could not load this conversation. It may have been removed, or your connection failed.');
+    return;
+  }
+  if (String(currentConv.poster_id) !== String(currentUserId) &&
+      String(currentConv.worker_id) !== String(currentUserId)) {
+    console.error('[QuickGigs chat] not a party on conversation', {
+      convId: convId,
+      uid: currentUserId,
+      poster: currentConv.poster_id,
+      worker: currentConv.worker_id
+    });
+    showChatLoadError('You are not a participant in this chat.');
     return;
   }
 
@@ -1116,19 +1142,38 @@ async function initChat(){
     }
   }
 
-  if (justPaid) currentConv.is_unlocked = true;
-
   await hydratePinnedTask(currentConv, isPoster, otherName, otherUid);
-  document.querySelector('.input-area').style.display = '';
 
-  if(isCompleted) currentConv.is_unlocked = false;
+  // Accept/apply mode: parties always message once matched — never re-lock on stale is_unlocked.
+  if (!paymentGated && !isCompleted && !isCancelled) {
+    chatOpen = true;
+    currentConv.is_unlocked = true;
+  }
+  if (justPaid || paymentVerified) {
+    chatOpen = true;
+    currentConv.is_unlocked = true;
+  }
 
-  if(!currentConv.is_unlocked && !justPaid && !paymentVerified){
+  if (isCompleted || isCancelled) {
+    currentConv.is_unlocked = false;
+    document.querySelector('.input-area').style.display = 'none';
     showLockedState(isCompleted, isCancelled, false);
     if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
     deferChatEnrichment(currentConv, otherUid, otherName, isPoster);
     return;
   }
+
+  if (!chatOpen) {
+    document.querySelector('.input-area').style.display = 'none';
+    document.getElementById('taskMeta').textContent =
+      formatTaskPrice(currentConv.task_budget) + ' · Payment required · Chat locked';
+    showLockedState(false, false, false);
+    if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
+    deferChatEnrichment(currentConv, otherUid, otherName, isPoster);
+    return;
+  }
+
+  document.querySelector('.input-area').style.display = '';
 
   if (messagesPromise) {
     var rows = await messagesPromise;
@@ -1159,6 +1204,32 @@ async function initChat(){
   deferChatEnrichment(currentConv, otherUid, otherName, isPoster);
 }
 window.initChat = initChat;
+
+function showChatLoadError(message) {
+  try {
+    if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
+  } catch (e) {}
+  var scroll = document.getElementById('chatScroll');
+  var input = document.querySelector('.input-area');
+  if (input) input.style.display = 'none';
+  var title = document.getElementById('taskTitle');
+  if (title) title.textContent = 'Chat unavailable';
+  var meta = document.getElementById('taskMeta');
+  if (meta) meta.textContent = '';
+  var msg = message || 'Could not open this chat.';
+  if (scroll) {
+    scroll.innerHTML =
+      '<div class="locked-state">' +
+        '<div class="locked-icon">💬</div>' +
+        '<div class="locked-title">Couldn\'t open chat</div>' +
+        '<div class="locked-sub">' + (typeof escapeHtml === 'function' ? escapeHtml(msg) : String(msg)) + '</div>' +
+        '<a class="locked-action locked-pay-btn" href="messages.html">← Back to messages</a>' +
+        '<button type="button" class="locked-action locked-review-btn" style="margin-top:10px" onclick="window.location.reload()">↻ Try again</button>' +
+      '</div>';
+  }
+  if (typeof showToast === 'function') showToast(msg, '#ef4444');
+  console.error('[QuickGigs chat]', msg);
+}
 
 function setupChatImageAttach() {
   // Intentionally no-op: photo attach waits for backend moderation.
@@ -1565,7 +1636,12 @@ window.handleKey = function(e){
 window.sendMessage = async function(){
   var input = document.getElementById('msgInput');
   var text = window.sanitizeInput(input.value.trim(), 2000);
-  if(!text || fraudDetected || !currentConv || !currentConv.is_unlocked) return;
+  if(!text || fraudDetected || !currentConv || !currentConv.is_unlocked) {
+    if (currentConv && !currentConv.is_unlocked && typeof showToast === 'function') {
+      showToast('Chat is locked for this task.', '#f59e0b');
+    }
+    return;
+  }
 
   var check = analyzeFraud(text);
   if(check.blocked){

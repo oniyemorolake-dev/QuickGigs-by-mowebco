@@ -55,8 +55,15 @@
   function render() {
     if (!urls.length) return;
     index = Math.max(0, Math.min(index, urls.length - 1));
-    imgEl.src = urls[index];
-    imgEl.alt = 'Photo ' + (index + 1) + ' of ' + urls.length;
+    var raw = urls[index];
+    var safe = typeof safeMediaUrl === 'function' ? safeMediaUrl(raw)
+      : (typeof safeUrl === 'function' ? safeUrl(raw) : '');
+    if (safe) imgEl.src = safe;
+    else {
+      imgEl.removeAttribute('src');
+      imgEl.alt = 'Photo unavailable';
+    }
+    if (safe) imgEl.alt = 'Photo ' + (index + 1) + ' of ' + urls.length;
     dotsEl.textContent = urls.length > 1 ? (index + 1) + ' / ' + urls.length : '';
     document.getElementById('qgLightboxPrev').style.display = urls.length > 1 ? '' : 'none';
     document.getElementById('qgLightboxNext').style.display = urls.length > 1 ? '' : 'none';
@@ -78,7 +85,11 @@
   window.openQgLightbox = function (photoUrls, startIndex, caption) {
     if (!photoUrls || !photoUrls.length) return;
     ensureRoot();
-    urls = photoUrls.filter(Boolean);
+    urls = photoUrls.map(function (u) {
+      return typeof safeMediaUrl === 'function' ? safeMediaUrl(u)
+        : (typeof safeUrl === 'function' ? safeUrl(u) : '');
+    }).filter(Boolean);
+    if (!urls.length) return;
     index = startIndex || 0;
     if (captionEl) captionEl.textContent = caption || '';
     render();

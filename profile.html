@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
 <link rel="stylesheet" href="qg-polish.css?v=20260726contrast">
-<link rel="stylesheet" href="qg-ux.css?v=20260726contrast">
+<link rel="stylesheet" href="qg-ux.css?v=20260728welcome1">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -543,7 +543,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
   <a class="tab-item active" href="profile.html"><span class="tab-icon">👤</span><span class="tab-lbl">Profile</span></a>
 </nav>
 
-<script defer src="qg-utils.js?v=20260727auth2"></script>
+<script defer src="qg-utils.js?v=20260728welcome1"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
@@ -581,10 +581,10 @@ onAuthStateChanged(auth, (user) => {
 });
 </script>
 
-<script defer src="qg-polish.js?v=20260726c"></script>
-<script src="qg-ux.js?v=20260726ux" defer></script>
-<script src="qg-bigtech.js?v=20260726bt" defer></script>
-<script src="qg-wave2.js?v=20260726w2" defer></script>
+<script defer src="qg-polish.js?v=20260728xss1"></script>
+<script src="qg-ux.js?v=20260728welcome1" defer></script>
+<script src="qg-bigtech.js?v=20260728xss1" defer></script>
+<script src="qg-wave2.js?v=20260728xss1" defer></script>
 <script defer src="qg-config.js"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="supabase-db.js"></script>
@@ -619,7 +619,9 @@ function showToast(msg) {
 }
 
 function esc(s) {
-  return typeof escapeHtml === 'function' ? escapeHtml(s) : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  return typeof escapeHtml === 'function' ? escapeHtml(s)
+    : (typeof qgEsc === 'function' ? qgEsc(s)
+      : String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
 }
 
 function updateAvatarDisplay(name, url) {
@@ -627,8 +629,9 @@ function updateAvatarDisplay(name, url) {
   var els = [document.getElementById('avatarEl'), document.getElementById('modalAvatarPreview')];
   els.forEach(function(el) {
     if (!el) return;
-    if (url) {
-      el.style.backgroundImage = 'url(' + url + ')';
+    var cssUrl = typeof safeCssUrl === 'function' ? safeCssUrl(url) : '';
+    if (cssUrl) {
+      el.style.backgroundImage = cssUrl;
       el.classList.add('has-photo');
       el.textContent = '';
     } else {
@@ -1027,7 +1030,14 @@ function renderProfile(user, isOwnProfile) {
     var avail = profileData.availability === 'busy' ? '🔴 Busy — not taking new tasks' : '🟢 Available for tasks';
     var area = profileData.service_area ? '📍 ' + profileData.service_area : '';
     var langs = profileData.languages ? '🗣 ' + profileData.languages : '';
-    trustTxt.innerHTML = [avail, area, langs].filter(Boolean).join('<br>') || 'Add service area and availability in Customize profile.';
+    trustTxt.textContent = '';
+    [avail, area, langs].filter(Boolean).forEach(function (line, i) {
+      if (i) trustTxt.appendChild(document.createElement('br'));
+      trustTxt.appendChild(document.createTextNode(line));
+    });
+    if (!trustTxt.childNodes.length) {
+      trustTxt.textContent = 'Add service area and availability in Customize profile.';
+    }
   } else if (trustSec) {
     trustSec.style.display = 'none';
   }

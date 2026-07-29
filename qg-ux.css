@@ -212,6 +212,25 @@ body.light .qg-onboard-sub { color: rgba(45, 27, 78, 0.6); }
   cursor: pointer;
   font-family: inherit;
 }
+.qg-onboard-skip {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  min-height: 40px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+body.light .qg-onboard-skip { color: rgba(45, 27, 78, 0.55); }
+.qg-onboard-skip:hover { color: #c8a8e9; }
+body.light .qg-onboard-skip:hover { color: #6b3fa0; }
 
 .qg-hint-banner {
   margin: 10px 16px 0;

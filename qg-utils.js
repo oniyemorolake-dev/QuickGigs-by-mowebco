@@ -87,12 +87,27 @@ function setSafeHref(el, url, opts) {
   return safe;
 }
 
+/**
+ * Safe local esc() for pages — always full HTML escape even if qg-utils loaded late.
+ * Prefer this over incomplete .replace(/</g, ...) fallbacks.
+ */
+function qgEsc(text) {
+  if (typeof escapeHtml === 'function' && escapeHtml !== qgEsc) return escapeHtml(text);
+  return String(text == null ? '' : text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 window.sanitizeInput = sanitizeInput;
 window.escapeHtml = escapeHtml;
 window.escAttr = escAttr;
 window.safeUrl = safeUrl;
 window.setText = setText;
 window.setSafeHref = setSafeHref;
+window.qgEsc = qgEsc;
 
 /** Capitalize each word — e.g. "john smith" → "John Smith" */
 function formatPersonName(name) {
@@ -693,6 +708,16 @@ function safeMediaUrl(url) {
   return '';
 }
 
+/** CSS background-image:url("…") — scheme-checked + quoted. */
+function safeCssUrl(url) {
+  var u = safeMediaUrl(url);
+  if (!u) return '';
+  return 'url("' + String(u).replace(/\\/g, '\\\\').replace(/"/g, '\\22') + '")';
+}
+
+window.safeMediaUrl = safeMediaUrl;
+window.safeCssUrl = safeCssUrl;
+
 function renderUserAvatarHtml(name, avatarUrl, opts) {
   opts = opts || {};
   var cls = opts.className || 'user-avatar';
@@ -855,8 +880,20 @@ var QG_AUTH_LS_KEEP = {
   'qg-pwa-dismiss': 1,
   'qg-pwa-ios-dismiss': 1,
   'qg-install-dismiss': 1,
-  'qg-near-radius-km': 1
+  'qg-near-radius-km': 1,
+  // Legacy welcome-tour flag (also preserved by prefix below)
+  'qg-onboarded': 1,
+  'qg-browse-hint-seen': 1
 };
+
+/** Keys that survive login clears — uid-scoped UX prefs. */
+function qgAuthLsKeyShouldKeep(key) {
+  if (!key) return false;
+  if (QG_AUTH_LS_KEEP[key]) return true;
+  if (key.indexOf('qg-welcome-tour:') === 0) return true;
+  if (key.indexOf('qg-onboarding-done:') === 0) return true;
+  return false;
+}
 
 var QG_AUTH_UID_KEY = 'qg-auth-uid';
 
@@ -890,7 +927,7 @@ function clearQgUserScopedStorage() {
     for (var i = 0; i < localStorage.length; i++) {
       var key = localStorage.key(i);
       if (!key) continue;
-      if (QG_AUTH_LS_KEEP[key]) continue;
+      if (qgAuthLsKeyShouldKeep(key)) continue;
       // Never touch firebase:* — Auth persistence is owned by signOut().
       if (key.indexOf('firebase:') === 0) continue;
       if (key.indexOf('qg-') === 0) remove.push(key);
