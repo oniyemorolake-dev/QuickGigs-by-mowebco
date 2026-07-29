@@ -194,7 +194,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 <!-- Shared bottom nav (qg-nav.js) — outside #mainContent so empty/list never removes it -->
 <nav class="tab-bar" id="qgTabBar" data-qg-nav-active="messages" aria-label="Main"></nav>
 <script defer src="qg-site.js"></script>
-<script defer src="qg-nav.js?v=20260728msgtheme"></script>
+<script defer src="qg-nav.js?v=20260728blank2"></script>
 <script>
 (function () {
   function paintMessagesTabBar() {
@@ -278,7 +278,8 @@ onAuthStateChanged(auth, (user) => {
 });
 
 function showMessagesBootError(msg) {
-  var content = document.getElementById('mainContent');
+  var content = (typeof ensureMessagesChrome === 'function' ? ensureMessagesChrome() : null) ||
+    document.getElementById('mainContent');
   if (!content) return;
   var safe = typeof escapeHtml === 'function' ? escapeHtml(msg) : String(msg || 'Something went wrong.');
   content.innerHTML = '<div class="empty-state"><div class="empty-title">Messages unavailable</div><div class="empty-sub">' + safe + '</div><a class="empty-btn" href="messages.html">↻ Retry</a></div>';
@@ -290,10 +291,10 @@ window.showMessagesBootError = showMessagesBootError;
 
 <script defer src="qg-utils.js?v=20260728welcome1"></script>
 <script defer src="qg-polish.js?v=20260728xss1"></script>
-<script src="qg-ux.js?v=20260728blank1" defer></script>
+<script src="qg-ux.js?v=20260728blank2" defer></script>
 <script src="qg-bigtech.js?v=20260728xss1" defer></script>
 <script src="qg-wave2.js?v=20260728xss1" defer></script>
-<script defer src="qg-config.js?v=20260728blank1"></script>
+<script defer src="qg-config.js?v=20260728blank2"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="supabase-db.js?v=20260728chatfix3"></script>
 <script defer src="qg-notifications.js"></script>
@@ -301,29 +302,114 @@ window.showMessagesBootError = showMessagesBootError;
 <script>
 // ── THEME (shared qg-theme.js — storage key: localStorage qg-theme) ──
 var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
-function applyTheme(){
-  if (typeof QG_applyTheme === 'function') QG_applyTheme(isDark, 'modeBtn', false);
-  else {
-    // Fallback: toggle only — never wipe page/role classes
-    document.documentElement.classList.toggle('light', !isDark);
-    document.body.classList.toggle('light', !isDark);
-    var b = document.getElementById('modeBtn');
-    if (b) b.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+
+/** Recreate messages chrome if an older qg-ux wrap / bad DOM left footer-only. */
+function ensureMessagesChrome() {
+  var body = document.body;
+  if (!body) return null;
+
+  if (!document.getElementById('messagesHeader')) {
+    var nav = document.createElement('nav');
+    nav.className = 'nav';
+    nav.id = 'messagesHeader';
+    nav.innerHTML =
+      '<a class="back-btn" href="dashboard.html" id="messagesBackBtn" aria-label="Back to dashboard">' +
+      '<span class="back-arrow" aria-hidden="true">←</span><span class="back-label">Back</span></a>' +
+      '<div class="nav-title">Messages</div>' +
+      '<div class="nav-right" style="display:flex;gap:8px;align-items:center">' +
+      '<button type="button" class="mode-btn" onclick="typeof switchRoleMode===\'function\'&&switchRoleMode()">Switch mode</button>' +
+      '<button type="button" class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>' +
+      '</div>';
+    body.insertBefore(nav, body.firstChild);
+  } else if (!document.getElementById('modeBtn')) {
+    var right = document.querySelector('#messagesHeader .nav-right');
+    if (right) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'mode-btn';
+      btn.id = 'modeBtn';
+      btn.setAttribute('onclick', 'toggleTheme()');
+      btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+      right.appendChild(btn);
+    }
   }
-  // Re-assert page + role chrome after theme paint
-  document.body.classList.add('page-messages');
-  if (typeof applyRoleTheme === 'function') applyRoleTheme();
+
+  var content = document.getElementById('mainContent');
+  if (!content) {
+    content = document.createElement('div');
+    content.id = 'mainContent';
+    content.setAttribute('role', 'main');
+    content.className = 'qg-main';
+    content.innerHTML =
+      '<div class="empty-state" id="messagesBootState">' +
+      '<div class="empty-title">Loading messages…</div>' +
+      '<div class="empty-sub">Pulling your conversations.</div></div>';
+    var before = document.getElementById('siteFooter') || document.getElementById('qgTabBar');
+    if (before && before.parentNode) before.parentNode.insertBefore(content, before);
+    else body.appendChild(content);
+  }
+
+  if (!document.getElementById('qgTabBar')) {
+    var tab = document.createElement('nav');
+    tab.className = 'tab-bar';
+    tab.id = 'qgTabBar';
+    tab.setAttribute('data-qg-nav-active', 'messages');
+    tab.setAttribute('aria-label', 'Main');
+    body.appendChild(tab);
+  }
+
+  if (!document.getElementById('siteFooter')) {
+    var foot = document.createElement('footer');
+    foot.className = 'app-legal-footer site-footer';
+    foot.id = 'siteFooter';
+    var tabBar = document.getElementById('qgTabBar');
+    if (tabBar && tabBar.parentNode) tabBar.parentNode.insertBefore(foot, tabBar);
+    else body.appendChild(foot);
+  }
+
+  return content;
+}
+window.ensureMessagesChrome = ensureMessagesChrome;
+
+function applyTheme(){
+  try {
+    ensureMessagesChrome();
+    if (typeof QG_applyTheme === 'function') {
+      QG_applyTheme(isDark, 'modeBtn', false);
+    } else {
+      if (document.documentElement && document.documentElement.classList) {
+        document.documentElement.classList.toggle('light', !isDark);
+      }
+      if (document.body && document.body.classList) {
+        document.body.classList.toggle('light', !isDark);
+      }
+      var b = document.getElementById('modeBtn');
+      if (b) b.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+    }
+    // Re-assert page + role chrome after theme paint — never throw if body was stripped
+    if (document.body && document.body.classList) {
+      document.body.classList.add('page-messages');
+    }
+    if (typeof applyRoleTheme === 'function') applyRoleTheme();
+  } catch (themeErr) {
+    console.warn('[QuickGigs messages] applyTheme skipped:', themeErr);
+  }
 }
 window.toggleTheme = function(){
   isDark = !isDark;
   if (typeof QG_setThemeDark === 'function') QG_setThemeDark(isDark);
-  else localStorage.setItem('qg-theme', isDark ? 'dark' : 'light');
+  else try { localStorage.setItem('qg-theme', isDark ? 'dark' : 'light'); } catch (e) {}
   applyTheme();
 };
-applyTheme();
+if (document.body) applyTheme();
+else document.addEventListener('DOMContentLoaded', applyTheme);
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', applyTheme);
+  document.addEventListener('DOMContentLoaded', function () {
+    ensureMessagesChrome();
+    applyTheme();
+  });
 } else {
+  ensureMessagesChrome();
   applyTheme();
 }
 
@@ -412,11 +498,16 @@ function conversationsForCurrentMode(list) {
 
 async function loadConversations(){
   var userId = window._currentUser ? window._currentUser.uid : null;
-  var content = document.getElementById('mainContent');
+  var content = typeof ensureMessagesChrome === 'function'
+    ? ensureMessagesChrome()
+    : document.getElementById('mainContent');
   if (!content) {
-    console.error('[QuickGigs messages] #mainContent missing — page chrome was removed');
-    if (typeof window.showMessagesBootError === 'function') {
-      window.showMessagesBootError('Messages layout failed. Hard refresh (Ctrl+Shift+R) and try again.');
+    content = document.getElementById('mainContent');
+  }
+  if (!content) {
+    console.error('[QuickGigs messages] #mainContent missing after ensureMessagesChrome');
+    if (typeof showToast === 'function') {
+      showToast('Messages layout failed — hard refresh and try again.', '#ef4444');
     }
     return;
   }
@@ -483,6 +574,8 @@ async function loadConversations(){
       : (rows || []);
     conversations = conversationsForCurrentMode(enriched.map(function(c){ return mapConversation(c, userId); }));
     filtered = conversations.slice();
+    // Re-resolve in case chrome was restored mid-fetch
+    content = document.getElementById('mainContent') || content;
     renderContent();
     if (typeof paintMessagesTabBar === 'function') paintMessagesTabBar();
     else if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('messages');
@@ -502,7 +595,10 @@ async function loadConversations(){
       : 'Could not load messages — check your connection and try again.';
     var escHint = typeof escapeHtml === 'function' ? escapeHtml(hint)
       : (typeof qgEsc === 'function' ? qgEsc(hint) : String(hint).replace(/</g, '&lt;'));
-    content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('alert',{size:24}):'')+'</div><div class="empty-title">Could not load messages</div><div class="empty-sub">'+escHint+'</div><a class="empty-btn" href="messages.html">↻ Retry</a></div>';
+    content = document.getElementById('mainContent') || (typeof ensureMessagesChrome === 'function' ? ensureMessagesChrome() : null) || content;
+    if (content) {
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('alert',{size:24}):'')+'</div><div class="empty-title">Could not load messages</div><div class="empty-sub">'+escHint+'</div><a class="empty-btn" href="messages.html">↻ Retry</a></div>';
+    }
     if (typeof paintMessagesTabBar === 'function') paintMessagesTabBar();
   }
 }
@@ -514,7 +610,8 @@ window.onQuickGigsModeChange = function () {
 };
 
 function renderContent(){
-  var content = document.getElementById('mainContent');
+  var content = document.getElementById('mainContent') ||
+    (typeof ensureMessagesChrome === 'function' ? ensureMessagesChrome() : null);
   if (!content) {
     console.error('[QuickGigs messages] renderContent: #mainContent missing');
     return;

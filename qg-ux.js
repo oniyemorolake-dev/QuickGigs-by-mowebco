@@ -79,13 +79,30 @@
     // <main id="main" class="qg-main"> and left messages.html blank (footer only).
     // Only mark an existing landmark and ensure a skip-link target exists.
 
-    if (document.getElementById('main')) {
+    // Messages page: if #mainContent was stripped, recreate it before anything else.
+    if (document.body &&
+        (PAGE === 'messages.html' || (document.body.classList && document.body.classList.contains('page-messages'))) &&
+        !document.getElementById('mainContent')) {
+      var restore = document.createElement('div');
+      restore.id = 'mainContent';
+      restore.setAttribute('role', 'main');
+      restore.className = 'qg-main';
+      restore.innerHTML = '<div class="empty-state"><div class="empty-title">Loading messages…</div></div>';
+      var beforeEl = document.getElementById('siteFooter') || document.getElementById('qgTabBar');
+      if (beforeEl && beforeEl.parentNode) beforeEl.parentNode.insertBefore(restore, beforeEl);
+      else document.body.appendChild(restore);
+    }
+
+    // Skip-target already present and list host exists — done.
+    if (document.getElementById('main') && document.getElementById('mainContent')) {
       return;
     }
 
     var isChatPage = PAGE === 'chat.html' ||
-      document.body.classList.contains('qg-page-chat') ||
-      document.body.classList.contains('page-chat') ||
+      (document.body && document.body.classList && (
+        document.body.classList.contains('qg-page-chat') ||
+        document.body.classList.contains('page-chat')
+      )) ||
       !!document.getElementById('chatScroll');
 
     var host = null;

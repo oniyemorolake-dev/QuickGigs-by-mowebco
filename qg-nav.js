@@ -122,9 +122,13 @@
 
   function applyRoleTheme() {
     var mode = cssMode();
-    document.body.classList.toggle('qg-mode-worker', mode === 'worker');
-    document.body.classList.toggle('qg-mode-poster', mode === 'poster');
-    document.documentElement.setAttribute('data-qg-mode', mode);
+    if (document.body && document.body.classList) {
+      document.body.classList.toggle('qg-mode-worker', mode === 'worker');
+      document.body.classList.toggle('qg-mode-poster', mode === 'poster');
+    }
+    if (document.documentElement) {
+      document.documentElement.setAttribute('data-qg-mode', mode);
+    }
     applyNavBrand();
   }
 
