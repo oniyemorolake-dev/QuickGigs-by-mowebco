@@ -64,6 +64,18 @@ body{
   overflow-x:hidden;
 }
 
+/* Shared dialogs cover the viewport; hidden ones must never obscure Messages. */
+.qg-menu-overlay:not(.open),
+.qg-bell-overlay:not(.open),
+.qg-ios-overlay:not(.open),
+#qgReportOverlay:not(.open),
+#qgDisputeOverlay:not(.open){
+  display:none!important;
+  visibility:hidden!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+
 /* App header — same pattern as other pages */
 .nav{
   position:sticky;top:0;z-index:50;background:var(--nav-bg);
@@ -414,8 +426,23 @@ function bootMessagesApp(tries) {
 <script defer src="supabase-db.js?v=20260729msgint1"></script>
 <script defer src="qg-report.js?v=20260716d"></script>
 <script defer src="qg-pwa.js?v=20260729msgint1"></script>
-<script defer src="qg-menu.js?v=5"></script>
 <script>
+/* qg-site.js owns the shared menu loader. Clear stale full-screen overlays
+   restored from browser history before repainting Messages. */
+function resetMessagesOverlays() {
+  document.body.classList.remove('qg-menu-open', 'qg-bell-open');
+  document.querySelectorAll(
+    '.qg-menu-overlay.open,.qg-bell-overlay.open,.qg-ios-overlay.open,' +
+    '#qgReportOverlay.open,#qgDisputeOverlay.open'
+  ).forEach(function (overlay) {
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.style.display = 'none';
+  });
+}
+resetMessagesOverlays();
+window.addEventListener('pageshow', resetMessagesOverlays);
+
 var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
 function applyTheme(){
   if (typeof QG_applyTheme === 'function') QG_applyTheme(isDark, 'modeBtn', false);
