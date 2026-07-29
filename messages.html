@@ -20,114 +20,122 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
-<meta name="theme-color" content="#6b3fa0">
-<link rel="stylesheet" href="qg-polish.css?v=20260729card1">
-<link rel="stylesheet" href="qg-ux.css?v=20260729card1">
-<link rel="stylesheet" href="qg-chrome.css?v=20260729card1">
+<meta name="theme-color" content="#f9f9f9">
+<link rel="stylesheet" href="qg-polish.css?v=20260729imsg1">
+<link rel="stylesheet" href="qg-ux.css?v=20260729imsg1">
+<link rel="stylesheet" href="qg-chrome.css?v=20260729imsg1">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="qg-role-theme.css?v=20260729card1">
-<script src="qg-theme.js?v=20260729card1"></script>
+<link rel="stylesheet" href="qg-role-theme.css?v=20260729imsg1">
+<script src="qg-theme.js?v=20260729imsg1"></script>
 <script src="qg-brand-init.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --bg:#0b0118;
-  --surface:rgba(255,255,255,0.04);
-  --surface-hover:rgba(107,63,160,0.08);
-  --border:rgba(200,168,233,0.1);
-  --text:#fff;
-  --text-muted:rgba(255,255,255,0.68);
-  --text-faint:rgba(255,255,255,0.62);
+  --msg-bg:#ffffff;
+  --msg-elevated:#f2f2f7;
+  --msg-separator:#c6c6c8;
+  --msg-separator-inset:#e5e5ea;
+  --msg-text:#000000;
+  --msg-secondary:#8e8e93;
+  --msg-blue:#007aff;
+  --msg-nav:#f9f9f9;
+  --msg-search:#e5e5ea;
   --purple:#6b3fa0;
-  --purple-light:#9b6fc4;
-  --lavender:#c8a8e9;
-  --nav-bg:#0b0118;
-  --tab-bg:#0e021f;
-  --input-bg:rgba(255,255,255,0.06);
-  --input-border:rgba(200,168,233,0.15);
-  --unread-preview:#fff;
-  --read-preview:rgba(255,255,255,0.62);
+  --tab-bg:#f9f9f9;
+  --text-faint:#8e8e93;
 }
 body.light{
-  --bg:#fafafe;
-  --surface:#fff;
-  --surface-hover:#f5f2ff;
-  --border:#f0eeff;
-  --text:#2d1b4e;
-  --text-muted:#6b6580;
-  --text-faint:#6b6580;
-  --nav-bg:#fff;
-  --tab-bg:#fff;
-  --input-bg:#f0eeff;
-  --input-border:#e8e2ff;
-  --unread-preview:#2d1b4e;
-  --read-preview:#6b6580;
-  --lavender:#6b3fa0;
+  --msg-bg:#ffffff;
+  --msg-elevated:#f2f2f7;
 }
+/* Messages uses Apple-like light surface even in dark app mode — readability first */
+body.page-messages{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  background:var(--msg-bg)!important;
+  color:var(--msg-text)!important;
+  font-size:17px;
+  min-height:100vh;
+  padding-bottom:76px;
+  -webkit-font-smoothing:antialiased;
+}
+body.page-messages.light{background:var(--msg-bg)!important;}
 
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh;padding-bottom:76px;transition:background 0.25s,color 0.25s;}
-
-body.light .empty-btn,
-body.light .conv-badge{color:#2d1b4e;}
-
-/* NAV */
-.nav{position:sticky;top:0;z-index:50;background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;transition:background 0.25s;}
+/* Top bar — compact system controls */
+.nav{
+  position:sticky;top:0;z-index:50;
+  background:rgba(249,249,249,0.92)!important;
+  backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:0.5px solid var(--msg-separator-inset)!important;
+  padding:8px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
 .back-btn{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:8px 14px 8px 12px;border-radius:999px;
-  background:rgba(255,255,255,0.08);border:0.5px solid var(--border);
-  color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;
-  text-decoration:none;min-height:40px;flex-shrink:0;
-  transition:transform 0.18s,background 0.18s;-webkit-tap-highlight-color:transparent;
+  display:inline-flex;align-items:center;gap:2px;
+  padding:8px 4px;border:none;background:transparent;
+  color:var(--msg-blue)!important;font-size:17px;font-weight:400;
+  text-decoration:none;min-height:44px;flex-shrink:0;
 }
-.back-btn:hover{transform:translateX(-2px);background:rgba(255,255,255,0.12);}
-.back-arrow{font-size:18px;line-height:1;}
-.back-label{line-height:1;}
-body.light .back-btn{background:#f0eeff;color:var(--purple);border-color:#e8e2ff;}
-body.light .back-btn:hover{background:#e8e2ff;}
-.nav-logo{font-family:'Playfair Display',serif;font-style:italic;font-size:1.25rem;color:var(--lavender);}
-.nav-title{font-size:16px;font-weight:500;color:var(--text);flex:1;text-align:center;}
-.mode-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);}
-body.light .mode-btn{background:#f0eeff;color:var(--purple);}
-/* Empty/list sit between sticky header and fixed tab bar — never cover chrome */
-#mainContent{min-height:40vh;position:relative;z-index:1;}
-.empty-state{min-height:auto;}
+.back-arrow{font-size:22px;line-height:1;font-weight:400;}
+.back-label{display:none;}
+.nav-title{display:none;}
+.mode-btn{
+  padding:6px 10px;border-radius:8px;font-size:13px;cursor:pointer;border:none;
+  font-family:inherit;background:transparent;color:var(--msg-blue)!important;
+}
+body.page-messages .mode-tag,
+body.page-messages [data-qg-mode-tag]{display:none!important;}
 
-/* SEARCH */
-.search-wrap{padding:12px 20px;background:var(--nav-bg);border-bottom:0.5px solid var(--border);transition:background 0.25s;}
-.search-box{display:flex;align-items:center;gap:8px;background:var(--input-bg);border:0.5px solid var(--input-border);border-radius:14px;padding:11px 15px;transition:border-color 0.2s;}
-.search-box:focus-within{border-color:var(--purple-light);}
-.search-icon{color:var(--purple-light);opacity:0.5;font-size:15px;}
-.search-input{flex:1;background:none;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);}
-.search-input::placeholder{color:var(--lavender);opacity:0.35;}
-.messages-safety-tip{margin:0;padding:8px 20px 10px;font-size:11px;line-height:1.45;color:var(--text-muted);background:rgba(107,63,160,0.08);border-bottom:0.5px solid var(--border);}
-body.light .messages-safety-tip{background:#f5f2ff;color:#5b21b6;}
+/* Large title + search — iOS Messages */
+.msg-hero{padding:4px 16px 8px;background:var(--msg-bg);}
+.msg-large-title{
+  font-size:34px;font-weight:700;letter-spacing:-0.5px;line-height:1.15;
+  color:var(--msg-text);margin:0 0 12px;padding:0;
+}
+.search-wrap{padding:0 0 10px;background:transparent;border:none;}
+.search-box{
+  display:flex;align-items:center;gap:8px;
+  background:var(--msg-search)!important;border:none!important;
+  border-radius:10px;padding:9px 12px;
+}
+.search-box:focus-within{outline:none;box-shadow:none;}
+.search-icon{color:var(--msg-secondary);opacity:1;font-size:15px;}
+.search-input{
+  flex:1;background:none;border:none;outline:none;font-family:inherit;
+  font-size:17px;color:var(--msg-text);
+}
+.search-input::placeholder{color:var(--msg-secondary);opacity:1;}
+.messages-safety-tip{
+  margin:0 16px 8px;padding:8px 12px;border-radius:10px;font-size:12px;line-height:1.4;
+  color:#636366;background:var(--msg-elevated);border:none;
+}
 
-/* EMPTY STATE */
+#mainContent{min-height:40vh;position:relative;z-index:1;background:var(--msg-bg);}
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 40px;text-align:center;}
 .empty-icon{font-size:48px;margin-bottom:16px;}
-.empty-title{font-size:17px;font-weight:500;color:var(--text);margin-bottom:8px;}
-.empty-sub{font-size:14px;color:var(--text-muted);line-height:1.6;margin-bottom:24px;}
-.empty-btn{padding:12px 24px;border-radius:14px;background:var(--purple);color:#fff;border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;display:inline-block;}
-body.light .empty-btn{color:#2d1b4e;}
+.empty-title{font-size:20px;font-weight:600;color:var(--msg-text);margin-bottom:8px;}
+.empty-sub{font-size:15px;color:var(--msg-secondary);line-height:1.45;margin-bottom:24px;}
+.empty-btn{
+  padding:12px 22px;border-radius:12px;background:var(--msg-blue);color:#fff;border:none;
+  font-family:inherit;font-size:16px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;
+}
 
-/* SECTION LABEL */
-.section-label{padding:14px 20px 8px;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);}
+.section-label{
+  padding:18px 16px 6px;font-size:13px;font-weight:600;text-transform:none;
+  letter-spacing:0;color:var(--msg-secondary);
+}
 
-/* CONVERSATION ITEM — one real <a> card. !important beats qg-ux / UA link styles.
-   Do NOT set pointer-events:none on children — that blocks taps on iOS/Android. */
+/* Conversation row — Apple Messages list */
 body.page-messages a.conv-item,
 a.conv-item,
 .conv-item{
   display:flex!important;
   flex-direction:row!important;
   align-items:center!important;
-  gap:14px!important;
-  padding:14px 20px!important;
+  gap:0!important;
+  padding:10px 16px 10px 12px!important;
   margin:0!important;
   width:100%!important;
   box-sizing:border-box!important;
@@ -135,38 +143,44 @@ a.conv-item,
   user-select:none!important;
   -webkit-user-select:none!important;
   -webkit-touch-callout:none;
-  -webkit-tap-highlight-color:transparent;
+  -webkit-tap-highlight-color:rgba(0,0,0,0.06);
   touch-action:manipulation;
   text-decoration:none!important;
-  color:var(--text)!important;
-  background:transparent!important;
+  color:var(--msg-text)!important;
+  background:var(--msg-bg)!important;
   border:0!important;
   border-radius:0!important;
+  position:relative;
 }
 body.page-messages a.conv-item:link,
 body.page-messages a.conv-item:visited,
 body.page-messages a.conv-item:hover,
 body.page-messages a.conv-item:active,
-a.conv-item:link,
-a.conv-item:visited,
-a.conv-item:hover,
-a.conv-item:active{
-  color:var(--text)!important;
+a.conv-item:link,a.conv-item:visited,a.conv-item:hover,a.conv-item:active{
+  color:var(--msg-text)!important;
   text-decoration:none!important;
 }
 body.page-messages a.conv-item *,
-a.conv-item *{
-  text-decoration:none!important;
-  -webkit-user-select:none!important;
-  user-select:none!important;
+a.conv-item *{text-decoration:none!important;user-select:none!important;-webkit-user-select:none!important;}
+.conv-item:active{background:#d1d1d6!important;}
+.conv-item+.conv-item::before{
+  content:'';position:absolute;left:78px;right:0;top:0;height:0.5px;background:var(--msg-separator-inset);
 }
-.conv-item:hover{background:var(--surface-hover)!important;}
-.conv-item+.conv-item{border-top:0.5px solid var(--border)!important;}
-.conv-avatar-link{flex:0 0 46px!important;width:46px!important;height:46px!important;display:block!important;}
+
+.conv-unread-col{
+  width:14px;flex:0 0 14px;display:flex;align-items:center;justify-content:center;align-self:stretch;
+}
+.conv-unread-dot{
+  width:10px;height:10px;border-radius:50%;background:var(--msg-blue);
+  box-shadow:0 0 0 0.5px rgba(0,122,255,0.2);
+}
+.conv-unread-dot.is-hidden{visibility:hidden;}
+
+.conv-avatar-link{flex:0 0 52px!important;width:52px!important;height:52px!important;display:block!important;margin-right:12px;}
 .conv-avatar{
-  width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;
+  width:52px!important;height:52px!important;min-width:52px!important;min-height:52px!important;
   border-radius:50%!important;display:flex!important;align-items:center!important;justify-content:center!important;
-  font-size:16px!important;font-weight:500!important;color:#fff!important;flex-shrink:0!important;position:relative!important;
+  font-size:20px!important;font-weight:600!important;color:#fff!important;flex-shrink:0!important;position:relative!important;
   background-size:cover!important;background-position:center!important;overflow:hidden!important;box-sizing:border-box!important;
 }
 .conv-avatar.has-photo{color:transparent!important;}
@@ -174,48 +188,56 @@ a.conv-item *{
   width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;
   object-fit:cover!important;display:block!important;border-radius:inherit!important;-webkit-user-drag:none;
 }
-body.light .conv-avatar{color:#2d1b4e!important;}
-.unread-dot{width:10px;height:10px;border-radius:50%;background:var(--purple-light);position:absolute;top:1px;right:1px;border:2px solid var(--nav-bg);z-index:1;}
-.conv-info{flex:1 1 auto!important;min-width:0!important;}
-.conv-name{font-size:14px!important;font-weight:500!important;color:var(--text)!important;margin:0 0 2px!important;text-decoration:none!important;}
-.conv-task{font-size:11px!important;color:var(--purple-light)!important;margin:0 0 3px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none!important;}
-body.light .conv-task{color:var(--purple)!important;}
-.conv-role-pill{font-size:10px!important;color:rgba(200,168,233,0.75)!important;margin-top:2px!important;text-decoration:none!important;}
-.conv-preview{font-size:12px!important;color:var(--read-preview)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none!important;}
-.conv-preview.unread{color:var(--unread-preview)!important;font-weight:500!important;}
-.conv-right{display:flex!important;flex-direction:column!important;align-items:flex-end!important;gap:5px!important;flex-shrink:0!important;}
-.conv-time{font-size:11px!important;color:var(--text-faint)!important;text-decoration:none!important;}
-.conv-badge{background:var(--purple);color:#fff;font-size:10px;font-weight:500;border-radius:20px;padding:2px 7px;min-width:20px;text-align:center;}
-body.light .conv-badge{color:#2d1b4e;}
+.unread-dot{display:none!important;}
 
-/* Page chrome must stay visible on messages */
+.conv-info{flex:1 1 auto!important;min-width:0!important;padding-right:8px;}
+.conv-name{
+  font-size:17px!important;font-weight:600!important;color:var(--msg-text)!important;
+  margin:0 0 2px!important;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.conv-task,.conv-role-pill{display:none!important;}
+.conv-preview{
+  font-size:15px!important;font-weight:400!important;color:var(--msg-secondary)!important;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;
+}
+.conv-preview.unread{color:#3a3a3c!important;font-weight:500!important;}
+
+.conv-right{
+  display:flex!important;flex-direction:column!important;align-items:flex-end!important;
+  gap:6px!important;flex-shrink:0!important;align-self:flex-start;padding-top:2px;
+}
+.conv-time{font-size:15px!important;color:var(--msg-secondary)!important;font-weight:400;}
+.conv-chevron{color:#c7c7cc;font-size:14px;font-weight:600;line-height:1;}
+.conv-badge{display:none!important;}
+
 body.page-messages .nav,
 body.page-messages .search-wrap,
-body.page-messages #qgTabBar{
-  display:flex!important;visibility:visible!important;opacity:1!important;
-}
+body.page-messages #qgTabBar{display:flex!important;visibility:visible!important;opacity:1!important;}
 body.page-messages .search-wrap{display:block!important;}
 body.page-messages .nav{align-items:center!important;}
 
-/* LOCKED BANNER */
-.locked-banner{margin:16px 20px;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;background:rgba(107,63,160,0.12);border:0.5px solid rgba(200,168,233,0.15);}
-body.light .locked-banner{background:#f5f2ff;border-color:#e8e2ff;}
+.locked-banner{
+  margin:8px 16px;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;
+  background:var(--msg-elevated);border:none;
+}
 .locked-icon{font-size:22px;flex-shrink:0;}
-.locked-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px;}
-.locked-sub{font-size:12px;color:var(--text-muted);line-height:1.5;}
+.locked-title{font-size:14px;font-weight:600;color:var(--msg-text);margin-bottom:2px;}
+.locked-sub{font-size:13px;color:var(--msg-secondary);line-height:1.4;}
 
-/* TAB BAR — always visible (empty state only fills #mainContent) */
-.tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--tab-bg);border-top:0.5px solid var(--border);display:flex!important;padding:8px 0 14px;z-index:100;transition:background 0.25s;visibility:visible!important;opacity:1!important;pointer-events:auto;min-height:56px;}
-.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;text-decoration:none;}
-.tab-icon{font-size:22px;color:var(--text-faint);transition:color 0.15s;line-height:1;}
-.tab-lbl{font-size:10px;color:var(--text-faint);transition:color 0.15s;}
-.tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:var(--purple-light);}
-body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color:var(--purple);}
-body.page-messages #qgTabBar,
-body[data-qg-page="messages"] #qgTabBar{display:flex!important;}
-.app-legal-footer{text-align:center;padding:20px 16px 96px;font-size:10px;color:var(--text-faint);line-height:1.75;}
-.app-legal-footer a{color:var(--purple-light);text-decoration:none;}
-body.light .app-legal-footer a{color:var(--purple);}
+.tab-bar{
+  position:fixed;bottom:0;left:0;right:0;background:rgba(249,249,249,0.94)!important;
+  border-top:0.5px solid var(--msg-separator-inset)!important;
+  display:flex!important;padding:6px 0 calc(8px + env(safe-area-inset-bottom,0px));z-index:100;
+  backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);
+  visibility:visible!important;opacity:1!important;pointer-events:auto;min-height:56px;
+}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;text-decoration:none;color:var(--msg-secondary)!important;}
+.tab-icon{font-size:22px;color:inherit;line-height:1;}
+.tab-lbl{font-size:10px;color:inherit;}
+.tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:var(--msg-blue)!important;}
+body.page-messages #qgTabBar,body[data-qg-page="messages"] #qgTabBar{display:flex!important;}
+.app-legal-footer{text-align:center;padding:16px 16px 96px;font-size:11px;color:var(--msg-secondary);line-height:1.7;}
+.app-legal-footer a{color:var(--msg-blue);text-decoration:none;}
 </style>
 <link rel="stylesheet" href="qg-brand.css">
 </head>
@@ -223,21 +245,24 @@ body.light .app-legal-footer a{color:var(--purple);}
 
 <nav class="nav" id="messagesHeader">
   <a class="back-btn" href="dashboard.html" id="messagesBackBtn" aria-label="Back to dashboard">
-    <span class="back-arrow" aria-hidden="true">←</span>
+    <span class="back-arrow" aria-hidden="true">‹</span>
     <span class="back-label">Back</span>
   </a>
   <div class="nav-title">Messages</div>
-  <div class="nav-right" style="display:flex;gap:8px;align-items:center">
-    <button type="button" class="mode-btn" onclick="typeof switchRoleMode==='function'&&switchRoleMode()">Switch mode</button>
-    <button type="button" class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
+  <div class="nav-right" style="display:flex;gap:4px;align-items:center">
+    <button type="button" class="mode-btn" onclick="typeof switchRoleMode==='function'&&switchRoleMode()">Mode</button>
+    <button type="button" class="mode-btn" id="modeBtn" onclick="toggleTheme()">Theme</button>
   </div>
 </nav>
-<div style="padding:8px 16px 0"><span class="mode-tag" data-qg-mode-tag>📋 Poster mode</span></div>
+<div style="display:none"><span class="mode-tag" data-qg-mode-tag>📋 Poster mode</span></div>
 
-<div class="search-wrap">
-  <div class="search-box">
-    <span class="search-icon">🔍</span>
-    <input class="search-input" id="searchInput" placeholder="Search conversations..." oninput="filterConvs()">
+<div class="msg-hero">
+  <h1 class="msg-large-title">Messages</h1>
+  <div class="search-wrap">
+    <div class="search-box">
+      <span class="search-icon" aria-hidden="true">⌕</span>
+      <input class="search-input" id="searchInput" placeholder="Search" oninput="filterConvs()" autocomplete="off">
+    </div>
   </div>
 </div>
 <p class="messages-safety-tip" id="messagesSafetyTip">Keep chat and payment on QuickGigs — off-platform deals aren't protected.</p>
@@ -743,7 +768,7 @@ function renderContent(){
   var completed = filtered.filter(function(c){ return c.status === 'completed'; });
 
   if(active.length){
-    html += '<div class="section-label">Active tasks</div>';
+    html += '<div class="section-label">Active</div>';
     html += active.map(renderConvItem).join('');
   }
 
@@ -770,50 +795,43 @@ window.chatThreadHref = chatThreadHref;
 
 function renderConvItem(c){
   var taskId = c && (c.taskId != null ? c.taskId : c.task_id);
-  // peer = the OTHER participant (not me): mapConversation sets otherUid from worker_id or poster_id
   var otherUid = c && c.otherUid ? String(c.otherUid) : '';
   var threadHref = chatThreadHref(taskId, otherUid);
   var avatarInner = typeof renderUserAvatarHtml === 'function'
-    ? renderUserAvatarHtml(c.name, c.avatarUrl, { className: 'conv-avatar', gradient: c.avatarBg, size: 46 })
+    ? renderUserAvatarHtml(c.name, c.avatarUrl, { className: 'conv-avatar', gradient: c.avatarBg, size: 52 })
     : ('<div class="conv-avatar" style="background:'+c.avatarBg+'">'+esc(c.initials)+'</div>');
-  if (c.unread > 0 && avatarInner.indexOf('unread-dot') < 0) {
-    avatarInner = avatarInner.replace(
-      /(<\/div>\s*)$/,
-      '<div class="unread-dot" aria-hidden="true"></div>$1'
-    );
-  }
+  var preview = (c.lastMessage && c.lastMessage !== 'No messages yet')
+    ? c.lastMessage
+    : ((c.taskIcon ? c.taskIcon + ' ' : '') + (c.taskName || 'Task'));
+  var unread = c.unread > 0;
   if (!threadHref) {
-    return '<div class="conv-item" aria-disabled="true" style="opacity:0.65;cursor:default">' +
+    return '<div class="conv-item" aria-disabled="true" style="opacity:0.55;cursor:default">' +
+      '<div class="conv-unread-col"><span class="conv-unread-dot is-hidden"></span></div>' +
       '<div class="conv-avatar-link">' + avatarInner + '</div>' +
       '<div class="conv-info">' +
         '<div class="conv-name">'+esc(c.name)+'</div>' +
-        '<div class="conv-task">'+c.taskIcon+' '+esc(c.taskName)+'</div>' +
-        '<div class="conv-preview">Conversation unavailable — refresh</div>' +
+        '<div class="conv-preview">Conversation unavailable</div>' +
       '</div></div>';
   }
-  // ONE real <a> around the whole card — inline flex so layout can't lose to other CSS.
-  var rowStyle = 'display:flex!important;flex-direction:row!important;align-items:center!important;gap:14px;padding:14px 20px;width:100%;box-sizing:border-box;text-decoration:none!important;color:inherit!important;cursor:pointer;-webkit-user-select:none;user-select:none;';
+  var rowStyle = 'display:flex!important;flex-direction:row!important;align-items:center!important;width:100%;box-sizing:border-box;text-decoration:none!important;color:inherit!important;cursor:pointer;-webkit-user-select:none;user-select:none;';
   return '<a class="conv-item" href="'+esc(threadHref)+'"' +
     ' style="'+rowStyle+'"' +
     ' data-task-id="'+esc(String(taskId))+'"' +
     ' data-peer="'+esc(otherUid)+'">' +
+    '<div class="conv-unread-col"><span class="conv-unread-dot'+(unread?'':' is-hidden')+'" aria-hidden="true"></span></div>' +
     '<div class="conv-avatar-link">' + avatarInner + '</div>' +
     '<div class="conv-info">' +
       '<div class="conv-name">'+esc(c.name)+'</div>' +
-      '<div class="conv-task">'+c.taskIcon+' '+esc(c.taskName)+'</div>' +
-      '<div class="conv-role-pill">'+esc(c.rolePill || '')+'</div>' +
-      '<div class="conv-preview'+(c.unread>0?' unread':'')+'">'+esc(c.lastMessage)+'</div>' +
+      '<div class="conv-preview'+(unread?' unread':'')+'">'+esc(preview)+'</div>' +
     '</div>' +
     '<div class="conv-right">' +
       '<div class="conv-time">'+esc(c.time)+'</div>' +
-      (c.unread > 0 ? '<div class="conv-badge">'+c.unread+'</div>' : getStatusLabel(c.status)) +
+      '<div class="conv-chevron" aria-hidden="true">›</div>' +
     '</div>' +
   '</a>';
 }
 
 function getStatusLabel(status){
-  if(status==='in_progress') return '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(74,222,128,0.12);color:#16a34a;">In progress</span>';
-  if(status==='completed')   return '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(107,63,160,0.2);color:#9b6fc4;">Completed</span>';
   return '';
 }
 
