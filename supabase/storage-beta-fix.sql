@@ -1,5 +1,8 @@
 -- QuickGigs — fix photo uploads (403 / row-level security on storage)
 -- Run this in Supabase → SQL Editor if Post Task shows photo upload errors.
+--
+-- BETA ONLY (open insert). After Firebase JWT linkage, replace with:
+--   supabase/storage-policies.sql  (own-folder writes, images only, private buckets)
 
 -- Task reference photos (post task page)
 INSERT INTO storage.buckets (id, name, public)

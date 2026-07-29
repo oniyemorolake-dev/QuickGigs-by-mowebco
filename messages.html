@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
-<link rel="stylesheet" href="qg-polish.css?v=20260726contrast">
+<link rel="stylesheet" href="qg-polish.css?v=20260727msgnav">
 <link rel="stylesheet" href="qg-ux.css?v=20260726contrast">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
@@ -74,11 +74,27 @@ body.light .empty-btn,
 body.light .conv-badge{color:#2d1b4e;}
 
 /* NAV */
-.nav{position:sticky;top:0;z-index:50;background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;transition:background 0.25s;}
+.nav{position:sticky;top:0;z-index:50;background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;transition:background 0.25s;}
+.back-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 14px 8px 12px;border-radius:999px;
+  background:rgba(255,255,255,0.08);border:0.5px solid var(--border);
+  color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;
+  text-decoration:none;min-height:40px;flex-shrink:0;
+  transition:transform 0.18s,background 0.18s;-webkit-tap-highlight-color:transparent;
+}
+.back-btn:hover{transform:translateX(-2px);background:rgba(255,255,255,0.12);}
+.back-arrow{font-size:18px;line-height:1;}
+.back-label{line-height:1;}
+body.light .back-btn{background:#f0eeff;color:var(--purple);border-color:#e8e2ff;}
+body.light .back-btn:hover{background:#e8e2ff;}
 .nav-logo{font-family:'Playfair Display',serif;font-style:italic;font-size:1.25rem;color:var(--lavender);}
-.nav-title{font-size:16px;font-weight:500;color:var(--text);}
+.nav-title{font-size:16px;font-weight:500;color:var(--text);flex:1;text-align:center;}
 .mode-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);}
 body.light .mode-btn{background:#f0eeff;color:var(--purple);}
+/* Empty/list sit between sticky header and fixed tab bar — never cover chrome */
+#mainContent{min-height:40vh;position:relative;z-index:1;}
+.empty-state{min-height:auto;}
 
 /* SEARCH */
 .search-wrap{padding:12px 20px;background:var(--nav-bg);border-bottom:0.5px solid var(--border);transition:background 0.25s;}
@@ -87,6 +103,8 @@ body.light .mode-btn{background:#f0eeff;color:var(--purple);}
 .search-icon{color:var(--purple-light);opacity:0.5;font-size:15px;}
 .search-input{flex:1;background:none;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);}
 .search-input::placeholder{color:var(--lavender);opacity:0.35;}
+.messages-safety-tip{margin:0;padding:8px 20px 10px;font-size:11px;line-height:1.45;color:var(--text-muted);background:rgba(107,63,160,0.08);border-bottom:0.5px solid var(--border);}
+body.light .messages-safety-tip{background:#f5f2ff;color:#5b21b6;}
 
 /* EMPTY STATE */
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 40px;text-align:center;}
@@ -100,8 +118,9 @@ body.light .empty-btn{color:#2d1b4e;}
 .section-label{padding:14px 20px 8px;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);}
 
 /* CONVERSATION ITEM */
-.conv-item{display:flex;align-items:center;gap:14px;padding:14px 20px;cursor:pointer;transition:background 0.15s;text-decoration:none;}
+.conv-item{display:flex;align-items:center;gap:14px;padding:14px 20px;cursor:pointer;transition:background 0.15s;text-decoration:none;color:inherit;}
 .conv-item:hover{background:var(--surface-hover);}
+.conv-item:visited{color:inherit;}
 .conv-item+.conv-item{border-top:0.5px solid var(--border);}
 .conv-avatar{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:500;color:#fff;flex-shrink:0;position:relative;background-size:cover;background-position:center;}
 .conv-avatar.has-photo{color:transparent;}
@@ -138,13 +157,13 @@ body.light .app-legal-footer a{color:var(--purple);}
 </style>
 <link rel="stylesheet" href="qg-brand.css">
 </head>
-<body>
+<body class="page-messages" data-qg-page="messages">
 
-<nav class="nav">
-  <div class="nav-brand">
-    <span class="nav-logo">QuickGigs</span>
-    <span class="nav-role">POSTER</span>
-  </div>
+<nav class="nav" id="messagesHeader">
+  <a class="back-btn" href="dashboard.html" id="messagesBackBtn" aria-label="Back">
+    <span class="back-arrow" aria-hidden="true">←</span>
+    <span class="back-label">Back</span>
+  </a>
   <div class="nav-title">Messages</div>
   <div class="nav-right" style="display:flex;gap:8px;align-items:center">
     <button type="button" class="mode-btn" onclick="typeof switchRoleMode==='function'&&switchRoleMode()">Switch mode</button>
@@ -159,14 +178,23 @@ body.light .app-legal-footer a{color:var(--purple);}
     <input class="search-input" id="searchInput" placeholder="Search conversations..." oninput="filterConvs()">
   </div>
 </div>
+<p class="messages-safety-tip" id="messagesSafetyTip">Keep chat and payment on QuickGigs — off-platform deals aren't protected.</p>
 
+<!-- List / empty state only — header + tab bar stay outside this node -->
 <div id="mainContent"></div>
 
 <footer class="app-legal-footer site-footer" id="siteFooter"></footer>
-<nav class="tab-bar" id="qgTabBar"></nav>
+<nav class="tab-bar" id="qgTabBar" aria-label="Main"></nav>
 <script defer src="qg-site.js"></script>
 <script defer src="qg-nav.js"></script>
-<script>renderQuickGigsTabBar('messages');</script>
+<script>
+function paintMessagesTabBar() {
+  if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('messages');
+}
+paintMessagesTabBar();
+document.addEventListener('DOMContentLoaded', paintMessagesTabBar);
+window.addEventListener('load', paintMessagesTabBar);
+</script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
@@ -186,11 +214,13 @@ let authChecked = false;
 const redirectTimeout = setTimeout(() => {
   if (!authChecked) window.location.href = 'login.html';
 }, 3000);
+window._auth = auth;
 onAuthStateChanged(auth, (user) => {
   authChecked = true;
   clearTimeout(redirectTimeout);
   if (!user) { window.location.href = 'login.html'; return; }
-  window._currentUser = user;
+  if (typeof setCurrentUser === 'function') setCurrentUser(user);
+  else window._currentUser = user;
   function startMessages() {
     if (typeof window.loadConversations === 'function') {
       window.loadConversations();
@@ -207,9 +237,9 @@ onAuthStateChanged(auth, (user) => {
 <script src="qg-ux.js?v=20260726ux" defer></script>
 <script src="qg-bigtech.js?v=20260726bt" defer></script>
 <script src="qg-wave2.js?v=20260726w2" defer></script>
-<script defer src="qg-config.js"></script>
+<script defer src="qg-config.js?v=20260728msg1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
-<script defer src="supabase-db.js?v=20260725j"></script>
+<script defer src="supabase-db.js?v=20260728msg1"></script>
 <script defer src="qg-notifications.js"></script>
 <script defer src="qg-push.js?v=1"></script>
 <script>
@@ -243,7 +273,7 @@ var AVATAR_GRADIENTS = [
   'linear-gradient(135deg,#2563eb,#60a5fa)'
 ];
 
-function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function avatarGradient(name){
   var n = 0;
@@ -282,6 +312,7 @@ function mapConversation(conv, userId){
   var cat = (conv.task_category || 'other').toLowerCase();
   return {
     id: conv.conv_id,
+    conv_id: conv.conv_id,
     posterId: conv.poster_id,
     workerId: conv.worker_id,
     myRole: iAmPoster ? 'poster' : 'tasker',
@@ -345,6 +376,8 @@ async function loadConversations(){
     conversations = conversationsForCurrentMode(enriched.map(function(c){ return mapConversation(c, userId); }));
     filtered = conversations.slice();
     renderContent();
+    if (typeof paintMessagesTabBar === 'function') paintMessagesTabBar();
+    else if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('messages');
     if (typeof applyRoleTheme === 'function') applyRoleTheme();
     if (typeof isSupabaseUsingStaleCache === 'function' && isSupabaseUsingStaleCache()) {
       showStaleDataBanner();
@@ -417,7 +450,45 @@ function renderContent(){
   content.innerHTML = html;
 }
 
+// Profile chips inside thread links — stop navigation to chat, go to profile instead.
+(function bindMessagesProfileClicks() {
+  var root = document.getElementById('mainContent');
+  if (!root || root._qgProfileBound) return;
+  root._qgProfileBound = true;
+  root.addEventListener('click', function (e) {
+    var chip = e.target.closest('[data-profile-href]');
+    if (!chip || !root.contains(chip)) return;
+    var href = chip.getAttribute('data-profile-href') || '';
+    var safe = typeof safeUrl === 'function' ? safeUrl(href) : href;
+    if (!safe) return;
+    e.preventDefault();
+    e.stopPropagation();
+    window.location.href = safe;
+  });
+})();
+
+function chatThreadHref(convId) {
+  var id = String(convId || '').trim();
+  if (!id || id === 'undefined' || id === 'null') return '';
+  return 'chat.html?conv=' + encodeURIComponent(id);
+}
+
+function openConversationThread(convId) {
+  var href = chatThreadHref(convId);
+  if (!href) {
+    console.warn('[QuickGigs messages] missing conv id');
+    if (typeof showToast === 'function') showToast('Conversation not found — refresh Messages.', '#f59e0b');
+    return;
+  }
+  // Always chat thread — never payment.html / Stripe pay modal.
+  window.location.href = href;
+}
+window.openConversationThread = openConversationThread;
+window.chatThreadHref = chatThreadHref;
+
 function renderConvItem(c){
+  var convId = c && (c.id || c.conv_id) ? String(c.id || c.conv_id) : '';
+  var threadHref = chatThreadHref(convId);
   var profileHref = typeof getProfileUrl === 'function'
     ? getProfileUrl(c.otherUid)
     : ('profile.html?user=' + encodeURIComponent(c.otherUid));
@@ -427,12 +498,23 @@ function renderConvItem(c){
   if (c.unread > 0 && avatarInner.indexOf('unread-dot') < 0) {
     avatarInner = avatarInner.replace('</div>', '<div class="unread-dot"></div></div>');
   }
-  return '<div class="conv-item" onclick="window.location.href=\'chat.html?conv='+encodeURIComponent(c.id)+'\'">' +
-    '<a href="'+profileHref+'" class="conv-avatar-link" onclick="event.stopPropagation()" style="flex-shrink:0;text-decoration:none">' +
+  // Real <a href> so open works without inline JS and never targets payments.
+  if (!threadHref) {
+    return '<div class="conv-item" aria-disabled="true" style="opacity:0.65;cursor:default">' +
+      '<div class="conv-avatar-link" style="flex-shrink:0">' + avatarInner + '</div>' +
+      '<div class="conv-info">' +
+        '<div class="conv-name">'+esc(c.name)+'</div>' +
+        '<div class="conv-task">'+c.taskIcon+' '+esc(c.taskName)+'</div>' +
+        '<div class="conv-preview">Conversation unavailable — refresh</div>' +
+      '</div></div>';
+  }
+  var safeProfile = (typeof safeUrl === 'function' ? safeUrl(profileHref) : profileHref) || 'profile.html';
+  return '<a class="conv-item" href="'+esc(threadHref)+'" data-open-conv="'+esc(convId)+'">' +
+    '<span class="conv-avatar-link" data-profile-href="'+esc(safeProfile)+'" style="flex-shrink:0;text-decoration:none;cursor:pointer">' +
     avatarInner +
-    '</a>' +
+    '</span>' +
     '<div class="conv-info">' +
-      '<div class="conv-name"><a href="'+profileHref+'" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none">'+esc(c.name)+'</a></div>' +
+      '<div class="conv-name"><span class="conv-profile-name" data-profile-href="'+esc(safeProfile)+'" style="color:inherit;text-decoration:none;cursor:pointer">'+esc(c.name)+'</span></div>' +
       '<div class="conv-task">'+c.taskIcon+' '+esc(c.taskName)+'</div>' +
       '<div class="conv-role-pill" style="font-size:10px;color:rgba(200,168,233,0.75);margin-top:2px">'+esc(c.rolePill || '')+'</div>' +
       '<div class="conv-preview'+(c.unread>0?' unread':'')+'">'+esc(c.lastMessage)+'</div>' +
@@ -441,7 +523,7 @@ function renderConvItem(c){
       '<div class="conv-time">'+esc(c.time)+'</div>' +
       (c.unread > 0 ? '<div class="conv-badge">'+c.unread+'</div>' : getStatusLabel(c.status)) +
     '</div>' +
-  '</div>';
+  '</a>';
 }
 
 function getStatusLabel(status){

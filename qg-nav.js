@@ -261,12 +261,17 @@
   document.head.appendChild(menuScript);
 
   var bellScript = document.createElement('script');
-  bellScript.src = 'qg-bell.js?v=3';
+  bellScript.src = 'qg-bell.js?v=20260726empty';
   bellScript.defer = true;
   document.head.appendChild(bellScript);
 
+  var gateScript = document.createElement('script');
+  gateScript.src = 'qg-admin-gate.js?v=1';
+  gateScript.defer = true;
+  document.head.appendChild(gateScript);
+
   var announceScript = document.createElement('script');
-  announceScript.src = 'qg-announcement.js?v=5';
+  announceScript.src = 'qg-announcement.js?v=6';
   announceScript.defer = true;
   document.head.appendChild(announceScript);
 })();

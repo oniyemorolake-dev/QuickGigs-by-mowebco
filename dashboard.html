@@ -34,7 +34,7 @@
 <meta name="theme-color" content="#6b3fa0">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
-<link rel="stylesheet" href="qg-role-theme.css">
+<link rel="stylesheet" href="qg-role-theme.css?v=20260728stats2">
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
 <script src="qg-theme.js"></script>
 <script src="qg-brand-init.js"></script>
@@ -77,7 +77,7 @@ body.light{
   --green:#16a34a;
 }
 
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh;padding-bottom:76px;transition:background 0.25s,color 0.25s;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh;padding-bottom:76px;transition:background 0.25s,color 0.25s;overflow-x:hidden;}
 
 /* NAV */
 .nav{position:relative;position:sticky;top:0;z-index:50;background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;transition:background 0.25s;}
@@ -114,12 +114,15 @@ body.light .tag-poster{background:#ede9ff;color:var(--purple);}
 .greet-sub{font-size:13px;color:var(--text-muted);}
 
 /* STAT CARDS */
-.stats{padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.stat-card{border-radius:16px;padding:14px 15px;border:0.5px solid var(--border);background:var(--card-bg);transition:all 0.2s;}
+.stats{padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px;overflow-x:visible;width:100%;box-sizing:border-box;}
+@media (min-width:720px){
+  .stats{grid-template-columns:repeat(4,1fr);}
+}
+.stat-card{border-radius:16px;padding:14px 15px;border:0.5px solid var(--border);background:var(--card-bg);transition:all 0.2s;min-width:0;}
 .light .stat-card{box-shadow:0 1px 3px rgba(107,63,160,0.08);}
 .stat-card:hover{border-color:var(--border-hover);}
 .stat-icon{font-size:20px;margin-bottom:8px;}
-.stat-val{font-size:22px;font-weight:500;color:var(--text);margin-bottom:3px;}
+.stat-val{font-size:22px;font-weight:500;color:var(--text);margin-bottom:3px;word-break:break-word;}
 .stat-val.green{color:var(--green);}
 .stat-val.purple{color:var(--lavender);}
 body.light .stat-val.purple{color:var(--purple);}
@@ -188,6 +191,16 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 .guardian-banner a{color:var(--purple-light);font-weight:500;}
 .legal-footer a{color:var(--purple-light);text-decoration:none;}
 .legal-footer a:hover{text-decoration:underline;}
+
+/* Skeleton loaders — instant feedback on cellular */
+.qg-skel{background:linear-gradient(90deg,rgba(200,168,233,0.08) 25%,rgba(200,168,233,0.16) 50%,rgba(200,168,233,0.08) 75%);background-size:200% 100%;animation:qgSkel 1.2s ease-in-out infinite;border-radius:10px;}
+@keyframes qgSkel{0%{background-position:200% 0}100%{background-position:-200% 0}}
+body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#eeeaf8 75%);background-size:200% 100%;}
+.qg-skel-stat{height:72px;border-radius:14px;}
+.qg-skel-action{height:88px;border-radius:16px;}
+.qg-skel-row{height:56px;margin-bottom:8px;border-radius:14px;}
+.qg-skel-hero{height:64px;margin-top:10px;border-radius:14px;}
+.dash-loading-hint{font-size:12px;color:var(--text-faint);margin:8px 20px 0;}
 </style>
 <link rel="stylesheet" href="qg-brand.css">
 </head>
@@ -217,15 +230,23 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <div class="greeting qg-page-wide">
   <div class="mode-tag tag-poster" id="modeTag" data-qg-mode-tag>📋 Poster mode</div>
   <div class="greet-name" id="greetName">Good evening 👋</div>
-  <div class="greet-sub" id="greetSub">Welcome back to QuickGigs</div>
-  <div id="dashHero"></div>
+  <div class="greet-sub" id="greetSub">Loading your dashboard…</div>
+  <div id="dashHero"><div class="qg-skel qg-skel-hero" aria-hidden="true"></div></div>
 </div>
+<p class="dash-loading-hint" id="dashLoadHint">Fetching your tasks…</p>
 
 <!-- STATS -->
-<div class="stats" id="statsGrid"></div>
+<div class="stats" id="statsGrid">
+  <div class="qg-skel qg-skel-stat"></div>
+  <div class="qg-skel qg-skel-stat"></div>
+  <div class="qg-skel qg-skel-stat"></div>
+</div>
 
 <!-- ACTION CARDS -->
-<div class="actions" id="actionsGrid"></div>
+<div class="actions" id="actionsGrid">
+  <div class="qg-skel qg-skel-action"></div>
+  <div class="qg-skel qg-skel-action"></div>
+</div>
 
 <div id="dashActivity" class="qg-page-wide"></div>
 
@@ -246,7 +267,11 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
     <span class="section-title" id="sectionTitle">Tasks near you</span>
     <a class="see-all" href="browsetask.html">See all</a>
   </div>
-  <div id="tasksList"></div>
+  <div id="tasksList">
+    <div class="qg-skel qg-skel-row"></div>
+    <div class="qg-skel qg-skel-row"></div>
+    <div class="qg-skel qg-skel-row"></div>
+  </div>
 </div>
 
 <footer class="legal-footer site-footer" id="siteFooter">
@@ -255,9 +280,11 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <!-- TAB BAR -->
 <nav class="tab-bar" id="qgTabBar"></nav>
+<script defer src="qg-utils.js?v=20260728perf2"></script>
 <script defer src="qg-nav.js"></script>
-<script defer src="qg-menu.js?v=2"></script>
-<script>renderQuickGigsTabBar('home');</script>
+<script defer src="qg-menu.js?v=20260727auth2"></script>
+<script defer src="supabaseClient.js?v=20260728perf2"></script>
+<script defer src="supabase-db.js?v=20260728perf2"></script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
@@ -274,8 +301,14 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+window._auth = auth;
 
 window.doLogout = function() {
+  if (typeof qgLogout === 'function') {
+    qgLogout(auth);
+    return;
+  }
+  if (typeof clearQgUserScopedStorage === 'function') clearQgUserScopedStorage();
   signOut(auth)
     .then(function(){ window.location.href = 'login.html'; })
     .catch(function(){ window.location.href = 'login.html'; });
@@ -289,13 +322,21 @@ const redirectTimeout = setTimeout(() => {
 onAuthStateChanged(auth, async (user) => {
   authChecked = true;
   clearTimeout(redirectTimeout);
-  if (!user) { window.location.href = 'login.html'; return; }
-  const name = user.displayName || user.email.split('@')[0];
+  if (!user) {
+    if (typeof setCurrentUser === 'function') setCurrentUser(null);
+    window.location.href = 'login.html';
+    return;
+  }
+  var live = auth.currentUser && auth.currentUser.uid === user.uid ? auth.currentUser : user;
+  if (typeof setCurrentUser === 'function') setCurrentUser(live);
+  else window._currentUser = live;
+  const name = live.displayName || (live.email ? live.email.split('@')[0] : 'there');
   const firstName = name.split(' ')[0];
   window._userName = firstName;
-  window._currentUser = user;
   document.getElementById('avatarEl').textContent = firstName.charAt(0).toUpperCase();
-  loadDashboardData(user.uid);
+  var hint = document.getElementById('dashLoadHint');
+  if (hint) hint.textContent = 'Loading your tasks…';
+  loadDashboardData(live.uid);
 
   function applyDbUserAfterLogin(dbUser) {
     if (dbUser && dbUser.role) {
@@ -316,30 +357,40 @@ onAuthStateChanged(auth, async (user) => {
           String(email).replace(/</g, '') + ' approves. <a href="' + link.replace(/"/g, '') + '" target="_blank" rel="noopener">Open consent link</a>';
       }
     }
+    if (dbUser && dbUser.status === 'banned' && typeof enforceBanOnLogin === 'function') {
+      enforceBanOnLogin(live);
+    }
   }
 
-  if (typeof syncCurrentUserProfile === 'function') {
-    syncCurrentUserProfile(user).then(function () {
-      if (typeof getUserByFirebaseUid === 'function') return getUserByFirebaseUid(user.uid);
-    }).then(applyDbUserAfterLogin);
-  } else if (typeof getUserByFirebaseUid === 'function') {
-    getUserByFirebaseUid(user.uid).then(applyDbUserAfterLogin);
+  // Background profile sync AFTER first paint — never blocks dashboard render.
+  function runDeferredProfileSync() {
+    if (typeof syncCurrentUserProfile !== 'function') {
+      if (typeof getUserByFirebaseUid === 'function') {
+        getUserByFirebaseUid(live.uid, { self: true }).then(applyDbUserAfterLogin).catch(function () {});
+      }
+      return;
+    }
+    var run = function () {
+      try { sessionStorage.removeItem('qg-pending-profile-sync'); } catch (e) {}
+      syncCurrentUserProfile(live).then(function (res) {
+        if (res && res.user) return applyDbUserAfterLogin(res.user);
+        if (typeof getUserByFirebaseUid === 'function') {
+          return getUserByFirebaseUid(live.uid, { self: true }).then(applyDbUserAfterLogin);
+        }
+      }).catch(function () {});
+    };
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 2200 });
+    else setTimeout(run, 400);
   }
-
-  if (typeof enforceBanOnLogin === 'function') {
-    enforceBanOnLogin(user).then(function (banCheck) {
-      if (!banCheck.ok) return;
-    });
-  }
+  runDeferredProfileSync();
 });
 </script>
 
-<script defer src="supabase-db.js"></script>
 <script defer src="qg-payments-ui.js?v=1"></script>
 <script defer src="qg-location.js"></script>
-<script defer src="qg-config.js"></script>
+<script defer src="qg-config.js?v=20260728msg1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
-<script defer src="qg-stats.js"></script>
+<script defer src="qg-stats.js?v=20260728perf1"></script>
 <script defer src="qg-notifications.js"></script>
 <script defer src="qg-push.js?v=1"></script>
 <script defer src="qg-cookies.js"></script>
@@ -471,33 +522,100 @@ function renderGreeting(contextOpts){
 
 async function loadDashboardData(userId) {
   dashData.userId = userId;
+  var hint = document.getElementById('dashLoadHint');
   var cached = typeof readTasksCache === 'function' ? readTasksCache() : null;
+  var cachedApps = typeof readAppsCache === 'function' ? readAppsCache() : null;
   if (cached && cached.length) {
     dashData.posted = cached;
+    if (cachedApps && cachedApps.length) dashData.apps = cachedApps;
     renderAll();
+    if (hint) hint.textContent = 'Refreshing…';
   }
-  try {
-    var headers = typeof getSupabaseHeaders === 'function'
-      ? await getSupabaseHeaders()
-      : window.SUPABASE_HEADERS;
-    var res = await Promise.all([
-      typeof fetchAllTasksFresh === 'function' ? fetchAllTasksFresh() : fetch(window.SUPABASE_URL + '/rest/v1/tasks?order=created_at.desc&limit=100', { headers: headers }).then(function (r) { return r.ok ? r.json() : []; }),
-      fetch(window.SUPABASE_URL + '/rest/v1/applications?order=created_at.desc&limit=200', { headers: headers }).then(function (r) { return r.ok ? r.json() : []; }),
-      typeof getPaymentsForUser === 'function'
-        ? getPaymentsForUser(userId, isPoster ? 'poster' : 'worker')
-        : Promise.resolve([])
-    ]);
-    dashData.posted = Array.isArray(res[0]) ? res[0] : [];
-    dashData.apps = Array.isArray(res[1]) ? res[1] : [];
-    dashData.payments = Array.isArray(res[2]) ? res[2] : [];
-  } catch (err) {
-    console.warn('Dashboard stats load failed:', err);
-    if (!cached || !cached.length) {
-      dashData.posted = [];
-      dashData.apps = [];
+
+  function finishLoad() {
+    if (hint) hint.remove();
+  }
+
+  function waitForDb(attempt) {
+    attempt = attempt || 0;
+    if (typeof fetchDashboardBootstrap === 'function' || typeof fetchAllTasksFresh === 'function') {
+      return runFetch();
     }
+    if (attempt > 40) {
+      console.warn('Dashboard DB helpers not ready');
+      finishLoad();
+      return Promise.resolve();
+    }
+    return new Promise(function (resolve) {
+      setTimeout(function () { resolve(waitForDb(attempt + 1)); }, 40);
+    });
   }
-  renderAll();
+
+  async function runFetch() {
+    try {
+      var role = isPoster ? 'poster' : 'worker';
+      if (typeof fetchDashboardBootstrap === 'function') {
+        // First paint: one parallel wave (4 queries). Poster apps load after render.
+        var boot = await fetchDashboardBootstrap(userId, role, { includePosterApps: false });
+        dashData.posted = Array.isArray(boot.tasks) ? boot.tasks : [];
+        dashData.apps = Array.isArray(boot.apps) ? boot.apps : [];
+        dashData.payments = Array.isArray(boot.payments) ? boot.payments : [];
+        renderAll();
+        finishLoad();
+        if (role === 'poster' && boot.myTaskIds && boot.myTaskIds.length &&
+            typeof fetchPosterAppsForTasks === 'function') {
+          fetchPosterAppsForTasks(boot.myTaskIds).then(function (posterApps) {
+            if (!posterApps || !posterApps.length) return;
+            var map = {};
+            (dashData.apps || []).forEach(function (a) {
+              var id = a.app_id || a.APP_ID || a.id;
+              var key = id != null && id !== ''
+                ? String(id)
+                : String(a.task_id || a.TASK_ID) + ':' + String(a.worker_id || a.WORKER_ID);
+              map[key] = a;
+            });
+            posterApps.forEach(function (a) {
+              var id = a.app_id || a.APP_ID || a.id;
+              var key = id != null && id !== ''
+                ? String(id)
+                : String(a.task_id || a.TASK_ID) + ':' + String(a.worker_id || a.WORKER_ID);
+              map[key] = a;
+            });
+            dashData.apps = Object.keys(map).map(function (k) { return map[k]; });
+            try { if (typeof writeAppsCache === 'function') writeAppsCache(dashData.apps); } catch (e) {}
+            renderAll();
+          }).catch(function () {});
+        }
+        return;
+      } else {
+        var headers = typeof getSupabaseHeaders === 'function'
+          ? await getSupabaseHeaders()
+          : window.SUPABASE_HEADERS;
+        var res = await Promise.all([
+          fetchAllTasksFresh({ limit: 20, select: (typeof SELECT_TASKS_BROWSE !== 'undefined' ? SELECT_TASKS_BROWSE : undefined) }),
+          typeof fetchApplicationsForActor === 'function'
+            ? fetchApplicationsForActor(userId)
+            : Promise.resolve([]),
+          typeof getPaymentsForUser === 'function'
+            ? getPaymentsForUser(userId, role, { limit: 20 })
+            : Promise.resolve([])
+        ]);
+        dashData.posted = Array.isArray(res[0]) ? res[0] : [];
+        dashData.apps = Array.isArray(res[1]) ? res[1] : [];
+        dashData.payments = Array.isArray(res[2]) ? res[2] : [];
+      }
+    } catch (err) {
+      console.warn('Dashboard stats load failed:', err);
+      if (!cached || !cached.length) {
+        dashData.posted = [];
+        dashData.apps = [];
+      }
+    }
+    renderAll();
+    finishLoad();
+  }
+
+  await waitForDb();
 }
 
 function applyDashboardRoleTheme() {
@@ -764,7 +882,23 @@ function renderAll(){
   document.getElementById('tasksList').innerHTML = html;
 }
 
-initUserLocation().then(function(){ renderGreeting(); });
+// Geolocation / Nominatim — after first paint (cellular-friendly)
+function deferDashLocation() {
+  if (typeof initUserLocation !== 'function') return;
+  var run = function () {
+    initUserLocation().then(function () { renderGreeting(); }).catch(function () {});
+  };
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 2500 });
+  else setTimeout(run, 600);
+}
+deferDashLocation();
+
+if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('home');
+else {
+  document.addEventListener('DOMContentLoaded', function () {
+    if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('home');
+  });
+}
 
 window.toggleAvatarMenu = function() {
   var menu = document.getElementById('avatarMenu');

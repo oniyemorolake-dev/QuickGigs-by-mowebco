@@ -1,5 +1,11 @@
 /* QuickGigs — email notification queue (apply, accept, complete) */
 (function () {
+  function titled(str) {
+    if (typeof formatTitle === 'function') return formatTitle(str || '');
+    var s = String(str == null ? '' : str).trim();
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+  }
+
   var TEMPLATES = {
     application_received: {
       subject: function (p) { return 'New applicant for “' + (p.taskTitle || 'your task') + '”'; },
@@ -187,7 +193,7 @@
       userId: posterId,
       email: posterEmail,
       payload: {
-        taskTitle: task && (task.title || task.TITLE),
+        taskTitle: titled(task && (task.title || task.TITLE)),
         taskId: taskId,
         workerName: application && (application.worker_name || application.WORKER_NAME),
         offer: application && (application.price || application.PRICE),
@@ -203,7 +209,7 @@
       userId: workerId,
       email: workerEmail,
       payload: {
-        taskTitle: task && (task.title || task.TITLE),
+        taskTitle: titled(task && (task.title || task.TITLE)),
         posterName: posterName,
         link: 'https://quickgigs.ca/mytasks.html?tab=inprogress'
       }
@@ -217,7 +223,7 @@
       userId: userId,
       email: email,
       payload: {
-        taskTitle: task && (task.title || task.TITLE),
+        taskTitle: titled(task && (task.title || task.TITLE)),
         role: role,
         link: 'https://quickgigs.ca/mytasks.html?tab=completed'
       }
@@ -233,7 +239,7 @@
       email: recipientEmail,
       payload: {
         senderName: payload.senderName,
-        taskTitle: payload.taskTitle,
+        taskTitle: titled(payload.taskTitle),
         preview: payload.preview,
         link: payload.link || 'https://quickgigs.ca/messages.html'
       }
@@ -277,7 +283,7 @@
       userId: workerId,
       email: workerEmail,
       payload: {
-        taskTitle: task && (task.title || task.TITLE),
+        taskTitle: titled(task && (task.title || task.TITLE)),
         taskId: taskId,
         amount: payload.amount,
         posterName: payload.posterName,
@@ -297,7 +303,7 @@
       userId: posterId,
       email: posterEmail,
       payload: {
-        taskTitle: task && (task.title || task.TITLE),
+        taskTitle: titled(task && (task.title || task.TITLE)),
         taskId: taskId,
         amount: payload.amount,
         workerName: payload.workerName,
@@ -310,17 +316,14 @@
   async function notifyAdminTaskRemoved(task, applications, reason) {
     if (!task) return { success: false };
     reason = String(reason || '').trim();
-    var taskTitle = task.title || task.TITLE || 'Task';
+    var taskTitle = titled(task.title || task.TITLE || 'Task');
     var posterId = task.posted_by || task.POSTED_BY;
-    var posterUser = posterId && typeof getUserByFirebaseUid === 'function'
-      ? await getUserByFirebaseUid(posterId)
-      : null;
 
     if (posterId) {
       await queueEmailNotification({
         type: 'task_removed_admin',
         userId: posterId,
-        email: posterUser && posterUser.email,
+        email: '',
         payload: {
           taskTitle: taskTitle,
           reason: reason,
@@ -338,11 +341,10 @@
       var wid = app.worker_id || app.WORKER_ID;
       if (!wid || seen[wid]) continue;
       seen[wid] = true;
-      var workerUser = typeof getUserByFirebaseUid === 'function' ? await getUserByFirebaseUid(wid) : null;
       await queueEmailNotification({
         type: 'task_removed_applicant',
         userId: wid,
-        email: workerUser && workerUser.email,
+        email: '',
         payload: {
           taskTitle: taskTitle,
           reason: reason,

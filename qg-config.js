@@ -29,13 +29,42 @@ window.QG_CONFIG = {
   connectLinkUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-connect-link',
   releasePayoutUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/release-payout',
   completeTaskUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/complete-task',
+  // Legacy single % (one-off default only — DO NOT use for fee math).
+  // All fee math must go through feeBreakdown.js:
+  // one-off 25% | recurring 10% | one-off sub 20% | recurring sub 8%.
   platformFeePercent: 25,
-  adminEmail: 'mowebsiteco@gmail.com'
+  feeRates: {
+    oneoff: 0.25,
+    recurring: 0.10,
+    oneoff_sub: 0.20,
+    recurring_sub: 0.08
+  },
+  // UX-only admin allow-list (see qg-admin-gate.js). Prefer adminUids (Firebase UID).
+  // Real enforcement: admins table + service-role function / custom claim admin:true.
+  adminEmail: 'mowebsiteco@gmail.com',
+  adminUids: [
+    // 'YOUR_FIREBASE_UID'
+  ],
+  // Client abuse UX (qg-abuse.js) — NOT real enforcement; server must enforce later
+  abuseLimits: {
+    minBudget: 20,
+    maxTitle: 100,
+    maxDescription: 2000,
+    maxApplyMessage: 1000,
+    maxChatMessage: 2000,
+    maxReview: 500,
+    maxBio: 160,
+    postCooldownMs: 5000,
+    applyCooldownMs: 3000,
+    chatMinGapMs: 900,
+    chatBurstMax: 5,
+    chatBurstWindowMs: 12000
+  }
 };
 
 // Returns whether a new conversation should start unlocked.
 window.resolveChatUnlockedOnCreate = function(stage) {
-  var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'payment';
+  var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept';
   if (rule === 'apply') return true;
   if (rule === 'accept' && (stage === 'in_progress' || stage === 'accepted')) return true;
   return false;
@@ -43,7 +72,7 @@ window.resolveChatUnlockedOnCreate = function(stage) {
 
 /** Beta: unlock chat when task is accepted even if conv row still says "application". */
 window.shouldUnlockChatNow = function(convStatus, taskStatus) {
-  var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'payment';
+  var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept';
   if (rule === 'apply') return (convStatus || '').toLowerCase() !== 'completed';
   if (rule === 'accept') {
     var cs = (convStatus || '').toLowerCase();
@@ -51,13 +80,15 @@ window.shouldUnlockChatNow = function(convStatus, taskStatus) {
     if (cs === 'completed') return false;
     if (cs === 'in_progress' || cs === 'accepted') return true;
     if (ts === 'in_progress') return true;
+    // Opening an existing thread from Messages — unlock unless clearly closed.
+    if (cs !== 'completed' && ts !== 'cancelled') return true;
     return false;
   }
   return false;
 };
 
 window.getChatLockMessage = function(isPoster) {
-  var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'payment';
+  var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept';
   if (rule === 'payment') {
     return isPoster
       ? 'Chat unlocks after you accept a worker and complete payment through QuickGigs. This keeps everyone protected and stops off-platform deals.'
@@ -70,7 +101,7 @@ window.getChatLockMessage = function(isPoster) {
 };
 
 window.getMessagesBannerCopy = function() {
-  var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'payment';
+  var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept';
   if (rule === 'payment') {
     return {
       title: 'Chat locked until payment',

@@ -13,18 +13,20 @@
     return '<span class="qg-trust-badge' + cls + '" title="' + label + '">' + value + '</span>';
   }
 
-  function renderTrustBadges(stats) {
+  function renderTrustBadges(stats, opts) {
     if (!stats) return '';
+    opts = opts || {};
     var parts = [];
-    if (stats.completionRate != null) {
+    if (stats.completionRate != null && !(opts.hideZeroComplete && stats.completionRate <= 0)) {
       var tone = stats.completionRate >= 80 ? 'green' : (stats.completionRate >= 50 ? 'amber' : '');
-      parts.push(trustBadgeHtml('Completion rate', '✓ ' + stats.completionRate + '% complete', tone));
+      parts.push(trustBadgeHtml('Task completion rate', stats.completionRate + '% task rate', tone));
     }
-    if (stats.responseRate != null) {
+    if (stats.responseRate != null && !(opts.hideZeroComplete && stats.responseRate <= 0)) {
       var rtone = stats.responseRate >= 70 ? 'green' : (stats.responseRate >= 40 ? 'amber' : '');
       parts.push(trustBadgeHtml('Response rate', '⚡ ' + stats.responseRate + '% response', rtone));
     }
-    if (stats.completedCount > 0) {
+    // Profile page already shows Completed in the stats row — avoid duplicating.
+    if (!opts.hideCompleted && stats.completedCount > 0) {
       parts.push(trustBadgeHtml('Jobs done', stats.completedCount + ' completed'));
     }
     if (stats.avgRating != null && stats.reviewCount > 0) {
@@ -91,7 +93,7 @@
 
   async function fetchUserWarnings(userId) {
     if (!userId || typeof sbGet !== 'function') return [];
-    var rows = await sbGet('user_warnings', 'user_id=eq.' + encodeURIComponent(userId) + '&order=created_at.desc');
+    var rows = await sbGet('user_warnings', 'user_id=eq.' + encodeURIComponent(userId) + '&select=warning_id,user_id,reason,created_at', 'created_at.desc');
     return Array.isArray(rows) ? rows : [];
   }
 
@@ -124,7 +126,13 @@
 
   async function getUserStatus(userId) {
     if (!userId || typeof sbGet !== 'function') return 'active';
-    var rows = await sbGet('users', 'user_id=eq.' + encodeURIComponent(userId) + '&select=status');
+    // Prefer firebase_uid (Auth uid) — user_id is the internal UUID PK.
+    var rows = await sbGet(
+      'users',
+      'firebase_uid=eq.' + encodeURIComponent(userId) + '&select=status',
+      null,
+      1
+    );
     if (Array.isArray(rows) && rows[0] && rows[0].status) {
       return rows[0].status;
     }
@@ -136,10 +144,16 @@
     var status = await getUserStatus(user.uid);
     if (status !== 'banned') return { ok: true, status: status };
 
-    if (typeof firebase !== 'undefined' && firebase.auth) {
-      await firebase.auth().signOut();
-    }
     qgNotify('Your account has been suspended. Contact support@quickgigs.ca if this is an error.', '#ef4444');
+    if (typeof qgLogout === 'function') {
+      await qgLogout(window._auth);
+      return { ok: false, banned: true };
+    }
+    if (typeof clearQgUserScopedStorage === 'function') clearQgUserScopedStorage();
+    try {
+      if (window._auth && typeof window._auth.signOut === 'function') await window._auth.signOut();
+      else if (typeof firebase !== 'undefined' && firebase.auth) await firebase.auth().signOut();
+    } catch (e) {}
     window.location.href = 'login.html';
     return { ok: false, banned: true };
   }

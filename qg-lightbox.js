@@ -33,7 +33,7 @@
       '</div>' +
       '<div class="qg-lightbox-stage">' +
         '<button type="button" class="qg-lightbox-nav qg-lightbox-prev" id="qgLightboxPrev" aria-label="Previous photo">‹</button>' +
-        '<img class="qg-lightbox-img" id="qgLightboxImg" alt="">' +
+        '<img class="qg-lightbox-img" id="qgLightboxImg" alt="" decoding="async" width="1200" height="900">' +
         '<button type="button" class="qg-lightbox-nav qg-lightbox-next" id="qgLightboxNext" aria-label="Next photo">›</button>' +
       '</div>' +
       '<div class="qg-lightbox-dots" id="qgLightboxDots"></div>';

@@ -298,6 +298,46 @@
 }
 .admin-danger-card .mc-title { color: #ef4444; }
 
+/* Waitlist stat blocks (was in qg-announcement.css but not loaded on admin) */
+.admin-wl-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+  align-items: stretch;
+}
+.admin-wl-stat {
+  background: rgba(255, 255, 255, 0.03);
+  border: 0.5px solid rgba(200, 168, 233, 0.1);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+  min-width: 0;
+}
+.admin-wl-stat-val {
+  font-size: 24px;
+  font-weight: 500;
+  color: #c8a8e9;
+  line-height: 1.2;
+}
+.admin-wl-stat-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.62);
+  margin-top: 4px;
+}
+.admin-wl-stats > .action-pill {
+  align-self: center;
+  justify-self: stretch;
+  text-align: center;
+  height: fit-content;
+  margin: auto 0;
+}
+@media (max-width: 720px) {
+  .admin-wl-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 /* Command bar */
 .admin-cmd-overlay {
   position: fixed; inset: 0; z-index: 600;
@@ -470,17 +510,21 @@
   body.admin-nav-open .admin-sidebar-backdrop { display: block; }
   .main { margin-left: 0 !important; padding: 16px 12px 96px; }
   .topbar { gap: 10px; flex-wrap: wrap; }
-  .col-row { display: none !important; }
+  /* Keep grid alignment on mobile — horizontal scroll via .table-scroll */
+  .table-scroll .col-row { display: grid !important; }
   .data-row.g-users,
   .data-row.g-tasks,
-  .data-row.g-disputes {
-    display: flex !important;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 14px 14px;
+  .data-row.g-disputes,
+  .data-row.g-revenue,
+  .data-row.g-waitlist {
+    display: grid !important;
+    align-items: center;
+    gap: 0;
+    column-gap: 16px;
+    padding: 12px 16px;
   }
-  .data-row .act-btns { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+  .data-row .cell-num { text-align: right; }
+  .data-row .act-btns { justify-content: flex-end; flex-wrap: wrap; }
   .admin-drawer {
     top: auto; bottom: 0; right: 0; left: 0;
     width: 100%; height: min(88vh, 100%);

@@ -22,19 +22,15 @@
     else alert(msg);
   }
 
-  async function persistRoleToDb(mode) {
-    var user = window._currentUser;
-    if (!user || typeof upsertUserProfile !== 'function') return;
+  // Workspace mode (poster/tasker) is local UI state only — never write to
+  // users.role (that column holds privilege roles like admin).
+  async function persistWorkspaceModeLocal(mode) {
     try {
-      await upsertUserProfile({
-        name: user.displayName || (user.email ? user.email.split('@')[0] : ''),
-        email: user.email || '',
-        firebase_uid: user.uid,
-        role: (mode === 'tasker' || mode === 'worker') ? 'worker' : 'poster'
-      });
-    } catch (e) {
-      console.warn('Role sync skipped:', e);
-    }
+      localStorage.setItem('qg-mode', mode === 'tasker' || mode === 'worker' ? 'tasker' : 'poster');
+      localStorage.setItem('qg-session-mode', mode === 'tasker' || mode === 'worker' ? 'worker' : 'poster');
+      // Legacy key — UI mode only, not users.role
+      localStorage.setItem('qg-role', mode === 'tasker' || mode === 'worker' ? 'worker' : 'poster');
+    } catch (e) {}
   }
 
   async function setQuickGigsMode(mode, options) {
@@ -46,12 +42,10 @@
     if (typeof setMode === 'function') setMode(mode);
     else if (typeof setSessionMode === 'function') setSessionMode(mode === 'tasker' ? 'worker' : 'poster');
     else {
-      localStorage.setItem('qg-mode', mode);
-      localStorage.setItem('qg-session-mode', mode === 'tasker' ? 'worker' : 'poster');
-      localStorage.setItem('qg-role', mode === 'tasker' ? 'worker' : 'poster');
+      await persistWorkspaceModeLocal(mode);
     }
 
-    await persistRoleToDb(mode);
+    // Explicit: do NOT upsert users.role when flipping poster <-> tasker.
 
     if (typeof applyRoleTheme === 'function') applyRoleTheme();
     if (typeof renderQuickGigsTabBar === 'function') {
@@ -126,7 +120,10 @@
   function buildDashboardHero(data) {
     data = data || {};
     var isPoster = data.isPoster !== false;
-    var city = data.city || 'Calgary';
+    var cityRaw = data.city || 'Calgary';
+    var city = typeof escapeHtml === 'function'
+      ? escapeHtml(cityRaw)
+      : String(cityRaw).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     var html = '';
 
     if (isPoster) {

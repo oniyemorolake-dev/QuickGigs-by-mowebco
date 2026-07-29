@@ -2,13 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!--
+  Obscurity only — real security is the Firebase Auth + role==='admin' gate, and
+  server-side RLS/service-role enforcement (to be added with backend).
+  Do NOT treat a hidden URL as protection.
+-->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
 <link rel="stylesheet" href="qg-polish.css?v=20260726c">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="noindex,nofollow">
 <title>QuickGigs — Admin Console</title>
 <link rel="stylesheet" href="qg-admin.css?v=3">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -163,8 +168,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .sec-time{font-size:11px;color:var(--text-faint);}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
 .modal-overlay.open{display:flex;}
-.modal{background:#120228;border:0.5px solid var(--border);border-radius:20px;padding:26px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;}
-.modal-title{font-size:18px;font-weight:500;color:var(--text);margin-bottom:6px;}
+.modal{position:relative;background:#120228;border:0.5px solid var(--border);border-radius:20px;padding:26px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;}
+.modal-close{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:10px;border:0.5px solid var(--border);background:transparent;color:var(--text-muted);font-size:18px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;}
+.modal-close:hover{color:var(--text);}
+.modal-title{font-size:18px;font-weight:500;color:var(--text);margin-bottom:6px;padding-right:40px;}
 .modal-sub{font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.5;}
 .modal-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);display:block;margin-bottom:6px;}
 .modal-value{font-size:14px;color:var(--text);}
@@ -221,9 +228,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="session-timer" id="sessionTimer">Session: 30:00 remaining</div>
   <div class="sidebar-footer">
     <div class="admin-user">
-      <div class="admin-av">M</div>
-      <div><div class="admin-name">Morolake O.</div><div class="admin-role">Super Admin</div></div>
-      <button class="logout-btn" onclick="doLogout()">Out</button>
+      <div class="admin-av" id="adminAv">A</div>
+      <div>
+        <div class="admin-name" id="adminName">Admin</div>
+        <div class="admin-role" id="adminRoleLabel">Checking…</div>
+        <div class="admin-role" id="adminUidLabel" style="margin-top:2px;word-break:break-all;max-width:140px"></div>
+      </div>
+      <button class="logout-btn" type="button" onclick="doLogout()">Out</button>
     </div>
   </div>
 </aside>
@@ -505,7 +516,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <!-- MODAL -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
-  <div class="modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" onclick="event.stopPropagation()">
+    <button type="button" class="modal-close" onclick="closeModalDirect()" aria-label="Close">✕</button>
     <div class="modal-title" id="modalTitle">Confirm</div>
     <div class="modal-sub" id="modalSub"></div>
     <div id="modalFields"></div>
@@ -516,9 +528,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <div class="toast" id="toast"></div>
 
+<script defer src="qg-config.js"></script>
+<script defer src="qg-utils.js?v=20260727auth2"></script>
+<script defer src="supabaseClient.js?v=20260727perf"></script>
+<script defer src="supabase-db.js?v=20260727perf"></script>
+<script defer src="qg-admin-gate.js?v=20260727admin1"></script>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+/**
+ * Admin console gate.
+ * SECURITY: Client UX only. True enforcement is server-side (RLS + service-role
+ * admin API / custom claim) once the backend exists. Never trust this redirect
+ * alone — always re-check users.role === 'admin' + verified on load.
+ * No hardcoded password or secret.
+ */
 const firebaseConfig = {
   apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
   authDomain: "quickgigs-7b12d.firebaseapp.com",
@@ -527,24 +553,94 @@ const firebaseConfig = {
   messagingSenderId: "698985399366",
   appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
 };
-const ADMIN_EMAIL = 'mowebsiteco@gmail.com';
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-onAuthStateChanged(auth, (user) => {
-  if (!user || user.email !== ADMIN_EMAIL) {
-    document.body.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:40px;font-family:DM Sans,sans-serif;background:#06000f;color:#fff"><div style="font-size:56px;margin-bottom:16px">🔐</div><div style="font-size:22px;font-weight:500;margin-bottom:8px">Access denied</div><div style="font-size:14px;color:rgba(255,255,255,0.4);margin-bottom:24px">This page is only accessible to QuickGigs admins.</div><a href="dashboard.html" style="padding:12px 28px;border-radius:14px;background:#6b3fa0;color:#fff;text-decoration:none;font-size:14px;font-weight:500">Back to dashboard</a></div>';
+window._auth = auth;
+
+function denyAdminAccess(message) {
+  var msg = message || 'This page is only accessible to QuickGigs admins.';
+  document.body.innerHTML =
+    '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:40px;font-family:DM Sans,sans-serif;background:#06000f;color:#fff">' +
+    '<div style="font-size:56px;margin-bottom:16px">🔐</div>' +
+    '<div style="font-size:22px;font-weight:500;margin-bottom:8px">Access denied</div>' +
+    '<div style="font-size:14px;color:rgba(255,255,255,0.4);margin-bottom:24px">' + msg + '</div>' +
+    '<a href="admin-login.html" style="padding:12px 28px;border-radius:14px;background:#6b3fa0;color:#fff;text-decoration:none;font-size:14px;font-weight:500">Admin log in</a>' +
+    '</div>';
+}
+
+function paintAdminIdentity(user, dbUser) {
+  var email = (user && user.email) || (dbUser && dbUser.email) || '';
+  var uid = (user && user.uid) || '';
+  var name = (dbUser && dbUser.name) || (user && user.displayName) || (email ? email.split('@')[0] : 'Admin');
+  var av = document.getElementById('adminAv');
+  var nameEl = document.getElementById('adminName');
+  var roleEl = document.getElementById('adminRoleLabel');
+  var uidEl = document.getElementById('adminUidLabel');
+  if (av) av.textContent = String(name).charAt(0).toUpperCase() || 'A';
+  if (nameEl) nameEl.textContent = name;
+  if (roleEl) roleEl.textContent = email || 'admin';
+  if (uidEl) uidEl.textContent = uid ? ('uid ' + uid) : '';
+  window._qgAdminIdentity = { email: email, uid: uid, name: name };
+  console.info('Admin console identity:', email, uid);
+}
+
+onAuthStateChanged(auth, async function (user) {
+  if (!user) {
+    if (typeof setCurrentUser === 'function') setCurrentUser(null);
+    window.location.replace('admin-login.html');
     return;
   }
-  window._auth = auth;
+
+  // Identity only from confirmed Auth — never a leftover cache.
+  var live = auth.currentUser && auth.currentUser.uid === user.uid ? auth.currentUser : user;
+  if (typeof setCurrentUser === 'function') setCurrentUser(live);
+  else window._currentUser = live;
+
+  var access = typeof resolveAdminAccess === 'function'
+    ? await resolveAdminAccess(live)
+    : { ok: false, reason: 'gate_missing' };
+
+  // Re-check Auth after async lookup (session must still be this uid).
+  if (!auth.currentUser || String(auth.currentUser.uid) !== String(live.uid)) {
+    denyAdminAccess('Session changed — sign in again via admin log in.');
+    return;
+  }
+
+  if (!access || !access.ok) {
+    if (typeof clearQgUserScopedStorage === 'function') clearQgUserScopedStorage();
+    try { await signOut(auth); } catch (e) {}
+    denyAdminAccess("This account doesn't have admin access.");
+    return;
+  }
+
+  paintAdminIdentity(live, access.dbUser || null);
   initAdmin();
 });
-window.doLogout = function() { signOut(auth).then(function(){ window.location.href='login.html'; }); };
+
+window.doLogout = function () {
+  if (typeof qgLogout === 'function') {
+    // Land on admin login, not the consumer login, after clear + signOut.
+    clearQgUserScopedStorage();
+    window._qgAdminDbOk = false;
+    window._qgAdminDbUser = null;
+    signOut(auth).then(function () {
+      window.location.href = 'admin-login.html';
+    }).catch(function () {
+      window.location.href = 'admin-login.html';
+    });
+    return;
+  }
+  if (typeof clearQgUserScopedStorage === 'function') clearQgUserScopedStorage();
+  signOut(auth).then(function () {
+    window.location.href = 'admin-login.html';
+  }).catch(function () {
+    window.location.href = 'admin-login.html';
+  });
+};
 </script>
 
-<script src="qg-utils.js"></script>
 <script src="qg-polish.js?v=20260726c"></script>
-<script src="qg-config.js"></script>
-<script src="supabase-db.js"></script>
 <script src="qg-notifications.js"></script>
 <script src="qg-stats.js"></script>
 <script src="qg-admin.js?v=7"></script>
@@ -917,6 +1013,17 @@ function openModal(title,sub,fields,confirmLabel,confirmClass,onConfirm,showNote
 }
 window.closeModal=function(e){if(e&&e.target!==document.getElementById('modalOverlay')) return;closeModalDirect();};
 window.closeModalDirect=function(){document.getElementById('modalOverlay').classList.remove('open');pendingFn=null;};
+if (!window._qgAdminEscBound) {
+  window._qgAdminEscBound = true;
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var overlay = document.getElementById('modalOverlay');
+    if (overlay && overlay.classList.contains('open')) {
+      e.preventDefault();
+      closeModalDirect();
+    }
+  });
+}
 window.confirmAction=async function(){
   if(!pendingFn){ closeModalDirect(); return; }
   var ok=await pendingFn();

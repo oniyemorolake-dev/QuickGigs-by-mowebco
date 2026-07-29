@@ -1,6 +1,6 @@
 /* QuickGigs — hamburger slide-out menu (app + public pages) */
 (function () {
-  var SKIP = { login: 1, signup: 1, 'parent-consent': 1 };
+  var SKIP = { login: 1, signup: 1, 'parent-consent': 1, 'admin-login': 1 };
   var APP = {
     dashboard: 1, browsetask: 1, posttask: 1, mytasks: 1, messages: 1,
     chat: 1, profile: 1, workers: 1, categories: 1, feedback: 1, review: 1, admin: 1
@@ -295,8 +295,24 @@
       return;
     }
     if (action === 'logout') {
-      if (typeof window.doLogout === 'function') window.doLogout();
-      else window.location.href = 'login.html';
+      // CRITICAL: never navigate to login alone — that left Firebase Auth B
+      // signed in (qg-menu.js previously fell through when doLogout missing).
+      if (typeof window.qgLogout === 'function') {
+        window.qgLogout(window._auth);
+        return;
+      }
+      if (typeof window.clearQgUserScopedStorage === 'function') {
+        window.clearQgUserScopedStorage();
+      } else {
+        try { sessionStorage.clear(); } catch (e) {}
+      }
+      var auth = window._auth;
+      var goLogin = function () { window.location.href = 'login.html'; };
+      if (auth && typeof auth.signOut === 'function') {
+        auth.signOut().then(goLogin).catch(goLogin);
+      } else {
+        goLogin();
+      }
     }
   }
 

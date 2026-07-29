@@ -287,15 +287,13 @@
     var input = document.getElementById('searchInput') || document.querySelector('.search-input');
     if (!input || input.dataset.qgDebounced === '1') return;
     input.dataset.qgDebounced = '1';
-    var handler = input.oninput;
-    if (typeof handler === 'function') {
-      input.oninput = null;
-      input.addEventListener('input', debounce(function (e) { handler.call(input, e); }, 300));
-    } else if (typeof window.filterTasks === 'function') {
-      input.addEventListener('input', debounce(function () { window.filterTasks(); }, 300));
-    } else if (typeof window.applyFilters === 'function') {
-      input.addEventListener('input', debounce(function () { window.applyFilters(); }, 300));
-    }
+    input.oninput = null;
+    input.removeAttribute('oninput');
+    var run = function () {
+      if (typeof window.applyFilters === 'function') window.applyFilters();
+      else if (typeof window.filterTasks === 'function') window.filterTasks();
+    };
+    input.addEventListener('input', debounce(run, 300));
   }
 
   function validateEmail(v) {
@@ -498,24 +496,15 @@
       try { localStorage.removeItem(KEY); } catch (e3) {}
     };
 
-    // Sticky post bar
+    // Keep a single Post button (HTML #submitBtn). Do not clone a sticky duplicate —
+    // a second visible CTA caused double-submit confusion and slower perceived posting.
     document.body.classList.add('qg-page-posttask');
     var postBtn = document.getElementById('submitBtn') ||
       document.getElementById('postBtn') ||
       document.querySelector('.submit-btn, .post-btn, button[onclick*="submit"], #submitPost');
-    if (postBtn && !document.querySelector('.qg-sticky-post-bar')) {
-      var bar = document.createElement('div');
-      bar.className = 'qg-sticky-post-bar';
-      var clone = postBtn.cloneNode(true);
-      clone.id = (postBtn.id || 'submitBtn') + 'Sticky';
-      clone.removeAttribute('onclick');
-      clone.addEventListener('click', function (e) {
-        e.preventDefault();
-        postBtn.click();
-      });
-      bar.appendChild(clone);
-      document.body.appendChild(bar);
-    }
+    document.querySelectorAll('.qg-sticky-post-bar').forEach(function (el) {
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+    });
 
     if (!document.querySelector('.qg-beta-free-note')) {
       var noteHost = postBtn && postBtn.parentNode;

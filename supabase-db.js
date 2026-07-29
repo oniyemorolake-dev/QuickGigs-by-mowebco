@@ -1,20 +1,22 @@
 // ================================================================
 // QuickGigs — Supabase Database Utility
-// All data pages import this file via <script src="supabase-db.js">
-// Project URL: https://nuyfqsxstsrbloztzgau.supabase.co
+// Load after supabaseClient.js (single shared client).
 // ================================================================
 
-const SUPABASE_URL = 'https://nuyfqsxstsrbloztzgau.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51eWZxc3hzdHNyYmxvenR6Z2F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NzkyNjUsImV4cCI6MjA5ODU1NTI2NX0.UpagWLifoxHmWu30lNnBO89gNYKIh4KxtYu28DKlSBM';
+var SUPABASE_URL = (window.QGSupabase && window.QGSupabase.url) || window.SUPABASE_URL || 'https://nuyfqsxstsrbloztzgau.supabase.co';
+var SUPABASE_ANON_KEY = (window.QGSupabase && window.QGSupabase.anonKey) || window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51eWZxc3hzdHNyYmxvenR6Z2F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NzkyNjUsImV4cCI6MjA5ODU1NTI2NX0.UpagWLifoxHmWu30lNnBO89gNYKIh4KxtYu28DKlSBM';
 
-const SUPABASE_HEADERS = {
+var SUPABASE_HEADERS = window.SUPABASE_HEADERS || {
   'Content-Type': 'application/json',
   'apikey': SUPABASE_ANON_KEY,
   'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
 };
 
-/** Supabase REST auth — anon key by default; Firebase JWT only when configured. */
+/** Supabase REST auth — prefers shared client from supabaseClient.js. */
 async function getSupabaseHeaders(extra, opts) {
+  if (window.QGSupabase && typeof window.QGSupabase.getHeaders === 'function') {
+    return window.QGSupabase.getHeaders(extra, opts);
+  }
   opts = opts || {};
   var headers = { 'apikey': SUPABASE_ANON_KEY };
   if (!opts.noContentType) headers['Content-Type'] = 'application/json';
@@ -39,7 +41,81 @@ async function getSupabaseHeaders(extra, opts) {
 }
 
 async function refreshSupabaseAuth() {
+  if (window.QGSupabase && typeof window.QGSupabase.refreshAuth === 'function') {
+    return window.QGSupabase.refreshAuth();
+  }
   return await getSupabaseHeaders();
+}
+
+/** Explicit column lists — only fields the UI actually renders / needs. Never select=*. */
+var SELECT_TASKS_BROWSE = 'task_id,title,budget,location,lat,lng,task_mode,status,created_at,category,description,posted_by,poster_name,budget_negotiable,photo_urls,scheduled_label,requires_photos,rate_type,is_recurring,hourly_rate,frequency,est_hours';
+/** Detail includes precise_address for post-accept reveal — public cards use BROWSE (no precise_address). */
+var SELECT_TASKS_DETAIL = SELECT_TASKS_BROWSE + ',scheduled_at,precise_address';
+var SELECT_APPLICATIONS = 'app_id,task_id,worker_id,worker_name,message,price,status,created_at,counter_price,counter_by,counter_round,last_counter_at';
+var SELECT_MESSAGES = 'message_id,conv_id,sender_id,body,created_at';
+var SELECT_CONVERSATIONS = 'conv_id,task_id,poster_id,worker_id,poster_name,worker_name,task_title,task_category,status,is_unlocked,last_message,last_message_at,created_at,poster_last_read_at,worker_last_read_at';
+var SELECT_PAYMENTS = 'payment_id,task_id,poster_id,worker_id,amount,platform_fee,worker_payout,status,stripe_id,transfer_id,created_at,completed_at';
+var SELECT_REVIEWS = 'review_id,task_id,reviewer_id,reviewee_id,rating,review_comment,reviewer_name,task_title,tags,created_at';
+/**
+ * Public user card/list — NEVER email/phone.
+ * Do NOT select is_verified here — optional column; missing it 400s the whole users GET.
+ * Rating is not a users column (computed from reviews).
+ */
+var SELECT_USERS_PUBLIC_CARD = 'user_id,firebase_uid,name,avatar_url';
+/**
+ * Public profile / worker discovery — rendered fields only, still NEVER email/phone.
+ */
+var SELECT_USERS_PUBLIC = SELECT_USERS_PUBLIC_CARD + ',role,status,bio,skills,availability,service_area,languages,pronouns,account_status,created_at';
+/**
+ * Own profile — completion meter columns + common settings.
+ * Keep this list conservative: a missing optional column must not blank the profile (0%).
+ * Completion reads: name, email, avatar_url, bio, skills, pronouns, email_verified.
+ */
+var SELECT_USERS_SELF_CORE =
+  'user_id,firebase_uid,name,email,avatar_url,bio,skills,pronouns,email_verified,role,status,phone,created_at,account_status';
+var SELECT_USERS_SELF =
+  SELECT_USERS_SELF_CORE +
+  ',availability,service_area,languages,gender,date_of_birth,identity_collected_at,' +
+  'guardian_name,guardian_email,guardian_phone,guardian_consent_status,guardian_consent_at,guardian_consent_token,' +
+  'stripe_connect_id,stripe_payouts_enabled,is_subscriber';
+/** Parent-consent page — no email/phone of the teen exposed beyond name + consent state. */
+var SELECT_USERS_GUARDIAN = 'user_id,firebase_uid,name,guardian_consent_status,guardian_consent_at,account_status';
+var SELECT_USERS_NAME = 'firebase_uid,name';
+var SELECT_USERS_AVATAR = 'firebase_uid,avatar_url';
+/** Login gate only — ban + onboarding check before redirect (minimal columns). */
+var SELECT_USERS_LOGIN_GATE = 'firebase_uid,status,date_of_birth,role,account_status,guardian_consent_status,guardian_email,guardian_consent_token';
+/** @deprecated use SELECT_USERS_PUBLIC / SELECT_USERS_SELF */
+var SELECT_USERS_LIST = SELECT_USERS_PUBLIC;
+var BROWSE_PAGE_SIZE = 20;
+var DASHBOARD_PAGE_SIZE = 20;
+
+function currentActorId(opts) {
+  opts = opts || {};
+  if (opts.actorId) return String(opts.actorId);
+  if (typeof getCurrentUserId === 'function') {
+    var id = getCurrentUserId();
+    if (id) return id;
+  }
+  var u = typeof getCurrentUser === 'function' ? getCurrentUser() : window._currentUser;
+  if (u && u.uid) return String(u.uid);
+  return '';
+}
+
+function isSelfUserQuery(firebaseUid, opts) {
+  opts = opts || {};
+  if (opts.self === true) return true;
+  var me = currentActorId(opts);
+  return !!(me && firebaseUid && String(me) === String(firebaseUid));
+}
+
+function hasSelectParam(filters) {
+  return /(^|&)select=/.test(String(filters || ''));
+}
+
+function withSelect(filters, selectCols) {
+  if (!selectCols || hasSelectParam(filters)) return filters || '';
+  var base = filters ? String(filters) : '';
+  return (base ? base + '&' : '') + 'select=' + selectCols;
 }
 
 var TASKS_CACHE_KEY = 'qg-tasks-cache-v1';
@@ -173,43 +249,126 @@ function mergeApplicationInCache(appId, taskId, workerId, patch) {
   if (changed) writeAppsCache(next);
 }
 
-async function sbGetOrThrow(table, filters, order, limit) {
+/**
+ * REST GET. opts: { select, range:[from,to], count:true }
+ * Prefer Range over limit when paginating.
+ * NEVER select=* on users — forced to public/self column lists.
+ */
+async function sbGetOrThrow(table, filters, order, limit, opts) {
+  opts = opts || {};
   var controller = new AbortController();
   var timeoutId = setTimeout(function () { controller.abort(); }, 8000);
   try {
     var qs = [];
-    if (filters) qs.push(filters);
+    var filterStr = filters || '';
+    if (opts.select && !hasSelectParam(filterStr)) {
+      filterStr = withSelect(filterStr, opts.select);
+    }
+    // Guard: users must never use select=* from the client
+    if (String(table) === 'users') {
+      filterStr = String(filterStr || '').replace(/(^|&)select=\*(?=&|$)/, '$1select=' + SELECT_USERS_PUBLIC);
+      if (!hasSelectParam(filterStr)) {
+        filterStr = withSelect(filterStr, SELECT_USERS_PUBLIC);
+      }
+    } else if (!hasSelectParam(filterStr) && !opts.select) {
+      // Default explicit selects for common tables (never bare *)
+      var defaults = {
+        tasks: SELECT_TASKS_DETAIL,
+        applications: SELECT_APPLICATIONS,
+        conversations: SELECT_CONVERSATIONS,
+        messages: SELECT_MESSAGES,
+        payments: SELECT_PAYMENTS,
+        reviews: SELECT_REVIEWS
+      };
+      if (defaults[table]) filterStr = withSelect(filterStr, defaults[table]);
+    }
+    if (filterStr) qs.push(filterStr);
     if (order === undefined) qs.push('order=created_at.desc');
     else if (order) qs.push('order=' + order);
-    if (limit) qs.push('limit=' + limit);
+    if (limit && !(opts.range && opts.range.length === 2)) qs.push('limit=' + limit);
     var url = SUPABASE_URL + '/rest/v1/' + table + (qs.length ? '?' + qs.join('&') : '');
-    var headers = await getSupabaseHeaders();
+    var extra = {};
+    if (opts.range && opts.range.length === 2) {
+      extra['Range-Unit'] = 'items';
+      extra.Range = String(opts.range[0]) + '-' + String(opts.range[1]);
+    }
+    if (opts.count) {
+      extra.Prefer = 'count=exact';
+    }
+    var headers = await getSupabaseHeaders(extra);
     var res = await fetch(url, { method: 'GET', headers: headers, signal: controller.signal });
     if (!res.ok) {
       var errText = await res.text();
       throw new Error('GET ' + table + ' failed: ' + res.status + (errText ? ' ' + errText : ''));
     }
-    return await res.json();
+    var rows = await res.json();
+    if (opts.count) {
+      var cr = res.headers.get('content-range') || res.headers.get('Content-Range') || '';
+      var m = cr.match(/\/(\d+)\s*$/);
+      if (m) rows._totalCount = parseInt(m[1], 10);
+    }
+    return rows;
   } finally {
     clearTimeout(timeoutId);
   }
 }
 
-async function sbGet(table, filters, order, limit) {
+async function sbGet(table, filters, order, limit, opts) {
   try {
-    return await sbGetOrThrow(table, filters, order, limit);
+    return await sbGetOrThrow(table, filters, order, limit, opts);
   } catch (err) {
     console.error('Supabase GET error:', err);
     return [];
   }
 }
 
-async function sbGetTasksList(filters, limit) {
+/**
+ * Count rows without downloading them.
+ * Mirrors supabase-js .select('*', { count: 'exact', head: true }).
+ */
+async function sbCount(table, filters) {
+  try {
+    var qs = [];
+    var filterStr = filters || '';
+    if (!hasSelectParam(filterStr)) {
+      filterStr = withSelect(filterStr, 'task_id');
+    }
+    if (filterStr) qs.push(filterStr);
+    var url = SUPABASE_URL + '/rest/v1/' + table + (qs.length ? '?' + qs.join('&') : '');
+    var headers = await getSupabaseHeaders({ Prefer: 'count=exact' });
+    var res = await fetch(url, { method: 'HEAD', headers: headers });
+    if (!res.ok) {
+      // Fallback: Range 0-0 GET (still no meaningful row payload needed)
+      headers = await getSupabaseHeaders({
+        Prefer: 'count=exact',
+        'Range-Unit': 'items',
+        Range: '0-0'
+      });
+      res = await fetch(url, { method: 'GET', headers: headers });
+    }
+    if (!res.ok) {
+      console.warn('sbCount failed:', table, res.status);
+      return 0;
+    }
+    var cr = res.headers.get('content-range') || res.headers.get('Content-Range') || '';
+    var m = cr.match(/\/(\d+)\s*$/);
+    if (m) return parseInt(m[1], 10);
+    return 0;
+  } catch (err) {
+    console.warn('sbCount error:', err);
+    return 0;
+  }
+}
+
+async function sbGetTasksList(filters, limit, opts) {
+  opts = opts || {};
+  var selectCols = opts.select || SELECT_TASKS_DETAIL;
+  var filterWithSelect = withSelect(filters, selectCols);
   var orders = ['created_at.desc', 'task_id.desc', null];
   var lastErr = null;
   for (var i = 0; i < orders.length; i++) {
     try {
-      return await sbGetOrThrow('tasks', filters, orders[i], limit || 200);
+      return await sbGetOrThrow('tasks', filterWithSelect, orders[i], limit || 200, opts);
     } catch (err) {
       lastErr = err;
       var msg = String(err.message || err);
@@ -219,6 +378,33 @@ async function sbGetTasksList(filters, limit) {
   }
   if (lastErr) console.warn('sbGetTasksList failed:', lastErr);
   return [];
+}
+
+/** Browse page: status=open, newest first, window of 20. Returns raw page rows (no client filter). */
+async function getOpenTasksPage(pageIndex, pageSize) {
+  pageIndex = Math.max(0, Number(pageIndex) || 0);
+  pageSize = pageSize || BROWSE_PAGE_SIZE;
+  var from = pageIndex * pageSize;
+  var to = from + pageSize - 1;
+  var rows = await sbGetTasksList(
+    'status=eq.open',
+    null,
+    { select: SELECT_TASKS_BROWSE, range: [from, to] }
+  );
+  // Until supabase/tasks-location.sql is applied, fall back without lat/lng.
+  if ((!rows || !rows.length) && SELECT_TASKS_BROWSE.indexOf('lat') >= 0) {
+    var legacy = SELECT_TASKS_BROWSE.replace(/,lat,lng/, '');
+    rows = await sbGetTasksList(
+      'status=eq.open',
+      null,
+      { select: legacy, range: [from, to] }
+    );
+  }
+  return (rows || []).map(normalizeTaskRow);
+}
+
+async function countOpenTasks() {
+  return await sbCount('tasks', 'status=eq.open');
 }
 
 async function sbPostReturn(table, data) {
@@ -360,7 +546,12 @@ async function expireStaleOpenTasksOnce() {
   sessionStorage.setItem(_expiryRunKey, '1');
   try {
     var cutoff = new Date(Date.now() - TASK_EXPIRY_DAYS * 86400000).toISOString();
-    var stale = await sbGet('tasks', 'status=eq.open&created_at=lt.' + encodeURIComponent(cutoff), 'created_at.asc', 50);
+    var stale = await sbGet(
+      'tasks',
+      withSelect('status=eq.open&created_at=lt.' + encodeURIComponent(cutoff), 'task_id,created_at,status'),
+      'created_at.asc',
+      50
+    );
     if (!stale || !stale.length) return;
     for (var i = 0; i < stale.length; i++) {
       var id = stale[i].task_id || stale[i].TASK_ID || stale[i].id;
@@ -375,12 +566,12 @@ async function expireStaleOpenTasksOnce() {
 async function getTasks() {
   // Never block browse/My Tasks on the expiry sweep
   try { expireStaleOpenTasksOnce(); } catch (e) {}
-  var rows = await sbGetTasksList('status=eq.open', 100);
+  var rows = await getOpenTasksPage(0, BROWSE_PAGE_SIZE);
   return filterBrowseableTasks(rows);
 }
 
 async function getAllTasks() {
-  return await sbGetTasksList(null, 100);
+  return await sbGetTasksList(null, 100, { select: SELECT_TASKS_DETAIL });
 }
 
 async function fetchTasksWithCache() {
@@ -392,10 +583,13 @@ async function fetchTasksWithCache() {
   return await fetchAllTasksFresh();
 }
 
-async function fetchAllTasksFresh() {
+async function fetchAllTasksFresh(opts) {
+  opts = opts || {};
+  var limit = opts.limit != null ? opts.limit : 200;
+  var select = opts.select || SELECT_TASKS_DETAIL;
   var stale = readTasksCache(true);
   try {
-    var items = await sbGetTasksList(null, 200);
+    var items = await sbGetTasksList(null, limit, { select: select });
     var list = Array.isArray(items) ? items.map(normalizeTaskRow) : [];
     writeTasksCache(list);
     window._supabaseUsingStaleCache = false;
@@ -411,11 +605,163 @@ async function fetchAllTasksFresh() {
   }
 }
 
+/**
+ * Dashboard first paint — parallel, scoped, paginated (no select=*, no full-table dumps).
+ * Returns { tasks, apps, payments, myTaskIds }.
+ * Poster applicant rows are deferred (opts.includePosterApps !== true) so first paint
+ * is a single Promise.all wave on cellular.
+ */
+async function fetchDashboardBootstrap(userId, role, opts) {
+  opts = opts || {};
+  userId = String(userId || currentActorId() || '');
+  var page = DASHBOARD_PAGE_SIZE;
+  if (!userId) {
+    return { tasks: [], apps: [], payments: [], myTaskIds: [] };
+  }
+
+  var myTasksP = sbGet(
+    'tasks',
+    withSelect('posted_by=eq.' + encodeURIComponent(userId), SELECT_TASKS_BROWSE),
+    'created_at.desc',
+    page
+  );
+  var openTasksP = sbGet(
+    'tasks',
+    withSelect('status=eq.open', SELECT_TASKS_BROWSE),
+    'created_at.desc',
+    page
+  );
+  var myAppsP = sbGet(
+    'applications',
+    withSelect('worker_id=eq.' + encodeURIComponent(userId), SELECT_APPLICATIONS),
+    'created_at.desc',
+    page
+  );
+  var paymentsP = typeof getPaymentsForUser === 'function'
+    ? getPaymentsForUser(userId, role === 'worker' ? 'worker' : 'poster', { limit: page })
+    : Promise.resolve([]);
+
+  var first = await Promise.all([myTasksP, openTasksP, myAppsP, paymentsP]);
+  var myTasks = (first[0] || []).map(normalizeTaskRow);
+  var openTasks = (first[1] || []).map(normalizeTaskRow);
+  var myApps = (first[2] || []).map(normalizeApplicationRow);
+  var payments = Array.isArray(first[3]) ? first[3] : [];
+
+  var taskIds = [];
+  myTasks.forEach(function (t) {
+    var id = getTaskRowId(t);
+    if (id != null && id !== '') taskIds.push(String(id));
+  });
+
+  var posterApps = [];
+  if (opts.includePosterApps && taskIds.length) {
+    var chunk = taskIds.slice(0, page);
+    posterApps = await sbGet(
+      'applications',
+      withSelect('task_id=in.(' + postgrestInList(chunk) + ')', SELECT_APPLICATIONS),
+      'created_at.desc',
+      page
+    );
+    posterApps = (posterApps || []).map(normalizeApplicationRow);
+  }
+
+  var taskMap = {};
+  myTasks.concat(openTasks).forEach(function (t) {
+    var id = String(getTaskRowId(t) || '');
+    if (id) taskMap[id] = t;
+  });
+  var appMap = {};
+  myApps.concat(posterApps).forEach(function (a) {
+    var id = a.app_id || a.APP_ID || a.id;
+    var key = id != null && id !== ''
+      ? String(id)
+      : String(a.task_id || a.TASK_ID) + ':' + String(a.worker_id || a.WORKER_ID);
+    appMap[key] = a;
+  });
+
+  var tasks = Object.keys(taskMap).map(function (k) { return taskMap[k]; });
+  var apps = Object.keys(appMap).map(function (k) { return appMap[k]; });
+  try {
+    writeTasksCache(tasks);
+    writeAppsCache(apps);
+  } catch (e) {}
+  return { tasks: tasks, apps: apps, payments: payments, myTaskIds: taskIds };
+}
+
+/** Second-wave: applications on the current user's posted tasks (poster dashboard). */
+async function fetchPosterAppsForTasks(taskIds) {
+  var ids = (taskIds || []).map(String).filter(Boolean).slice(0, DASHBOARD_PAGE_SIZE);
+  if (!ids.length) return [];
+  var rows = await sbGet(
+    'applications',
+    withSelect('task_id=in.(' + postgrestInList(ids) + ')', SELECT_APPLICATIONS),
+    'created_at.desc',
+    DASHBOARD_PAGE_SIZE
+  );
+  return (rows || []).map(normalizeApplicationRow);
+}
+
+function postgrestInList(ids) {
+  return (ids || []).map(function (id) {
+    return '"' + String(id).replace(/"/g, '') + '"';
+  }).join(',');
+}
+
+/** Applications where current user is worker OR poster of the task — never the full table. */
+async function fetchApplicationsForActor(userId) {
+  userId = String(userId || currentActorId() || '');
+  if (!userId) return [];
+  var appMap = {};
+  function addApp(row) {
+    if (!row) return;
+    row = normalizeApplicationRow(row);
+    var id = row.app_id || row.APP_ID || row.id;
+    var key = id != null && id !== ''
+      ? String(id)
+      : String(row.task_id || row.TASK_ID) + ':' + String(row.worker_id || row.WORKER_ID);
+    appMap[key] = row;
+  }
+
+  var asWorker = await sbGet(
+    'applications',
+    withSelect('worker_id=eq.' + encodeURIComponent(userId), SELECT_APPLICATIONS),
+    'created_at.desc',
+    200
+  );
+  (asWorker || []).forEach(addApp);
+
+  var myTasks = [];
+  try {
+    myTasks = await getTasksByUser(userId);
+  } catch (e) {
+    myTasks = [];
+  }
+  var taskIds = [];
+  (myTasks || []).forEach(function (t) {
+    var id = getTaskRowId(t);
+    if (id != null && id !== '') taskIds.push(String(id));
+  });
+  var chunkSize = 40;
+  for (var i = 0; i < taskIds.length; i += chunkSize) {
+    var chunk = taskIds.slice(i, i + chunkSize);
+    if (!chunk.length) continue;
+    var asPoster = await sbGet(
+      'applications',
+      withSelect('task_id=in.(' + postgrestInList(chunk) + ')', SELECT_APPLICATIONS),
+      'created_at.desc',
+      200
+    );
+    (asPoster || []).forEach(addApp);
+  }
+
+  return Object.keys(appMap).map(function (k) { return appMap[k]; });
+}
+
 async function fetchAllApplicationsFresh() {
+  var userId = currentActorId();
   var stale = readAppsCache(true);
   try {
-    var rows = await sbGetOrThrow('applications', null, 'created_at.desc', 200);
-    var list = (rows || []).map(normalizeApplicationRow);
+    var list = await fetchApplicationsForActor(userId);
     writeAppsCache(list);
     return list;
   } catch (err) {
@@ -446,7 +792,7 @@ async function getTaskById(taskId, options) {
   options = options || {};
   var filters = buildTaskIdFilters(taskId, null);
   for (var i = 0; i < filters.length; i++) {
-    var results = await sbGet('tasks', filters[i]);
+    var results = await sbGet('tasks', withSelect(filters[i], SELECT_TASKS_DETAIL));
     if (results && results[0]) return normalizeTaskRow(results[0]);
   }
 
@@ -711,7 +1057,7 @@ async function getConversationsForTask(taskId) {
   }
   // If UI has UUID, find via applications/payments context is handled elsewhere
   for (var i = 0; i < filters.length; i++) {
-    var convs = await sbGet('conversations', filters[i]);
+    var convs = await sbGet('conversations', withSelect(filters[i], SELECT_CONVERSATIONS));
     if (convs && convs.length) return convs;
   }
   return [];
@@ -729,11 +1075,15 @@ async function lockConversationsForTask(taskId) {
 async function getTasksByUser(userId) {
   userId = String(userId || '');
   if (!userId) return [];
-  var rows = await sbGetTasksList('posted_by=eq.' + encodeURIComponent(userId), 100);
+  var rows = await sbGetTasksList(
+    'posted_by=eq.' + encodeURIComponent(userId),
+    100,
+    { select: SELECT_TASKS_DETAIL }
+  );
   if (rows && rows.length) return rows;
   // Some rows may have been saved before posted_by normalization — scan open tasks
   try {
-    var all = await sbGetTasksList(null, 200);
+    var all = await sbGetTasksList('status=eq.open', 200, { select: SELECT_TASKS_DETAIL });
     return (all || []).filter(function (t) {
       return String(t.posted_by || t.POSTED_BY || '') === userId;
     });
@@ -806,7 +1156,7 @@ async function fetchMyTasksBundle(userId) {
   });
 
   try {
-    allApps = await withTimeout(fetchAllApplicationsFresh(), 8000, []);
+    allApps = await withTimeout(fetchApplicationsForActor(userId), 8000, []);
   } catch (e) {
     console.warn('fetchMyTasksBundle applications fetch failed:', e);
     try {
@@ -883,12 +1233,29 @@ function getEffectiveApplicationPrice(app) {
 }
 
 async function postTask(taskData) {
+  var rateType = String(taskData.rate_type || 'fixed').toLowerCase() === 'hourly' ? 'hourly' : 'fixed';
+  var isRecurring = !!(taskData.is_recurring === true || taskData.is_recurring === 1 ||
+    String(taskData.task_mode || '').toLowerCase() === 'recurring');
+  var frequency = null;
+  if (isRecurring) {
+    var f = String(taskData.frequency || 'weekly').toLowerCase();
+    frequency = (f === 'biweekly' || f === 'monthly') ? f : 'weekly';
+  }
+  var hourlyRate = rateType === 'hourly' ? Number(taskData.hourly_rate) : null;
+  var estHours = rateType === 'hourly' ? Number(taskData.est_hours) : null;
+  var budgetNum = Number(taskData.budget) || 0;
+  if (rateType === 'hourly' && hourlyRate > 0 && estHours > 0) {
+    budgetNum = typeof periodTotal === 'function'
+      ? periodTotal(hourlyRate, estHours)
+      : Math.round(hourlyRate * estHours * 100) / 100;
+  }
+
   var row = {
     title:       taskData.title,
     description: taskData.description || '',
     category:    String(taskData.category || 'other').toLowerCase(),
     task_mode:   taskData.task_mode,
-    budget:      Math.round(Number(taskData.budget) || 0),
+    budget:      Math.round(budgetNum),
     location:    taskData.location || 'Calgary, AB',
     status:      'open',
     posted_by:   taskData.posted_by
@@ -901,10 +1268,35 @@ async function postTask(taskData) {
   if (taskData.photo_urls) extras.photo_urls = taskData.photo_urls;
   if (taskData.requires_photos) extras.requires_photos = true;
   if (taskData.budget_negotiable) extras.budget_negotiable = true;
+  // Durable rate / recurring model (columns from tasks-rate-recurring.sql)
+  extras.rate_type = rateType;
+  extras.is_recurring = isRecurring;
+  if (frequency) extras.frequency = frequency;
+  if (rateType === 'hourly' && hourlyRate > 0) extras.hourly_rate = hourlyRate;
+  if (rateType === 'hourly' && estHours > 0) extras.est_hours = estHours;
+  // Approximate coords for distance filter (rounded). Never store the poster's live GPS stream.
+  var latNum = taskData.lat != null ? Number(taskData.lat) : NaN;
+  var lngNum = taskData.lng != null ? Number(taskData.lng) : NaN;
+  if (isFinite(latNum) && isFinite(lngNum)) {
+    extras.lat = typeof roundCoord === 'function' ? roundCoord(latNum, 2) : Math.round(latNum * 100) / 100;
+    extras.lng = typeof roundCoord === 'function' ? roundCoord(lngNum, 2) : Math.round(lngNum * 100) / 100;
+  }
+  // Optional precise address — reveal only after accept/escrow (client + future RLS).
+  // SERVER-TODO: restrict SELECT of precise_address to poster + accepted worker via RLS.
+  if (taskData.precise_address) {
+    extras.precise_address = String(taskData.precise_address).trim().slice(0, 200);
+  }
+  // FUTURE: per-period Stripe charging (subscriptions / scheduled invoices) after accept —
+  // display + data model only; do not process real charges here while Stripe is disconnected.
 
   var withoutPhotos = Object.assign({}, row, extras);
   delete withoutPhotos.photo_urls;
   delete withoutPhotos.requires_photos;
+
+  var withoutCoords = Object.assign({}, row, extras);
+  delete withoutCoords.lat;
+  delete withoutCoords.lng;
+  delete withoutCoords.precise_address;
 
   var withSchedule = Object.assign({}, row);
   if (taskData.poster_name) withSchedule.poster_name = taskData.poster_name;
@@ -917,6 +1309,7 @@ async function postTask(taskData) {
   var attempts = [
     Object.assign({}, row, extras),
     withoutPhotos,
+    withoutCoords,
     withSchedule,
     withPoster,
     row
@@ -967,7 +1360,15 @@ async function repostTask(sourceTaskId, posterId) {
     scheduled_at: task.scheduled_at || task.SCHEDULED_AT,
     scheduled_label: task.scheduled_label || task.SCHEDULED_LABEL,
     requires_photos: !!(task.requires_photos || task.REQUIRES_PHOTOS),
-    budget_negotiable: !!(task.budget_negotiable || task.BUDGET_NEGOTIABLE)
+    budget_negotiable: !!(task.budget_negotiable || task.BUDGET_NEGOTIABLE),
+    rate_type: task.rate_type || task.RATE_TYPE || 'fixed',
+    is_recurring: !!(task.is_recurring || task.IS_RECURRING),
+    frequency: task.frequency || task.FREQUENCY || null,
+    hourly_rate: task.hourly_rate != null ? task.hourly_rate : task.HOURLY_RATE,
+    est_hours: task.est_hours != null ? task.est_hours : task.EST_HOURS,
+    lat: task.lat != null ? task.lat : task.LAT,
+    lng: task.lng != null ? task.lng : task.LNG,
+    precise_address: task.precise_address || task.PRECISE_ADDRESS || null
   });
 }
 
@@ -1020,7 +1421,17 @@ async function uploadStoragePhoto(file, userId, bucket, folder) {
   if (!file.type || file.type.indexOf('image/') !== 0) {
     return { success: false, error: 'Please choose an image file' };
   }
-  var ext = (String(file.name || '').split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+  // Compress before upload (posttask / profile / chat)
+  if (typeof compressImage === 'function') {
+    try {
+      file = await compressImage(file, 800);
+    } catch (compressErr) {
+      console.warn('compressImage skipped:', compressErr);
+    }
+  }
+  var ext = (file.type === 'image/webp')
+    ? 'webp'
+    : ((String(file.name || '').split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg');
   var folderPath = String(folder).split('/').map(function(part) {
     return encodeURIComponent(part);
   }).join('/');
@@ -1056,13 +1467,23 @@ function isChatImageBody(body) {
 
 function parseChatImageUrl(body) {
   if (!isChatImageBody(body)) return null;
-  return String(body).slice(CHAT_IMAGE_PREFIX.length);
+  var url = String(body).slice(CHAT_IMAGE_PREFIX.length).trim();
+  // Never return javascript:/data: — only allowlisted storage HTTPS URLs
+  if (!isAllowedChatImageUrl(url)) return null;
+  return url;
 }
 
 function isAllowedChatImageUrl(url) {
   if (!url) return false;
-  var prefix = SUPABASE_URL + '/storage/v1/object/public/chat-photos/';
-  return String(url).indexOf(prefix) === 0;
+  var u = String(url).trim();
+  if (typeof safeUrl === 'function') {
+    u = safeUrl(u);
+    if (!u) return false;
+  } else if (!/^https:\/\//i.test(u)) {
+    return false;
+  }
+  var prefix = String(SUPABASE_URL || '').replace(/\/$/, '') + '/storage/v1/object/public/chat-photos/';
+  return u.indexOf(prefix) === 0;
 }
 
 function parsePhotoUrls(raw) {
@@ -1169,7 +1590,7 @@ async function updateTaskStatus(taskId, status, options) {
 }
 
 async function getUsers() {
-  return await sbGet('users');
+  return await sbGet('users', withSelect(null, SELECT_USERS_PUBLIC), null, 500);
 }
 
 async function saveUser(userData) {
@@ -1187,7 +1608,8 @@ function isGenericDisplayName(name) {
   return !n || n === 'quickgigs user' || n === 'worker' || n === 'poster' || n === 'user' || n === 'tasker';
 }
 
-async function upsertUserProfile(userData) {
+async function upsertUserProfile(userData, opts) {
+  opts = opts || {};
   var row = {
     name:         userData.name || '',
     email:        userData.email || '',
@@ -1216,13 +1638,24 @@ async function upsertUserProfile(userData) {
     return { success: false, error: 'Missing email or firebase_uid' };
   }
 
-  var existing = null;
-  if (row.firebase_uid) {
-    existing = await getUserByFirebaseUid(row.firebase_uid);
+  var existing = (opts && opts.existing) || null;
+  if (!existing && row.firebase_uid) {
+    existing = await getUserByFirebaseUid(row.firebase_uid, { fresh: true, self: true });
   }
   if (!existing && row.email) {
-    var byEmail = await sbGet('users', 'email=eq.' + encodeURIComponent(row.email));
-    existing = byEmail && byEmail[0] ? byEmail[0] : null;
+    var meEmail = (window._currentUser && window._currentUser.email) || '';
+    if (meEmail && String(meEmail).toLowerCase() === String(row.email).toLowerCase()) {
+      var byEmail = await sbGet(
+        'users',
+        withSelect('email=eq.' + encodeURIComponent(row.email), SELECT_USERS_SELF)
+      );
+      existing = byEmail && byEmail[0] ? byEmail[0] : null;
+      // Never claim another account's row (different firebase_uid already set).
+      if (existing && existing.firebase_uid && row.firebase_uid &&
+          String(existing.firebase_uid) !== String(row.firebase_uid)) {
+        existing = null;
+      }
+    }
   }
 
   if (existing) {
@@ -1230,8 +1663,13 @@ async function upsertUserProfile(userData) {
     var patch = {};
     if (row.name) patch.name = row.name;
     if (row.phone) patch.phone = row.phone;
-    if (row.role) patch.role = row.role;
-    if (row.firebase_uid) patch.firebase_uid = row.firebase_uid;
+    // NEVER patch role on existing rows — workspace mode (poster/worker) is
+    // local UI state (qg-mode / qg-role). Overwriting role wiped 'admin'.
+    // Role is only set on INSERT (first-time signup) below.
+    // Only attach firebase_uid when linking a legacy row (empty uid) or same uid.
+    if (row.firebase_uid && (!existing.firebase_uid || String(existing.firebase_uid) === String(row.firebase_uid))) {
+      patch.firebase_uid = row.firebase_uid;
+    }
     if (userData.avatar_url) patch.avatar_url = userData.avatar_url;
     if (userData.bio !== undefined) patch.bio = String(userData.bio || '').trim();
     if (userData.skills !== undefined) patch.skills = serializeUserSkills(userData.skills);
@@ -1249,50 +1687,124 @@ async function upsertUserProfile(userData) {
     if (userData.guardian_consent_at) patch.guardian_consent_at = userData.guardian_consent_at;
     if (userData.guardian_consent_token) patch.guardian_consent_token = userData.guardian_consent_token;
     if (userData.account_status) patch.account_status = userData.account_status;
+    // Identity-safe filters only — never PATCH by email alone (could overwrite another uid).
     var filters = [];
     if (id != null) {
       filters.push('user_id=eq.' + encodeURIComponent(String(id)));
-      filters.push('id=eq.' + encodeURIComponent(String(id)));
     }
-    if (row.email) filters.push('email=eq.' + encodeURIComponent(row.email));
+    if (existing.firebase_uid) {
+      filters.push('firebase_uid=eq.' + encodeURIComponent(String(existing.firebase_uid)));
+    } else if (row.firebase_uid) {
+      filters.push('firebase_uid=eq.' + encodeURIComponent(String(row.firebase_uid)));
+    }
     var result = { success: false, error: 'Could not update user' };
     for (var i = 0; i < filters.length; i++) {
       result = await sbUpdate('users', patch, filters[i]);
       if (result.success) break;
     }
+    if (result.success) {
+      invalidateUserProfileCache(row.firebase_uid || existing.firebase_uid);
+      return { success: true, user: Object.assign({}, existing, patch) };
+    }
     return result;
   }
 
-  return await sbPost('users', row);
+  var created = await sbPost('users', row);
+  if (created && created.success) invalidateUserProfileCache(row.firebase_uid);
+  return created;
 }
 
-async function syncCurrentUserProfile(firebaseUser) {
+async function syncCurrentUserProfile(firebaseUser, opts) {
   if (!firebaseUser) return { success: false };
+  opts = opts || {};
   var name = firebaseUser.displayName || (firebaseUser.email ? firebaseUser.email.split('@')[0] : '');
   if (typeof formatPersonName === 'function' && name) name = formatPersonName(name);
-  var role = localStorage.getItem('qg-role') || localStorage.getItem('qg-session-mode') || 'poster';
   var payload = {
     name: name,
     email: firebaseUser.email || '',
-    firebase_uid: firebaseUser.uid,
-    role: role === 'worker' ? 'worker' : 'poster'
+    firebase_uid: firebaseUser.uid
   };
   var localAvatar = readLocalProfileAvatar(firebaseUser.uid);
   if (hasProfilePhotoUrl(localAvatar)) payload.avatar_url = localAvatar;
   var localExtras = readLocalProfileExtras(firebaseUser.uid);
-  var existing = await getUserByFirebaseUid(firebaseUser.uid);
+  var existing = opts.existing || await getUserByFirebaseUid(firebaseUser.uid, { self: true });
   if (localExtras.bio && !(existing && existing.bio && String(existing.bio).trim())) {
     payload.bio = localExtras.bio;
   }
   if (localExtras.skills.length && !parseUserSkills(existing || {}).length) {
     payload.skills = localExtras.skills;
   }
-  return await upsertUserProfile(payload);
+  // Role only on genuine first insert — never map qg-mode onto existing users.
+  if (!existing) {
+    var mode = localStorage.getItem('qg-role') || localStorage.getItem('qg-session-mode') || 'poster';
+    payload.role = mode === 'worker' ? 'worker' : 'poster';
+  }
+  var result = await upsertUserProfile(payload, { existing: existing });
+  if (result && result.user) return result;
+  if (result && result.success) return { success: true, user: existing || null };
+  return result;
 }
 
-async function getUserByFirebaseUid(firebaseUid) {
-  var results = await sbGet('users', 'firebase_uid=eq.' + encodeURIComponent(firebaseUid));
-  return results[0] || null;
+/** One-shot login gate: status + onboarding fields only (never blocks on profile PATCH). */
+async function getUserLoginGate(firebaseUid) {
+  if (!firebaseUid) return null;
+  try {
+    var rows = await sbGet(
+      'users',
+      withSelect('firebase_uid=eq.' + encodeURIComponent(String(firebaseUid)), SELECT_USERS_LOGIN_GATE),
+      null,
+      1
+    );
+    return (rows && rows[0]) || null;
+  } catch (err) {
+    console.warn('getUserLoginGate failed:', err);
+    return null;
+  }
+}
+
+function invalidateUserProfileCache(firebaseUid) {
+  try {
+    if (firebaseUid) {
+      var uid = String(firebaseUid);
+      sessionStorage.removeItem('qg-cache:user-profile:' + uid);
+      sessionStorage.removeItem('qg-cache:user-profile-self:' + uid);
+      sessionStorage.removeItem('qg-cache:user-profile-public:' + uid);
+    }
+    sessionStorage.removeItem('qg-cache:users-name-map');
+    sessionStorage.removeItem('qg-cache:users-avatar-map');
+    sessionStorage.removeItem('qg-cache:category-open-counts');
+  } catch (e) {}
+}
+
+async function getUserByFirebaseUid(firebaseUid, opts) {
+  if (!firebaseUid) return null;
+  opts = opts || {};
+  var self = isSelfUserQuery(firebaseUid, opts);
+  var cacheKey = (self ? 'user-profile-self:' : 'user-profile-public:') + String(firebaseUid);
+  var fetchOne = async function () {
+    var filter = 'firebase_uid=eq.' + encodeURIComponent(firebaseUid);
+    if (self) {
+      // Prefer full self select; fall back to completion-core if optional cols 400
+      try {
+        var full = await sbGetOrThrow('users', withSelect(filter, SELECT_USERS_SELF), null, 1);
+        if (full && full[0]) return full[0];
+      } catch (err) {
+        console.warn('getUserByFirebaseUid self full select failed, using CORE:', err && err.message);
+      }
+      var core = await sbGet('users', withSelect(filter, SELECT_USERS_SELF_CORE), null, 1);
+      return (core && core[0]) || null;
+    }
+    var publicRows = await sbGet('users', withSelect(filter, SELECT_USERS_PUBLIC), null, 1);
+    return (publicRows && publicRows[0]) || null;
+  };
+  var user = (opts.fresh || typeof getCached !== 'function')
+    ? await fetchOne()
+    : await getCached(cacheKey, fetchOne, 300000);
+  if (user && self) {
+    window._qgCurrentDbUser = user;
+    window._qgIsSubscriber = !!(user.is_subscriber === true || user.is_subscriber === 1 || user.IS_SUBSCRIBER === true);
+  }
+  return user;
 }
 
 async function getUserNameByFirebaseUid(firebaseUid) {
@@ -1306,14 +1818,20 @@ async function getUserNameByFirebaseUid(firebaseUid) {
 }
 
 async function getUsersNameMap() {
-  var users = await getUsers();
-  var map = {};
-  if (!Array.isArray(users)) return map;
-  users.forEach(function (u) {
-    if (!u.name || isGenericDisplayName(u.name)) return;
-    if (u.firebase_uid) map[String(u.firebase_uid)] = u.name;
-  });
-  return map;
+  var fetchMap = async function () {
+    var users = await sbGet('users', withSelect(null, SELECT_USERS_NAME), null, 500);
+    var map = {};
+    if (!Array.isArray(users)) return map;
+    users.forEach(function (u) {
+      if (!u.name || isGenericDisplayName(u.name)) return;
+      if (u.firebase_uid) map[String(u.firebase_uid)] = u.name;
+    });
+    return map;
+  };
+  if (typeof getCached === 'function') {
+    return await getCached('users-name-map', fetchMap, 300000);
+  }
+  return await fetchMap();
 }
 
 function hasProfilePhotoUrl(url) {
@@ -1372,30 +1890,45 @@ function serializeUserSkills(skills) {
   return list.length ? JSON.stringify(list) : '';
 }
 
-function applyDbUserToProfileData(dbUser, target) {
+function applyDbUserToProfileData(dbUser, target, opts) {
   if (!dbUser || !target) return target;
+  opts = opts || {};
+  var self = opts.self === true || isSelfUserQuery(dbUser.firebase_uid, opts);
   if (dbUser.name) target.name = dbUser.name;
   if (dbUser.avatar_url) target.avatar_url = dbUser.avatar_url;
   if (dbUser.role) target.role = dbUser.role;
   if (dbUser.bio != null && String(dbUser.bio).trim()) target.bio = String(dbUser.bio).trim();
   var skills = parseUserSkills(dbUser);
   if (skills.length) target.skills = skills;
-    if (dbUser.created_at) target.memberSince = dbUser.created_at;
+  if (dbUser.created_at) target.memberSince = dbUser.created_at;
   if (dbUser.availability) target.availability = dbUser.availability;
   if (dbUser.service_area) target.service_area = String(dbUser.service_area).trim();
   if (dbUser.languages) target.languages = String(dbUser.languages).trim();
   if (dbUser.pronouns) target.pronouns = String(dbUser.pronouns).trim();
-  if (dbUser.gender) target.gender = String(dbUser.gender).trim();
-  if (dbUser.date_of_birth) target.date_of_birth = dbUser.date_of_birth;
-  if (dbUser.identity_collected_at) target.identity_collected_at = dbUser.identity_collected_at;
-  if (dbUser.guardian_consent_status) target.guardian_consent_status = dbUser.guardian_consent_status;
   if (dbUser.account_status) target.account_status = dbUser.account_status;
+  if (self) {
+    if (dbUser.email) target.email = dbUser.email;
+    if (dbUser.phone) target.phone = dbUser.phone;
+    if (dbUser.gender) target.gender = String(dbUser.gender).trim();
+    if (dbUser.date_of_birth) target.date_of_birth = dbUser.date_of_birth;
+    if (dbUser.identity_collected_at) target.identity_collected_at = dbUser.identity_collected_at;
+    if (dbUser.guardian_consent_status) target.guardian_consent_status = dbUser.guardian_consent_status;
+    if (dbUser.stripe_connect_id) target.stripe_connect_id = dbUser.stripe_connect_id;
+    if (dbUser.stripe_payouts_enabled != null) target.stripe_payouts_enabled = dbUser.stripe_payouts_enabled;
+    if (dbUser.email_verified === true || dbUser.verified === true) {
+      target.email_verified = true;
+      target.verified = true;
+    }
+  }
   return target;
 }
 
 async function getUserByGuardianToken(token) {
   if (!token) return null;
-  var results = await sbGet('users', 'guardian_consent_token=eq.' + encodeURIComponent(token));
+  var results = await sbGet(
+    'users',
+    withSelect('guardian_consent_token=eq.' + encodeURIComponent(token), SELECT_USERS_GUARDIAN)
+  );
   return results && results[0] ? results[0] : null;
 }
 
@@ -1456,12 +1989,11 @@ async function syncProfilePhotoToDb(firebaseUser, avatarUrl) {
   if (existing && hasProfilePhotoUrl(existing.avatar_url)) return { success: true };
   var name = firebaseUser.displayName || (firebaseUser.email ? firebaseUser.email.split('@')[0] : '');
   if (typeof formatPersonName === 'function' && name) name = formatPersonName(name);
-  var role = localStorage.getItem('qg-role') || localStorage.getItem('qg-session-mode') || 'worker';
+  // Do not pass role — existing rows must keep privilege role (e.g. admin).
   return await upsertUserProfile({
     name: name,
     email: firebaseUser.email || '',
     firebase_uid: firebaseUser.uid,
-    role: role === 'worker' ? 'worker' : 'poster',
     avatar_url: avatarUrl
   });
 }
@@ -1473,14 +2005,20 @@ async function getUserAvatarUrl(firebaseUid) {
 }
 
 async function getUsersAvatarMap() {
-  var users = await getUsers();
-  var map = {};
-  if (!Array.isArray(users)) return map;
-  users.forEach(function (u) {
-    if (!u.firebase_uid || !hasProfilePhotoUrl(u.avatar_url)) return;
-    map[String(u.firebase_uid)] = String(u.avatar_url).trim();
-  });
-  return map;
+  var fetchMap = async function () {
+    var users = await sbGet('users', withSelect(null, SELECT_USERS_AVATAR), null, 500);
+    var map = {};
+    if (!Array.isArray(users)) return map;
+    users.forEach(function (u) {
+      if (!u.firebase_uid || !hasProfilePhotoUrl(u.avatar_url)) return;
+      map[String(u.firebase_uid)] = String(u.avatar_url).trim();
+    });
+    return map;
+  };
+  if (typeof getCached === 'function') {
+    return await getCached('users-avatar-map', fetchMap, 300000);
+  }
+  return await fetchMap();
 }
 
 async function currentUserHasProfilePhoto() {
@@ -1566,7 +2104,8 @@ async function getConversationsForUser(userId) {
   var controller = new AbortController();
   var timeoutId = setTimeout(function () { controller.abort(); }, 8000);
   try {
-    var url = SUPABASE_URL + '/rest/v1/conversations?order=last_message_at.desc.nullslast,created_at.desc';
+    var url = SUPABASE_URL + '/rest/v1/conversations?select=' + encodeURIComponent(SELECT_CONVERSATIONS);
+    url += '&order=last_message_at.desc.nullslast,created_at.desc';
     url += '&or=(poster_id.eq.' + encodeURIComponent(userId) + ',worker_id.eq.' + encodeURIComponent(userId) + ')';
     var headers = await getSupabaseHeaders();
     var res = await fetch(url, { method: 'GET', headers: headers, signal: controller.signal });
@@ -1596,9 +2135,27 @@ function normalizeTaskId(taskId) {
   return isNaN(n) ? taskId : n;
 }
 
-async function getConversation(convId) {
-  var results = await sbGet('conversations', 'conv_id=eq.' + encodeURIComponent(convId));
-  return results[0] || null;
+async function getConversation(convId, opts) {
+  opts = opts || {};
+  var me = currentActorId(opts);
+  if (!me && opts.actorId) me = String(opts.actorId);
+  if (!me) return null;
+  var results = await sbGet(
+    'conversations',
+    withSelect('conv_id=eq.' + encodeURIComponent(convId), SELECT_CONVERSATIONS)
+  );
+  var conv = results[0] || null;
+  if (!conv) return null;
+  if (String(conv.poster_id) !== me && String(conv.worker_id) !== me) {
+    return null;
+  }
+  return conv;
+}
+
+function userIsConversationParty(conv, userId) {
+  if (!conv || !userId) return false;
+  var uid = String(userId);
+  return String(conv.poster_id) === uid || String(conv.worker_id) === uid;
 }
 
 async function getConversationForTask(taskId, posterId, workerId) {
@@ -1612,16 +2169,22 @@ async function getConversationForTask(taskId, posterId, workerId) {
     seen[ids[i]] = true;
     var results = await sbGet(
       'conversations',
-      'task_id=eq.' + encodeURIComponent(ids[i]) +
-        '&poster_id=eq.' + encodeURIComponent(posterId) +
-        '&worker_id=eq.' + encodeURIComponent(workerId)
+      withSelect(
+        'task_id=eq.' + encodeURIComponent(ids[i]) +
+          '&poster_id=eq.' + encodeURIComponent(posterId) +
+          '&worker_id=eq.' + encodeURIComponent(workerId),
+        SELECT_CONVERSATIONS
+      )
     );
     if (results && results[0]) return results[0];
   }
   var byPosterWorker = await sbGet(
     'conversations',
-    'poster_id=eq.' + encodeURIComponent(posterId) +
-      '&worker_id=eq.' + encodeURIComponent(workerId),
+    withSelect(
+      'poster_id=eq.' + encodeURIComponent(posterId) +
+        '&worker_id=eq.' + encodeURIComponent(workerId),
+      SELECT_CONVERSATIONS
+    ),
     'created_at.desc',
     20
   );
@@ -1643,7 +2206,7 @@ function parseConversationUnlocked(conv) {
 
 async function forceUnlockConversationForTask(conv, taskStatus) {
   if (!conv || !conv.conv_id) return { success: false, error: 'No conversation' };
-  var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'payment';
+  var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept';
 
   if (parseConversationUnlocked(conv) && String(conv.status || '').toLowerCase() !== 'application') {
     return { success: true, conv: conv };
@@ -1706,10 +2269,16 @@ async function forceUnlockConversationForTask(conv, taskStatus) {
 
   var result = await updateConversation(conv.conv_id, patch);
   if (result.success) {
+    if (typeof clearConversationFraudBuffers === 'function') {
+      clearConversationFraudBuffers(conv.conv_id, conv.poster_id, conv.worker_id);
+    }
     return { success: true, conv: Object.assign({}, conv, patch) };
   }
   result = await updateConversation(conv.conv_id, { is_unlocked: true });
   if (result.success) {
+    if (typeof clearConversationFraudBuffers === 'function') {
+      clearConversationFraudBuffers(conv.conv_id, conv.poster_id, conv.worker_id);
+    }
     return { success: true, conv: Object.assign({}, conv, { is_unlocked: true }) };
   }
   return { success: false, error: result.error, conv: conv };
@@ -1734,6 +2303,11 @@ async function createConversation(convData) {
     : (typeof resolveChatUnlockedOnCreate === 'function'
       ? resolveChatUnlockedOnCreate(status)
       : false);
+
+  if (convData.poster_id && convData.worker_id &&
+      await areUsersBlocked(convData.poster_id, convData.worker_id)) {
+    return { success: false, error: 'user_blocked' };
+  }
 
   var existing = await getConversationForTask(taskId, convData.poster_id, convData.worker_id);
   if (existing && existing.conv_id) {
@@ -1772,28 +2346,94 @@ async function createConversation(convData) {
 }
 
 async function getMessagesForConversation(convId) {
-  return await sbGet('messages', 'conv_id=eq.' + encodeURIComponent(convId), 'created_at.asc');
+  var me = currentActorId();
+  if (!me) return [];
+  var conv = await getConversation(convId);
+  if (!conv || !userIsConversationParty(conv, me)) return [];
+  return await sbGet(
+    'messages',
+    withSelect('conv_id=eq.' + encodeURIComponent(convId), SELECT_MESSAGES),
+    'created_at.asc'
+  );
 }
 
-async function sendChatMessage(convId, senderId, body, recentTexts) {
+async function sendChatMessage(convId, senderId, body, recentTexts, fraudOpts) {
+  // CLIENT UX filter only — authoritative check must be a server Edge Function on insert.
+  try {
+    var conv = await getConversation(convId);
+    if (conv) {
+      var otherId = String(conv.poster_id) === String(senderId) ? conv.worker_id : conv.poster_id;
+      if (otherId && await areUsersBlocked(senderId, otherId)) {
+        return { success: false, error: 'user_blocked', blocked: true };
+      }
+    }
+  } catch (blockErr) {
+    console.warn('Block check skipped:', blockErr);
+  }
+  var opts = fraudOpts || { convId: convId, senderId: senderId };
   if (isChatImageBody(body)) {
     var imgUrl = parseChatImageUrl(body);
     if (!isAllowedChatImageUrl(imgUrl)) {
       return { success: false, error: 'invalid_image', blocked: true };
     }
   } else if (typeof analyzeOffPlatformContact === 'function') {
-    var fraudCheck = analyzeOffPlatformContact(body, recentTexts || []);
+    var fraudCheck = analyzeOffPlatformContact(body, recentTexts || [], opts);
     if (fraudCheck.blocked) {
+      // Hard match → admin moderation queue (reports + admin_actions) via shared logger
+      if (typeof logFraudContactEvent === 'function') {
+        logFraudContactEvent({
+          userId: senderId,
+          convId: convId,
+          reason: fraudCheck.reason || 'contact',
+          preview: body
+        });
+      }
       return {
         success: false,
         error: 'off_platform_contact',
         blocked: true,
         reason: fraudCheck.reason || 'pattern',
-        message: fraudCheck.message || ''
+        message: fraudCheck.message || (typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : ''),
+        logged: true
       };
     }
-  } else if (typeof containsOffPlatformContact === 'function' && containsOffPlatformContact(body, recentTexts || [])) {
-    return { success: false, error: 'off_platform_contact', blocked: true };
+  } else if (typeof containsOffPlatformContact === 'function' && containsOffPlatformContact(body, recentTexts || [], opts)) {
+    if (typeof logFraudContactEvent === 'function') {
+      logFraudContactEvent({ userId: senderId, convId: convId, reason: 'contact', preview: body });
+    }
+    return {
+      success: false,
+      error: 'off_platform_contact',
+      blocked: true,
+      message: typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : '',
+      logged: true
+    };
+  }
+
+  // Content safety first-pass (threats / adult) — lists live in contentModeration.js
+  if (!isChatImageBody(body) && typeof moderateText === 'function') {
+    var modCheck = moderateText(body);
+    if (modCheck.blocked) {
+      if (typeof logModerationAttempt === 'function') {
+        logModerationAttempt({
+          userId: senderId,
+          source: 'chat',
+          targetType: 'chat_message',
+          targetId: convId,
+          flags: modCheck.flags,
+          preview: body,
+          message: modCheck.message
+        });
+      }
+      return {
+        success: false,
+        error: 'content_moderation',
+        blocked: true,
+        reason: (modCheck.flags || []).map(function (f) { return f.type; }).join(',') || 'content',
+        message: modCheck.message || '',
+        flags: modCheck.flags || []
+      };
+    }
   }
 
   var result = await sbPostReturn('messages', {
@@ -1817,17 +2457,19 @@ function notifyChatRecipientAsync(convId, senderId, preview) {
   if (typeof notifyNewChatMessage !== 'function' && typeof window.showQuickGigsPush !== 'function') return;
   (async function () {
     try {
-      var conv = typeof getConversation === 'function' ? await getConversation(convId) : null;
+      var conv = typeof getConversation === 'function'
+        ? await getConversation(convId, { actorId: senderId })
+        : null;
       if (!conv) return;
       var recipientId = senderId === conv.poster_id ? conv.worker_id : conv.poster_id;
       if (!recipientId || recipientId === senderId) return;
-      var recipient = typeof getUserByFirebaseUid === 'function' ? await getUserByFirebaseUid(recipientId) : null;
       var senderName = typeof getUserNameByFirebaseUid === 'function'
         ? await getUserNameByFirebaseUid(senderId)
         : 'QuickGigs user';
       var chatLink = 'https://quickgigs.ca/chat.html?conv=' + encodeURIComponent(convId);
       if (typeof notifyNewChatMessage === 'function') {
-        await notifyNewChatMessage(recipientId, recipient && recipient.email, {
+        // Do not fetch other users' email on the client — queue by user_id only.
+        await notifyNewChatMessage(recipientId, '', {
           senderName: senderName,
           taskTitle: conv.task_title || 'your task',
           preview: String(preview || '').substring(0, 120),
@@ -1847,12 +2489,38 @@ async function markConversationRead(convId, userId, posterId) {
   return await sbUpdate('conversations', patch, 'conv_id=eq.' + encodeURIComponent(convId));
 }
 
-async function getApplicationsByTask(taskId) {
+async function getTaskPosterIdQuick(taskId) {
+  var filters = buildTaskIdFilters(taskId, null);
+  for (var i = 0; i < filters.length; i++) {
+    var results = await sbGet('tasks', withSelect(filters[i], 'task_id,posted_by'));
+    if (results && results[0]) {
+      return String(results[0].posted_by || results[0].POSTED_BY || '');
+    }
+  }
+  return '';
+}
+
+async function getApplicationsByTask(taskId, opts) {
+  opts = opts || {};
+  var me = currentActorId(opts);
+  var asPoster = !!opts.asPoster;
+  if (!asPoster && opts.posterId && me && String(opts.posterId) === me) asPoster = true;
+  if (!asPoster && opts.taskRow && me && taskPostedByUser(opts.taskRow, me)) asPoster = true;
+  if (!asPoster && me) {
+    var postedBy = await getTaskPosterIdQuick(taskId);
+    if (postedBy && postedBy === me) asPoster = true;
+  }
   var filters = buildTaskIdFilters(taskId, null).filter(function (f) {
     return f.indexOf('task_id=eq.') === 0;
   });
   for (var i = 0; i < filters.length; i++) {
-    var rows = await sbGet('applications', filters[i]);
+    var f = filters[i];
+    if (me && !asPoster) {
+      f = f + '&worker_id=eq.' + encodeURIComponent(me);
+    } else if (!me && !asPoster) {
+      return [];
+    }
+    var rows = await sbGet('applications', withSelect(f, SELECT_APPLICATIONS));
     if (rows && rows.length) return rows.map(normalizeApplicationRow);
   }
   return [];
@@ -1863,7 +2531,7 @@ async function getApplicationById(appId, opts) {
   var appRow = null;
   var idFilters = buildApplicationIdFilters(appId, null);
   for (var i = 0; i < idFilters.length; i++) {
-    var rows = await sbGet('applications', idFilters[i]);
+    var rows = await sbGet('applications', withSelect(idFilters[i], SELECT_APPLICATIONS));
     if (rows && rows[0]) {
       appRow = normalizeApplicationRow(rows[0]);
       break;
@@ -1872,18 +2540,32 @@ async function getApplicationById(appId, opts) {
   if (!appRow && opts.taskId && opts.workerId) {
     var composite = buildApplicationCompositeFilters(opts.taskId, opts.workerId);
     for (var j = 0; j < composite.length; j++) {
-      var byPair = await sbGet('applications', composite[j]);
+      var byPair = await sbGet('applications', withSelect(composite[j], SELECT_APPLICATIONS));
       if (byPair && byPair[0]) {
         appRow = normalizeApplicationRow(byPair[0]);
         break;
       }
     }
   }
-  return appRow;
+  if (!appRow) return null;
+  var me = currentActorId(opts);
+  if (!me) return null;
+  if (String(appRow.worker_id || appRow.WORKER_ID) === me) return appRow;
+  var tid = appRow.task_id || appRow.TASK_ID || opts.taskId;
+  if (tid) {
+    var postedBy = opts.posterId ? String(opts.posterId) : await getTaskPosterIdQuick(tid);
+    if (postedBy && postedBy === me) return appRow;
+  }
+  return null;
 }
 
 async function getApplicationsByWorker(workerId) {
-  var rows = await sbGet('applications', 'worker_id=eq.' + workerId);
+  var me = currentActorId();
+  if (me && String(me) !== String(workerId)) return [];
+  var rows = await sbGet(
+    'applications',
+    withSelect('worker_id=eq.' + encodeURIComponent(String(workerId)), SELECT_APPLICATIONS)
+  );
   return (rows || []).map(normalizeApplicationRow);
 }
 
@@ -1960,9 +2642,8 @@ async function posterSendCounterOffer(appId, posterId, amount, opts) {
   var result = await patchApplicationFields(appId, patch, { taskId: taskId, workerId: workerId });
   if (result.success && typeof notifyWorkerCounterOffer === 'function') {
     try {
-      var workerUser = workerId ? await getUserByFirebaseUid(workerId) : null;
       var posterName = task.poster_name || task.POSTER_NAME || 'The poster';
-      await notifyWorkerCounterOffer(workerId, workerUser && workerUser.email, task, {
+      await notifyWorkerCounterOffer(workerId, '', task, {
         amount: amount,
         posterName: posterName,
         appId: appId,
@@ -2020,9 +2701,8 @@ async function workerRespondToCounter(appId, workerId, action, amount, opts) {
   if (action === 'counter' && typeof notifyPosterCounterReply === 'function') {
     try {
       var posterId = task && (task.posted_by || task.POSTED_BY);
-      var posterUser = posterId ? await getUserByFirebaseUid(posterId) : null;
       var workerName = app.worker_name || app.WORKER_NAME || 'A tasker';
-      await notifyPosterCounterReply(posterId, posterUser && posterUser.email, task, {
+      await notifyPosterCounterReply(posterId, '', task, {
         amount: amount,
         workerName: workerName,
         appId: appId,
@@ -2035,9 +2715,8 @@ async function workerRespondToCounter(appId, workerId, action, amount, opts) {
   } else if (action === 'accept' && typeof notifyPosterCounterReply === 'function') {
     try {
       var posterIdAccept = task && (task.posted_by || task.POSTED_BY);
-      var posterUserAccept = posterIdAccept ? await getUserByFirebaseUid(posterIdAccept) : null;
       var workerNameAccept = app.worker_name || app.WORKER_NAME || 'A tasker';
-      await notifyPosterCounterReply(posterIdAccept, posterUserAccept && posterUserAccept.email, task, {
+      await notifyPosterCounterReply(posterIdAccept, '', task, {
         amount: neg.counterPrice,
         workerName: workerNameAccept,
         appId: appId,
@@ -2075,8 +2754,7 @@ async function posterRespondToCounter(appId, posterId, action, opts) {
   var result = await patchApplicationFields(appId, patch, { taskId: taskId, workerId: workerId });
   if (result.success && action === 'accept' && typeof notifyWorkerCounterOffer === 'function') {
     try {
-      var workerUser = workerId ? await getUserByFirebaseUid(workerId) : null;
-      await notifyWorkerCounterOffer(workerId, workerUser && workerUser.email, task, {
+      await notifyWorkerCounterOffer(workerId, '', task, {
         amount: neg.counterPrice,
         posterName: task.poster_name || task.POSTER_NAME || 'The poster',
         appId: appId,
@@ -2091,58 +2769,142 @@ async function posterRespondToCounter(appId, posterId, action, opts) {
 }
 
 async function getAllApplications() {
-  var rows = await sbGet('applications', null, 'created_at.desc', 200);
-  return (rows || []).map(normalizeApplicationRow);
+  return await fetchApplicationsForActor(currentActorId());
 }
 
 async function submitApplication(appData) {
-  if (appData.task_id && appData.worker_id) {
-    var task = await getTaskById(appData.task_id);
-    var posterId = task && (task.posted_by || task.POSTED_BY);
-    if (posterId && String(posterId) === String(appData.worker_id)) {
-      return { success: false, error: 'cannot_apply_own_task' };
+  appData = appData || {};
+  // applications.worker_id stores Firebase Auth uid — never users.user_id (UUID).
+  var workerFirebaseUid = String(
+    appData.worker_id ||
+    (window._currentUser && window._currentUser.uid) ||
+    currentActorId() ||
+    ''
+  ).trim();
+  var taskId = appData.task_id != null && appData.task_id !== ''
+    ? String(appData.task_id)
+    : '';
+
+  if (!taskId) {
+    return { success: false, error: 'missing_task_id' };
+  }
+  if (!workerFirebaseUid) {
+    return { success: false, error: 'missing_worker_id' };
+  }
+
+  var task = await getTaskById(taskId);
+  var posterId = task && (task.posted_by || task.POSTED_BY);
+  if (posterId && String(posterId) === workerFirebaseUid) {
+    return { success: false, error: 'cannot_apply_own_task' };
+  }
+
+  // Duplicate guard — one application per Firebase uid + task_id (fail closed).
+  // Do NOT swallow errors: a failed check must not allow another insert.
+  var already = false;
+  var composite = buildApplicationCompositeFilters(taskId, workerFirebaseUid);
+  if (!composite.length) {
+    return { success: false, error: 'invalid_duplicate_check' };
+  }
+  for (var ci = 0; ci < composite.length && !already; ci++) {
+    var existingRows;
+    try {
+      existingRows = typeof sbGetOrThrow === 'function'
+        ? await sbGetOrThrow(
+            'applications',
+            withSelect(composite[ci], SELECT_APPLICATIONS),
+            null,
+            20
+          )
+        : await sbGet(
+            'applications',
+            withSelect(composite[ci], SELECT_APPLICATIONS),
+            null,
+            20
+          );
+    } catch (dupGetErr) {
+      console.error('Duplicate application check failed:', dupGetErr);
+      return {
+        success: false,
+        error: 'Could not verify existing applications — try again. (' +
+          (dupGetErr && dupGetErr.message ? dupGetErr.message : 'check_failed') + ')'
+      };
     }
-    var workerPhoto = await resolveUserAvatarUrl(appData.worker_id);
-    if (!hasProfilePhotoUrl(workerPhoto)) {
-      return { success: false, error: 'profile_photo_required' };
+    already = (existingRows || []).some(function (a) {
+      var tid = a.task_id || a.TASK_ID;
+      var wid = a.worker_id || a.WORKER_ID;
+      if (tid == null || tid === '' || !wid) return false;
+      return String(tid) === String(taskId) && String(wid) === String(workerFirebaseUid);
+    });
+  }
+  if (!already) {
+    try {
+      var existingApps = await getApplicationsByWorker(workerFirebaseUid);
+      already = (existingApps || []).some(function (a) {
+        var tid = a.task_id || a.TASK_ID;
+        if (tid == null || tid === '') return false;
+        return String(tid) === String(taskId);
+      });
+    } catch (workerDupErr) {
+      console.warn('Worker-apps duplicate fallback skipped:', workerDupErr);
     }
-    if (window._currentUser && window._currentUser.uid === appData.worker_id) {
-      var existing = await getUserByFirebaseUid(appData.worker_id);
-      if (!existing || !hasProfilePhotoUrl(existing.avatar_url)) {
-        await syncProfilePhotoToDb(window._currentUser, workerPhoto);
-      }
+  }
+  if (already) return { success: false, error: 'already_applied' };
+
+  var workerPhoto = await resolveUserAvatarUrl(workerFirebaseUid);
+  if (!hasProfilePhotoUrl(workerPhoto)) {
+    return { success: false, error: 'profile_photo_required' };
+  }
+  if (window._currentUser && window._currentUser.uid === workerFirebaseUid) {
+    var existing = await getUserByFirebaseUid(workerFirebaseUid);
+    if (!existing || !hasProfilePhotoUrl(existing.avatar_url)) {
+      await syncProfilePhotoToDb(window._currentUser, workerPhoto);
     }
   }
 
   var row = {
-    task_id:   appData.task_id,
-    worker_id: appData.worker_id,
+    task_id:   taskId,
+    worker_id: workerFirebaseUid,
     message:   appData.message,
     price:     appData.price,
     status:    'pending'
   };
   if (appData.worker_name) row.worker_name = appData.worker_name;
 
-  var result = await sbPost('applications', row);
+  // Prefer return=representation so the UI can confirm app_id / ids written.
+  var result = typeof sbPostReturn === 'function'
+    ? await sbPostReturn('applications', row)
+    : await sbPost('applications', row);
   if (!result.success && appData.worker_name) {
     var fallback = {
-      task_id:   appData.task_id,
-      worker_id: appData.worker_id,
+      task_id:   taskId,
+      worker_id: workerFirebaseUid,
       message:   appData.message,
       price:     appData.price,
       status:    'pending'
     };
-    result = await sbPost('applications', fallback);
+    result = typeof sbPostReturn === 'function'
+      ? await sbPostReturn('applications', fallback)
+      : await sbPost('applications', fallback);
+  }
+  if (result.success && result.data) {
+    console.log('[QuickGigs apply] applications row created', {
+      app_id: result.data.app_id,
+      task_id: result.data.task_id,
+      worker_id: result.data.worker_id,
+      status: result.data.status,
+      price: result.data.price
+    });
+  } else if (!result.success) {
+    console.error('[QuickGigs apply] applications insert failed', result.error);
   }
 
-  if (result.success && appData.task_id && typeof notifyPosterNewApplication === 'function') {
+  if (result.success && taskId && typeof notifyPosterNewApplication === 'function') {
     try {
-      var notifyTask = await getTaskById(appData.task_id);
-      var posterId = notifyTask && (notifyTask.posted_by || notifyTask.POSTED_BY);
-      var posterUser = posterId ? await getUserByFirebaseUid(posterId) : null;
+      var notifyTask = task || await getTaskById(taskId);
+      var notifyPosterId = notifyTask && (notifyTask.posted_by || notifyTask.POSTED_BY);
       await notifyPosterNewApplication(
-        posterId,
-        posterUser && posterUser.email,
+        notifyPosterId,
+        '',
         notifyTask,
         { worker_name: appData.worker_name, price: appData.price }
       );
@@ -2196,8 +2958,11 @@ function buildApplicationCompositeFilters(taskId, workerId) {
     if (!seen[f]) { seen[f] = true; filters.push(f); }
   }
   addPair(taskId, workerId);
-  var tn = parseInt(taskId, 10);
-  if (!isNaN(tn)) addPair(tn, workerId);
+  // Only add numeric twin for pure integer task ids — never parseInt a UUID
+  // (parseInt('8c1c2ff2-…') === 8 and would query the wrong task).
+  if (/^\d+$/.test(String(taskId))) {
+    addPair(String(parseInt(taskId, 10)), workerId);
+  }
   return filters;
 }
 
@@ -2554,7 +3319,12 @@ function mergeReviewInCache(review) {
 
 async function getReviewsForUser(userId) {
   var uid = encodeURIComponent(String(userId));
-  var rows = await sbGet('reviews', 'reviewee_id=eq.' + uid, 'created_at.desc', 100);
+  var rows = await sbGet(
+    'reviews',
+    withSelect('reviewee_id=eq.' + uid, 'reviewee_id,rating,review_comment,reviewer_id,reviewer_name,task_id,task_title,created_at'),
+    'created_at.desc',
+    100
+  );
   if (rows && rows.length) {
     writeReviewsCache(userId, rows);
     return rows;
@@ -2562,9 +3332,244 @@ async function getReviewsForUser(userId) {
   return readReviewsCache(userId);
 }
 
+/**
+ * One query for many users → { [uid]: { avgRating, reviewCount } }.
+ * Prefer this over N per-card review fetches.
+ */
+async function fetchRatingsMap(userIds) {
+  var map = {};
+  var ids = [];
+  var seen = {};
+  (userIds || []).forEach(function (id) {
+    if (id == null || id === '') return;
+    var key = String(id);
+    if (seen[key]) return;
+    seen[key] = true;
+    ids.push(key);
+    map[key] = { avgRating: null, reviewCount: 0 };
+  });
+  if (!ids.length || typeof sbGet !== 'function') return map;
+
+  // PostgREST in.() batches — keep URL length sane
+  var CHUNK = 80;
+  for (var i = 0; i < ids.length; i += CHUNK) {
+    var chunk = ids.slice(i, i + CHUNK);
+    var filter = 'reviewee_id=in.(' + chunk.join(',') + ')';
+    var rows = await sbGet(
+      'reviews',
+      withSelect(filter, 'reviewee_id,rating'),
+      null,
+      5000
+    );
+    (rows || []).forEach(function (r) {
+      var uid = String(r.reviewee_id || '');
+      if (!uid || !map[uid]) return;
+      var rating = Number(r.rating);
+      if (!rating) return;
+      if (!map[uid]._sum) map[uid]._sum = 0;
+      map[uid]._sum += rating;
+      map[uid].reviewCount += 1;
+    });
+  }
+  Object.keys(map).forEach(function (uid) {
+    if (map[uid].reviewCount > 0) {
+      map[uid].avgRating = map[uid]._sum / map[uid].reviewCount;
+    }
+    delete map[uid]._sum;
+  });
+  return map;
+}
+
+/** "4.8 ★ · 23 jobs" or "New" when reviewCount is 0. */
+function formatUserRatingLabel(avgRating, reviewCount) {
+  var n = Number(reviewCount) || 0;
+  if (n <= 0 || avgRating == null || isNaN(Number(avgRating))) return 'New';
+  var a = (Math.round(Number(avgRating) * 10) / 10).toFixed(1);
+  return a + ' ★ · ' + n + ' job' + (n === 1 ? '' : 's');
+}
+
+function formatUserRatingHtml(avgRating, reviewCount, opts) {
+  opts = opts || {};
+  var label = formatUserRatingLabel(avgRating, reviewCount);
+  var cls = 'qg-trust-rating' + (label === 'New' ? ' is-new' : '');
+  if (opts.className) cls += ' ' + opts.className;
+  return '<span class="' + cls + '">' + label + '</span>';
+}
+
+// ── User blocks ──────────────────────────────────────────────────
+var _blockedIdsCache = { at: 0, userId: '', ids: null };
+var BLOCKS_CACHE_MS = 120000;
+
+async function getBlockedUserIds(userId) {
+  userId = String(userId || '');
+  if (!userId) return [];
+  if (_blockedIdsCache.userId === userId && _blockedIdsCache.ids &&
+      (Date.now() - _blockedIdsCache.at) < BLOCKS_CACHE_MS) {
+    return _blockedIdsCache.ids.slice();
+  }
+  var set = {};
+  // Canonical `blocks` + legacy `user_blocks` (merge whichever exist)
+  var tables = ['blocks', 'user_blocks'];
+  try {
+    for (var ti = 0; ti < tables.length; ti++) {
+      var table = tables[ti];
+      var out = await sbGet(
+        table,
+        withSelect('blocker_id=eq.' + encodeURIComponent(userId), 'blocked_id'),
+        null,
+        500
+      );
+      (out || []).forEach(function (r) {
+        if (r.blocked_id) set[String(r.blocked_id)] = true;
+      });
+      var inbound = await sbGet(
+        table,
+        withSelect('blocked_id=eq.' + encodeURIComponent(userId), 'blocker_id'),
+        null,
+        500
+      );
+      (inbound || []).forEach(function (r) {
+        if (r.blocker_id) set[String(r.blocker_id)] = true;
+      });
+    }
+  } catch (err) {
+    console.warn('getBlockedUserIds:', err);
+  }
+  var ids = Object.keys(set);
+  _blockedIdsCache = { at: Date.now(), userId: userId, ids: ids };
+  return ids.slice();
+}
+
+function invalidateBlocksCache() {
+  _blockedIdsCache = { at: 0, userId: '', ids: null };
+}
+
+function isUserBlockedLocal(userId, otherId) {
+  if (!userId || !otherId) return false;
+  if (_blockedIdsCache.userId !== String(userId) || !_blockedIdsCache.ids) return false;
+  return _blockedIdsCache.ids.indexOf(String(otherId)) >= 0;
+}
+
+async function areUsersBlocked(userA, userB) {
+  if (!userA || !userB || String(userA) === String(userB)) return false;
+  var ids = await getBlockedUserIds(userA);
+  return ids.indexOf(String(userB)) >= 0;
+}
+
+/**
+ * Insert a user report into `reports` (do not rename columns).
+ * reason must be: spam|scam|inappropriate|off_platform|other
+ * target_type must be: task|user
+ */
+async function createReport(reportData) {
+  var ALLOWED_REASONS = { spam: 1, scam: 1, inappropriate: 1, off_platform: 1, other: 1 };
+  var reporterId = String((reportData && reportData.reporter_id) || '');
+  var targetType = String((reportData && reportData.target_type) || '').toLowerCase();
+  if (targetType === 'profile') targetType = 'user';
+  var targetId = String((reportData && reportData.target_id) || '');
+  var reason = String((reportData && reportData.reason) || 'other').toLowerCase();
+  if (!ALLOWED_REASONS[reason]) reason = 'other';
+  if (!reporterId || !targetId) return { success: false, error: 'missing_report_fields' };
+  if (targetType !== 'task' && targetType !== 'user') {
+    return { success: false, error: 'invalid_target_type' };
+  }
+  var row = {
+    reporter_id: reporterId,
+    target_type: targetType,
+    target_id: targetId,
+    reason: reason,
+    detail: String((reportData && reportData.detail) || '').trim() || null,
+    status: 'open',
+    created_at: new Date().toISOString()
+  };
+  var result = await sbPost('reports', row);
+  if (!result.success) {
+    // Some older schemas used `details` instead of `detail`
+    var alt = Object.assign({}, row);
+    alt.details = alt.detail;
+    delete alt.detail;
+    result = await sbPost('reports', alt);
+  }
+  return result;
+}
+
+async function blockUser(blockerId, blockedId) {
+  blockerId = String(blockerId || '');
+  blockedId = String(blockedId || '');
+  if (!blockerId || !blockedId) return { success: false, error: 'missing_ids' };
+  if (blockerId === blockedId) return { success: false, error: 'cannot_block_self' };
+  var row = { blocker_id: blockerId, blocked_id: blockedId };
+  var result = await sbPost('blocks', row);
+  if (!result.success) {
+    var err = String(result.error || '');
+    if (err.indexOf('23505') >= 0 || err.toLowerCase().indexOf('duplicate') >= 0) {
+      invalidateBlocksCache();
+      return { success: true, already: true };
+    }
+    // Legacy table name
+    if (err.indexOf('42P01') >= 0 || err.toLowerCase().indexOf('blocks') >= 0) {
+      result = await sbPost('user_blocks', row);
+      err = String(result.error || '');
+      if (result.success) {
+        invalidateBlocksCache();
+        return result;
+      }
+      if (err.indexOf('23505') >= 0 || err.toLowerCase().indexOf('duplicate') >= 0) {
+        invalidateBlocksCache();
+        return { success: true, already: true };
+      }
+      if (err.indexOf('42P01') >= 0 || err.indexOf('user_blocks') >= 0) {
+        return { success: false, error: 'blocks_table_missing' };
+      }
+    }
+  }
+  invalidateBlocksCache();
+  return result;
+}
+
+async function unblockUser(blockerId, blockedId) {
+  blockerId = String(blockerId || '');
+  blockedId = String(blockedId || '');
+  if (!blockerId || !blockedId) return { success: false, error: 'missing_ids' };
+  var filter =
+    'blocker_id=eq.' + encodeURIComponent(blockerId) +
+    '&blocked_id=eq.' + encodeURIComponent(blockedId);
+  var result = await sbDelete('blocks', filter);
+  if (!result.success) {
+    result = await sbDelete('user_blocks', filter);
+  }
+  invalidateBlocksCache();
+  return result;
+}
+
 async function submitReview(reviewData) {
   if (!reviewData || !reviewData.reviewer_id || !reviewData.reviewee_id || !reviewData.task_id) {
     return { success: false, error: 'missing_review_fields' };
+  }
+  // FIRST-PASS content moderation (lists in contentModeration.js). Server + API later.
+  var commentCheck = String(reviewData.review_comment || '');
+  if (commentCheck && typeof moderateText === 'function') {
+    var modCheck = moderateText(commentCheck);
+    if (modCheck.blocked) {
+      if (typeof logModerationAttempt === 'function') {
+        logModerationAttempt({
+          userId: reviewData.reviewer_id,
+          source: 'review',
+          targetType: 'review',
+          targetId: reviewData.task_id,
+          flags: modCheck.flags,
+          preview: commentCheck,
+          message: modCheck.message
+        });
+      }
+      return {
+        success: false,
+        error: 'content_moderation',
+        blocked: true,
+        message: modCheck.message || '',
+        flags: modCheck.flags || []
+      };
+    }
   }
   var taskId = String(reviewData.task_id).trim();
   // Prefer canonical UUID when the UI still has a legacy numeric id
@@ -2669,8 +3674,11 @@ async function getPaymentByTask(taskId, options) {
   if (options.posterId && options.workerId) {
     var byPair = await sbGet(
       'payments',
-      'poster_id=eq.' + encodeURIComponent(options.posterId) +
-        '&worker_id=eq.' + encodeURIComponent(options.workerId),
+      withSelect(
+        'poster_id=eq.' + encodeURIComponent(options.posterId) +
+          '&worker_id=eq.' + encodeURIComponent(options.workerId),
+        SELECT_PAYMENTS
+      ),
       'created_at.desc',
       20
     );
@@ -2709,7 +3717,19 @@ async function getPaymentByTask(taskId, options) {
     }
   }
   for (var i = 0; i < ids.length; i++) {
-    var results = await sbGet('payments', 'task_id=eq.' + encodeURIComponent(ids[i]), 'created_at.desc', 20);
+    var mePay = currentActorId(options);
+    var payFilter = 'task_id=eq.' + encodeURIComponent(ids[i]);
+    if (mePay) {
+      payFilter += '&or=(poster_id.eq.' + encodeURIComponent(mePay) + ',worker_id.eq.' + encodeURIComponent(mePay) + ')';
+    } else if (options.posterId || options.workerId) {
+      var parts = [];
+      if (options.posterId) parts.push('poster_id.eq.' + encodeURIComponent(options.posterId));
+      if (options.workerId) parts.push('worker_id.eq.' + encodeURIComponent(options.workerId));
+      if (parts.length) payFilter += '&or=(' + parts.join(',') + ')';
+    } else {
+      continue;
+    }
+    var results = await sbGet('payments', withSelect(payFilter, SELECT_PAYMENTS), 'created_at.desc', 20);
     var row = pickBestPaymentRow(results);
     if (row && (!best || rank(row) > rank(best))) best = row;
   }
@@ -2851,10 +3871,19 @@ async function ensureChatReadyForTask(taskId, actorId, options) {
   };
 }
 
-async function getPaymentsForUser(userId, role) {
+async function getPaymentsForUser(userId, role, opts) {
   if (!userId) return [];
+  opts = opts || {};
+  var me = currentActorId();
+  if (me && String(me) !== String(userId)) return [];
   var col = role === 'poster' ? 'poster_id' : 'worker_id';
-  return await sbGet('payments', col + '=eq.' + encodeURIComponent(String(userId)), 'created_at.desc', 100);
+  var limit = opts.limit != null ? opts.limit : 20;
+  return await sbGet(
+    'payments',
+    withSelect(col + '=eq.' + encodeURIComponent(String(userId)), SELECT_PAYMENTS),
+    'created_at.desc',
+    limit
+  );
 }
 
 async function refundTaskPayment(taskId, actorId) {
@@ -2964,7 +3993,15 @@ async function unlockChatForTask(taskId, posterId, workerId) {
   if (!conv || !conv.conv_id) return { success: false, error: 'No conversation' };
   var taskRow = typeof getTaskById === 'function' ? await getTaskById(taskId) : null;
   var taskStatus = taskRow ? (taskRow.status || taskRow.STATUS || '') : 'in_progress';
-  return await forceUnlockConversationForTask(conv, taskStatus);
+  var result = await forceUnlockConversationForTask(conv, taskStatus);
+  // Escrow/unlock: clear sliding-window contact buffers (legitimate open chat)
+  if (result && result.success && typeof clearConversationFraudBuffers === 'function') {
+    clearConversationFraudBuffers(conv.conv_id, posterId || conv.poster_id, workerId || conv.worker_id);
+  } else if (result && result.success && typeof clearBuffer === 'function') {
+    clearBuffer(conv.conv_id, posterId || conv.poster_id);
+    clearBuffer(conv.conv_id, workerId || conv.worker_id);
+  }
+  return result;
 }
 
 var INAPP_BODY = {
@@ -3107,20 +4144,42 @@ window.SUPABASE_URL = SUPABASE_URL;
 window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
 window.getSupabaseHeaders = getSupabaseHeaders;
 window.refreshSupabaseAuth = refreshSupabaseAuth;
+window.SELECT_TASKS_BROWSE = SELECT_TASKS_BROWSE;
+window.SELECT_TASKS_DETAIL = SELECT_TASKS_DETAIL;
+window.SELECT_APPLICATIONS = SELECT_APPLICATIONS;
+window.SELECT_USERS_PUBLIC = SELECT_USERS_PUBLIC;
+window.SELECT_USERS_PUBLIC_CARD = SELECT_USERS_PUBLIC_CARD;
+window.SELECT_USERS_SELF = SELECT_USERS_SELF;
+window.SELECT_USERS_SELF_CORE = SELECT_USERS_SELF_CORE;
+window.SELECT_REVIEWS = SELECT_REVIEWS;
+window.withSelect = withSelect;
 window.SUPABASE_HEADERS = SUPABASE_HEADERS;
 window.SB_HEADERS = SUPABASE_HEADERS;
 window.HEADERS = SUPABASE_HEADERS;
+window.sbGet = sbGet;
+window.sbGetOrThrow = sbGetOrThrow;
+window.sbCount = sbCount;
+window.getOpenTasksPage = getOpenTasksPage;
+window.countOpenTasks = countOpenTasks;
+window.BROWSE_PAGE_SIZE = BROWSE_PAGE_SIZE;
 window.getTasks = getTasks;
 window.getAllTasks = getAllTasks;
 window.fetchTasksWithCache = fetchTasksWithCache;
 window.fetchAllTasksFresh = fetchAllTasksFresh;
+window.fetchDashboardBootstrap = fetchDashboardBootstrap;
+window.fetchPosterAppsForTasks = fetchPosterAppsForTasks;
 window.fetchMyTasksBundle = fetchMyTasksBundle;
 window.taskPostedByUser = taskPostedByUser;
 window.withTimeout = withTimeout;
 window.mergeTaskLists = mergeTaskLists;
 window.mergeApplicationLists = mergeApplicationLists;
 window.fetchAllApplicationsFresh = fetchAllApplicationsFresh;
+window.fetchApplicationsForActor = fetchApplicationsForActor;
 window.readTasksCache = readTasksCache;
+window.readAppsCache = readAppsCache;
+window.writeAppsCache = writeAppsCache;
+window.writeTasksCache = writeTasksCache;
+window.invalidateUserProfileCache = invalidateUserProfileCache;
 window.mergeTaskInCache = mergeTaskInCache;
 window.mergeApplicationInCache = mergeApplicationInCache;
 window.invalidateTasksCache = invalidateTasksCache;
@@ -3142,6 +4201,7 @@ window.getUsers = getUsers;
 window.saveUser = saveUser;
 window.upsertUserProfile = upsertUserProfile;
 window.syncCurrentUserProfile = syncCurrentUserProfile;
+window.getUserLoginGate = getUserLoginGate;
 window.getUserByFirebaseUid = getUserByFirebaseUid;
 window.getUserNameByFirebaseUid = getUserNameByFirebaseUid;
 window.getUsersNameMap = getUsersNameMap;
@@ -3176,6 +4236,7 @@ window.getApplicationsByTask = getApplicationsByTask;
 window.getApplicationsByWorker = getApplicationsByWorker;
 window.getAllApplications = getAllApplications;
 window.submitApplication = submitApplication;
+window.submitApplicationToDb = submitApplication;
 window.updateApplicationStatus = updateApplicationStatus;
 window.patchApplicationFields = patchApplicationFields;
 window.posterSendCounterOffer = posterSendCounterOffer;
@@ -3197,6 +4258,16 @@ window.resolveTaskContext = resolveTaskContext;
 window.releaseAcceptedTasker = releaseAcceptedTasker;
 window.declinePendingApplicationsForTask = declinePendingApplicationsForTask;
 window.getReviewsForUser = getReviewsForUser;
+window.fetchRatingsMap = fetchRatingsMap;
+window.formatUserRatingLabel = formatUserRatingLabel;
+window.formatUserRatingHtml = formatUserRatingHtml;
+window.createReport = createReport;
+window.getBlockedUserIds = getBlockedUserIds;
+window.areUsersBlocked = areUsersBlocked;
+window.blockUser = blockUser;
+window.unblockUser = unblockUser;
+window.invalidateBlocksCache = invalidateBlocksCache;
+window.isUserBlockedLocal = isUserBlockedLocal;
 window.submitReview = submitReview;
 window.readReviewsCache = readReviewsCache;
 window.mergeReviewInCache = mergeReviewInCache;
@@ -3219,7 +4290,6 @@ window.getSavedTaskIds = getSavedTaskIds;
 window.saveTask = saveTask;
 window.unsaveTask = unsaveTask;
 window.sbDelete = sbDelete;
-window.sbGet = sbGet;
 window.sbPost = sbPost;
 window.sbPostReturn = sbPostReturn;
 window.sbUpdate = sbUpdate;

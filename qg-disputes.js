@@ -1,28 +1,17 @@
-/* QuickGigs — dispute resolution UI (Profile Studio–style sheet) */
+/* QuickGigs — Report a problem / dispute sheet */
 (function () {
   if (typeof ensureQgSheetStyles === 'function') ensureQgSheetStyles();
+
   var REASONS = [
-    { value: 'work_not_done', label: 'Work not completed', icon: '📋' },
-    { value: 'quality', label: 'Quality mismatch', icon: '⭐' },
-    { value: 'no_show', label: 'No-show / abandoned', icon: '👻' },
-    { value: 'payment', label: 'Payment issue', icon: '💳' },
-    { value: 'safety', label: 'Safety concern', icon: '🛡️' },
-    { value: 'other', label: 'Other', icon: '💬' }
+    { value: 'not_done', label: 'Work not done' },
+    { value: 'not_as_described', label: 'Not as described' },
+    { value: 'no_show', label: 'No-show' },
+    { value: 'payment', label: 'Payment issue' },
+    { value: 'other', label: 'Other' }
   ];
 
   var overlay = null;
   var ctx = null;
-  var selectedReason = REASONS[0].value;
-
-  function reasonPillsHtml() {
-    return REASONS.map(function (r, i) {
-      return '<button type="button" class="qg-report-reason' + (i === 0 ? ' is-selected' : '') + '" ' +
-        'data-value="' + r.value + '" role="radio" aria-checked="' + (i === 0 ? 'true' : 'false') + '">' +
-        '<span class="qg-report-reason-icon" aria-hidden="true">' + r.icon + '</span>' +
-        '<span class="qg-report-reason-label">' + r.label + '</span>' +
-      '</button>';
-    }).join('');
-  }
 
   function ensureOverlay() {
     if (overlay) return overlay;
@@ -41,80 +30,66 @@
         '<div class="qg-report-handle" aria-hidden="true"></div>' +
         '<div class="qg-report-header">' +
           '<div class="qg-report-header-glow" aria-hidden="true"></div>' +
-          '<button type="button" class="qg-report-close" id="qgDisputeClose" aria-label="Close dispute">✕</button>' +
-          '<div class="qg-report-kicker">Resolution</div>' +
-          '<h2 class="qg-report-title" id="qgDisputeTitle">Open a dispute</h2>' +
-          '<p class="qg-report-sub">We review disputes within 48 hours and email both parties an outcome.</p>' +
+          '<button type="button" class="qg-report-close" id="qgDisputeClose" aria-label="Close">✕</button>' +
+          '<div class="qg-report-kicker">Safety</div>' +
+          '<h2 class="qg-report-title" id="qgDisputeTitle">Report a problem</h2>' +
+          '<p class="qg-report-sub">Tell us what went wrong. An admin will review — we do not move money automatically.</p>' +
         '</div>' +
         '<div class="qg-report-body">' +
-          '<div class="qg-dispute-steps" aria-label="How disputes work">' +
-            '<div class="qg-dispute-step"><span class="qg-dispute-num">1</span><div><strong>Tell us what happened</strong><p>Share your version. Keep messages on QuickGigs when possible.</p></div></div>' +
-            '<div class="qg-dispute-step"><span class="qg-dispute-num">2</span><div><strong>We review within 48 hours</strong><p>Our team reads the task, chat, and payment status (when live).</p></div></div>' +
-            '<div class="qg-dispute-step"><span class="qg-dispute-num">3</span><div><strong>Outcome</strong><p>We may release payment, refund, reopen the task, or take account action.</p></div></div>' +
-          '</div>' +
           '<div class="qg-report-target" id="qgDisputeTarget">' +
-            '<span class="qg-report-target-icon" aria-hidden="true">⚖️</span>' +
+            '<span class="qg-report-target-icon" aria-hidden="true">⚠</span>' +
             '<div class="qg-report-target-text">' +
-              '<span class="qg-report-target-label">Dispute for</span>' +
+              '<span class="qg-report-target-label">Task</span>' +
               '<strong id="qgDisputeSub">This task</strong>' +
             '</div>' +
           '</div>' +
           '<div class="qg-report-field">' +
-            '<span class="qg-report-label" id="qgDisputeReasonLabel">What went wrong?</span>' +
-            '<div class="qg-report-reasons" id="qgDisputeReasons" role="radiogroup" aria-labelledby="qgDisputeReasonLabel">' +
-              reasonPillsHtml() +
-            '</div>' +
+            '<label class="qg-report-label" for="qgDisputeReasonSelect">Reason</label>' +
+            '<select class="qg-report-select" id="qgDisputeReasonSelect" aria-label="Dispute reason">' +
+              REASONS.map(function (r) {
+                return '<option value="' + r.value + '">' + r.label + '</option>';
+              }).join('') +
+            '</select>' +
           '</div>' +
           '<div class="qg-report-field">' +
             '<label class="qg-report-label" for="qgDisputeDetails">Details</label>' +
             '<div class="qg-report-textarea-wrap">' +
               '<textarea class="qg-report-textarea" id="qgDisputeDetails" maxlength="1500" ' +
-                'placeholder="Describe what happened, dates, and what outcome you need." rows="4"></textarea>' +
+                'placeholder="What happened? Include dates or chat context if helpful." rows="4"></textarea>' +
               '<span class="qg-report-char" id="qgDisputeCharCount">0 / 1500</span>' +
             '</div>' +
           '</div>' +
-          '<p class="qg-dispute-note">Beta: payments are not live yet — disputes are logged and reviewed by support@quickgigs.ca.</p>' +
         '</div>' +
         '<div class="qg-report-footer">' +
           '<button type="button" class="qg-report-cancel" id="qgDisputeCancel">Cancel</button>' +
-          '<button type="button" class="qg-report-submit" id="qgDisputeSubmit">Submit dispute</button>' +
+          '<button type="button" class="qg-report-submit" id="qgDisputeSubmit">Submit</button>' +
         '</div>' +
       '</div>';
 
     document.body.appendChild(overlay);
 
+    if (!document.getElementById('qg-dispute-select-css')) {
+      var s = document.createElement('style');
+      s.id = 'qg-dispute-select-css';
+      s.textContent =
+        '.qg-report-select{width:100%;padding:12px 14px;border-radius:12px;border:0.5px solid rgba(200,168,233,0.25);' +
+        'background:rgba(255,255,255,0.06);color:inherit;font:inherit;font-size:14px;margin-top:6px}' +
+        'body.light .qg-report-select{background:#fff;border-color:#e8e4f5}';
+      (document.head || document.documentElement).appendChild(s);
+    }
+
     overlay.addEventListener('click', function (e) {
       if (e.target === overlay) closeDisputeModal();
     });
-
     document.getElementById('qgDisputeClose').onclick = closeDisputeModal;
     document.getElementById('qgDisputeCancel').onclick = closeDisputeModal;
     document.getElementById('qgDisputeSubmit').onclick = submitDispute;
-
-    document.getElementById('qgDisputeReasons').addEventListener('click', function (e) {
-      var btn = e.target.closest('.qg-report-reason');
-      if (!btn) return;
-      selectReason(btn.getAttribute('data-value'));
-    });
-
     document.getElementById('qgDisputeDetails').addEventListener('input', updateCharCount);
-
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && overlay.classList.contains('open')) closeDisputeModal();
     });
 
     return overlay;
-  }
-
-  function selectReason(value) {
-    selectedReason = value || REASONS[0].value;
-    var wrap = document.getElementById('qgDisputeReasons');
-    if (!wrap) return;
-    wrap.querySelectorAll('.qg-report-reason').forEach(function (btn) {
-      var on = btn.getAttribute('data-value') === selectedReason;
-      btn.classList.toggle('is-selected', on);
-      btn.setAttribute('aria-checked', on ? 'true' : 'false');
-    });
   }
 
   function updateCharCount() {
@@ -123,29 +98,21 @@
     if (!detailsEl || !countEl) return;
     var len = (detailsEl.value || '').length;
     countEl.textContent = len + ' / 1500';
-    countEl.classList.toggle('is-near', len > 1300);
-    countEl.classList.toggle('is-over', len >= 1500);
   }
 
   function openDisputeModal(options) {
     ctx = options || {};
     ensureOverlay();
-
     document.getElementById('qgDisputeSub').textContent =
-      '“' + (ctx.taskTitle || 'Untitled') + '”' +
-      (ctx.otherName ? ' · with ' + ctx.otherName : '');
-
+      (ctx.taskTitle || 'Untitled task') + (ctx.otherName ? ' · with ' + ctx.otherName : '');
     document.getElementById('qgDisputeDetails').value = '';
-    selectReason(REASONS[0].value);
+    document.getElementById('qgDisputeReasonSelect').value = REASONS[0].value;
     updateCharCount();
-
     overlay.classList.add('open');
     overlay.setAttribute('aria-hidden', 'false');
     overlay.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-
-    var firstReason = document.querySelector('#qgDisputeReasons .qg-report-reason');
-    if (firstReason) firstReason.focus();
+    document.getElementById('qgDisputeReasonSelect').focus();
   }
 
   function closeDisputeModal() {
@@ -158,34 +125,33 @@
   }
 
   async function submitDispute() {
-    var user = typeof getCurrentUser === 'function' ? getCurrentUser() : window._currentUser;
-    if (!user) {
-      qgNotify('Please sign in to open a dispute.', '#f59e0b');
+    var user = (typeof getCurrentUser === 'function' ? getCurrentUser() : null) || window._currentUser;
+    if (!user || !user.uid) {
+      qgNotify('Please sign in to report a problem.', '#f59e0b');
       window.location.href = 'login.html';
       return;
     }
     if (!ctx || !ctx.taskId) return;
 
     var btn = document.getElementById('qgDisputeSubmit');
-    btn.disabled = true;
-    btn.textContent = 'Submitting…';
-
-    var details = (document.getElementById('qgDisputeDetails').value || '').trim();
-    if (!details) {
-      qgNotify('Please describe what happened so we can review.', '#f59e0b');
-      btn.disabled = false;
-      btn.textContent = 'Submit dispute';
+    var reason = (document.getElementById('qgDisputeReasonSelect') || {}).value || REASONS[0].value;
+    var detail = (document.getElementById('qgDisputeDetails').value || '').trim();
+    if (!detail) {
+      qgNotify('Please add a short description so we can review.', '#f59e0b');
       return;
     }
 
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+
+    // Canonical schema: raised_by + detail (reports-blocks-disputes.sql)
     var row = {
       task_id: String(ctx.taskId),
-      opened_by: user.uid,
-      opened_by_email: user.email || '',
-      against_user_id: ctx.otherUserId || '',
-      reason: selectedReason,
-      details: details,
-      status: 'open'
+      raised_by: user.uid,
+      reason: reason,
+      detail: detail,
+      status: 'open',
+      created_at: new Date().toISOString()
     };
 
     var result = { success: false };
@@ -196,27 +162,28 @@
     }
 
     btn.disabled = false;
-    btn.textContent = 'Submit dispute';
+    btn.textContent = 'Submit';
 
     if (result.success) {
       closeDisputeModal();
-      if (typeof showToast === 'function') {
-        showToast('Dispute submitted — we will review within 48 hours.');
-      } else {
-        qgNotify('Dispute submitted — we will review within 48 hours.', '#4ade80');
-      }
+      var msg = "We've received this — an admin will review";
+      if (typeof showToast === 'function') showToast(msg);
+      else qgNotify(msg, '#4ade80');
     } else {
-      qgNotify('Could not submit dispute. Run supabase/disputes.sql in Supabase.', '#ef4444');
+      qgNotify('Could not submit. Run supabase/reports-blocks-disputes.sql in Supabase, then try again.', '#ef4444');
     }
   }
 
   function disputeButtonHtml(taskId, taskTitle, otherUserId, otherName) {
-    return '<button type="button" class="qg-chip-btn qg-dispute-trigger" ' +
-      'data-task-id="' + (taskId || '') + '" ' +
-      'data-task-title="' + String(taskTitle || '').replace(/"/g, '&quot;') + '" ' +
-      'data-other-id="' + (otherUserId || '') + '" ' +
-      'data-other-name="' + String(otherName || '').replace(/"/g, '&quot;') + '" ' +
-      'aria-label="Open dispute for ' + String(taskTitle || 'task').replace(/"/g, '&quot;') + '">⚖ Dispute</button>';
+    var attr = typeof escAttr === 'function' ? escAttr : function (s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    };
+    return '<button type="button" class="qg-chip-btn is-danger qg-dispute-trigger" ' +
+      'data-task-id="' + attr(taskId || '') + '" ' +
+      'data-task-title="' + attr(taskTitle || '') + '" ' +
+      'data-other-id="' + attr(otherUserId || '') + '" ' +
+      'data-other-name="' + attr(otherName || '') + '" ' +
+      'aria-label="Report a problem">Report a problem</button>';
   }
 
   function bindDisputeTriggers(root) {

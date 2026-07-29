@@ -4,6 +4,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
+import { feeBreakdown, periodTotal } from '../_shared/fee.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -46,8 +47,16 @@ function errorMessage(err: unknown): string {
 }
 
 function resolveAmount(task: Record<string, unknown>, app: Record<string, unknown>) {
+  // Accepted offer price wins when present (negotiation).
   const price = getField(app, 'price');
-  if (price != null && price !== '') return Number(price);
+  if (price != null && price !== '' && Number(price) > 0) return Number(price);
+
+  const rateType = String(getField(task, 'rate_type') || 'fixed').toLowerCase();
+  if (rateType === 'hourly') {
+    const hr = Number(getField(task, 'hourly_rate') || 0);
+    const hours = Number(getField(task, 'est_hours') || 0);
+    if (hr > 0 && hours > 0) return periodTotal(hr, hours);
+  }
   const budget = getField(task, 'budget');
   return Number(budget || 0);
 }
@@ -359,18 +368,48 @@ Deno.serve(async (req) => {
     if (!amount || amount <= 0) return json({ ok: false, error: 'invalid_amount' }, 400);
     if (amount < 0.5) return json({ ok: false, error: 'amount_below_minimum' }, 400);
 
-    const amountCents = Math.round(amount * 100);
-    const platformFeePercent = Number(Deno.env.get('PLATFORM_FEE_PERCENT') || '25');
-    const platformFeeCents = Math.round(amountCents * (platformFeePercent / 100));
-    const workerPayoutCents = amountCents - platformFeeCents;
+    let workerUser: Record<string, unknown> | null = null;
+    {
+      const withSub = await supabase
+        .from('users')
+        .select('stripe_connect_id, stripe_payouts_enabled, is_subscriber')
+        .eq('firebase_uid', workerId)
+        .maybeSingle();
+      if (withSub.error) {
+        const fallback = await supabase
+          .from('users')
+          .select('stripe_connect_id, stripe_payouts_enabled')
+          .eq('firebase_uid', workerId)
+          .maybeSingle();
+        workerUser = (fallback.data as Record<string, unknown>) || null;
+      } else {
+        workerUser = (withSub.data as Record<string, unknown>) || null;
+      }
+    }
 
-    const { data: workerUser } = await supabase
-      .from('users')
-      .select('stripe_connect_id, stripe_payouts_enabled')
-      .eq('firebase_uid', workerId)
-      .maybeSingle();
-
-    const workerConnectId = workerUser?.stripe_connect_id || '';
+    const workerConnectId = String(workerUser?.stripe_connect_id || '');
+    const isRecurring = !!(getField(task, 'is_recurring'));
+    const isSubscriber = !!(workerUser && workerUser.is_subscriber);
+    // FUTURE: per-period Stripe charging for recurring jobs (subscriptions / scheduled
+    // invoices) hooks here — display + data model only while checkout may be disconnected.
+    // Durable fee model — never hardcode 25%. Env PLATFORM_FEE_PERCENT is ignored when
+    // feeBreakdown rates apply (kept only as emergency override if FEE_FORCE_ENV=1).
+    let breakdown = feeBreakdown(amount, { isRecurring, isSubscriber });
+    if (Deno.env.get('FEE_FORCE_ENV') === '1') {
+      const envPct = Number(Deno.env.get('PLATFORM_FEE_PERCENT') || '25');
+      const fee = Math.round(amount * (envPct / 100) * 100) / 100;
+      breakdown = {
+        total: amount,
+        fee,
+        payout: Math.round((amount - fee) * 100) / 100,
+        rate: envPct / 100,
+        ratePct: envPct,
+        percent: envPct,
+      };
+    }
+    const amountCents = Math.round(breakdown.total * 100);
+    const platformFeeCents = Math.round(breakdown.fee * 100);
+    const workerPayoutCents = Math.round(breakdown.payout * 100);
     const title = String(getField(task, 'title') || 'QuickGigs task');
 
     const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
@@ -442,7 +481,12 @@ Deno.serve(async (req) => {
       ok: true,
       client_secret: session.client_secret,
       session_id: session.id,
-      amount,
+      amount: breakdown.total,
+      platform_fee: breakdown.fee,
+      worker_payout: breakdown.payout,
+      fee_rate_pct: breakdown.ratePct,
+      is_recurring: isRecurring,
+      is_subscriber: isSubscriber,
       worker_has_payouts: !!workerConnectId,
     });
   } catch (err) {

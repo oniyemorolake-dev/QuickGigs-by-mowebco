@@ -1,4 +1,8 @@
-/* QuickGigs — admin console Phase 1 (drawers, edit, flag, notes, moderation) */
+/* QuickGigs — admin console Phase 1 (drawers, edit, flag, notes, moderation)
+ *
+ * SECURITY: isAdmin() / requireAdmin() are UX only (qg-admin-gate.js).
+ * Real enforcement = RLS + service-role backend. Never put secrets here.
+ */
 (function () {
   var TEMP_EMAIL_DOMAINS = [
     'mailinator.com', 'guerrillamail.com', 'tempmail.com', '10minutemail.com',
@@ -8,14 +12,81 @@
 
   var drawerState = { type: null, id: null };
   var reportFilter = 'open';
+  var disputeFilter = 'open';
+
+  /**
+   * Human labels for reports.reason / disputes.reason (and related enums).
+   * Keep keys in sync with supabase/reports-blocks-disputes.sql CHECK constraints.
+   */
+  var ADMIN_REASON_LABELS = {
+    // reports.reason
+    spam: 'Spam',
+    scam: 'Scam',
+    inappropriate: 'Inappropriate',
+    off_platform: 'Off-platform contact',
+    other: 'Other',
+    // disputes.reason
+    not_done: 'Task not completed',
+    not_as_described: 'Not as described',
+    no_show: 'No-show',
+    payment: 'Payment issue',
+    // statuses (display)
+    open: 'Open',
+    reviewing: 'In review',
+    resolved: 'Resolved',
+    rejected: 'Rejected',
+    reviewed: 'Reviewed',
+    dismissed: 'Dismissed',
+    actioned: 'Actioned'
+  };
+
+  function adminReasonLabel(raw) {
+    var key = String(raw || '').toLowerCase().trim();
+    if (!key) return '—';
+    if (ADMIN_REASON_LABELS[key]) return ADMIN_REASON_LABELS[key];
+    return key.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  }
+
+  function adminTimeAgo(iso) {
+    if (!iso) return '—';
+    if (typeof timeAgo === 'function') return timeAgo(iso) || '—';
+    if (typeof formatRelativeTime === 'function') return formatRelativeTime(iso) || '—';
+    try { return new Date(iso).toLocaleString('en-CA'); } catch (e) { return '—'; }
+  }
+
+  /* Task list UI state — search + filters + bulk selection */
+  var taskUI = {
+    search: '',
+    status: 'all',
+    mode: 'all',
+    selected: {},
+    searchTimer: null,
+    filteredIds: []
+  };
 
   function esc(s) {
     if (typeof window.escapeHtml === 'function') return window.escapeHtml(s);
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  function isAdmin(user) {
+    return typeof window.isAdmin === 'function' ? window.isAdmin(user) : false;
+  }
+
+  function requireAdmin() {
+    if (typeof window.requireAdmin === 'function') return window.requireAdmin();
+    return isAdmin();
+  }
+
+  /** Prefer shared adminConfirm modal; never use window.confirm for destructive ops. */
+  function confirmAdmin(opts) {
+    if (typeof window.adminConfirm === 'function') return window.adminConfirm(opts);
+    return Promise.resolve(false);
+  }
+
   function adminEmail() {
-    return (window._auth && window._auth.currentUser && window._auth.currentUser.email) || 'mowebsiteco@gmail.com';
+    var u = (window._auth && window._auth.currentUser) || window._currentUser || null;
+    return (u && u.email) || '';
   }
 
   function userKey(u) {
@@ -87,7 +158,7 @@
 
   async function loadAdminNotesForUser(uid) {
     if (!uid || typeof sbGet !== 'function') return [];
-    var rows = await sbGet('admin_notes', 'user_id=eq.' + encodeURIComponent(uid), 'created_at.desc', 30);
+    var rows = await sbGet('admin_notes', 'user_id=eq.' + encodeURIComponent(uid) + '&select=note_id,user_id,admin_email,body,created_at', 'created_at.desc', 30);
     return Array.isArray(rows) ? rows : [];
   }
 
@@ -180,6 +251,10 @@
           (st === 'banned'
             ? '<button type="button" class="admin-drawer-btn success" onclick="adminUnbanUser()">Unban</button>'
             : '<button type="button" class="admin-drawer-btn danger" onclick="adminBanUser()">Ban user</button>') +
+          (isAdmin()
+            ? '<button type="button" class="admin-drawer-btn danger" onclick="adminDeleteUser()">Delete user</button>' +
+              '<p style="font-size:10px;color:rgba(255,255,255,0.4);margin:8px 0 0;line-height:1.4">Delete removes their tasks (and children), applications, then the user row. Cannot be undone.</p>'
+            : '') +
           (u.firebase_uid ? '<a class="admin-drawer-btn ghost" href="profile.html?user=' + encodeURIComponent(u.firebase_uid) + '" target="_blank" rel="noopener">View public profile</a>' : '') +
         '</div>' +
       '</div>';
@@ -205,8 +280,22 @@
       '<div class="admin-drawer-sub">' + esc(t.poster_name || t.posted_by || 'Poster') + ' · $' + (t.budget || 0) + '</div></div>' +
       '<button type="button" class="admin-drawer-close" onclick="closeAdminDrawer()" aria-label="Close">×</button>';
 
-    var statusOpts = ['open', 'in_progress', 'completed', 'cancelled', 'expired'];
+    var statusOpts = ['open', 'in_progress', 'completed', 'cancelled', 'expired', 'removed'];
     var curStatus = (t.status || 'open').toLowerCase();
+    var isRemoved = curStatus === 'removed';
+    var adminActions = '';
+    if (isAdmin()) {
+      adminActions =
+        '<button type="button" class="admin-drawer-btn warn" onclick="adminHideTask(\'' + tid.replace(/'/g, '') + '\')">' +
+          (isRemoved ? 'Unhide task' : 'Hide task') + '</button>' +
+        '<div class="admin-more-wrap" id="admTaskMoreWrap">' +
+          '<button type="button" class="admin-drawer-btn ghost" onclick="event.stopPropagation();toggleAdminMoreMenu(\'admTaskMoreWrap\')">⋯ More</button>' +
+          '<div class="admin-more-menu">' +
+            '<button type="button" class="admin-more-item" onclick="adminHardDeleteTask(\'' + tid.replace(/'/g, '') + '\')">Delete permanently</button>' +
+          '</div>' +
+        '</div>' +
+        '<p style="font-size:10px;color:rgba(255,255,255,0.4);margin:8px 0 0;line-height:1.4">Hide sets status to removed (keeps the record). Delete removes the task and related applications/messages/reviews/disputes.</p>';
+    }
 
     document.getElementById('adminDrawerBody').innerHTML =
       '<div class="admin-drawer-section"><div class="admin-drawer-section-title">Edit task</div>' +
@@ -241,8 +330,7 @@
         '<div class="admin-drawer-actions">' +
           '<button type="button" class="admin-drawer-btn primary" onclick="adminSaveTask()">Save changes</button>' +
           '<button type="button" class="admin-drawer-btn warn" onclick="adminExpireTask()">Mark expired</button>' +
-          '<button type="button" class="admin-drawer-btn danger" onclick="adminRemoveTask()">Delete task</button>' +
-          '<p style="font-size:10px;color:rgba(255,255,255,0.4);margin:8px 0 0;line-height:1.4">Delete cancels the listing and emails the poster (with your reason). Applicants are notified too.</p>' +
+          adminActions +
           '<a class="admin-drawer-btn ghost" href="browsetask.html?task=' + encodeURIComponent(tid) + '" target="_blank" rel="noopener">View on browse ↗</a>' +
         '</div>' +
       '</div>';
@@ -251,6 +339,7 @@
   }
 
   async function adminSaveUser() {
+    if (!requireAdmin()) return;
     var u = findUser(drawerState.id);
     if (!u) return;
     var patch = {
@@ -271,6 +360,7 @@
   }
 
   async function adminAddUserNote() {
+    if (!requireAdmin()) return;
     var u = findUser(drawerState.id);
     if (!u) return;
     var body = (document.getElementById('admNewNote') && document.getElementById('admNewNote').value || '').trim();
@@ -287,6 +377,7 @@
   }
 
   async function adminFlagUser() {
+    if (!requireAdmin()) return;
     var u = findUser(drawerState.id);
     if (!u) return;
     var next = !u.review_flag;
@@ -301,6 +392,7 @@
   }
 
   async function adminWarnUser() {
+    if (!requireAdmin()) return;
     var u = findUser(drawerState.id);
     if (!u) return;
     var uid = userKey(u);
@@ -315,6 +407,7 @@
   }
 
   async function adminBanUser() {
+    if (!requireAdmin()) return;
     var u = findUser(drawerState.id);
     if (!u || !confirm('Ban ' + (u.name || 'this user') + '? They will not be able to log in.')) return;
     var result = await patchUser(u, { status: 'banned' });
@@ -327,6 +420,7 @@
   }
 
   async function adminUnbanUser() {
+    if (!requireAdmin()) return;
     var u = findUser(drawerState.id);
     if (!u) return;
     var result = await patchUser(u, { status: 'active' });
@@ -339,6 +433,7 @@
   }
 
   async function adminSaveTask() {
+    if (!requireAdmin()) return;
     var t = findTask(drawerState.id);
     if (!t) return;
     var tid = String(t.task_id || t.id);
@@ -365,6 +460,7 @@
   }
 
   async function adminExpireTask() {
+    if (!requireAdmin()) return;
     var t = findTask(drawerState.id);
     if (!t) return;
     var tid = String(t.task_id || t.id);
@@ -380,88 +476,483 @@
     openTaskDrawer(tid);
   }
 
-  async function adminRemoveTask() {
-    var t = findTask(drawerState.id);
-    if (!t) return;
-    var tid = String(t.task_id || t.id);
-    var title = t.title || 'this task';
-
-    if (typeof openModal !== 'function') {
-      var reasonFallback = prompt('Reason for deleting this task (required):');
-      if (!reasonFallback || reasonFallback.trim().length < 5) {
-        showToast('Add a reason (min 5 characters)', 'red');
-        return;
-      }
-      await executeAdminTaskDelete(tid, reasonFallback.trim(), t);
-      return;
-    }
-
-    var noteEl = document.getElementById('modalNote');
-    if (noteEl) {
-      noteEl.value = '';
-      noteEl.placeholder = 'Why is this task being removed? (required — sent to the poster by email)';
-    }
-
-    openModal(
-      'Delete task',
-      'Cancel “' + title + '” and email the poster your reason. Pending applicants are notified too.',
-      '',
-      'Delete & email',
-      'danger',
-      async function () {
-        var reason = (document.getElementById('modalNote').value || '').trim();
-        if (reason.length < 5) {
-          showToast('Add a reason (min 5 characters)', 'red');
-          return false;
-        }
-        await executeAdminTaskDelete(tid, reason, t);
-        return true;
-      },
-      true
-    );
+  function toggleAdminMoreMenu(wrapId) {
+    document.querySelectorAll('.admin-more-wrap.open').forEach(function (el) {
+      if (el.id !== wrapId) el.classList.remove('open');
+    });
+    var wrap = document.getElementById(wrapId);
+    if (wrap) wrap.classList.toggle('open');
   }
 
-  async function executeAdminTaskDelete(tid, reason, t) {
-    var result;
-    if (typeof adminRemoveTaskWithReason === 'function') {
-      result = await adminRemoveTaskWithReason(tid, reason);
-    } else if (typeof cancelTask === 'function') {
-      result = await cancelTask(tid);
-      if (result.success && typeof notifyAdminTaskRemoved === 'function') {
-        var apps = (window.applications || []).filter(function (a) {
-          return String(a.task_id || a.TASK_ID) === tid;
-        });
-        await notifyAdminTaskRemoved(t, apps, reason);
+  if (!window._qgAdminMoreBound) {
+    window._qgAdminMoreBound = true;
+    document.addEventListener('click', function () {
+      document.querySelectorAll('.admin-more-wrap.open').forEach(function (el) {
+        el.classList.remove('open');
+      });
+    });
+  }
+
+  async function deleteRowsByTaskId(table, taskId) {
+    if (typeof sbDelete !== 'function') return { success: false };
+    return sbDelete(table, 'task_id=eq.' + encodeURIComponent(String(taskId)));
+  }
+
+  async function deleteMessagesForTask(taskId) {
+    taskId = String(taskId || '');
+    var convs = [];
+    if (typeof getConversationsForTask === 'function') {
+      try { convs = await getConversationsForTask(taskId) || []; } catch (e) { convs = []; }
+    }
+    if ((!convs || !convs.length) && typeof sbGet === 'function') {
+      try {
+        var rows = await sbGet('conversations', 'task_id=eq.' + encodeURIComponent(taskId) + '&select=conv_id,task_id,poster_id,worker_id,poster_name,worker_name,task_title,status,last_message,last_message_at,created_at', null, 100);
+        if (Array.isArray(rows)) convs = rows;
+      } catch (e2) { /* ignore */ }
+    }
+    for (var i = 0; i < (convs || []).length; i++) {
+      var cid = convs[i].conv_id || convs[i].id;
+      if (!cid) continue;
+      await sbDelete('messages', 'conv_id=eq.' + encodeURIComponent(String(cid)));
+      await sbDelete('conversations', 'conv_id=eq.' + encodeURIComponent(String(cid)));
+    }
+    return { success: true };
+  }
+
+  /**
+   * Hard-delete a task and child rows. Client isAdmin is UX only —
+   * server-side enforcement required when RLS is enabled (LAUNCH-PREP Phase 5).
+   */
+  async function hardDeleteTaskCascade(taskId) {
+    if (!isAdmin()) return { success: false, error: 'not_admin' };
+    taskId = String(taskId || '');
+    if (!taskId || typeof sbDelete !== 'function') return { success: false, error: 'missing' };
+
+    await deleteRowsByTaskId('applications', taskId);
+    await deleteMessagesForTask(taskId);
+    await deleteRowsByTaskId('reviews', taskId);
+    await deleteRowsByTaskId('disputes', taskId);
+
+    var result = await sbDelete('tasks', 'task_id=eq.' + encodeURIComponent(taskId));
+    if (!result.success) {
+      var t = findTask(taskId);
+      if (t && t.id != null) {
+        result = await sbDelete('tasks', 'id=eq.' + encodeURIComponent(String(t.id)));
       }
+    }
+    return result;
+  }
+
+  async function adminHideTask(taskId) {
+    if (!requireAdmin()) return { success: false, error: 'not_admin' };
+    var tid = String(taskId || drawerState.id || '');
+    var t = findTask(tid);
+    if (!t) return { success: false, error: 'not_found' };
+    var cur = String(t.status || 'open').toLowerCase();
+    var next = cur === 'removed' ? 'open' : 'removed';
+    var result;
+    if (typeof updateTaskStatus === 'function' && next !== 'removed') {
+      result = await updateTaskStatus(tid, next);
     } else {
-      result = await sbUpdate('tasks', { status: 'cancelled' }, 'task_id=eq.' + encodeURIComponent(tid));
+      result = await sbUpdate('tasks', { status: next }, 'task_id=eq.' + encodeURIComponent(tid));
     }
-
     if (!result || !result.success) {
-      showToast('Could not delete task', 'red');
-      return;
+      showToast('Could not update task', 'red');
+      return result || { success: false };
+    }
+    t.status = next;
+    if (typeof mergeTaskInCache === 'function') mergeTaskInCache(tid, { status: next });
+    await logAdminAction(next === 'removed' ? 'task_hide' : 'task_unhide', 'task', tid, {});
+    showToast(next === 'removed' ? 'Task hidden (status=removed)' : 'Task unhidden', 'amber');
+    applyAdminTasksView();
+    if (typeof renderOverview === 'function') renderOverview();
+    if (typeof renderModerationQueue === 'function') renderModerationQueue();
+    if (drawerState.type === 'task') openTaskDrawer(tid);
+    return { success: true };
+  }
+
+  async function adminHardDeleteTask(taskId, opts) {
+    opts = opts || {};
+    if (!requireAdmin()) return { success: false, error: 'not_admin' };
+    var tid = String(taskId || drawerState.id || '');
+    var t = findTask(tid);
+    if (!t) return { success: false, error: 'not_found' };
+
+    if (!opts.skipConfirm) {
+      var ok = await confirmAdmin({
+        title: 'Delete this task?',
+        message: 'Delete this task and all its applications/messages? This cannot be undone.',
+        confirmLabel: 'Delete permanently',
+        confirmClass: 'danger'
+      });
+      if (!ok) return { success: false, cancelled: true };
     }
 
-    await logAdminAction('task_delete', 'task', tid, { reason: reason });
+    var result = await hardDeleteTaskCascade(tid);
+    if (!result.success) {
+      if (!opts.silent) showToast('Could not delete task', 'red');
+      return result;
+    }
+
+    await logAdminAction('task_hard_delete', 'task', tid, { title: t.title || '' });
     window.tasks = (window.tasks || []).filter(function (x) {
       return String(x.task_id || x.id) !== tid;
     });
-    if (t) t.status = 'cancelled';
-    showToast('Task deleted — poster emailed', 'green');
-    renderTasks(window.tasks);
-    renderOverview();
-    closeAdminDrawer();
+    window.applications = (window.applications || []).filter(function (a) {
+      return String(a.task_id || a.TASK_ID || '') !== tid;
+    });
+    window.disputes = (window.disputes || []).filter(function (d) {
+      return String(d.task_id || '') !== tid;
+    });
+    delete taskUI.selected[tid];
+    if (!opts.silent) {
+      showToast('Task permanently deleted', 'red');
+      applyAdminTasksView();
+      if (typeof renderOverview === 'function') renderOverview();
+      if (typeof renderModerationQueue === 'function') renderModerationQueue();
+      closeAdminDrawer();
+    }
+    return { success: true };
   }
 
+  /** Legacy entry point — hard delete (kept for moderation shortcuts). */
+  async function adminRemoveTask() {
+    return adminHardDeleteTask(drawerState.id);
+  }
+
+  /**
+   * Delete a user + their posted tasks/children.
+   * Bulk delete is powerful — client isAdmin() is UX only; real enforcement = RLS + service-role.
+   */
+  async function adminDeleteUserById(uidOrKey, opts) {
+    opts = opts || {};
+    if (!requireAdmin()) return { success: false, error: 'not_admin' };
+    var u = findUser(uidOrKey);
+    if (!u) return { success: false, error: 'not_found' };
+    var uid = userKey(u);
+    if (isAdmin({ email: u.email, uid: u.firebase_uid || u.uid || uid })) {
+      if (!opts.silent) showToast('Cannot delete an admin account', 'red');
+      return { success: false, error: 'cannot_delete_admin' };
+    }
+    var label = u.name || u.email || 'this user';
+    if (!opts.skipConfirm) {
+      var ok = await confirmAdmin({
+        title: 'Delete ' + label + '?',
+        message: 'Delete ' + label + ' and all their tasks/applications? This cannot be undone.',
+        confirmLabel: 'Delete user',
+        confirmClass: 'danger'
+      });
+      if (!ok) return { success: false, cancelled: true };
+    }
+
+    var posted = (window.tasks || []).filter(function (t) {
+      return String(t.posted_by || t.POSTED_BY || t.poster_id || '') === uid;
+    });
+    for (var i = 0; i < posted.length; i++) {
+      var tid = String(posted[i].task_id || posted[i].id || '');
+      if (tid) await hardDeleteTaskCascade(tid);
+    }
+
+    if (typeof sbDelete === 'function') {
+      await sbDelete('applications', 'worker_id=eq.' + encodeURIComponent(uid));
+      await sbDelete('applications', 'WORKER_ID=eq.' + encodeURIComponent(uid));
+    }
+
+    var deletedUser = false;
+    var filters = [];
+    if (u.user_id != null) filters.push('user_id=eq.' + encodeURIComponent(String(u.user_id)));
+    if (u.firebase_uid) filters.push('firebase_uid=eq.' + encodeURIComponent(u.firebase_uid));
+    if (u.email) filters.push('email=eq.' + encodeURIComponent(u.email));
+    for (var fi = 0; fi < filters.length; fi++) {
+      var ur = await sbDelete('users', filters[fi]);
+      if (ur.success) { deletedUser = true; break; }
+    }
+
+    if (!deletedUser) {
+      if (!opts.silent) showToast('Could not delete user row', 'red');
+      return { success: false };
+    }
+
+    await logAdminAction('user_hard_delete', 'user', uid, { email: u.email || '' });
+    window.users = (window.users || []).filter(function (x) {
+      return userKey(x) !== uid;
+    });
+    window.tasks = (window.tasks || []).filter(function (t) {
+      return String(t.posted_by || t.POSTED_BY || t.poster_id || '') !== uid;
+    });
+    window.applications = (window.applications || []).filter(function (a) {
+      return String(a.worker_id || a.WORKER_ID || '') !== uid;
+    });
+    if (!opts.silent) {
+      showToast('User deleted', 'red');
+      if (typeof applyUsersView === 'function') applyUsersView();
+      else if (typeof renderUsers === 'function') renderUsers(window.users);
+      applyAdminTasksView();
+      if (typeof renderOverview === 'function') renderOverview();
+      closeAdminDrawer();
+    }
+    return { success: true };
+  }
+
+  async function adminDeleteUser() {
+    return adminDeleteUserById(drawerState.id);
+  }
+
+  function taskPosterSearchName(t) {
+    var uid = t.posted_by || t.POSTED_BY || '';
+    if (typeof adminResolveUserName === 'function') {
+      return adminResolveUserName(uid, t.poster_name || '');
+    }
+    return String(t.poster_name || '').trim();
+  }
+
+  function getFilteredTasks() {
+    var q = String(taskUI.search || '').toLowerCase().trim();
+    var status = String(taskUI.status || 'all').toLowerCase();
+    var mode = String(taskUI.mode || 'all').toLowerCase();
+    return (window.tasks || []).filter(function (t) {
+      var st = String(t.status || 'open').toLowerCase();
+      var md = String(t.task_mode || t.TASK_MODE || 'standard').toLowerCase();
+      if (status !== 'all' && st !== status) return false;
+      if (mode !== 'all' && md !== mode) return false;
+      if (!q) return true;
+      var title = String(t.title || '').toLowerCase();
+      var posterName = taskPosterSearchName(t).toLowerCase();
+      return title.indexOf(q) >= 0 || posterName.indexOf(q) >= 0;
+    });
+  }
+
+  function syncTaskFilterChips() {
+    document.querySelectorAll('[data-task-status]').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-task-status') === taskUI.status);
+    });
+    document.querySelectorAll('[data-task-mode]').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-task-mode') === taskUI.mode);
+    });
+  }
+
+  function updateTasksBulkBar() {
+    var ids = Object.keys(taskUI.selected).filter(function (id) { return taskUI.selected[id]; });
+    var bulk = document.getElementById('tasksBulkActions');
+    var label = document.getElementById('tasksBulkLabel');
+    if (bulk) {
+      if (ids.length) bulk.classList.add('show');
+      else bulk.classList.remove('show');
+    }
+    if (label) label.textContent = ids.length + ' selected';
+    var all = document.querySelectorAll('#tasksBody .task-select-cb');
+    var selAll = document.getElementById('tasksSelectAll');
+    if (selAll && all.length) {
+      var checked = 0;
+      all.forEach(function (c) { if (c.checked) checked++; });
+      selAll.checked = checked === all.length;
+      selAll.indeterminate = checked > 0 && checked < all.length;
+    }
+  }
+
+  function applyAdminTasksView() {
+    syncTaskFilterChips();
+    var filtered = getFilteredTasks();
+    taskUI.filteredIds = filtered.map(function (t) { return String(t.task_id || t.id || ''); });
+    // Drop selections that are no longer in the filtered set
+    Object.keys(taskUI.selected).forEach(function (id) {
+      if (taskUI.filteredIds.indexOf(id) < 0) delete taskUI.selected[id];
+    });
+    renderTasksEnhanced(filtered);
+    updateTasksBulkBar();
+  }
+
+  function onTasksSearchInput(q) {
+    taskUI.search = q || '';
+    if (taskUI.searchTimer) clearTimeout(taskUI.searchTimer);
+    taskUI.searchTimer = setTimeout(function () { applyAdminTasksView(); }, 300);
+  }
+
+  function setTaskStatusFilter(status) {
+    taskUI.status = status || 'all';
+    applyAdminTasksView();
+  }
+
+  function setTaskModeFilter(mode) {
+    taskUI.mode = mode || 'all';
+    applyAdminTasksView();
+  }
+
+  function toggleTaskSelected(tid, checked) {
+    tid = String(tid || '');
+    if (!tid) return;
+    if (checked) taskUI.selected[tid] = true;
+    else delete taskUI.selected[tid];
+    updateTasksBulkBar();
+  }
+
+  function selectAllTasks(cb) {
+    var on = !!(cb && cb.checked);
+    taskUI.filteredIds.forEach(function (id) {
+      if (on) taskUI.selected[id] = true;
+      else delete taskUI.selected[id];
+    });
+    document.querySelectorAll('#tasksBody .task-select-cb').forEach(function (c) {
+      c.checked = on;
+    });
+    updateTasksBulkBar();
+  }
+
+  /**
+   * Bulk hide — primary/safer action.
+   * Bulk delete is powerful; client isAdmin() is UX only until RLS + service-role backend.
+   */
+  async function bulkHideTasks() {
+    if (!requireAdmin()) return;
+    var ids = Object.keys(taskUI.selected).filter(function (id) { return taskUI.selected[id]; });
+    if (!ids.length) return;
+    var ok = await confirmAdmin({
+      title: 'Hide ' + ids.length + ' task' + (ids.length === 1 ? '' : 's') + '?',
+      message: 'Hide ' + ids.length + ' selected task' + (ids.length === 1 ? '' : 's') + ' (status → removed). They can be unhidden later.',
+      confirmLabel: 'Hide selected',
+      confirmClass: 'warn'
+    });
+    if (!ok) return;
+    var n = 0;
+    for (var i = 0; i < ids.length; i++) {
+      var t = findTask(ids[i]);
+      if (!t) continue;
+      var cur = String(t.status || 'open').toLowerCase();
+      if (cur === 'removed') continue;
+      var result = await sbUpdate('tasks', { status: 'removed' }, 'task_id=eq.' + encodeURIComponent(ids[i]));
+      if (result && result.success) {
+        t.status = 'removed';
+        n++;
+        await logAdminAction('task_hide', 'task', ids[i], { bulk: true });
+      }
+    }
+    taskUI.selected = {};
+    applyAdminTasksView();
+    if (typeof renderOverview === 'function') renderOverview();
+    if (typeof renderModerationQueue === 'function') renderModerationQueue();
+    showToast(n + ' task' + (n === 1 ? '' : 's') + ' hidden', 'amber');
+  }
+
+  async function bulkDeleteTasks() {
+    if (!requireAdmin()) return;
+    var ids = Object.keys(taskUI.selected).filter(function (id) { return taskUI.selected[id]; });
+    if (!ids.length) return;
+    var ok = await confirmAdmin({
+      title: 'Delete ' + ids.length + ' task' + (ids.length === 1 ? '' : 's') + '?',
+      message: 'Delete ' + ids.length + ' tasks and their applications/messages/reviews/disputes? This cannot be undone.',
+      confirmLabel: 'Delete selected',
+      confirmClass: 'danger'
+    });
+    if (!ok) return;
+    var n = 0;
+    for (var i = 0; i < ids.length; i++) {
+      var result = await adminHardDeleteTask(ids[i], { skipConfirm: true, silent: true });
+      if (result && result.success) n++;
+    }
+    taskUI.selected = {};
+    applyAdminTasksView();
+    if (typeof renderOverview === 'function') renderOverview();
+    if (typeof renderModerationQueue === 'function') renderModerationQueue();
+    showToast(n + ' task' + (n === 1 ? '' : 's') + ' deleted', 'red');
+  }
+
+  function renderTasksEnhanced(data) {
+    // When called with full list from legacy paths, re-apply filters
+    if (!data || data === window.tasks) {
+      data = getFilteredTasks();
+    }
+    var totalAll = (window.tasks || []).length;
+    var countEl = document.getElementById('tasksCount');
+    if (countEl) {
+      countEl.textContent = data.length === totalAll
+        ? ('· ' + data.length + ' total')
+        : ('· ' + data.length + ' shown · ' + totalAll + ' total');
+    }
+    var body = document.getElementById('tasksBody');
+    if (!body) return;
+    if (!data.length) {
+      body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-faint);font-size:13px">No tasks match these filters</div>';
+      updateTasksBulkBar();
+      return;
+    }
+    var adminOk = isAdmin();
+    body.innerHTML = data.map(function (t, i) {
+      var tid = String(t.task_id || t.id || '');
+      var st = (t.status || 'open').toLowerCase();
+      var sc = st === 'completed' ? 's-done'
+        : st === 'in_progress' ? 's-progress'
+        : st === 'expired' ? 's-expired'
+        : st === 'removed' ? 's-removed'
+        : st === 'cancelled' ? 's-banned'
+        : 's-posted';
+      var sl = st === 'in_progress' ? 'In progress'
+        : st === 'removed' ? 'Hidden'
+        : st.charAt(0).toUpperCase() + st.slice(1);
+      var appCount = (window.applications || []).filter(function (a) {
+        return String(a.task_id || a.TASK_ID || '') === tid;
+      }).length;
+      var safeTid = tid.replace(/'/g, '');
+      var menuId = 'taskMore_' + i;
+      var checked = !!taskUI.selected[tid];
+      var actions =
+        '<button type="button" class="act-btn btn-view" onclick="event.stopPropagation();openTaskDrawer(\'' + safeTid + '\')">Open</button>';
+      if (adminOk) {
+        actions +=
+          '<button type="button" class="act-btn btn-hide" onclick="event.stopPropagation();adminHideTask(\'' + safeTid + '\')">' +
+            (st === 'removed' ? 'Unhide' : 'Hide') + '</button>' +
+          '<div class="admin-more-wrap" id="' + menuId + '" onclick="event.stopPropagation()">' +
+            '<button type="button" class="act-btn btn-more" onclick="event.stopPropagation();toggleAdminMoreMenu(\'' + menuId + '\')" aria-label="More actions">⋯</button>' +
+            '<div class="admin-more-menu">' +
+              '<button type="button" class="admin-more-item" onclick="event.stopPropagation();adminHardDeleteTask(\'' + safeTid + '\')">Delete</button>' +
+            '</div>' +
+          '</div>';
+      }
+      var posterHtml = typeof adminResolveUserHtml === 'function'
+        ? adminResolveUserHtml(t.posted_by || t.POSTED_BY, t.poster_name)
+        : esc(t.poster_name || t.posted_by || '—');
+      var money = typeof adminFormatMoney === 'function'
+        ? adminFormatMoney(t.budget)
+        : ('$' + Number(t.budget || 0).toFixed(2));
+      return '<div class="data-row g-tasks" onclick="openTaskDrawer(\'' + safeTid + '\')">' +
+        '<div><input type="checkbox" class="checkbox task-select-cb" value="' + esc(tid) + '"' +
+          (checked ? ' checked' : '') +
+          ' onclick="event.stopPropagation()" onchange="toggleTaskSelected(this.value, this.checked)" aria-label="Select task"></div>' +
+        '<div class="user-cell"><div style="min-width:0"><div class="u-name">' + esc(t.title || 'Untitled') + '</div>' +
+        '<div class="u-meta">' + appCount + ' applicant' + (appCount !== 1 ? 's' : '') +
+        ' · ' + (t.created_at ? new Date(t.created_at).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }) : '') +
+        '</div></div></div>' +
+        '<div class="cell">' + posterHtml + '</div>' +
+        '<div class="cell cell-num">' + money + '</div>' +
+        '<div class="cell-pill"><span class="mode-pill">' + esc(t.task_mode || 'standard') + '</span></div>' +
+        '<div class="cell-pill"><span class="status-pill ' + sc + '">' + esc(sl) + '</span></div>' +
+        '<div class="act-btns">' + actions + '</div></div>';
+    }).join('');
+    updateTasksBulkBar();
+  }
+
+  /**
+   * Update a report status (reviewed / dismissed / actioned).
+   * ADMIN-NOTE: uses anon client today. Once RLS is on, this write (and reading
+   * OTHER users' reports) must go through a service-role Edge Function —
+   * never put a service-role key in the frontend.
+   */
   async function adminResolveReport(reportId, newStatus) {
+    if (!requireAdmin()) return;
     if (typeof sbUpdate !== 'function') return;
-    await sbUpdate('reports', { status: newStatus }, 'report_id=eq.' + encodeURIComponent(String(reportId)));
-    var r = (window.reports || []).find(function (x) { return String(x.report_id || x.id) === String(reportId); });
-    if (r) r.status = newStatus;
-    await logAdminAction('report_' + newStatus, 'report', reportId, {});
-    showToast('Report ' + newStatus, 'green');
-    renderReports();
-    renderOverview();
+    var rid = String(reportId || '');
+    var st = String(newStatus || '').toLowerCase();
+    if (!rid || ['reviewed', 'dismissed', 'actioned'].indexOf(st) < 0) return;
+    var result = await sbUpdate('reports', { status: st }, 'report_id=eq.' + encodeURIComponent(rid));
+    if (!result || !result.success) {
+      showToast('Could not update report', 'red');
+      return;
+    }
+    var r = (window.reports || []).find(function (x) { return String(x.report_id || x.id) === rid; });
+    if (r) r.status = st;
+    await logAdminAction('report_' + st, 'report', rid, {});
+    showToast('Report marked ' + adminReasonLabel(st), 'green');
+    renderReportsEnhanced();
+    if (typeof renderOverview === 'function') renderOverview();
   }
 
   function csvEscape(val) {
@@ -588,52 +1079,239 @@
   }
 
   function setReportFilter(f) {
-    reportFilter = f;
-    document.querySelectorAll('.report-filter-btn').forEach(function (btn) {
-      btn.classList.toggle('active', btn.getAttribute('data-filter') === f);
+    reportFilter = f === 'all' ? 'all' : 'open';
+    document.querySelectorAll('#section-reports .report-filter-btn').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-filter') === reportFilter);
     });
-    renderReports();
+    renderReportsEnhanced();
   }
 
-  function renderReportsEnhanced() {
-    var open = (window.reports || []).filter(function (r) { return (r.status || 'open') === 'open'; }).length;
-    var countEl = document.getElementById('reportsCount');
-    if (countEl) countEl.textContent = '· ' + (window.reports || []).length + ' total · ' + open + ' open';
-    var badge = document.getElementById('reportBadge');
-    if (badge) badge.textContent = open;
+  function setDisputeFilter(f) {
+    disputeFilter = f === 'all' ? 'all' : 'open';
+    document.querySelectorAll('#section-disputes .report-filter-btn').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-dispute-filter') === disputeFilter);
+    });
+    renderDisputesEnhanced();
+  }
 
-    var list = (window.reports || []).slice();
-    if (reportFilter === 'open') list = list.filter(function (r) { return (r.status || 'open') === 'open'; });
-    else if (reportFilter === 'task') list = list.filter(function (r) { return (r.target_type || '') === 'task'; });
-    else if (reportFilter === 'user') list = list.filter(function (r) { return (r.target_type || '') === 'profile' || (r.target_type || '') === 'user'; });
+  function countOpenReports() {
+    return (window.reports || []).filter(function (r) {
+      return String(r.status || 'open').toLowerCase() === 'open';
+    }).length;
+  }
+
+  /** Active dispute queue: open + reviewing (not resolved/rejected). */
+  function countOpenDisputes() {
+    return (window.disputes || []).filter(function (d) {
+      var st = String(d.status || 'open').toLowerCase();
+      return st === 'open' || st === 'reviewing';
+    }).length;
+  }
+
+  function syncModerationBadges() {
+    var openR = countOpenReports();
+    var openD = countOpenDisputes();
+    var rb = document.getElementById('reportBadge');
+    var db = document.getElementById('disputeBadge');
+    if (rb) rb.textContent = String(openR);
+    if (db) db.textContent = String(openD);
+    var modBadge = document.getElementById('moderationReportBadge');
+    if (modBadge) modBadge.textContent = String(openR);
+  }
+
+  /**
+   * Reports queue — open first (newest), human reason labels, linked target.
+   * Loaded via anon client (see loadData ADMIN-NOTE). After RLS: service-role backend only.
+   */
+  function renderReportsEnhanced() {
+    var open = countOpenReports();
+    var countEl = document.getElementById('reportsCount');
+    if (countEl) {
+      countEl.textContent = reportFilter === 'open'
+        ? ('· ' + open + ' open')
+        : ('· ' + (window.reports || []).length + ' total · ' + open + ' open');
+    }
+    syncModerationBadges();
+
+    var list = (window.reports || []).slice().sort(function (a, b) {
+      return String(b.created_at || '').localeCompare(String(a.created_at || ''));
+    });
+    if (reportFilter === 'open') {
+      list = list.filter(function (r) { return String(r.status || 'open').toLowerCase() === 'open'; });
+    }
 
     var body = document.getElementById('reportsBody');
     if (!body) return;
     if (!list.length) {
-      body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-faint);font-size:13px">No reports in this queue</div>';
+      body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-faint);font-size:13px">' +
+        (reportFilter === 'open' ? 'No open reports' : 'No reports yet') + '</div>';
       return;
     }
+
+    var attr = typeof escAttr === 'function' ? escAttr : function (s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    };
+
     body.innerHTML = list.map(function (r) {
-      var rid = r.report_id || r.id;
-      var target = (r.target_type || '?') + ': ' + (r.target_label || r.target_id || '—');
-      var when = r.created_at ? new Date(r.created_at).toLocaleDateString('en-CA') : '—';
-      var st = r.status || 'open';
+      var rid = String(r.report_id || r.id || '');
+      var tt = String(r.target_type || '').toLowerCase();
+      var tid = String(r.target_id || '');
+      var targetLabel = (tt === 'task' ? 'Task' : tt === 'user' || tt === 'profile' ? 'User' : (tt || 'Target')) +
+        (tid ? ' · ' + (tid.length > 18 ? tid.slice(0, 10) + '…' : tid) : '');
+      var detail = String(r.detail || r.details || '').trim();
+      var detailShort = detail.length > 100 ? detail.slice(0, 100) + '…' : detail;
+      var st = String(r.status || 'open').toLowerCase();
+      var reporterHtml = typeof adminResolveUserHtml === 'function'
+        ? adminResolveUserHtml(r.reporter_id)
+        : esc(r.reporter_id || '—');
+
       return '<div class="data-row g-disputes">' +
-        '<div class="cell" style="cursor:pointer" onclick="adminOpenReportTarget(\'' + esc(String(r.target_type)) + '\',\'' + esc(String(r.target_id || '')) + '\')">' + esc(target) + '</div>' +
-        '<div class="cell">' + esc(r.reason || '—') + '</div>' +
-        '<div class="cell">' + esc(r.reporter_email || r.reporter_id || '—') + '</div>' +
-        '<div class="cell"><span class="status-pill ' + (st === 'open' ? 's-open' : 's-resolved') + '">' + esc(st) + '</span></div>' +
-        '<div class="cell">' + when + '</div>' +
+        '<div class="cell">' + esc(adminReasonLabel(r.reason)) + '</div>' +
+        '<div class="cell">' +
+          (tid
+            ? '<a href="#" class="admin-uid-name" title="' + attr(tt + ': ' + tid) + '" data-tt="' + attr(tt) + '" data-tid="' + attr(tid) + '" onclick="event.preventDefault();adminOpenReportTarget(this.getAttribute(\'data-tt\'),this.getAttribute(\'data-tid\'))">' + esc(targetLabel) + '</a>'
+            : esc(targetLabel || '—')) +
+        '</div>' +
+        '<div class="cell">' + reporterHtml + '</div>' +
+        '<div class="cell cell-wrap" title="' + attr(detail) + '">' + esc(detailShort || '—') + '</div>' +
+        '<div class="cell">' + esc(adminTimeAgo(r.created_at)) + '</div>' +
         '<div class="act-btns">' +
-          (st === 'open' ? '<button class="act-btn btn-resolve" onclick="adminResolveReport(\'' + rid + '\',\'resolved\')">Resolve</button>' +
-          '<button class="act-btn btn-view" onclick="adminResolveReport(\'' + rid + '\',\'dismissed\')">Dismiss</button>' : '') +
+          (st === 'open'
+            ? '<button type="button" class="act-btn btn-resolve" data-rid="' + attr(rid) + '" onclick="adminResolveReport(this.getAttribute(\'data-rid\'),\'reviewed\')">Mark reviewed</button>' +
+              '<button type="button" class="act-btn btn-view" data-rid="' + attr(rid) + '" onclick="adminResolveReport(this.getAttribute(\'data-rid\'),\'dismissed\')">Dismiss</button>' +
+              '<button type="button" class="act-btn btn-warn" data-rid="' + attr(rid) + '" onclick="adminResolveReport(this.getAttribute(\'data-rid\'),\'actioned\')">Actioned</button>'
+            : '<span class="status-pill ' + (st === 'actioned' ? 's-progress' : 's-resolved') + '">' + esc(adminReasonLabel(st)) + '</span>') +
         '</div></div>';
     }).join('');
   }
 
   function adminOpenReportTarget(type, id) {
+    type = String(type || '').toLowerCase();
+    id = String(id || '');
+    if (!id) return;
     if (type === 'task') openTaskDrawer(id);
     else openUserDrawer(id);
+  }
+
+  /**
+   * Disputes queue — open/reviewing by default. Status updates only (no money movement).
+   * ADMIN-NOTE: anon client for now; after RLS, use service-role Edge Function for admin reads/writes.
+   */
+  function renderDisputesEnhanced() {
+    var open = countOpenDisputes();
+    var countEl = document.getElementById('disputesCount');
+    if (countEl) {
+      countEl.textContent = disputeFilter === 'open'
+        ? ('· ' + open + ' open')
+        : ('· ' + (window.disputes || []).length + ' total · ' + open + ' open');
+    }
+    syncModerationBadges();
+
+    var list = (window.disputes || []).slice().sort(function (a, b) {
+      return String(b.created_at || '').localeCompare(String(a.created_at || ''));
+    });
+    if (disputeFilter === 'open') {
+      list = list.filter(function (d) {
+        var st = String(d.status || 'open').toLowerCase();
+        return st === 'open' || st === 'reviewing';
+      });
+    }
+
+    var body = document.getElementById('disputesBody');
+    if (!body) return;
+    if (!list.length) {
+      body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-faint);font-size:13px">' +
+        (disputeFilter === 'open' ? 'No open disputes' : 'No disputes yet') + '</div>';
+      return;
+    }
+
+    var attr = typeof escAttr === 'function' ? escAttr : function (s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    };
+
+    body.innerHTML = list.map(function (d) {
+      var did = String(d.dispute_id || d.id || '');
+      var tid = String(d.task_id || '');
+      var task = (window.tasks || []).find(function (t) {
+        return String(t.task_id || t.id) === tid;
+      });
+      var taskTitle = task ? (task.title || tid) : tid;
+      var taskLabel = taskTitle
+        ? (String(taskTitle).length > 36 ? String(taskTitle).slice(0, 34) + '…' : taskTitle)
+        : '—';
+      var detail = String(d.detail || d.details || '').trim();
+      var detailShort = detail.length > 100 ? detail.slice(0, 100) + '…' : detail;
+      var st = String(d.status || 'open').toLowerCase();
+      var raisedHtml = typeof adminResolveUserHtml === 'function'
+        ? adminResolveUserHtml(d.raised_by)
+        : esc(d.raised_by || '—');
+      var stPill = st === 'open' ? 's-open'
+        : st === 'reviewing' ? 's-progress'
+        : st === 'rejected' ? 's-banned'
+        : 's-resolved';
+
+      var actions = '';
+      if (st === 'open') {
+        actions =
+          '<button type="button" class="act-btn btn-view" data-did="' + attr(did) + '" onclick="adminUpdateDisputeStatus(this.getAttribute(\'data-did\'),\'reviewing\')">Start review</button>' +
+          '<button type="button" class="act-btn btn-resolve" data-did="' + attr(did) + '" onclick="adminUpdateDisputeStatus(this.getAttribute(\'data-did\'),\'resolved\')">Resolve</button>' +
+          '<button type="button" class="act-btn btn-remove" data-did="' + attr(did) + '" onclick="adminUpdateDisputeStatus(this.getAttribute(\'data-did\'),\'rejected\')">Reject</button>';
+      } else if (st === 'reviewing') {
+        actions =
+          '<button type="button" class="act-btn btn-resolve" data-did="' + attr(did) + '" onclick="adminUpdateDisputeStatus(this.getAttribute(\'data-did\'),\'resolved\')">Resolve</button>' +
+          '<button type="button" class="act-btn btn-remove" data-did="' + attr(did) + '" onclick="adminUpdateDisputeStatus(this.getAttribute(\'data-did\'),\'rejected\')">Reject</button>';
+      } else {
+        actions = '<span class="status-pill ' + stPill + '">' + esc(adminReasonLabel(st)) + '</span>';
+      }
+
+      return '<div class="data-row g-disputes">' +
+        '<div class="cell">' + esc(adminReasonLabel(d.reason)) +
+          (st === 'reviewing' ? ' <span class="status-pill s-progress">In review</span>' : '') +
+        '</div>' +
+        '<div class="cell">' +
+          (tid
+            ? '<a href="#" class="admin-uid-name" title="' + attr(tid) + '" data-tid="' + attr(tid) + '" onclick="event.preventDefault();openTaskDrawer(this.getAttribute(\'data-tid\'))">' + esc(taskLabel) + '</a>'
+            : '—') +
+        '</div>' +
+        '<div class="cell">' + raisedHtml + '</div>' +
+        '<div class="cell cell-wrap" title="' + attr(detail) + '">' + esc(detailShort || '—') + '</div>' +
+        '<div class="cell">' + esc(adminTimeAgo(d.created_at)) + '</div>' +
+        '<div class="act-btns">' + actions + '</div></div>';
+    }).join('');
+  }
+
+  /**
+   * Dispute status only — never moves money / escrow.
+   * reviewing | resolved | rejected (+ resolved_at when closed).
+   */
+  async function adminUpdateDisputeStatus(disputeId, newStatus) {
+    if (!requireAdmin()) return;
+    if (typeof sbUpdate !== 'function') return;
+    var did = String(disputeId || '');
+    var st = String(newStatus || '').toLowerCase();
+    if (!did || ['reviewing', 'resolved', 'rejected'].indexOf(st) < 0) return;
+
+    var patch = { status: st };
+    if (st === 'resolved' || st === 'rejected') {
+      patch.resolved_at = new Date().toISOString();
+    }
+
+    var result = await sbUpdate('disputes', patch, 'dispute_id=eq.' + encodeURIComponent(did));
+    if (!result || !result.success) {
+      showToast('Could not update dispute', 'red');
+      return;
+    }
+    var d = (window.disputes || []).find(function (x) {
+      return String(x.dispute_id || x.id) === did;
+    });
+    if (d) {
+      d.status = st;
+      if (patch.resolved_at) d.resolved_at = patch.resolved_at;
+    }
+    await logAdminAction('dispute_' + st, 'dispute', did, { money: false });
+    showToast('Dispute ' + adminReasonLabel(st) + (st === 'resolved' || st === 'rejected' ? ' (no payment change)' : ''), st === 'rejected' ? 'amber' : 'green');
+    renderDisputesEnhanced();
+    if (typeof renderOverview === 'function') renderOverview();
   }
 
   function syncWaitlistSignups() {
@@ -664,11 +1342,23 @@
 
     var statsEl = document.getElementById('waitlistStats');
     if (statsEl) {
-      statsEl.innerHTML =
-        '<div class="admin-wl-stat"><div class="admin-wl-stat-val">' + total + '</div><div class="admin-wl-stat-label">Total</div></div>' +
-        '<div class="admin-wl-stat"><div class="admin-wl-stat-val">' + signed + '</div><div class="admin-wl-stat-label">Signed up</div></div>' +
-        '<div class="admin-wl-stat"><div class="admin-wl-stat-val">' + invited + '</div><div class="admin-wl-stat-label">Invited</div></div>' +
-        '<div class="admin-wl-stat"><div class="admin-wl-stat-val">' + pending + '</div><div class="admin-wl-stat-label">Not yet joined</div></div>';
+      statsEl.className = 'stats-grid';
+      function wlCard(val, label, sub, accent, valClass) {
+        if (typeof adminStatCardHtml === 'function') {
+          return adminStatCardHtml({ val: val, label: label, sub: sub, accent: accent, valClass: valClass });
+        }
+        // Fallback — same Revenue-style card markup (never loose stacked text)
+        return '<div class="stat-card"><div class="stat-accent ' + accent + '"></div>' +
+          '<div class="stat-val ' + valClass + '">' + val + '</div>' +
+          '<div class="stat-label">' + label + '</div>' +
+          '<div class="stat-sub">' + sub + '</div></div>';
+      }
+      statsEl.innerHTML = [
+        wlCard(total, 'Total', 'On waitlist', 'accent-purple', 'c-purple'),
+        wlCard(signed, 'Signed up', 'Already joined', 'accent-green', 'c-green'),
+        wlCard(invited, 'Invited', 'Invite sent', 'accent-amber', 'c-amber'),
+        wlCard(pending, 'Not yet joined', 'Still waiting', 'accent-red', 'c-red')
+      ].join('');
     }
 
     var countEl = document.getElementById('waitlistCount');
@@ -685,10 +1375,10 @@
       var wid = w.waitlist_id;
       var st = w.signed_up ? 's-done' : (w.invited_at ? 's-progress' : 's-posted');
       var sl = w.signed_up ? '✓ Joined' : (w.invited_at ? '📨 Invited' : '⏳ Waiting');
-      return '<div class="data-row g-disputes">' +
+      return '<div class="data-row g-waitlist">' +
         '<div class="cell">' + esc(w.email) + '</div>' +
         '<div class="cell">' + esc(w.name || '—') + '</div>' +
-        '<div class="cell"><span class="status-pill ' + st + '">' + sl + '</span></div>' +
+        '<div class="cell-pill"><span class="status-pill ' + st + '">' + sl + '</span></div>' +
         '<div class="cell">' + (w.invited_at ? new Date(w.invited_at).toLocaleDateString('en-CA') : '—') + '</div>' +
         '<div class="cell">' + (w.signed_up_at ? new Date(w.signed_up_at).toLocaleDateString('en-CA') : '—') + '</div>' +
         '<div class="act-btns">' +
@@ -700,6 +1390,7 @@
   }
 
   async function adminImportWaitlist() {
+    if (!requireAdmin()) return;
     var box = document.getElementById('waitlistImport');
     if (!box) return;
     var raw = box.value || '';
@@ -730,6 +1421,7 @@
   }
 
   async function adminMarkInvited(id) {
+    if (!requireAdmin()) return;
     var w = (window.waitlist || []).find(function (x) { return String(x.waitlist_id) === String(id); });
     if (!w) return;
     if (typeof sendWaitlistEmail === 'function') {
@@ -748,6 +1440,7 @@
   }
 
   async function adminMarkReminder(id) {
+    if (!requireAdmin()) return;
     var w = (window.waitlist || []).find(function (x) { return String(x.waitlist_id) === String(id); });
     if (!w) return;
     if (typeof sendWaitlistEmail === 'function') {
@@ -766,6 +1459,7 @@
   }
 
   async function adminDeleteWaitlist(id) {
+    if (!requireAdmin()) return;
     if (!confirm('Remove this waitlist entry?')) return;
     if (typeof sbDelete === 'function') {
       await sbDelete('waitlist', 'waitlist_id=eq.' + encodeURIComponent(String(id)));
@@ -792,7 +1486,7 @@
 
   async function loadPlatformBannerForm() {
     if (typeof sbGet !== 'function') return;
-    var rows = await sbGet('platform_banner', 'id=eq.1', 'id.asc', 1);
+    var rows = await sbGet('platform_banner', 'id=eq.1&select=id,message,link,style,active,soft_close,updated_at', 'id.asc', 1);
     var statusEl = document.getElementById('bannerDbStatus');
     if (!rows || !rows.length) {
       if (statusEl) {
@@ -821,6 +1515,7 @@
   }
 
   async function adminSaveBanner() {
+    if (!requireAdmin()) return;
     var patch = {
       message: (document.getElementById('bannerMessage').value || '').trim(),
       link: (document.getElementById('bannerLink').value || '').trim(),
@@ -844,7 +1539,7 @@
       }
     }
 
-    var savedRows = await sbGet('platform_banner', 'id=eq.1', 'id.asc', 1);
+    var savedRows = await sbGet('platform_banner', 'id=eq.1&select=id,message,link,style,active,soft_close,updated_at', 'id.asc', 1);
     var saved = savedRows && savedRows[0] ? savedRows[0] : null;
     if (!saved) {
       showToast('Save failed — run supabase/soft-close.sql in Supabase SQL Editor, then try again', 'red');
@@ -885,13 +1580,32 @@
   window.adminSaveTask = adminSaveTask;
   window.adminExpireTask = adminExpireTask;
   window.adminRemoveTask = adminRemoveTask;
+  window.adminHideTask = adminHideTask;
+  window.adminHardDeleteTask = adminHardDeleteTask;
+  window.adminDeleteUser = adminDeleteUser;
+  window.adminDeleteUserById = adminDeleteUserById;
+  window.toggleAdminMoreMenu = toggleAdminMoreMenu;
+  // Do not overwrite window.isAdmin from qg-admin-gate.js
+  window.renderTasksEnhanced = renderTasksEnhanced;
+  window.applyAdminTasksView = applyAdminTasksView;
+  window.onTasksSearchInput = onTasksSearchInput;
+  window.setTaskStatusFilter = setTaskStatusFilter;
+  window.setTaskModeFilter = setTaskModeFilter;
+  window.toggleTaskSelected = toggleTaskSelected;
+  window.selectAllTasks = selectAllTasks;
+  window.bulkHideTasks = bulkHideTasks;
+  window.bulkDeleteTasks = bulkDeleteTasks;
   window.adminResolveReport = adminResolveReport;
   window.adminOpenReportTarget = adminOpenReportTarget;
   window.exportCSV = exportCSV;
   window.renderSecurityFromActions = renderSecurityFromActions;
   window.renderFraudAlerts = renderFraudAlerts;
   window.setReportFilter = setReportFilter;
+  window.setDisputeFilter = setDisputeFilter;
   window.renderReportsEnhanced = renderReportsEnhanced;
+  window.renderDisputesEnhanced = renderDisputesEnhanced;
+  window.adminUpdateDisputeStatus = adminUpdateDisputeStatus;
+  window.adminReasonLabel = adminReasonLabel;
   window.isTempEmail = isTempEmail;
   window.findUser = findUser;
   window.userKey = userKey;

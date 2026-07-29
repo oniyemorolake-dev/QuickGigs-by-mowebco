@@ -55,6 +55,7 @@
             '<div class="qg-stripe-title" id="qgStripeTitle">Pay to unlock chat</div>' +
             '<div class="qg-stripe-sub" id="qgStripeSub">Secure payment · held in escrow until job is done</div>' +
             '<div class="qg-stripe-amount" id="qgStripeAmount"></div>' +
+            '<div class="qg-stripe-fee" id="qgStripeFee" style="display:none;font-size:11px;line-height:1.45;margin-top:6px;opacity:0.85"></div>' +
           '</div>' +
           '<button type="button" class="qg-stripe-close" id="qgStripeClose" aria-label="Close">×</button>' +
         '</div>' +
@@ -314,7 +315,7 @@
       body: JSON.stringify({
         task_id: String(taskId),
         poster_id: String(posterId),
-        return_page: returnPage || 'payment',
+        return_page: returnPage || 'chat',
         return_conv: returnConv || ''
       })
     });
@@ -806,15 +807,28 @@
     var titleEl = document.getElementById('qgStripeTitle');
     var subEl = document.getElementById('qgStripeSub');
     var amountEl = document.getElementById('qgStripeAmount');
+    var feeEl = document.getElementById('qgStripeFee');
     if (titleEl) titleEl.textContent = options.title || 'Pay to unlock chat';
     if (subEl) subEl.textContent = options.subtitle || 'Pay once to unlock chat · held in escrow until the job is done';
     if (amountEl) {
       if (options.amount != null && options.amount !== '') {
         amountEl.textContent = '$' + Number(options.amount).toFixed(2) + ' CAD';
         amountEl.style.display = 'block';
+        if (feeEl && typeof formatFeeCommitmentLine === 'function') {
+          feeEl.style.display = 'block';
+          var feeOpts = options.feeOpts || {};
+          if (!feeOpts.task && options.task) feeOpts.task = options.task;
+          if (typeof feeOptsFromTask === 'function' && feeOpts.task && feeOpts.isRecurring == null) {
+            feeOpts = Object.assign({}, feeOptsFromTask(feeOpts.task), feeOpts);
+          }
+          // FUTURE: per-period Stripe billing for recurring jobs hooks in after accept —
+          // this modal is display-only while Stripe checkout may be disconnected.
+          feeEl.textContent = formatFeeCommitmentLine(options.amount, feeOpts) + ' CAD';
+        }
       } else {
         amountEl.textContent = '';
         amountEl.style.display = 'none';
+        if (feeEl) { feeEl.style.display = 'none'; feeEl.textContent = ''; }
       }
     }
 
@@ -876,6 +890,15 @@
       if (amountEl && result.amount != null && !options.amount) {
         amountEl.textContent = '$' + Number(result.amount).toFixed(2) + ' CAD';
         amountEl.style.display = 'block';
+        if (feeEl && typeof formatFeeCommitmentLine === 'function') {
+          feeEl.style.display = 'block';
+          var feeOpts2 = options.feeOpts || {};
+          if (!feeOpts2.task && options.task) feeOpts2.task = options.task;
+          if (typeof feeOptsFromTask === 'function' && feeOpts2.task && feeOpts2.isRecurring == null) {
+            feeOpts2 = Object.assign({}, feeOptsFromTask(feeOpts2.task), feeOpts2);
+          }
+          feeEl.textContent = formatFeeCommitmentLine(result.amount, feeOpts2) + ' CAD';
+        }
       }
       var checkoutOpts = {
         clientSecret: result.client_secret,

@@ -1,4 +1,7 @@
-/* QuickGigs — report user / task / message (Profile Studio–style sheet) v3 */
+/* QuickGigs — Report & Block (client-side). Do not rename reports/blocks columns.
+ * Report → reports (reporter_id, target_type task|user, target_id, reason, detail).
+ * Block → blocks (blocker_id, blocked_id). Browse hides blocked posters; chat blocked both ways.
+ */
 (function () {
   /* Remove any stale report/dispute DOM from cached old scripts */
   function purgeStaleReportDom() {
@@ -13,7 +16,7 @@
     document.addEventListener('DOMContentLoaded', purgeStaleReportDom);
   }
 
-  var SHEET_VER = '20260716d';
+  var SHEET_VER = '20260727trust';
 
   function ensureQgSheetStyles() {
     var head = document.head || document.documentElement;
@@ -38,12 +41,12 @@
 
   ensureQgSheetStyles();
   window.ensureQgSheetStyles = ensureQgSheetStyles;
+  /* reports.reason CHECK: spam|scam|inappropriate|off_platform|other — do not rename */
   var REASONS = [
-    { value: 'spam', label: 'Spam or misleading', icon: '📢' },
-    { value: 'harassment', label: 'Harassment or abuse', icon: '🚫' },
-    { value: 'scam', label: 'Scam or fraud', icon: '⚠️' },
-    { value: 'inappropriate', label: 'Inappropriate content', icon: '🔞' },
-    { value: 'no_show', label: 'No-show or unreliable', icon: '👻' },
+    { value: 'spam', label: 'Spam', icon: '📢' },
+    { value: 'scam', label: 'Scam', icon: '⚠️' },
+    { value: 'inappropriate', label: 'Inappropriate', icon: '🔞' },
+    { value: 'off_platform', label: 'Off-platform contact', icon: '📵' },
     { value: 'other', label: 'Other', icon: '💬' }
   ];
 
@@ -91,8 +94,13 @@
             '</div>' +
           '</div>' +
           '<div class="qg-report-field">' +
-            '<span class="qg-report-label" id="qgReportReasonLabel">What&apos;s the issue?</span>' +
-            '<div class="qg-report-reasons" id="qgReportReasons" role="radiogroup" aria-labelledby="qgReportReasonLabel">' +
+            '<label class="qg-report-label" for="qgReportReasonSelect">What&apos;s the issue?</label>' +
+            '<select class="qg-report-select" id="qgReportReasonSelect" aria-label="Report reason">' +
+              REASONS.map(function (r) {
+                return '<option value="' + r.value + '">' + r.label + '</option>';
+              }).join('') +
+            '</select>' +
+            '<div class="qg-report-reasons" id="qgReportReasons" role="radiogroup" aria-label="Report reason" style="margin-top:10px">' +
               reasonPillsHtml() +
             '</div>' +
           '</div>' +
@@ -126,6 +134,13 @@
       selectReason(btn.getAttribute('data-value'));
     });
 
+    var reasonSelect = document.getElementById('qgReportReasonSelect');
+    if (reasonSelect) {
+      reasonSelect.addEventListener('change', function () {
+        selectReason(reasonSelect.value);
+      });
+    }
+
     var detailsEl = document.getElementById('qgReportDetails');
     detailsEl.addEventListener('input', updateCharCount);
 
@@ -141,12 +156,15 @@
   function selectReason(value) {
     selectedReason = value || REASONS[0].value;
     var wrap = document.getElementById('qgReportReasons');
-    if (!wrap) return;
-    wrap.querySelectorAll('.qg-report-reason').forEach(function (btn) {
-      var on = btn.getAttribute('data-value') === selectedReason;
-      btn.classList.toggle('is-selected', on);
-      btn.setAttribute('aria-checked', on ? 'true' : 'false');
-    });
+    if (wrap) {
+      wrap.querySelectorAll('.qg-report-reason').forEach(function (btn) {
+        var on = btn.getAttribute('data-value') === selectedReason;
+        btn.classList.toggle('is-selected', on);
+        btn.setAttribute('aria-checked', on ? 'true' : 'false');
+      });
+    }
+    var sel = document.getElementById('qgReportReasonSelect');
+    if (sel && sel.value !== selectedReason) sel.value = selectedReason;
   }
 
   function updateCharCount() {
@@ -194,8 +212,8 @@
   }
 
   async function submitReport() {
-    var user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
-    if (!user) {
+    var user = (typeof getCurrentUser === 'function' ? getCurrentUser() : null) || window._currentUser || null;
+    if (!user || !user.uid) {
       qgNotify('Please sign in to submit a report.', '#f59e0b');
       window.location.href = 'login.html';
       return;
@@ -204,23 +222,32 @@
 
     var detailsEl = document.getElementById('qgReportDetails');
     var submitBtn = document.getElementById('qgReportSubmit');
+    var reasonSel = document.getElementById('qgReportReasonSelect');
+    if (reasonSel && reasonSel.value) selectedReason = reasonSel.value;
     submitBtn.disabled = true;
     submitBtn.textContent = 'Sending…';
 
+    var rawType = String(currentContext.targetType || '').toLowerCase();
+    var targetType = (rawType === 'profile' || rawType === 'user') ? 'user'
+      : (rawType === 'task' ? 'task' : '');
+    var targetId = String(currentContext.targetId || '');
+    var detail = (detailsEl.value || '').trim();
     var row = {
       reporter_id: user.uid,
-      reporter_email: user.email || '',
-      target_type: currentContext.targetType || 'unknown',
-      target_id: String(currentContext.targetId || ''),
-      target_label: currentContext.targetLabel || '',
+      target_type: targetType,
+      target_id: targetId,
       reason: selectedReason,
-      details: (detailsEl.value || '').trim(),
-      status: 'open'
+      detail: detail
     };
 
     var result = { success: false };
-    if (typeof sbPost === 'function') {
-      result = await sbPost('reports', row);
+    if (typeof createReport === 'function') {
+      result = await createReport(row);
+    } else if (typeof sbPost === 'function' && targetType && targetId) {
+      result = await sbPost('reports', Object.assign({}, row, {
+        status: 'open',
+        created_at: new Date().toISOString()
+      }));
     }
 
     submitBtn.disabled = false;
@@ -228,18 +255,18 @@
 
     if (result.success) {
       closeReportModal();
+      // Confirm toast — row feeds the admin Reports queue (reports table)
       if (typeof showToast === 'function') {
-        showToast('Report submitted. Thank you for helping keep QuickGigs safe.');
+        showToast('Report submitted. Thanks — our team will review it.');
       } else {
-        qgNotify('Report submitted. Thank you.', '#4ade80');
+        qgNotify('Report submitted. Thanks — our team will review it.', '#4ade80');
       }
     } else {
-      var details = (detailsEl.value || '').trim();
       var mailSubject = encodeURIComponent('QuickGigs report: ' + (currentContext.targetType || 'item'));
       var mailBody = encodeURIComponent(
         'Reason: ' + selectedReason + '\n' +
-        'Target: ' + (currentContext.targetLabel || '') + ' (' + (currentContext.targetType || '') + ' #' + (currentContext.targetId || '') + ')\n\n' +
-        'Details:\n' + (details || '(none)') + '\n\n' +
+        'Target: ' + (currentContext.targetLabel || '') + ' (' + targetType + ' #' + targetId + ')\n\n' +
+        'Details:\n' + (detail || '(none)') + '\n\n' +
         'Reporter: ' + (user.email || user.uid)
       );
       if (confirm('Could not save your report online (database may not be set up yet). Send it by email instead?')) {
@@ -254,10 +281,13 @@
   document.addEventListener('DOMContentLoaded', purgeStaleReportDom);
 
   function reportButtonHtml(targetType, targetId, targetLabel) {
-    var safeLabel = (targetLabel || '').replace(/"/g, '&quot;');
+    var attr = typeof escAttr === 'function' ? escAttr : function (s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    };
+    var safeLabel = attr(targetLabel || '');
     return '<button type="button" class="qg-chip-btn is-danger qg-report-trigger" ' +
-      'data-target-type="' + (targetType || '') + '" ' +
-      'data-target-id="' + (targetId || '') + '" ' +
+      'data-target-type="' + attr(targetType || '') + '" ' +
+      'data-target-id="' + attr(targetId || '') + '" ' +
       'data-target-label="' + safeLabel + '" ' +
       'aria-label="Report ' + safeLabel + '">🚩 Report</button>';
   }
@@ -267,7 +297,11 @@
     scope.querySelectorAll('.qg-report-trigger').forEach(function (btn) {
       if (btn._qgReportBound) return;
       btn._qgReportBound = true;
-      btn.onclick = function () {
+      btn.onclick = function (e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         openReportModal({
           targetType: btn.getAttribute('data-target-type'),
           targetId: btn.getAttribute('data-target-id'),
@@ -277,8 +311,84 @@
     });
   }
 
+  function blockButtonHtml(userId, userName) {
+    if (!userId) return '';
+    var attr = typeof escAttr === 'function' ? escAttr : function (s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    };
+    var safeName = attr(userName || 'this user');
+    return '<button type="button" class="qg-chip-btn is-danger qg-block-trigger" ' +
+      'data-block-id="' + attr(userId) + '" ' +
+      'data-block-name="' + safeName + '" ' +
+      'aria-label="Block ' + safeName + '">Block user</button>';
+  }
+
+  async function confirmAndBlockUser(userId, userName) {
+    var me = window._currentUser;
+    if (!me || !me.uid) {
+      qgNotify('Please sign in to block someone.', '#f59e0b');
+      window.location.href = 'login.html';
+      return { success: false };
+    }
+    if (String(me.uid) === String(userId)) {
+      qgNotify('You cannot block yourself.', '#f59e0b');
+      return { success: false };
+    }
+    var label = userName || 'this user';
+    if (!confirm('Block ' + label + '? Their tasks will be hidden from you, and you will not be able to message each other.')) {
+      return { success: false, cancelled: true };
+    }
+    if (typeof blockUser !== 'function') {
+      qgNotify('Blocking is not available yet. Run supabase/reports-blocks-disputes.sql in Supabase.', '#ef4444');
+      return { success: false };
+    }
+    var result = await blockUser(me.uid, userId);
+    if (result && result.success) {
+      if (typeof showToast === 'function') showToast('User blocked. You will not see their tasks or messages.');
+      else qgNotify('User blocked.', '#4ade80');
+      if (typeof window.onUserBlocked === 'function') window.onUserBlocked(userId);
+    } else if (result && result.error === 'blocks_table_missing') {
+      qgNotify('Run supabase/reports-blocks-disputes.sql in the Supabase SQL Editor first.', '#ef4444');
+    } else {
+      qgNotify('Could not block user. Try again.', '#ef4444');
+    }
+    return result || { success: false };
+  }
+
+  function bindBlockTriggers(root) {
+    var scope = root || document;
+    scope.querySelectorAll('.qg-block-trigger').forEach(function (btn) {
+      if (btn._qgBlockBound) return;
+      btn._qgBlockBound = true;
+      btn.onclick = function (e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        confirmAndBlockUser(btn.getAttribute('data-block-id'), btn.getAttribute('data-block-name'));
+      };
+    });
+  }
+
   window.openReportModal = openReportModal;
   window.closeReportModal = closeReportModal;
   window.reportButtonHtml = reportButtonHtml;
   window.bindReportTriggers = bindReportTriggers;
+  window.blockButtonHtml = blockButtonHtml;
+  window.bindBlockTriggers = bindBlockTriggers;
+  window.confirmAndBlockUser = confirmAndBlockUser;
+})();
+
+/* Minimal select styling for report reason dropdown */
+(function () {
+  if (document.getElementById('qg-report-select-css')) return;
+  var s = document.createElement('style');
+  s.id = 'qg-report-select-css';
+  s.textContent =
+    '.qg-report-select{width:100%;padding:12px 14px;border-radius:12px;border:0.5px solid rgba(200,168,233,0.25);' +
+    'background:rgba(255,255,255,0.06);color:inherit;font:inherit;font-size:14px;margin-top:6px}' +
+    'body.light .qg-report-select{background:#fff;border-color:#e8e4f5}' +
+    '.qg-trust-rating{font-size:12px;color:var(--text-muted,#a89bb8);font-weight:500}' +
+    '.qg-trust-rating.is-new{color:var(--lavender,#c8a8e9)}';
+  (document.head || document.documentElement).appendChild(s);
 })();

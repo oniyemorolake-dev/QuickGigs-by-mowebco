@@ -550,7 +550,9 @@
     }, 400);
   }
 
-  /* ── Profile completeness (view page) ── */
+  /* ── Profile page: other-user sticky invite only.
+     Completion % lives in profileCompletion.js + #profileCompleteCard — do NOT
+     inject a second card (old equal-weight 20% checks used wrong DOM selectors). */
   function initProfileCompleteness() {
     if (PAGE !== 'profile.html') return;
     var params = new URLSearchParams(window.location.search);
@@ -564,75 +566,10 @@
         bar.innerHTML = '<a href="mytasks.html?tab=posted">Invite to a task</a>';
         document.body.appendChild(bar);
       }
-      return;
     }
-    // Wait for profile render
-    setTimeout(function () {
-      if (document.getElementById('qgCompleteCard')) return;
-      var photo = !!(document.querySelector('#avatarImg[src], .profile-avatar img[src], #profilePhoto[src]'));
-      var bioEl = document.getElementById('bioText');
-      var bio = bioEl && bioEl.textContent && bioEl.textContent.indexOf('No bio') < 0 && bioEl.textContent.trim().length > 8;
-      var skills = document.querySelectorAll('#skillsList .skill, #skillsList .chip, .skills .skill-chip, .skills span').length;
-      var locEl = document.getElementById('locationText') || document.querySelector('[data-profile-location], .profile-location');
-      var loc = locEl && locEl.textContent && locEl.textContent.trim() && locEl.textContent.indexOf('Add') < 0;
-      var emailVerified = !!(window._currentUser && window._currentUser.emailVerified);
-
-      // Fallback reads from common profile fields
-      if (!photo) photo = !!(document.querySelector('.avatar-img[src], #pAvatar img[src]'));
-      if (!bio && document.getElementById('editBio')) bio = !!(document.getElementById('editBio').value || '').trim();
-      if (!skills) skills = document.querySelectorAll('#skillsList > *').length;
-
-      var checks = [
-        { ok: photo, label: 'Add a profile photo', open: 'photo' },
-        { ok: bio, label: 'Write a short bio', open: 'bio' },
-        { ok: skills >= 3, label: 'Add at least 3 skills', open: 'skills' },
-        { ok: loc, label: 'Set your location', open: 'location' },
-        { ok: emailVerified, label: 'Verify your email', open: 'email' }
-      ];
-      var done = checks.filter(function (c) { return c.ok; }).length;
-      var pct = Math.round((done / checks.length) * 100);
-      if (pct >= 100) return;
-
-      var card = document.createElement('div');
-      card.id = 'qgCompleteCard';
-      card.className = 'qg-complete-card';
-      card.innerHTML =
-        '<div class="qg-complete-head"><strong>Complete your profile</strong><span class="qg-complete-pct">' + pct + '%</span></div>' +
-        '<div class="qg-complete-bar"><i style="width:' + pct + '%"></i></div>' +
-        checks.filter(function (c) { return !c.ok; }).map(function (c) {
-          return '<button type="button" class="qg-complete-item" data-open="' + esc(c.open) + '">○ ' + esc(c.label) + '</button>';
-        }).join('');
-      var insertAt = document.querySelector('.profile-header, .profile-top, #profileHeader, .content') || document.body;
-      if (insertAt.classList && insertAt.classList.contains('content')) insertAt.insertBefore(card, insertAt.firstChild);
-      else insertAt.parentNode.insertBefore(card, insertAt.nextSibling);
-
-      card.querySelectorAll('.qg-complete-item').forEach(function (btn) {
-        btn.onclick = function () {
-          var which = btn.getAttribute('data-open');
-          if (typeof window.openEditModal === 'function') window.openEditModal();
-          else if (typeof window.openProfileEdit === 'function') window.openProfileEdit();
-          else {
-            var editBtn = document.querySelector('[onclick*="Edit"], #editBtn, .edit-btn, button[aria-label*="Edit"]');
-            if (editBtn) editBtn.click();
-          }
-          setTimeout(function () {
-            var map = {
-              photo: '#editPhoto, #photoInput, .edit-photo, #avatarUpload',
-              bio: '#editBio, #bioInput, textarea[name="bio"]',
-              skills: '#skillsEdit, .skills-edit, #editSkills',
-              location: '#editLocation, #locationInput, input[name="location"]',
-              email: '#editEmail, #emailInput'
-            };
-            var sel = map[which];
-            var el = sel && document.querySelector(sel);
-            if (el && el.scrollIntoView) {
-              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              if (el.focus) try { el.focus(); } catch (e) {}
-            }
-          }, 250);
-        };
-      });
-    }, 900);
+    // Remove any legacy injected card from older builds
+    var legacy = document.getElementById('qgCompleteCard');
+    if (legacy && legacy.parentNode) legacy.parentNode.removeChild(legacy);
   }
 
   /* ── Dashboard activity + contextual greeting helpers ── */

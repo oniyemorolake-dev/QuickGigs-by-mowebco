@@ -319,7 +319,9 @@
       Prefer: 'count=exact',
       Range: '0-0'
     });
-    var url = window.SUPABASE_URL + '/rest/v1/' + table + '?select=*';
+    var url = window.SUPABASE_URL + '/rest/v1/' + table + '?select=user_id';
+    if (table === 'tasks') url = window.SUPABASE_URL + '/rest/v1/tasks?select=task_id';
+    if (table === 'disputes') url = window.SUPABASE_URL + '/rest/v1/disputes?select=dispute_id';
     var res = await fetch(url, { method: 'GET', headers: headers });
     var cr = res.headers.get('content-range') || res.headers.get('Content-Range') || '';
     var m = cr.match(/\/(\d+)\s*$/);

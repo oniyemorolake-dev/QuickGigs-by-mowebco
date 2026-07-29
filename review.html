@@ -275,6 +275,7 @@ onAuthStateChanged(auth, (user) => {
 </script>
 
 <script defer src="qg-utils.js"></script>
+<script defer src="contentModeration.js?v=20260727cm1"></script>
 <script defer src="qg-polish.js?v=20260726d"></script>
 <script src="qg-ux.js?v=20260726ux" defer></script>
 <script src="qg-bigtech.js?v=20260726bt" defer></script>
@@ -302,6 +303,10 @@ var selectedTags  = [];
 function reviewErrorMessage(err) {
   var code = String(err || '');
   if (code === 'already_reviewed') return 'You already reviewed this task.';
+  if (code === 'content_moderation') {
+    return (typeof QG_CONTENT_MOD_MESSAGE === 'string' && QG_CONTENT_MOD_MESSAGE) ||
+      "This contains language that isn't allowed on QuickGigs — please edit and try again";
+  }
   if (code === 'reviews_table_missing') return 'Reviews not set up — run supabase/reviews.sql in Supabase SQL Editor.';
   if (code === 'reviews_rls_blocked' || code === 'reviews_save_failed' || code === 'reviews_task_id_type') {
     return 'Could not save review — run supabase/reviews.sql in Supabase SQL Editor, then refresh.';
@@ -434,12 +439,23 @@ window.submitReviewForm = async function(){
       reviewer_name:  window._currentUser.displayName || (window._currentUser.email || '').split('@')[0],
       task_title:     taskTitle
     });
-    if (!result.success) throw new Error(result.error || 'save failed');
+    if (!result.success) {
+      if (result.error === 'content_moderation' && result.message) {
+        throw new Error(result.message);
+      }
+      throw new Error(result.error || 'save failed');
+    }
   } catch (err) {
     console.warn('Review save error:', err);
     submitBtn.disabled = false;
     submitBtn.textContent = 'Post review';
-    showToast(reviewErrorMessage(err && err.message ? err.message : err), '#ef4444');
+    var raw = err && err.message ? err.message : err;
+    var msg = String(raw || '');
+    if (msg.indexOf("isn't allowed on QuickGigs") >= 0 || msg.indexOf('content_moderation') >= 0) {
+      showToast(msg.indexOf("isn't allowed") >= 0 ? msg : reviewErrorMessage('content_moderation'), '#ef4444');
+    } else {
+      showToast(reviewErrorMessage(raw), '#ef4444');
+    }
     return;
   }
 

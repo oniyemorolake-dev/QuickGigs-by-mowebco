@@ -126,32 +126,85 @@ body.light .mpill.active-standard{background:#ede9ff;color:#5a2d8a;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .loading-txt{font-size:13px;color:var(--results-color);}
 .cards-area{padding:10px 18px 0;}
-.task-card{border-radius:16px;padding:15px;margin-bottom:10px;border:0.5px solid var(--border);background:var(--card-bg);cursor:pointer;transition:border-color 0.18s,background 0.18s;overflow:hidden;}
-.task-card.has-photo{padding-top:0;padding-left:0;padding-right:0;}
-.task-card.has-photo .tc-body{padding:0 15px 15px;}
+/* eBay-style: large media left (~40%), details right — same height with or without photo */
+.task-card{
+  display:flex;align-items:stretch;gap:0;
+  border-radius:16px;padding:0;margin-bottom:12px;
+  border:0.5px solid var(--border);background:var(--card-bg);
+  cursor:pointer;transition:border-color 0.18s,background 0.18s;overflow:hidden;
+  min-height:132px;
+}
 .light .task-card{box-shadow:0 1px 3px rgba(107,63,160,0.08);}
 .task-card:hover{border-color:var(--border-hover);background:var(--surface-hover);}
-.task-card.has-photo:hover .tc-photo-hero .tc-photo-img{opacity:0.92;}
-.tc-photo-hero{
-  min-height:140px;max-height:220px;
-  display:flex;align-items:center;justify-content:center;
+.task-card.has-photo:hover .tc-media-img{opacity:0.94;}
+
+.tc-media{
+  flex:0 0 40%;
+  width:40%;
+  max-width:220px;
+  min-width:118px;
+  position:relative;
+  align-self:stretch;
+  margin:10px 0 10px 10px;
+  border-radius:12px;
   background:rgba(255,255,255,0.04);
-  position:relative;margin-bottom:12px;overflow:hidden;
+  overflow:hidden;
 }
-body.light .tc-photo-hero{background:#f5f2ff;}
-.tc-photo-hero .tc-photo-img{
-  width:100%;max-height:220px;object-fit:contain;display:block;
-  vertical-align:middle;
+body.light .tc-media{background:#f0eeff;}
+.tc-media-inner{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
 }
-.tc-photo-hero::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,0.45));pointer-events:none;}
-.tc-photo-cat-badge{position:absolute;bottom:10px;left:12px;z-index:1;display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);font-size:10px;font-weight:600;color:#fff;letter-spacing:0.04em;text-transform:uppercase;}
-.tc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;}
-.tc-left{display:flex;align-items:flex-start;gap:12px;flex:1;min-width:0;}
-.tc-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
-.tc-icon-photo{width:72px;height:72px;border-radius:14px;}
+.tc-media-img{
+  width:100%;height:100%;
+  object-fit:cover;object-position:center;
+  display:block;border-radius:12px;
+}
+/* Compact zoom hint — full “Tap to enlarge” chip is too wide for ~40% media */
+.tc-media.tc-photo-tappable::before{
+  content:'🔍';
+  top:8px;right:8px;
+  padding:4px 6px;
+  font-size:11px;
+  opacity:0.85;
+}
+.tc-media-placeholder{
+  width:100%;height:100%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  padding:12px;
+}
+.tc-media-placeholder-icon{font-size:36px;line-height:1;}
+.tc-media-placeholder-label{
+  font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+  color:rgba(255,255,255,0.55);text-align:center;
+}
+body.light .tc-media-placeholder-label{color:rgba(45,27,78,0.45);}
+.tc-media-dots{
+  position:absolute;left:0;right:0;bottom:8px;
+  display:flex;justify-content:center;gap:5px;z-index:2;
+  pointer-events:none;
+}
+.tc-media-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:rgba(255,255,255,0.35);
+  box-shadow:0 0 0 1px rgba(0,0,0,0.25);
+}
+.tc-media-dot.is-active{background:#fff;}
+.tc-media.tc-photo-tappable{cursor:zoom-in;}
+
+.tc-body{
+  flex:1;min-width:0;
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:12px 12px 12px 14px;
+  gap:8px;
+}
+.tc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:0;}
+.tc-left{display:flex;align-items:flex-start;gap:0;flex:1;min-width:0;}
+.tc-icon{display:none;} /* legacy small icon — media column replaces it */
 .tc-meta{flex:1;min-width:0;}
 .tc-cat{font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);margin-bottom:3px;}
-.tc-title{font-size:15px;font-weight:500;color:var(--text);line-height:1.4;}
+.tc-title{font-size:15px;font-weight:500;color:var(--text);line-height:1.35;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 
 body.light .apply-btn,
 body.light .submit-btn{color:#2d1b4e;}
@@ -163,13 +216,34 @@ body.light .badge-standard{background:#ede9ff;color:var(--purple);}
 .badge-recurring{background:rgba(74,222,128,0.1);color:#16a34a;}
 .tc-desc{font-size:12px;line-height:1.6;color:var(--desc-color);margin-bottom:11px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .tc-desc.is-empty{display:none;}
-.tc-icon-photo{background-size:cover;background-position:center;position:relative;overflow:visible;}
-.tc-icon-badge{position:absolute;bottom:-4px;right:-4px;width:22px;height:22px;border-radius:50%;background:var(--card-bg);border:0.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;box-shadow:0 2px 6px rgba(0,0,0,0.25);}
-.tc-bottom{display:flex;align-items:center;justify-content:space-between;}
+.tc-bottom{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-top:auto;}
 .tc-price{font-size:16px;font-weight:500;color:#4ade80;}
 body.light .tc-price{color:#16a34a;}
-.tc-info{font-size:11px;color:var(--info-color);margin-top:1px;}
-.apply-btn{padding:9px 18px;border-radius:11px;border:none;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;color:#fff;}
+.tc-info{font-size:11px;color:var(--info-color);margin-top:2px;line-height:1.35;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.qg-action-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.apply-btn{padding:9px 14px;border-radius:11px;border:none;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;color:#fff;flex-shrink:0;white-space:nowrap;}
+
+@media (max-width:420px){
+  .task-card{min-height:120px;}
+  .tc-media{
+    flex-basis:36%;width:36%;max-width:140px;min-width:108px;
+    margin:8px 0 8px 8px;border-radius:10px;
+  }
+  .tc-media-img{border-radius:10px;}
+  .tc-body{padding:10px 10px 10px 10px;}
+  .tc-title{font-size:14px;}
+  .tc-price{font-size:15px;}
+  .apply-btn{padding:8px 12px;font-size:11px;}
+  .tc-media-placeholder-icon{font-size:30px;}
+  .tc-media.tc-photo-tappable::before{display:none;}
+  .cards-area{padding:10px 12px 0;}
+}
+@media (min-width:720px){
+  .task-card{min-height:148px;}
+  .tc-media{max-width:240px;min-width:160px;}
+  .tc-media-placeholder-icon{font-size:42px;}
+}
 .btn-quick{background:#d97706;}
 .btn-standard{background:var(--purple);}
 .btn-recurring{background:#16a34a;}
@@ -182,9 +256,23 @@ body.light .tc-price{color:#16a34a;}
 .modal-scroll{flex:1 1 auto;overflow-y:auto;min-height:0;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:4px;}
 .modal-footer{flex-shrink:0;padding-top:12px;margin-top:8px;border-top:0.5px solid var(--border);background:var(--modal-bg);}
 .modal-handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 18px;}
-.modal-title{font-size:15px;font-weight:500;color:var(--text);margin-bottom:3px;}
+.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:3px;}
+.modal-title{font-size:15px;font-weight:500;color:var(--text);margin:0;flex:1;min-width:0;padding-right:8px;}
+.modal-close{flex-shrink:0;width:36px;height:36px;border-radius:10px;border:0.5px solid var(--border);background:var(--input-bg);color:var(--text-muted);font-size:18px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
+.modal-close:hover{color:var(--text);border-color:var(--purple-light);}
 .modal-sub{font-size:12px;color:var(--text-muted);margin-bottom:18px;}
 .modal-label{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);display:block;margin-bottom:6px;}
+.offer-fee-line{font-size:12px;color:var(--purple-light);line-height:1.45;margin:8px 0 4px;min-height:1.3em;}
+body.light .offer-fee-line{color:var(--purple);}
+.offer-fee-line.is-muted{color:var(--text-faint);opacity:0.85;}
+.apply-already{display:none;text-align:center;padding:28px 12px 18px;}
+.apply-already.is-visible{display:block;}
+.apply-already-icon{font-size:28px;margin-bottom:10px;}
+.apply-already-title{font-size:15px;font-weight:500;color:var(--text);margin-bottom:6px;}
+.apply-already-sub{font-size:13px;color:var(--text-muted);line-height:1.5;}
+#applyFormFields.is-hidden{display:none;}
+.modal-footer.is-hidden{display:none;}
+.msg-hint{font-size:11px;color:var(--text-faint);margin:-6px 0 10px;}
 /* 16px+ prevents iOS Safari zooming the whole page when focusing inputs */
 .modal-input{width:100%;background:var(--input-bg);border:0.5px solid var(--border);border-radius:12px;padding:12px 14px;font-family:'DM Sans',sans-serif;font-size:16px;color:var(--text);outline:none;margin-bottom:13px;-webkit-text-size-adjust:100%;}
 .modal-input:focus{border-color:var(--purple-light);}
@@ -205,9 +293,27 @@ textarea.modal-input{resize:vertical;min-height:110px;max-height:40vh;}
 }
 .modal-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;}
 .cancel-btn{padding:13px;border-radius:13px;border:0.5px solid var(--cancel-border);background:none;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;color:var(--cancel-color);}
-.submit-btn{padding:13px;border-radius:13px;border:none;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;}
-.submit-btn:disabled{opacity:0.5;cursor:not-allowed;}
-.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:#4ade80;color:#0b0118;padding:11px 24px;border-radius:20px;font-size:13px;font-weight:500;display:none;z-index:300;white-space:nowrap;}
+.submit-btn{padding:13px;border-radius:13px;border:none;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;-webkit-tap-highlight-color:rgba(200,168,233,0.35);touch-action:manipulation;}
+.submit-btn:disabled,.submit-btn.is-apply-blocked{opacity:0.5;cursor:not-allowed;}
+/* Keep pointer events while blocked so tap can surface validation errors (HTML disabled swallows taps). */
+.submit-btn:disabled{pointer-events:none;}
+.submit-btn.is-apply-blocked:not(:disabled){pointer-events:auto;}
+.apply-inline-alert{display:none;margin:0 0 10px;padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.45;font-weight:500;text-align:left;}
+.apply-inline-alert.is-visible{display:block;}
+.apply-inline-alert.is-error{background:rgba(239,68,68,0.14);border:1px solid rgba(239,68,68,0.4);color:#fecaca;}
+.apply-inline-alert.is-warn{background:rgba(245,158,11,0.14);border:1px solid rgba(245,158,11,0.4);color:#fde68a;}
+.apply-inline-alert.is-ok{background:rgba(74,222,128,0.14);border:1px solid rgba(74,222,128,0.4);color:#bbf7d0;}
+body.light .apply-inline-alert.is-error{background:#fef2f2;border-color:#fecaca;color:#b91c1c;}
+body.light .apply-inline-alert.is-warn{background:#fffbeb;border-color:#fde68a;color:#b45309;}
+body.light .apply-inline-alert.is-ok{background:#f0fdf4;border-color:#bbf7d0;color:#15803d;}
+.toast{position:fixed;left:50%;transform:translateX(-50%);background:#4ade80;color:#0b0118;padding:11px 24px;border-radius:20px;font-size:13px;font-weight:500;display:none;z-index:13000;max-width:min(92vw,420px);white-space:normal;text-align:center;line-height:1.4;bottom:calc(88px + env(safe-area-inset-bottom, 0px));}
+/* When apply sheet is open, pin toast to the top so it isn't under the keyboard / sheet on iOS+Android */
+body.qg-apply-open .toast,
+body.qg-apply-open .qg-toast{
+  top:calc(12px + env(safe-area-inset-top, 0px));
+  bottom:auto;
+  z-index:14000;
+}
 .photo-required-banner{margin:12px 18px 0;padding:12px 14px;border-radius:12px;background:rgba(251,191,36,0.1);border:0.5px solid rgba(251,191,36,0.25);display:flex;align-items:center;gap:12px;}
 .photo-required-banner strong{display:block;font-size:13px;color:var(--text);margin-bottom:2px;}
 .photo-required-banner p{font-size:11px;color:var(--text-muted);line-height:1.45;margin:0;}
@@ -340,25 +446,40 @@ body.light .app-legal-footer a{color:var(--purple);}
   <div class="loading-state"><div class="loading-spinner">⏳</div><div class="loading-txt">Loading tasks near you...</div></div>
 </div>
 <div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
-  <div class="modal" onclick="event.stopPropagation()">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
     <div class="modal-scroll">
-      <p class="modal-title" id="modalTitle">Apply for task</p>
+      <div class="modal-head">
+        <p class="modal-title" id="modalTitle">Apply for task</p>
+        <button type="button" class="modal-close" id="modalCloseBtn" onclick="closeModal()" aria-label="Close">✕</button>
+      </div>
       <p class="modal-sub" id="modalSub">Send your offer to the poster</p>
       <p class="modal-sub" id="modalNegoHint" style="display:none;margin-top:-6px;font-size:11px;color:var(--text-muted)"></p>
-      <div class="price-grid">
-        <div><span class="modal-label">Your offer</span><div class="price-wrap"><span class="price-pre">$</span><input class="modal-input" id="offerPrice" type="number" min="20" placeholder="40" inputmode="decimal"></div></div>
-        <div><span class="modal-label">Availability</span><input class="modal-input" id="offerAvail" type="text" placeholder="e.g. This Saturday, mornings"></div>
+
+      <div class="apply-already" id="applyAlreadyState" aria-live="polite">
+        <div class="apply-already-icon">✓</div>
+        <div class="apply-already-title">You've already applied to this task</div>
+        <div class="apply-already-sub">Check <a href="mytasks.html?tab=applied" style="color:var(--purple-light)">My Tasks → Applied</a> for status updates.</div>
       </div>
-      <span class="modal-label">Message to poster</span>
-      <textarea class="modal-input" id="offerMsg" placeholder="Tell them why you're the right person..." rows="4"></textarea>
-      <div class="field-error" id="offerFraudError" style="display:none;color:#ef4444;font-size:12px;margin-top:8px;"></div>
-      <div id="modalPhotoWrap" style="display:none;margin-top:12px;"></div>
+
+      <div id="applyFormFields">
+        <div class="price-grid">
+          <div><span class="modal-label">Your offer</span><div class="price-wrap"><span class="price-pre">$</span><input class="modal-input" id="offerPrice" type="number" min="20" placeholder="40" inputmode="decimal"></div></div>
+          <div><span class="modal-label">Availability</span><input class="modal-input" id="offerAvail" type="text" placeholder="e.g. This Saturday, mornings"></div>
+        </div>
+        <p class="offer-fee-line is-muted" id="offerFeeLine" aria-live="polite">Enter an offer of at least $20 to see your payout.</p>
+        <span class="modal-label">Message to poster</span>
+        <textarea class="modal-input" id="offerMsg" placeholder="Tell them why you're the right person..." rows="4" maxlength="1000"></textarea>
+        <p class="msg-hint" id="offerMsgHint">At least 20 characters</p>
+        <div class="field-error" id="offerFraudError" style="display:none;color:#ef4444;font-size:12px;margin-top:8px;"></div>
+        <div id="modalPhotoWrap" style="display:none;margin-top:12px;"></div>
+      </div>
     </div>
-    <div class="modal-footer">
+    <div class="modal-footer" id="applyModalFooter">
+      <div class="apply-inline-alert" id="applyInlineAlert" role="alert" aria-live="assertive"></div>
       <div class="modal-btns">
         <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>
-        <button type="button" class="submit-btn" id="applySubmitBtn" onclick="submitApplication()">Send application</button>
+        <button type="button" class="submit-btn is-apply-blocked" id="applySubmitBtn" aria-disabled="true">Send application</button>
       </div>
     </div>
   </div>
@@ -414,7 +535,9 @@ onAuthStateChanged(auth, (user) => {
 });
 </script>
 
-<script defer src="qg-utils.js"></script>
+<script defer src="qg-utils.js?v=20260728applym1"></script>
+<script defer src="feeBreakdown.js?v=20260727fee1"></script>
+<script defer src="contentModeration.js?v=20260727cm1"></script>
 <script defer src="qg-polish.js?v=20260726e"></script>
 <script src="qg-ux.js?v=20260726ux" defer></script>
 <script src="qg-bigtech.js?v=20260726bt" defer></script>
@@ -422,7 +545,7 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-config.js?v=20260726e"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="qg-categories.js"></script>
-<script defer src="supabase-db.js?v=20260726e"></script>
+<script defer src="supabase-db.js?v=20260727dup1"></script>
 <script defer src="qg-location.js"></script>
 <script defer src="qg-pwa.js?v=4"></script>
 <script defer src="qg-notifications.js"></script>
@@ -442,7 +565,7 @@ function normaliseTask(row){
   var posterName=row.poster_name||row.POSTER_NAME||'';
   if(!posterName&&posterUid&&typeof resolveUserName==='function') posterName=resolveUserName(posterUid,row,userNames);
   return {
-    id:row.id||row.TASK_ID||row.task_id,
+    id: row.task_id || row.TASK_ID || row.id,
     mode:mode,
     cat:(row.CATEGORY||row.category||'other').toLowerCase(),
     catLabel:catInfo.label,icon:catInfo.icon,iconBg:catInfo.bg,
@@ -462,16 +585,100 @@ function normaliseTask(row){
     posterId:posterUid,
     posterName:posterName||'QuickGigs user',
     photoUrls: typeof parsePhotoUrls === 'function' ? parsePhotoUrls(row.photo_urls || row.PHOTO_URLS) : [],
-    requiresPhotos: !!(row.requires_photos || row.REQUIRES_PHOTOS)
+    requiresPhotos: !!(row.requires_photos || row.REQUIRES_PHOTOS),
+    isRecurring: !!(row.is_recurring || row.IS_RECURRING || mode === 'recurring'),
+    rateType: String(row.rate_type || row.RATE_TYPE || (mode === 'recurring' ? 'hourly' : 'fixed')).toLowerCase(),
+    hourlyRate: row.hourly_rate != null ? row.hourly_rate : row.HOURLY_RATE,
+    estHours: row.est_hours != null ? row.est_hours : row.EST_HOURS,
+    frequency: row.frequency || row.FREQUENCY || ''
   };
 }
 var allTasks=[],activeMode='all',activeCat='all',activeTask=null;
 var budgetMinVal=20,budgetMaxVal=300,budgetPreset='';
 var appliedTaskIds = {};
 var userNames={};
-var dbSubmitApplication = window.submitApplication;
 var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
 window._nearMeOnly=false;
+
+/** Resolve the DB apply fn — never capture at parse time (defer scripts load later). */
+function getDbSubmitApplication() {
+  if (typeof window.submitApplicationToDb === 'function' &&
+      window.submitApplicationToDb !== window.submitBrowseApplication) {
+    return window.submitApplicationToDb;
+  }
+  if (typeof window._qgSubmitApplicationDb === 'function' &&
+      window._qgSubmitApplicationDb !== window.submitBrowseApplication) {
+    return window._qgSubmitApplicationDb;
+  }
+  return null;
+}
+
+function bindBrowseSubmitApplication() {
+  // If supabase-db overwrote window.submitApplication with the raw DB fn, stash it
+  if (typeof window.submitApplication === 'function' &&
+      window.submitApplication !== window.submitBrowseApplication) {
+    window._qgSubmitApplicationDb = window.submitApplication;
+  }
+  if (typeof window.submitApplicationToDb === 'function' &&
+      window.submitApplicationToDb !== window.submitBrowseApplication) {
+    window._qgSubmitApplicationDb = window.submitApplicationToDb;
+  }
+  if (typeof window.submitBrowseApplication === 'function') {
+    window.submitApplication = window.submitBrowseApplication;
+  }
+}
+
+function applyNotify(msg, color) {
+  var text = String(msg || 'Something went wrong. Try again.');
+  console.warn('[QuickGigs apply]', text);
+  var tone = 'is-error';
+  var c = String(color || '#ef4444');
+  if (c.indexOf('4ade80') >= 0 || c.indexOf('16a34a') >= 0) tone = 'is-ok';
+  else if (c.indexOf('f59e0b') >= 0 || c.indexOf('d97706') >= 0) tone = 'is-warn';
+
+  // Always show inside the modal footer first — never rely on bottom toasts under the keyboard.
+  var inline = document.getElementById('applyInlineAlert');
+  var overlayOpen = document.getElementById('modalOverlay');
+  var modalOpen = overlayOpen && overlayOpen.classList.contains('open');
+  if (inline && modalOpen) {
+    inline.textContent = text;
+    inline.className = 'apply-inline-alert is-visible ' + tone;
+    try { inline.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (eScroll) {}
+  }
+
+  var fraudErr = document.getElementById('offerFraudError');
+  if (fraudErr && tone === 'is-error') {
+    fraudErr.textContent = text;
+    fraudErr.style.display = 'block';
+    try {
+      var scroll = document.querySelector('#modalOverlay .modal-scroll');
+      if (scroll) scroll.scrollTop = scroll.scrollHeight;
+    } catch (e2) {}
+  }
+
+  if (typeof showToast === 'function') {
+    try { showToast(text, color || '#ef4444'); } catch (e) {}
+  } else {
+    var toast = document.getElementById('toast');
+    if (toast) {
+      toast.textContent = text;
+      toast.style.background = color || '#ef4444';
+      toast.style.color = '#fff';
+      toast.style.display = 'block';
+      setTimeout(function () { toast.style.display = 'none'; }, 5000);
+    }
+  }
+}
+
+function clearApplyInlineAlert() {
+  var inline = document.getElementById('applyInlineAlert');
+  if (inline) {
+    inline.textContent = '';
+    inline.className = 'apply-inline-alert';
+  }
+}
+document.addEventListener('DOMContentLoaded', bindBrowseSubmitApplication);
+window.addEventListener('load', bindBrowseSubmitApplication);
 
 function taskMatchesLocation(task, filterLoc, nearMeOnly) {
   if (!filterLoc && !nearMeOnly) return true;
@@ -667,20 +874,60 @@ function formatLocationDisplay(loc) {
   }).filter(Boolean).join(', ');
 }
 
+/** Prefer a resized storage URL so browse stays light on cellular. */
+function browseThumbUrl(url, width) {
+  width = width || 480;
+  var u = String(url || '').trim();
+  if (!u) return '';
+  try {
+    // Supabase public object → render/image transform (safe no-op if transform unavailable)
+    if (u.indexOf('/storage/v1/object/public/') >= 0) {
+      var rendered = u.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+      var join = rendered.indexOf('?') >= 0 ? '&' : '?';
+      return rendered + join + 'width=' + width + '&resize=cover&quality=70';
+    }
+  } catch (e) {}
+  return u;
+}
+
 function renderCardIcon(t) {
-  if (t.photoUrls && t.photoUrls[0]) {
-    return '<div class="tc-icon tc-icon-photo" style="background-image:url('+esc(t.photoUrls[0])+')" role="img" aria-label="'+esc(t.catLabel)+' task photo">' +
-      '<span class="tc-icon-badge" aria-hidden="true">'+t.icon+'</span></div>';
-  }
+  // Kept for any legacy callers; eBay cards use renderCardMedia instead.
   return '<div class="tc-icon" style="background:'+t.iconBg+'" aria-hidden="true">'+t.icon+'</div>';
 }
 
+function renderCardMedia(t) {
+  var urls = (t.photoUrls && t.photoUrls.length) ? t.photoUrls : [];
+  var hasPhoto = urls.length > 0;
+  var dots = '';
+  if (urls.length > 1) {
+    dots = '<div class="tc-media-dots" aria-hidden="true">' +
+      urls.map(function (_u, i) {
+        return '<span class="tc-media-dot'+(i===0?' is-active':'')+'"></span>';
+      }).join('') +
+      '</div>';
+  }
+  if (hasPhoto) {
+    var photosJson = esc(JSON.stringify(urls));
+    var raw = String(urls[0] || '');
+    var src = esc(browseThumbUrl(raw, 480));
+    var fallbackAttr = (src !== esc(raw)) ? ' data-fallback="'+esc(raw)+'" onerror="if(this.dataset.fallback){this.src=this.dataset.fallback;delete this.dataset.fallback;this.onerror=null;}"' : '';
+    return '<div class="tc-media tc-photo-tappable" role="button" tabindex="0" aria-label="View task photos — tap to enlarge" data-photos="'+photosJson+'" data-photo-caption="'+esc(t.title)+'">' +
+      '<div class="tc-media-inner">' +
+        '<img class="tc-media-img" src="'+src+'" alt="'+esc(t.title)+' photo" loading="lazy" decoding="async" width="220" height="160"'+fallbackAttr+'>' +
+      '</div>' + dots +
+    '</div>';
+  }
+  return '<div class="tc-media" aria-hidden="true">' +
+    '<div class="tc-media-inner tc-media-placeholder" style="background:'+esc(t.iconBg || 'rgba(107,63,160,0.2)')+'">' +
+      '<span class="tc-media-placeholder-icon">'+t.icon+'</span>' +
+      '<span class="tc-media-placeholder-label">'+esc(t.catLabel || 'Task')+'</span>' +
+    '</div>' +
+  '</div>';
+}
+
+/** @deprecated use renderCardMedia — kept so older call sites don't break */
 function renderCardPhotoHero(t) {
-  if (!t.photoUrls || !t.photoUrls[0]) return '';
-  var photosJson = esc(JSON.stringify(t.photoUrls));
-  return '<div class="tc-photo-hero tc-photo-tappable" role="button" tabindex="0" aria-label="View task photos — tap to enlarge" data-photos="'+photosJson+'" data-photo-caption="'+esc(t.title)+'">' +
-    '<img class="tc-photo-img" src="'+esc(t.photoUrls[0])+'" alt="'+esc(t.title)+' photo" loading="lazy">' +
-    '<span class="tc-photo-cat-badge"><span aria-hidden="true">'+t.icon+'</span> '+esc(t.catLabel)+'</span></div>';
+  return renderCardMedia(t);
 }
 
 function persistBrowseState(){
@@ -801,18 +1048,29 @@ function renderCards(){
     var loc = formatLocationDisplay(t.location);
     var shareBtn = typeof shareButtonHtml === 'function' ? shareButtonHtml('task', t.id, t.title) : '';
     var saveBtn = typeof bookmarkButtonHtml === 'function' ? bookmarkButtonHtml(t.id) : '';
-    var hasPhoto = t.photoUrls && t.photoUrls[0];
-    var photoHero = renderCardPhotoHero(t);
-    var cardClass = 'task-card' + (hasPhoto ? ' has-photo' : '');
-    var iconHtml = hasPhoto ? '' : renderCardIcon(t);
-    // Progressive disclosure: essentials only on card; details live in modal
+    var hasPhoto = !!(t.photoUrls && t.photoUrls[0]);
+    var mediaHtml = renderCardMedia(t);
+    var cardClass = 'task-card' + (hasPhoto ? ' has-photo' : ' no-photo');
+    // eBay-style: large media left, details + actions right (same height with/without photo)
     return '<div class="'+cardClass+'" data-task-id="'+esc(String(t.id))+'">'+
-      photoHero+
+      mediaHtml +
       '<div class="tc-body">'+
-      '<div class="tc-top"><div class="tc-left">'+iconHtml+'<div class="tc-meta"><p class="tc-title">'+esc(t.title)+'</p></div></div>'+getBadge(t.mode,t)+'</div>'+
-      '<div class="tc-bottom"><div><div class="tc-price">'+esc(t.priceLabel)+(typeof qgNewPillHtml==='function'?qgNewPillHtml(t.createdAt||t.created_at):'')+'</div><div class="tc-info">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(loc)+' · '+esc(t.posted||'Posted recently')+'</div>'+
-      '<div class="qg-action-row">'+saveBtn+shareBtn+'</div></div>'+
-      '<button class="apply-btn '+getBtnClass(t.mode)+'" onclick="openModal(\''+t.id+'\',event)">'+getBtnLabel(t.mode)+'</button></div></div></div>';
+        '<div class="tc-top">'+
+          '<div class="tc-left"><div class="tc-meta">'+
+            '<p class="tc-cat">'+esc(t.catLabel || '')+'</p>'+
+            '<p class="tc-title">'+esc(t.title)+'</p>'+
+          '</div></div>'+getBadge(t.mode,t)+
+        '</div>'+
+        '<div class="tc-bottom">'+
+          '<div style="min-width:0;flex:1">'+
+            '<div class="tc-price">'+esc(t.priceLabel)+(typeof qgNewPillHtml==='function'?qgNewPillHtml(t.createdAt||t.created_at):'')+'</div>'+
+            '<div class="tc-info">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(loc)+' · '+esc(t.posted||'Posted recently')+'</div>'+
+            '<div class="qg-action-row">'+saveBtn+shareBtn+'</div>'+
+          '</div>'+
+          '<button type="button" class="apply-btn '+getBtnClass(t.mode)+'" onclick="openModal(\''+esc(String(t.id))+'\',event)">'+getBtnLabel(t.mode)+'</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
   }).join('');
   if (typeof bindShareTriggers === 'function') {
     bindShareTriggers(area, function(id){ return allTasks.find(function(t){ return String(t.id)===String(id); }); });
@@ -877,6 +1135,207 @@ window.clearFilters=function(){
   syncBudgetUI();
 })();
 
+var APPLY_MSG_MIN = 20;
+var _applySubmitInFlight = false;
+var _applyModalEscBound = false;
+
+function applyFeeOptsForActiveTask() {
+  var isRecurring = !!(activeTask && (activeTask.isRecurring || activeTask.mode === 'recurring'));
+  var isSubscriber = typeof currentUserIsSubscriber === 'function'
+    ? currentUserIsSubscriber()
+    : !!window._qgIsSubscriber;
+  return { isRecurring: isRecurring, isSubscriber: isSubscriber };
+}
+
+function updateOfferFeeLine() {
+  var el = document.getElementById('offerFeeLine');
+  if (!el) return;
+  var priceNum = parseFloat((document.getElementById('offerPrice') || {}).value);
+  if (!priceNum || isNaN(priceNum) || priceNum < 20) {
+    el.classList.add('is-muted');
+    el.textContent = 'Enter an offer of at least $20 to see your payout.';
+    return;
+  }
+  var opts = applyFeeOptsForActiveTask();
+  if (typeof feeBreakdown !== 'function') {
+    el.classList.add('is-muted');
+    el.textContent = 'Fee breakdown loading…';
+    return;
+  }
+  var b = feeBreakdown(priceNum, opts);
+  el.classList.remove('is-muted');
+  el.textContent = "You'll receive $" + b.payout.toFixed(2) +
+    ' after the QuickGigs fee (' + b.ratePct + '%)';
+  if (opts.isRecurring && typeof RECURRING_FEE_NOTE === 'string') {
+    el.textContent += ' · ' + RECURRING_FEE_NOTE;
+  }
+}
+
+function refreshApplySubmitEnabled() {
+  var btn = document.getElementById('applySubmitBtn');
+  if (!btn) return;
+  var priceNum = parseFloat((document.getElementById('offerPrice') || {}).value);
+  var msg = String((document.getElementById('offerMsg') || {}).value || '').trim();
+  var fraudErr = document.getElementById('offerFraudError');
+  var hint = document.getElementById('offerMsgHint');
+  var priceOk = !isNaN(priceNum) && priceNum >= 20;
+  var msgOk = msg.length >= APPLY_MSG_MIN;
+  var blocked = false;
+  var blockMsg = '';
+
+  if (msg) {
+    if (typeof analyzeOffPlatformContact === 'function') {
+      var fraud = analyzeOffPlatformContact(msg);
+      if (fraud && fraud.blocked) {
+        blocked = true;
+        blockMsg = fraud.message || (typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : 'Remove contact details.');
+      }
+    } else if (typeof containsOffPlatformContact === 'function' && containsOffPlatformContact(msg)) {
+      blocked = true;
+      blockMsg = typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : 'Remove contact details.';
+    }
+    if (!blocked && typeof moderateText === 'function') {
+      var mod = moderateText(msg);
+      if (mod && mod.blocked) {
+        blocked = true;
+        blockMsg = mod.message || (typeof QG_CONTENT_MOD_MESSAGE === 'string' ? QG_CONTENT_MOD_MESSAGE : 'Message not allowed.');
+      }
+    }
+  }
+
+  if (fraudErr) {
+    if (blocked) {
+      fraudErr.textContent = blockMsg;
+      fraudErr.style.display = 'block';
+    } else {
+      fraudErr.style.display = 'none';
+    }
+  }
+  if (hint) {
+    if (!msg) hint.textContent = 'At least 20 characters';
+    else if (!msgOk) hint.textContent = (APPLY_MSG_MIN - msg.length) + ' more characters needed';
+    else if (blocked) hint.textContent = 'Fix the message above to continue';
+    else hint.textContent = 'Looks good — ready to send';
+  }
+
+  // Only hard-disable while a submit is in flight. Invalid drafts stay clickable so
+  // the handler can show a clear toast (HTML disabled swallows clicks with no feedback).
+  var ready = priceOk && msgOk && !blocked;
+  btn._qgApplyReady = ready;
+  btn.setAttribute('aria-disabled', ready && !_applySubmitInFlight ? 'false' : 'true');
+  btn.classList.toggle('is-apply-blocked', !ready);
+  if (_applySubmitInFlight) {
+    btn.disabled = true;
+  } else {
+    btn.disabled = false;
+    btn.removeAttribute('disabled');
+  }
+}
+
+function setApplyModalAlreadyApplied(already) {
+  var form = document.getElementById('applyFormFields');
+  var footer = document.getElementById('applyModalFooter');
+  var state = document.getElementById('applyAlreadyState');
+  if (form) form.classList.toggle('is-hidden', !!already);
+  if (footer) footer.classList.toggle('is-hidden', !!already);
+  if (state) state.classList.toggle('is-visible', !!already);
+}
+
+function hasTypedApplyDraft() {
+  var price = String((document.getElementById('offerPrice') || {}).value || '').trim();
+  var msg = String((document.getElementById('offerMsg') || {}).value || '').trim();
+  var avail = String((document.getElementById('offerAvail') || {}).value || '').trim();
+  var defaultPrice = activeTask && activeTask.price != null ? String(activeTask.price) : '';
+  return !!(msg || avail || (price && price !== defaultPrice));
+}
+
+function wireApplyModalInputs() {
+  var price = document.getElementById('offerPrice');
+  var msg = document.getElementById('offerMsg');
+  var avail = document.getElementById('offerAvail');
+  var sendBtn = document.getElementById('applySubmitBtn');
+  function onChange() {
+    updateOfferFeeLine();
+    refreshApplySubmitEnabled();
+  }
+  if (price && !price._qgApplyBound) {
+    price._qgApplyBound = true;
+    price.addEventListener('input', onChange);
+    price.addEventListener('change', onChange);
+  }
+  if (msg && !msg._qgApplyBound) {
+    msg._qgApplyBound = true;
+    msg.addEventListener('input', onChange);
+  }
+  if (avail && !avail._qgApplyBound) {
+    avail._qgApplyBound = true;
+    avail.addEventListener('input', onChange);
+  }
+  // Prefer addEventListener — bind pointerup + click so iOS/Android taps always fire.
+  // (Some WebViews delay/suppress click after keyboard blur; pointerup is reliable.)
+  if (sendBtn && !sendBtn._qgApplyClickBound) {
+    sendBtn._qgApplyClickBound = true;
+    var lastTapTs = 0;
+    function onSendTap(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      var now = Date.now();
+      if (now - lastTapTs < 500) return; // debounce ghost click after touch
+      lastTapTs = now;
+
+      // Close keyboard so toasts/footer stay in the visual viewport
+      try {
+        var ae = document.activeElement;
+        if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) ae.blur();
+      } catch (blurErr) {}
+
+      console.log('[QuickGigs apply] Send tap fired', {
+        type: e && e.type,
+        ready: !!sendBtn._qgApplyReady,
+        inFlight: !!_applySubmitInFlight,
+        taskId: activeTask && activeTask.id,
+        hasBrowseFn: typeof window.submitBrowseApplication === 'function',
+        hasDbFn: typeof getDbSubmitApplication() === 'function'
+      });
+
+      // Immediate loading affordance — even before validation awaits
+      if (!_applySubmitInFlight && sendBtn) {
+        sendBtn.textContent = 'Sending…';
+      }
+
+      if (typeof window.submitBrowseApplication === 'function') {
+        window.submitBrowseApplication();
+      } else {
+        applyNotify('Apply handler missing — hard-refresh the page and try again.', '#ef4444');
+        if (sendBtn) sendBtn.textContent = 'Send application';
+      }
+    }
+    sendBtn.addEventListener('click', onSendTap);
+    sendBtn.addEventListener('pointerup', function (e) {
+      if (e.pointerType === 'mouse') return; // click handles mouse
+      onSendTap(e);
+    });
+    // iOS Safari fallback when Pointer Events are flaky
+    sendBtn.addEventListener('touchend', function (e) {
+      if (window.PointerEvent) return;
+      onSendTap(e);
+    }, { passive: false });
+  }
+  if (!_applyModalEscBound) {
+    _applyModalEscBound = true;
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      var overlay = document.getElementById('modalOverlay');
+      if (overlay && overlay.classList.contains('open')) {
+        e.preventDefault();
+        closeModal();
+      }
+    });
+  }
+}
+
 window.openModal=async function(id,e){
   if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
   if (typeof getMode === 'function' && getMode() === 'poster') {
@@ -884,10 +1343,20 @@ window.openModal=async function(id,e){
     if (typeof setMode === 'function') setMode('tasker');
     else if (typeof setSessionMode === 'function') setSessionMode('worker');
     if (typeof applyRoleTheme === 'function') applyRoleTheme();
-    else if (typeof setMode === 'function' && setMode.length <= 1) setMode('tasker');
     else localStorage.setItem('qg-mode', 'tasker');
   }
   activeTask=allTasks.find(function(t){return String(t.id)===String(id);});
+  if(!activeTask){
+    // May be filtered out after apply — try unfiltered cache by id for already-applied message
+    var cached = typeof readTasksCache === 'function' ? readTasksCache(true) : null;
+    if (cached && cached.length) {
+      var raw = cached.find(function(r){
+        var tid = r.id || r.TASK_ID || r.task_id;
+        return String(tid) === String(id);
+      });
+      if (raw) activeTask = normaliseTask(raw);
+    }
+  }
   if(!activeTask)return;
   if (typeof qgTrackTaskView === 'function') qgTrackTaskView(activeTask);
   if (typeof haptic === 'function') haptic(10);
@@ -895,7 +1364,14 @@ window.openModal=async function(id,e){
     showToast('This is your own posting. Switch to Poster mode → My Tasks to manage applicants.', '#f59e0b');
     return;
   }
-  if (typeof ensureTaskerProfilePhoto === 'function') {
+
+  var userId = getCurrentUserId();
+  if (userId && !appliedTaskIds[String(activeTask.id)]) {
+    await loadMyAppliedTaskIds(userId);
+  }
+  var alreadyApplied = !!appliedTaskIds[String(activeTask.id)];
+
+  if (!alreadyApplied && typeof ensureTaskerProfilePhoto === 'function') {
     var photoCheck = await ensureTaskerProfilePhoto();
     if (!photoCheck.ok) {
       if (confirm('Taskers need a profile photo before applying. Add your photo now?')) {
@@ -904,6 +1380,9 @@ window.openModal=async function(id,e){
       return;
     }
   }
+
+  wireApplyModalInputs();
+  _applySubmitInFlight = false;
   document.getElementById('modalTitle').textContent=activeTask.catLabel+' — '+activeTask.title.substring(0,40)+(activeTask.title.length>40?'…':'');
   var sub = (activeTask.budgetNegotiable ? 'Budget: Around ' : 'Budget: ') + activeTask.priceLabel + ' · ' + activeTask.location;
   if (activeTask.when) sub += ' · 🕐 ' + activeTask.when;
@@ -912,6 +1391,15 @@ window.openModal=async function(id,e){
   if (activeTask.posterName) sub += '\nPosted by ' + activeTask.posterName;
   document.getElementById('modalSub').textContent=sub;
   document.getElementById('modalSub').style.whiteSpace='pre-wrap';
+
+  setApplyModalAlreadyApplied(alreadyApplied);
+  if (alreadyApplied) {
+    document.getElementById('modalOverlay').classList.add('open');
+    document.body.style.overflow='hidden';
+    document.body.classList.add('qg-apply-open');
+    return;
+  }
+
   var offerInput = document.getElementById('offerPrice');
   offerInput.value=activeTask.price;
   offerInput.readOnly = !activeTask.budgetNegotiable;
@@ -939,135 +1427,332 @@ window.openModal=async function(id,e){
     photoWrap.style.display='none';
     photoWrap.innerHTML='';
   }
+  updateOfferFeeLine();
+  refreshApplySubmitEnabled();
+  clearApplyInlineAlert();
   document.getElementById('modalOverlay').classList.add('open');
   document.body.style.overflow='hidden';
+  document.body.classList.add('qg-apply-open');
   setTimeout(function(){
     var scroll = document.querySelector('#modalOverlay .modal-scroll');
     if (scroll) scroll.scrollTop = 0;
   }, 50);
 };
 window.closeModal=function(){
-  document.getElementById('modalOverlay').classList.remove('open');
+  var overlay = document.getElementById('modalOverlay');
+  if (!overlay || !overlay.classList.contains('open')) return;
+  var already = document.getElementById('applyAlreadyState');
+  var showingForm = !(already && already.classList.contains('is-visible'));
+  if (showingForm && hasTypedApplyDraft()) {
+    if (!confirm('Discard your application?')) return;
+  }
+  overlay.classList.remove('open');
   document.body.style.overflow='';
+  document.body.classList.remove('qg-apply-open');
+  clearApplyInlineAlert();
+  _applySubmitInFlight = false;
 };
 window.handleOverlayClick=function(e){if(e.target===document.getElementById('modalOverlay'))closeModal();};
 
-window.submitApplication=async function(){
-  if (typeof getMode === 'function' && getMode() === 'poster') {
-    if (!confirm('You are in Poster mode. Switch to Tasker mode to apply for tasks?')) return;
-    if (typeof setMode === 'function') setMode('tasker');
-    else if (typeof setSessionMode === 'function') setSessionMode('worker');
-    if (typeof applyRoleTheme === 'function') applyRoleTheme();
-    else if (typeof setMode === 'function' && setMode.length <= 1) setMode('tasker');
-    else localStorage.setItem('qg-mode', 'tasker');
-  }
-  var price=document.getElementById('offerPrice').value;
-  var msg=window.sanitizeInput(document.getElementById('offerMsg').value, 1000);
-  var avail=window.sanitizeInput(document.getElementById('offerAvail').value, 120);
-  var fraudErr = document.getElementById('offerFraudError');
-  if(!price||price<20){ showToast('Please enter an offer of at least $20', '#ef4444'); return; }
-  if(!msg){ showToast('Please add a message to the poster', '#ef4444'); return; }
-  if (typeof containsOffPlatformContact === 'function' && containsOffPlatformContact(msg + ' ' + avail)) {
-    fraudErr.textContent = typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : 'Remove contact or payment details from your message.';
-    fraudErr.style.display = 'block';
+window.submitBrowseApplication=async function(){
+  console.log('[QuickGigs apply] submitBrowseApplication entered');
+  if (_applySubmitInFlight) {
+    applyNotify('Still sending your application…', '#f59e0b');
     return;
   }
-  fraudErr.style.display = 'none';
-  var btn=document.getElementById('applySubmitBtn');
-  btn.textContent='Sending...';btn.disabled=true;
-  var userId=window._currentUser?window._currentUser.uid:'anonymous';
-  if (activeTask && isOwnPostedTask(activeTask)) {
-    showToast('You cannot apply to your own task.', '#ef4444');
-    btn.textContent='Send application';btn.disabled=false;
-    return;
+  var btn = document.getElementById('applySubmitBtn');
+  var unlockApplyBtn = function () {
+    _applySubmitInFlight = false;
+    if (btn) {
+      btn.textContent = 'Send application';
+      btn.disabled = false;
+      btn.removeAttribute('disabled');
+    }
+    refreshApplySubmitEnabled();
+  };
+
+  // Immediate loading state on tap (before validation / network)
+  _applySubmitInFlight = true;
+  if (btn) {
+    btn.textContent = 'Sending…';
+    btn.disabled = true;
   }
-  var workerName = window._currentUser
-    ? (window._currentUser.displayName || window._currentUser.email.split('@')[0])
-    : '';
-  if (typeof formatPersonName === 'function' && workerName) workerName = formatPersonName(workerName);
-  if (typeof syncCurrentUserProfile === 'function' && window._currentUser) {
-    await syncCurrentUserProfile(window._currentUser);
-  }
-  if (typeof ensureTaskerProfilePhoto === 'function') {
-    var photoGate = await ensureTaskerProfilePhoto();
-    if (!photoGate.ok) {
-      showToast('Add a profile photo before applying. Posters need to see who they\'re hiring.', '#f59e0b');
-      window.location.href = 'profile.html?setup=photo&required=1&return=browsetask.html';
-      btn.textContent='Send application';btn.disabled=false;
+  clearApplyInlineAlert();
+
+  try {
+    if (typeof getMode === 'function' && getMode() === 'poster') {
+      if (!confirm('You are in Poster mode. Switch to Tasker mode to apply for tasks?')) {
+        applyNotify('Switch to Tasker mode to send an application.', '#f59e0b');
+        unlockApplyBtn();
+        return;
+      }
+      if (typeof setMode === 'function') setMode('tasker');
+      else if (typeof setSessionMode === 'function') setSessionMode('worker');
+      if (typeof applyRoleTheme === 'function') applyRoleTheme();
+      else localStorage.setItem('qg-mode', 'tasker');
+    }
+    if (!activeTask || !activeTask.id) {
+      applyNotify('Pick a task first, then send your application.', '#f59e0b');
+      unlockApplyBtn();
       return;
     }
-  }
-  var chatNote = '';
-  var chatUnlocked = typeof resolveChatUnlockedOnCreate === 'function' && resolveChatUnlockedOnCreate('application');
-  try {
-    var result = await dbSubmitApplication({
-      task_id: activeTask.id,
+    if (appliedTaskIds[String(activeTask.id)]) {
+      setApplyModalAlreadyApplied(true);
+      applyNotify("You've already applied to this task.", '#f59e0b');
+      unlockApplyBtn();
+      return;
+    }
+
+    refreshApplySubmitEnabled();
+    var priceEl = document.getElementById('offerPrice');
+    var msgEl = document.getElementById('offerMsg');
+    var availEl = document.getElementById('offerAvail');
+    if (!priceEl || !msgEl) {
+      applyNotify('Apply form failed to load — refresh and try again.', '#ef4444');
+      unlockApplyBtn();
+      return;
+    }
+    var sanitize = typeof window.sanitizeInput === 'function'
+      ? window.sanitizeInput
+      : function (t) { return String(t == null ? '' : t).trim(); };
+    var price = priceEl.value;
+    var msg = sanitize(msgEl.value, 1000);
+    var avail = sanitize(availEl ? availEl.value : '', 120);
+    var fraudErr = document.getElementById('offerFraudError');
+    var priceNum = parseFloat(price);
+
+    if (!price || isNaN(priceNum) || priceNum < 20) {
+      applyNotify('Please enter an offer of at least $20', '#ef4444');
+      unlockApplyBtn();
+      return;
+    }
+    if (!msg || msg.length < APPLY_MSG_MIN) {
+      applyNotify('Please write a message of at least ' + APPLY_MSG_MIN + ' characters.', '#ef4444');
+      unlockApplyBtn();
+      return;
+    }
+
+    var contactCheck = typeof analyzeOffPlatformContact === 'function'
+      ? analyzeOffPlatformContact(msg + (avail ? ' ' + avail : ''))
+      : (typeof containsOffPlatformContact === 'function' && containsOffPlatformContact(msg + ' ' + avail)
+        ? { blocked: true, message: typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : '' }
+        : { blocked: false });
+    if (contactCheck.blocked) {
+      var cMsg = contactCheck.message || (typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : 'Remove contact details from your message.');
+      if (fraudErr) { fraudErr.textContent = cMsg; fraudErr.style.display = 'block'; }
+      if (typeof logFraudContactEvent === 'function') {
+        logFraudContactEvent({
+          userId: getCurrentUserId(),
+          reason: contactCheck.reason || 'contact',
+          preview: msg,
+          violation: 1
+        });
+      }
+      applyNotify(cMsg, '#ef4444');
+      unlockApplyBtn();
+      return;
+    }
+    if (typeof moderateText === 'function') {
+      var modCheck = moderateText(msg);
+      if (modCheck.blocked) {
+        var mMsg = modCheck.message || (typeof QG_CONTENT_MOD_MESSAGE === 'string' ? QG_CONTENT_MOD_MESSAGE : 'Message not allowed.');
+        if (fraudErr) { fraudErr.textContent = mMsg; fraudErr.style.display = 'block'; }
+        if (typeof logModerationAttempt === 'function') {
+          logModerationAttempt({
+            userId: getCurrentUserId(),
+            source: 'application',
+            targetType: 'task',
+            targetId: activeTask.id,
+            field: 'message',
+            flags: modCheck.flags || [],
+            preview: msg,
+            message: mMsg
+          });
+        }
+        applyNotify(mMsg, '#ef4444');
+        unlockApplyBtn();
+        return;
+      }
+    }
+    if (fraudErr) fraudErr.style.display = 'none';
+
+    // applications.worker_id = Firebase Auth uid (TEXT). Never users.user_id (UUID PK).
+    var userId = window._currentUser ? String(window._currentUser.uid) : '';
+    if (!userId) {
+      applyNotify('Log in again to apply.', '#ef4444');
+      unlockApplyBtn();
+      setTimeout(function(){ window.location.href = 'login.html'; }, 1200);
+      return;
+    }
+    if (activeTask && isOwnPostedTask(activeTask)) {
+      applyNotify('You cannot apply to your own task.', '#ef4444');
+      unlockApplyBtn();
+      return;
+    }
+
+    var taskId = String(activeTask.id);
+    // Live DB: applications.task_id is UUID (FK → tasks.task_id)
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(taskId)) {
+      applyNotify('This task has an invalid id — refresh Browse and try again.', '#ef4444');
+      console.error('[QuickGigs apply] non-UUID task_id', taskId, activeTask);
+      unlockApplyBtn();
+      return;
+    }
+
+    var workerName = window._currentUser.displayName ||
+      (window._currentUser.email && window._currentUser.email.split('@')[0]) ||
+      'Tasker';
+    if (typeof formatPersonName === 'function' && workerName) workerName = formatPersonName(workerName);
+
+    // Do NOT await full profile sync here — it slowed/blocked apply with no UI feedback.
+    if (typeof ensureTaskerProfilePhoto === 'function') {
+      var photoGate = await ensureTaskerProfilePhoto();
+      if (!photoGate.ok) {
+        applyNotify('Add a profile photo before applying. Posters need to see who they\'re hiring.', '#f59e0b');
+        unlockApplyBtn();
+        window.location.href = 'profile.html?setup=photo&required=1&return=browsetask.html';
+        return;
+      }
+    }
+
+    bindBrowseSubmitApplication();
+    var dbSubmitApplication = getDbSubmitApplication();
+    if (typeof dbSubmitApplication !== 'function') {
+      applyNotify('Still loading — wait a second and try again.', '#f59e0b');
+      unlockApplyBtn();
+      return;
+    }
+
+    var payload = {
+      task_id: taskId,
       worker_id: userId,
       worker_name: workerName,
       message: msg + (avail ? ' — Available: ' + avail : ''),
-      price: parseFloat(price)
-    });
-    if (!result.success) {
-      if (result.error === 'cannot_apply_own_task') throw new Error('own_task');
-      if (result.error === 'profile_photo_required') throw new Error('photo_required');
-      throw new Error(result.error || 'save failed');
+      price: priceNum
+    };
+    console.log('[QuickGigs apply] inserting applications row', payload);
+
+    var chatNote = '';
+    var chatUnlocked = typeof resolveChatUnlockedOnCreate === 'function' && resolveChatUnlockedOnCreate('application');
+    var createdRow = null;
+    try {
+      var result = await dbSubmitApplication(payload);
+      console.log('[QuickGigs apply] insert result', result);
+      if (!result || !result.success) {
+        if (result && result.error === 'cannot_apply_own_task') throw new Error('own_task');
+        if (result && result.error === 'profile_photo_required') throw new Error('photo_required');
+        if (result && result.error === 'already_applied') throw new Error('already_applied');
+        var errText = (result && result.error) ? String(result.error) : 'save failed';
+        throw new Error(errText);
+      }
+      createdRow = result.data || null;
+    } catch (err) {
+      console.warn('Application save error:', err);
+      if (err && err.message === 'photo_required') {
+        unlockApplyBtn();
+        window.location.href = 'profile.html?setup=photo&required=1&return=browsetask.html';
+        return;
+      }
+      if (err && err.message === 'already_applied') {
+        appliedTaskIds[String(activeTask.id)] = true;
+        setApplyModalAlreadyApplied(true);
+        applyNotify("You've already applied to this task.", '#f59e0b');
+      } else {
+        var failMsg = (err && err.message === 'own_task')
+          ? 'You cannot apply to your own task.'
+          : (typeof formatSupabaseActionError === 'function'
+            ? formatSupabaseActionError('send application', err && err.message)
+            : ('Could not send application: ' + (err && err.message ? err.message : 'try again')));
+        applyNotify(failMsg, '#ef4444');
+      }
+      unlockApplyBtn();
+      return;
     }
 
-    if (activeTask.posterId && userId !== 'anonymous') {
-      var posterName = activeTask.posterName || 'Poster';
-      if (typeof getUserNameByFirebaseUid === 'function') {
-        var fetchedPoster = await getUserNameByFirebaseUid(activeTask.posterId);
-        if (fetchedPoster) posterName = fetchedPoster;
-      }
-      var convResult = await createConversation({
-        task_id: activeTask.id,
-        poster_id: activeTask.posterId,
-        worker_id: userId,
-        poster_name: posterName,
-        worker_name: workerName,
-        task_title: activeTask.title,
-        task_category: activeTask.cat,
-        status: 'application'
-      });
-      if (convResult.success && convResult.data && convResult.data.conv_id && chatUnlocked) {
-        var offerMsg = msg + (avail ? ' — Available: ' + avail : '') + ' — My offer: $' + price;
-        var msgResult = await sendChatMessage(convResult.data.conv_id, userId, offerMsg);
-        if (msgResult.blocked) {
-          chatNote = ' Application saved — chat stays locked until payment.';
-        } else {
-          chatNote = ' Open Messages to chat with the poster.';
+    try {
+      if (activeTask.posterId && userId) {
+        var posterName = activeTask.posterName || 'Poster';
+        if (typeof getUserNameByFirebaseUid === 'function') {
+          var fetchedPoster = await getUserNameByFirebaseUid(activeTask.posterId);
+          if (fetchedPoster) posterName = fetchedPoster;
         }
-      } else if (convResult.success) {
-        chatNote = ' Application saved — chat opens after acceptance and payment.';
-      } else if (!convResult.success) {
-        console.warn('Chat setup failed:', convResult.error);
-        chatNote = ' Open Messages to track your application.';
+        if (typeof createConversation === 'function') {
+          var convResult = await createConversation({
+            task_id: taskId,
+            poster_id: activeTask.posterId,
+            worker_id: userId,
+            poster_name: posterName,
+            worker_name: workerName,
+            task_title: activeTask.title,
+            task_category: activeTask.cat,
+            status: 'application'
+          });
+          if (convResult.success && convResult.data && convResult.data.conv_id && chatUnlocked && typeof sendChatMessage === 'function') {
+            var offerMsg = msg + (avail ? ' — Available: ' + avail : '') + ' — My offer: $' + priceNum;
+            var msgResult = await sendChatMessage(convResult.data.conv_id, userId, offerMsg);
+            if (msgResult && msgResult.blocked) {
+              chatNote = ' Application saved — chat stays locked until payment.';
+            } else {
+              chatNote = ' Open Messages to chat with the poster.';
+            }
+          } else if (convResult.success) {
+            chatNote = ' Application saved — chat opens after acceptance and payment.';
+          } else {
+            console.warn('Chat setup failed:', convResult.error);
+            chatNote = ' Open Messages to track your application.';
+          }
+        }
       }
+    } catch (chatErr) {
+      console.warn('Chat setup after apply skipped:', chatErr);
+      chatNote = ' Application saved. Open Messages if chat does not appear yet.';
     }
-  } catch(err) {
-    console.warn('Application save error:', err);
-    if (err.message === 'photo_required') {
-      window.location.href = 'profile.html?setup=photo&required=1&return=browsetask.html';
-    } else {
-      showToast(err.message === 'own_task' ? 'You cannot apply to your own task.' : 'Could not send application. Try again.', '#ef4444');
-    }
-    btn.textContent='Send application';btn.disabled=false;
-    return;
-  }
-  if (typeof qgMicroConfirm === 'function') qgMicroConfirm(btn);
-  if (typeof qgTrackEvent === 'function') qgTrackEvent('apply_task', { task_id: activeTask && activeTask.id ? String(activeTask.id) : '' });
-  closeModal();
-  btn.textContent='Send application';btn.disabled=false;
-  if (activeTask && activeTask.id) {
-    appliedTaskIds[String(activeTask.id)] = true;
-    allTasks = allTasks.filter(function(t) { return String(t.id) !== String(activeTask.id); });
+
+    if (typeof qgMicroConfirm === 'function') qgMicroConfirm(btn);
+    if (typeof qgTrackEvent === 'function') qgTrackEvent('apply_task', { task_id: taskId });
+    appliedTaskIds[taskId] = true;
+    allTasks = allTasks.filter(function(t) { return String(t.id) !== taskId; });
     renderCards();
+    document.getElementById('modalOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+    document.body.classList.remove('qg-apply-open');
+    _applySubmitInFlight = false;
+    if (btn) { btn.textContent = 'Send application'; btn.disabled = true; }
+    var okMsg = 'Application sent.' + (chatNote || '');
+    if (createdRow && createdRow.app_id) {
+      console.log('[QuickGigs apply] created app_id=', createdRow.app_id,
+        'task_id=', createdRow.task_id, 'worker_id=', createdRow.worker_id);
+    }
+    applyNotify(okMsg, '#4ade80');
+    var toast = document.getElementById('toast');
+    if (toast) {
+      toast.innerHTML = okMsg + ' <a href="messages.html" style="color:#0b0118;text-decoration:underline;margin-left:6px">Messages</a>';
+      toast.style.background = '#4ade80';
+      toast.style.color = '#0b0118';
+      toast.style.display = 'block';
+      setTimeout(function(){ toast.style.display = 'none'; }, 5000);
+    }
+  } catch (fatalErr) {
+    console.error('Send application failed:', fatalErr);
+    applyNotify(
+      typeof formatSupabaseActionError === 'function'
+        ? formatSupabaseActionError('send application', fatalErr && fatalErr.message)
+        : ('Could not send application: ' + (fatalErr && fatalErr.message ? fatalErr.message : 'try again')),
+      '#ef4444'
+    );
+    unlockApplyBtn();
   }
-  var toast=document.getElementById('toast');
-  toast.innerHTML='Application sent.' + (chatNote || '') + ' <a href="messages.html" style="color:#fff;text-decoration:underline;margin-left:6px">Messages</a>';
-  toast.style.display='block';
-  setTimeout(function(){toast.style.display='none';},5000);
 };
+window.submitApplication = window.submitBrowseApplication;
+bindBrowseSubmitApplication();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function () {
+    wireApplyModalInputs();
+    bindBrowseSubmitApplication();
+  });
+} else {
+  wireApplyModalInputs();
+}
 
 window.reloadBrowseTasks = loadTasks;
 window.toggleMode=function(){

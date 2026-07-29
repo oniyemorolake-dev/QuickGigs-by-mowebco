@@ -335,6 +335,7 @@ body{padding-bottom:76px;}
   <div class="field section">
     <span class="section-label">Description</span>
     <textarea class="field-input" id="taskDesc" placeholder="Add details — location, timing, anything helpful..."></textarea>
+    <div class="field-error" id="descError">Add a clearer description</div>
   </div>
 
   <!-- PHOTOS -->
@@ -442,8 +443,9 @@ body{padding-bottom:76px;}
 </div>
 
 <script defer src="qg-utils.js"></script>
+<script defer src="contentModeration.js?v=20260727cm1"></script>
 <script defer src="qg-polish.js?v=20260726c"></script>
-<script src="qg-ux.js?v=20260726ux" defer></script>
+<script src="qg-ux.js?v=20260727post1" defer></script>
 <script src="qg-bigtech.js?v=20260726bt" defer></script>
 <script src="qg-wave2.js?v=20260726w2" defer></script>
 <script defer src="qg-config.js"></script>
@@ -928,7 +930,28 @@ function updateHint(city) {
 }
 
 // ── SUBMIT ─────────────────────────────────────────────
+window._postTaskInFlight = false;
 window.handleSubmit = async function(skipPhotos) {
+  // Guard duplicate clicks / sticky→original double-fire before any work runs twice
+  if (window._postTaskInFlight) return;
+  window._postTaskInFlight = true;
+
+  var btn = document.getElementById('submitBtn');
+  var btnDefaultLabel = 'Post task →';
+  function unlockSubmit() {
+    window._postTaskInFlight = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = btnDefaultLabel;
+    }
+  }
+  function lockSubmitPosting() {
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Posting…';
+    }
+  }
+
   var title    = window.sanitizeInput(document.getElementById('taskTitle').value, 120);
   var desc     = window.sanitizeInput(document.getElementById('taskDesc').value, 2000);
   var budget   = parseFloat(document.getElementById('taskBudget').value);
@@ -974,25 +997,58 @@ window.handleSubmit = async function(skipPhotos) {
   if (!valid) {
     var errMsg = scrollToFirstFormError() || 'Fix the highlighted fields above.';
     showFormBanner(errMsg);
+    unlockSubmit();
+    return;
+  }
+
+  // FIRST-PASS content moderation (once per submit). Server + API later.
+  var modMsg = (typeof QG_CONTENT_MOD_MESSAGE === 'string' && QG_CONTENT_MOD_MESSAGE) ||
+    "This contains language that isn't allowed on QuickGigs — please edit and try again";
+  var titleMod = typeof moderateText === 'function' ? moderateText(title) : { blocked: false };
+  var descMod = typeof moderateText === 'function' ? moderateText(desc || '') : { blocked: false };
+  if (titleMod.blocked || descMod.blocked) {
+    var badField = titleMod.blocked ? 'title' : 'description';
+    var badFlags = (titleMod.blocked ? titleMod.flags : descMod.flags) || [];
+    if (typeof logModerationAttempt === 'function') {
+      logModerationAttempt({
+        userId: window._currentUser && window._currentUser.uid,
+        source: 'task',
+        targetType: 'task_post',
+        targetId: 'post_attempt',
+        field: badField,
+        flags: badFlags,
+        preview: titleMod.blocked ? title : desc,
+        message: modMsg
+      });
+    }
+    if (titleMod.blocked) {
+      var te = document.getElementById('titleError');
+      if (te) { te.textContent = modMsg; te.style.display = 'block'; }
+      document.getElementById('taskTitle').classList.add('invalid');
+    }
+    if (descMod.blocked) {
+      var de = document.getElementById('descError');
+      if (de) { de.textContent = modMsg; de.style.display = 'block'; }
+      document.getElementById('taskDesc').classList.add('invalid');
+    }
+    showFormBanner(modMsg);
+    scrollToFirstFormError();
+    unlockSubmit();
     return;
   }
 
   if (!window._currentUser) {
     showFormBanner('Log in again to post a task.');
+    unlockSubmit();
     setTimeout(function(){ window.location.href = 'login.html'; }, 2000);
     return;
   }
 
-  // Show loading state
-  var btn = document.getElementById('submitBtn');
-  var banner = document.getElementById('errorBanner');
-  btn.textContent = 'Posting...';
-  btn.disabled = true;
+  // Lock immediately — only one network post path from here
+  lockSubmitPosting();
 
-  if (typeof syncCurrentUserProfile === 'function') {
-    await syncCurrentUserProfile(window._currentUser);
-  }
-  var posterName = window._currentUser.displayName || window._currentUser.email.split('@')[0];
+  // Do not await profile sync here — it blocked the UI and is not required to insert a task.
+  var posterName = window._currentUser.displayName || (window._currentUser.email && window._currentUser.email.split('@')[0]) || 'Poster';
   if (typeof formatPersonName === 'function') posterName = formatPersonName(posterName);
 
   // Build task object for Supabase
@@ -1014,50 +1070,55 @@ window.handleSubmit = async function(skipPhotos) {
     taskData.description = ('When: ' + schedule.scheduled_label + (taskData.description ? '\n\n' + taskData.description : '')).trim();
   }
 
-  if (selectedPhotos.length && !skipPhotos) {
-    var photoUrls = [];
-    for (var i = 0; i < selectedPhotos.length; i++) {
-      var upload = await uploadTaskPhoto(selectedPhotos[i], window._currentUser.uid);
-      if (!upload.success) {
-        var photoMsg = typeof formatUploadError === 'function'
-          ? formatUploadError(upload.error)
-          : 'Photo upload failed.';
-        showFormBanner(photoMsg, { showSkipPhotos: true });
-        btn.textContent = 'Post task →';
-        btn.disabled = false;
-        return;
+  try {
+    if (selectedPhotos.length && !skipPhotos) {
+      var photoUrls = [];
+      for (var i = 0; i < selectedPhotos.length; i++) {
+        var upload = await uploadTaskPhoto(selectedPhotos[i], window._currentUser.uid);
+        if (!upload.success) {
+          var photoMsg = typeof formatUploadError === 'function'
+            ? formatUploadError(upload.error)
+            : 'Photo upload failed.';
+          showFormBanner(photoMsg, { showSkipPhotos: true });
+          unlockSubmit();
+          return;
+        }
+        photoUrls.push(upload.url);
       }
-      photoUrls.push(upload.url);
+      taskData.photo_urls = JSON.stringify(photoUrls);
     }
-    taskData.photo_urls = JSON.stringify(photoUrls);
-  }
 
-  var result = await postTask(taskData);
+    var result = await postTask(taskData);
 
-  if (result.success) {
-    // Flip to poster only on successful post — never on mere page visit
-    if (typeof setMode === 'function') setMode('poster');
-    else if (typeof setSessionMode === 'function') setSessionMode('poster');
-    try { sessionStorage.setItem('qg-just-posted', '1'); } catch (e) {}
-    if (typeof window.qgClearPostDraft === 'function') window.qgClearPostDraft();
-    try {
-      if (!localStorage.getItem('qg-first-post-done')) {
-        localStorage.setItem('qg-first-post-done', '1');
-        if (typeof qgCelebrate === 'function') qgCelebrate({ count: 40 });
-      }
-    } catch (e2) {}
-    if (typeof haptic === 'function') haptic([15, 30, 15]);
-    if (typeof qgTrackEvent === 'function') qgTrackEvent('post_task', { category: taskData.category || '' });
-    document.getElementById('formContent').style.display = 'none';
-    document.getElementById('successScreen').style.display = 'block';
-  } else {
-    var failMsg = typeof formatSupabaseActionError === 'function'
-      ? formatSupabaseActionError('post task', result.error)
-      : 'Could not save your task. Run supabase/beta-setup-all.sql in Supabase, then refresh and try again.';
-    showFormBanner(failMsg);
-    console.error('postTask failed:', result.error);
-    btn.textContent = 'Post task →';
-    btn.disabled = false;
+    if (result.success) {
+      // Flip to poster only on successful post — never on mere page visit
+      if (typeof setMode === 'function') setMode('poster');
+      else if (typeof setSessionMode === 'function') setSessionMode('poster');
+      try { sessionStorage.setItem('qg-just-posted', '1'); } catch (e) {}
+      if (typeof window.qgClearPostDraft === 'function') window.qgClearPostDraft();
+      try {
+        if (!localStorage.getItem('qg-first-post-done')) {
+          localStorage.setItem('qg-first-post-done', '1');
+          if (typeof qgCelebrate === 'function') qgCelebrate({ count: 40 });
+        }
+      } catch (e2) {}
+      if (typeof haptic === 'function') haptic([15, 30, 15]);
+      if (typeof qgTrackEvent === 'function') qgTrackEvent('post_task', { category: taskData.category || '' });
+      document.getElementById('formContent').style.display = 'none';
+      document.getElementById('successScreen').style.display = 'block';
+      // Keep inFlight true — form is gone; no second insert from this page
+    } else {
+      var failMsg = typeof formatSupabaseActionError === 'function'
+        ? formatSupabaseActionError('post task', result.error)
+        : 'Could not save your task. Run supabase/beta-setup-all.sql in Supabase, then refresh and try again.';
+      showFormBanner(failMsg);
+      console.error('postTask failed:', result.error);
+      unlockSubmit();
+    }
+  } catch (postErr) {
+    console.error('postTask exception:', postErr);
+    showFormBanner('Could not save your task. Check your connection and try again.');
+    unlockSubmit();
   }
 };
 </script>

@@ -152,14 +152,47 @@ img[loading="lazy"] {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Help widget — bottom-left (opposite typical back-to-top) */
-.qg-help-root { position: fixed; left: 16px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); z-index: 90; }
-/* Chat + inbox: sit above composer / tab bar so it never covers the last bubble or rows */
+/* Help FAB — above bottom nav; never cover card text */
+.qg-help-root,
+.help-fab {
+  position: fixed;
+  left: 16px;
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+}
+/* Profile: lift FAB fully above tab bar; left:16px; z-index:40 */
+body.page-profile .qg-help-root,
+body.page-profile .help-fab,
+body[data-qg-page="profile"] .qg-help-root,
+body[data-qg-page="profile"] .help-fab,
+html[data-qg-page="profile"] .qg-help-root,
+html[data-qg-page="profile"] .help-fab {
+  left: 16px !important;
+  /* nav height (~76) + gap so "?" never sits on card text */
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
+  z-index: 40 !important;
+}
+/* Chat: sit above composer so "?" never covers the last bubble */
 body.page-chat .qg-help-root,
-body.page-messages .qg-help-root,
 html[data-qg-page="chat"] .qg-help-root,
-html[data-qg-page="messages"] .qg-help-root {
+body.page-chat .help-fab {
   bottom: calc(env(safe-area-inset-bottom, 0px) + 140px);
+  z-index: 40;
+}
+/* Messages inbox: clear the fixed tab bar (not the chat composer) */
+body.page-messages .qg-help-root,
+html[data-qg-page="messages"] .qg-help-root,
+body.page-messages .help-fab,
+html[data-qg-page="messages"] .help-fab {
+  left: 16px !important;
+  bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+  z-index: 40 !important;
+}
+
+/* Task title capitalization safety net (existing lowercase rows) */
+.task-title::first-letter,
+.tc-title::first-letter {
+  text-transform: uppercase;
 }
 .qg-help-root.is-composer-focused {
   opacity: 0;

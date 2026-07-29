@@ -89,7 +89,25 @@
   transition:border-color 0.2s,box-shadow 0.2s,background 0.2s;
 }
 .signup-field input::placeholder{color:rgba(255,255,255,0.3);}
-.signup-field input:focus{border-color:rgba(200,168,233,0.55);box-shadow:0 0 0 3px rgba(107,63,160,0.2);background:rgba(255,255,255,0.07);}
+.signup-field input:focus,
+.signup-field input:focus-visible{
+  border-color:rgba(200,168,233,0.7);box-shadow:0 0 0 3px rgba(107,63,160,0.35);background:rgba(255,255,255,0.07);outline:none;
+}
+.signup-field input.is-invalid{border-color:rgba(255,107,107,0.55);}
+.signup-field input.is-valid{border-color:rgba(74,222,128,0.4);}
+.signup-optional{font-weight:500;letter-spacing:0.04em;text-transform:none;color:rgba(255,255,255,0.4);font-size:0.68rem;}
+
+.signup-pw-meter{margin-top:8px;}
+.signup-pw-meter-bar{display:flex;gap:4px;height:4px;margin-bottom:6px;}
+.signup-pw-meter-seg{flex:1;border-radius:999px;background:rgba(255,255,255,0.1);transition:background 0.2s;}
+.signup-pw-meter[data-level="1"] .signup-pw-meter-seg:nth-child(1){background:#ff6b6b;}
+.signup-pw-meter[data-level="2"] .signup-pw-meter-seg:nth-child(1),
+.signup-pw-meter[data-level="2"] .signup-pw-meter-seg:nth-child(2){background:#fbbf24;}
+.signup-pw-meter[data-level="3"] .signup-pw-meter-seg{background:#4ade80;}
+.signup-pw-meter-label{font-size:0.72rem;color:rgba(255,255,255,0.55);}
+.signup-pw-meter[data-level="1"] .signup-pw-meter-label{color:#ff8a8a;}
+.signup-pw-meter[data-level="2"] .signup-pw-meter-label{color:#fbbf24;}
+.signup-pw-meter[data-level="3"] .signup-pw-meter-label{color:#4ade80;}
 
 .signup-btn{
   width:100%;padding:15px;border:none;border-radius:12px;cursor:pointer;
@@ -97,11 +115,32 @@
   background:linear-gradient(135deg,#b07fd4,#7b52b8,#9b6fc4);background-size:200% 200%;
   box-shadow:0 6px 24px rgba(107,63,160,0.45);transition:transform 0.15s,box-shadow 0.15s,background-position 0.3s;
   position:relative;overflow:hidden;
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
 }
 .signup-btn:hover{transform:translateY(-1px);box-shadow:0 10px 32px rgba(107,63,160,0.55);background-position:100% 0;}
+.signup-btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(200,168,233,0.45),0 6px 24px rgba(107,63,160,0.45);}
 .signup-btn:disabled{opacity:0.55;cursor:not-allowed;transform:none;}
+.signup-btn.is-loading{pointer-events:none;}
+.signup-btn-spinner{
+  width:16px;height:16px;border-radius:50%;
+  border:2px solid rgba(255,255,255,0.35);border-top-color:#fff;
+  animation:signupSpin 0.7s linear infinite;flex-shrink:0;
+}
+@keyframes signupSpin{to{transform:rotate(360deg);}}
 .signup-btn-secondary{background:rgba(255,255,255,0.07);box-shadow:none;border:1px solid rgba(200,168,233,0.2);}
 .signup-btn-secondary:hover{background:rgba(255,255,255,0.11);box-shadow:none;}
+
+.signup-privacy-note{text-align:center;font-size:0.78rem;color:rgba(255,255,255,0.55);line-height:1.5;margin:0.85rem 0 0;}
+.signup-privacy-note a{color:#c8a8e9;font-weight:600;text-decoration:none;}
+.signup-privacy-note a:hover,.signup-privacy-note a:focus-visible{text-decoration:underline;outline:none;}
+
+.signup-verify-state{display:none;text-align:center;padding:0.5rem 0 0.25rem;}
+.signup-verify-state.active{display:block;}
+.signup-verify-icon{font-size:2.4rem;margin-bottom:0.75rem;line-height:1;}
+.signup-verify-title{font-family:'Playfair Display',serif;font-size:1.45rem;margin:0 0 0.5rem;color:#fff;}
+.signup-verify-body{font-size:0.9rem;color:rgba(255,255,255,0.65);line-height:1.55;margin:0 0 1.25rem;}
+.signup-verify-body strong{color:rgba(255,255,255,0.9);font-weight:600;}
+.signup-verify-actions{display:grid;gap:0.65rem;}
 
 .signup-trust{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:1rem;}
 .signup-trust span{font-size:10px;color:rgba(255,255,255,0.62);padding:4px 10px;border-radius:999px;border:0.5px solid rgba(200,168,233,0.12);}
@@ -140,8 +179,12 @@ body.light .signup-google-btn:hover{background:#f8f7ff;}
 .signup-perk{display:flex;align-items:center;gap:8px;font-size:0.8rem;color:rgba(255,255,255,0.55);}
 .signup-perk span:first-child{font-size:1rem;}
 
-.signup-forgot{font-size:0.8rem;color:#c8a8e9;text-align:right;display:block;margin:-0.2rem 0 1rem;cursor:pointer;background:none;border:none;font-family:inherit;padding:0;width:100%;}
+.signup-forgot{font-size:0.8rem;color:#c8a8e9;text-align:right;display:block;margin:-0.2rem 0 1rem;cursor:pointer;background:none;border:none;font-family:inherit;padding:4px 0;width:100%;border-radius:6px;}
 .signup-forgot:hover{text-decoration:underline;}
+.signup-forgot:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(200,168,233,0.4);text-decoration:underline;}
+.signup-google-btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(200,168,233,0.4);border-color:rgba(200,168,233,0.55);}
+.signup-msg a{color:#c8a8e9;font-weight:600;text-decoration:underline;}
+.signup-msg a:focus-visible{outline:none;box-shadow:0 0 0 2px rgba(200,168,233,0.45);border-radius:2px;}
 .signup-auth-links{text-align:center;margin-top:1.25rem;font-size:11px;color:rgba(255,255,255,0.62);line-height:1.8;}
 .signup-auth-links a{color:#c8a8e9;text-decoration:none;}
 .signup-auth-links a:hover{text-decoration:underline;}
@@ -176,12 +219,22 @@ body.light .signup-role-label{color:#1a0a3d;}
 body.light .signup-role-desc{color:#6b7280;}
 body.light .signup-role.active{background:linear-gradient(145deg,#ede9ff,#f5f2ff);border-color:#c8a8e9;}
 body.light .signup-field label{color:#6b7280;}
+body.light .signup-optional{color:#9ca3af;}
 body.light .signup-field input{background:#fff;border-color:#e0d8ff;color:#1a0a3d;}
 body.light .signup-field input::placeholder{color:#6b6580;}
+body.light .signup-field input:focus,
+body.light .signup-field input:focus-visible{border-color:#9b6fc4;box-shadow:0 0 0 3px rgba(107,63,160,0.2);}
+body.light .signup-pw-meter-seg{background:#ece8ff;}
+body.light .signup-pw-meter-label{color:#6b7280;}
 body.light .signup-perk{color:#6b7280;}
 body.light .signup-trust span{color:#6b6580;border-color:#e8e2ff;}
 body.light .signup-login{color:#6b7280;}
 body.light .signup-login a{color:#6b3fa0;}
+body.light .signup-privacy-note{color:#6b7280;}
+body.light .signup-privacy-note a{color:#6b3fa0;}
+body.light .signup-verify-title{color:#1a0a3d;}
+body.light .signup-verify-body{color:#6b7280;}
+body.light .signup-verify-body strong{color:#1a0a3d;}
 body.light .signup-terms-check{background:#faf8ff;border-color:#e8e2ff;}
 body.light .signup-terms-check label{color:#4b5563;}
 body.light .star{opacity:0.15!important;}

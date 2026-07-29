@@ -79,11 +79,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .nav-chat-avatar.has-photo{color:transparent;}
 .nav-name{font-size:15px;font-weight:500;color:var(--text);}
 .nav-sub{font-size:11px;color:var(--text-muted);}
-.nav-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.nav-right{display:flex;align-items:center;gap:6px;flex-shrink:0;}
 .mode-btn{padding:5px 11px;border-radius:20px;font-size:10px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);}
 body.light .mode-btn{background:#f0eeff;color:var(--purple);}
+.chat-hdr-btn{padding:5px 10px;border-radius:20px;font-size:10px;font-weight:500;cursor:pointer;border:0.5px solid rgba(239,68,68,0.35);font-family:'DM Sans',sans-serif;background:rgba(239,68,68,0.12);color:#ef4444;white-space:nowrap;}
+body.light .chat-hdr-btn{background:#fef2f2;border-color:#fecaca;color:#b91c1c;}
+.chat-hdr-btn:hover{filter:brightness(1.08);}
 
-/* TASK BANNER */
+/* TASK BANNER — pinned task context */
 .task-banner{background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:10px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0;transition:background 0.25s;}
 .tb-dot{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
 .tb-info{flex:1;min-width:0;}
@@ -92,8 +95,18 @@ body.light .mode-btn{background:#f0eeff;color:var(--purple);}
 .tb-status{font-size:10px;padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
 .status-progress{background:rgba(74,222,128,0.12);color:#16a34a;}
 .status-done{background:rgba(107,63,160,0.2);color:var(--purple-light);}
+.status-open{background:rgba(251,191,36,0.12);color:#d97706;}
+.status-cancelled{background:rgba(239,68,68,0.12);color:#ef4444;}
 
-/* FRAUD WARNING */
+/* ONE-TIME SAFETY BANNER */
+.safety-banner{display:none;background:rgba(107,63,160,0.14);border-bottom:0.5px solid rgba(200,168,233,0.22);padding:10px 14px 10px 18px;font-size:12px;color:var(--lavender);line-height:1.45;flex-shrink:0;align-items:flex-start;gap:10px;}
+.safety-banner.is-visible{display:flex;}
+body.light .safety-banner{background:#f5f2ff;color:#5b21b6;border-color:#e8e2ff;}
+.safety-banner-text{flex:1;min-width:0;}
+.safety-banner-dismiss{border:none;background:transparent;color:inherit;opacity:0.7;cursor:pointer;font-size:16px;line-height:1;padding:2px 4px;flex-shrink:0;}
+.safety-banner-dismiss:hover{opacity:1;}
+
+/* LEGACY FRAUD BAR (kept for photo tip when safety banner dismissed) */
 .fraud-bar{background:rgba(251,191,36,0.07);border-bottom:0.5px solid rgba(251,191,36,0.15);padding:8px 18px;font-size:11px;color:rgba(251,191,36,0.75);line-height:1.5;flex-shrink:0;}
 body.light .fraud-bar{background:#fffbeb;color:#92400e;border-color:#fde68a;}
 
@@ -163,7 +176,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 </style>
 <link rel="stylesheet" href="qg-mobile.css">
 </head>
-<body class="qg-page-chat">
+<body class="qg-page-chat page-chat" data-qg-page="chat">
 
 <!-- NAV -->
 <nav class="nav">
@@ -176,24 +189,28 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
     <div class="nav-sub" id="chatSub">Applied to your task</div>
   </a>
   <div class="nav-right">
+    <button type="button" class="chat-hdr-btn" id="chatReportBtn" hidden>Report</button>
+    <button type="button" class="chat-hdr-btn" id="chatBlockBtn" hidden>Block</button>
     <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
   </div>
 </nav>
 
-<!-- TASK BANNER -->
+<!-- TASK BANNER — pinned context (title / price / status) -->
 <div class="task-banner" id="taskBanner">
   <div class="tb-dot" id="taskIcon" style="background:rgba(107,63,160,0.2)">🏠</div>
   <div class="tb-info">
-    <div class="tb-title" id="taskTitle">Deep clean 2 bedroom apartment</div>
-    <div class="tb-meta" id="taskMeta">$120 · Standard · Escrow paid ✓</div>
+    <div class="tb-title" id="taskTitle">Loading task…</div>
+    <div class="tb-meta" id="taskMeta">—</div>
   </div>
-  <span class="tb-status status-progress" id="taskStatus">In progress</span>
+  <span class="tb-status status-progress" id="taskStatus">—</span>
 </div>
 
 <div class="task-photo-strip" id="taskPhotoStrip"></div>
 
-<!-- FRAUD WARNING BAR -->
-<div class="fraud-bar">Keep all communication and payments on QuickGigs. Share task or progress photos here — no IDs or personal documents.
+<!-- ONE-TIME SAFETY BANNER (new conversations) -->
+<div class="safety-banner" id="chatSafetyBanner" role="status">
+  <span class="safety-banner-text">Keep chat and payment on QuickGigs — off-platform deals aren't protected.</span>
+  <button type="button" class="safety-banner-dismiss" id="chatSafetyDismiss" aria-label="Dismiss safety tip">✕</button>
 </div>
 
 <!-- CHAT AREA -->
@@ -234,38 +251,55 @@ let authChecked = false;
 const redirectTimeout = setTimeout(() => {
   if (!authChecked) window.location.href = 'login.html';
 }, 3000);
+window._auth = auth;
 onAuthStateChanged(auth, (user) => {
   authChecked = true;
   clearTimeout(redirectTimeout);
   if (!user) { window.location.href = 'login.html'; return; }
-  window._currentUser = user;
-  initChat();
+  if (typeof setCurrentUser === 'function') setCurrentUser(user);
+  else window._currentUser = user;
+  function startChat() {
+    if (typeof window.initChat === 'function' && typeof getConversation === 'function') {
+      window.initChat();
+    } else {
+      setTimeout(startChat, 40);
+    }
+  }
+  startChat();
 });
 </script>
 
 <link rel="stylesheet" href="qg-stripe.css">
 <link rel="stylesheet" href="qg-trust.css">
 <script defer src="qg-utils.js"></script>
+<script defer src="contentModeration.js?v=20260727cm1"></script>
 <script defer src="qg-polish.js?v=20260726c"></script>
 <script src="qg-ux.js?v=20260726ux" defer></script>
 <script src="qg-bigtech.js?v=20260726bt" defer></script>
 <script src="qg-wave2.js?v=20260726w2" defer></script>
-<script defer src="qg-config.js"></script>
+<script defer src="qg-config.js?v=20260728msg1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
-<script defer src="supabase-db.js?v=20260725j"></script>
+<script defer src="supabase-db.js?v=20260728msg1"></script>
 <script defer src="qg-site.js"></script>
 <script defer src="qg-stripe.js?v=20260725g"></script>
 <script defer src="qg-lightbox.js?v=1"></script>
+<script defer src="qg-report.js?v=20260727chat1"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
-var isDark = localStorage.getItem('qg-mode') !== 'light';
+var isDark = (typeof QG_isDarkTheme === 'function')
+  ? QG_isDarkTheme()
+  : (localStorage.getItem('qg-theme') !== 'light');
 function applyTheme(){
-  document.body.className = isDark ? '' : 'light';
-  document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark';
+  document.body.classList.toggle('light', !isDark);
+  document.body.classList.add('qg-page-chat', 'page-chat');
+  document.documentElement.setAttribute('data-qg-page', 'chat');
+  var b = document.getElementById('modeBtn');
+  if (b) b.textContent = isDark ? '☀️ Light' : '🌙 Dark';
 }
 window.toggleTheme = function(){
   isDark = !isDark;
-  localStorage.setItem('qg-mode', isDark ? 'dark' : 'light');
+  if (typeof QG_setThemeDark === 'function') QG_setThemeDark(isDark);
+  else localStorage.setItem('qg-theme', isDark ? 'dark' : 'light');
   applyTheme();
 };
 applyTheme();
@@ -280,8 +314,10 @@ var pollTimer = null;
 var currentUserId = null;
 var chatIsPoster = false;
 var chatLightboxBound = false;
+var chatOtherUid = '';
+var chatOtherName = '';
 
-// ?? FRAUD DETECTION (shared rules in qg-utils.js) ????????
+// ── FRAUD + CONTENT MODERATION (shared rules) ──────────
 
 function getRecentMyTexts(){
   return messages.filter(function(m){ return m.from === 'me'; }).slice(-4).map(function(m){ return m.text; });
@@ -290,12 +326,17 @@ function getRecentMyTexts(){
 function analyzeFraud(text){
   var recent = getRecentMyTexts();
   if (typeof analyzeOffPlatformContact === 'function') {
-    return analyzeOffPlatformContact(text, recent);
+    return analyzeOffPlatformContact(text, recent, { convId: convId, senderId: currentUserId });
   }
-  if (typeof containsOffPlatformContact === 'function' && containsOffPlatformContact(text, recent)) {
+  if (typeof containsOffPlatformContact === 'function' && containsOffPlatformContact(text, recent, { convId: convId, senderId: currentUserId })) {
     return { blocked: true, reason: 'pattern', message: typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : '' };
   }
   return { blocked: false };
+}
+
+function analyzeContentSafety(text){
+  if (typeof moderateText !== 'function') return { blocked: false };
+  return moderateText(text);
 }
 
 function containsFraud(text){
@@ -339,21 +380,26 @@ function showFraudStrongModal(){
   wrap.addEventListener('click', function(e){ if (e.target === wrap) wrap.remove(); });
 }
 
-function handleFraudBlock(check, preview){
-  check = check || {};
-  var msg = check.message || (typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : 'Message blocked.');
+function showRulesBlockInline(msg){
   var fraudInline = document.getElementById('fraudInline');
   var warnEl = document.getElementById('fraudInlineText');
   if (fraudInline) fraudInline.style.display = 'block';
-  if (warnEl) warnEl.textContent = msg;
+  if (warnEl) warnEl.textContent = msg || (typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : 'Message blocked.');
+}
 
-  if (check.reason === 'digits_only') {
+function handleFraudBlock(check, preview, opts){
+  check = check || {};
+  opts = opts || {};
+  var msg = check.message || (typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : 'Message blocked.');
+  showRulesBlockInline(msg);
+
+  if (check.reason === 'digits_only' || check.reason === 'digit_fragment') {
     if (typeof showToast === 'function') showToast(msg, '#f59e0b');
     return;
   }
 
   var count = bumpFraudViolation();
-  if (typeof logFraudContactEvent === 'function') {
+  if (!opts.skipLog && typeof logFraudContactEvent === 'function') {
     logFraudContactEvent({
       userId: currentUserId,
       convId: convId,
@@ -367,6 +413,123 @@ function handleFraudBlock(check, preview){
   } else if (typeof showToast === 'function') {
     showToast(msg, '#f59e0b');
   }
+}
+
+function handleContentModBlock(mod, preview, opts){
+  mod = mod || {};
+  opts = opts || {};
+  var msg = mod.message || (typeof QG_CONTENT_MOD_MESSAGE === 'string' ? QG_CONTENT_MOD_MESSAGE :
+    "This contains language that isn't allowed on QuickGigs — please edit and try again");
+  showRulesBlockInline(msg);
+  if (!opts.skipLog && typeof logModerationAttempt === 'function') {
+    logModerationAttempt({
+      userId: currentUserId,
+      source: 'chat',
+      targetType: 'chat_message',
+      targetId: convId || 'chat',
+      flags: mod.flags || [],
+      preview: preview || '',
+      message: msg
+    });
+  }
+  if (typeof showToast === 'function') showToast(msg, '#ef4444');
+}
+
+function safetyBannerKey(id){
+  return 'qg-chat-safety-seen:' + (id || 'none');
+}
+
+function maybeShowSafetyBanner(id, messageCount){
+  var banner = document.getElementById('chatSafetyBanner');
+  if (!banner) return;
+  var seen = false;
+  try { seen = !!localStorage.getItem(safetyBannerKey(id)); } catch (e) {}
+  // One-time for a conversation (especially new / low-message threads)
+  var isNew = !messageCount || messageCount < 3;
+  if (!seen && isNew) banner.classList.add('is-visible');
+  else banner.classList.remove('is-visible');
+}
+
+function dismissSafetyBanner(){
+  var banner = document.getElementById('chatSafetyBanner');
+  if (banner) banner.classList.remove('is-visible');
+  try { localStorage.setItem(safetyBannerKey(convId), '1'); } catch (e) {}
+}
+
+function wireSafetyBanner(){
+  var btn = document.getElementById('chatSafetyDismiss');
+  if (btn && !btn._qgBound) {
+    btn._qgBound = true;
+    btn.addEventListener('click', dismissSafetyBanner);
+  }
+}
+
+function wireChatSafetyActions(otherUid, otherName){
+  chatOtherUid = otherUid || '';
+  chatOtherName = otherName || 'this user';
+  var reportBtn = document.getElementById('chatReportBtn');
+  var blockBtn = document.getElementById('chatBlockBtn');
+  if (reportBtn) {
+    reportBtn.hidden = !chatOtherUid;
+    if (!reportBtn._qgBound) {
+      reportBtn._qgBound = true;
+      reportBtn.addEventListener('click', function(){
+        if (!chatOtherUid) return;
+        if (typeof openReportModal === 'function') {
+          openReportModal({
+            targetType: 'user',
+            targetId: chatOtherUid,
+            targetLabel: chatOtherName
+          });
+        } else if (typeof showToast === 'function') {
+          showToast('Report is loading — try again in a moment.', '#f59e0b');
+        }
+      });
+    }
+  }
+  if (blockBtn) {
+    blockBtn.hidden = !chatOtherUid;
+    if (!blockBtn._qgBound) {
+      blockBtn._qgBound = true;
+      blockBtn.addEventListener('click', function(){
+        if (!chatOtherUid) return;
+        if (typeof confirmAndBlockUser === 'function') {
+          confirmAndBlockUser(chatOtherUid, chatOtherName);
+        } else if (typeof showToast === 'function') {
+          showToast('Block is loading — try again in a moment.', '#f59e0b');
+        }
+      });
+    }
+  }
+}
+
+window.onUserBlocked = function(){
+  if (typeof showToast === 'function') showToast('User blocked. Returning to messages…');
+  setTimeout(function(){ window.location.href = 'messages.html'; }, 900);
+};
+
+function taskStatusLabel(status){
+  var s = String(status || '').toLowerCase();
+  if (s === 'completed' || s === 'done') return 'Completed';
+  if (s === 'cancelled' || s === 'canceled') return 'Cancelled';
+  if (s === 'in_progress' || s === 'accepted' || s === 'assigned') return 'In progress';
+  if (s === 'open' || s === 'posted') return 'Open';
+  if (s === 'expired') return 'Expired';
+  return s ? (s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ')) : 'In progress';
+}
+
+function taskStatusClass(status){
+  var s = String(status || '').toLowerCase();
+  if (s === 'completed' || s === 'done') return 'status-done';
+  if (s === 'cancelled' || s === 'canceled') return 'status-cancelled';
+  if (s === 'open' || s === 'posted') return 'status-open';
+  return 'status-progress';
+}
+
+function formatTaskPrice(budget){
+  if (budget == null || budget === '' || isNaN(Number(budget))) return 'Price TBD';
+  if (typeof formatCadMoney === 'function') return formatCadMoney(budget);
+  return '$' + Number(budget);
 }
 
 async function loadTaskPhotos(taskId){
@@ -384,10 +547,20 @@ async function loadTaskPhotos(taskId){
 }
 
 function formatMessageTime(iso){
+  if (!iso) return '';
+  if (typeof timeAgo === 'function') {
+    var ago = timeAgo(iso);
+    if (ago) return ago;
+  }
+  if (typeof formatRelativeTime === 'function') {
+    var rel = formatRelativeTime(iso);
+    if (rel) return rel;
+  }
   return new Date(iso).toLocaleTimeString('en-CA', {hour:'numeric', minute:'2-digit', hour12:true});
 }
 
 function formatMessageDate(iso){
+  if (!iso) return '';
   var d = new Date(iso);
   var today = new Date();
   if(d.toDateString() === today.toDateString()) return 'Today';
@@ -395,6 +568,11 @@ function formatMessageDate(iso){
   yesterday.setDate(today.getDate() - 1);
   if(d.toDateString() === yesterday.toDateString()) return 'Yesterday';
   return d.toLocaleDateString('en-CA', {month:'short', day:'numeric', year:'numeric'});
+}
+
+function formatMessageClock(iso){
+  if (!iso) return '';
+  return new Date(iso).toLocaleTimeString('en-CA', {hour:'numeric', minute:'2-digit', hour12:true});
 }
 
 function isJustPaidConv(id) {
@@ -423,10 +601,17 @@ function cleanPaidUrlParams() {
   window.history.replaceState({}, '', url.pathname + '?' + url.searchParams.toString());
 }
 
-function renderChatHeaderFromConv(conv, isPoster, otherName, otherUid) {
-  var convStatus = (conv.status || 'in_progress').toLowerCase();
-  var cat = (conv.task_category || 'other').toLowerCase();
-  var isCompleted = convStatus === 'completed';
+function renderChatHeaderFromConv(conv, isPoster, otherName, otherUid, taskRow) {
+  var cat = ((taskRow && (taskRow.category || taskRow.CATEGORY)) || conv.task_category || 'other').toLowerCase();
+  var title = (taskRow && (taskRow.title || taskRow.TITLE)) || conv.task_title || 'Task';
+  var budget = taskRow
+    ? (taskRow.budget != null ? taskRow.budget : taskRow.BUDGET)
+    : conv.task_budget;
+  var statusRaw = taskRow
+    ? String(taskRow.status || taskRow.STATUS || '').toLowerCase()
+    : String(conv.status || 'in_progress').toLowerCase();
+  if (!statusRaw) statusRaw = String(conv.status || 'in_progress').toLowerCase();
+
   document.getElementById('chatName').textContent = otherName;
   var profileLink = document.getElementById('chatProfileLink');
   if (profileLink && otherUid) {
@@ -436,16 +621,30 @@ function renderChatHeaderFromConv(conv, isPoster, otherName, otherUid) {
     profileLink.title = 'View ' + otherName + '\'s profile';
   }
   document.getElementById('chatSub').textContent = isPoster
-    ? 'Tasker · ' + (conv.task_title || 'Your task')
-    : 'Poster · ' + (conv.task_title || 'Task');
-  document.getElementById('taskTitle').textContent = conv.task_title || 'Task';
-  document.getElementById('taskMeta').textContent = isCompleted
-    ? ('$' + (conv.task_budget || '—') + ' · Task completed')
-    : 'Chat open · Escrow paid';
+    ? 'Tasker · ' + title
+    : 'Poster · ' + title;
+
+  document.getElementById('taskTitle').textContent = title;
+  document.getElementById('taskMeta').textContent = formatTaskPrice(budget) + ' · ' + taskStatusLabel(statusRaw);
   document.getElementById('taskIcon').textContent = CAT_ICONS[cat] || '📦';
   document.getElementById('taskIcon').style.background = CAT_BG[cat] || 'rgba(107,63,160,0.2)';
-  document.getElementById('taskStatus').textContent = isCompleted ? 'Completed' : 'In progress';
-  document.getElementById('taskStatus').className = 'tb-status ' + (isCompleted ? 'status-done' : 'status-progress');
+  document.getElementById('taskStatus').textContent = taskStatusLabel(statusRaw);
+  document.getElementById('taskStatus').className = 'tb-status ' + taskStatusClass(statusRaw);
+
+  if (budget != null) conv.task_budget = budget;
+  if (title) conv.task_title = title;
+
+  wireChatSafetyActions(otherUid, otherName);
+  wireSafetyBanner();
+}
+
+async function hydratePinnedTask(conv, isPoster, otherName, otherUid) {
+  var taskRow = null;
+  if (conv && conv.task_id && typeof getTaskById === 'function') {
+    try { taskRow = await getTaskById(conv.task_id); } catch (e) { taskRow = null; }
+  }
+  renderChatHeaderFromConv(conv, isPoster, otherName, otherUid, taskRow);
+  return taskRow;
 }
 
 function deferChatEnrichment(conv, otherUid, otherName, isPoster) {
@@ -518,6 +717,11 @@ async function initChat(){
     return;
   }
 
+  if (typeof getConversation !== 'function') {
+    console.warn('[QuickGigs chat] DB not ready');
+    return;
+  }
+
   var justPaid = paidReturn || !!sessionFromUrl || isJustPaidConv(convId);
 
   if (typeof syncCurrentUserProfile === 'function' && window._currentUser) {
@@ -528,26 +732,58 @@ async function initChat(){
     cleanPaidUrlParams();
   }
 
-  var convPromise = getConversation(convId);
+  var actorOpts = { actorId: currentUserId };
+  var convPromise = getConversation(convId, actorOpts);
   var messagesPromise = (justPaid && typeof getMessagesForConversation === 'function')
     ? getMessagesForConversation(convId)
     : null;
 
   currentConv = await convPromise;
-  if(!currentConv || (currentConv.poster_id !== currentUserId && currentConv.worker_id !== currentUserId)){
+  if (!currentConv) {
+    // Brief retry — currentActorId can lag one tick behind auth on first open.
+    await new Promise(function (r) { setTimeout(r, 120); });
+    currentConv = await getConversation(convId, actorOpts);
+  }
+  if(!currentConv ||
+     (String(currentConv.poster_id) !== String(currentUserId) &&
+      String(currentConv.worker_id) !== String(currentUserId))){
     window.location.href = 'messages.html';
     return;
   }
 
-  if (!justPaid && typeof syncConversationUnlock === 'function') {
-    try {
-      var syncUnlock = await syncConversationUnlock(convId, currentUserId);
-      if (syncUnlock && syncUnlock.ok && syncUnlock.unlocked) {
-        var syncedConv = await getConversation(convId);
-        if (syncedConv) currentConv = syncedConv;
+  // Match product config (qg-config chatUnlockAfter: 'accept'). Never default to payment.
+  var unlockRule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept';
+  var paymentGated = unlockRule === 'payment';
+
+  // Accept / apply mode: unlock on open — never send the user into a pay wall.
+  // syncConversationUnlock hits confirm-checkout (payment) — only use it when payment-gated.
+  if (!justPaid) {
+    if (paymentGated && typeof syncConversationUnlock === 'function') {
+      try {
+        var syncUnlock = await syncConversationUnlock(convId, currentUserId);
+        if (syncUnlock && syncUnlock.ok && syncUnlock.unlocked) {
+          var syncedConv = await getConversation(convId, actorOpts);
+          if (syncedConv) currentConv = syncedConv;
+        }
+      } catch (syncErr) {
+        console.warn('Chat unlock sync skipped:', syncErr);
       }
-    } catch (syncErr) {
-      console.warn('Chat unlock sync skipped:', syncErr);
+    } else if (!paymentGated && typeof forceUnlockConversationForTask === 'function') {
+      try {
+        var taskStatusHint = '';
+        if (currentConv.task_id && typeof getTaskById === 'function') {
+          var unlockTask = await getTaskById(currentConv.task_id);
+          if (unlockTask) taskStatusHint = unlockTask.status || unlockTask.STATUS || '';
+        }
+        var forced = await forceUnlockConversationForTask(currentConv, taskStatusHint);
+        if (forced && forced.conv) currentConv = forced.conv;
+        else if (forced && forced.success) {
+          var refreshed = await getConversation(convId, actorOpts);
+          if (refreshed) currentConv = refreshed;
+        }
+      } catch (forceErr) {
+        console.warn('Accept-mode chat unlock skipped:', forceErr);
+      }
     }
   }
 
@@ -562,6 +798,28 @@ async function initChat(){
   chatIsPoster = isPoster;
   window._chatIsPoster = isPoster;
 
+  // Blocked users cannot message each other
+  if (typeof areUsersBlocked === 'function') {
+    try {
+      var blockedPair = await areUsersBlocked(currentUserId, otherUid);
+      if (blockedPair) {
+        await hydratePinnedTask(currentConv, isPoster, otherName, otherUid);
+        document.querySelector('.input-area').style.display = 'none';
+        document.getElementById('chatScroll').innerHTML =
+          '<div class="locked-state">' +
+            '<div class="locked-icon">🚫</div>' +
+            '<div class="locked-title">Messaging unavailable</div>' +
+            '<div class="locked-sub">You can\'t message this user because one of you has blocked the other.</div>' +
+            '<a class="locked-action" href="messages.html">Back to messages</a>' +
+          '</div>';
+        if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
+        return;
+      }
+    } catch (blockCheckErr) {
+      console.warn('Block check skipped:', blockCheckErr);
+    }
+  }
+
   var convStatus = (currentConv.status || 'in_progress').toLowerCase();
   var taskStatus = '';
   var isCompleted = convStatus === 'completed';
@@ -572,6 +830,28 @@ async function initChat(){
     ? parseConversationUnlocked(currentConv)
     : !!currentConv.is_unlocked);
 
+  // Accept / apply: open the thread for parties — never bounce them into payments.
+  // (is_unlocked / status can lag after accept; messages list already proved access.)
+  if (!chatOpen && !paymentGated) {
+    var csOpen = String(currentConv.status || '').toLowerCase();
+    var tsOpen = '';
+    if (currentConv.task_id && typeof getTaskById === 'function') {
+      try {
+        var tOpen = await getTaskById(currentConv.task_id);
+        if (tOpen) tsOpen = String(tOpen.status || tOpen.STATUS || '').toLowerCase();
+      } catch (eOpen) {}
+    }
+    var ruleSaysOpen = typeof window.shouldUnlockChatNow === 'function'
+      ? window.shouldUnlockChatNow(csOpen, tsOpen)
+      : true;
+    if (ruleSaysOpen || unlockRule === 'apply' || unlockRule === 'accept') {
+      if (csOpen !== 'completed' && tsOpen !== 'completed' && tsOpen !== 'cancelled') {
+        chatOpen = true;
+        currentConv.is_unlocked = true;
+      }
+    }
+  }
+
   if (!chatOpen && !justPaid) {
     if (currentConv.task_id && typeof getTaskById === 'function') {
       var taskRow = await getTaskById(currentConv.task_id);
@@ -580,6 +860,7 @@ async function initChat(){
         isCancelled = taskStatus === 'cancelled';
         isCompleted = isCompleted || taskStatus === 'completed';
         currentConv.task_budget = taskRow.budget != null ? taskRow.budget : taskRow.BUDGET;
+        renderChatHeaderFromConv(currentConv, isPoster, otherName, otherUid, taskRow);
       }
     }
     var taskAlreadyPaid = false;
@@ -602,8 +883,13 @@ async function initChat(){
       }
     }
     if (!chatOpen) {
-      renderChatHeaderFromConv(currentConv, isPoster, otherName, otherUid);
-      document.getElementById('taskMeta').textContent = 'Payment required · Chat locked';
+      if (!document.getElementById('taskTitle').textContent || document.getElementById('taskTitle').textContent === 'Loading task…') {
+        await hydratePinnedTask(currentConv, isPoster, otherName, otherUid);
+      } else {
+        wireChatSafetyActions(otherUid, otherName);
+      }
+      document.getElementById('taskMeta').textContent =
+        formatTaskPrice(currentConv.task_budget) + ' · Payment required · Chat locked';
       showLockedState(isCompleted, isCancelled, taskAlreadyPaid);
       if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
       deferChatEnrichment(currentConv, otherUid, otherName, isPoster);
@@ -613,7 +899,7 @@ async function initChat(){
 
   if (justPaid) currentConv.is_unlocked = true;
 
-  renderChatHeaderFromConv(currentConv, isPoster, otherName, otherUid);
+  await hydratePinnedTask(currentConv, isPoster, otherName, otherUid);
   document.querySelector('.input-area').style.display = '';
 
   if(isCompleted) currentConv.is_unlocked = false;
@@ -634,7 +920,9 @@ async function initChat(){
         text: m.body,
         senderIsPoster: currentConv && m.sender_id === currentConv.poster_id,
         time: formatMessageTime(m.created_at),
-        date: formatMessageDate(m.created_at)
+        clock: formatMessageClock(m.created_at),
+        date: formatMessageDate(m.created_at),
+        ts: m.created_at ? new Date(m.created_at).getTime() : 0
       };
     });
     renderMessages();
@@ -643,6 +931,7 @@ async function initChat(){
     await refreshMessages();
   }
 
+  maybeShowSafetyBanner(convId, messages.length);
   setupChatImageAttach();
   ensureChatLightbox();
   pollTimer = setInterval(refreshMessages, 4000);
@@ -652,6 +941,7 @@ async function initChat(){
   if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
   deferChatEnrichment(currentConv, otherUid, otherName, isPoster);
 }
+window.initChat = initChat;
 
 function setupChatImageAttach() {
   var attachBtn = document.getElementById('attachBtn');
@@ -780,7 +1070,13 @@ function showLockedState(isCompleted, isCancelled, taskAlreadyPaid){
       actionHtml = '<a href="'+reviewHref+'" class="locked-action locked-review-btn">⭐ Leave a review</a>';
     }
   } else if (!isCompleted && isPoster && currentConv && currentConv.task_id && !taskAlreadyPaid) {
-    actionHtml = '<button type="button" class="locked-action locked-pay-btn" data-pay-task="'+String(currentConv.task_id)+'" data-pay-return="chat" data-pay-conv="'+String(convId)+'">💳 Pay & unlock chat</button>';
+    // Only offer Stripe pay when explicitly payment-gated — never when config is missing/accept.
+    var payGatedUi = !!(window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter === 'payment');
+    if (payGatedUi) {
+      actionHtml = '<button type="button" class="locked-action locked-pay-btn" data-pay-task="'+String(currentConv.task_id)+'" data-pay-return="chat" data-pay-conv="'+String(convId)+'">💳 Pay & unlock chat</button>';
+    } else {
+      actionHtml = '<a class="locked-action locked-pay-btn" href="messages.html">← Back to messages</a>';
+    }
   } else if (!isCompleted && taskAlreadyPaid) {
     actionHtml = '<button type="button" class="locked-action locked-pay-btn" onclick="window.location.reload()">↻ Refresh chat</button>';
   }
@@ -806,6 +1102,7 @@ async function refreshMessages(){
       text: m.body,
       senderIsPoster: currentConv && m.sender_id === currentConv.poster_id,
       time: formatMessageTime(m.created_at),
+      clock: formatMessageClock(m.created_at),
       date: formatMessageDate(m.created_at),
       ts: m.created_at ? new Date(m.created_at).getTime() : 0
     };
@@ -826,7 +1123,7 @@ function renderMessages(){
   var prevTs = 0;
   messages.forEach(function(m, idx){
     if(m.date !== lastDate){
-      html += '<div class="date-divider">'+m.date+'</div>';
+      html += '<div class="date-divider">'+window.escapeHtml(m.date)+'</div>';
       lastDate = m.date;
       prevFrom = '';
       prevTs = 0;
@@ -837,9 +1134,11 @@ function renderMessages(){
     var nextSame = next && next.from === m.from && next.date === m.date && next.ts && (next.ts - ts) < 120000;
     var grouped = prevFrom === m.from && prevTs && (ts - prevTs) < 120000;
     var showTime = !nextSame;
+    var timeLabel = window.escapeHtml(m.time || '');
+    var clockTitle = window.escapeHtml(m.clock || m.time || '');
     html += '<div class="bubble-row '+(isMe?'mine':'theirs')+(grouped?' grouped':'')+(showTime?' show-time':'')+'">' +
       '<div class="bubble">'+renderMessageBubble(m.text, { senderIsPoster: m.senderIsPoster })+'</div>' +
-      (showTime ? '<div class="bubble-time">'+m.time+(isMe?' <span class="bubble-check" aria-label="Delivered">✓</span>':'')+'</div>' : '') +
+      (showTime ? '<div class="bubble-time" title="'+clockTitle+'">'+timeLabel+(isMe?' <span class="bubble-check" aria-label="Delivered">✓</span>':'')+'</div>' : '') +
     '</div>';
     prevFrom = m.from;
     prevTs = ts;
@@ -901,11 +1200,16 @@ window.handleInput = function(el){
   var fraudInline = document.getElementById('fraudInline');
 
   var check = val ? analyzeFraud(val) : { blocked: false };
-  if(check.blocked){
+  var mod = (!check.blocked && val) ? analyzeContentSafety(val) : { blocked: false };
+  if(check.blocked || mod.blocked){
     fraudDetected = true;
     fraudInline.style.display = 'block';
     var warnEl = document.getElementById('fraudInlineText');
-    if (warnEl) warnEl.textContent = check.message || (typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : '');
+    if (warnEl) {
+      warnEl.textContent = check.blocked
+        ? (check.message || (typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : ''))
+        : (mod.message || (typeof QG_CONTENT_MOD_MESSAGE === 'string' ? QG_CONTENT_MOD_MESSAGE : 'Message blocked.'));
+    }
     sendBtn.disabled = true;
   } else {
     fraudDetected = false;
@@ -946,20 +1250,37 @@ window.sendMessage = async function(){
     return;
   }
 
+  var mod = analyzeContentSafety(text);
+  if(mod.blocked){
+    handleContentModBlock(mod, text);
+    fraudDetected = true;
+    document.getElementById('sendBtn').disabled = true;
+    return;
+  }
+
   var sendBtn = document.getElementById('sendBtn');
   sendBtn.disabled = true;
 
   var recent = getRecentMyTexts();
   var result = typeof sendChatMessage === 'function'
-    ? await sendChatMessage(convId, currentUserId, text, recent)
+    ? await sendChatMessage(convId, currentUserId, text, recent, { convId: convId, senderId: currentUserId })
     : { success: false };
   if(!result.success){
-    if (result.blocked || result.error === 'off_platform_contact') {
+    if (result.error === 'user_blocked') {
+      showToast('Messaging is blocked between you and this user.', '#ef4444');
+      document.querySelector('.input-area').style.display = 'none';
+    } else if (result.blocked || result.error === 'off_platform_contact') {
       handleFraudBlock({
         blocked: true,
         reason: result.reason || 'pattern',
         message: result.message || (typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : '')
-      }, text);
+      }, text, { skipLog: !!result.logged });
+    } else if (result.error === 'content_moderation' || result.reason === 'content_moderation') {
+      handleContentModBlock({
+        blocked: true,
+        message: result.message || '',
+        flags: result.flags || []
+      }, text, { skipLog: true });
     } else {
       showToast('Could not send message. Try again.', '#ef4444');
     }

@@ -113,14 +113,19 @@ body.light .photo-btn{color:#2d1b4e;}
 /* DIVIDER */
 .divider{height:0.5px;background:var(--border);margin:0 20px 16px;}
 
-/* STATS */
-.stats{display:grid;grid-template-columns:1fr 1fr 1fr;margin:0 20px 16px;border-radius:16px;overflow:hidden;border:0.5px solid var(--border);}
-.stat{padding:14px 8px;text-align:center;background:var(--card-bg);}
+/* STATS — three-up grid; shrink to fit narrow phones (no horizontal swipe) */
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0 20px 16px;border-radius:16px;overflow:hidden;border:0.5px solid var(--border);}
+.stat{padding:14px 6px;text-align:center;background:var(--card-bg);min-width:0;}
 .stat+.stat{border-left:0.5px solid var(--border);}
-.stat-num{font-size:20px;font-weight:500;color:var(--text);margin-bottom:3px;}
+.stat-num{font-size:20px;font-weight:500;color:var(--text);margin-bottom:3px;word-break:break-word;}
 .stat-num.green{color:#4ade80;}
 body.light .stat-num.green{color:#16a34a;}
 .stat-lbl{font-size:10px;color:var(--text-faint);}
+@media (max-width:374px){
+  .stat{padding:12px 4px;}
+  .stat-num{font-size:17px;}
+  .stat-lbl{font-size:9px;}
+}
 
 /* SECTION */
 .section{margin:0 20px 16px;animation:sectionIn 0.5s cubic-bezier(0.22,1,0.36,1) backwards;}
@@ -538,6 +543,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
   <a class="tab-item active" href="profile.html"><span class="tab-icon">👤</span><span class="tab-lbl">Profile</span></a>
 </nav>
 
+<script defer src="qg-utils.js?v=20260727auth2"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
@@ -553,6 +559,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+window._auth = auth;
 
 let authChecked = false;
 const redirectTimeout = setTimeout(() => {
@@ -562,13 +569,18 @@ const redirectTimeout = setTimeout(() => {
 onAuthStateChanged(auth, (user) => {
   authChecked = true;
   clearTimeout(redirectTimeout);
-  if (!user) { window.location.href = 'login.html'; return; }
-  window._currentUser = user;
-  loadProfile(user);
+  if (!user) {
+    if (typeof setCurrentUser === 'function') setCurrentUser(null);
+    window.location.href = 'login.html';
+    return;
+  }
+  var live = auth.currentUser && auth.currentUser.uid === user.uid ? auth.currentUser : user;
+  if (typeof setCurrentUser === 'function') setCurrentUser(live);
+  else window._currentUser = live;
+  loadProfile(live);
 });
 </script>
 
-<script defer src="qg-utils.js"></script>
 <script defer src="qg-polish.js?v=20260726c"></script>
 <script src="qg-ux.js?v=20260726ux" defer></script>
 <script src="qg-bigtech.js?v=20260726bt" defer></script>
@@ -584,7 +596,7 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-stats.js"></script>
 <script defer src="qg-confetti.js?v=1"></script>
 <script defer src="qg-nav.js"></script>
-<script defer src="qg-menu.js?v=2"></script>
+<script defer src="qg-menu.js?v=20260727auth2"></script>
 <script defer src="qg-role-switch.js"></script>
 <script>
 var HEADERS = window.HEADERS;
@@ -788,6 +800,11 @@ function userIsTasker(role) {
 }
 
 async function loadProfile(user) {
+  try {
+    if (window._auth && window._auth.currentUser) user = window._auth.currentUser;
+  } catch (eAuth) {}
+  if (typeof setCurrentUser === 'function') setCurrentUser(user);
+
   var isOwnProfile = !viewUserId || viewUserId === user.uid;
   var targetId = viewUserId || user.uid;
   var dbUser = null;
@@ -879,6 +896,7 @@ async function loadProfile(user) {
   }, localProfile, dbProfile, profileData);
 
   if (isOwnProfile) {
+    // Displayed account email MUST match Firebase Auth.
     if (user.email) profileData.email = user.email;
     if (dbUser && dbUser.phone) profileData.phone = String(dbUser.phone).trim();
   } else {

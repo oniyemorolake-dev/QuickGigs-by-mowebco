@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--
+  Obscurity only — real security is the Firebase Auth + role==='admin' gate, and
+  server-side RLS/service-role enforcement (to be added with backend).
+  Do NOT treat a hidden URL as protection.
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#06000f">
+<title>Admin log in — QuickGigs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    background: #06000f;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    width: 100%;
+    max-width: 400px;
+    padding: 28px 24px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.03);
+    border: 0.5px solid rgba(200,168,233,0.12);
+  }
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 1.35rem;
+    color: #c8a8e9;
+  }
+  .badge {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #ef4444;
+    border: 0.5px solid rgba(239,68,68,0.35);
+    background: rgba(239,68,68,0.12);
+    border-radius: 20px;
+    padding: 2px 8px;
+  }
+  h1 {
+    margin-top: 20px;
+    font-size: 1.35rem;
+    font-weight: 500;
+  }
+  .sub {
+    margin-top: 6px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.45;
+  }
+  label {
+    display: block;
+    margin-top: 16px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+  }
+  input {
+    width: 100%;
+    margin-top: 6px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 0.5px solid rgba(200,168,233,0.18);
+    background: rgba(0,0,0,0.35);
+    color: #fff;
+    font: inherit;
+    font-size: 14px;
+    outline: none;
+  }
+  input:focus { border-color: rgba(155,111,196,0.7); }
+  button[type="submit"] {
+    width: 100%;
+    margin-top: 20px;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 12px;
+    background: #6b3fa0;
+    color: #fff;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  button[type="submit"]:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .msg {
+    display: none;
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .msg.error {
+    display: block;
+    background: rgba(239,68,68,0.12);
+    border: 0.5px solid rgba(239,68,68,0.3);
+    color: #fca5a5;
+  }
+  .msg.ok {
+    display: block;
+    background: rgba(74,222,128,0.1);
+    border: 0.5px solid rgba(74,222,128,0.25);
+    color: #86efac;
+  }
+  .foot {
+    margin-top: 18px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    text-align: center;
+  }
+  .foot a { color: #c8a8e9; text-decoration: none; }
+  .note {
+    margin-top: 14px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+    line-height: 1.4;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">QuickGigs</div>
+    <div class="badge">Admin</div>
+    <h1>Admin log in</h1>
+    <p class="sub">Isolated console sign-in. Prior account sessions are cleared before credentials are applied.</p>
+
+    <div class="msg" id="errorMsg" role="alert"></div>
+    <div class="msg" id="okMsg"></div>
+
+    <form id="adminLoginForm" novalidate>
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" autocomplete="username" required placeholder="admin@example.com">
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" required placeholder="Your password">
+
+      <button type="submit" id="submitBtn">Sign in to admin →</button>
+    </form>
+
+    <p class="note">
+      <!-- True enforcement is server-side (RLS + service-role admin API / custom claim)
+           once the backend exists. This page is UX gating only: Firebase Auth +
+           users.role === 'admin' and verified/email_verified. No password or secret
+           is hardcoded here. -->
+      Access requires Firebase Auth plus users.role = admin and verified. Client checks are UX only.
+    </p>
+    <p class="foot"><a href="login.html">Regular user log in</a></p>
+  </div>
+
+  <script defer src="qg-config.js"></script>
+  <script defer src="qg-utils.js?v=20260727auth2"></script>
+  <script defer src="supabaseClient.js?v=20260727perf"></script>
+  <script defer src="supabase-db.js?v=20260727perf"></script>
+  <script defer src="qg-admin-gate.js?v=20260727admin1"></script>
+
+  <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import {
+  initializeAuth,
+  browserLocalPersistence,
+  signInWithEmailAndPassword,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+/**
+ * Isolated admin login.
+ * SECURITY: Client-side only. True enforcement = RLS + service-role once backend exists.
+ * No hardcoded password/secret. Gate = Firebase Auth + users.role === 'admin' + verified.
+ */
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
+  authDomain: "quickgigs-7b12d.firebaseapp.com",
+  projectId: "quickgigs-7b12d",
+  storageBucket: "quickgigs-7b12d.firebasestorage.app",
+  messagingSenderId: "698985399366",
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = initializeAuth(app, { persistence: browserLocalPersistence });
+window._auth = auth;
+
+const errorMsg = document.getElementById('errorMsg');
+const okMsg = document.getElementById('okMsg');
+const submitBtn = document.getElementById('submitBtn');
+
+function showError(text) {
+  okMsg.style.display = 'none';
+  okMsg.className = 'msg';
+  errorMsg.textContent = text || 'Something went wrong.';
+  errorMsg.className = 'msg error';
+  errorMsg.style.display = 'block';
+}
+
+function showOk(text) {
+  errorMsg.style.display = 'none';
+  errorMsg.className = 'msg';
+  okMsg.textContent = text || '';
+  okMsg.className = 'msg ok';
+  okMsg.style.display = 'block';
+}
+
+function clearMessages() {
+  errorMsg.style.display = 'none';
+  errorMsg.className = 'msg';
+  errorMsg.textContent = '';
+  okMsg.style.display = 'none';
+  okMsg.className = 'msg';
+  okMsg.textContent = '';
+}
+
+/** Wipe prior identity so account A never bleeds into this admin session. */
+async function beginFreshAdminLogin() {
+  if (typeof qgPrepareLogin === 'function') qgPrepareLogin();
+  else if (typeof clearQgUserScopedStorage === 'function') clearQgUserScopedStorage();
+  else {
+    try { sessionStorage.clear(); } catch (e) {}
+  }
+  window._qgAdminDbOk = false;
+  window._qgAdminDbUser = null;
+  window._currentUser = null;
+  try { await signOut(auth); } catch (e2) {}
+}
+
+async function refuseNonAdmin(reason) {
+  if (typeof clearQgUserScopedStorage === 'function') clearQgUserScopedStorage();
+  try { await signOut(auth); } catch (e) {}
+  if (typeof setCurrentUser === 'function') setCurrentUser(null);
+  else window._currentUser = null;
+  window._qgAdminDbOk = false;
+  window._qgAdminDbUser = null;
+  showError("This account doesn't have admin access.");
+  console.warn('Admin login refused:', reason || 'not_admin');
+}
+
+document.getElementById('adminLoginForm').addEventListener('submit', async function (e) {
+  e.preventDefault();
+  clearMessages();
+
+  var email = String(document.getElementById('email').value || '').trim();
+  var password = String(document.getElementById('password').value || '');
+  if (!email || !password) {
+    showError('Enter email and password.');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Signing in…';
+
+  try {
+    await beginFreshAdminLogin();
+
+    var cred = await signInWithEmailAndPassword(auth, email, password);
+    var signedIn = (cred && cred.user) || auth.currentUser;
+    if (!signedIn || !signedIn.uid) {
+      throw { code: 'auth/invalid-credential' };
+    }
+    // Derive identity ONLY from the fresh Auth result.
+    if (auth.currentUser && String(auth.currentUser.uid) !== String(signedIn.uid)) {
+      signedIn = auth.currentUser;
+    }
+    if (typeof setCurrentUser === 'function') setCurrentUser(signedIn);
+    else window._currentUser = signedIn;
+
+    submitBtn.textContent = 'Checking admin access…';
+
+    var access = typeof resolveAdminAccess === 'function'
+      ? await resolveAdminAccess(signedIn)
+      : { ok: false, reason: 'gate_missing' };
+
+    if (!access || !access.ok) {
+      await refuseNonAdmin(access && access.reason);
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Sign in to admin →';
+      return;
+    }
+
+    // Confirm Auth still matches the user we just verified.
+    var live = auth.currentUser;
+    if (!live || String(live.uid) !== String(signedIn.uid)) {
+      await refuseNonAdmin('auth_mismatch');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Sign in to admin →';
+      return;
+    }
+
+    showOk('Admin verified — opening console…');
+    window.location.replace('admin.html');
+  } catch (err) {
+    var message = typeof qgFirebaseAuthErrorMessage === 'function'
+      ? qgFirebaseAuthErrorMessage(err)
+      : 'Incorrect email or password.';
+    if (err && (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' ||
+        err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-login-credentials')) {
+      message = 'Incorrect email or password.';
+    }
+    showError(message);
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Sign in to admin →';
+  }
+});
+  </script>
+</body>
+</html>

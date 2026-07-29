@@ -60,6 +60,7 @@
     if (!task) return { success: false };
     var id = task.task_id || task.TASK_ID || task.id;
     var title = task.title || task.TITLE || 'QuickGigs task';
+    if (typeof formatTitle === 'function') title = formatTitle(title);
     var price = task.price || task.PRICE;
     var text = price ? title + ' — $' + price + ' on QuickGigs' : title + ' on QuickGigs';
     return shareContent({
@@ -78,11 +79,17 @@
   }
 
   function shareButtonHtml(kind, id, label) {
+    var attr = typeof escAttr === 'function' ? escAttr : function (s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/\r?\n/g, ' ');
+    };
+    var safeLabel = attr(label || '');
     return '<button type="button" class="qg-chip-btn qg-share-trigger" ' +
-      'data-share-kind="' + (kind || 'task') + '" ' +
-      'data-share-id="' + (id || '') + '" ' +
-      'data-share-label="' + (label || '').replace(/"/g, '&quot;') + '" ' +
-      'aria-label="Share ' + (label || 'link') + '">↗ Share</button>';
+      'data-share-kind="' + attr(kind || 'task') + '" ' +
+      'data-share-id="' + attr(id || '') + '" ' +
+      'data-share-label="' + safeLabel + '" ' +
+      'aria-label="Share ' + (safeLabel || 'link') + '">↗ Share</button>';
   }
 
   function bindShareTriggers(root, getTaskById) {

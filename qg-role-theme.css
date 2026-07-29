@@ -126,43 +126,65 @@ body.light.qg-mode-worker .tab-item.active .tab-lbl {
 
 /* ══════════════════════════════════════════════════════
    DASHBOARD — layout differs; colours stay purple
+   Stats: 2×2 on mobile (no horizontal swipe), 4-up on wide.
+   Applies to poster + tasker (iOS Safari + Android Chrome).
    ══════════════════════════════════════════════════════ */
 html[data-qg-mode="poster"] .stats,
-body.qg-mode-poster .stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+body.qg-mode-poster .stats,
+html[data-qg-mode="worker"] .stats,
+body.qg-mode-worker .stats,
+#statsGrid.stats {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
   gap: 10px;
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+  flex-wrap: unset !important;
+  padding-bottom: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: auto;
 }
 
-html[data-qg-mode="worker"] .stats,
-body.qg-mode-worker .stats {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 6px;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
+@media (min-width: 720px) {
+  html[data-qg-mode="poster"] .stats,
+  body.qg-mode-poster .stats,
+  html[data-qg-mode="worker"] .stats,
+  body.qg-mode-worker .stats,
+  #statsGrid.stats {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+}
+
+/* Tasker cards keep purple tint — grid cells only (never pill min-width scroll). */
+html[data-qg-mode="worker"] .stat-card,
+body.qg-mode-worker .stat-card,
+#statsGrid .stat-card {
+  min-width: 0 !important;
+  max-width: 100%;
+  flex: unset !important;
+  width: auto !important;
+  box-sizing: border-box;
+}
+
+html[data-qg-mode="worker"] .stat-card,
+body.qg-mode-worker .stat-card {
+  text-align: center;
+  border-radius: 16px;
+  padding: 12px 12px;
+  border: 1px solid rgba(200, 168, 233, 0.25);
+  background: rgba(107, 63, 160, 0.12);
 }
 
 html[data-qg-mode="worker"] .stats::-webkit-scrollbar,
 body.qg-mode-worker .stats::-webkit-scrollbar { display: none; }
 
-html[data-qg-mode="worker"] .stat-card,
-body.qg-mode-worker .stat-card {
-  min-width: 108px;
-  flex: 0 0 auto;
-  text-align: center;
-  border-radius: 999px;
-  padding: 12px 16px;
-  border: 1px solid rgba(200, 168, 233, 0.25);
-  background: rgba(107, 63, 160, 0.12);
-}
-
 html[data-qg-mode="worker"] .stat-icon,
 body.qg-mode-worker .stat-icon { font-size: 16px; margin-bottom: 2px; }
 
 html[data-qg-mode="worker"] .stat-val,
-body.qg-mode-worker .stat-val { font-size: 18px; }
+body.qg-mode-worker .stat-val { font-size: 18px; word-break: break-word; }
 
 html[data-qg-mode="worker"] .stat-lbl,
 body.qg-mode-worker .stat-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; }

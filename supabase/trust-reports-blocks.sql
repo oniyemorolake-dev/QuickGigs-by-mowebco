@@ -1,0 +1,5 @@
+-- DEPRECATED — use the canonical schema instead:
+--   supabase/reports-blocks-disputes.sql
+--
+-- That file creates reports + blocks + disputes with CHECK constraints
+-- and JWT-based RLS (run RLS section only after Firebase JWT → Supabase).

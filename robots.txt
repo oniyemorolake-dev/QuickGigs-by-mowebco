@@ -6,6 +6,7 @@ Disallow: /messages.html
 Disallow: /chat.html
 Disallow: /profile.html
 Disallow: /admin.html
+Disallow: /admin-login.html
 Disallow: /review.html
 
 Sitemap: https://quickgigs.ca/sitemap.xml

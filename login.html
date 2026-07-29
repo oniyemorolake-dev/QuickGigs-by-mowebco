@@ -37,6 +37,12 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 .stars{position:fixed;inset:0;z-index:0;pointer-events:none;}
 .star{position:absolute;border-radius:50%;background:white;animation:twinkle var(--d,3s) ease-in-out infinite;opacity:0;}
 @keyframes twinkle{0%,100%{opacity:0;}50%{opacity:var(--op,0.8);}}
+.login-progress{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:12px 14px;border-radius:12px;background:rgba(107,63,160,0.18);border:1px solid rgba(200,168,233,0.25);font-size:13px;color:rgba(255,255,255,0.9);}
+.login-progress[hidden]{display:none!important;}
+.login-progress-spinner{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,0.25);border-top-color:#c8a8e9;animation:loginSpin 0.7s linear infinite;flex-shrink:0;}
+@keyframes loginSpin{to{transform:rotate(360deg);}}
+body.light .login-progress{background:#f0eeff;border-color:#e0daf5;color:#2d1b4e;}
+body.light .login-progress-spinner{border-color:rgba(107,63,160,0.2);border-top-color:#6b3fa0;}
 </style>
 </head>
 <body>
@@ -65,6 +71,10 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 
       <div class="signup-msg error" id="errorMsg"></div>
       <div class="signup-msg ok" id="okMsg"></div>
+      <div class="login-progress" id="loginProgress" hidden>
+        <div class="login-progress-spinner" aria-hidden="true"></div>
+        <div class="login-progress-text">Opening dashboard…</div>
+      </div>
 
       <form id="loginForm">
         <div class="signup-field">
@@ -102,18 +112,14 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
   </div>
 </div>
 
-<script defer src="qg-utils.js"></script>
-<script defer src="qg-polish.js?v=20260726c"></script>
-<script src="qg-ux.js?v=20260726ux" defer></script>
-<script src="qg-bigtech.js?v=20260726bt" defer></script>
-<script src="qg-wave2.js?v=20260726w2" defer></script>
-<script defer src="qg-config.js"></script>
+<script defer src="qg-utils.js?v=20260728perf2"></script>
+<script defer src="qg-config.js?v=20260728msg1"></script>
 <script defer src="qg-analytics.js"></script>
 <script defer src="qg-auth-google.js"></script>
-<script defer src="supabase-db.js"></script>
-<script defer src="qg-announcement.js?v=5"></script>
+<script defer src="supabaseClient.js?v=20260728perf2"></script>
+<script defer src="supabase-db.js?v=20260728perf2"></script>
 <script defer src="qg-cookies.js"></script>
-<script src="qg-theme.js"></script>
+<script defer src="qg-theme.js"></script>
 <script>
 attachPasswordToggle('password');
 
@@ -132,7 +138,7 @@ window.toggleAuthTheme = function() {
 applyAuthTheme();
 
 var stars = document.getElementById('stars');
-var starCount = window.matchMedia('(max-width:768px)').matches ? 30 : 60;
+var starCount = window.matchMedia('(max-width:768px)').matches ? 0 : 40;
 for (var i = 0; i < starCount; i++) {
   var s = document.createElement('div');
   s.className = 'star';
@@ -160,28 +166,101 @@ const auth = initializeAuth(app, {
   persistence: browserLocalPersistence,
   popupRedirectResolver: browserPopupRedirectResolver
 });
+window._auth = auth;
+
+/** Drop previous Auth session + user caches before new credentials (capped wait for mobile). */
+async function beginFreshCredentialLogin() {
+  if (typeof qgPrepareLogin === 'function') qgPrepareLogin();
+  else if (typeof clearQgUserScopedStorage === 'function') clearQgUserScopedStorage();
+  else {
+    try { sessionStorage.clear(); } catch (e) {}
+  }
+  window._currentUser = null;
+  try {
+    var signOutP = auth.signOut();
+    await Promise.race([
+      signOutP,
+      new Promise(function (resolve) { setTimeout(resolve, 700); })
+    ]);
+  } catch (e2) {}
+}
+
+function markPendingProfileSync() {
+  try { sessionStorage.setItem('qg-pending-profile-sync', '1'); } catch (e) {}
+}
+
+function prefetchDashboard() {
+  try {
+    if (document.querySelector('link[data-qg-prefetch-dash]')) return;
+    var link = document.createElement('link');
+    link.rel = 'prefetch';
+    link.href = 'dashboard.html';
+    link.setAttribute('data-qg-prefetch-dash', '1');
+    document.head.appendChild(link);
+  } catch (e) {}
+}
 
 async function finishGoogleLogin(user) {
   var errorMsg = document.getElementById('errorMsg');
-  if (typeof syncCurrentUserProfile === 'function') {
-    await syncCurrentUserProfile(user);
+  if (typeof setCurrentUser === 'function') setCurrentUser(user);
+  else window._currentUser = user;
+  showLoginProgress('Signing you in…');
+  prefetchDashboard();
+
+  // Wait briefly for shared DB helpers on cold start (cellular + home-screen).
+  var gateWait = 0;
+  while (typeof getUserLoginGate !== 'function' && typeof getUserByFirebaseUid !== 'function' && gateWait < 40) {
+    await new Promise(function (r) { setTimeout(r, 50); });
+    gateWait++;
   }
-  var existing = typeof getUserByFirebaseUid === 'function'
-    ? await getUserByFirebaseUid(user.uid)
-    : null;
+
+  // Critical path: ONE light user read (ban + onboarding). Profile upsert runs on dashboard.
+  var existing = typeof getUserLoginGate === 'function'
+    ? await getUserLoginGate(user.uid)
+    : (typeof getUserByFirebaseUid === 'function' ? await getUserByFirebaseUid(user.uid, { self: true }) : null);
+
   if (existing && existing.status === 'banned') {
+    if (typeof clearQgUserScopedStorage === 'function') clearQgUserScopedStorage();
     await auth.signOut();
+    if (typeof setCurrentUser === 'function') setCurrentUser(null);
     errorMsg.textContent = 'This account has been suspended. Contact support@quickgigs.ca if you think this is a mistake.';
     errorMsg.style.display = 'block';
     if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+    var overlay = document.getElementById('loginProgress');
+    if (overlay) overlay.hidden = true;
     return;
   }
+
+  // Do NOT start sync before navigation — it fights the redirect on cellular.
+  markPendingProfileSync();
+
   if (existing && typeof qgUserNeedsOnboarding === 'function' && !qgUserNeedsOnboarding(existing)) {
     if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'google' });
+    showLoginProgress('Opening dashboard…');
     window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
     return;
   }
+  showLoginProgress('Almost there…');
   window.location.replace('signup.html?oauth=continue');
+}
+
+function showLoginProgress(label) {
+  var btn = document.getElementById('submitBtn');
+  var gBtn = document.getElementById('googleLoginBtn');
+  var overlay = document.getElementById('loginProgress');
+  if (btn) {
+    btn.textContent = label || 'Opening dashboard…';
+    btn.disabled = true;
+  }
+  if (gBtn) {
+    gBtn.disabled = true;
+    gBtn.textContent = label || 'Opening…';
+  }
+  if (overlay) {
+    overlay.hidden = false;
+    var t = overlay.querySelector('.login-progress-text');
+    if (t) t.textContent = label || 'Opening dashboard…';
+  }
 }
 
 getRedirectResult(auth).then(function(result) {
@@ -211,9 +290,19 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
   submitBtn.disabled = true;
 
   try {
-    await signInWithEmailAndPassword(auth, email, password);
+    await beginFreshCredentialLogin();
+    var cred = await signInWithEmailAndPassword(auth, email, password);
+    var signedIn = (cred && cred.user) || auth.currentUser;
+    if (!signedIn || !signedIn.uid) throw { code: 'auth/invalid-credential' };
+    if (auth.currentUser && String(auth.currentUser.uid) !== String(signedIn.uid)) {
+      signedIn = auth.currentUser;
+    }
+    if (typeof setCurrentUser === 'function') setCurrentUser(signedIn);
+    else window._currentUser = signedIn;
     if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'email' });
-    submitBtn.textContent = 'Opening dashboard…';
+    try { sessionStorage.setItem('qg-pending-profile-sync', '1'); } catch (ePend) {}
+    prefetchDashboard();
+    showLoginProgress('Opening dashboard…');
     var dest = typeof getDashboardUrl === 'function' ? getDashboardUrl() : 'dashboard.html';
     window.location.replace(dest);
   } catch (error) {
@@ -272,6 +361,7 @@ document.getElementById('googleLoginBtn').addEventListener('click', async functi
   var useRedirect = typeof qgGooglePreferRedirect === 'function' && qgGooglePreferRedirect();
   if (useRedirect) {
     try {
+      await beginFreshCredentialLogin();
       await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
     } catch (redirectErr) {
       var rMsg = typeof qgGoogleAuthErrorMessage === 'function' ? qgGoogleAuthErrorMessage(redirectErr) : '';
@@ -282,6 +372,7 @@ document.getElementById('googleLoginBtn').addEventListener('click', async functi
   }
 
   try {
+    await beginFreshCredentialLogin();
     var result = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
     await finishGoogleLogin(result.user);
   } catch (error) {

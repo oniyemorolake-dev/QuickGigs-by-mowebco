@@ -430,7 +430,7 @@
     if (typingEnabled === false || !convId || typeof getConversationById !== 'function' && typeof sbGet !== 'function') return;
     try {
       var rows = typeof sbGet === 'function'
-        ? await sbGet('conversations', 'conv_id=eq.' + encodeURIComponent(convId), null, 1)
+        ? await sbGet('conversations', 'select=conv_id,poster_id,worker_id,typing_by,typing_at&conv_id=eq.' + encodeURIComponent(convId), null, 1)
         : null;
       var row = rows && rows[0];
       if (!row) return;

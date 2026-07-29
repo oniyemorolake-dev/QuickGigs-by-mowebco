@@ -95,7 +95,7 @@
     }
     var root = document.createElement('div');
     root.id = 'qgHelpRoot';
-    root.className = 'qg-help-root';
+    root.className = 'qg-help-root help-fab';
     root.innerHTML =
       '<button type="button" class="qg-help-fab" id="qgHelpFab" aria-expanded="false" aria-controls="qgHelpPanel" aria-label="Help and support">?</button>' +
       '<div class="qg-help-panel" id="qgHelpPanel" role="dialog" aria-modal="true" aria-labelledby="qgHelpTitle" hidden>' +

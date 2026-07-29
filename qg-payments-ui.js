@@ -48,25 +48,30 @@
     var role = opts.role || 'poster';
     var held = 0;
     var paid = 0;
+    var pending = 0;
     var refunded = 0;
     (payments || []).forEach(function (p) {
       var st = String(payField(p, 'status') || '').toLowerCase();
+      var workerAmt = parseFloat(payField(p, 'worker_payout')) || 0;
+      var posterAmt = parseFloat(payField(p, 'amount')) || 0;
+      var amt = role === 'worker' ? workerAmt : posterAmt;
       if (st === 'refunded') {
-        refunded += parseFloat(payField(p, 'amount')) || 0;
+        refunded += posterAmt || amt;
+        return;
+      }
+      if (st === 'pending') {
+        pending += amt;
         return;
       }
       if (st === 'held') {
-        held += role === 'worker'
-          ? (parseFloat(payField(p, 'worker_payout')) || 0)
-          : (parseFloat(payField(p, 'amount')) || 0);
+        held += amt;
+        return;
       }
       if (st === 'paid' || st === 'completed') {
-        paid += role === 'worker'
-          ? (parseFloat(payField(p, 'worker_payout')) || 0)
-          : (parseFloat(payField(p, 'amount')) || 0);
+        paid += amt;
       }
     });
-    return { held: held, paid: paid, refunded: refunded };
+    return { held: held, paid: paid, pending: pending, refunded: refunded };
   }
 
   function renderPaymentHistoryList(payments, opts) {

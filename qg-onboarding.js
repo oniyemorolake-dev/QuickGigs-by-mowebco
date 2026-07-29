@@ -279,9 +279,9 @@
         if (type === 'account' || type === 'security') {
           return true;
         }
-        if (type === 'pronouns' && !resolveChipValue(state, 'pronouns')) {
-          qgNotify('Please choose or enter your pronouns.', '#f59e0b');
-          return false;
+        // Pronouns are optional — allow skip / empty / free-text via chips.
+        if (type === 'pronouns') {
+          return true;
         }
         if (type === 'gender' && !resolveChipValue(state, 'gender')) {
           qgNotify('Please choose a gender option or select "Prefer not to say".', '#f59e0b');

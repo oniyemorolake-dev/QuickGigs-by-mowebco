@@ -130,8 +130,10 @@ body.light .tc-applicants-toggle{color:var(--purple);}
 /* CONFIRM MODAL */
 .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;z-index:400;padding:20px;}
 .confirm-overlay.open{display:flex;}
-.confirm-box{background:var(--surface);border:0.5px solid var(--border);border-radius:18px;padding:22px;max-width:340px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,0.35);}
-.confirm-title{font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px;}
+.confirm-box{position:relative;background:var(--surface);border:0.5px solid var(--border);border-radius:18px;padding:22px;max-width:340px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,0.35);}
+.confirm-close{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:8px;border:0.5px solid var(--border);background:transparent;color:var(--text-muted);font-size:16px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;z-index:2;}
+.confirm-close:hover{color:var(--text);}
+.confirm-title{font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px;padding-right:36px;}
 .confirm-msg{font-size:13px;color:var(--text-muted);line-height:1.55;margin-bottom:18px;}
 .confirm-btns{display:flex;gap:10px;justify-content:flex-end;}
 .confirm-cancel{padding:10px 18px;border-radius:12px;border:0.5px solid var(--border);background:transparent;color:var(--text-muted);font-family:inherit;font-size:13px;cursor:pointer;}
@@ -246,7 +248,8 @@ body.light .app-legal-footer a{color:var(--purple);}
 <div class="toast" id="toast"></div>
 
 <div class="confirm-overlay" id="confirmOverlay" onclick="if(event.target===this)closeConfirm()">
-  <div class="confirm-box">
+  <div class="confirm-box" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <button type="button" class="confirm-close" onclick="closeConfirm()" aria-label="Close">✕</button>
     <div class="confirm-title" id="confirmTitle">Are you sure?</div>
     <div class="confirm-msg" id="confirmMsg"></div>
     <div class="confirm-btns">
@@ -257,7 +260,8 @@ body.light .app-legal-footer a{color:var(--purple);}
 </div>
 
 <div class="confirm-overlay" id="counterOverlay" onclick="if(event.target===this)closeCounterModal()">
-  <div class="confirm-box">
+  <div class="confirm-box" role="dialog" aria-modal="true" aria-labelledby="counterTitle">
+    <button type="button" class="confirm-close" onclick="closeCounterModal()" aria-label="Close">✕</button>
     <div class="confirm-title" id="counterTitle">Counter offer</div>
     <div class="confirm-msg" id="counterMsg">Enter your counter amount (min $20).</div>
     <input class="field-input" id="counterAmount" type="number" min="20" placeholder="85" style="width:100%;margin:12px 0 4px;padding:12px 14px;border-radius:10px;border:0.5px solid var(--border);background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;">
@@ -573,7 +577,8 @@ function applyLocalAcceptState(taskId, appId) {
 }
 
 function isPaymentGatedChat() {
-  return !window.QG_CONFIG || window.QG_CONFIG.chatUnlockAfter === 'payment';
+  // Explicit payment rule only — missing config must not invent a pay wall.
+  return !!(window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter === 'payment');
 }
 
 function renderApplicantAction(a, taskId, task) {
@@ -1319,6 +1324,24 @@ window.openCounterModal = function(opts) {
   document.getElementById('counterOverlay').classList.add('open');
   setTimeout(function(){ document.getElementById('counterAmount').focus(); }, 50);
 };
+
+if (!window._qgMyTasksEscBound) {
+  window._qgMyTasksEscBound = true;
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var counter = document.getElementById('counterOverlay');
+    var confirm = document.getElementById('confirmOverlay');
+    if (counter && counter.classList.contains('open')) {
+      e.preventDefault();
+      if (typeof closeCounterModal === 'function') closeCounterModal();
+      return;
+    }
+    if (confirm && confirm.classList.contains('open')) {
+      e.preventDefault();
+      if (typeof closeConfirm === 'function') closeConfirm();
+    }
+  });
+}
 
 window.closeCounterModal = function() {
   pendingCounterAction = null;

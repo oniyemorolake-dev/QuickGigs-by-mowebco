@@ -35,19 +35,29 @@
     };
   }
 
+  // Prefer shared qg-utils timeAgo; keep a matching fallback if utils is late
   if (typeof window.timeAgo !== 'function') {
     window.timeAgo = function (dateStr) {
       if (!dateStr) return '';
-      var diff = Date.now() - new Date(dateStr).getTime();
-      var mins = Math.floor(diff / 60000);
-      if (mins < 1) return 'just now';
-      if (mins < 60) return mins + 'm ago';
-      var hrs = Math.floor(mins / 60);
-      if (hrs < 24) return hrs + 'hr ago';
-      var days = Math.floor(hrs / 24);
-      if (days < 7) return days + 'd ago';
-      return window.formatDate(dateStr);
+      var then = new Date(dateStr);
+      if (isNaN(then.getTime())) return '';
+      var s = (Date.now() - then.getTime()) / 1000;
+      if (s < 0) s = 0;
+      if (s < 3600) return Math.floor(s / 60) + 'm ago';
+      if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+      if (s < 604800) return Math.floor(s / 86400) + 'd ago';
+      return then.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
     };
+  }
+  if (typeof window.cleanSnippet !== 'function') {
+    window.cleanSnippet = function (desc) {
+      if (!desc) return null;
+      var t = String(desc).trim();
+      return t.length > 8 ? t : null;
+    };
+  }
+  if (typeof window.formatRelativeTime !== 'function') {
+    window.formatRelativeTime = function (iso) { return window.timeAgo(iso) || 'Recently'; };
   }
 
   if (typeof window.showEmptyState !== 'function') {

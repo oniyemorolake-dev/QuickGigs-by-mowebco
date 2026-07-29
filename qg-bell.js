@@ -1,6 +1,6 @@
 /* QuickGigs — in-app notification bell */
 (function () {
-  var SKIP = { login: 1, signup: 1, 'parent-consent': 1, admin: 1 };
+  var SKIP = { login: 1, signup: 1, 'parent-consent': 1, admin: 1, 'admin-login': 1 };
   var APP = {
     dashboard: 1, browsetask: 1, posttask: 1, mytasks: 1, messages: 1,
     chat: 1, profile: 1, workers: 1, categories: 1, feedback: 1, review: 1
@@ -121,18 +121,13 @@
 
   function formatTime(iso) {
     if (!iso) return '';
-    if (typeof formatRelativeTime === 'function') {
-      try {
-        return formatRelativeTime(iso);
-      } catch (e) {}
+    if (typeof timeAgo === 'function') {
+      try { return timeAgo(iso); } catch (e) {}
     }
-    var diff = Date.now() - new Date(iso).getTime();
-    var mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'Just now';
-    if (mins < 60) return mins + 'm ago';
-    var hrs = Math.floor(mins / 60);
-    if (hrs < 24) return hrs + 'h ago';
-    return Math.floor(hrs / 24) + 'd ago';
+    if (typeof formatRelativeTime === 'function') {
+      try { return formatRelativeTime(iso); } catch (e2) {}
+    }
+    return '';
   }
 
   function updateBadge(count) {
@@ -152,15 +147,22 @@
     if (!panelBody) return;
     if (!notifications.length) {
       var emptyIco = typeof window.qgIcon === 'function' ? window.qgIcon('bell', { size: 24 }) : '';
-      panelBody.innerHTML = '<div class="qg-bell-empty"><div class="empty-icon" style="margin:0 auto 12px">'+emptyIco+'</div>No notifications yet.<br>Applies, hires, messages, and completions show up here.</div>';
+      panelBody.innerHTML =
+        '<div class="qg-bell-empty" style="text-align:center;padding:28px 16px">' +
+          '<div class="empty-icon" style="margin:0 auto 12px">'+emptyIco+'</div>' +
+          '<div style="font-size:14px;margin-bottom:14px;line-height:1.45">No notifications yet</div>' +
+          '<a href="browsetask.html" class="empty-btn" style="display:inline-block;padding:10px 16px;border-radius:12px;background:var(--purple,#6b3fa0);color:#fff;text-decoration:none;font-size:13px">Browse tasks</a>' +
+        '</div>';
       return;
     }
     panelBody.innerHTML = notifications.map(function (n) {
       var unread = !n.read_at;
       var link = n.link || (n.payload && n.payload.link) || '';
       var id = n.notification_id || n.id || '';
-      return '<button type="button" class="qg-bell-item' + (unread ? ' unread' : '') + '" data-nid="' + String(id).replace(/"/g, '') + '" data-link="' + String(link).replace(/"/g, '&quot;') + '">' +
-        '<div class="qg-bell-item-title">' + escapeHtml(n.title || 'Notification') + '</div>' +
+      var safeLink = typeof safeUrl === 'function' ? safeUrl(link) : '';
+      var attr = typeof escAttr === 'function' ? escAttr : escapeHtml;
+      return '<button type="button" class="qg-bell-item' + (unread ? ' unread' : '') + '" data-nid="' + attr(String(id)) + '" data-link="' + attr(safeLink) + '">' +
+        '<div class="qg-bell-item-title">' + escapeHtml(typeof formatTitle === 'function' ? formatTitle(n.title || 'Notification') : (n.title || 'Notification')) + '</div>' +
         '<div class="qg-bell-item-body">' + escapeHtml(n.body || '') + '</div>' +
         '<div class="qg-bell-item-time">' + escapeHtml(formatTime(n.created_at)) + '</div>' +
       '</button>';
@@ -175,7 +177,7 @@
 
   function escapeHtml(s) {
     if (typeof window.escapeHtml === 'function') return window.escapeHtml(s);
-    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
   async function openNotification(id, link) {
@@ -193,8 +195,10 @@
     }
     closeBellPanel();
     await refreshNotifications();
-    if (link) {
-      window.location.href = link;
+    // Only navigate to safe same-app / http(s) URLs — never javascript:
+    var dest = typeof safeUrl === 'function' ? safeUrl(link) : '';
+    if (dest) {
+      window.location.href = dest;
     }
   }
 

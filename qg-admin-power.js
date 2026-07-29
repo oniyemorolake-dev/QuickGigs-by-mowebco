@@ -203,8 +203,10 @@
         'Dispute — ' + (d.task_title || d.task_id || 'Task'),
         'Review and add internal notes. Resolve when ready.',
         '<div style="display:grid;gap:12px">' +
-          '<div><div class="modal-label">Opened by</div><div class="modal-value">' + esc(d.opened_by_email || d.opened_by_id || '—') + '</div></div>' +
-          '<div><div class="modal-label">Reason</div><div class="modal-value">' + esc(d.reason || d.details || '—') + '</div></div>' +
+          '<div><div class="modal-label">Opened by</div><div class="modal-value">' + esc(d.opened_by_email || d.raised_by || d.opened_by || d.opened_by_id || '—') + '</div></div>' +
+          '<div><div class="modal-label">Reason</div><div class="modal-value">' + esc(d.reason || '—') + '</div></div>' +
+          '<div><div class="modal-label">Details</div><div class="modal-value">' + esc(d.detail || d.details || '—') + '</div></div>' +
+          '<div><div class="modal-label">Status</div><div class="modal-value">' + esc(d.status || 'open') + '</div></div>' +
           '<div class="admin-field"><label>Admin notes (local)</label><textarea id="admDisputeNote">' + esc(note) + '</textarea></div>' +
           '<p style="font-size:10px;color:var(--text-faint)">ADMIN-TODO: store dispute notes in Supabase</p>' +
         '</div>',
@@ -310,6 +312,42 @@
   };
 
   /* ── Moderation queue ── */
+  function contentModerationReports() {
+    function isContentMod(r) {
+      if (!r) return false;
+      var reason = String(r.reason || '');
+      if (reason.indexOf('content_moderation') === 0) return true;
+      var raw = r.detail != null ? r.detail : r.details;
+      if (raw && typeof raw === 'object') {
+        return !!(raw.content_moderation || (raw.flags && raw.flags.length));
+      }
+      var s = String(raw || '');
+      if (s.indexOf('content_moderation') >= 0) return true;
+      try {
+        var d = JSON.parse(s);
+        return !!(d && (d.content_moderation || (d.flags && d.flags.length)));
+      } catch (e) { return false; }
+    }
+    var fromDb = (window.reports || []).filter(isContentMod);
+    var fromLocal = [];
+    try {
+      fromLocal = (JSON.parse(localStorage.getItem('qg-moderation-queue') || '[]') || []).map(function (row, i) {
+        return {
+          report_id: 'local-' + i,
+          reason: row.reason || 'content_moderation',
+          target_type: row.source || 'content',
+          target_id: row.target_id || '',
+          reporter_id: row.user_id || '',
+          detail: JSON.stringify(Object.assign({ content_moderation: true }, row)),
+          created_at: row.at,
+          status: 'open',
+          _local: true
+        };
+      });
+    } catch (e) {}
+    return fromDb.concat(fromLocal);
+  }
+
   window.renderModerationQueue = function () {
     var body = document.getElementById('moderationBody');
     var countEl = document.getElementById('moderationCount');
@@ -331,23 +369,68 @@
       if (!seen[id]) { seen[id] = true; list.push(Object.assign({}, t, { _flag: '', _priority: 0 })); }
     });
     list.sort(function (a, b) { return (b._priority - a._priority) || (new Date(b.created_at) - new Date(a.created_at)); });
-    if (countEl) countEl.textContent = '· ' + list.length + ' in queue';
-    if (!list.length) {
+
+    var modHits = contentModerationReports().sort(function (a, b) {
+      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+    }).slice(0, 40);
+
+    if (countEl) countEl.textContent = '· ' + list.length + ' tasks · ' + modHits.length + ' content flags';
+    if (!list.length && !modHits.length) {
       body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-faint);font-size:13px">No new or flagged tasks in the last 24 hours</div>';
       return;
     }
-    body.innerHTML = list.map(function (t) {
+
+    var hitsHtml = '';
+    if (modHits.length) {
+      hitsHtml = '<div style="padding:12px 16px 8px;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint)">Content moderation blocks (first-pass)</div>' +
+        modHits.map(function (r) {
+          var flags = '';
+          var preview = '';
+          try {
+            var d = typeof r.detail === 'string' ? JSON.parse(r.detail) : (r.detail || {});
+            if (Array.isArray(d.flags) && d.flags.length) flags = d.flags.join(',');
+            preview = d.preview || d.body || '';
+          } catch (e) { preview = String(r.detail || r.details || '').slice(0, 80); }
+          if (!flags) {
+            var reason = String(r.reason || '');
+            flags = reason.indexOf('content_moderation:') === 0
+              ? reason.slice('content_moderation:'.length)
+              : (reason === 'inappropriate' ? 'inappropriate' : 'flagged');
+          }
+          return '<div class="data-row g-tasks mod-row is-flagged" data-row-kind="moderation" data-row-id="' + esc(String(r.report_id || '')) + '">' +
+            '<div></div>' +
+            '<div class="user-cell"><div><div class="u-name">Blocked ' + esc(r.target_type || 'content') +
+            ' <span class="mod-flag">⚑ ' + esc(flags) + '</span></div>' +
+            '<div class="u-meta">' + esc(r.reporter_id || 'user') + ' · ' +
+            (r.created_at ? new Date(r.created_at).toLocaleString('en-CA') : '') +
+            (preview ? ' · “' + esc(String(preview).slice(0, 60)) + '”' : '') +
+            '</div></div></div>' +
+            '<div class="cell">' + esc(r.target_id || '—') + '</div>' +
+            '<div class="cell">—</div>' +
+            '<div class="cell">' + esc(r.target_type || '—') + '</div>' +
+            '<div class="cell"><span class="status-pill s-posted">' + esc(r.status || 'open') + '</span></div>' +
+            '<div class="act-btns"></div></div>';
+        }).join('');
+    }
+
+    body.innerHTML = hitsHtml + list.map(function (t) {
       var tid = String(t.task_id || t.id || '');
       var flag = t._flag ? '<span class="mod-flag">⚑ ' + esc(t._flag) + '</span>' : '';
+      var posterMeta = typeof adminResolveUserHtml === 'function'
+        ? adminResolveUserHtml(t.posted_by || t.POSTED_BY, t.poster_name)
+        : esc(t.poster_name || t.posted_by || '');
+      var money = typeof adminFormatMoney === 'function'
+        ? adminFormatMoney(t.budget)
+        : ('$' + Number(t.budget || 0).toFixed(2));
       return '<div class="data-row g-tasks mod-row' + (t._flag ? ' is-flagged' : '') + '" data-row-kind="moderation" data-row-id="' + esc(tid) + '" onclick="openTaskDrawer(\'' + tid.replace(/'/g, '') + '\')">' +
         '<div></div>' +
-        '<div class="user-cell"><div><div class="u-name">' + esc(t.title || 'Task') + ' ' + flag + '</div>' +
-        '<div class="u-meta">' + esc(t.poster_name || t.posted_by || '') + ' · ' +
+        '<div class="user-cell"><div style="min-width:0"><div class="u-name">' + esc(t.title || 'Task') + ' ' + flag + '</div>' +
+        '<div class="u-meta">' + posterMeta + ' · ' +
         (t.created_at ? new Date(t.created_at).toLocaleString('en-CA') : '') + '</div></div></div>' +
         '<div class="cell">' + esc(t.location || '—') + '</div>' +
-        '<div class="cell">$' + (t.budget || 0) + '</div>' +
+        '<div class="cell cell-num">' + money + '</div>' +
         '<div class="cell">' + esc(t.category || '—') + '</div>' +
-        '<div class="cell"><span class="status-pill s-posted">' + esc(t.status || 'open') + '</span></div>' +
+        '<div class="cell-pill"><span class="status-pill s-posted">' + esc(t.status || 'open') + '</span></div>' +
         '<div class="act-btns" onclick="event.stopPropagation()">' +
           '<button type="button" class="act-btn btn-resolve" onclick="adminApproveTask(\'' + tid.replace(/'/g, '') + '\')">Approve</button>' +
           '<button type="button" class="act-btn btn-remove" onclick="adminModRemoveTask(\'' + tid.replace(/'/g, '') + '\')">Remove</button>' +
@@ -368,8 +451,9 @@
   };
 
   window.adminModRemoveTask = async function (tid) {
-    if (typeof openTaskDrawer === 'function') await openTaskDrawer(tid);
-    if (typeof adminRemoveTask === 'function') await adminRemoveTask();
+    // Prefer soft hide; hard delete stays behind the task ⋯ menu
+    if (typeof adminHideTask === 'function') await adminHideTask(tid);
+    else if (typeof adminRemoveTask === 'function') await adminRemoveTask();
     appendAudit('remove_task', tid);
     renderModerationQueue();
   };
@@ -402,11 +486,25 @@
     });
     var signed = emails.filter(function (e) { return userEmails[e]; });
     var pending = emails.filter(function (e) { return !userEmails[e]; });
-    el.innerHTML =
-      '<div class="admin-wl-stat"><div class="admin-wl-stat-val">' + emails.length + '</div><div class="admin-wl-stat-label">Local list</div></div>' +
-      '<div class="admin-wl-stat"><div class="admin-wl-stat-val">' + signed.length + '</div><div class="admin-wl-stat-label">Signed up</div></div>' +
-      '<div class="admin-wl-stat"><div class="admin-wl-stat-val">' + pending.length + '</div><div class="admin-wl-stat-label">Not yet</div></div>' +
-      '<button type="button" class="action-pill pill-export" onclick="adminCopyPendingWaitlist()">Copy not-yet emails</button>';
+    el.className = 'stats-grid';
+    function xrefCard(opts) {
+      if (typeof adminStatCardHtml === 'function') return adminStatCardHtml(opts);
+      if (opts.actionHtml) {
+        return '<div class="stat-card is-action">' + opts.actionHtml + '</div>';
+      }
+      return '<div class="stat-card"><div class="stat-accent ' + (opts.accent || '') + '"></div>' +
+        '<div class="stat-val ' + (opts.valClass || '') + '">' + opts.val + '</div>' +
+        '<div class="stat-label">' + (opts.label || '') + '</div>' +
+        (opts.sub ? '<div class="stat-sub">' + opts.sub + '</div>' : '') + '</div>';
+    }
+    el.innerHTML = [
+      xrefCard({ val: emails.length, label: 'Local list', sub: 'Saved in this browser', accent: 'accent-purple', valClass: 'c-purple' }),
+      xrefCard({ val: signed.length, label: 'Signed up', sub: 'Matched to users', accent: 'accent-green', valClass: 'c-green' }),
+      xrefCard({ val: pending.length, label: 'Not yet', sub: 'Still waiting', accent: 'accent-amber', valClass: 'c-amber' }),
+      xrefCard({
+        actionHtml: '<button type="button" class="action-pill pill-export" onclick="adminCopyPendingWaitlist()">Copy not-yet emails</button>'
+      })
+    ].join('');
     window._pendingWaitlistEmails = pending;
   };
 
@@ -593,13 +691,13 @@
   window.exportCSV = function (type) {
     if (type === 'disputes') {
       var rows = (window.disputes || []).map(function (d) {
-        return [d.dispute_id || d.id, d.task_id, d.task_title, d.reason, d.status, d.opened_by_email || d.opened_by_id, d.created_at]
+        return [d.dispute_id || d.id, d.task_id, d.task_title, d.reason, d.status, d.opened_by_email || d.raised_by || d.opened_by || d.opened_by_id, d.detail || d.details || '', d.created_at]
           .map(function (v) {
             var s = String(v == null ? '' : v);
             return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
           }).join(',');
       });
-      rows.unshift(['ID', 'Task ID', 'Title', 'Reason', 'Status', 'Opened by', 'Created'].join(','));
+      rows.unshift(['ID', 'Task ID', 'Title', 'Reason', 'Status', 'Opened by', 'Details', 'Created'].join(','));
       downloadCsv(rows.join('\n'), 'quickgigs-disputes.csv');
       return;
     }

@@ -1,23 +1,24 @@
 /* QuickGigs — platform announcement banner + admin soft close */
 (function () {
-  var SKIP = { admin: 1, terms: 1, privacy: 1, login: 1, 'reset-password': 1 };
+  var SKIP = { admin: 1, 'admin-login': 1, terms: 1, privacy: 1, login: 1, 'reset-password': 1 };
   var BLOCK_PAGES = { posttask: 1, browsetask: 1, signup: 1 };
-  var ADMIN_EMAIL = (window.QG_CONFIG && window.QG_CONFIG.adminEmail) || 'mowebsiteco@gmail.com';
-
   function pageKey() {
     var path = (window.location.pathname || '').split('/').pop() || 'index.html';
     return path.replace(/\.html$/i, '') || 'index';
   }
 
   function isAdminUser() {
+    // Prefer shared gate (custom claim / uid / email). UX only.
+    if (typeof window.isAdmin === 'function') return window.isAdmin(window._currentUser);
+    var allow = (window.QG_CONFIG && window.QG_CONFIG.adminEmail) || '';
     var u = window._currentUser;
-    return !!(u && u.email && String(u.email).toLowerCase() === String(ADMIN_EMAIL).toLowerCase());
+    return !!(u && u.email && allow && String(u.email).toLowerCase() === String(allow).toLowerCase());
   }
 
   function shouldBypassSoftClose() {
     var u = window._currentUser;
     var key = pageKey();
-    if (u && u.email && isAdminUser()) {
+    if (u && isAdminUser()) {
       if (key === 'index' || key === 'signup') return false;
       return true;
     }
@@ -62,7 +63,10 @@
       '<span class="qg-platform-banner-text">' + esc(banner.message) + '</span>';
 
     if (banner.link) {
-      inner += ' <a class="qg-platform-banner-link" href="' + esc(banner.link) + '">Learn more →</a>';
+      var safeLink = typeof safeUrl === 'function' ? safeUrl(banner.link) : '';
+      if (safeLink) {
+        inner += ' <a class="qg-platform-banner-link" href="' + esc(safeLink) + '">Learn more →</a>';
+      }
     }
 
     inner += '<button type="button" class="qg-platform-banner-close" aria-label="Dismiss">×</button></div>';
@@ -95,7 +99,12 @@
         '<div class="qg-soft-close-box">' +
           '<p class="qg-soft-close-title">' + esc(banner.message || 'QuickGigs beta is closed while we prepare for launch.') + '</p>' +
           '<p class="qg-soft-close-sub" style="margin-top:14px">Already have an account? <a href="login.html" style="color:var(--al);font-weight:500;text-decoration:none">Log in to continue →</a></p>' +
-          (banner.link ? '<p class="qg-soft-close-sub"><a href="' + esc(banner.link) + '" style="color:var(--al)">Learn more →</a></p>' : '') +
+          (function () {
+            var safeLink = typeof safeUrl === 'function' ? safeUrl(banner.link) : '';
+            return safeLink
+              ? '<p class="qg-soft-close-sub"><a href="' + esc(safeLink) + '" style="color:var(--al)">Learn more →</a></p>'
+              : '';
+          })() +
         '</div>';
     }
   }
@@ -155,7 +164,7 @@
 
   async function fetchBanner() {
     if (typeof sbGet !== 'function') return null;
-    var rows = await sbGet('platform_banner', 'id=eq.1', 'id.asc', 1);
+    var rows = await sbGet('platform_banner', 'id=eq.1&select=id,message,link,style,active,soft_close,updated_at', 'id.asc', 1);
     return rows && rows[0] ? rows[0] : null;
   }
 
@@ -200,7 +209,8 @@
   };
 
   window.QG_setCurrentUserForSoftClose = function (user) {
-    window._currentUser = user;
+    if (typeof setCurrentUser === 'function') setCurrentUser(user);
+    else window._currentUser = user;
     if (typeof window.QG_onAuthReadyForSoftClose === 'function') {
       window.QG_onAuthReadyForSoftClose();
     }

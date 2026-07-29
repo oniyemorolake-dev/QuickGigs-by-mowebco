@@ -35,7 +35,9 @@
   </div>
 </main>
 <footer class="site-footer" id="siteFooter"></footer>
-<script src="supabase-db.js"></script>
+<script src="qg-utils.js"></script>
+<script src="supabaseClient.js?v=20260727perf"></script>
+<script src="supabase-db.js?v=20260727perf"></script>
 <script src="qg-cookies.js"></script>
 <script src="qg-site.js"></script>
 <script>
@@ -44,7 +46,11 @@
   var card = document.getElementById('consentCard');
 
   if (!token) {
-    card.innerHTML = '<p class="consent-err">Missing consent link. Ask your teen to resend from their QuickGigs dashboard.</p>';
+    card.textContent = '';
+    var miss = document.createElement('p');
+    miss.className = 'consent-err';
+    miss.textContent = 'Missing consent link. Ask your teen to resend from their QuickGigs dashboard.';
+    card.appendChild(miss);
     return;
   }
 
@@ -53,18 +59,23 @@
       card.innerHTML = '<p class="consent-err">This link is invalid or expired. Contact <a href="mailto:support@quickgigs.ca">support@quickgigs.ca</a>.</p>';
       return;
     }
+    var teenName = user.name || 'Account';
     if (user.guardian_consent_status === 'approved') {
-      card.innerHTML = '<p class="consent-ok">✓ <strong>' + (user.name || 'Account') + '</strong> is already approved. They can post and apply to tasks.</p>' +
+      card.innerHTML = '<p class="consent-ok">✓ <strong></strong> is already approved. They can post and apply to tasks.</p>' +
         '<a class="consent-btn" href="login.html" style="text-decoration:none;display:inline-block">Go to QuickGigs</a>';
+      var strongOk = card.querySelector('strong');
+      if (strongOk) strongOk.textContent = teenName;
       return;
     }
     var teen = user.name || 'Your teen';
     card.innerHTML =
       '<h2>Approve account</h2>' +
-      '<p class="consent-teen"><strong>' + teen + '</strong> wants to use QuickGigs</p>' +
+      '<p class="consent-teen"><strong></strong> wants to use QuickGigs</p>' +
       '<p style="font-size:14px;color:var(--text-muted);line-height:1.6">They can browse while waiting. After you approve, they can post tasks and apply to gigs.</p>' +
       '<button type="button" class="consent-btn" id="approveBtn">I approve this account</button>' +
       '<p id="consentMsg" style="margin-top:12px"></p>';
+    var strongEl = card.querySelector('.consent-teen strong');
+    if (strongEl) strongEl.textContent = teen;
 
     document.getElementById('approveBtn').onclick = async function () {
       var btn = document.getElementById('approveBtn');
@@ -73,7 +84,9 @@
       var result = await approveGuardianConsent(token);
       var msg = document.getElementById('consentMsg');
       if (result.success) {
-        card.innerHTML = '<p class="consent-ok">✓ Approved! <strong>' + teen + '</strong> can now use QuickGigs fully.</p>';
+        card.innerHTML = '<p class="consent-ok">✓ Approved! <strong></strong> can now use QuickGigs fully.</p>';
+        var strongDone = card.querySelector('strong');
+        if (strongDone) strongDone.textContent = teen;
       } else {
         msg.className = 'consent-err';
         msg.textContent = 'Could not approve — try again or email support@quickgigs.ca';
