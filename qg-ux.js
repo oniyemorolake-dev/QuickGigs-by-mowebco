@@ -63,6 +63,29 @@
       document.body.insertBefore(a, document.body.firstChild);
     }
     if (document.getElementById('main')) return;
+
+    // Full-viewport chat is body{display:flex;flex-direction:column} with .chat-scroll{flex:1}.
+    // Wrapping banners/scroll/input in <main> without flex:1 collapses the thread and clips
+    // the composer (felt like "messages won't open"). Mark chat-scroll as main; do not wrap.
+    var isChatPage = PAGE === 'chat.html' ||
+      document.body.classList.contains('qg-page-chat') ||
+      document.body.classList.contains('page-chat') ||
+      !!document.getElementById('chatScroll');
+    if (isChatPage) {
+      var chatHost = document.getElementById('chatScroll') || document.querySelector('.chat-scroll');
+      if (chatHost) {
+        chatHost.setAttribute('role', 'main');
+        if (!document.getElementById('main')) {
+          var chatAnchor = document.createElement('span');
+          chatAnchor.id = 'main';
+          chatAnchor.setAttribute('tabindex', '-1');
+          chatAnchor.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)';
+          chatHost.parentNode.insertBefore(chatAnchor, chatHost);
+        }
+      }
+      return;
+    }
+
     var host = document.querySelector('main, [role="main"], #mainContent, .content, .page-content, .page-wrap, .signup-card');
     if (host) {
       host.classList.add('qg-main');
@@ -102,6 +125,15 @@
   }
 
   function ensureTrustFooter() {
+    // Chat is a full-viewport flex column — a site footer steals height and clips the composer.
+    if (PAGE === 'chat.html' ||
+        document.body.classList.contains('qg-page-chat') ||
+        document.body.classList.contains('page-chat') ||
+        document.getElementById('chatScroll')) {
+      var chatFoot = document.getElementById('siteFooter');
+      if (chatFoot && chatFoot.parentNode) chatFoot.parentNode.removeChild(chatFoot);
+      return;
+    }
     var el = document.getElementById('siteFooter');
     if (!el) {
       el = document.createElement('footer');

@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
 <link rel="stylesheet" href="qg-polish.css?v=20260726contrast">
-<link rel="stylesheet" href="qg-ux.css?v=20260728welcome1">
+<link rel="stylesheet" href="qg-ux.css?v=20260728chatfix3">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -296,14 +296,14 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-utils.js?v=20260728welcome1"></script>
 <script defer src="contentModeration.js?v=20260727cm1"></script>
 <script defer src="qg-polish.js?v=20260728xss1"></script>
-<script src="qg-ux.js?v=20260728welcome1" defer></script>
+<script src="qg-ux.js?v=20260728chatfix3" defer></script>
 <script src="qg-bigtech.js?v=20260728xss1" defer></script>
 <script src="qg-wave2.js?v=20260728xss1" defer></script>
-<script defer src="qg-config.js?v=20260728chatopen2"></script>
+<script defer src="qg-config.js?v=20260728chatfix3"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/dist/umd/supabase.min.js" defer></script>
 <script defer src="supabaseClient.js"></script>
-<script defer src="supabase-db.js?v=20260728chatopen2"></script>
+<script defer src="supabase-db.js?v=20260728chatfix3"></script>
 <script defer src="qg-chat-realtime.js?v=20260728chatux1"></script>
 <script defer src="qg-site.js"></script>
 <script defer src="qg-stripe.js?v=20260725g"></script>
@@ -935,9 +935,17 @@ async function initChat(){
   }
 
   if (typeof getConversation !== 'function') {
-    console.warn('[QuickGigs chat] DB not ready');
+    console.warn('[QuickGigs chat] DB not ready — will retry');
+    showChatLoadError('Chat is still loading. Tap Try again in a moment.');
+    setTimeout(function () {
+      if (typeof getConversation === 'function' && typeof window.initChat === 'function') {
+        window.initChat();
+      }
+    }, 250);
     return;
   }
+
+  console.info('[QuickGigs chat] init', { convId: convId, uid: currentUserId });
 
   var justPaid = paidReturn || !!sessionFromUrl || isJustPaidConv(convId);
 
@@ -952,7 +960,7 @@ async function initChat(){
   var actorOpts = { actorId: currentUserId };
   var convPromise = getConversation(convId, actorOpts);
   var messagesPromise = (justPaid && typeof getMessagesForConversation === 'function')
-    ? getMessagesForConversation(convId)
+    ? getMessagesForConversation(convId, actorOpts)
     : null;
 
   currentConv = await convPromise;
@@ -1037,11 +1045,18 @@ async function initChat(){
     clearJustPaidConv(convId);
   }
 
-  var isPoster = currentConv.poster_id === currentUserId;
+  var isPoster = String(currentConv.poster_id) === String(currentUserId);
   var otherUid = isPoster ? currentConv.worker_id : currentConv.poster_id;
   var otherName = isPoster ? (currentConv.worker_name || 'Tasker') : (currentConv.poster_name || 'Poster');
   chatIsPoster = isPoster;
   window._chatIsPoster = isPoster;
+  console.info('[QuickGigs chat] party ok', {
+    isPoster: isPoster,
+    unlockRule: unlockRule,
+    paymentGated: paymentGated,
+    is_unlocked: currentConv.is_unlocked,
+    status: currentConv.status
+  });
 
   // Blocked users cannot message each other
   if (typeof areUsersBlocked === 'function') {
@@ -1153,6 +1168,8 @@ async function initChat(){
     chatOpen = true;
     currentConv.is_unlocked = true;
   }
+
+  console.info('[QuickGigs chat] open decision', { chatOpen: chatOpen, paymentGated: paymentGated, isCompleted: isCompleted });
 
   if (isCompleted || isCancelled) {
     currentConv.is_unlocked = false;
@@ -1384,12 +1401,12 @@ function mapMessageRow(m) {
   var isSys = typeof isSystemChatBody === 'function' && isSystemChatBody(body);
   return {
     id: m.message_id || m.id,
-    from: isSys ? 'system' : (m.sender_id === currentUserId ? 'me' : 'them'),
+    from: isSys ? 'system' : (String(m.sender_id) === String(currentUserId) ? 'me' : 'them'),
     text: isSys && typeof parseSystemChatBody === 'function' ? parseSystemChatBody(body) : body,
     rawBody: body,
     isSystem: isSys,
     senderId: m.sender_id,
-    senderIsPoster: currentConv && m.sender_id === currentConv.poster_id,
+    senderIsPoster: currentConv && String(m.sender_id) === String(currentConv.poster_id),
     time: formatMessageTime(m.created_at),
     clock: formatMessageClock(m.created_at),
     date: formatMessageDate(m.created_at),
@@ -1441,6 +1458,13 @@ function startChatRealtime() {
         onConvUpdate: function (row) {
           if (!row) return;
           currentConv = Object.assign({}, currentConv || {}, row);
+          // Accept-mode: never re-lock from a stale realtime is_unlocked=false patch
+          var payGatedRt = typeof window.isChatPaymentGated === 'function'
+            ? window.isChatPaymentGated()
+            : false;
+          if (!payGatedRt && currentConv && String(currentConv.status || '').toLowerCase() !== 'completed') {
+            currentConv.is_unlocked = true;
+          }
           updatePeerReadFromConv(currentConv);
           renderMessages();
           var by = row.typing_by || row.TYPING_BY;
@@ -1481,7 +1505,7 @@ function showTypingBubble(by, at) {
 async function refreshMessages(opts){
   opts = opts || {};
   if(!convId) return;
-  var rows = await getMessagesForConversation(convId);
+  var rows = await getMessagesForConversation(convId, { actorId: currentUserId });
   var prevLen = messages.length;
   var wasNear = isNearBottom();
   messages = (rows || []).map(mapMessageRow);
@@ -1636,9 +1660,21 @@ window.handleKey = function(e){
 window.sendMessage = async function(){
   var input = document.getElementById('msgInput');
   var text = window.sanitizeInput(input.value.trim(), 2000);
-  if(!text || fraudDetected || !currentConv || !currentConv.is_unlocked) {
-    if (currentConv && !currentConv.is_unlocked && typeof showToast === 'function') {
+  var paymentGatedSend = typeof window.isChatPaymentGated === 'function'
+    ? window.isChatPaymentGated()
+    : !!(window.QG_CONFIG && window.QG_CONFIG.paymentsEnabled && window.QG_CONFIG.chatUnlockAfter === 'payment');
+  var unlocked = !!(currentConv && (
+    (typeof parseConversationUnlocked === 'function'
+      ? parseConversationUnlocked(currentConv)
+      : !!currentConv.is_unlocked) ||
+    (!paymentGatedSend && String(currentConv.status || '').toLowerCase() !== 'completed')
+  ));
+  if (currentConv && unlocked) currentConv.is_unlocked = true;
+  if(!text || fraudDetected || !currentConv || !unlocked) {
+    if (currentConv && !unlocked && typeof showToast === 'function') {
       showToast('Chat is locked for this task.', '#f59e0b');
+    } else if (!text && typeof showToast === 'function') {
+      showToast('Type a message first.', '#f59e0b');
     }
     return;
   }

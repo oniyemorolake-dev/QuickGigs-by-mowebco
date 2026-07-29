@@ -2441,10 +2441,15 @@ async function createConversation(convData) {
   });
 }
 
-async function getMessagesForConversation(convId) {
-  var me = currentActorId();
-  if (!me) return [];
-  var conv = await getConversation(convId);
+async function getMessagesForConversation(convId, opts) {
+  opts = opts || {};
+  var me = currentActorId(opts);
+  if (!me && opts.actorId) me = String(opts.actorId);
+  if (!me) {
+    console.warn('[QuickGigs] getMessagesForConversation: no actor id');
+    return [];
+  }
+  var conv = await getConversation(convId, { actorId: me });
   if (!conv || !userIsConversationParty(conv, me)) return [];
   return await sbGet(
     'messages',

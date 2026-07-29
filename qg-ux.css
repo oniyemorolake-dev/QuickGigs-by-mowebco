@@ -24,6 +24,25 @@ main#main,
 #main.qg-main {
   animation: qgMainIn 0.25s ease;
 }
+
+/* Safety net: if chat content was wrapped in #main, preserve body flex column layout */
+body.qg-page-chat > #main.qg-main,
+body.page-chat > #main.qg-main,
+body.qg-page-chat > main#main,
+body.page-chat > main#main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+body.qg-page-chat > #main.qg-main .chat-scroll,
+body.page-chat > #main.qg-main .chat-scroll,
+body.qg-page-chat > main#main .chat-scroll,
+body.page-chat > main#main .chat-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}
 @keyframes qgMainIn {
   from { opacity: 0; }
   to { opacity: 1; }

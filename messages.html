@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
 <link rel="stylesheet" href="qg-polish.css?v=20260727msgnav">
-<link rel="stylesheet" href="qg-ux.css?v=20260728welcome1">
+<link rel="stylesheet" href="qg-ux.css?v=20260728chatfix3">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -264,12 +264,12 @@ onAuthStateChanged(auth, (user) => {
 
 <script defer src="qg-utils.js?v=20260728welcome1"></script>
 <script defer src="qg-polish.js?v=20260728xss1"></script>
-<script src="qg-ux.js?v=20260728welcome1" defer></script>
+<script src="qg-ux.js?v=20260728chatfix3" defer></script>
 <script src="qg-bigtech.js?v=20260728xss1" defer></script>
 <script src="qg-wave2.js?v=20260728xss1" defer></script>
-<script defer src="qg-config.js?v=20260728chatopen2"></script>
+<script defer src="qg-config.js?v=20260728chatfix3"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
-<script defer src="supabase-db.js?v=20260728chatopen2"></script>
+<script defer src="supabase-db.js?v=20260728chatfix3"></script>
 <script defer src="qg-notifications.js"></script>
 <script defer src="qg-push.js?v=1"></script>
 <script>
@@ -513,36 +513,42 @@ function renderContent(){
   content.innerHTML = html;
 }
 
-// Profile chips inside thread links — stop navigation to chat, go to profile instead.
-// Also: backup open for rows if the <a href> is blocked by an overlay / JS error.
+// Row tap always opens chat. Profile is a separate small control — never hijack the thread link.
 (function bindMessagesListClicks() {
   var root = document.getElementById('mainContent');
   if (!root || root._qgMsgClickBound) return;
   root._qgMsgClickBound = true;
   root.addEventListener('click', function (e) {
-    var chip = e.target.closest('[data-profile-href]');
-    if (chip && root.contains(chip)) {
-      var href = chip.getAttribute('data-profile-href') || '';
+    var profileOnly = e.target.closest('[data-profile-only]');
+    if (profileOnly && root.contains(profileOnly)) {
+      var href = profileOnly.getAttribute('data-profile-href') || profileOnly.getAttribute('href') || '';
       var safe = typeof safeUrl === 'function' ? safeUrl(href) : href;
-      if (!safe) return;
+      if (!safe) {
+        if (typeof showToast === 'function') showToast('Could not open profile.', '#f59e0b');
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
+      console.info('[QuickGigs messages] open profile', safe);
       window.location.href = safe;
       return;
     }
-    var row = e.target.closest('a.conv-item[data-open-conv]');
+    var row = e.target.closest('a.conv-item[data-open-conv], .conv-item[data-open-conv]');
     if (!row || !root.contains(row)) return;
     var convId = row.getAttribute('data-open-conv') || '';
     var hrefChat = row.getAttribute('href') || '';
-    if (!convId || !hrefChat || hrefChat === '#' || hrefChat.indexOf('chat.html') < 0) {
-      e.preventDefault();
-      console.error('[QuickGigs messages] tap blocked — missing conv id', { convId: convId, href: hrefChat });
+    e.preventDefault();
+    e.stopPropagation();
+    if (!convId) {
+      console.error('[QuickGigs messages] tap blocked — missing conv id', { href: hrefChat });
       if (typeof showToast === 'function') {
         showToast('Could not open chat — refresh Messages and try again.', '#ef4444');
       }
       return;
     }
-    // Let the browser follow the real <a href="chat.html?conv=…"> — do not preventDefault.
+    console.info('[QuickGigs messages] open conversation', convId);
+    if (typeof openConversationThread === 'function') openConversationThread(convId);
+    else window.location.href = hrefChat.indexOf('chat.html') >= 0 ? hrefChat : ('chat.html?conv=' + encodeURIComponent(convId));
   });
 })();
 
@@ -568,9 +574,6 @@ window.chatThreadHref = chatThreadHref;
 function renderConvItem(c){
   var convId = c && (c.id || c.conv_id) ? String(c.id || c.conv_id) : '';
   var threadHref = chatThreadHref(convId);
-  var profileHref = typeof getProfileUrl === 'function'
-    ? getProfileUrl(c.otherUid)
-    : ('profile.html?user=' + encodeURIComponent(c.otherUid));
   var avatarInner = typeof renderUserAvatarHtml === 'function'
     ? renderUserAvatarHtml(c.name, c.avatarUrl, { className: 'conv-avatar', gradient: c.avatarBg })
     : ('<div class="conv-avatar" style="background:'+c.avatarBg+'">'+esc(c.initials)+'</div>');
@@ -587,13 +590,12 @@ function renderConvItem(c){
         '<div class="conv-preview">Conversation unavailable — refresh</div>' +
       '</div></div>';
   }
-  var safeProfile = (typeof safeUrl === 'function' ? safeUrl(profileHref) : profileHref) || 'profile.html';
   return '<a class="conv-item" href="'+esc(threadHref)+'" data-open-conv="'+esc(convId)+'">' +
-    '<span class="conv-avatar-link" data-profile-href="'+esc(safeProfile)+'" style="flex-shrink:0;text-decoration:none;cursor:pointer">' +
+    '<span class="conv-avatar-link" style="flex-shrink:0;pointer-events:none">' +
     avatarInner +
     '</span>' +
     '<div class="conv-info">' +
-      '<div class="conv-name"><span class="conv-profile-name" data-profile-href="'+esc(safeProfile)+'" style="color:inherit;text-decoration:none;cursor:pointer">'+esc(c.name)+'</span></div>' +
+      '<div class="conv-name">'+esc(c.name)+'</div>' +
       '<div class="conv-task">'+c.taskIcon+' '+esc(c.taskName)+'</div>' +
       '<div class="conv-role-pill" style="font-size:10px;color:rgba(200,168,233,0.75);margin-top:2px">'+esc(c.rolePill || '')+'</div>' +
       '<div class="conv-preview'+(c.unread>0?' unread':'')+'">'+esc(c.lastMessage)+'</div>' +
