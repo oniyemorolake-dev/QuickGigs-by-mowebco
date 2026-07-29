@@ -1,0 +1,14 @@
+# Supabase CLI local cache (never commit)
+supabase/.temp/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
