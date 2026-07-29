@@ -2,7 +2,7 @@
 (function () {
   var DISMISS_KEY = 'qg-pwa-dismissed';
   var IOS_DISMISS_KEY = 'qg-ios-install-dismissed';
-  var SHEET_VER = '93';
+  var SHEET_VER = '94';
 
   function assetUrl(path) {
     try {

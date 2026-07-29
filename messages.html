@@ -573,32 +573,47 @@ function countUnread(conv, userId){
 }
 
 function mapConversation(conv, userId){
-  var iAmPoster = String(conv.poster_id) === String(userId);
-  var otherUid = iAmPoster ? conv.worker_id : conv.poster_id;
-  var otherName = iAmPoster ? (conv.worker_name || 'Tasker') : (conv.poster_name || 'Poster');
+  var posterId = conv.poster_id != null ? conv.poster_id : conv.POSTER_ID;
+  var workerId = conv.worker_id != null ? conv.worker_id : conv.WORKER_ID;
+  var convId = conv.conv_id != null ? conv.conv_id : conv.CONV_ID;
+  var taskId = conv.task_id != null ? conv.task_id : conv.TASK_ID;
+  var iAmPoster = String(posterId) === String(userId);
+  // otherUid = the OTHER party's firebase_uid (never me)
+  var otherUid = iAmPoster ? workerId : posterId;
+  otherUid = otherUid != null && String(otherUid) !== '' && String(otherUid) !== 'null'
+    ? String(otherUid) : '';
+  var otherName = iAmPoster ? (conv.worker_name || conv.WORKER_NAME || 'Tasker') : (conv.poster_name || conv.POSTER_NAME || 'Poster');
   if (typeof isGenericDisplayName === 'function') {
     if (isGenericDisplayName(otherName)) otherName = iAmPoster ? 'Tasker' : 'Poster';
   }
-  var cat = (conv.task_category || 'other').toLowerCase();
+  var cat = (conv.task_category || conv.TASK_CATEGORY || 'other').toLowerCase();
   return {
-    id: conv.conv_id,
-    conv_id: conv.conv_id,
-    taskId: conv.task_id,
-    posterId: conv.poster_id,
-    workerId: conv.worker_id,
+    id: convId,
+    conv_id: convId,
+    taskId: taskId,
+    posterId: posterId,
+    workerId: workerId,
     myRole: iAmPoster ? 'poster' : 'tasker',
     rolePill: iAmPoster ? "You're the poster" : "You're the tasker",
     otherUid: otherUid,
     name: otherName,
     initials: otherName.charAt(0).toUpperCase(),
-    avatarUrl: userAvatars[String(otherUid)] || '',
+    avatarUrl: otherUid ? (userAvatars[String(otherUid)] || '') : '',
     avatarBg: avatarGradient(otherName),
-    taskName: conv.task_title || 'Task',
+    taskName: conv.task_title || conv.TASK_TITLE || 'Task',
     taskIcon: CAT_ICONS[cat] || '📦',
-    lastMessage: conv.last_message || 'No messages yet',
-    time: formatRelativeTime(conv.last_message_at || conv.created_at),
-    unread: countUnread(conv, userId),
-    status: conv.status === 'application' ? 'in_progress' : (conv.status === 'completed' ? 'completed' : 'in_progress'),
+    lastMessage: conv.last_message || conv.LAST_MESSAGE || 'No messages yet',
+    time: formatRelativeTime(conv.last_message_at || conv.LAST_MESSAGE_AT || conv.created_at || conv.CREATED_AT),
+    unread: countUnread({
+      poster_id: posterId,
+      worker_id: workerId,
+      poster_last_read_at: conv.poster_last_read_at,
+      worker_last_read_at: conv.worker_last_read_at,
+      last_message: conv.last_message || conv.LAST_MESSAGE,
+      last_message_at: conv.last_message_at || conv.LAST_MESSAGE_AT
+    }, userId),
+    status: (conv.status || '').toLowerCase() === 'application' ? 'in_progress'
+      : ((conv.status || '').toLowerCase() === 'completed' ? 'completed' : 'in_progress'),
     paid: conv.is_unlocked,
     locked: !conv.is_unlocked
   };
@@ -781,22 +796,39 @@ function renderContent(){
 }
 
 /**
- * Native navigation target for a conversation row.
- * Only task + peer (other party's firebase_uid) — chat.html resolves the thread.
+ * Native navigation — conv_id alone is enough (chat.html reads ?conv=).
+ * Append task/peer when present for faster resolve / debugging.
  */
-function chatThreadHref(taskId, otherUid) {
-  var task = taskId != null && String(taskId) !== '' ? String(taskId) : '';
+function chatThreadHref(convId, taskId, otherUid) {
+  var id = String(convId || '').trim();
+  if (!id || id === 'undefined' || id === 'null') return '';
+  var href = 'chat.html?conv=' + encodeURIComponent(id);
+  var task = taskId != null && String(taskId) !== '' && String(taskId) !== 'null' ? String(taskId) : '';
   var peer = otherUid ? String(otherUid) : '';
-  if (!task || !peer) return '';
-  return 'chat.html?task=' + encodeURIComponent(task) + '&peer=' + encodeURIComponent(peer);
+  if (task) href += '&task=' + encodeURIComponent(task);
+  if (peer) href += '&peer=' + encodeURIComponent(peer);
+  return href;
 }
 
 window.chatThreadHref = chatThreadHref;
 
 function renderConvItem(c){
+  var convId = c && (c.conv_id || c.id) ? String(c.conv_id || c.id) : '';
   var taskId = c && (c.taskId != null ? c.taskId : c.task_id);
   var otherUid = c && c.otherUid ? String(c.otherUid) : '';
-  var threadHref = chatThreadHref(taskId, otherUid);
+  if (!otherUid && c) {
+    // Fallback: derive peer from poster/worker ids if map left otherUid empty
+    var me = window._currentUser && window._currentUser.uid ? String(window._currentUser.uid) : '';
+    if (c.workerId && String(c.workerId) !== me) otherUid = String(c.workerId);
+    else if (c.posterId && String(c.posterId) !== me) otherUid = String(c.posterId);
+  }
+  var threadHref = chatThreadHref(convId, taskId, otherUid);
+  console.info('[QuickGigs messages] row', {
+    conv_id: convId,
+    taskId: taskId != null ? String(taskId) : '',
+    otherUid: otherUid,
+    href: threadHref
+  });
   var avatarInner = typeof renderUserAvatarHtml === 'function'
     ? renderUserAvatarHtml(c.name, c.avatarUrl, { className: 'conv-avatar', gradient: c.avatarBg, size: 52 })
     : ('<div class="conv-avatar" style="background:'+c.avatarBg+'">'+esc(c.initials)+'</div>');
@@ -804,6 +836,7 @@ function renderConvItem(c){
     ? c.lastMessage
     : ((c.taskIcon ? c.taskIcon + ' ' : '') + (c.taskName || 'Task'));
   var unread = c.unread > 0;
+  // Only disable when conv_id is truly missing — chat.html loads by ?conv= alone.
   if (!threadHref) {
     return '<div class="conv-item" aria-disabled="true" style="opacity:0.55;cursor:default">' +
       '<div class="conv-unread-col"><span class="conv-unread-dot is-hidden"></span></div>' +
@@ -816,7 +849,8 @@ function renderConvItem(c){
   var rowStyle = 'display:flex!important;flex-direction:row!important;align-items:center!important;width:100%;box-sizing:border-box;text-decoration:none!important;color:inherit!important;cursor:pointer;-webkit-user-select:none;user-select:none;';
   return '<a class="conv-item" href="'+esc(threadHref)+'"' +
     ' style="'+rowStyle+'"' +
-    ' data-task-id="'+esc(String(taskId))+'"' +
+    ' data-open-conv="'+esc(convId)+'"' +
+    ' data-task-id="'+esc(String(taskId == null ? '' : taskId))+'"' +
     ' data-peer="'+esc(otherUid)+'">' +
     '<div class="conv-unread-col"><span class="conv-unread-dot'+(unread?'':' is-hidden')+'" aria-hidden="true"></span></div>' +
     '<div class="conv-avatar-link">' + avatarInner + '</div>' +
