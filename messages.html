@@ -23,6 +23,7 @@
 <meta name="theme-color" content="#6b3fa0">
 <link rel="stylesheet" href="qg-polish.css?v=20260727msgnav">
 <link rel="stylesheet" href="qg-ux.css?v=20260728blank1">
+<link rel="stylesheet" href="qg-chrome.css?v=20260729tap1">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -204,8 +205,8 @@ body.light .app-legal-footer a{color:var(--purple);}
 <footer class="app-legal-footer site-footer" id="siteFooter"></footer>
 <!-- Shared bottom nav (qg-nav.js) — outside #mainContent so empty/list never removes it -->
 <nav class="tab-bar" id="qgTabBar" data-qg-nav-active="messages" aria-label="Main"></nav>
-<script defer src="qg-site.js"></script>
-<script defer src="qg-nav.js?v=20260728blank2"></script>
+<script defer src="qg-site.js?v=20260729tap1"></script>
+<script defer src="qg-nav.js?v=20260729tap1"></script>
 <script>
 (function () {
   function paintMessagesTabBar() {
@@ -674,46 +675,30 @@ function renderContent(){
   }
 
   content.innerHTML = html;
+  wireConversationRows(content);
 }
 
-// Row tap always opens chat. Profile is a separate small control — never hijack the thread link.
-(function bindMessagesListClicks() {
-  var root = document.getElementById('mainContent');
-  if (!root || root._qgMsgClickBound) return;
-  root._qgMsgClickBound = true;
-  root.addEventListener('click', function (e) {
-    var profileOnly = e.target.closest('[data-profile-only]');
-    if (profileOnly && root.contains(profileOnly)) {
-      var href = profileOnly.getAttribute('data-profile-href') || profileOnly.getAttribute('href') || '';
-      var safe = typeof safeUrl === 'function' ? safeUrl(href) : href;
-      if (!safe) {
-        if (typeof showToast === 'function') showToast('Could not open profile.', '#f59e0b');
-        return;
-      }
-      e.preventDefault();
-      e.stopPropagation();
-      console.info('[QuickGigs messages] open profile', safe);
-      window.location.href = safe;
-      return;
+/**
+ * ROOT CAUSE (messages tap no-op):
+ * Production used Element.closest('a.conv-item[data-open-conv], .conv-item[data-open-conv]')
+ * — selector *lists* throw SyntaxError on some mobile WebViews. An exception mid-click
+ * cancels the native <a href> navigation → URL never leaves messages.html.
+ * Also: listening only on #mainContent was orphaned when chrome recreated that node,
+ * while other handlers called preventDefault. Fix: wire each row in capture phase +
+ * parent walk (no comma closest), force location.href, visible error if still here.
+ */
+function findConvRowFromEventTarget(start) {
+  var el = start;
+  // Text nodes don't have classList / closest
+  if (el && el.nodeType === 3) el = el.parentElement || el.parentNode;
+  while (el && el !== document.body && el !== document.documentElement) {
+    if (el.nodeType === 1 && el.classList && el.classList.contains('conv-item')) {
+      return el;
     }
-    var row = e.target.closest('a.conv-item[data-open-conv], .conv-item[data-open-conv]');
-    if (!row || !root.contains(row)) return;
-    var convId = row.getAttribute('data-open-conv') || '';
-    var hrefChat = row.getAttribute('href') || '';
-    e.preventDefault();
-    e.stopPropagation();
-    if (!convId) {
-      console.error('[QuickGigs messages] tap blocked — missing conv id', { href: hrefChat });
-      if (typeof showToast === 'function') {
-        showToast('Could not open chat — refresh Messages and try again.', '#ef4444');
-      }
-      return;
-    }
-    console.info('[QuickGigs messages] open conversation', convId);
-    if (typeof openConversationThread === 'function') openConversationThread(convId);
-    else window.location.href = hrefChat.indexOf('chat.html') >= 0 ? hrefChat : ('chat.html?conv=' + encodeURIComponent(convId));
-  });
-})();
+    el = el.parentElement || el.parentNode;
+  }
+  return null;
+}
 
 function chatThreadHref(convId) {
   var id = String(convId || '').trim();
@@ -726,13 +711,116 @@ function openConversationThread(convId) {
   if (!href) {
     console.warn('[QuickGigs messages] missing conv id');
     if (typeof showToast === 'function') showToast('Conversation not found — refresh Messages.', '#f59e0b');
-    return;
+    return false;
   }
-  // Always chat thread — never payment.html / Stripe pay modal.
-  window.location.href = href;
+  console.info('[QuickGigs messages] navigate', href);
+  window.__qgPendingChatHref = href;
+  try {
+    window.location.href = href;
+  } catch (e1) {
+    try { window.location.assign(href); } catch (e2) {
+      console.error('[QuickGigs messages] navigate failed:', e2);
+      if (typeof showToast === 'function') showToast('Could not open chat.', '#ef4444');
+      return false;
+    }
+  }
+  // If navigation is blocked (overlay / SW / WebView), surface it — never silent.
+  setTimeout(function () {
+    if (window.__qgPendingChatHref !== href) return;
+    var stillMessages = /messages\.html/i.test(window.location.pathname || '') ||
+      /(^|\/)messages\/?$/i.test(window.location.pathname || '');
+    if (!stillMessages) return;
+    console.error('[QuickGigs messages] still on messages after navigate attempt', href);
+    if (typeof showToast === 'function') {
+      showToast('Could not open chat. Hard-refresh, then tap again.', '#ef4444');
+    } else {
+      alert('Could not open chat.\n' + href);
+    }
+  }, 900);
+  return true;
 }
+
+function goConversationFromRow(row, ev) {
+  if (!row) return false;
+  var id = row.getAttribute('data-open-conv') || '';
+  var href = row.getAttribute('href') || row.getAttribute('data-href') || '';
+  if ((!href || href === '#' || href.indexOf('javascript:') === 0) && id) {
+    href = chatThreadHref(id);
+  }
+  if (ev) {
+    try { ev.preventDefault(); } catch (eP) {}
+    try { ev.stopPropagation(); } catch (eS) {}
+  }
+  if (!id && !href) {
+    console.error('[QuickGigs messages] row missing conv id', row);
+    if (typeof showToast === 'function') {
+      showToast('Conversation missing an id — refresh Messages.', '#ef4444');
+    }
+    return false;
+  }
+  if (id) return openConversationThread(id);
+  window.location.href = href;
+  return true;
+}
+
+function wireConversationRows(root) {
+  root = root || document.getElementById('mainContent');
+  if (!root) return;
+  var rows = root.querySelectorAll('.conv-item');
+  for (var i = 0; i < rows.length; i++) {
+    (function (row) {
+      if (row.getAttribute('data-qg-wired') === '1') return;
+      row.setAttribute('data-qg-wired', '1');
+      if (!row.getAttribute('role')) row.setAttribute('role', 'link');
+      if (!row.hasAttribute('tabindex')) row.setAttribute('tabindex', '0');
+      // Capture on the row itself — fires before any bubbling preventDefault.
+      row.addEventListener('click', function (ev) {
+        goConversationFromRow(row, ev);
+      }, true);
+      row.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          goConversationFromRow(row, ev);
+        }
+      });
+    })(rows[i]);
+  }
+}
+
+function bindMessagesListClicks() {
+  if (window._qgMsgClickDocBound) return;
+  window._qgMsgClickDocBound = true;
+  // Capture-phase document backup (survives #mainContent recreate).
+  document.addEventListener('click', function (e) {
+    try {
+      var root = document.getElementById('mainContent');
+      if (!root) return;
+      var row = findConvRowFromEventTarget(e.target);
+      if (!row || !root.contains(row)) return;
+      goConversationFromRow(row, e);
+    } catch (tapErr) {
+      console.error('[QuickGigs messages] tap failed:', tapErr);
+      if (typeof showToast === 'function') {
+        showToast('Could not open chat — try again.', '#ef4444');
+      }
+    }
+  }, true);
+}
+bindMessagesListClicks();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function () {
+    bindMessagesListClicks();
+    wireConversationRows();
+  });
+} else {
+  wireConversationRows();
+}
+
 window.openConversationThread = openConversationThread;
 window.chatThreadHref = chatThreadHref;
+window.wireConversationRows = wireConversationRows;
+window.qgOpenConvRow = function (el, evt) {
+  return goConversationFromRow(el, evt);
+};
 
 function renderConvItem(c){
   var convId = c && (c.id || c.conv_id) ? String(c.id || c.conv_id) : '';
@@ -749,7 +837,7 @@ function renderConvItem(c){
   }
   // Real <a href> so open works without inline JS and never targets payments.
   if (!threadHref) {
-    return '<div class="conv-item" aria-disabled="true" style="opacity:0.65;cursor:default">' +
+    return '<div class="conv-item" role="link" tabindex="0" aria-disabled="true" style="opacity:0.65;cursor:pointer" data-open-conv="">' +
       '<div class="conv-avatar-link" style="flex-shrink:0">' + avatarInner + '</div>' +
       '<div class="conv-info">' +
         '<div class="conv-name">'+esc(c.name)+'</div>' +
@@ -757,7 +845,7 @@ function renderConvItem(c){
         '<div class="conv-preview">Conversation unavailable — refresh</div>' +
       '</div></div>';
   }
-  return '<a class="conv-item" href="'+esc(threadHref)+'" data-open-conv="'+esc(convId)+'">' +
+  return '<a class="conv-item" href="'+esc(threadHref)+'" data-href="'+esc(threadHref)+'" data-open-conv="'+esc(convId)+'">' +
     '<span class="conv-avatar-link" style="flex-shrink:0;pointer-events:none">' +
     avatarInner +
     '</span>' +

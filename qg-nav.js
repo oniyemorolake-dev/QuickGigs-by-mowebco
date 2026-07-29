@@ -276,12 +276,12 @@
   document.head.appendChild(mobileScript);
 
   var menuScript = document.createElement('script');
-  menuScript.src = 'qg-menu.js?v=4';
+  menuScript.src = 'qg-menu.js?v=5';
   menuScript.defer = true;
   document.head.appendChild(menuScript);
 
   var bellScript = document.createElement('script');
-  bellScript.src = 'qg-bell.js?v=20260726empty';
+  bellScript.src = 'qg-bell.js?v=20260729tap1';
   bellScript.defer = true;
   document.head.appendChild(bellScript);
 

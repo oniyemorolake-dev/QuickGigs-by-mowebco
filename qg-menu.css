@@ -73,12 +73,14 @@ body.light .qg-menu-btn span {
   background: rgba(0, 0, 0, 0.55);
   opacity: 0;
   visibility: hidden;
+  pointer-events: none; /* closed overlay must never swallow message row taps */
   transition: opacity 0.25s, visibility 0.25s;
 }
 
 .qg-menu-overlay.open {
   opacity: 1;
   visibility: visible;
+  pointer-events: auto;
 }
 
 .qg-menu-drawer {

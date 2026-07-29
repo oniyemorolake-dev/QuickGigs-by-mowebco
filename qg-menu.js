@@ -42,7 +42,7 @@
     var link = document.createElement('link');
     link.id = 'qg-menu-css';
     link.rel = 'stylesheet';
-    link.href = 'qg-menu.css?v=3';
+    link.href = 'qg-menu.css?v=5';
     document.head.appendChild(link);
   }
 

@@ -42,7 +42,7 @@
     var link = document.createElement('link');
     link.id = 'qg-bell-css';
     link.rel = 'stylesheet';
-    link.href = 'qg-bell.css?v=3';
+    link.href = 'qg-bell.css?v=4';
     document.head.appendChild(link);
   }
 
