@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://www.gstatic.com">
 <meta name="theme-color" content="#6b3fa0">
 <link rel="stylesheet" href="qg-polish.css?v=20260727msgnav">
-<link rel="stylesheet" href="qg-ux.css?v=20260728chatfix3">
+<link rel="stylesheet" href="qg-ux.css?v=20260728blank1">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -183,7 +183,12 @@ body.light .app-legal-footer a{color:var(--purple);}
 <p class="messages-safety-tip" id="messagesSafetyTip">Keep chat and payment on QuickGigs — off-platform deals aren't protected.</p>
 
 <!-- List / empty state only — header + tab bar stay outside this node -->
-<div id="mainContent"></div>
+<div id="mainContent" role="main">
+  <div class="empty-state" id="messagesBootState">
+    <div class="empty-title">Loading messages…</div>
+    <div class="empty-sub">Pulling your conversations.</div>
+  </div>
+</div>
 
 <footer class="app-legal-footer site-footer" id="siteFooter"></footer>
 <!-- Shared bottom nav (qg-nav.js) — outside #mainContent so empty/list never removes it -->
@@ -251,23 +256,44 @@ onAuthStateChanged(auth, (user) => {
   if (!user) { window.location.href = 'login.html'; return; }
   if (typeof setCurrentUser === 'function') setCurrentUser(user);
   else window._currentUser = user;
-  function startMessages() {
-    if (typeof window.loadConversations === 'function') {
-      window.loadConversations();
-    } else {
-      setTimeout(startMessages, 50);
+  function startMessages(tries) {
+    tries = tries || 0;
+    if (typeof window.loadConversations !== 'function') {
+      if (tries < 80) setTimeout(function () { startMessages(tries + 1); }, 50);
+      else showMessagesBootError('Messages script failed to load. Hard refresh and try again.');
+      return;
     }
+    var uid = (window._currentUser && window._currentUser.uid) || (user && user.uid);
+    if (!uid) {
+      if (tries < 40) setTimeout(function () { startMessages(tries + 1); }, 50);
+      else showMessagesBootError('Could not verify your account. Sign in again.');
+      return;
+    }
+    window.loadConversations().catch(function (err) {
+      console.error('[QuickGigs messages] loadConversations rejected:', err);
+      showMessagesBootError('Could not load messages. Check your connection and try again.');
+    });
   }
-  startMessages();
+  startMessages(0);
 });
+
+function showMessagesBootError(msg) {
+  var content = document.getElementById('mainContent');
+  if (!content) return;
+  var safe = typeof escapeHtml === 'function' ? escapeHtml(msg) : String(msg || 'Something went wrong.');
+  content.innerHTML = '<div class="empty-state"><div class="empty-title">Messages unavailable</div><div class="empty-sub">' + safe + '</div><a class="empty-btn" href="messages.html">↻ Retry</a></div>';
+  if (typeof paintMessagesTabBar === 'function') paintMessagesTabBar();
+  else if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('messages');
+}
+window.showMessagesBootError = showMessagesBootError;
 </script>
 
 <script defer src="qg-utils.js?v=20260728welcome1"></script>
 <script defer src="qg-polish.js?v=20260728xss1"></script>
-<script src="qg-ux.js?v=20260728chatfix3" defer></script>
+<script src="qg-ux.js?v=20260728blank1" defer></script>
 <script src="qg-bigtech.js?v=20260728xss1" defer></script>
 <script src="qg-wave2.js?v=20260728xss1" defer></script>
-<script defer src="qg-config.js?v=20260728chatfix3"></script>
+<script defer src="qg-config.js?v=20260728blank1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="supabase-db.js?v=20260728chatfix3"></script>
 <script defer src="qg-notifications.js"></script>
@@ -386,15 +412,37 @@ function conversationsForCurrentMode(list) {
 
 async function loadConversations(){
   var userId = window._currentUser ? window._currentUser.uid : null;
-  if(!userId) return;
+  var content = document.getElementById('mainContent');
+  if (!content) {
+    console.error('[QuickGigs messages] #mainContent missing — page chrome was removed');
+    if (typeof window.showMessagesBootError === 'function') {
+      window.showMessagesBootError('Messages layout failed. Hard refresh (Ctrl+Shift+R) and try again.');
+    }
+    return;
+  }
+  if (!userId) {
+    content.innerHTML = '<div class="empty-state"><div class="empty-title">Signing you in…</div><div class="empty-sub">Hang tight.</div></div>';
+    return;
+  }
+  // Always keep bottom nav painted, even if the list fetch fails
+  try {
+    if (typeof paintMessagesTabBar === 'function') paintMessagesTabBar();
+    else if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('messages');
+    if (typeof applyTheme === 'function') applyTheme();
+    else if (typeof applyRoleTheme === 'function') applyRoleTheme();
+  } catch (chromeErr) {
+    console.warn('[QuickGigs messages] chrome paint:', chromeErr);
+  }
+
   if (typeof getConversationsForUser !== 'function') {
-    document.getElementById('mainContent').innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('alert',{size:24}):'')+'</div><div class="empty-title">Messages failed to load</div><div class="empty-sub">Refresh the page. If this keeps happening, check your connection.</div></div>';
+    content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('alert',{size:24}):'')+'</div><div class="empty-title">Messages failed to load</div><div class="empty-sub">Refresh the page. If this keeps happening, check your connection.</div><a class="empty-btn" href="messages.html">↻ Retry</a></div>';
     return;
   }
   if (typeof syncCurrentUserProfile === 'function' && window._currentUser) {
-    await syncCurrentUserProfile(window._currentUser);
+    try { await syncCurrentUserProfile(window._currentUser); } catch (eSync) {
+      console.warn('[QuickGigs messages] profile sync skipped:', eSync);
+    }
   }
-  var content = document.getElementById('mainContent');
   content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('clock',{size:24}):'')+'</div><div class="empty-title">Loading messages...</div></div>';
 
   try {
@@ -452,7 +500,10 @@ async function loadConversations(){
     var hint = String(err && err.message || '').indexOf('401') >= 0
       ? 'Session error — hard refresh and log in again.'
       : 'Could not load messages — check your connection and try again.';
-    content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('alert',{size:24}):'')+'</div><div class="empty-title">Could not load messages</div><div class="empty-sub">'+window.escapeHtml(hint)+'</div></div>';
+    var escHint = typeof escapeHtml === 'function' ? escapeHtml(hint)
+      : (typeof qgEsc === 'function' ? qgEsc(hint) : String(hint).replace(/</g, '&lt;'));
+    content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('alert',{size:24}):'')+'</div><div class="empty-title">Could not load messages</div><div class="empty-sub">'+escHint+'</div><a class="empty-btn" href="messages.html">↻ Retry</a></div>';
+    if (typeof paintMessagesTabBar === 'function') paintMessagesTabBar();
   }
 }
 
@@ -464,6 +515,10 @@ window.onQuickGigsModeChange = function () {
 
 function renderContent(){
   var content = document.getElementById('mainContent');
+  if (!content) {
+    console.error('[QuickGigs messages] renderContent: #mainContent missing');
+    return;
+  }
 
   // No conversations at all
   if(!conversations.length){

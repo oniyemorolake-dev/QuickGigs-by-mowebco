@@ -62,61 +62,64 @@
       a.textContent = 'Skip to content';
       document.body.insertBefore(a, document.body.firstChild);
     }
-    if (document.getElementById('main')) return;
 
-    // Full-viewport chat is body{display:flex;flex-direction:column} with .chat-scroll{flex:1}.
-    // Wrapping banners/scroll/input in <main> without flex:1 collapses the thread and clips
-    // the composer (felt like "messages won't open"). Mark chat-scroll as main; do not wrap.
+    // Remove / unwrap leftover <main id="main"> from the old body-wrap bug (blank messages page).
+    try {
+      document.querySelectorAll('main#main.qg-main, main#main').forEach(function (el) {
+        if (!el || !el.parentNode) return;
+        // Restore any trapped chrome (nav, list, tab bar) before removing the wrapper
+        while (el.firstChild) {
+          el.parentNode.insertBefore(el.firstChild, el);
+        }
+        el.parentNode.removeChild(el);
+      });
+    } catch (eClean) {}
+
+    // NEVER wrap body children into a new <main>. That path moved nav/list into an empty
+    // <main id="main" class="qg-main"> and left messages.html blank (footer only).
+    // Only mark an existing landmark and ensure a skip-link target exists.
+
+    if (document.getElementById('main')) {
+      return;
+    }
+
     var isChatPage = PAGE === 'chat.html' ||
       document.body.classList.contains('qg-page-chat') ||
       document.body.classList.contains('page-chat') ||
       !!document.getElementById('chatScroll');
+
+    var host = null;
     if (isChatPage) {
-      var chatHost = document.getElementById('chatScroll') || document.querySelector('.chat-scroll');
-      if (chatHost) {
-        chatHost.setAttribute('role', 'main');
-        if (!document.getElementById('main')) {
-          var chatAnchor = document.createElement('span');
-          chatAnchor.id = 'main';
-          chatAnchor.setAttribute('tabindex', '-1');
-          chatAnchor.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)';
-          chatHost.parentNode.insertBefore(chatAnchor, chatHost);
-        }
-      }
-      return;
+      host = document.getElementById('chatScroll') || document.querySelector('.chat-scroll');
+    } else {
+      // Prefer explicit ids — never use a broad querySelector list (document-order
+      // can pick a stray <main> / .content and skip #mainContent).
+      host = document.getElementById('mainContent') ||
+        document.querySelector('main[role="main"], [role="main"].qg-main, .page-content, .page-wrap');
     }
 
-    var host = document.querySelector('main, [role="main"], #mainContent, .content, .page-content, .page-wrap, .signup-card');
     if (host) {
+      if (!host.getAttribute('role')) host.setAttribute('role', 'main');
       host.classList.add('qg-main');
-      host.setAttribute('role', 'main');
-      // Never rename an existing id (e.g. mainContent) — add a sibling target for skip-link
-      if (!host.id) host.id = 'main';
-      else if (host.id !== 'main' && !document.getElementById('main')) {
+      if (!host.id) {
+        host.id = 'main';
+      } else if (host.id !== 'main') {
         var anchor = document.createElement('span');
         anchor.id = 'main';
         anchor.setAttribute('tabindex', '-1');
         anchor.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)';
-        host.parentNode.insertBefore(anchor, host);
+        if (host.parentNode) host.parentNode.insertBefore(anchor, host);
+        else document.body.insertBefore(anchor, document.body.firstChild);
       }
       return;
     }
-    var main = document.createElement('main');
-    main.id = 'main';
-    main.className = 'qg-main';
-    var stopSelectors = 'nav, .nav, .tab-bar, #qgTabBar, footer, .qg-global-loading, .skip-link, script, link, style, .qg-onboard-overlay, .modal-overlay, .confirm-overlay, #qgGlobalLoading, .stars, .signup-bg-mesh';
-    var nodes = Array.prototype.slice.call(document.body.children);
-    var moved = false;
-    nodes.forEach(function (n) {
-      if (n.nodeType !== 1) return;
-      if (n.matches && n.matches(stopSelectors)) return;
-      if (!moved) {
-        document.body.insertBefore(main, n);
-        moved = true;
-      }
-      main.appendChild(n);
-    });
-    if (!moved) document.body.appendChild(main);
+
+    // Last resort: invisible skip target only — do not relocate DOM nodes.
+    var skipTarget = document.createElement('span');
+    skipTarget.id = 'main';
+    skipTarget.setAttribute('tabindex', '-1');
+    skipTarget.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)';
+    document.body.insertBefore(skipTarget, document.body.firstChild);
   }
 
   function ensureBetaPill() {
