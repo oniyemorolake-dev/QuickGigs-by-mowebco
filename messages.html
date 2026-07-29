@@ -922,88 +922,105 @@ applyTheme();
     var search = $('searchInput');
     if (search) search.addEventListener('input', filterList);
 
-    $('convList').addEventListener('click', function (e) {
+    /* Delegate from document so startup cannot crash if shared chrome briefly
+       reparents/rebuilds the conversation list. */
+    document.addEventListener('click', function (e) {
       var row = e.target && e.target.closest ? e.target.closest('.im-row') : null;
       if (!row) return;
+      var list = $('convList');
+      if (list && !list.contains(row)) return;
       e.preventDefault();
       var id = row.getAttribute('data-conv');
       // Handler: openConversation(conv_id) — same as href messages.html?conv=<id>
       if (id) openConversation(id);
     });
 
-    $('threadBackBtn').addEventListener('click', function () {
-      setChatOpen(false);
-      selectedId = '';
-      currentConv = null;
-      currentPeer = { uid: '', name: '' };
-      setSafetyButtons(false);
-      if (pollTimer) clearInterval(pollTimer);
-      renderList();
-      try {
-        var u = new URL(window.location.href);
-        u.search = '';
-        window.history.replaceState({}, '', u.pathname);
-      } catch (e3) {}
-    });
+    var backBtn = $('threadBackBtn');
+    if (backBtn) {
+      backBtn.addEventListener('click', function () {
+        setChatOpen(false);
+        selectedId = '';
+        currentConv = null;
+        currentPeer = { uid: '', name: '' };
+        setSafetyButtons(false);
+        if (pollTimer) clearInterval(pollTimer);
+        renderList();
+        try {
+          var u = new URL(window.location.href);
+          u.search = '';
+          window.history.replaceState({}, '', u.pathname);
+        } catch (e3) {}
+      });
+    }
 
     var input = $('msgInput');
     var sendBtn = $('sendBtn');
-    input.addEventListener('input', function () {
-      input.style.height = 'auto';
-      input.style.height = Math.min(input.scrollHeight, 100) + 'px';
-      var val = input.value.trim();
-      var check = val ? analyzeFraudLocal(val) : { blocked: false };
-      var fi = $('fraudInline');
-      if (check.blocked) {
-        fraudDetected = true;
-        fi.textContent = check.message || 'Keep contact info off QuickGigs.';
-        fi.classList.add('show');
-        sendBtn.disabled = true;
-      } else {
-        fraudDetected = false;
-        fi.classList.remove('show');
-        sendBtn.disabled = !val;
-      }
-    });
-    input.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        if (!sendBtn.disabled) sendMessage();
-      }
-    });
-    sendBtn.addEventListener('click', function () { sendMessage(); });
+    if (input && sendBtn) {
+      input.addEventListener('input', function () {
+        input.style.height = 'auto';
+        input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+        var val = input.value.trim();
+        var check = val ? analyzeFraudLocal(val) : { blocked: false };
+        var fi = $('fraudInline');
+        if (check.blocked) {
+          fraudDetected = true;
+          if (fi) {
+            fi.textContent = check.message || 'Keep contact info off QuickGigs.';
+            fi.classList.add('show');
+          }
+          sendBtn.disabled = true;
+        } else {
+          fraudDetected = false;
+          if (fi) fi.classList.remove('show');
+          sendBtn.disabled = !val;
+        }
+      });
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          if (!sendBtn.disabled) sendMessage();
+        }
+      });
+      sendBtn.addEventListener('click', function () { sendMessage(); });
+    }
 
-    $('chatReportBtn').addEventListener('click', function () {
-      if (!currentPeer.uid) return;
-      if (typeof openReportModal === 'function') {
-        openReportModal({
-          targetType: 'user',
-          targetId: currentPeer.uid,
-          targetLabel: currentPeer.name || 'User'
-        });
-      } else if (typeof showToast === 'function') {
-        showToast('Report is unavailable right now.', '#f59e0b');
-      }
-    });
+    var reportBtn = $('chatReportBtn');
+    if (reportBtn) {
+      reportBtn.addEventListener('click', function () {
+        if (!currentPeer.uid) return;
+        if (typeof openReportModal === 'function') {
+          openReportModal({
+            targetType: 'user',
+            targetId: currentPeer.uid,
+            targetLabel: currentPeer.name || 'User'
+          });
+        } else if (typeof showToast === 'function') {
+          showToast('Report is unavailable right now.', '#f59e0b');
+        }
+      });
+    }
 
-    $('chatBlockBtn').addEventListener('click', async function () {
-      if (!currentPeer.uid || !currentUserId) return;
-      var ok = window.confirm('Block ' + (currentPeer.name || 'this user') + '? You will not be able to message each other.');
-      if (!ok) return;
-      if (typeof blockUser !== 'function') {
-        if (typeof showToast === 'function') showToast('Block is unavailable.', '#f59e0b');
-        return;
-      }
-      var res = await blockUser(currentUserId, currentPeer.uid);
-      if (res && res.success !== false) {
-        if (typeof showToast === 'function') showToast('User blocked.', '#16a34a');
-        setChatOpen(false);
-        selectedId = '';
-        await loadConversations();
-      } else if (typeof showToast === 'function') {
-        showToast('Could not block user.', '#ef4444');
-      }
-    });
+    var blockBtn = $('chatBlockBtn');
+    if (blockBtn) {
+      blockBtn.addEventListener('click', async function () {
+        if (!currentPeer.uid || !currentUserId) return;
+        var ok = window.confirm('Block ' + (currentPeer.name || 'this user') + '? You will not be able to message each other.');
+        if (!ok) return;
+        if (typeof blockUser !== 'function') {
+          if (typeof showToast === 'function') showToast('Block is unavailable.', '#f59e0b');
+          return;
+        }
+        var res = await blockUser(currentUserId, currentPeer.uid);
+        if (res && res.success !== false) {
+          if (typeof showToast === 'function') showToast('User blocked.', '#16a34a');
+          setChatOpen(false);
+          selectedId = '';
+          await loadConversations();
+        } else if (typeof showToast === 'function') {
+          showToast('Could not block user.', '#ef4444');
+        }
+      });
+    }
   }
 
   window.QGMessages = {
