@@ -812,7 +812,7 @@ function openConversationThread(convId) {
 function goConversationFromRow(row, ev) {
   if (!row) return false;
   var id = row.getAttribute('data-open-conv') || '';
-  var href = row.getAttribute('href') || row.getAttribute('data-href') || '';
+  var href = row.getAttribute('data-href') || row.getAttribute('href') || '';
   if ((!href || href === '#' || href.indexOf('javascript:') === 0) && id) {
     href = chatThreadHref(id);
   }
