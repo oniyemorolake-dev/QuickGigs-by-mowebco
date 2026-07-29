@@ -126,25 +126,26 @@ body.light .mpill.active-standard{background:#ede9ff;color:#5a2d8a;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .loading-txt{font-size:13px;color:var(--results-color);}
 .cards-area{padding:10px 18px 0;}
-/* eBay-style: large media left (~40%), details right — same height with or without photo */
+/* eBay-style: fixed-ratio media left, details right — photo + placeholder same box */
 .task-card{
-  display:flex;align-items:stretch;gap:0;
+  display:flex;align-items:center;gap:0;
   border-radius:16px;padding:0;margin-bottom:12px;
   border:0.5px solid var(--border);background:var(--card-bg);
   cursor:pointer;transition:border-color 0.18s,background 0.18s;overflow:hidden;
-  min-height:132px;
 }
 .light .task-card{box-shadow:0 1px 3px rgba(107,63,160,0.08);}
 .task-card:hover{border-color:var(--border-hover);background:var(--surface-hover);}
 .task-card.has-photo:hover .tc-media-img{opacity:0.94;}
 
 .tc-media{
-  flex:0 0 40%;
-  width:40%;
-  max-width:220px;
-  min-width:118px;
+  flex:0 0 auto;
+  width:36%;
+  max-width:168px;
+  min-width:120px;
+  aspect-ratio:1 / 1;
+  height:auto;
+  align-self:center;
   position:relative;
-  align-self:stretch;
   margin:10px 0 10px 10px;
   border-radius:12px;
   background:rgba(255,255,255,0.04);
@@ -172,6 +173,7 @@ body.light .tc-media{background:#f0eeff;}
   width:100%;height:100%;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
   padding:12px;
+  box-sizing:border-box;
 }
 .tc-media-placeholder-icon{font-size:36px;line-height:1;}
 .tc-media-placeholder-label{
@@ -194,9 +196,10 @@ body.light .tc-media-placeholder-label{color:rgba(45,27,78,0.45);}
 
 .tc-body{
   flex:1;min-width:0;
-  display:flex;flex-direction:column;justify-content:space-between;
+  display:flex;flex-direction:column;justify-content:center;
   padding:12px 12px 12px 14px;
   gap:8px;
+  align-self:stretch;
 }
 .tc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:0;}
 .tc-left{display:flex;align-items:flex-start;gap:0;flex:1;min-width:0;}
@@ -225,23 +228,25 @@ body.light .tc-price{color:#16a34a;}
 .apply-btn{padding:9px 14px;border-radius:11px;border:none;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;color:#fff;flex-shrink:0;white-space:nowrap;}
 
 @media (max-width:420px){
-  .task-card{min-height:120px;}
   .tc-media{
-    flex-basis:36%;width:36%;max-width:140px;min-width:108px;
-    margin:8px 0 8px 8px;border-radius:10px;
+    width:34%;
+    max-width:132px;
+    min-width:118px;
+    aspect-ratio:1 / 1;
+    margin:8px 0 8px 8px;
+    border-radius:10px;
   }
-  .tc-media-img{border-radius:10px;}
+  .tc-media-img,.tc-media{border-radius:10px;}
   .tc-body{padding:10px 10px 10px 10px;}
   .tc-title{font-size:14px;}
   .tc-price{font-size:15px;}
   .apply-btn{padding:8px 12px;font-size:11px;}
-  .tc-media-placeholder-icon{font-size:30px;}
+  .tc-media-placeholder-icon{font-size:28px;}
   .tc-media.tc-photo-tappable::before{display:none;}
   .cards-area{padding:10px 12px 0;}
 }
 @media (min-width:720px){
-  .task-card{min-height:148px;}
-  .tc-media{max-width:240px;min-width:160px;}
+  .tc-media{max-width:176px;min-width:140px;width:32%;}
   .tc-media-placeholder-icon{font-size:42px;}
 }
 .btn-quick{background:#d97706;}
@@ -913,7 +918,7 @@ function renderCardMedia(t) {
     var fallbackAttr = (src !== esc(raw)) ? ' data-fallback="'+esc(raw)+'" onerror="if(this.dataset.fallback){this.src=this.dataset.fallback;delete this.dataset.fallback;this.onerror=null;}"' : '';
     return '<div class="tc-media tc-photo-tappable" role="button" tabindex="0" aria-label="View task photos — tap to enlarge" data-photos="'+photosJson+'" data-photo-caption="'+esc(t.title)+'">' +
       '<div class="tc-media-inner">' +
-        '<img class="tc-media-img" src="'+src+'" alt="'+esc(t.title)+' photo" loading="lazy" decoding="async" width="220" height="160"'+fallbackAttr+'>' +
+        '<img class="tc-media-img" src="'+src+'" alt="'+esc(t.title)+' photo" loading="lazy" decoding="async" width="168" height="168"'+fallbackAttr+'>' +
       '</div>' + dots +
     '</div>';
   }
