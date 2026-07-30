@@ -47,6 +47,35 @@ async function refreshSupabaseAuth() {
   return await getSupabaseHeaders();
 }
 
+/** Call a security-sensitive Edge Function with a verified Firebase ID token. */
+async function callVerifiedFunction(url, body, firebaseUser) {
+  var user = firebaseUser || window._currentUser;
+  if (!url) return { success: false, ok: false, error: 'function_not_configured' };
+  if (!user || typeof user.getIdToken !== 'function') {
+    return { success: false, ok: false, error: 'firebase_auth_required' };
+  }
+  try {
+    var token = await user.getIdToken(false);
+    var res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify(body || {})
+    });
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok) {
+      return Object.assign({ success: false, ok: false, error: data.error || ('http_' + res.status) }, data);
+    }
+    if (data.success == null) data.success = data.ok !== false;
+    return data;
+  } catch (err) {
+    return { success: false, ok: false, error: err && err.message ? err.message : String(err) };
+  }
+}
+
 /** Explicit column lists — only fields the UI actually renders / needs. Never select=*. */
 var SELECT_TASKS_BROWSE = 'task_id,title,budget,location,lat,lng,task_mode,status,created_at,category,description,posted_by,poster_name,budget_negotiable,photo_urls,scheduled_label,requires_photos,rate_type,is_recurring,hourly_rate,frequency,est_hours';
 /** Detail includes precise_address for post-accept reveal — public cards use BROWSE (no precise_address). */
@@ -1368,6 +1397,25 @@ async function postTask(taskData) {
     withPoster,
     row
   ];
+  var securePostUrl = window.QG_CONFIG && window.QG_CONFIG.postTaskUrl;
+  if (securePostUrl) {
+    var secureResult = await callVerifiedFunction(securePostUrl, { task: attempts[0] });
+    if (secureResult.success) {
+      if (secureResult.data) {
+        var secureRow = normalizeTaskRow(secureResult.data);
+        var secureCache = readTasksCache(true) || [];
+        var secureRowId = getTaskRowId(secureRow);
+        secureCache = secureCache.filter(function (t) {
+          return String(getTaskRowId(t)) !== String(secureRowId);
+        });
+        secureCache.unshift(secureRow);
+        writeTasksCache(secureCache);
+      } else {
+        invalidateTasksCache();
+      }
+    }
+    return secureResult;
+  }
   var seen = {};
   var result = { success: false, error: 'Could not save task — refresh and try again' };
   for (var i = 0; i < attempts.length; i++) {
@@ -2025,6 +2073,20 @@ async function approveGuardianConsent(token) {
 function isAccountPendingGuardian(user) {
   if (!user) return false;
   return user.account_status === 'pending_guardian' || user.guardian_consent_status === 'pending';
+}
+
+async function getAccountActionPermission(firebaseUid, action) {
+  var user = firebaseUid ? await getUserByFirebaseUid(firebaseUid) : null;
+  var status = user && user.account_status ? String(user.account_status) : '';
+  if (status === 'active') return { allowed: true, status: status };
+  var verb = action === 'post' ? 'post gigs' : 'apply to gigs';
+  return {
+    allowed: false,
+    status: status || 'unknown',
+    message: status === 'pending_guardian'
+      ? 'A parent or guardian must approve your account before you can ' + verb + '.'
+      : 'Your account is not currently allowed to ' + verb + '.'
+  };
 }
 
 async function resolveUserAvatarUrl(firebaseUid) {
@@ -2997,11 +3059,14 @@ async function submitApplication(appData) {
   };
   if (appData.worker_name) row.worker_name = appData.worker_name;
 
-  // Prefer return=representation so the UI can confirm app_id / ids written.
-  var result = typeof sbPostReturn === 'function'
-    ? await sbPostReturn('applications', row)
-    : await sbPost('applications', row);
-  if (!result.success && appData.worker_name) {
+  // Security-sensitive insert goes through a Firebase-verified Edge Function.
+  var secureApplyUrl = window.QG_CONFIG && window.QG_CONFIG.submitApplicationUrl;
+  var result = secureApplyUrl
+    ? await callVerifiedFunction(secureApplyUrl, { application: row })
+    : (typeof sbPostReturn === 'function'
+      ? await sbPostReturn('applications', row)
+      : await sbPost('applications', row));
+  if (!secureApplyUrl && !result.success && appData.worker_name) {
     var fallback = {
       task_id:   taskId,
       worker_id: workerFirebaseUid,
@@ -4074,6 +4139,15 @@ async function releaseTaskPayout(taskId, actorId, options) {
   var url = cfg.releasePayoutUrl ||
     'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/release-payout';
   try {
+    if (typeof callVerifiedFunction === 'function') {
+      var verifiedRelease = await callVerifiedFunction(url, {
+        task_id: String(payment.task_id || taskId),
+        poster_id: String(options.posterId || payment.poster_id || ''),
+        worker_id: String(options.workerId || payment.worker_id || '')
+      });
+      if (verifiedRelease.ok == null) verifiedRelease.ok = verifiedRelease.success === true;
+      return verifiedRelease;
+    }
     var headers = await getSupabaseHeaders();
     var res = await fetch(url, {
       method: 'POST',
@@ -4271,6 +4345,7 @@ window.SUPABASE_URL = SUPABASE_URL;
 window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
 window.getSupabaseHeaders = getSupabaseHeaders;
 window.refreshSupabaseAuth = refreshSupabaseAuth;
+window.callVerifiedFunction = callVerifiedFunction;
 window.SELECT_TASKS_BROWSE = SELECT_TASKS_BROWSE;
 window.SELECT_TASKS_DASH = SELECT_TASKS_DASH;
 window.SELECT_TASKS_DETAIL = SELECT_TASKS_DETAIL;
@@ -4346,6 +4421,7 @@ window.applyDbUserToProfileData = applyDbUserToProfileData;
 window.getUserByGuardianToken = getUserByGuardianToken;
 window.approveGuardianConsent = approveGuardianConsent;
 window.isAccountPendingGuardian = isAccountPendingGuardian;
+window.getAccountActionPermission = getAccountActionPermission;
 window.syncProfilePhotoToDb = syncProfilePhotoToDb;
 window.resolveUserName = resolveUserName;
 window.isGenericDisplayName = isGenericDisplayName;

@@ -1,0 +1,20 @@
+[functions.register-account]
+verify_jwt = false
+
+[functions.guardian-consent]
+verify_jwt = false
+
+[functions.resend-guardian-consent]
+verify_jwt = false
+
+[functions.post-task]
+verify_jwt = false
+
+[functions.submit-application]
+verify_jwt = false
+
+[functions.create-connect-link]
+verify_jwt = false
+
+[functions.release-payout]
+verify_jwt = false

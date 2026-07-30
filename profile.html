@@ -583,7 +583,7 @@ onAuthStateChanged(auth, (user) => {
 
 <script defer src="qg-polish.js?v=20260728xss1"></script>
 <script src="qg-ux.js?v=20260728welcome1" defer></script>
-<script src="qg-bigtech.js?v=20260728xss1" defer></script>
+<script src="qg-bigtech.js?v=20260729chatprofile1" defer></script>
 <script src="qg-wave2.js?v=20260728xss1" defer></script>
 <script defer src="qg-config.js"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
@@ -725,7 +725,9 @@ function updateEditProgress() {
 }
 
 var params = new URLSearchParams(window.location.search);
-var viewUserId = params.get('user');
+// `user_id` is the chat/public-profile route; keep `user` as a backwards-compatible alias.
+// Both values are Firebase UIDs, matching users.firebase_uid and reviews.reviewee_id.
+var viewUserId = params.get('user_id') || params.get('user');
 var returnTo = params.get('from') || params.get('return');
 var photoSetupMode = params.get('setup') === 'photo';
 var photoRequired = params.get('required') === '1';

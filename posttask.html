@@ -1043,6 +1043,14 @@ window.handleSubmit = async function(skipPhotos) {
     setTimeout(function(){ window.location.href = 'login.html'; }, 2000);
     return;
   }
+  if (typeof getAccountActionPermission === 'function') {
+    var postPermission = await getAccountActionPermission(window._currentUser.uid, 'post');
+    if (!postPermission.allowed) {
+      showFormBanner(postPermission.message);
+      unlockSubmit();
+      return;
+    }
+  }
 
   // Lock immediately — only one network post path from here
   lockSubmitPosting();

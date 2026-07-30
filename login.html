@@ -234,11 +234,13 @@ async function finishGoogleLogin(user) {
     existing = await getUserByFirebaseUid(user.uid, { self: true });
   }
 
-  if (existing && existing.status === 'banned') {
+  if (existing && (existing.status === 'banned' || existing.account_status === 'blocked')) {
     if (typeof clearQgUserScopedStorage === 'function') clearQgUserScopedStorage();
     await auth.signOut();
     if (typeof setCurrentUser === 'function') setCurrentUser(null);
-    errorMsg.textContent = 'This account has been suspended. Contact support@quickgigs.ca if you think this is a mistake.';
+    errorMsg.textContent = existing.account_status === 'blocked'
+      ? 'This account was not approved by its parent or guardian.'
+      : 'This account has been suspended. Contact support@quickgigs.ca if you think this is a mistake.';
     errorMsg.style.display = 'block';
     if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
     var overlay = document.getElementById('loginProgress');

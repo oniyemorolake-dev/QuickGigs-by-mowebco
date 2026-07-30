@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="qg-polish.css?v=20260729msgint1">
 <link rel="stylesheet" href="qg-ux.css?v=20260729msgint1">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-role-theme.css?v=20260729msgint1">
 <script src="qg-theme.js?v=20260729msgint1"></script>
 <script src="qg-brand-init.js?v=20260729msg2"></script>
@@ -191,6 +191,7 @@ body.light .im-thread-empty .glyph{background:#f0eeff;}
 .im-thread-hdr{
   display:none;align-items:center;gap:10px;padding:10px 14px;
   border-bottom:0.5px solid var(--border);background:var(--nav-bg);flex-shrink:0;
+  font-family:'Poppins','DM Sans',sans-serif;
 }
 .im-app.has-thread .im-thread-hdr{display:flex;}
 .im-app.has-thread .im-thread-empty{display:none;}
@@ -209,9 +210,15 @@ body.light .im-hdr-back{color:var(--purple);}
   width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;border-radius:50%!important;
 }
 .im-hdr-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
-.im-hdr-meta{flex:1;min-width:0;}
+.im-hdr-avatar-link{display:flex;flex-shrink:0;border-radius:50%;text-decoration:none;color:inherit;}
+.im-hdr-avatar-link:focus-visible{outline:2px solid var(--purple-light);outline-offset:3px;}
+.im-hdr-meta{flex:1;min-width:0;text-decoration:none;color:inherit;border-radius:8px;padding:2px 4px;margin-left:-4px;}
+.im-hdr-meta:hover .im-profile-affordance,.im-hdr-meta:focus-visible .im-profile-affordance{color:var(--lavender);}
+.im-hdr-meta:focus-visible{outline:2px solid var(--purple-light);outline-offset:2px;}
 .im-hdr-name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.im-hdr-status{font-size:12px;color:var(--text-muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.im-hdr-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);margin-top:1px;white-space:nowrap;overflow:hidden;}
+#threadStatus{overflow:hidden;text-overflow:ellipsis;}
+.im-profile-affordance{color:var(--purple-light);font-weight:500;flex-shrink:0;}
 .im-hdr-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;}
 .chat-hdr-btn{
   padding:6px 10px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;
@@ -252,8 +259,16 @@ body.light .im-task-chip{background:#f0eeff;}
 .im-date{align-self:center;font-size:11px;color:var(--text-faint);margin:10px 0 6px;}
 .im-sys{align-self:center;max-width:90%;text-align:center;font-size:12px;color:var(--text-muted);padding:6px 10px;margin:4px 0;}
 .im-bubble-row{display:flex;flex-direction:column;max-width:100%;}
-.im-bubble-shell{display:flex;align-items:flex-end;gap:5px;max-width:100%;}
+.im-bubble-shell{display:flex;align-items:flex-end;gap:6px;width:100%;max-width:100%;font-family:'Poppins','DM Sans',sans-serif;}
 .mine .im-bubble-shell{flex-direction:row-reverse;}
+.im-msg-avatar-link{display:flex;flex:0 0 30px;width:30px;height:30px;border-radius:50%;text-decoration:none;color:inherit;}
+.im-msg-avatar-link:focus-visible{outline:2px solid var(--purple-light);outline-offset:2px;}
+.im-msg-avatar{
+  width:30px!important;height:30px!important;min-width:30px!important;min-height:30px!important;
+  border-radius:50%!important;overflow:hidden;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:11px;font-weight:600;
+}
+.im-msg-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
 .im-message-report{
   width:28px;height:28px;border:0;border-radius:50%;background:transparent;color:var(--text-faint);
   cursor:pointer;opacity:0;transition:opacity .15s;font:700 16px/1 inherit;
@@ -264,8 +279,8 @@ body.light .im-task-chip{background:#f0eeff;}
 .im-bubble-row.grouped{margin-top:1px;}
 .im-bubble-row:not(.grouped){margin-top:7px;}
 .im-bubble{
-  max-width:min(78%,420px);padding:9px 14px;font-size:14px;line-height:1.4;
-  word-wrap:break-word;overflow-wrap:anywhere;border-radius:18px;
+  display:inline-block;width:auto;flex:0 1 auto;min-width:0;max-width:75%;padding:9px 14px;font-size:14px;line-height:1.4;
+  overflow-wrap:break-word;word-break:normal;hyphens:none;border-radius:18px;
 }
 .im-bubble-row.mine .im-bubble{
   background:linear-gradient(145deg,#7a4cb8,#6b3fa0);color:#fff;
@@ -407,11 +422,13 @@ body.light .app-legal-footer a{color:var(--purple);}
 
     <header class="im-thread-hdr" id="threadHdr">
       <button type="button" class="im-hdr-back" id="threadBackBtn" aria-label="Back to conversations">‹</button>
-      <div class="im-hdr-avatar" id="threadAvatar"></div>
-      <div class="im-hdr-meta">
+      <a class="im-hdr-avatar-link" id="threadAvatarLink" aria-label="View profile">
+        <div class="im-hdr-avatar" id="threadAvatar"></div>
+      </a>
+      <a class="im-hdr-meta" id="threadProfileLink" aria-label="View profile">
         <div class="im-hdr-name" id="threadName">—</div>
-        <div class="im-hdr-status" id="threadStatus">QuickGigs chat</div>
-      </div>
+        <div class="im-hdr-status"><span id="threadStatus">QuickGigs chat</span><span class="im-profile-affordance">View profile ›</span></div>
+      </a>
       <div class="im-hdr-actions">
         <button type="button" class="chat-hdr-btn" id="chatReportBtn" disabled>Report</button>
         <button type="button" class="chat-hdr-btn" id="chatBlockBtn" disabled>Block</button>
@@ -692,6 +709,12 @@ applyTheme();
     return '<div class="' + (className || 'im-avatar') + '" style="background:' + bg + '">' + esc((name || 'U').charAt(0)) + '</div>';
   }
 
+  function peerProfileHref(uid) {
+    if (!uid) return '';
+    var returnPath = window.location.pathname.split('/').pop() + window.location.search;
+    return 'profile.html?user_id=' + encodeURIComponent(String(uid)) + '&from=' + encodeURIComponent(returnPath);
+  }
+
   /** Exact open target: messages.html?conv=<conv_id> (+ optional task/peer). Click → openConversation(conv_id). */
   function rowHref(c) {
     var href = 'messages.html?conv=' + encodeURIComponent(c.id);
@@ -959,6 +982,20 @@ applyTheme();
     if (!meta) return;
     setNodeText('threadName', meta.name || 'Chat');
     setNodeText('threadStatus', meta.taskName ? String(meta.taskName) : 'QuickGigs chat');
+    var peerUid = meta.otherUid || currentPeer.uid || '';
+    var profileHref = peerProfileHref(peerUid);
+    var avatarLink = $('threadAvatarLink');
+    var profileLink = $('threadProfileLink');
+    [avatarLink, profileLink].forEach(function (link) {
+      if (!link) return;
+      if (profileHref) {
+        link.setAttribute('href', profileHref);
+        link.removeAttribute('aria-disabled');
+      } else {
+        link.removeAttribute('href');
+        link.setAttribute('aria-disabled', 'true');
+      }
+    });
     var wrap = $('threadAvatar');
     if (wrap) {
       wrap.innerHTML = avatarHtml(meta.name, meta.avatarUrl, meta.avatarBg || avatarGradient(meta.name), 36, 'im-hdr-avatar');
@@ -1068,8 +1105,15 @@ applyTheme();
       var reportButton = !isMe
         ? '<button type="button" class="im-message-report" data-report-message="' + esc(m.id) + '" data-message-index="' + idx + '" aria-label="Report this message" title="Report message">•••</button>'
         : '';
+      var senderUid = !isMe ? (m.senderId || currentPeer.uid || '') : '';
+      var senderProfile = peerProfileHref(senderUid);
+      var receivedAvatar = senderProfile
+        ? '<a class="im-msg-avatar-link" href="' + esc(senderProfile) + '" aria-label="View ' + esc(currentPeer.name || 'user') + ' profile">' +
+          avatarHtml(currentPeer.name || 'User', userAvatars[String(senderUid)] || '', avatarGradient(currentPeer.name || 'User'), 30, 'im-msg-avatar') +
+          '</a>'
+        : '';
       html += '<div class="im-bubble-row ' + (isMe ? 'mine' : 'theirs') + (grouped ? ' grouped' : '') + '">' +
-        '<div class="im-bubble-shell"><div class="im-bubble' + (m.isImage ? ' is-image' : '') + '">' + renderMessageBody(m) + '</div>' +
+        '<div class="im-bubble-shell">' + receivedAvatar + '<div class="im-bubble' + (m.isImage ? ' is-image' : '') + '">' + renderMessageBody(m) + '</div>' +
         reportButton + '</div>' +
         (showTime ? '<div class="im-bubble-time">' + esc(m.clock || '') + '</div>' : '') +
       '</div>';

@@ -237,7 +237,7 @@ attachNameFormatter('name');
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { initializeAuth, browserLocalPersistence, browserPopupRedirectResolver, createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { initializeAuth, browserLocalPersistence, browserPopupRedirectResolver, createUserWithEmailAndPassword, deleteUser, updateProfile, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
@@ -592,8 +592,20 @@ document.getElementById('submitBtn').onclick = async function() {
     var userPayload = Object.assign({}, account, identity, { firebase_uid: userCredential.user.uid });
     delete userPayload.password;
     delete userPayload.oauth;
-    var saveResult = await saveUser(userPayload);
-    if (!saveResult.success) console.warn('Could not save user to Supabase:', saveResult.error);
+    var registerUrl = window.QG_CONFIG && window.QG_CONFIG.registerAccountUrl;
+    var saveResult = typeof callVerifiedFunction === 'function'
+      ? await callVerifiedFunction(registerUrl, userPayload, userCredential.user)
+      : { success: false, error: 'secure_registration_unavailable' };
+    if (!saveResult.success) {
+      if (!oauthSignupMode) {
+        try { await deleteUser(userCredential.user); } catch (deleteErr) {}
+      }
+      var registerError = new Error(saveResult.message || saveResult.error || 'Could not create account');
+      registerError.code = saveResult.error || 'registration_failed';
+      throw registerError;
+    }
+    identity.account_status = saveResult.account_status || identity.account_status;
+    identity.guardian_consent_status = saveResult.guardian_consent_status || identity.guardian_consent_status;
 
     if (typeof qgTrackEvent === 'function') {
       qgTrackEvent('sign_up', {
@@ -602,19 +614,10 @@ document.getElementById('submitBtn').onclick = async function() {
       });
     }
 
-    if (identity.account_status === 'pending_guardian' && identity.guardian_consent_token) {
-      var consentUrl = 'https://quickgigs.ca/parent-consent.html?token=' + identity.guardian_consent_token;
-      if (typeof queueGuardianConsentEmail === 'function') {
-        await queueGuardianConsentEmail({
-          userId: userCredential.user.uid,
-          guardianEmail: identity.guardian_email,
-          teenName: account.name,
-          consentUrl: consentUrl
-        });
-      }
+    if (identity.account_status === 'pending_guardian') {
       localStorage.setItem('qg-guardian-pending', JSON.stringify({
         guardianEmail: identity.guardian_email,
-        consentUrl: consentUrl
+        emailSent: saveResult.email_sent === true
       }));
     }
 
@@ -628,20 +631,27 @@ document.getElementById('submitBtn').onclick = async function() {
     }
 
     okMsg.textContent = identity.account_status === 'pending_guardian'
-      ? 'Account created Ask your parent to check their email to approve. Redirecting…'
+      ? (saveResult.email_sent
+        ? 'Account created. Ask your parent to check their email to approve. Redirecting…'
+        : 'Account created, but the approval email could not be sent. Contact support@quickgigs.ca.')
       : 'Welcome to QuickGigs 🎉 Redirecting…';
     okMsg.style.display = 'block';
 
     var dest = account.role === 'worker'
       ? 'profile.html?setup=photo&required=1&welcome=1'
       : 'thank-you.html?mode=poster&welcome=1';
-    setTimeout(function(){ window.location.href = dest; }, identity.account_status === 'pending_guardian' ? 2500 : 1500);
+    var redirectDelay = identity.account_status === 'pending_guardian'
+      ? (saveResult.email_sent ? 2500 : 6000)
+      : 1500;
+    setTimeout(function(){ window.location.href = dest; }, redirectDelay);
 
   } catch (error) {
     var message = 'Something went wrong. Try again.';
     if (error.code === 'auth/email-already-in-use') message = 'This email is already registered. Try logging in.';
     if (error.code === 'auth/invalid-email') message = 'Enter a valid email address.';
     if (error.code === 'auth/weak-password') message = 'Password is too weak. Use at least 8 characters.';
+    if (error.code === 'underage') message = 'You must be at least 16 to join QuickGigs';
+    if (error.code === 'secure_registration_unavailable') message = 'Secure signup is temporarily unavailable. Please try again.';
     errorMsg.textContent = message;
     errorMsg.style.display = 'block';
     submitBtn.textContent = 'Create account ✨';

@@ -335,6 +335,14 @@
   }
 
   async function startConnectOnboarding(workerId, email) {
+    if (typeof callVerifiedFunction === 'function') {
+      var verified = await callVerifiedFunction(
+        fnUrl('connectLinkUrl', 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-connect-link'),
+        { worker_id: String(workerId), email: email || '' }
+      );
+      if (verified.ok == null) verified.ok = verified.success === true;
+      return verified;
+    }
     if (typeof getSupabaseHeaders !== 'function') {
       return { ok: false, error: 'Database not loaded' };
     }

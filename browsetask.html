@@ -1632,6 +1632,14 @@ window.submitBrowseApplication=async function(){
       setTimeout(function(){ window.location.href = 'login.html'; }, 1200);
       return;
     }
+    if (typeof getAccountActionPermission === 'function') {
+      var applyPermission = await getAccountActionPermission(userId, 'apply');
+      if (!applyPermission.allowed) {
+        applyNotify(applyPermission.message, '#f59e0b');
+        unlockApplyBtn();
+        return;
+      }
+    }
     if (activeTask && isOwnPostedTask(activeTask)) {
       applyNotify('You cannot apply to your own task.', '#ef4444');
       unlockApplyBtn();

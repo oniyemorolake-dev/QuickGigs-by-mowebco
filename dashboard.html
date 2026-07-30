@@ -189,6 +189,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 .guardian-banner{margin:12px 20px 0;padding:14px 16px;border-radius:14px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.28);font-size:13px;line-height:1.55;color:var(--text);}
 .guardian-banner strong{display:block;margin-bottom:4px;font-weight:600;}
 .guardian-banner a{color:var(--purple-light);font-weight:500;}
+.guardian-banner button{margin-top:8px;padding:8px 12px;border:0;border-radius:10px;background:linear-gradient(135deg,var(--purple),var(--purple-light));color:#fff;font:600 12px 'Poppins',sans-serif;cursor:pointer;}
 .legal-footer a{color:var(--purple-light);text-decoration:none;}
 .legal-footer a:hover{text-decoration:underline;}
 
@@ -355,28 +356,37 @@ onAuthStateChanged(auth, async (user) => {
         var pending = {};
         try { pending = JSON.parse(localStorage.getItem('qg-guardian-pending') || '{}'); } catch (e) {}
         var email = (dbUser && dbUser.guardian_email) || pending.guardianEmail || 'your parent';
-        var link = pending.consentUrl || ('https://quickgigs.ca/parent-consent.html?token=' + (dbUser.guardian_consent_token || ''));
         banner.style.display = 'block';
         banner.className = 'guardian-banner qg-page-wide';
-        var safeLink = typeof safeUrl === 'function' ? safeUrl(link) : '';
         banner.textContent = '';
         var strong = document.createElement('strong');
         strong.textContent = '⏳ Waiting for parent approval';
         banner.appendChild(strong);
         banner.appendChild(document.createTextNode(
-          'You can browse, but posting and applying are paused until ' + String(email) + ' approves. '
+          'You can browse, but posting and applying are paused until ' + String(email) + ' approves from the secure email link.'
         ));
-        if (safeLink) {
-          var a = document.createElement('a');
-          a.href = safeLink;
-          a.target = '_blank';
-          a.rel = 'noopener';
-          a.textContent = 'Open consent link';
-          banner.appendChild(a);
-        }
+        var resend = document.createElement('button');
+        resend.type = 'button';
+        resend.textContent = 'Resend approval email';
+        resend.onclick = async function () {
+          resend.disabled = true;
+          resend.textContent = 'Sending…';
+          var url = window.QG_CONFIG && window.QG_CONFIG.resendGuardianConsentUrl;
+          var result = typeof callVerifiedFunction === 'function'
+            ? await callVerifiedFunction(url, {})
+            : { success: false };
+          resend.textContent = result.success ? 'Email sent ✓' : 'Could not send — try again';
+          if (!result.success) setTimeout(function () {
+            resend.disabled = false;
+            resend.textContent = 'Resend approval email';
+          }, 2500);
+        };
+        banner.appendChild(document.createElement('br'));
+        banner.appendChild(resend);
       }
     }
-    if (dbUser && dbUser.status === 'banned' && typeof enforceBanOnLogin === 'function') {
+    if (dbUser && (dbUser.status === 'banned' || dbUser.account_status === 'blocked') &&
+        typeof enforceBanOnLogin === 'function') {
       enforceBanOnLogin(live);
     }
   }

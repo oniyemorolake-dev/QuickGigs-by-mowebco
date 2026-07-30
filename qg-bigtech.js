@@ -557,7 +557,7 @@
   function initProfileCompleteness() {
     if (PAGE !== 'profile.html') return;
     var params = new URLSearchParams(window.location.search);
-    var viewUser = params.get('user');
+    var viewUser = params.get('user_id') || params.get('user');
     var self = window._currentUser && window._currentUser.uid;
     if (viewUser && self && String(viewUser) !== String(self)) {
       document.body.classList.add('qg-other-profile');

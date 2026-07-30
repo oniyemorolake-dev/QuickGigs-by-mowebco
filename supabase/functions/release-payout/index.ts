@@ -4,6 +4,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
+import { authErrorStatus, requireFirebaseUser } from '../_shared/firebase-auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -46,6 +47,19 @@ function isUuidLike(val: string): boolean {
   );
 }
 
+function isMinor(dateOfBirth: unknown): boolean {
+  const raw = String(dateOfBirth || '');
+  const dob = new Date(`${raw}T00:00:00Z`);
+  if (!raw || Number.isNaN(dob.getTime())) return false;
+  const now = new Date();
+  let age = now.getUTCFullYear() - dob.getUTCFullYear();
+  if (
+    now.getUTCMonth() < dob.getUTCMonth() ||
+    (now.getUTCMonth() === dob.getUTCMonth() && now.getUTCDate() < dob.getUTCDate())
+  ) age -= 1;
+  return age < 18;
+}
+
 function taskIdKeys(taskId: string, extra?: string): (string | number)[] {
   const keys: (string | number)[] = [];
   const seen = new Set<string>();
@@ -80,7 +94,7 @@ function canonicalTaskId(task: Record<string, unknown>): string {
 }
 
 async function findAcceptedAppForTaskUuid(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   taskUuid: string,
 ) {
   if (!taskUuid) return null;
@@ -89,7 +103,7 @@ async function findAcceptedAppForTaskUuid(
 }
 
 async function fetchTaskRow(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   taskId: string,
   actorId: string,
   hintPosterId?: string,
@@ -175,7 +189,7 @@ async function fetchTaskRow(
 }
 
 async function fetchAcceptedApp(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   task: Record<string, unknown>,
   inputTaskId: string,
 ) {
@@ -193,7 +207,7 @@ async function fetchAcceptedApp(
 }
 
 async function findHeldPayment(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   posterId: string,
   workerId: string,
   taskId: string,
@@ -252,15 +266,24 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
+    let identity;
+    try {
+      identity = await requireFirebaseUser(req);
+    } catch (authErr) {
+      return json({
+        ok: false,
+        error: authErr instanceof Error ? authErr.message : 'unauthorized',
+      }, authErrorStatus(authErr));
+    }
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeKey) return json({ ok: false, error: 'stripe_not_configured' }, 503);
 
     const body = await req.json();
     const inputTaskId = String(body.task_id || '').trim();
-    const actorId = String(body.actor_id || '').trim();
+    const actorId = identity.uid;
     const hintPosterId = String(body.poster_id || '').trim();
     const hintWorkerId = String(body.worker_id || '').trim();
-    if (!inputTaskId || !actorId) return json({ ok: false, error: 'missing_task_or_actor' }, 400);
+    if (!inputTaskId) return json({ ok: false, error: 'missing_task' }, 400);
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -317,13 +340,22 @@ Deno.serve(async (req) => {
 
     const { data: workerUser } = await supabase
       .from('users')
-      .select('stripe_connect_id, stripe_payouts_enabled')
+      .select('date_of_birth,guardian_consent_status,guardian_stripe_connect_id,guardian_stripe_payouts_enabled,stripe_connect_id,stripe_payouts_enabled')
       .eq('firebase_uid', workerId)
       .maybeSingle();
 
-    const connectId = workerUser?.stripe_connect_id || '';
+    const guardianOwnsPayout = isMinor(workerUser?.date_of_birth);
+    if (guardianOwnsPayout && workerUser?.guardian_consent_status !== 'approved') {
+      return json({ ok: false, error: 'guardian_consent_required' }, 400);
+    }
+    const connectId = guardianOwnsPayout
+      ? (workerUser?.guardian_stripe_connect_id || '')
+      : (workerUser?.stripe_connect_id || '');
     if (!connectId) {
-      return json({ ok: false, error: 'worker_payout_setup_required' }, 400);
+      return json({
+        ok: false,
+        error: guardianOwnsPayout ? 'guardian_payout_setup_required' : 'worker_payout_setup_required',
+      }, 400);
     }
 
     const workerPayout = Number(getField(payment, 'worker_payout') || 0);
@@ -333,6 +365,13 @@ Deno.serve(async (req) => {
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
+    const destinationAccount = await stripe.accounts.retrieve(connectId);
+    if (!destinationAccount.payouts_enabled) {
+      return json({
+        ok: false,
+        error: guardianOwnsPayout ? 'guardian_payout_setup_incomplete' : 'worker_payout_setup_incomplete',
+      }, 400);
+    }
     const paymentIntentId = String(getField(payment, 'stripe_id') || '');
 
     let sourceTransaction: string | undefined;
@@ -365,6 +404,7 @@ Deno.serve(async (req) => {
         task_id: taskUuid || inputTaskId,
         worker_id: workerId,
         poster_id: posterId,
+        payout_owner: guardianOwnsPayout ? 'guardian' : 'worker',
       },
     });
 
@@ -382,6 +422,7 @@ Deno.serve(async (req) => {
       ok: true,
       transfer_id: transfer.id,
       worker_payout: workerPayout,
+      payout_owner: guardianOwnsPayout ? 'guardian' : 'worker',
       platform_fee: Number(getField(payment, 'platform_fee') || 0),
       amount: Number(getField(payment, 'amount') || 0),
     });

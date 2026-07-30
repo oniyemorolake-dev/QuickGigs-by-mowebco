@@ -41,12 +41,18 @@ CREATE TABLE IF NOT EXISTS users (
   guardian_phone            TEXT,
   guardian_consent_status   TEXT DEFAULT 'not_required',
   guardian_consent_at       TIMESTAMPTZ,
+  guardian_consent_sent_at  TIMESTAMPTZ,
   guardian_consent_token    TEXT,
+  consent_token             TEXT,
+  consent_token_expires_at  TIMESTAMPTZ,
+  consent_accepted_at       TIMESTAMPTZ,
   email_verified            BOOLEAN NOT NULL DEFAULT FALSE,
   is_verified               BOOLEAN NOT NULL DEFAULT FALSE,
   is_subscriber             BOOLEAN NOT NULL DEFAULT FALSE,
   stripe_connect_id         TEXT,
   stripe_payouts_enabled    BOOLEAN DEFAULT FALSE,
+  guardian_stripe_connect_id TEXT,
+  guardian_stripe_payouts_enabled BOOLEAN DEFAULT FALSE,
   review_flag               BOOLEAN NOT NULL DEFAULT FALSE,
   created_at                TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -74,9 +80,15 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS guardian_phone TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS guardian_consent_status TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS guardian_consent_at TIMESTAMPTZ;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS guardian_consent_token TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS guardian_consent_sent_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS consent_token TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS consent_token_expires_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS consent_accepted_at TIMESTAMPTZ;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_subscriber BOOLEAN;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS guardian_stripe_connect_id TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS guardian_stripe_payouts_enabled BOOLEAN;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_connect_id TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_payouts_enabled BOOLEAN;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS review_flag BOOLEAN;
