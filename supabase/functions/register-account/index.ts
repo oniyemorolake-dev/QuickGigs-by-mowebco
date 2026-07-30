@@ -75,6 +75,16 @@ Deno.serve(async (req) => {
     }
 
     const isTeen = age < 18;
+    const startingRole = String(body.starting_role || body.role || 'worker').toLowerCase() === 'poster'
+      ? 'poster'
+      : 'tasker';
+    if (isTeen && startingRole === 'poster') {
+      return json({
+        ok: false,
+        error: 'teen_poster_unavailable',
+        message: 'Poster mode becomes available when you turn 18.',
+      }, 403);
+    }
     const guardianName = String(body.guardian_name || '').trim().slice(0, 120);
     const guardianEmail = String(body.guardian_email || '').trim().toLowerCase().slice(0, 254);
     const guardianPhone = String(body.guardian_phone || '').trim().slice(0, 30);
@@ -104,7 +114,11 @@ Deno.serve(async (req) => {
       name: String(body.name || '').trim().slice(0, 120),
       email: identity.email || String(body.email || '').trim().toLowerCase(),
       phone: String(body.phone || '').trim().slice(0, 30),
-      role: String(body.role || 'poster') === 'worker' ? 'worker' : 'poster',
+      role: startingRole === 'tasker' ? 'worker' : 'poster',
+      is_tasker: startingRole === 'tasker',
+      is_poster: startingRole === 'poster',
+      last_active_mode: startingRole,
+      roles_updated_at: now,
       status: 'active',
       account_status: isTeen ? 'pending_guardian' : 'active',
       date_of_birth: dateOfBirth,
@@ -120,6 +134,13 @@ Deno.serve(async (req) => {
       consent_token: tokenHash,
       consent_token_expires_at: tokenExpires,
       consent_accepted_at: null,
+      graduated_at: null,
+      payout_owner: isTeen ? 'guardian' : 'self',
+      tasker_verified: false,
+      tasker_verification_status: 'unverified',
+      tasker_background_check_status: 'not_started',
+      poster_verified: false,
+      poster_verification_status: 'unverified',
       email_verified: identity.emailVerified,
     };
 

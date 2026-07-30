@@ -25,6 +25,10 @@ CREATE TABLE IF NOT EXISTS users (
   phone                     TEXT,
   avatar_url                TEXT,
   role                      TEXT DEFAULT 'poster',
+  is_tasker                 BOOLEAN NOT NULL DEFAULT TRUE,
+  is_poster                 BOOLEAN NOT NULL DEFAULT FALSE,
+  last_active_mode          TEXT NOT NULL DEFAULT 'tasker',
+  roles_updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   status                    TEXT DEFAULT 'active',
   account_status            TEXT DEFAULT 'active',
   bio                       TEXT,
@@ -48,11 +52,24 @@ CREATE TABLE IF NOT EXISTS users (
   consent_accepted_at       TIMESTAMPTZ,
   email_verified            BOOLEAN NOT NULL DEFAULT FALSE,
   is_verified               BOOLEAN NOT NULL DEFAULT FALSE,
+  tasker_verified           BOOLEAN NOT NULL DEFAULT FALSE,
+  tasker_verified_at        TIMESTAMPTZ,
+  tasker_verification_status TEXT NOT NULL DEFAULT 'unverified',
+  tasker_identity_session_id TEXT,
+  tasker_background_check_status TEXT NOT NULL DEFAULT 'not_started',
+  tasker_background_checked_at TIMESTAMPTZ,
+  poster_verified           BOOLEAN NOT NULL DEFAULT FALSE,
+  poster_verified_at        TIMESTAMPTZ,
+  poster_verification_status TEXT NOT NULL DEFAULT 'unverified',
+  poster_stripe_customer_id TEXT,
+  poster_payment_method_id  TEXT,
   is_subscriber             BOOLEAN NOT NULL DEFAULT FALSE,
   stripe_connect_id         TEXT,
   stripe_payouts_enabled    BOOLEAN DEFAULT FALSE,
   guardian_stripe_connect_id TEXT,
   guardian_stripe_payouts_enabled BOOLEAN DEFAULT FALSE,
+  graduated_at              TIMESTAMPTZ,
+  payout_owner              TEXT NOT NULL DEFAULT 'self',
   review_flag               BOOLEAN NOT NULL DEFAULT FALSE,
   created_at                TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -63,6 +80,10 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_tasker BOOLEAN;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_poster BOOLEAN;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_active_mode TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS roles_updated_at TIMESTAMPTZ;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS status TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS account_status TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT;
@@ -86,13 +107,75 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS consent_token_expires_at TIMESTAMPTZ;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS consent_accepted_at TIMESTAMPTZ;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS tasker_verified BOOLEAN;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS tasker_verified_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS tasker_verification_status TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS tasker_identity_session_id TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS tasker_background_check_status TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS tasker_background_checked_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS poster_verified BOOLEAN;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS poster_verified_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS poster_verification_status TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS poster_stripe_customer_id TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS poster_payment_method_id TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_subscriber BOOLEAN;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS guardian_stripe_connect_id TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS guardian_stripe_payouts_enabled BOOLEAN;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS graduated_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS payout_owner TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_connect_id TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_payouts_enabled BOOLEAN;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS review_flag BOOLEAN;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+
+UPDATE users
+SET is_tasker = TRUE,
+    is_poster = TRUE,
+    last_active_mode = CASE WHEN LOWER(COALESCE(role, '')) = 'worker' THEN 'tasker' ELSE 'poster' END,
+    roles_updated_at = COALESCE(roles_updated_at, NOW())
+WHERE is_tasker IS NULL OR is_poster IS NULL OR last_active_mode IS NULL OR roles_updated_at IS NULL;
+UPDATE users
+SET is_tasker = TRUE, is_poster = FALSE, last_active_mode = 'tasker', roles_updated_at = NOW()
+WHERE date_of_birth IS NOT NULL
+  AND date_of_birth > (CURRENT_DATE - INTERVAL '18 years')::DATE;
+ALTER TABLE users ALTER COLUMN is_tasker SET DEFAULT TRUE;
+ALTER TABLE users ALTER COLUMN is_poster SET DEFAULT FALSE;
+ALTER TABLE users ALTER COLUMN last_active_mode SET DEFAULT 'tasker';
+ALTER TABLE users ALTER COLUMN roles_updated_at SET DEFAULT NOW();
+ALTER TABLE users ALTER COLUMN is_tasker SET NOT NULL;
+ALTER TABLE users ALTER COLUMN is_poster SET NOT NULL;
+ALTER TABLE users ALTER COLUMN last_active_mode SET NOT NULL;
+ALTER TABLE users ALTER COLUMN roles_updated_at SET NOT NULL;
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_has_role_check;
+ALTER TABLE users ADD CONSTRAINT users_has_role_check CHECK (is_tasker OR is_poster);
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_last_active_mode_check;
+ALTER TABLE users ADD CONSTRAINT users_last_active_mode_check
+  CHECK (
+    (last_active_mode = 'tasker' AND is_tasker) OR
+    (last_active_mode = 'poster' AND is_poster)
+  );
+
+UPDATE users SET payout_owner = 'self' WHERE payout_owner IS NULL;
+ALTER TABLE users ALTER COLUMN payout_owner SET DEFAULT 'self';
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_payout_owner_check;
+ALTER TABLE users ADD CONSTRAINT users_payout_owner_check
+  CHECK (payout_owner IN ('guardian', 'self'));
+UPDATE users SET tasker_verified = FALSE WHERE tasker_verified IS NULL;
+UPDATE users SET poster_verified = FALSE WHERE poster_verified IS NULL;
+UPDATE users SET tasker_verification_status = 'unverified' WHERE tasker_verification_status IS NULL;
+UPDATE users SET poster_verification_status = 'unverified' WHERE poster_verification_status IS NULL;
+UPDATE users SET tasker_background_check_status = 'not_started' WHERE tasker_background_check_status IS NULL;
+ALTER TABLE users ALTER COLUMN tasker_verified SET DEFAULT FALSE;
+ALTER TABLE users ALTER COLUMN poster_verified SET DEFAULT FALSE;
+ALTER TABLE users ALTER COLUMN tasker_verification_status SET DEFAULT 'unverified';
+ALTER TABLE users ALTER COLUMN poster_verification_status SET DEFAULT 'unverified';
+ALTER TABLE users ALTER COLUMN tasker_background_check_status SET DEFAULT 'not_started';
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_tasker_verification_status_check;
+ALTER TABLE users ADD CONSTRAINT users_tasker_verification_status_check
+  CHECK (tasker_verification_status IN ('unverified', 'pending', 'verified', 'rejected'));
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_poster_verification_status_check;
+ALTER TABLE users ADD CONSTRAINT users_poster_verification_status_check
+  CHECK (poster_verification_status IN ('unverified', 'pending', 'verified', 'failed'));
 
 -- ---------- tasks ----------
 -- Live: SELECT_TASKS_BROWSE / DETAIL — task_mode (not mode); rate_type, is_recurring, etc.
@@ -120,6 +203,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   lat                DOUBLE PRECISION,
   lng                DOUBLE PRECISION,
   precise_address    TEXT,
+  age_preference     TEXT NOT NULL DEFAULT 'adults_only',
   created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -145,7 +229,11 @@ ALTER TABLE tasks ADD COLUMN IF NOT EXISTS est_hours NUMERIC(6,2);
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS lng DOUBLE PRECISION;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS precise_address TEXT;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS age_preference TEXT;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+
+UPDATE tasks SET age_preference = 'adults_only' WHERE age_preference IS NULL;
+ALTER TABLE tasks ALTER COLUMN age_preference SET DEFAULT 'adults_only';
 
 ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_rate_type_check;
 ALTER TABLE tasks ADD CONSTRAINT tasks_rate_type_check
@@ -154,6 +242,26 @@ ALTER TABLE tasks ADD CONSTRAINT tasks_rate_type_check
 ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_frequency_check;
 ALTER TABLE tasks ADD CONSTRAINT tasks_frequency_check
   CHECK (frequency IS NULL OR frequency IN ('weekly', 'biweekly', 'monthly'));
+
+ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_age_preference_check;
+ALTER TABLE tasks ADD CONSTRAINT tasks_age_preference_check
+  CHECK (age_preference IN ('adults_only', 'teens_welcome', 'any_with_guardian'));
+
+UPDATE tasks
+SET lat = NULL, lng = NULL
+WHERE (lat IS NULL) <> (lng IS NULL)
+   OR lat NOT BETWEEN 41.5 AND 83.5
+   OR lng NOT BETWEEN -141.1 AND -52.5;
+
+ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_coordinates_pair_check;
+ALTER TABLE tasks ADD CONSTRAINT tasks_coordinates_pair_check
+  CHECK ((lat IS NULL AND lng IS NULL) OR (lat IS NOT NULL AND lng IS NOT NULL));
+ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_coordinates_range_check;
+ALTER TABLE tasks ADD CONSTRAINT tasks_coordinates_range_check
+  CHECK (
+    lat IS NULL OR
+    (lat BETWEEN 41.5 AND 83.5 AND lng BETWEEN -141.1 AND -52.5)
+  );
 
 -- ---------- applications ----------
 -- Live: SELECT_APPLICATIONS — app_id, counter_* negotiation columns
@@ -169,6 +277,9 @@ CREATE TABLE IF NOT EXISTS applications (
   counter_by       TEXT,
   counter_round    INT NOT NULL DEFAULT 0,
   last_counter_at  TIMESTAMPTZ,
+  guardian_status  TEXT NOT NULL DEFAULT 'approved',
+  guardian_reviewed_at TIMESTAMPTZ,
+  guardian_distance_km NUMERIC(7,2),
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -182,7 +293,17 @@ ALTER TABLE applications ADD COLUMN IF NOT EXISTS counter_price NUMERIC;
 ALTER TABLE applications ADD COLUMN IF NOT EXISTS counter_by TEXT;
 ALTER TABLE applications ADD COLUMN IF NOT EXISTS counter_round INT;
 ALTER TABLE applications ADD COLUMN IF NOT EXISTS last_counter_at TIMESTAMPTZ;
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS guardian_status TEXT;
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS guardian_reviewed_at TIMESTAMPTZ;
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS guardian_distance_km NUMERIC(7,2);
 ALTER TABLE applications ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+
+UPDATE applications SET guardian_status = 'approved' WHERE guardian_status IS NULL;
+ALTER TABLE applications ALTER COLUMN guardian_status SET DEFAULT 'approved';
+
+ALTER TABLE applications DROP CONSTRAINT IF EXISTS applications_guardian_status_check;
+ALTER TABLE applications ADD CONSTRAINT applications_guardian_status_check
+  CHECK (guardian_status IN ('pending_guardian', 'approved', 'rejected'));
 
 -- ---------- payments ----------
 -- Live: SELECT_PAYMENTS
@@ -253,6 +374,7 @@ CREATE TABLE IF NOT EXISTS conversations (
   is_unlocked           BOOLEAN NOT NULL DEFAULT FALSE,
   last_message          TEXT,
   last_message_at       TIMESTAMPTZ,
+  last_sender_id        TEXT,
   poster_last_read_at   TIMESTAMPTZ,
   worker_last_read_at   TIMESTAMPTZ,
   created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -270,6 +392,7 @@ ALTER TABLE conversations ADD COLUMN IF NOT EXISTS status TEXT;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS is_unlocked BOOLEAN;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS last_message TEXT;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS last_message_at TIMESTAMPTZ;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS last_sender_id TEXT;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS poster_last_read_at TIMESTAMPTZ;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS worker_last_read_at TIMESTAMPTZ;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;

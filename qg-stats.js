@@ -168,24 +168,16 @@
   window.enforceBanOnLogin = enforceBanOnLogin;
 
   async function isWorkerVerified(userId, userRow, stats) {
-    if (userRow && (userRow.is_verified === true || userRow.is_verified === 'true')) return true;
-    if (userRow && userRow.IS_VERIFIED === true) return true;
-    if (!userId) return false;
-    stats = stats || (typeof fetchUserTrustStats === 'function' ? await fetchUserTrustStats(userId) : null);
-    var photoOk = typeof hasProfilePhotoUrl === 'function' && userRow && hasProfilePhotoUrl(userRow.avatar_url);
-    if (!photoOk && typeof resolveUserAvatarUrl === 'function') {
-      var av = await resolveUserAvatarUrl(userId);
-      photoOk = typeof hasProfilePhotoUrl === 'function' && hasProfilePhotoUrl(av);
-    }
-    if (!stats || !photoOk) return false;
-    return (stats.completedCount || 0) >= 3 &&
-      (stats.avgRating == null || stats.avgRating >= 4) &&
-      (stats.completionRate == null || stats.completionRate >= 70);
+    return !!(userRow && (
+      userRow.tasker_verified === true ||
+      userRow.tasker_verified === 'true' ||
+      userRow.TASKER_VERIFIED === true
+    ));
   }
 
   function renderVerifiedBadge(isVerified) {
     if (!isVerified) return '';
-    return '<span class="qg-verified-badge" title="Verified tasker — photo on file, strong completion history, and positive reviews">✓ Verified</span>';
+    return '<span class="qg-verified-badge" title="QuickGigs identity verified">✓ Identity verified</span>';
   }
 
   window.isWorkerVerified = isWorkerVerified;

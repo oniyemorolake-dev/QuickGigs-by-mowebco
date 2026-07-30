@@ -16,6 +16,8 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS guardian_consent_sent_at TIMES
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS guardian_consent_token TEXT;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS guardian_stripe_connect_id TEXT;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS guardian_stripe_payouts_enabled BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS graduated_at TIMESTAMPTZ;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS payout_owner TEXT NOT NULL DEFAULT 'self';
 
 UPDATE public.users SET account_status = 'blocked'
 WHERE account_status IN ('suspended', 'rejected');
@@ -59,7 +61,9 @@ BEGIN
     NEW.consent_token IS DISTINCT FROM OLD.consent_token OR
     NEW.consent_accepted_at IS DISTINCT FROM OLD.consent_accepted_at OR
     NEW.guardian_stripe_connect_id IS DISTINCT FROM OLD.guardian_stripe_connect_id OR
-    NEW.guardian_stripe_payouts_enabled IS DISTINCT FROM OLD.guardian_stripe_payouts_enabled
+    NEW.guardian_stripe_payouts_enabled IS DISTINCT FROM OLD.guardian_stripe_payouts_enabled OR
+    NEW.graduated_at IS DISTINCT FROM OLD.graduated_at OR
+    NEW.payout_owner IS DISTINCT FROM OLD.payout_owner
   ) THEN
     RAISE EXCEPTION 'security_fields_are_server_managed' USING ERRCODE = '42501';
   END IF;

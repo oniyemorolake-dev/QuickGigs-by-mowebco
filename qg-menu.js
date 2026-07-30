@@ -111,28 +111,43 @@
   function appMenuSections() {
     var worker = typeof isWorkerMode === 'function' && isWorkerMode();
     var mode = worker ? 'worker' : 'poster';
+    var access = typeof window.QG_getRoleAccess === 'function' ? window.QG_getRoleAccess() : null;
+    var targetMode = worker ? 'poster' : 'tasker';
+    var hasTarget = !access || (targetMode === 'poster' ? access.is_poster : access.is_tasker);
+    var canOfferTarget = !(access && access.is_teen && targetMode === 'poster');
     var sections = [];
 
+    var accountItems = [
+      { type: 'link', href: 'profile.html', icon: '👤', label: 'Profile' }
+    ];
+    if (canOfferTarget) {
+      accountItems.push({
+        type: 'action',
+        action: 'switchMode',
+        icon: hasTarget ? '🔄' : (worker ? '📋' : '💼'),
+        label: hasTarget
+          ? (worker ? 'Switch to Poster' : 'Switch to Tasker')
+          : (worker ? 'Become a Poster' : 'Start finding work')
+      });
+    }
     sections.push({
       label: 'Account',
-      items: [
-        { type: 'link', href: 'profile.html', icon: '👤', label: 'Profile' },
-        { type: 'action', action: 'switchMode', icon: '🔄', label: worker ? 'Switch to Poster' : 'Switch to Tasker' }
-      ]
+      items: accountItems
     });
 
+    var goItems = [
+      { type: 'link', href: 'dashboard.html', icon: '🏠', label: 'Home' },
+      worker
+        ? { type: 'link', href: 'browsetask.html', icon: '🔍', label: 'Browse tasks' }
+        : { type: 'link', href: 'posttask.html', icon: '➕', label: 'Post a task' },
+      { type: 'link', href: 'mytasks.html', icon: '📋', label: worker ? 'My jobs' : 'My tasks' },
+      { type: 'link', href: 'messages.html', icon: '💬', label: 'Messages' }
+    ];
+    if (worker) goItems.push({ type: 'link', href: 'categories.html', icon: '🏷️', label: 'Categories' });
+    else goItems.push({ type: 'link', href: 'workers.html', icon: '👥', label: 'Find taskers' });
     sections.push({
       label: 'Go to',
-      items: [
-        { type: 'link', href: 'dashboard.html', icon: '🏠', label: 'Home' },
-        worker
-          ? { type: 'link', href: 'browsetask.html', icon: '🔍', label: 'Browse tasks' }
-          : { type: 'link', href: 'posttask.html', icon: '➕', label: 'Post a task' },
-        { type: 'link', href: 'mytasks.html', icon: '📋', label: worker ? 'My jobs' : 'My tasks' },
-        { type: 'link', href: 'messages.html', icon: '💬', label: 'Messages' },
-        { type: 'link', href: 'workers.html', icon: '👥', label: 'Find taskers' },
-        { type: 'link', href: 'categories.html', icon: '🏷️', label: 'Categories' }
-      ]
+      items: goItems
     });
 
     sections.push({
@@ -315,6 +330,10 @@
       }
     }
   }
+
+  document.addEventListener('qg-role-access-changed', function () {
+    if (overlay && overlay.classList.contains('open')) refreshContent();
+  });
 
   function openMenu() {
     if (open) return;

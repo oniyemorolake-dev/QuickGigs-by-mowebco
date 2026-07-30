@@ -5,6 +5,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { feeBreakdown, periodTotal } from '../_shared/fee.ts';
+import { authErrorStatus, requireFirebaseUser } from '../_shared/firebase-auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -108,7 +109,7 @@ function canonicalTaskId(task: Record<string, unknown>): string {
 }
 
 async function findAcceptedAppForTaskUuid(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   taskUuid: string,
 ) {
   if (!taskUuid) return null;
@@ -118,7 +119,7 @@ async function findAcceptedAppForTaskUuid(
 }
 
 async function matchInProgressTaskByWorker(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   tasks: Record<string, unknown>[],
   workerId: string,
 ) {
@@ -132,7 +133,7 @@ async function matchInProgressTaskByWorker(
 }
 
 async function fetchInProgressPosterTasks(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   posterId: string,
 ) {
   const { data, error } = await supabase
@@ -145,7 +146,7 @@ async function fetchInProgressPosterTasks(
 }
 
 async function fetchTaskRow(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   taskId: string,
   posterId: string,
 ) {
@@ -211,7 +212,7 @@ async function fetchTaskRow(
 }
 
 async function fetchAcceptedApp(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   task: Record<string, unknown>,
   inputTaskId: string,
 ) {
@@ -236,7 +237,7 @@ async function fetchAcceptedApp(
 }
 
 async function upsertPendingPayment(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   row: Record<string, unknown>,
 ) {
   const taskId = String(row.task_id || '');
@@ -286,6 +287,14 @@ async function upsertPendingPayment(
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (req.method !== 'POST') return json({ ok: false, error: 'method_not_allowed' }, 405);
+
+  let identity;
+  try {
+    identity = await requireFirebaseUser(req);
+  } catch (err) {
+    return json({ ok: false, error: err instanceof Error ? err.message : 'unauthorized' }, authErrorStatus(err));
+  }
 
   try {
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
@@ -299,10 +308,38 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const taskId = String(body.task_id || '').trim();
-    const posterId = String(body.poster_id || '').trim();
+    const requestedPosterId = String(body.poster_id || '').trim();
+    const posterId = identity.uid;
     if (!taskId || !posterId) return json({ ok: false, error: 'missing_task_or_poster' }, 400);
+    if (requestedPosterId && requestedPosterId !== posterId) {
+      return json({ ok: false, error: 'poster_identity_mismatch' }, 403);
+    }
 
     const supabase = createClient(supabaseUrl, serviceKey);
+    const { data: posterUser, error: posterUserError } = await supabase
+      .from('users')
+      .select('account_status,status,is_poster,poster_verified,poster_verification_status,poster_stripe_customer_id,poster_payment_method_id')
+      .eq('firebase_uid', posterId)
+      .maybeSingle();
+    if (posterUserError) throw posterUserError;
+    if (
+      !posterUser ||
+      posterUser.account_status !== 'active' ||
+      ['banned', 'blocked', 'suspended'].includes(String(posterUser.status || '').toLowerCase())
+    ) return json({ ok: false, error: 'account_not_active' }, 403);
+    if (posterUser.is_poster !== true) {
+      return json({ ok: false, error: 'poster_role_required' }, 403);
+    }
+    if (
+      posterUser.poster_verified !== true ||
+      !String(posterUser.poster_payment_method_id || '').trim()
+    ) {
+      return json({
+        ok: false,
+        error: 'poster_payment_verification_required',
+        verification_status: posterUser.poster_verification_status || 'unverified',
+      }, 403);
+    }
 
     const { task, error: taskErr } = await fetchTaskRow(supabase, taskId, posterId);
     if (!task) {
@@ -418,6 +455,7 @@ Deno.serve(async (req) => {
     try {
       session = await stripe.checkout.sessions.create({
         mode: 'payment',
+        customer: String(posterUser.poster_stripe_customer_id || '') || undefined,
         ui_mode: 'embedded',
         redirect_on_completion: 'never',
         currency: 'cad',

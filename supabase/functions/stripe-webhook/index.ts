@@ -1,8 +1,10 @@
-// QuickGigs — Stripe webhook (checkout completed → unlock chat)
+// QuickGigs — Stripe payments plus role-verification webhook.
 // Deploy: supabase functions deploy stripe-webhook --no-verify-jwt
 // Secrets: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
 // Stripe Dashboard → Webhooks → endpoint URL = .../functions/v1/stripe-webhook
-// Events: checkout.session.completed
+// Events: checkout.session.completed, identity.verification_session.verified,
+// identity.verification_session.requires_input, identity.verification_session.canceled,
+// payment_method.detached
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
@@ -27,6 +29,53 @@ Deno.serve(async (req) => {
     return new Response('Invalid signature', { status: 400 });
   }
 
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
+
+  if (
+    event.type === 'identity.verification_session.verified' ||
+    event.type === 'identity.verification_session.requires_input' ||
+    event.type === 'identity.verification_session.canceled'
+  ) {
+    const verification = event.data.object as Stripe.Identity.VerificationSession;
+    if (
+      verification.metadata?.project !== 'quickgigs' ||
+      verification.metadata?.purpose !== 'tasker_identity' ||
+      !verification.metadata?.firebase_uid
+    ) {
+      return new Response(JSON.stringify({ ignored: true }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    const verified = event.type === 'identity.verification_session.verified';
+    await supabase.from('users').update({
+      tasker_verified: verified,
+      tasker_verified_at: verified ? new Date().toISOString() : null,
+      tasker_verification_status: verified
+        ? 'verified'
+        : event.type === 'identity.verification_session.requires_input' ? 'rejected' : 'unverified',
+    }).eq('firebase_uid', verification.metadata.firebase_uid)
+      .eq('tasker_identity_session_id', verification.id);
+    return new Response(JSON.stringify({ received: true, verification: 'tasker' }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (event.type === 'payment_method.detached') {
+    const paymentMethod = event.data.object as Stripe.PaymentMethod;
+    await supabase.from('users').update({
+      poster_verified: false,
+      poster_verified_at: null,
+      poster_verification_status: 'failed',
+      poster_payment_method_id: null,
+    }).eq('poster_payment_method_id', paymentMethod.id);
+    return new Response(JSON.stringify({ received: true, verification: 'poster_revoked' }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   if (event.type !== 'checkout.session.completed') {
     return new Response(JSON.stringify({ received: true }), {
       headers: { 'Content-Type': 'application/json' },
@@ -36,6 +85,30 @@ Deno.serve(async (req) => {
   const session = event.data.object as Stripe.Checkout.Session;
   if (session.metadata?.project !== 'quickgigs') {
     return new Response(JSON.stringify({ ignored: true }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (
+    session.metadata?.purpose === 'poster_payment_method' &&
+    session.metadata?.firebase_uid
+  ) {
+    const expanded = await stripe.checkout.sessions.retrieve(session.id, {
+      expand: ['setup_intent'],
+    });
+    const setupIntent = expanded.setup_intent as Stripe.SetupIntent | null;
+    const paymentMethod = setupIntent && typeof setupIntent.payment_method === 'string'
+      ? setupIntent.payment_method
+      : setupIntent?.payment_method?.id || '';
+    if (expanded.status === 'complete' && setupIntent?.status === 'succeeded' && paymentMethod) {
+      await supabase.from('users').update({
+        poster_verified: true,
+        poster_verified_at: new Date().toISOString(),
+        poster_verification_status: 'verified',
+        poster_payment_method_id: paymentMethod,
+      }).eq('firebase_uid', session.metadata.firebase_uid);
+    }
+    return new Response(JSON.stringify({ received: true, verification: 'poster' }), {
       headers: { 'Content-Type': 'application/json' },
     });
   }
@@ -50,11 +123,6 @@ Deno.serve(async (req) => {
   if (!taskId || !posterId || !workerId) {
     return new Response('Missing metadata', { status: 400 });
   }
-
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  );
 
   const heldPatch = {
     status: 'held',

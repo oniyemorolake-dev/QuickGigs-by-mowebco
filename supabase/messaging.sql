@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS conversations (
   is_unlocked       BOOLEAN NOT NULL DEFAULT FALSE,
   last_message      TEXT,
   last_message_at   TIMESTAMPTZ,
+  last_sender_id    TEXT,
   poster_last_read_at TIMESTAMPTZ,
   worker_last_read_at TIMESTAMPTZ,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -42,21 +43,20 @@ CREATE TABLE IF NOT EXISTS messages (
 
 CREATE INDEX IF NOT EXISTS messages_conv_created_idx ON messages (conv_id, created_at ASC);
 
--- Row Level Security (open for beta — matches existing anon REST pattern)
+-- Row Level Security: browser access is handled by the Firebase-authenticated
+-- secure-messaging Edge Function. Run messaging-secure.sql for participant policies,
+-- relationship triggers, grants, and revocations.
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "anon_select_conversations" ON conversations;
 DROP POLICY IF EXISTS "anon_insert_conversations" ON conversations;
 DROP POLICY IF EXISTS "anon_update_conversations" ON conversations;
-CREATE POLICY "anon_select_conversations" ON conversations FOR SELECT TO anon USING (true);
-CREATE POLICY "anon_insert_conversations" ON conversations FOR INSERT TO anon WITH CHECK (true);
-CREATE POLICY "anon_update_conversations" ON conversations FOR UPDATE TO anon USING (true);
 
 DROP POLICY IF EXISTS "anon_select_messages" ON messages;
 DROP POLICY IF EXISTS "anon_insert_messages" ON messages;
-CREATE POLICY "anon_select_messages" ON messages FOR SELECT TO anon USING (true);
-CREATE POLICY "anon_insert_messages" ON messages FOR INSERT TO anon WITH CHECK (true);
+REVOKE ALL ON conversations FROM anon;
+REVOKE ALL ON messages FROM anon;
 
 -- Optional: enable Supabase Realtime for live message updates (Dashboard → Database → Replication)
 -- ALTER PUBLICATION supabase_realtime ADD TABLE messages;

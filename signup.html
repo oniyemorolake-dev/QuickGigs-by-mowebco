@@ -78,17 +78,18 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
             <div class="signup-perk"><span>🤝</span> Connect with trusted local taskers</div>
           </div>
           <div class="signup-role-grid">
-            <button type="button" class="signup-role active" onclick="setRole('poster',this)">
-              <span class="signup-role-emoji">📋</span>
-              <span class="signup-role-label">I need help</span>
-              <span class="signup-role-desc">Post tasks &amp; hire taskers</span>
-            </button>
-            <button type="button" class="signup-role" onclick="setRole('worker',this)">
+            <button type="button" class="signup-role active" data-start-role="worker" onclick="setRole('worker',this)">
               <span class="signup-role-emoji">💰</span>
-              <span class="signup-role-label">I want to earn</span>
-              <span class="signup-role-desc">browse tasks &amp; get paid</span>
+              <span class="signup-role-label">Find work</span>
+              <span class="signup-role-desc">Tasker mode · browse gigs and earn</span>
+            </button>
+            <button type="button" class="signup-role" data-start-role="poster" onclick="setRole('poster',this)">
+              <span class="signup-role-emoji">📋</span>
+              <span class="signup-role-label">Post tasks</span>
+              <span class="signup-role-desc">Poster mode · hire local taskers</span>
             </button>
           </div>
+          <p class="signup-role-note" id="signupRoleNote">Choose how you want to start. You can enable the second mode later.</p>
           <div class="signup-field"><label for="name">Full name <span class="req">*</span></label><input type="text" id="name" placeholder="Your full name" autocomplete="name" enterkeyhint="next" required><div class="signup-error" id="nameError">Enter your full name</div></div>
           <div class="signup-field"><label for="email">Email address <span class="req">*</span></label><input type="email" id="email" placeholder="you@example.com" autocomplete="email" enterkeyhint="next" required><div class="signup-error" id="emailError">Enter a valid email</div></div>
           <div class="qg-wizard-nav"><button type="button" class="signup-btn" data-qg-next>Continue →</button></div>
@@ -196,7 +197,7 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
         </div>
       </div>
 
-      <input type="hidden" id="roleInput" value="poster">
+      <input type="hidden" id="roleInput" value="worker">
 
       <p class="qg-pipeda-line">🔒 Your data is protected under Canadian privacy law (PIPEDA)</p>
       <div class="signup-trust">
@@ -447,6 +448,7 @@ for (var i = 0; i < 100; i++) {
 }
 
 window.setRole = function(role, btn) {
+  if (role === 'poster' && btn && btn.classList.contains('is-teen-hidden')) return;
   document.querySelectorAll('.signup-role').forEach(function(b){ b.classList.remove('active'); });
   btn.classList.add('active');
   document.getElementById('roleInput').value = role;
@@ -454,11 +456,28 @@ window.setRole = function(role, btn) {
 
 (function applySignupRoleFromUrl() {
   var roleParam = new URLSearchParams(window.location.search).get('role');
-  if (roleParam === 'worker') {
-    var workerBtn = document.querySelector('.signup-role[onclick*="worker"]');
-    if (workerBtn) setRole('worker', workerBtn);
+  var normalized = roleParam === 'poster' ? 'poster' : (roleParam === 'worker' || roleParam === 'tasker' ? 'worker' : '');
+  if (normalized) {
+    var roleBtn = document.querySelector('.signup-role[data-start-role="' + normalized + '"]');
+    if (roleBtn) setRole(normalized, roleBtn);
   }
 })();
+
+document.addEventListener('qg-signup-age-changed', function(event) {
+  var isTeen = !!(event.detail && event.detail.isTeen);
+  var posterBtn = document.querySelector('.signup-role[data-start-role="poster"]');
+  var taskerBtn = document.querySelector('.signup-role[data-start-role="worker"]');
+  var grid = document.querySelector('.signup-role-grid');
+  var note = document.getElementById('signupRoleNote');
+  if (posterBtn) posterBtn.classList.toggle('is-teen-hidden', isTeen);
+  if (grid) grid.classList.toggle('teen-tasker-only', isTeen);
+  if (isTeen && taskerBtn) setRole('worker', taskerBtn);
+  if (note) {
+    note.textContent = isTeen
+      ? 'Teen accounts start in Tasker mode. Poster mode becomes available at 18.'
+      : 'Choose how you want to start. You can enable the second mode later.';
+  }
+});
 
 function updateSignupStepUI(idx) {
   var meta = STEP_META[idx] || STEP_META[0];
@@ -589,7 +608,10 @@ document.getElementById('submitBtn').onclick = async function() {
       await updateProfile(userCredential.user, { displayName: account.name });
     }
 
-    var userPayload = Object.assign({}, account, identity, { firebase_uid: userCredential.user.uid });
+    var userPayload = Object.assign({}, account, identity, {
+      firebase_uid: userCredential.user.uid,
+      starting_role: account.role === 'poster' ? 'poster' : 'tasker'
+    });
     delete userPayload.password;
     delete userPayload.oauth;
     var registerUrl = window.QG_CONFIG && window.QG_CONFIG.registerAccountUrl;
@@ -625,6 +647,17 @@ document.getElementById('submitBtn').onclick = async function() {
     localStorage.setItem('qg-session-mode', account.role === 'worker' ? 'worker' : 'poster');
     if (typeof setMode === 'function') setMode(account.role === 'worker' ? 'tasker' : 'poster');
     else localStorage.setItem('qg-mode', account.role === 'worker' ? 'tasker' : 'poster');
+    if (saveResult.user) {
+      try {
+        localStorage.setItem('qg-role-access:' + userCredential.user.uid, JSON.stringify({
+          is_tasker: saveResult.user.is_tasker === true,
+          is_poster: saveResult.user.is_poster === true,
+          last_active_mode: saveResult.user.last_active_mode || (account.role === 'worker' ? 'tasker' : 'poster'),
+          is_teen: identity.account_status === 'pending_guardian',
+          roles_updated_at: saveResult.user.roles_updated_at || null
+        }));
+      } catch (roleCacheErr) {}
+    }
     if (typeof qgMarkOnboardingDone === 'function') qgMarkOnboardingDone(userCredential.user.uid);
     else {
       try { localStorage.setItem('qg-onboarding-done:' + userCredential.user.uid, '1'); } catch (eFlag) {}
@@ -652,6 +685,7 @@ document.getElementById('submitBtn').onclick = async function() {
     if (error.code === 'auth/weak-password') message = 'Password is too weak. Use at least 8 characters.';
     if (error.code === 'underage') message = 'You must be at least 16 to join QuickGigs';
     if (error.code === 'secure_registration_unavailable') message = 'Secure signup is temporarily unavailable. Please try again.';
+    if (error.code === 'teen_poster_unavailable') message = 'Teen accounts start in Tasker mode. Poster mode becomes available at 18.';
     errorMsg.textContent = message;
     errorMsg.style.display = 'block';
     submitBtn.textContent = 'Create account ✨';

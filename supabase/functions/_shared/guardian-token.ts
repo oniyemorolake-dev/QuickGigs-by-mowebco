@@ -10,10 +10,11 @@ function signingKey(): Uint8Array {
 
 export async function signGuardianToken(
   uid: string,
-  purpose: 'guardian_consent' | 'guardian_payout',
+  purpose: 'guardian_consent' | 'guardian_payout' | 'guardian_queue',
   expiresIn = '7d',
+  claims: Record<string, unknown> = {},
 ): Promise<string> {
-  return await new SignJWT({ purpose })
+  return await new SignJWT({ ...claims, purpose })
     .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
     .setSubject(uid)
     .setIssuedAt()
@@ -24,13 +25,18 @@ export async function signGuardianToken(
 
 export async function verifyGuardianToken(
   token: string,
-  purpose: 'guardian_consent' | 'guardian_payout',
-): Promise<{ uid: string; jti: string }> {
+  purpose: 'guardian_consent' | 'guardian_payout' | 'guardian_queue',
+): Promise<{ uid: string; jti: string; guardianEmail?: string; applicationId?: string }> {
   const { payload } = await jwtVerify(token, signingKey(), { algorithms: ['HS256'] });
   if (payload.purpose !== purpose || !payload.sub || !payload.jti) {
     throw new Error('invalid_guardian_token');
   }
-  return { uid: String(payload.sub), jti: String(payload.jti) };
+  return {
+    uid: String(payload.sub),
+    jti: String(payload.jti),
+    guardianEmail: payload.guardian_email ? String(payload.guardian_email) : undefined,
+    applicationId: payload.application_id ? String(payload.application_id) : undefined,
+  };
 }
 
 export async function hashToken(token: string): Promise<string> {

@@ -113,11 +113,11 @@ body.light .login-progress-spinner{border-color:rgba(107,63,160,0.2);border-top-
 </div>
 
 <script defer src="qg-utils.js?v=20260728welcome1"></script>
-<script defer src="qg-config.js?v=20260728msg1"></script>
+<script defer src="qg-config.js?v=20260730verify1"></script>
 <script defer src="qg-analytics.js"></script>
 <script defer src="qg-auth-google.js?v=20260728fix1"></script>
 <script defer src="supabaseClient.js?v=20260728perf3"></script>
-<script defer src="supabase-db.js?v=20260728fix1"></script>
+<script defer src="supabase-db.js?v=20260730verify1"></script>
 <script defer src="qg-cookies.js"></script>
 <script defer src="qg-theme.js"></script>
 <script>
@@ -202,6 +202,23 @@ function prefetchDashboard() {
   } catch (e) {}
 }
 
+async function runGraduationCheck(user) {
+  var url = window.QG_CONFIG && window.QG_CONFIG.graduateAccountUrl;
+  if (!url || typeof callVerifiedFunction !== 'function' || !user) return null;
+  try {
+    var result = await Promise.race([
+      callVerifiedFunction(url, {}, user),
+      new Promise(function(resolve){ setTimeout(function(){ resolve(null); }, 2500); })
+    ]);
+    if (result && result.ok) {
+      sessionStorage.setItem('qg-graduation-state', JSON.stringify(result));
+    }
+    return result;
+  } catch (e) {
+    return null;
+  }
+}
+
 async function finishGoogleLogin(user) {
   var errorMsg = document.getElementById('errorMsg');
   if (typeof setCurrentUser === 'function') setCurrentUser(user);
@@ -214,6 +231,7 @@ async function finishGoogleLogin(user) {
   if (typeof qgIsOnboardingDoneCached === 'function' && qgIsOnboardingDoneCached(user.uid)) {
     if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'google' });
     showLoginProgress('Opening dashboard…');
+    await runGraduationCheck(user);
     window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
     return;
   }
@@ -253,6 +271,7 @@ async function finishGoogleLogin(user) {
     if (typeof qgMarkOnboardingDone === 'function') qgMarkOnboardingDone(user.uid);
     if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'google' });
     showLoginProgress('Opening dashboard…');
+    await runGraduationCheck(user);
     window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
     return;
   }
@@ -261,6 +280,7 @@ async function finishGoogleLogin(user) {
   // If helpers never loaded, still prefer dashboard over a false "new user" signup loop.
   if (typeof getUserLoginGate !== 'function' && typeof getUserByFirebaseUid !== 'function') {
     showLoginProgress('Opening dashboard…');
+    await runGraduationCheck(user);
     window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
     return;
   }
@@ -327,6 +347,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     try { sessionStorage.setItem('qg-pending-profile-sync', '1'); } catch (ePend) {}
     prefetchDashboard();
     showLoginProgress('Opening dashboard…');
+    await runGraduationCheck(signedIn);
     var dest = typeof getDashboardUrl === 'function' ? getDashboardUrl() : 'dashboard.html';
     window.location.replace(dest);
   } catch (error) {

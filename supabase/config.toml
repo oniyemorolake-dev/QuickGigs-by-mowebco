@@ -4,6 +4,24 @@ verify_jwt = false
 [functions.guardian-consent]
 verify_jwt = false
 
+[functions.guardian-queue]
+verify_jwt = false
+
+[functions.my-applications]
+verify_jwt = false
+
+[functions.graduate-account]
+verify_jwt = false
+
+[functions.role-verification]
+verify_jwt = false
+
+[functions.role-access]
+verify_jwt = false
+
+[functions.secure-messaging]
+verify_jwt = false
+
 [functions.resend-guardian-consent]
 verify_jwt = false
 
@@ -17,4 +35,13 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.release-payout]
+verify_jwt = false
+
+[functions.sync-connect-status]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.create-checkout]
 verify_jwt = false

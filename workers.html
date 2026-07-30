@@ -6,7 +6,7 @@
 <title>QuickGigs — Find Taskers</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
-<link rel="stylesheet" href="qg-role-theme.css">
+<link rel="stylesheet" href="qg-role-theme.css?v=20260730roles1">
 <link rel="stylesheet" href="qg-brand.css">
 <link rel="stylesheet" href="qg-mobile.css">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716d">
@@ -85,7 +85,7 @@ onAuthStateChanged(auth, function (user) {
 <script src="qg-categories.js"></script>
 <script src="qg-location.js"></script>
 <script src="qg-pwa.js?v=4"></script>
-<script src="qg-stats.js"></script>
+<script src="qg-stats.js?v=20260730verify1"></script>
 <script src="qg-share.js"></script>
 <script src="qg-report.js?v=20260716d"></script>
 <script src="supabase-db.js"></script>
@@ -147,7 +147,7 @@ async function loadWorkers() {
   var users = typeof getUsers === 'function' ? await getUsers() : [];
   var rows = (users || []).filter(function (u) {
     var role = String(u.role || '').toLowerCase();
-    if (role !== 'worker' && role !== 'both') return false;
+    if (u.is_tasker !== true && role !== 'worker' && role !== 'both') return false;
     var uid = u.firebase_uid || u.user_id || u.id;
     if (!uid) return false;
     if (u.status === 'banned') return false;

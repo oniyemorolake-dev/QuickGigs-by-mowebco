@@ -3,8 +3,8 @@
   var NAV = {
     poster: [
       { id: 'home', href: 'dashboard.html', icon: 'home', label: 'Home' },
-      { id: 'post', href: 'posttask.html', icon: 'plus', label: 'Post' },
       { id: 'tasks', href: 'mytasks.html?tab=posted', icon: 'clipboard', label: 'My Tasks' },
+      { id: 'applicants', href: 'mytasks.html?tab=posted&applicants=1', icon: 'users', label: 'Applicants' },
       { id: 'messages', href: 'messages.html', icon: 'message', label: 'Messages' }
     ],
     worker: [
@@ -14,6 +14,7 @@
       { id: 'messages', href: 'messages.html', icon: 'message', label: 'Messages' }
     ]
   };
+  var roleUnreadCounts = { tasker: 0, poster: 0 };
 
   function navIconHtml(name) {
     if (typeof window.qgIcon === 'function') return window.qgIcon(name, { size: 22 });
@@ -78,16 +79,81 @@
     return isWorkerMode() ? 'worker' : 'poster';
   }
 
-  function switchRoleMode() {
-    var next = isWorkerMode() ? 'poster' : 'tasker';
+  async function switchToRoleMode(next) {
+    next = normalizeMode(next);
+    var allowed = typeof window.QG_canUseRole === 'function' ? window.QG_canUseRole(next) : null;
+    if (allowed === false) {
+      if (typeof window.QG_offerRoleOptIn === 'function') window.QG_offerRoleOptIn(next);
+      else window.location.href = 'profile.html#roleFlipMount';
+      return { success: false, error: next + '_role_required' };
+    }
+    document.documentElement.classList.add('qg-role-transitioning');
+    var result = typeof window.QG_setActiveRoleMode === 'function'
+      ? await window.QG_setActiveRoleMode(next)
+      : { success: true };
+    if (!result.success) {
+      document.documentElement.classList.remove('qg-role-transitioning');
+      return result;
+    }
     setMode(next);
     applyRoleTheme();
     document.dispatchEvent(new CustomEvent('qg-mode-changed', { detail: { mode: next } }));
-    if (typeof window.onQuickGigsModeChange === 'function') {
-      try { window.onQuickGigsModeChange(next); return; } catch (e) {}
-    }
-    // Stay on the same page — re-render via reload (no dashboard redirect)
-    window.location.reload();
+    setTimeout(function () {
+      document.documentElement.classList.remove('qg-role-transitioning');
+      window.location.reload();
+    }, 180);
+    return result;
+  }
+
+  function switchRoleMode() {
+    return switchToRoleMode(isWorkerMode() ? 'poster' : 'tasker');
+  }
+
+  function renderHeaderRoleToggle() {
+    var state = typeof window.QG_getRoleAccess === 'function' ? window.QG_getRoleAccess() : null;
+    document.querySelectorAll('.qg-header-role-toggle').forEach(function (el) { el.remove(); });
+    var hasBoth = !!(state && state.is_tasker && state.is_poster && !state.is_teen);
+    document.querySelectorAll('#roleSwitchBtn,[onclick*="switchRoleMode"]').forEach(function (el) {
+      if (!el.classList.contains('qg-header-role-opt')) el.style.display = hasBoth ? 'none' : 'none';
+    });
+    if (!hasBoth) return;
+    document.querySelectorAll('.nav').forEach(function (nav) {
+      var host = nav.querySelector('.nav-right') || nav;
+      var current = getMode();
+      var toggle = document.createElement('div');
+      toggle.className = 'qg-header-role-toggle';
+      toggle.setAttribute('role', 'group');
+      toggle.setAttribute('aria-label', 'Current QuickGigs mode');
+      toggle.innerHTML =
+        '<button type="button" class="qg-header-role-opt' + (current === 'tasker' ? ' active' : '') + '" data-role-mode="tasker" aria-pressed="' + (current === 'tasker') + '">Tasker</button>' +
+        '<button type="button" class="qg-header-role-opt' + (current === 'poster' ? ' active' : '') + '" data-role-mode="poster" aria-pressed="' + (current === 'poster') + '">Poster</button>';
+      toggle.querySelectorAll('[data-role-mode]').forEach(function (btn) {
+        btn.onclick = function () { switchToRoleMode(btn.getAttribute('data-role-mode')); };
+      });
+      host.insertBefore(toggle, host.firstChild);
+    });
+    paintRoleUnreadIndicators();
+  }
+
+  function paintRoleUnreadIndicators() {
+    var current = getMode();
+    document.querySelectorAll('.qg-header-role-opt[data-role-mode]').forEach(function (btn) {
+      var mode = btn.getAttribute('data-role-mode');
+      var count = Number(roleUnreadCounts[mode] || 0);
+      var show = mode !== current && count > 0;
+      btn.classList.toggle('has-mode-unread', show);
+      var dot = btn.querySelector('.qg-role-unread-dot');
+      if (!dot) {
+        dot = document.createElement('span');
+        dot.className = 'qg-role-unread-dot';
+        dot.setAttribute('aria-hidden', 'true');
+        btn.appendChild(dot);
+      }
+      dot.hidden = !show;
+      btn.setAttribute('aria-label', show
+        ? (mode === 'poster' ? 'Poster' : 'Tasker') + ', ' + count + ' unread messages'
+        : (mode === 'poster' ? 'Poster' : 'Tasker'));
+    });
   }
 
   function getThemeMode() {
@@ -113,6 +179,7 @@
       var label = isWorkerMode() ? 'TASKER' : 'POSTER';
       document.querySelectorAll('.nav-role').forEach(function (el) { el.textContent = label; });
     }
+    renderHeaderRoleToggle();
     document.querySelectorAll('[data-qg-mode-tag]').forEach(function (el) {
       el.textContent = isWorkerMode() ? 'Tasker mode' : 'Poster mode';
       el.classList.toggle('tag-worker', isWorkerMode());
@@ -160,27 +227,36 @@
   function refreshMessagesUnreadBadge() {
     var badge = document.getElementById('qgMsgUnreadBadge');
     var link = badge && badge.closest('.tab-item');
-    if (!badge || !link) return;
+    var toggles = document.querySelectorAll('.qg-header-role-opt[data-role-mode]');
+    if ((!badge || !link) && !toggles.length) return;
     var user = window._currentUser;
     if (!user || typeof getConversationsForUser !== 'function') return;
     getConversationsForUser(user.uid).then(function (rows) {
-      var tasker = isWorkerMode();
-      var n = 0;
+      var counts = { tasker: 0, poster: 0 };
       (rows || []).forEach(function (conv) {
         var iAmPoster = String(conv.poster_id) === String(user.uid);
-        if (tasker && iAmPoster) return;
-        if (!tasker && !iAmPoster) return;
+        var iAmTasker = String(conv.worker_id) === String(user.uid);
+        if (!iAmPoster && !iAmTasker) return;
+        var side = iAmPoster ? 'poster' : 'tasker';
         // Active chat thread — treat as read
         try {
           var openConv = new URLSearchParams(window.location.search).get('conv');
           if (openConv && String(openConv) === String(conv.conv_id) &&
-              /chat\.html$/i.test(location.pathname.split('/').pop() || '')) {
+              /(?:chat|messages)\.html$/i.test(location.pathname.split('/').pop() || '')) {
             return;
           }
         } catch (eOpen) {}
         var lastRead = iAmPoster ? conv.poster_last_read_at : conv.worker_last_read_at;
-        if (!lastRead || (conv.last_message_at && new Date(conv.last_message_at) > new Date(lastRead))) n += 1;
+        var sentByMe = conv.last_sender_id && String(conv.last_sender_id) === String(user.uid);
+        if (!sentByMe && conv.last_message_at &&
+            (!lastRead || new Date(conv.last_message_at) > new Date(lastRead))) {
+          counts[side] += 1;
+        }
       });
+      roleUnreadCounts = counts;
+      paintRoleUnreadIndicators();
+      var n = counts[getMode()] || 0;
+      if (!badge || !link) return;
       if (n > 0) {
         badge.textContent = n > 99 ? '99+' : String(n);
         link.classList.add('has-unread');
@@ -241,6 +317,11 @@
     opts = opts || {};
     var targetMode = opts.targetMode === 'poster' ? 'poster' : 'tasker';
     var label = targetMode === 'tasker' ? 'Tasker' : 'Poster';
+    var allowed = typeof window.QG_canUseRole === 'function' ? window.QG_canUseRole(targetMode) : null;
+    var actionLabel = allowed === false ? 'Enable ' + label + ' mode' : 'Switch to ' + label + ' mode';
+    var action = allowed === false
+      ? 'typeof QG_offerRoleOptIn===\'function\'&&QG_offerRoleOptIn(\'' + targetMode + '\')'
+      : 'typeof switchToRoleMode===\'function\'&&switchToRoleMode(\'' + targetMode + '\')';
     var ico = typeof window.qgIcon === 'function'
       ? window.qgIcon(opts.iconName || 'refresh', { size: 24 })
       : '';
@@ -248,7 +329,7 @@
       '<div class="empty-icon">' + ico + '</div>' +
       '<div class="empty-title">' + (opts.title || ('Switch to ' + label + ' mode')) + '</div>' +
       '<div class="empty-sub">' + (opts.sub || '') + '</div>' +
-      '<button type="button" class="empty-btn" onclick="typeof switchRoleMode===\'function\'&&switchRoleMode()">Switch to ' + label + ' mode</button>' +
+      '<button type="button" class="empty-btn" onclick="' + action + '">' + actionLabel + '</button>' +
       '</div>';
   }
 
@@ -259,6 +340,7 @@
   window.isWorkerMode = isWorkerMode;
   window.isPosterMode = isPosterMode;
   window.switchRoleMode = switchRoleMode;
+  window.switchToRoleMode = switchToRoleMode;
   window.renderQuickGigsTabBar = renderQuickGigsTabBar;
   window.refreshMessagesUnreadBadge = refreshMessagesUnreadBadge;
   window.applyMyTasksTabsForMode = applyMyTasksTabsForMode;
@@ -279,6 +361,40 @@
   menuScript.src = 'qg-menu.js?v=5';
   menuScript.defer = true;
   document.head.appendChild(menuScript);
+
+  if (!document.querySelector('script[src*="qg-role-access.js"]')) {
+    var roleAccessScript = document.createElement('script');
+    roleAccessScript.src = 'qg-role-access.js?v=1';
+    roleAccessScript.async = false;
+    roleAccessScript.defer = true;
+    document.head.appendChild(roleAccessScript);
+  }
+  if (!document.querySelector('script[src*="qg-role-switch.js"]')) {
+    var roleSwitchScript = document.createElement('script');
+    roleSwitchScript.src = 'qg-role-switch.js?v=2';
+    roleSwitchScript.async = false;
+    roleSwitchScript.defer = true;
+    document.head.appendChild(roleSwitchScript);
+  }
+
+  document.addEventListener('qg-role-access-changed', function () {
+    applyRoleTheme();
+    var bar = document.getElementById('qgTabBar');
+    if (bar) {
+      var active = bar.querySelector('.tab-item.active');
+      var label = active && active.getAttribute('aria-label')
+        ? active.getAttribute('aria-label').toLowerCase()
+        : '';
+      var activeId = label.indexOf('browse') >= 0 ? 'browse'
+        : label.indexOf('job') >= 0 ? 'jobs'
+        : label.indexOf('applicant') >= 0 ? 'applicants'
+        : label.indexOf('task') >= 0 ? 'tasks'
+        : label.indexOf('message') >= 0 ? 'messages'
+        : label.indexOf('post') >= 0 ? 'post'
+        : 'home';
+      renderQuickGigsTabBar(activeId);
+    }
+  });
 
   var bellScript = document.createElement('script');
   bellScript.src = 'qg-bell.js?v=20260729tap1';

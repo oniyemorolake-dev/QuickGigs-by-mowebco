@@ -34,7 +34,7 @@
 <meta name="theme-color" content="#6b3fa0">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
-<link rel="stylesheet" href="qg-role-theme.css?v=20260728stats2">
+<link rel="stylesheet" href="qg-role-theme.css?v=20260730roles1">
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
 <script src="qg-theme.js"></script>
 <script src="qg-brand-init.js"></script>
@@ -190,6 +190,15 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 .guardian-banner strong{display:block;margin-bottom:4px;font-weight:600;}
 .guardian-banner a{color:var(--purple-light);font-weight:500;}
 .guardian-banner button{margin-top:8px;padding:8px 12px;border:0;border-radius:10px;background:linear-gradient(135deg,var(--purple),var(--purple-light));color:#fff;font:600 12px 'Poppins',sans-serif;cursor:pointer;}
+.teen-dashboard-banner{display:none;margin:12px 20px 0;padding:16px;border-radius:16px;background:linear-gradient(135deg,rgba(107,63,160,.28),rgba(155,111,196,.12));border:1px solid rgba(200,168,233,.3);}
+.teen-dashboard-banner strong{display:block;font:600 15px 'Poppins',sans-serif;margin-bottom:4px;}
+.teen-dashboard-banner p{margin:0;color:var(--text-muted);font-size:12px;line-height:1.5;}
+.graduation-banner{display:none;margin:12px 20px 0;padding:14px 16px;border-radius:14px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.28);font-size:12px;line-height:1.55;}
+.graduation-banner a{color:var(--lavender);font-weight:600;}
+.verification-gate-banner{display:none;margin:12px 20px 0;padding:14px 16px;border-radius:14px;background:rgba(107,63,160,.13);border:1px solid rgba(200,168,233,.28);font-size:12px;line-height:1.55}.verification-gate-banner strong{display:block;margin-bottom:3px}.verification-gate-banner button{margin-top:8px;padding:8px 12px;border:0;border-radius:10px;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;font:600 11px Poppins,sans-serif;cursor:pointer}
+.graduation-overlay{display:none;position:fixed;inset:0;z-index:1200;background:rgba(4,0,12,.78);backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:20px;}
+.graduation-overlay.open{display:flex}.graduation-card{width:min(460px,100%);border-radius:22px;padding:25px;background:linear-gradient(145deg,#1a0b32,#251146);border:1px solid rgba(200,168,233,.3);box-shadow:0 28px 80px rgba(0,0,0,.45);}
+.graduation-card h2{font:700 24px 'Poppins',sans-serif;margin:8px 0}.graduation-card p{color:var(--text-muted);font-size:13px;line-height:1.65}.graduation-actions{display:grid;gap:9px;margin-top:18px}.graduation-primary,.graduation-later{padding:12px;border-radius:12px;text-align:center;font:600 13px 'Poppins',sans-serif;text-decoration:none;cursor:pointer}.graduation-primary{border:0;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff}.graduation-later{border:1px solid var(--border);background:transparent;color:var(--muted);}
 .legal-footer a{color:var(--purple-light);text-decoration:none;}
 .legal-footer a:hover{text-decoration:underline;}
 
@@ -228,6 +237,14 @@ body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#ee
 
 <!-- GREETING + SMART HERO -->
 <div id="guardianBanner" style="display:none"></div>
+<div id="teenDashboardBanner" class="teen-dashboard-banner qg-page-wide">
+  <strong>Your teen tasker dashboard</strong>
+  <p>Browse age-eligible gigs and track which applications are waiting for guardian review.</p>
+</div>
+<div id="graduationPayoutBanner" class="graduation-banner qg-page-wide">
+  <strong>Your completed-gig payouts are on hold.</strong> Add your own payout details now that you are 18. <a href="profile.html#payouts">Set up payouts →</a>
+</div>
+<div id="verificationGateBanner" class="verification-gate-banner qg-page-wide"></div>
 <div class="greeting qg-page-wide">
   <div class="mode-tag tag-poster" id="modeTag" data-qg-mode-tag>📋 Poster mode</div>
   <div class="greet-name" id="greetName">Good evening 👋</div>
@@ -281,12 +298,25 @@ body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#ee
 
 <!-- TAB BAR -->
 <nav class="tab-bar" id="qgTabBar"></nav>
+<div class="graduation-overlay" id="graduationOverlay" role="dialog" aria-modal="true" aria-labelledby="graduationTitle">
+  <div class="graduation-card">
+    <div class="eyebrow">Full account access</div>
+    <h2 id="graduationTitle">You’re now an adult on QuickGigs</h2>
+    <p>Guardian approval no longer applies to new gigs, and teen filters have been removed. Before completed-gig payouts can be released, add payout details in your own name.</p>
+    <div class="graduation-actions">
+      <a class="graduation-primary" href="profile.html#payouts">Set up my payouts</a>
+      <button type="button" class="graduation-later" onclick="document.getElementById('graduationOverlay').classList.remove('open')">Do this later</button>
+    </div>
+  </div>
+</div>
 <script defer src="qg-utils.js?v=20260728welcome1"></script>
 <script defer src="qg-nav.js"></script>
 <script defer src="qg-menu.js?v=20260727auth2"></script>
 <script defer src="qg-auth-google.js?v=20260728fix1"></script>
 <script defer src="supabaseClient.js?v=20260728perf3"></script>
-<script defer src="supabase-db.js?v=20260728fix1"></script>
+<script defer src="supabase-db.js?v=20260730verify1"></script>
+<script defer src="qg-age.js?v=1"></script>
+<script defer src="qg-verification.js?v=1"></script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
@@ -350,6 +380,12 @@ onAuthStateChanged(auth, async (user) => {
       localStorage.setItem('qg-role', dbUser.role);
       if (typeof applyRoleTheme === 'function') applyRoleTheme();
     }
+    if (dbUser && typeof QG_setAgeTierFromUser === 'function') {
+      var ageState = QG_setAgeTierFromUser(dbUser);
+      var teenBanner = document.getElementById('teenDashboardBanner');
+      if (teenBanner) teenBanner.style.display = ageState.tier === 'teen' ? 'block' : 'none';
+      if (dashData && dashData.userId) renderAll();
+    }
     if (typeof isAccountPendingGuardian === 'function' && isAccountPendingGuardian(dbUser)) {
       var banner = document.getElementById('guardianBanner');
       if (banner) {
@@ -397,7 +433,11 @@ onAuthStateChanged(auth, async (user) => {
     var run = function () {
       if (typeof getUserLoginGate !== 'function') return;
       getUserLoginGate(live.uid).then(function (gateUser) {
-        if (!gateUser) return;
+        if (!gateUser) {
+          if (typeof QG_setAgeTierFromUser === 'function') QG_setAgeTierFromUser(null);
+          if (dashData && dashData.userId) renderAll();
+          return;
+        }
         if (typeof qgMarkOnboardingDone === 'function') qgMarkOnboardingDone(live.uid);
         applyDbUserAfterLogin(gateUser);
       }).catch(function () {});
@@ -433,16 +473,17 @@ onAuthStateChanged(auth, async (user) => {
 
 <script defer src="qg-payments-ui.js?v=1"></script>
 <script defer src="qg-location.js"></script>
-<script defer src="qg-config.js?v=20260728msg1"></script>
+<script defer src="qg-config.js?v=20260730verify1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
-<script defer src="qg-stats.js?v=20260728perf1"></script>
+<script defer src="qg-stats.js?v=20260730verify1"></script>
 <script defer src="qg-notifications.js"></script>
 <script defer src="qg-push.js?v=1"></script>
 <script defer src="qg-cookies.js"></script>
 <script defer src="qg-site.js"></script>
-<script defer src="qg-role-switch.js"></script>
+<script defer src="qg-role-switch.js?v=2"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
+window._qgAgeTier=window._qgAgeTier||'loading';
 var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
 function applyTheme(){
   if (typeof window.QG_applyTheme === 'function') window.QG_applyTheme(isDark, 'modeBtn', false);
@@ -459,6 +500,61 @@ window.toggleTheme = function(){
   applyTheme();
 };
 applyTheme();
+
+function applyGraduationState(result) {
+  if (!result || !result.ok) return;
+  var banner = document.getElementById('graduationPayoutBanner');
+  if (banner) banner.style.display = result.needs_payout_setup ? 'block' : 'none';
+  if (result.graduated) {
+    var overlay = document.getElementById('graduationOverlay');
+    if (overlay) overlay.classList.add('open');
+  }
+}
+function bootGraduationFallback(attempt) {
+  attempt = attempt || 0;
+  try {
+    var stored = JSON.parse(sessionStorage.getItem('qg-graduation-state') || 'null');
+    if (stored) {
+      applyGraduationState(stored);
+      sessionStorage.removeItem('qg-graduation-state');
+    }
+  } catch (e) {}
+  var url = window.QG_CONFIG && window.QG_CONFIG.graduateAccountUrl;
+  if (window._currentUser && url && typeof callVerifiedFunction === 'function') {
+    callVerifiedFunction(url, {}).then(applyGraduationState).catch(function(){});
+    return;
+  }
+  if (attempt < 30) setTimeout(function(){ bootGraduationFallback(attempt + 1); }, 120);
+}
+document.addEventListener('DOMContentLoaded', function(){ bootGraduationFallback(0); });
+
+function renderDashboardVerificationGate(state) {
+  var banner = document.getElementById('verificationGateBanner');
+  if (!banner || !state) return;
+  var posterMode = typeof getMode === 'function' ? getMode() === 'poster' : !!isPoster;
+  var role = posterMode ? 'poster' : 'tasker';
+  var isVerified = posterMode ? state.poster_verified === true : state.tasker_verified === true;
+  if (isVerified) { banner.style.display = 'none'; return; }
+  banner.style.display = 'block';
+  banner.innerHTML = '<strong>' + (posterMode ? '💳 Add a payment method to post' : '🪪 Verify your identity to start working') + '</strong>' +
+    (posterMode
+      ? 'Draft freely now; verification is required only when you publish.'
+      : 'Browse and build your profile freely; verification is required before applying or accepting gigs.') +
+    '<br><button type="button" id="dashboardVerifyBtn">' + (posterMode ? 'Add payment method' : 'Verify identity') + '</button>';
+  document.getElementById('dashboardVerifyBtn').onclick = function () {
+    if (typeof QG_openVerificationPrompt === 'function') QG_openVerificationPrompt(role);
+  };
+}
+document.addEventListener('DOMContentLoaded', function bootDashboardVerification(){
+  if (!window._currentUser || typeof QG_loadVerification !== 'function') {
+    setTimeout(bootDashboardVerification, 120);
+    return;
+  }
+  QG_loadVerification().then(renderDashboardVerificationGate);
+});
+document.addEventListener('qg-mode-changed', function(){
+  if (window.QG_verificationState) renderDashboardVerificationGate(window.QG_verificationState);
+});
 
 // ── MODE (poster / tasker) — never set from URL; only getMode/setMode ──
 var isPoster = (typeof getMode === 'function' ? getMode() : 'poster') === 'poster';
@@ -485,6 +581,11 @@ window.setDashboardMode = function(mode) {
 window.quickSwitchFromMenu = function() {
   var next = isPoster ? 'tasker' : 'poster';
   document.getElementById('avatarMenu').style.display = 'none';
+  var allowed = typeof QG_canUseRole === 'function' ? QG_canUseRole(next) : null;
+  if (allowed === false && typeof QG_offerRoleOptIn === 'function') {
+    QG_offerRoleOptIn(next);
+    return;
+  }
   if (typeof setQuickGigsMode === 'function') {
     setQuickGigsMode(next, { toast: true, reload: true });
   } else if (typeof switchRoleMode === 'function') {
@@ -499,8 +600,19 @@ window.onQuickGigsModeChange = function() {
 function updateAvatarMenuSwitchLabel() {
   var el = document.getElementById('avatarMenuSwitch');
   if (!el) return;
-  el.textContent = isPoster ? 'Switch to Tasker' : 'Switch to Poster';
+  var access = typeof QG_getRoleAccess === 'function' ? QG_getRoleAccess() : null;
+  if (access && access.is_teen && !isPoster) {
+    el.style.display = 'none';
+    return;
+  }
+  el.style.display = 'flex';
+  var target = isPoster ? 'tasker' : 'poster';
+  var hasTarget = !access || (target === 'tasker' ? access.is_tasker : access.is_poster);
+  el.textContent = hasTarget
+    ? (isPoster ? '🔄 Switch to Tasker' : '🔄 Switch to Poster')
+    : (isPoster ? '💼 Start finding work' : '📋 Become a Poster');
 }
+document.addEventListener('qg-role-access-changed', updateAvatarMenuSwitchLabel);
 
 function updateModeTag() {
   var tag = document.getElementById('modeTag');
@@ -733,6 +845,7 @@ function renderAll(){
       : (typeof qgEsc === 'function' ? qgEsc(s)
         : String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
   }
+  if (window._qgAgeTier === 'loading') return;
   if (typeof getMode === 'function') {
     isPoster = getMode() === 'poster';
   } else if (typeof getSessionMode === 'function') {
@@ -757,6 +870,10 @@ function renderAll(){
   var pendingWorkerApps = myApps.filter(function (a) {
     return String(appField(a, 'status') || 'pending').toLowerCase() === 'pending';
   }).length;
+  var guardianWaiting = myApps.filter(function(a) {
+    return String(appField(a, 'guardian_status') || '').toLowerCase() === 'pending_guardian';
+  }).length;
+  var isTeenDashboard = window._qgAgeTier === 'teen' && !isPoster;
   var inProgressCount = isPoster
     ? myPosted.filter(function (t) { return taskField(t, 'status') === 'in_progress'; }).length
     : 0;
@@ -815,7 +932,7 @@ function renderAll(){
         {icon:'dollar', val: totalPaidDisplay, cls:'green', lbl:'Paid via QuickGigs', sub: paidSubLabel, href:'profile.html#payments'}
       ]
     : [
-        {icon:'inbox', val: String(myApps.length), cls:'', lbl:'Applications', href:'mytasks.html?tab=applied'},
+        {icon:'inbox', val: String(isTeenDashboard ? guardianWaiting : myApps.length), cls:'', lbl:isTeenDashboard?'Guardian review':'Applications', href:'mytasks.html?tab=applied'},
         {icon:'checkCircle', val: String(myAcceptedApps.length), cls:'purple', lbl:'Jobs accepted', href:'mytasks.html?tab=applied'},
         {icon:'clock', val: String(myInProgressWorker), cls:'', lbl:'In progress', href:'mytasks.html?tab=inprogress'},
         {icon:'dollar', val: earnedLabel, cls:'green', lbl:'Total earned', href:'profile.html#payments'}
@@ -842,7 +959,7 @@ function renderAll(){
         {icon:'folder',title:'Review applicants',desc:'See who applied to your tasks',href:'mytasks.html?tab=posted',cls:'secondary'}
       ]
     : [
-        {icon:'search',title:'Browse tasks',desc:'Find tasks near you',href:'browsetask.html',cls:'primary'},
+        {icon:'search',title:isTeenDashboard?'Browse teen-friendly gigs':'Browse tasks',desc:isTeenDashboard?'Only gigs that welcome ages 16–17':'Find tasks near you',href:'browsetask.html',cls:'primary'},
         {icon:'list',title:'Categories',desc:'Explore tasks by skill type',href:'categories.html',cls:'secondary'},
         {icon:'briefcase',title:'My tasks',desc:'Applications & active work',href:'mytasks.html?tab=applied&mode=worker',cls:'secondary'}
       ];
@@ -919,7 +1036,9 @@ function renderAll(){
     sectionTitle.textContent = 'Tasks near you';
     if (seeAll) { seeAll.href = 'browsetask.html'; seeAll.textContent = 'See all'; }
     var openNearby = dashData.posted.filter(function(t){
-      return taskField(t, 'status') === 'open' && taskField(t, 'posted_by') !== userId;
+      if (taskField(t, 'status') !== 'open' || taskField(t, 'posted_by') === userId) return false;
+      if (isTeenDashboard && typeof QG_taskAllowsTeen === 'function' && !QG_taskAllowsTeen(t)) return false;
+      return true;
     }).slice(0, 5);
     if (openNearby.length) {
       html = openNearby.map(function(t){

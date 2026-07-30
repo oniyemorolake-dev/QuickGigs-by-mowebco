@@ -29,7 +29,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
-<link rel="stylesheet" href="qg-role-theme.css">
+<link rel="stylesheet" href="qg-role-theme.css?v=20260730roles1">
 <script src="qg-brand-init.js"></script>
 <script>document.documentElement.setAttribute('data-qg-mode','poster');</script>
 <style>
@@ -136,6 +136,15 @@ body.theme-posttask .photo-upload-btn{background:rgba(107,63,160,0.35);color:#f3
 .mode-desc{font-size:10px;}
 .dark .mode-desc{color:rgba(255,255,255,0.62);}
 .light .mode-desc{color:#6b6580;}
+.age-pref-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.age-pref-card{border-radius:14px;padding:14px 10px;text-align:left;cursor:pointer;transition:all .2s;color:inherit;font-family:'Poppins',sans-serif;}
+.dark .age-pref-card{background:rgba(255,255,255,.04);border:1px solid rgba(200,168,233,.16);}
+.light .age-pref-card{background:#f8f7ff;border:1px solid #e8e2ff;}
+.dark .age-pref-card.selected{background:rgba(107,63,160,.3);border-color:#c8a8e9;}
+.light .age-pref-card.selected{background:#ede9ff;border-color:#9b6fc4;}
+.age-pref-card strong{display:block;font-size:12px;margin-bottom:4px;}
+.age-pref-card span{display:block;font-size:10px;line-height:1.35;opacity:.72;}
+@media(max-width:560px){.age-pref-grid{grid-template-columns:1fr;}}
 
 .budget-type-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
 .budget-type-card{border-radius:12px;padding:12px 14px;cursor:pointer;transition:all 0.2s;}
@@ -237,7 +246,7 @@ body{padding-bottom:76px;}
 <body class="theme-posttask">
 <script src="qg-theme.js"></script>
 <script src="qg-brand-init.js"></script>
-<script defer src="qg-location.js"></script>
+<script defer src="qg-location.js?v=2"></script>
 <script defer src="qg-nav.js"></script>
 
 <!-- NAV -->
@@ -251,6 +260,7 @@ body{padding-bottom:76px;}
 </nav>
 
 <!-- MAIN FORM -->
+<div class="content" id="postRoleGate" style="display:none"></div>
 <div class="content" id="formContent">
 
   <div id="postModeBanner" class="hint-box" style="display:none;margin-bottom:16px">
@@ -322,6 +332,23 @@ body{padding-bottom:76px;}
       <span class="cat-chip" onclick="selectCat(this)">📦 Other</span>
     </div>
     <div class="field-error" id="catError">Select a category</div>
+  </div>
+
+  <!-- AGE PREFERENCE -->
+  <div class="section">
+    <span class="section-label">Who can apply?</span>
+    <p class="field-hint">Taskers aged 16–17 always need guardian approval for each application.</p>
+    <div class="age-pref-grid" id="agePreferenceGrid">
+      <button type="button" class="age-pref-card selected" data-age-preference="adults_only" onclick="selectAgePreference(this)">
+        <strong>18+ only</strong><span>Only adult taskers will see this gig.</span>
+      </button>
+      <button type="button" class="age-pref-card" data-age-preference="teens_welcome" onclick="selectAgePreference(this)">
+        <strong>16+ welcome</strong><span>Teen taskers may request guardian approval.</span>
+      </button>
+      <button type="button" class="age-pref-card" data-age-preference="any_with_guardian" onclick="selectAgePreference(this)">
+        <strong>Any age</strong><span>Currently 16+ under QuickGigs policy; guardian approval applies.</span>
+      </button>
+    </div>
   </div>
 
   <!-- TITLE -->
@@ -401,7 +428,20 @@ body{padding-bottom:76px;}
     </div>
     <div class="field">
       <span class="section-label">Location</span>
-      <input class="field-input" id="taskLocation" type="text" placeholder="Calgary, AB">
+      <input class="field-input" id="taskLocation" type="text" list="canadianLocationSuggestions"
+        placeholder="Calgary, AB" autocomplete="address-level2">
+      <datalist id="canadianLocationSuggestions">
+        <option value="Calgary, AB"></option>
+        <option value="Edmonton, AB"></option>
+        <option value="Red Deer, AB"></option>
+        <option value="Lethbridge, AB"></option>
+        <option value="Toronto, ON"></option>
+        <option value="Vancouver, BC"></option>
+        <option value="Winnipeg, MB"></option>
+        <option value="Montreal, QC"></option>
+        <option value="Halifax, NS"></option>
+      </datalist>
+      <div class="field-error" id="locationError">Choose a valid Canadian city or area</div>
     </div>
   </div>
 
@@ -428,7 +468,7 @@ body{padding-bottom:76px;}
 
   <!-- SUBMIT -->
   <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">Post task →</button>
-  <p class="qg-beta-free-note">Free to post during beta. No payment required.</p>
+  <p class="qg-beta-free-note">No charge to post during beta. A verified payment method is still required for trust and safety.</p>
   <p class="footer-note">After beta, payment is held in escrow when you accept — released only after you confirm the task is done. <span data-qg-tip="Escrow means funds are held safely until you mark the task complete. During beta, posting is free.">What is escrow?</span></p>
 
 </div>
@@ -448,9 +488,10 @@ body{padding-bottom:76px;}
 <script src="qg-ux.js?v=20260728welcome1" defer></script>
 <script src="qg-bigtech.js?v=20260728xss1" defer></script>
 <script src="qg-wave2.js?v=20260728xss1" defer></script>
-<script defer src="qg-config.js"></script>
+<script defer src="qg-config.js?v=20260730verify1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
-<script defer src="supabase-db.js"></script>
+<script defer src="supabase-db.js?v=20260730verify1"></script>
+<script defer src="qg-verification.js?v=1"></script>
 <script>
 var selectedPhotos = [];
 
@@ -531,9 +572,23 @@ window.toggleMode = function() {
 };
 applyTheme();
 
+document.addEventListener('DOMContentLoaded', function bootPosterVerification(){
+  if (!window._currentUser || typeof QG_loadVerification !== 'function') {
+    setTimeout(bootPosterVerification, 120);
+    return;
+  }
+  QG_loadVerification().then(function(state){
+    var button = document.getElementById('submitBtn');
+    if (button && state && state.poster_verified !== true) {
+      button.textContent = 'Add payment method to post';
+    }
+  });
+});
+
 var selectedMode = 'quick';
 var selectedCat  = '';
 var selectedBudgetType = 'fixed';
+var selectedAgePreference = 'adults_only';
 var selectedRec  = 'Daily';
 var selectedTimeSlot = 'exact';
 var TIME_SLOT_LABELS = {
@@ -550,6 +605,52 @@ var CAT_SLUGS = {
   'Errands': 'errands', 'Home': 'home', 'Tutoring': 'tutoring', 'Beauty': 'beauty',
   'Moving': 'moving', 'Cooking': 'cooking', 'Tech': 'tech', 'Care': 'care',
   'Gardening': 'gardening', 'Events': 'events', 'Trades': 'trades', 'Other': 'other'
+};
+
+function saveVerificationDraftState() {
+  try {
+    localStorage.setItem('qg-post-verification-state', JSON.stringify({
+      mode: selectedMode,
+      category: selectedCat,
+      budgetType: selectedBudgetType,
+      agePreference: selectedAgePreference,
+      recurring: selectedRec,
+      timeSlot: selectedTimeSlot,
+      date: document.getElementById('taskDate') ? document.getElementById('taskDate').value : '',
+      time: document.getElementById('taskTime') ? document.getElementById('taskTime').value : '',
+      requiresPhotos: !!(document.getElementById('requiresPhotos') && document.getElementById('requiresPhotos').checked)
+    }));
+  } catch (e) {}
+}
+
+document.addEventListener('DOMContentLoaded', function restoreVerificationDraftState(){
+  try {
+    var state = JSON.parse(localStorage.getItem('qg-post-verification-state') || 'null');
+    if (!state) return;
+    var mode = document.querySelector('.mode-card[data-mode="' + state.mode + '"]');
+    if (mode) selectMode(mode);
+    document.querySelectorAll('.cat-chip').forEach(function(chip){
+      var label = chip.textContent.replace(/[^\w\s]/g, '').trim();
+      var slug = CAT_SLUGS[label] || label.toLowerCase();
+      if (slug === state.category) selectCat(chip);
+    });
+    var budgetType = document.querySelector('.budget-type-card[data-budget-type="' + state.budgetType + '"]');
+    if (budgetType) selectBudgetType(budgetType);
+    var age = document.querySelector('.age-pref-card[data-age-preference="' + state.agePreference + '"]');
+    if (age) selectAgePreference(age);
+    if (document.getElementById('taskDate') && state.date) document.getElementById('taskDate').value = state.date;
+    if (document.getElementById('taskTime') && state.time) document.getElementById('taskTime').value = state.time;
+    if (document.getElementById('requiresPhotos')) document.getElementById('requiresPhotos').checked = !!state.requiresPhotos;
+    updateSchedulePreview();
+  } catch (e) {}
+});
+
+window.selectAgePreference = function(el) {
+  document.querySelectorAll('.age-pref-card').forEach(function(card) {
+    card.classList.remove('selected');
+  });
+  el.classList.add('selected');
+  selectedAgePreference = el.getAttribute('data-age-preference') || 'adults_only';
 };
 
 function applyLocationDefaults() {
@@ -937,7 +1038,10 @@ window.handleSubmit = async function(skipPhotos) {
   window._postTaskInFlight = true;
 
   var btn = document.getElementById('submitBtn');
-  var btnDefaultLabel = 'Post task →';
+  var btnDefaultLabel = window.QG_verificationState &&
+    window.QG_verificationState.poster_verified !== true
+    ? 'Add payment method to post'
+    : 'Post task →';
   function unlockSubmit() {
     window._postTaskInFlight = false;
     if (btn) {
@@ -981,6 +1085,11 @@ window.handleSubmit = async function(skipPhotos) {
   if (!budget || budget < 20) {
     document.getElementById('budgetError').style.display = 'block';
     document.getElementById('taskBudget').classList.add('invalid');
+    valid = false;
+  }
+  if (!location) {
+    document.getElementById('locationError').style.display = 'block';
+    document.getElementById('taskLocation').classList.add('invalid');
     valid = false;
   }
   var schedule = buildSchedulePayload();
@@ -1047,9 +1156,33 @@ window.handleSubmit = async function(skipPhotos) {
     var postPermission = await getAccountActionPermission(window._currentUser.uid, 'post');
     if (!postPermission.allowed) {
       showFormBanner(postPermission.message);
+      if (postPermission.reason === 'poster_role_required' &&
+          typeof QG_offerRoleOptIn === 'function') {
+        QG_offerRoleOptIn('poster');
+      }
+      if (postPermission.reason === 'poster_payment_verification_required' &&
+          typeof QG_openVerificationPrompt === 'function') {
+        saveVerificationDraftState();
+        QG_openVerificationPrompt('poster');
+      }
       unlockSubmit();
       return;
     }
+  }
+
+  var geocodedLocation = typeof geocodeDisplayLocation === 'function'
+    ? await geocodeDisplayLocation(location)
+    : null;
+  if (!geocodedLocation) {
+    document.getElementById('locationError').style.display = 'block';
+    document.getElementById('taskLocation').classList.add('invalid');
+    showFormBanner('Choose a valid Canadian city or area.');
+    unlockSubmit();
+    return;
+  }
+  location = geocodedLocation.location || location;
+  if (typeof setUserLocationResult === 'function') {
+    setUserLocationResult(location, geocodedLocation.lat, geocodedLocation.lng);
   }
 
   // Lock immediately — only one network post path from here
@@ -1068,11 +1201,14 @@ window.handleSubmit = async function(skipPhotos) {
     budget:      budget,
     budget_negotiable: selectedBudgetType === 'negotiable',
     location:    location,
+    lat:         geocodedLocation.lat,
+    lng:         geocodedLocation.lng,
     posted_by:   window._currentUser.uid,
     poster_name: posterName,
     requires_photos: !!document.getElementById('requiresPhotos').checked,
     scheduled_at: schedule.scheduled_at,
-    scheduled_label: schedule.scheduled_label
+    scheduled_label: schedule.scheduled_label,
+    age_preference: selectedAgePreference
   };
   if (schedule.scheduled_label && taskData.description.indexOf('When:') === -1) {
     taskData.description = ('When: ' + schedule.scheduled_label + (taskData.description ? '\n\n' + taskData.description : '')).trim();
@@ -1104,6 +1240,7 @@ window.handleSubmit = async function(skipPhotos) {
       else if (typeof setSessionMode === 'function') setSessionMode('poster');
       try { sessionStorage.setItem('qg-just-posted', '1'); } catch (e) {}
       if (typeof window.qgClearPostDraft === 'function') window.qgClearPostDraft();
+      try { localStorage.removeItem('qg-post-verification-state'); } catch (draftErr) {}
       try {
         if (!localStorage.getItem('qg-first-post-done')) {
           localStorage.setItem('qg-first-post-done', '1');
@@ -1116,6 +1253,14 @@ window.handleSubmit = async function(skipPhotos) {
       document.getElementById('successScreen').style.display = 'block';
       // Keep inFlight true — form is gone; no second insert from this page
     } else {
+      if (result.error === 'poster_payment_verification_required' &&
+          typeof QG_openVerificationPrompt === 'function') {
+        QG_openVerificationPrompt('poster');
+      }
+      if (result.error === 'poster_role_required' &&
+          typeof QG_offerRoleOptIn === 'function') {
+        QG_offerRoleOptIn('poster');
+      }
       var failMsg = typeof formatSupabaseActionError === 'function'
         ? formatSupabaseActionError('post task', result.error)
         : 'Could not save your task. Run supabase/beta-setup-all.sql in Supabase, then refresh and try again.';
@@ -1137,18 +1282,44 @@ renderQuickGigsTabBar('post');
 (function () {
   function refreshPostModeBanner() {
     var banner = document.getElementById('postModeBanner');
-    if (!banner) return;
+    var gate = document.getElementById('postRoleGate');
+    var form = document.getElementById('formContent');
+    if (!banner || !gate || !form) return;
     var mode = typeof getMode === 'function' ? getMode() : 'poster';
-    banner.style.display = mode === 'tasker' ? 'flex' : 'none';
+    var blocked = mode === 'tasker';
+    banner.style.display = 'none';
+    form.style.display = blocked ? 'none' : '';
+    gate.style.display = blocked ? 'block' : 'none';
+    if (blocked) {
+      var allowed = typeof QG_canUseRole === 'function' ? QG_canUseRole('poster') : null;
+      var access = typeof QG_getRoleAccess === 'function' ? QG_getRoleAccess() : null;
+      var teen = !!(access && access.is_teen);
+      gate.innerHTML = typeof roleGateHtml === 'function' && !teen
+        ? roleGateHtml({
+            targetMode: 'poster',
+            iconName: 'clipboard',
+            title: allowed === false ? 'Become a Poster to post tasks' : 'Switch to Poster mode',
+            sub: allowed === false
+              ? 'Poster mode stays off until you explicitly enable it.'
+              : 'Task publishing is available only in Poster mode.'
+          })
+        : '<div class="empty-state"><div class="empty-title">Poster mode is available at 18</div><div class="empty-sub">Teen accounts can find age-appropriate work in Tasker mode.</div></div>';
+    }
   }
   window.switchToPosterForPost = function () {
-    if (typeof setMode === 'function') setMode('poster');
-    else if (typeof setSessionMode === 'function') setSessionMode('poster');
-    if (typeof applyRoleTheme === 'function') applyRoleTheme();
-    refreshPostModeBanner();
+    var allowed = typeof QG_canUseRole === 'function' ? QG_canUseRole('poster') : null;
+    if (allowed === false && typeof QG_offerRoleOptIn === 'function') {
+      QG_offerRoleOptIn('poster');
+      return;
+    }
+    if (typeof switchToRoleMode === 'function') {
+      switchToRoleMode('poster');
+      return;
+    }
   };
   refreshPostModeBanner();
   document.addEventListener('qg-mode-changed', refreshPostModeBanner);
+  document.addEventListener('qg-role-access-changed', refreshPostModeBanner);
 })();
 </script>
 <script defer src="qg-help.js?v=20260726seo"></script>

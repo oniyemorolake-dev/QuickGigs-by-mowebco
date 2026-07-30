@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="qg-ux.css?v=20260729msgint1">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="qg-role-theme.css?v=20260729msgint1">
+<link rel="stylesheet" href="qg-role-theme.css?v=20260730roles1">
 <script src="qg-theme.js?v=20260729msgint1"></script>
 <script src="qg-brand-init.js?v=20260729msg2"></script>
 <style>
@@ -55,6 +55,19 @@ body.light{
   --bubble-theirs-text:#2d1b4e;
   --selected:#ede9ff;
   --lavender:#6b3fa0;
+}
+html[data-qg-mode="poster"] body{
+  --purple:#0f766e;
+  --purple-light:#2dd4bf;
+  --lavender:#5eead4;
+  --surface-hover:rgba(45,212,191,.12);
+  --selected:rgba(45,212,191,.18);
+  --bubble-mine:#0f766e;
+}
+html[data-qg-mode="poster"] body.light{
+  --surface-hover:#ecfdf9;
+  --selected:#ccfbf1;
+  --input-bg:#e8f8f5;
 }
 body{
   font-family:'DM Sans',sans-serif;
@@ -286,6 +299,9 @@ body.light .im-task-chip{background:#f0eeff;}
   background:linear-gradient(145deg,#7a4cb8,#6b3fa0);color:#fff;
   border-bottom-right-radius:5px;
 }
+html[data-qg-mode="poster"] .im-bubble-row.mine .im-bubble{
+  background:linear-gradient(145deg,#2dd4bf,#0f766e);
+}
 .im-bubble-row.theirs .im-bubble{
   background:var(--bubble-theirs);color:var(--bubble-theirs-text);
   border-bottom-left-radius:5px;border:0.5px solid var(--border);
@@ -323,6 +339,7 @@ body.light .im-task-chip{background:#f0eeff;}
   background:linear-gradient(145deg,#8b5cc7,#6b3fa0);color:#fff;font-size:16px;
   display:inline-flex;align-items:center;justify-content:center;
 }
+html[data-qg-mode="poster"] .im-send{background:linear-gradient(145deg,#2dd4bf,#0f766e);}
 .im-send:disabled{opacity:0.4;cursor:default;}
 .im-fraud{
   display:none;margin:0 12px 6px;padding:8px 12px;border-radius:10px;
@@ -582,6 +599,7 @@ applyTheme();
 })();
 
 (function () {
+  var allConversations = [];
   var conversations = [];
   var filtered = [];
   var userAvatars = {};
@@ -596,6 +614,7 @@ applyTheme();
   var lightboxBound = false;
   var isUploading = false;
   var uiWired = false;
+  var lastMarkedReadId = '';
 
   var AVATAR_GRADIENTS = [
     'linear-gradient(135deg,#6b3fa0,#c8a8e9)',
@@ -669,8 +688,9 @@ applyTheme();
     } catch (e2) { return ''; }
   }
   function countUnread(conv, userId) {
-    var lastRead = userId === conv.poster_id ? conv.poster_last_read_at : conv.worker_last_read_at;
+    var lastRead = String(userId) === String(conv.poster_id) ? conv.poster_last_read_at : conv.worker_last_read_at;
     if (!conv.last_message_at) return 0;
+    if (conv.last_sender_id && String(conv.last_sender_id) === String(userId)) return 0;
     if (!lastRead) return conv.last_message && conv.last_message_at ? 1 : 0;
     return new Date(conv.last_message_at) > new Date(lastRead) ? 1 : 0;
   }
@@ -680,6 +700,7 @@ applyTheme();
     var convId = conv.conv_id != null ? conv.conv_id : conv.CONV_ID;
     var taskId = conv.task_id != null ? conv.task_id : conv.TASK_ID;
     var iAmPoster = String(posterId) === String(userId);
+    var iAmTasker = String(workerId) === String(userId);
     var otherUid = iAmPoster ? workerId : posterId;
     otherUid = otherUid != null && String(otherUid) !== '' && String(otherUid) !== 'null' ? String(otherUid) : '';
     var otherName = iAmPoster ? (conv.worker_name || 'Tasker') : (conv.poster_name || 'Poster');
@@ -692,6 +713,7 @@ applyTheme();
       taskId: taskId,
       posterId: posterId,
       workerId: workerId,
+      side: iAmPoster ? 'poster' : (iAmTasker ? 'tasker' : ''),
       otherUid: otherUid,
       name: otherName,
       avatarUrl: otherUid ? (userAvatars[String(otherUid)] || '') : '',
@@ -701,6 +723,17 @@ applyTheme();
       time: formatRelativeTime(conv.last_message_at || conv.created_at),
       unread: countUnread(conv, userId)
     };
+  }
+
+  function currentInboxMode() {
+    var mode = typeof window.getMode === 'function' ? window.getMode() : localStorage.getItem('qg-mode');
+    return mode === 'poster' ? 'poster' : 'tasker';
+  }
+
+  function applyModeFilter() {
+    var mode = currentInboxMode();
+    conversations = allConversations.filter(function (c) { return c.side === mode; });
+    filterList();
   }
   function avatarHtml(name, url, bg, size, className) {
     if (typeof renderUserAvatarHtml === 'function') {
@@ -728,7 +761,8 @@ applyTheme();
     if (!list) return;
     setNodeText('conversationCount', filtered.length ? filtered.length + (filtered.length === 1 ? ' chat' : ' chats') : '');
     if (!filtered.length) {
-      list.innerHTML = '<div class="im-list-empty"><strong>No messages yet</strong>Accept an applicant or get accepted on a task — chats show up here.</div>';
+      var modeLabel = currentInboxMode() === 'poster' ? 'Poster' : 'Tasker';
+      list.innerHTML = '<div class="im-list-empty"><strong>No ' + modeLabel + ' messages yet</strong>Conversations for your other mode stay in that mode’s inbox.</div>';
       return;
     }
     list.innerHTML = filtered.map(function (c) {
@@ -794,9 +828,9 @@ applyTheme();
       var enriched = typeof enrichConversationNames === 'function'
         ? await Promise.all((rows || []).map(function (c) { return enrichConversationNames(c); }))
         : (rows || []);
-      conversations = enriched.map(function (c) { return mapConversation(c, currentUserId); });
-      filtered = conversations.slice();
-      renderList();
+      allConversations = enriched.map(function (c) { return mapConversation(c, currentUserId); })
+        .filter(function (c) { return !!c.side; });
+      applyModeFilter();
       if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('messages');
 
       var params = new URLSearchParams(window.location.search);
@@ -896,6 +930,7 @@ applyTheme();
   async function openConversation(convId) {
     if (!convId) return;
     try {
+      if (String(selectedId) !== String(convId)) lastMarkedReadId = '';
       selectedId = String(convId);
       renderList();
       setChatOpen(true);
@@ -966,9 +1001,6 @@ applyTheme();
       }
 
       await refreshMessages({ forceScroll: true });
-      if (typeof markConversationRead === 'function') {
-        markConversationRead(selectedId, currentUserId, currentConv.poster_id).catch(function () {});
-      }
       startPolling();
     } catch (err) {
       console.error('[QuickGigs messages] open failed', err);
@@ -1047,6 +1079,15 @@ applyTheme();
         }
       });
         filterList();
+        if (last.from === 'them' && last.id && last.id !== lastMarkedReadId &&
+            typeof markConversationRead === 'function') {
+          lastMarkedReadId = last.id;
+          markConversationRead(selectedId, currentUserId, currentConv && currentConv.poster_id)
+            .then(function () {
+              if (typeof window.refreshMessagesUnreadBadge === 'function') window.refreshMessagesUnreadBadge();
+            })
+            .catch(function () { lastMarkedReadId = ''; });
+        }
       }
       setVisibleError('threadError', '');
     } catch (err) {
@@ -1278,6 +1319,10 @@ applyTheme();
     uiWired = true;
     var search = $('searchInput');
     if (search && search.addEventListener) search.addEventListener('input', filterList);
+    document.addEventListener('qg-mode-changed', function () {
+      applyModeFilter();
+      if (typeof window.refreshMessagesUnreadBadge === 'function') window.refreshMessagesUnreadBadge();
+    });
 
     /* Delegate from document so startup cannot crash if shared chrome briefly
        reparents/rebuilds the conversation list. */

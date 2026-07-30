@@ -98,6 +98,15 @@
     if (typeof err === 'string') {
       if (err === '[object Object]') return 'Payment could not start — try Message or refresh the page';
       if (err === 'already_paid') return 'This task is already paid — opening chat…';
+      if (err === 'poster_payment_verification_required') {
+        return 'Add and verify a payment method before paying for this task.';
+      }
+      if (err === 'poster_role_required') {
+        return 'Enable Poster mode before paying for this task.';
+      }
+      if (err === 'poster_identity_mismatch' || err === 'not_task_poster') {
+        return 'Only the authenticated task poster can pay for this task.';
+      }
       if (err === 'stripe_not_configured') {
         return 'Stripe secret not set in Supabase — redeploy create-checkout (see STRIPE-SETUP.md)';
       }
@@ -115,7 +124,6 @@
       }
       if (err === 'task_not_in_progress') return 'Task must be in progress before paying.';
       if (err === 'no_accepted_worker') return 'Accept a tasker first, then pay.';
-      if (err === 'not_task_poster') return 'Only the poster can pay for this task.';
       if (err === 'cannot_pay_self') {
         return 'You cannot pay on your own task. Use a second account as the tasker, cancel this task, and repost.';
       }
@@ -301,13 +309,23 @@
   }
 
   async function startCheckout(taskId, posterId, returnPage, returnConv) {
-    if (typeof getSupabaseHeaders !== 'function') {
-      return { ok: false, error: 'Database not loaded' };
-    }
     var url = fnUrl(
       'createCheckoutUrl',
       'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-checkout'
     );
+    if (typeof callVerifiedFunction === 'function') {
+      var verified = await callVerifiedFunction(url, {
+        task_id: String(taskId),
+        poster_id: String(posterId),
+        return_page: returnPage || 'chat',
+        return_conv: returnConv || ''
+      });
+      if (verified.ok == null) verified.ok = verified.success === true;
+      return verified;
+    }
+    if (typeof getSupabaseHeaders !== 'function') {
+      return { ok: false, error: 'Database not loaded' };
+    }
     var headers = await getSupabaseHeaders();
     var res = await fetch(url, {
       method: 'POST',
@@ -1029,12 +1047,18 @@
   });
 
   async function syncConnectStatus(workerId) {
-    if (!workerId || typeof getSupabaseHeaders !== 'function') return { ok: false };
+    if (!workerId) return { ok: false };
     var url = fnUrl(
       'syncConnectUrl',
       'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/sync-connect-status'
     );
     try {
+      if (typeof callVerifiedFunction === 'function') {
+        var verified = await callVerifiedFunction(url, { worker_id: String(workerId) });
+        if (verified.ok == null) verified.ok = verified.success === true;
+        return verified;
+      }
+      if (typeof getSupabaseHeaders !== 'function') return { ok: false };
       var headers = await getSupabaseHeaders();
       var res = await fetch(url, {
         method: 'POST',

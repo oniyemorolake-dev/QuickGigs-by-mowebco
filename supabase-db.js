@@ -77,16 +77,16 @@ async function callVerifiedFunction(url, body, firebaseUser) {
 }
 
 /** Explicit column lists — only fields the UI actually renders / needs. Never select=*. */
-var SELECT_TASKS_BROWSE = 'task_id,title,budget,location,lat,lng,task_mode,status,created_at,category,description,posted_by,poster_name,budget_negotiable,photo_urls,scheduled_label,requires_photos,rate_type,is_recurring,hourly_rate,frequency,est_hours';
+var SELECT_TASKS_BROWSE = 'task_id,title,budget,location,lat,lng,task_mode,status,created_at,category,description,posted_by,poster_name,age_preference,budget_negotiable,photo_urls,scheduled_label,requires_photos,rate_type,is_recurring,hourly_rate,frequency,est_hours';
 /** Detail includes precise_address for post-accept reveal — public cards use BROWSE (no precise_address). */
 var SELECT_TASKS_DETAIL = SELECT_TASKS_BROWSE + ',scheduled_at,precise_address';
 /** Dashboard first paint — no description/photos/geo (smaller cellular payload). */
-var SELECT_TASKS_DASH = 'task_id,title,budget,location,task_mode,status,created_at,category,posted_by,budget_negotiable';
-var SELECT_APPLICATIONS = 'app_id,task_id,worker_id,worker_name,message,price,status,created_at,counter_price,counter_by,counter_round,last_counter_at';
+var SELECT_TASKS_DASH = 'task_id,title,budget,location,task_mode,status,created_at,category,posted_by,age_preference,budget_negotiable';
+var SELECT_APPLICATIONS = 'app_id,task_id,worker_id,worker_name,message,price,status,guardian_status,guardian_reviewed_at,guardian_distance_km,created_at,counter_price,counter_by,counter_round,last_counter_at';
 var SELECT_MESSAGES = 'message_id,conv_id,sender_id,body,created_at';
 /** Core conversation columns — always available after messaging.sql. */
 var SELECT_CONVERSATIONS_CORE =
-  'conv_id,task_id,poster_id,worker_id,poster_name,worker_name,task_title,task_category,status,is_unlocked,last_message,last_message_at,created_at';
+  'conv_id,task_id,poster_id,worker_id,poster_name,worker_name,task_title,task_category,status,is_unlocked,last_message,last_message_at,last_sender_id,created_at';
 /** Full select — last_read cols added later for receipts; fall back to CORE if missing. */
 var SELECT_CONVERSATIONS = SELECT_CONVERSATIONS_CORE + ',poster_last_read_at,worker_last_read_at';
 var SELECT_PAYMENTS = 'payment_id,task_id,poster_id,worker_id,amount,platform_fee,worker_payout,status,stripe_id,transfer_id,created_at,completed_at';
@@ -96,7 +96,7 @@ var SELECT_REVIEWS = 'review_id,task_id,reviewer_id,reviewee_id,rating,review_co
  * Do NOT select is_verified here — optional column; missing it 400s the whole users GET.
  * Rating is not a users column (computed from reviews).
  */
-var SELECT_USERS_PUBLIC_CARD = 'user_id,firebase_uid,name,avatar_url';
+var SELECT_USERS_PUBLIC_CARD = 'user_id,firebase_uid,name,avatar_url,is_tasker,is_poster,tasker_verified,poster_verified';
 /**
  * Public profile / worker discovery — rendered fields only, still NEVER email/phone.
  */
@@ -107,18 +107,21 @@ var SELECT_USERS_PUBLIC = SELECT_USERS_PUBLIC_CARD + ',role,status,bio,skills,av
  * Completion reads: name, email, avatar_url, bio, skills, pronouns, email_verified.
  */
 var SELECT_USERS_SELF_CORE =
-  'user_id,firebase_uid,name,email,avatar_url,bio,skills,pronouns,email_verified,role,status,phone,created_at,account_status';
+  'user_id,firebase_uid,name,email,avatar_url,bio,skills,pronouns,email_verified,role,status,phone,created_at,account_status,' +
+  'is_tasker,is_poster,last_active_mode,roles_updated_at,' +
+  'tasker_verified,tasker_verified_at,tasker_verification_status,tasker_background_check_status,' +
+  'poster_verified,poster_verified_at,poster_verification_status';
 var SELECT_USERS_SELF =
   SELECT_USERS_SELF_CORE +
   ',availability,service_area,languages,gender,date_of_birth,identity_collected_at,' +
   'guardian_name,guardian_email,guardian_phone,guardian_consent_status,guardian_consent_at,guardian_consent_token,' +
-  'stripe_connect_id,stripe_payouts_enabled,is_subscriber';
+  'stripe_connect_id,stripe_payouts_enabled,graduated_at,payout_owner,is_subscriber';
 /** Parent-consent page — no email/phone of the teen exposed beyond name + consent state. */
 var SELECT_USERS_GUARDIAN = 'user_id,firebase_uid,name,guardian_consent_status,guardian_consent_at,account_status';
 var SELECT_USERS_NAME = 'firebase_uid,name';
 var SELECT_USERS_AVATAR = 'firebase_uid,avatar_url';
 /** Login gate only — ban + onboarding check before redirect (minimal columns). */
-var SELECT_USERS_LOGIN_GATE = 'firebase_uid,status,date_of_birth,role,account_status,guardian_consent_status,guardian_email,guardian_consent_token';
+var SELECT_USERS_LOGIN_GATE = 'firebase_uid,status,date_of_birth,role,is_tasker,is_poster,last_active_mode,account_status,guardian_consent_status,guardian_email,guardian_consent_token,graduated_at,payout_owner,stripe_payouts_enabled,tasker_verified,tasker_verification_status,poster_verified,poster_verification_status';
 /** @deprecated use SELECT_USERS_PUBLIC / SELECT_USERS_SELF */
 var SELECT_USERS_LIST = SELECT_USERS_PUBLIC;
 var BROWSE_PAGE_SIZE = 20;
@@ -805,12 +808,20 @@ async function fetchApplicationsForActor(userId) {
     appMap[key] = row;
   }
 
-  var asWorker = await sbGet(
-    'applications',
-    withSelect('worker_id=eq.' + encodeURIComponent(userId), SELECT_APPLICATIONS),
-    'created_at.desc',
-    200
-  );
+  var asWorker = [];
+  var isCurrentWorker = window._currentUser && String(window._currentUser.uid) === userId;
+  var myAppsUrl = window.QG_CONFIG && window.QG_CONFIG.myApplicationsUrl;
+  if (isCurrentWorker && myAppsUrl && typeof callVerifiedFunction === 'function') {
+    var ownResult = await callVerifiedFunction(myAppsUrl, {});
+    asWorker = ownResult && ownResult.success ? (ownResult.data || []) : [];
+  } else {
+    asWorker = await sbGet(
+      'applications',
+      withSelect('worker_id=eq.' + encodeURIComponent(userId), SELECT_APPLICATIONS),
+      'created_at.desc',
+      200
+    );
+  }
   (asWorker || []).forEach(addApp);
 
   var myTasks = [];
@@ -1131,19 +1142,19 @@ async function completeTaskViaServer(taskId, actorId, options) {
   }
 }
 
+async function secureMessagingRequest(action, payload) {
+  var url = window.QG_CONFIG && window.QG_CONFIG.secureMessagingUrl;
+  if (!url) return { success: false, error: 'secure_messaging_unavailable' };
+  return await callVerifiedFunction(
+    url,
+    Object.assign({ action: action }, payload || {}),
+    window._currentUser
+  );
+}
+
 async function getConversationsForTask(taskId) {
-  // conversations.task_id is BIGINT — only query with numeric ids
-  var filters = [];
-  var raw = String(taskId || '');
-  if (/^\d+$/.test(raw)) {
-    filters.push('task_id=eq.' + encodeURIComponent(raw));
-  }
-  // If UI has UUID, find via applications/payments context is handled elsewhere
-  for (var i = 0; i < filters.length; i++) {
-    var convs = await sbGet('conversations', withSelect(filters[i], SELECT_CONVERSATIONS));
-    if (convs && convs.length) return convs;
-  }
-  return [];
+  var result = await secureMessagingRequest('for_task', { task_id: String(taskId || '') });
+  return result.success && Array.isArray(result.data) ? result.data : [];
 }
 
 async function lockConversationsForTask(taskId) {
@@ -1351,6 +1362,9 @@ async function postTask(taskData) {
   if (taskData.photo_urls) extras.photo_urls = taskData.photo_urls;
   if (taskData.requires_photos) extras.requires_photos = true;
   if (taskData.budget_negotiable) extras.budget_negotiable = true;
+  extras.age_preference = ['teens_welcome', 'any_with_guardian'].indexOf(String(taskData.age_preference)) >= 0
+    ? String(taskData.age_preference)
+    : 'adults_only';
   // Durable rate / recurring model (columns from tasks-rate-recurring.sql)
   extras.rate_type = rateType;
   extras.is_recurring = isRecurring;
@@ -2012,6 +2026,8 @@ function applyDbUserToProfileData(dbUser, target, opts) {
   if (dbUser.name) target.name = dbUser.name;
   if (dbUser.avatar_url) target.avatar_url = dbUser.avatar_url;
   if (dbUser.role) target.role = dbUser.role;
+  if (dbUser.is_tasker != null) target.is_tasker = dbUser.is_tasker === true;
+  if (dbUser.is_poster != null) target.is_poster = dbUser.is_poster === true;
   if (dbUser.bio != null && String(dbUser.bio).trim()) target.bio = String(dbUser.bio).trim();
   var skills = parseUserSkills(dbUser);
   if (skills.length) target.skills = skills;
@@ -2030,6 +2046,8 @@ function applyDbUserToProfileData(dbUser, target, opts) {
     if (dbUser.guardian_consent_status) target.guardian_consent_status = dbUser.guardian_consent_status;
     if (dbUser.stripe_connect_id) target.stripe_connect_id = dbUser.stripe_connect_id;
     if (dbUser.stripe_payouts_enabled != null) target.stripe_payouts_enabled = dbUser.stripe_payouts_enabled;
+    if (dbUser.graduated_at) target.graduated_at = dbUser.graduated_at;
+    if (dbUser.payout_owner) target.payout_owner = dbUser.payout_owner;
     if (dbUser.email_verified === true || dbUser.verified === true) {
       target.email_verified = true;
       target.verified = true;
@@ -2078,15 +2096,59 @@ function isAccountPendingGuardian(user) {
 async function getAccountActionPermission(firebaseUid, action) {
   var user = firebaseUid ? await getUserByFirebaseUid(firebaseUid) : null;
   var status = user && user.account_status ? String(user.account_status) : '';
-  if (status === 'active') return { allowed: true, status: status };
   var verb = action === 'post' ? 'post gigs' : 'apply to gigs';
-  return {
-    allowed: false,
-    status: status || 'unknown',
-    message: status === 'pending_guardian'
-      ? 'A parent or guardian must approve your account before you can ' + verb + '.'
-      : 'Your account is not currently allowed to ' + verb + '.'
-  };
+  if (status !== 'active') {
+    return {
+      allowed: false,
+      status: status || 'unknown',
+      message: status === 'pending_guardian'
+        ? 'A parent or guardian must approve your account before you can ' + verb + '.'
+        : 'Your account is not currently allowed to ' + verb + '.'
+    };
+  }
+  if (action === 'post' && typeof QG_isTeenDob === 'function' && QG_isTeenDob(user.date_of_birth)) {
+    return {
+      allowed: false,
+      status: status,
+      reason: 'teen_poster_unavailable',
+      message: 'Poster mode becomes available when you turn 18.'
+    };
+  }
+  if (action === 'post' && user.is_poster !== true) {
+    return {
+      allowed: false,
+      status: status,
+      reason: 'poster_role_required',
+      message: 'Enable Poster mode before posting tasks.'
+    };
+  }
+  if (action !== 'post' && user.is_tasker !== true) {
+    return {
+      allowed: false,
+      status: status,
+      reason: 'tasker_role_required',
+      message: 'Enable Tasker mode before applying to gigs.'
+    };
+  }
+  if (action === 'post' && user.poster_verified !== true) {
+    return {
+      allowed: false,
+      status: status,
+      reason: 'poster_payment_verification_required',
+      verificationRole: 'poster',
+      message: 'Add a payment method to post.'
+    };
+  }
+  if (action !== 'post' && user.tasker_verified !== true) {
+    return {
+      allowed: false,
+      status: status,
+      reason: 'tasker_identity_verification_required',
+      verificationRole: 'tasker',
+      message: 'Verify your identity to start working.'
+    };
+  }
+  return { allowed: true, status: status };
 }
 
 async function resolveUserAvatarUrl(firebaseUid) {
@@ -2229,29 +2291,13 @@ async function enrichConversationNames(conv) {
 }
 
 async function getConversationsForUser(userId) {
+  var actorId = window._currentUser && window._currentUser.uid;
+  if (actorId) userId = String(actorId);
   var stale = readConversationsCache(userId, true);
-  var controller = new AbortController();
-  var timeoutId = setTimeout(function () { controller.abort(); }, 8000);
   try {
-    async function fetchWithSelect(selectCols) {
-      var url = SUPABASE_URL + '/rest/v1/conversations?select=' + encodeURIComponent(selectCols);
-      url += '&order=last_message_at.desc.nullslast,created_at.desc';
-      url += '&or=(poster_id.eq.' + encodeURIComponent(userId) + ',worker_id.eq.' + encodeURIComponent(userId) + ')';
-      var headers = await getSupabaseHeaders();
-      var res = await fetch(url, { method: 'GET', headers: headers, signal: controller.signal });
-      if (!res.ok) {
-        var errText = await res.text();
-        throw new Error('GET conversations failed: ' + res.status + ' ' + errText);
-      }
-      return await res.json();
-    }
-    var rows;
-    try {
-      rows = await fetchWithSelect(SELECT_CONVERSATIONS);
-    } catch (fullErr) {
-      console.warn('getConversationsForUser full select failed, using CORE:', fullErr && fullErr.message);
-      rows = await fetchWithSelect(SELECT_CONVERSATIONS_CORE);
-    }
+    var result = await secureMessagingRequest('list');
+    if (!result.success) throw new Error(result.error || 'conversation_list_failed');
+    var rows = Array.isArray(result.data) ? result.data : [];
     writeConversationsCache(userId, rows || []);
     window._supabaseUsingStaleCache = false;
     return rows;
@@ -2263,8 +2309,6 @@ async function getConversationsForUser(userId) {
       return stale;
     }
     throw err;
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 
@@ -2278,15 +2322,8 @@ async function getConversation(convId, opts) {
   if (!convId) return null;
   var me = currentActorId(opts);
   if (!me && opts.actorId) me = String(opts.actorId);
-  var filter = 'conv_id=eq.' + encodeURIComponent(String(convId));
-  var rows = null;
-  try {
-    rows = await sbGetOrThrow('conversations', withSelect(filter, SELECT_CONVERSATIONS), null, 1);
-  } catch (fullErr) {
-    console.warn('getConversation full select failed, using CORE:', fullErr && fullErr.message);
-    rows = await sbGet('conversations', withSelect(filter, SELECT_CONVERSATIONS_CORE), null, 1);
-  }
-  var conv = (rows && rows[0]) || null;
+  var result = await secureMessagingRequest('get', { conv_id: String(convId) });
+  var conv = result.success ? result.data : null;
   if (!conv) return null;
   // If actor id is not ready yet, still return the row — caller validates party.
   if (me && String(conv.poster_id) !== me && String(conv.worker_id) !== me) {
@@ -2443,7 +2480,7 @@ async function forceUnlockConversationForTask(conv, taskStatus) {
 }
 
 async function updateConversation(convId, patch) {
-  return await sbUpdate('conversations', patch, 'conv_id=eq.' + encodeURIComponent(convId));
+  return await secureMessagingRequest('update', { conv_id: String(convId || ''), patch: patch || {} });
 }
 
 async function unlockConversationIfAllowed(convId, convStatus, taskStatus) {
@@ -2488,7 +2525,7 @@ async function createConversation(convData) {
     return { success: true, data: existing, existing: true };
   }
 
-  return await sbPostReturn('conversations', {
+  return await secureMessagingRequest('create', { conversation: {
     task_id:       taskId,
     poster_id:     convData.poster_id,
     worker_id:     convData.worker_id,
@@ -2500,7 +2537,7 @@ async function createConversation(convData) {
     is_unlocked:   shouldUnlock,
     last_message:  convData.last_message || '',
     last_message_at: convData.last_message_at || null
-  });
+  }});
 }
 
 async function getMessagesForConversation(convId, opts) {
@@ -2524,11 +2561,8 @@ async function getMessagesForConversation(convId, opts) {
       return [];
     }
   }
-  return await sbGet(
-    'messages',
-    withSelect('conv_id=eq.' + encodeURIComponent(convId), SELECT_MESSAGES),
-    'created_at.asc'
-  );
+  var result = await secureMessagingRequest('messages', { conv_id: String(convId || '') });
+  return result.success && Array.isArray(result.data) ? result.data : [];
 }
 
 async function sendChatMessage(convId, senderId, body, recentTexts, fraudOpts) {
@@ -2611,21 +2645,15 @@ async function sendChatMessage(convId, senderId, body, recentTexts, fraudOpts) {
     }
   }
 
-  var result = await sbPostReturn('messages', {
-    conv_id:   convId,
-    sender_id: senderId,
-    body:      body
+  var result = await secureMessagingRequest('send', {
+    conv_id: String(convId || ''),
+    body: body
   });
   if (!result.success) return result;
 
   var preview = isSystem
     ? (typeof parseSystemChatBody === 'function' ? parseSystemChatBody(body) : body)
     : (isChatImageBody(body) ? '📷 Photo' : body);
-
-  await sbUpdate('conversations', {
-    last_message:    preview,
-    last_message_at: new Date().toISOString()
-  }, 'conv_id=eq.' + encodeURIComponent(convId));
 
   if (!isSystem) {
     notifyChatRecipientAsync(convId, senderId, preview);
@@ -2672,10 +2700,7 @@ function notifyChatRecipientAsync(convId, senderId, preview) {
 }
 
 async function markConversationRead(convId, userId, posterId) {
-  var field = userId === posterId ? 'poster_last_read_at' : 'worker_last_read_at';
-  var patch = {};
-  patch[field] = new Date().toISOString();
-  return await sbUpdate('conversations', patch, 'conv_id=eq.' + encodeURIComponent(convId));
+  return await secureMessagingRequest('mark_read', { conv_id: String(convId || '') });
 }
 
 async function getTaskPosterIdQuick(taskId) {
@@ -2751,6 +2776,11 @@ async function getApplicationById(appId, opts) {
 async function getApplicationsByWorker(workerId) {
   var me = currentActorId();
   if (me && String(me) !== String(workerId)) return [];
+  var myAppsUrl = window.QG_CONFIG && window.QG_CONFIG.myApplicationsUrl;
+  if (myAppsUrl && typeof callVerifiedFunction === 'function') {
+    var result = await callVerifiedFunction(myAppsUrl, {});
+    return (result && result.success ? (result.data || []) : []).map(normalizeApplicationRow);
+  }
   var rows = await sbGet(
     'applications',
     withSelect('worker_id=eq.' + encodeURIComponent(String(workerId)), SELECT_APPLICATIONS)
@@ -3061,23 +3091,17 @@ async function submitApplication(appData) {
 
   // Security-sensitive insert goes through a Firebase-verified Edge Function.
   var secureApplyUrl = window.QG_CONFIG && window.QG_CONFIG.submitApplicationUrl;
-  var result = secureApplyUrl
-    ? await callVerifiedFunction(secureApplyUrl, { application: row })
-    : (typeof sbPostReturn === 'function'
-      ? await sbPostReturn('applications', row)
-      : await sbPost('applications', row));
-  if (!secureApplyUrl && !result.success && appData.worker_name) {
-    var fallback = {
-      task_id:   taskId,
-      worker_id: workerFirebaseUid,
-      message:   appData.message,
-      price:     appData.price,
-      status:    'pending'
-    };
-    result = typeof sbPostReturn === 'function'
-      ? await sbPostReturn('applications', fallback)
-      : await sbPost('applications', fallback);
-  }
+  if (!secureApplyUrl) return { success: false, error: 'secure_application_unavailable' };
+  var secureApplication = Object.assign({}, row);
+  try {
+    var geoRaw = sessionStorage.getItem('qg-geo-filter-pos');
+    var geoPos = geoRaw ? JSON.parse(geoRaw) : null;
+    if (geoPos && isFinite(Number(geoPos.lat)) && isFinite(Number(geoPos.lng))) {
+      secureApplication.origin_lat = Math.round(Number(geoPos.lat) * 100) / 100;
+      secureApplication.origin_lng = Math.round(Number(geoPos.lng) * 100) / 100;
+    }
+  } catch (geoErr) {}
+  var result = await callVerifiedFunction(secureApplyUrl, { application: secureApplication });
   if (result.success && result.data) {
     console.log('[QuickGigs apply] applications row created', {
       app_id: result.data.app_id,
@@ -3090,7 +3114,8 @@ async function submitApplication(appData) {
     console.error('[QuickGigs apply] applications insert failed', result.error);
   }
 
-  if (result.success && taskId && typeof notifyPosterNewApplication === 'function') {
+  if (result.success && result.guardian_status !== 'pending_guardian' &&
+      taskId && typeof notifyPosterNewApplication === 'function') {
     try {
       var notifyTask = task || await getTaskById(taskId);
       var notifyPosterId = notifyTask && (notifyTask.posted_by || notifyTask.POSTED_BY);
@@ -3207,6 +3232,24 @@ function formatSupabaseActionError(action, err) {
   if (msg === '[object Object]') msg = '';
   var lower = msg.toLowerCase();
   var act = String(action || '').toLowerCase();
+  if (lower.indexOf('tasker_identity_verification_required') >= 0) {
+    return 'Verify your identity to start working.';
+  }
+  if (lower.indexOf('poster_payment_verification_required') >= 0) {
+    return 'Add a payment method to post.';
+  }
+  if (lower.indexOf('poster_role_required') >= 0) {
+    return 'Enable Poster mode before posting tasks.';
+  }
+  if (lower.indexOf('tasker_role_required') >= 0) {
+    return 'Enable Tasker mode before applying to gigs.';
+  }
+  if (lower.indexOf('teen_poster_unavailable') >= 0) {
+    return 'Poster mode becomes available when you turn 18.';
+  }
+  if (lower.indexOf('location_geocode_failed') >= 0) {
+    return 'Choose a valid Canadian city or area.';
+  }
   var isReviewAction = act.indexOf('review') >= 0;
   if (isReviewAction || lower.indexOf('reviews') >= 0) {
     if (lower.indexOf('already') >= 0 || lower.indexOf('duplicate') >= 0 || lower.indexOf('23505') >= 0) {

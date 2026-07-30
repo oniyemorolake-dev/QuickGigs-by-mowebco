@@ -31,6 +31,7 @@
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
 <link rel="stylesheet" href="qg-menu.css?v=2">
+<link rel="stylesheet" href="qg-role-theme.css?v=20260730roles1">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -92,6 +93,7 @@ body.light .mode-btn{background:rgba(0,0,0,0.2);color:#fff;}
 .avatar-camera{position:absolute;bottom:2px;right:2px;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);border:3px solid var(--bg);display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,0.25);}
 .avatar-edit-hint{font-size:11px;color:var(--text-faint);margin-bottom:8px;}
 .verified{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid var(--bg);}
+.role-verification-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.role-verification-card{padding:14px;border-radius:15px;background:var(--surface);border:1px solid var(--border)}.role-verification-card strong{display:block;font-size:13px;margin-bottom:4px}.role-verification-card p{font-size:11px;line-height:1.5;color:var(--text-muted);margin:0 0 10px}.role-verification-btn{width:100%;padding:9px 11px;border:0;border-radius:10px;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;font:600 11px Poppins,sans-serif;cursor:pointer}.role-verification-btn.is-verified{background:rgba(74,222,128,.14);color:#16a34a;cursor:default}.role-verified-badges{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:7px}.role-verified-pill{padding:5px 9px;border-radius:999px;background:rgba(74,222,128,.12);color:#16a34a;font-size:10px;font-weight:600}@media(max-width:560px){.role-verification-grid{grid-template-columns:1fr}}
 .profile-name{font-size:22px;font-weight:600;margin-bottom:4px;text-align:center;}
 .profile-pronouns{font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:6px;font-weight:400;}
 .role-tags{display:flex;gap:6px;justify-content:center;margin-bottom:10px;flex-wrap:wrap;}
@@ -356,7 +358,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
       </div>
     </div>
     <div class="avatar-camera" id="avatarCamera" style="display:none">📷</div>
-    <div class="verified" title="Verified user">✓</div>
+    <div class="verified" id="avatarVerifiedMark" title="Verified user" style="display:none">✓</div>
   </div>
   <div class="avatar-edit-hint" id="avatarHint" style="display:none">Tap photo to change</div>
   <div class="profile-name" id="profileName">Loading...</div>
@@ -376,6 +378,21 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
   <div class="sec-title">Account</div>
   <div id="profileAccountRows"></div>
   <p class="account-privacy-note">Only you can see this — email and phone are never shown on your public profile.</p>
+</div>
+<div class="section" id="roleVerificationSection" style="display:none">
+  <div class="sec-title">Verification to transact</div>
+  <div class="role-verification-grid">
+    <div class="role-verification-card" id="taskerVerificationCard">
+      <strong>🪪 Tasker identity</strong>
+      <p id="taskerVerificationCopy">Required before applying to or accepting gigs.</p>
+      <button type="button" class="role-verification-btn" id="taskerVerificationBtn">Verify identity</button>
+    </div>
+    <div class="role-verification-card" id="posterVerificationCard">
+      <strong>💳 Poster payment method</strong>
+      <p id="posterVerificationCopy">Required before publishing a task.</p>
+      <button type="button" class="role-verification-btn" id="posterVerificationBtn">Add payment method</button>
+    </div>
+  </div>
 </div>
 
 <!-- EDIT BUTTONS (own profile only) -->
@@ -585,19 +602,20 @@ onAuthStateChanged(auth, (user) => {
 <script src="qg-ux.js?v=20260728welcome1" defer></script>
 <script src="qg-bigtech.js?v=20260729chatprofile1" defer></script>
 <script src="qg-wave2.js?v=20260728xss1" defer></script>
-<script defer src="qg-config.js"></script>
+<script defer src="qg-config.js?v=20260730verify1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
-<script defer src="supabase-db.js"></script>
+<script defer src="supabase-db.js?v=20260730verify1"></script>
+<script defer src="qg-verification.js?v=1"></script>
 <script defer src="qg-payments-ui.js?v=1"></script>
-<script defer src="qg-stripe.js"></script>
+<script defer src="qg-stripe.js?v=20260730teen1"></script>
 <script defer src="qg-pwa.js?v=4"></script>
 <script defer src="qg-share.js"></script>
 <script defer src="qg-report.js?v=20260716d"></script>
-<script defer src="qg-stats.js"></script>
+<script defer src="qg-stats.js?v=20260730verify1"></script>
 <script defer src="qg-confetti.js?v=1"></script>
 <script defer src="qg-nav.js"></script>
 <script defer src="qg-menu.js?v=20260727auth2"></script>
-<script defer src="qg-role-switch.js"></script>
+<script defer src="qg-role-switch.js?v=2"></script>
 <script>
 var HEADERS = window.HEADERS;
 
@@ -609,6 +627,16 @@ var isDark = localStorage.getItem('qg-mode') !== 'light';
 function applyTheme(){ document.body.className = isDark ? '' : 'light'; document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark'; }
 window.toggleTheme = function(){ isDark = !isDark; localStorage.setItem('qg-mode', isDark?'dark':'light'); applyTheme(); };
 applyTheme();
+
+document.addEventListener('DOMContentLoaded', function bootVerificationReturn(){
+  if (!window._currentUser || typeof QG_syncVerificationReturn !== 'function') {
+    setTimeout(bootVerificationReturn, 120);
+    return;
+  }
+  QG_syncVerificationReturn().then(function(result){
+    if (result && result.ok && window._currentUser) loadProfile(window._currentUser);
+  }).catch(function(){});
+});
 
 function showToast(msg) {
   var t = document.getElementById('toast');
@@ -622,6 +650,70 @@ function esc(s) {
   return typeof escapeHtml === 'function' ? escapeHtml(s)
     : (typeof qgEsc === 'function' ? qgEsc(s)
       : String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+}
+
+function renderRoleVerificationState(dbUser, isOwnProfile) {
+  dbUser = dbUser || {};
+  var taskerVerified = dbUser.tasker_verified === true;
+  var posterVerified = dbUser.poster_verified === true;
+  var hasTaskerRole = dbUser.is_tasker === true;
+  var hasPosterRole = dbUser.is_poster === true;
+  var mark = document.getElementById('avatarVerifiedMark');
+  if (mark) mark.style.display = taskerVerified || posterVerified ? 'flex' : 'none';
+  var badgeWrap = document.getElementById('verifiedBadgeWrap');
+  if (badgeWrap) {
+    var badges = [];
+    if (taskerVerified) badges.push('<span class="role-verified-pill">✓ Identity verified</span>');
+    if (posterVerified) badges.push('<span class="role-verified-pill">✓ Payment verified</span>');
+    badgeWrap.className = 'role-verified-badges';
+    badgeWrap.innerHTML = badges.join('');
+  }
+
+  var section = document.getElementById('roleVerificationSection');
+  if (!section) return;
+  section.style.display = isOwnProfile && (hasTaskerRole || hasPosterRole) ? 'block' : 'none';
+  if (!isOwnProfile) return;
+  var taskerCard = document.getElementById('taskerVerificationCard');
+  var posterCard = document.getElementById('posterVerificationCard');
+  if (taskerCard) taskerCard.style.display = hasTaskerRole ? '' : 'none';
+  if (posterCard) posterCard.style.display = hasPosterRole ? '' : 'none';
+
+  var taskerButton = document.getElementById('taskerVerificationBtn');
+  var taskerCopy = document.getElementById('taskerVerificationCopy');
+  taskerButton.classList.remove('is-verified');
+  taskerButton.disabled = false;
+  var taskerStatus = String(dbUser.tasker_verification_status || 'unverified');
+  if (taskerVerified) {
+    taskerButton.textContent = 'Verified ✓';
+    taskerButton.classList.add('is-verified');
+    taskerButton.disabled = true;
+    taskerCopy.textContent = 'Identity verified. You can apply to and accept eligible gigs.';
+  } else {
+    taskerButton.textContent = taskerStatus === 'pending' ? 'Check verification status' : 'Verify identity';
+    taskerButton.onclick = async function () {
+      if (taskerStatus === 'pending' && typeof callVerifiedFunction === 'function') {
+        var result = await callVerifiedFunction(window.QG_CONFIG && window.QG_CONFIG.roleVerificationUrl, { action: 'sync_tasker' });
+        if (result && result.tasker_verified && window._currentUser) return loadProfile(window._currentUser);
+      }
+      if (typeof QG_openVerificationPrompt === 'function') QG_openVerificationPrompt('tasker');
+    };
+  }
+
+  var posterButton = document.getElementById('posterVerificationBtn');
+  var posterCopy = document.getElementById('posterVerificationCopy');
+  posterButton.classList.remove('is-verified');
+  posterButton.disabled = false;
+  if (posterVerified) {
+    posterButton.textContent = 'Verified ✓';
+    posterButton.classList.add('is-verified');
+    posterButton.disabled = true;
+    posterCopy.textContent = 'Payment method verified. You can publish tasks.';
+  } else {
+    posterButton.textContent = 'Add payment method';
+    posterButton.onclick = function () {
+      if (typeof QG_openVerificationPrompt === 'function') QG_openVerificationPrompt('poster');
+    };
+  }
 }
 
 function updateAvatarDisplay(name, url) {
@@ -801,7 +893,7 @@ async function loadReviewsForProfile(targetId) {
 
 function userIsTasker(role) {
   role = role || profileData.role || localStorage.getItem('qg-role') || '';
-  return role === 'worker' || role === 'both';
+  return profileData.is_tasker === true || role === 'worker' || role === 'both';
 }
 
 async function loadProfile(user) {
@@ -835,7 +927,7 @@ async function loadProfile(user) {
     if (roleWrap) {
       roleWrap.style.display = 'block';
       if (typeof renderRoleFlip === 'function') renderRoleFlip('roleFlipMount');
-      if (window.location.hash === '#roleSwitch') {
+      if (window.location.hash === '#roleSwitch' || window.location.hash === '#roleFlipMount') {
         setTimeout(function() { roleWrap.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 400);
       }
     }
@@ -950,13 +1042,9 @@ async function loadProfile(user) {
     if (trustEl && typeof renderTrustBadges === 'function') {
       trustEl.innerHTML = renderTrustBadges(trustStats);
     }
-    if (typeof isWorkerVerified === 'function' && typeof renderVerifiedBadge === 'function') {
-      var verified = await isWorkerVerified(targetId, dbUser, trustStats);
-      var vWrap = document.getElementById('verifiedBadgeWrap');
-      if (vWrap) vWrap.innerHTML = verified ? renderVerifiedBadge(true) : '';
-    }
   }
 
+  renderRoleVerificationState(dbUser, isOwnProfile);
   renderProfile(user, isOwnProfile);
   renderProfileActions(targetId, profileData.name, isOwnProfile);
   renderPayoutSetup(user, isOwnProfile, dbUser);
@@ -1007,13 +1095,15 @@ function renderProfile(user, isOwnProfile) {
   }
 
   var role = profileData.role || 'poster';
+  var hasTaskerRole = profileData.is_tasker === true || role === 'worker' || role === 'both';
+  var hasPosterRole = profileData.is_poster === true || role === 'poster' || role === 'both';
   if (typeof getSessionMode === 'function' && isOwnProfile) {
     role = getSessionMode() === 'worker' ? 'worker' : 'poster';
     profileData.role = role;
   }
   var roleHtml = '';
-  if (role === 'poster' || role === 'both') roleHtml += '<span class="role-tag">📋 Poster</span>';
-  if (role === 'worker' || role === 'both') roleHtml += '<span class="role-tag">💼 Tasker</span>';
+  if (hasPosterRole) roleHtml += '<span class="role-tag">📋 Poster</span>';
+  if (hasTaskerRole) roleHtml += '<span class="role-tag">💼 Tasker</span>';
   if (!roleHtml) roleHtml = '<span class="role-tag">👤 QuickGigs member</span>';
   document.getElementById('roleTags').innerHTML = roleHtml;
 
@@ -1026,7 +1116,7 @@ function renderProfile(user, isOwnProfile) {
 
   var trustSec = document.getElementById('workerTrustSection');
   var trustTxt = document.getElementById('workerTrustText');
-  var showWorker = userIsTasker(role);
+  var showWorker = hasTaskerRole;
   if (trustSec && trustTxt && showWorker) {
     trustSec.style.display = 'block';
     var avail = profileData.availability === 'busy' ? '🔴 Busy — not taking new tasks' : '🟢 Available for tasks';

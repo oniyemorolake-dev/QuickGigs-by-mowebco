@@ -39,7 +39,10 @@
     var current = getCurrentMode();
     if (mode === current && !options.force) return { changed: false, mode: mode };
 
-    if (typeof setMode === 'function') setMode(mode);
+    if (typeof window.QG_setActiveRoleMode === 'function') {
+      var roleResult = await window.QG_setActiveRoleMode(mode);
+      if (!roleResult.success) return { changed: false, mode: current, error: roleResult.error };
+    } else if (typeof setMode === 'function') setMode(mode);
     else if (typeof setSessionMode === 'function') setSessionMode(mode === 'tasker' ? 'worker' : 'poster');
     else {
       await persistWorkspaceModeLocal(mode);
@@ -85,36 +88,111 @@
     options = options || {};
     var el = document.getElementById(containerId);
     if (!el) return;
+    var access = typeof window.QG_getRoleAccess === 'function' ? window.QG_getRoleAccess() : null;
+    if (!access) {
+      el.innerHTML = '<div class="qg-role-flip"><p class="qg-role-flip-note">Loading account modes…</p></div>';
+      if (typeof window.QG_loadRoleAccess === 'function') {
+        window.QG_loadRoleAccess(true).then(function () { renderRoleFlip(containerId, options); });
+      }
+      return;
+    }
     var mode = getCurrentMode();
     var isWorker = mode === 'tasker';
+    var both = access.is_tasker && access.is_poster && !access.is_teen;
+    if (both) {
+      el.innerHTML =
+        '<div class="qg-role-flip" role="group" aria-label="Switch between Tasker and Poster mode">' +
+          '<p class="qg-role-flip-kicker">Your QuickGigs mode</p>' +
+          '<div class="qg-role-flip-track' + (isWorker ? ' is-worker' : '') + '">' +
+            '<button type="button" class="qg-role-flip-opt' + (isWorker ? ' active' : '') + '" data-mode="tasker" aria-pressed="' + isWorker + '">' +
+              '<span class="qg-role-flip-icon">💼</span><span class="qg-role-flip-label">Tasker</span><span class="qg-role-flip-desc">Find work</span>' +
+            '</button>' +
+            '<button type="button" class="qg-role-flip-opt' + (!isWorker ? ' active' : '') + '" data-mode="poster" aria-pressed="' + (!isWorker) + '">' +
+              '<span class="qg-role-flip-icon">📋</span><span class="qg-role-flip-label">Poster</span><span class="qg-role-flip-desc">Post tasks</span>' +
+            '</button>' +
+            '<span class="qg-role-flip-slider" aria-hidden="true"></span>' +
+          '</div>' +
+          '<p class="qg-role-flip-note">Your navigation and accent change with the selected mode.</p>' +
+        '</div>';
+      el.querySelectorAll('.qg-role-flip-opt').forEach(function (btn) {
+        btn.onclick = function () {
+          setQuickGigsMode(btn.getAttribute('data-mode'), { toast: true, reload: true });
+        };
+      });
+      return;
+    }
 
+    var canAddPoster = access.is_tasker && !access.is_poster && !access.is_teen;
+    var addMode = canAddPoster ? 'poster' : 'tasker';
+    var title = canAddPoster ? 'Become a Poster' : 'Start finding work';
+    var description = canAddPoster
+      ? 'Enable Poster mode to publish tasks and hire local taskers.'
+      : 'Enable Tasker mode to browse gigs, apply, and earn.';
+    if (access.is_teen && !access.is_poster) {
+      title = 'Tasker account';
+      description = 'Poster mode becomes available when you turn 18.';
+    }
     el.innerHTML =
-      '<div class="qg-role-flip" role="group" aria-label="Switch between Poster and Tasker mode">' +
-        '<p class="qg-role-flip-kicker">How you use QuickGigs</p>' +
-        '<div class="qg-role-flip-track' + (isWorker ? ' is-worker' : '') + '">' +
-          '<button type="button" class="qg-role-flip-opt' + (!isWorker ? ' active' : '') + '" data-mode="poster" aria-pressed="' + (!isWorker) + '">' +
-            '<span class="qg-role-flip-icon">📋</span>' +
-            '<span class="qg-role-flip-label">I need help</span>' +
-            '<span class="qg-role-flip-desc">Post & hire</span>' +
-          '</button>' +
-          '<button type="button" class="qg-role-flip-opt' + (isWorker ? ' active' : '') + '" data-mode="tasker" aria-pressed="' + isWorker + '">' +
-            '<span class="qg-role-flip-icon">💼</span>' +
-            '<span class="qg-role-flip-label">I\'m available</span>' +
-            '<span class="qg-role-flip-desc">Browse & apply</span>' +
-          '</button>' +
-          '<span class="qg-role-flip-slider" aria-hidden="true"></span>' +
-        '</div>' +
-        '<p class="qg-role-flip-note">Same account — switch anytime. Taskers need a profile photo to apply.</p>' +
+      '<div class="qg-role-flip qg-role-opt-in">' +
+        '<p class="qg-role-flip-kicker">Your QuickGigs account</p>' +
+        '<strong class="qg-role-opt-in-title">' + title + '</strong>' +
+        '<p class="qg-role-flip-note">' + description + '</p>' +
+        (access.is_teen ? '' : '<button type="button" class="qg-role-enable-btn" data-enable-role="' + addMode + '">' + title + '</button>') +
       '</div>';
+    var enable = el.querySelector('[data-enable-role]');
+    if (enable) enable.onclick = function () { offerRoleOptIn(enable.getAttribute('data-enable-role')); };
+  }
 
-    el.querySelectorAll('.qg-role-flip-opt').forEach(function (btn) {
-      btn.onclick = function () {
-        var next = btn.getAttribute('data-mode');
-        setQuickGigsMode(next, { toast: true, reload: true }).then(function () {
-          renderRoleFlip(containerId, options);
-        });
-      };
-    });
+  function offerRoleOptIn(mode) {
+    mode = mode === 'poster' ? 'poster' : 'tasker';
+    var access = typeof window.QG_getRoleAccess === 'function' ? window.QG_getRoleAccess() : null;
+    if (mode === 'poster' && access && access.is_teen) {
+      var teenMessage = 'Poster mode becomes available when you turn 18.';
+      if (typeof qgNotify === 'function') qgNotify(teenMessage, '#f59e0b');
+      else if (typeof showToast === 'function') showToast(teenMessage);
+      else alert(teenMessage);
+      return;
+    }
+    var existing = document.getElementById('qgRoleOptInOverlay');
+    if (existing) existing.remove();
+    var overlay = document.createElement('div');
+    overlay.id = 'qgRoleOptInOverlay';
+    overlay.className = 'qg-role-opt-in-overlay open';
+    var poster = mode === 'poster';
+    overlay.innerHTML =
+      '<div class="qg-role-opt-in-dialog" role="dialog" aria-modal="true" aria-labelledby="qgRoleOptInTitle">' +
+        '<span class="qg-role-opt-in-icon">' + (poster ? '📋' : '💼') + '</span>' +
+        '<h2 id="qgRoleOptInTitle">' + (poster ? 'Become a Poster?' : 'Start finding work?') + '</h2>' +
+        '<p>' + (poster
+          ? 'This adds Poster mode to your account. You will need to verify a payment method before publishing.'
+          : 'This adds Tasker mode to your account. Identity verification is required before applying.') + '</p>' +
+        '<div class="qg-role-opt-in-actions">' +
+          '<button type="button" data-role-cancel>Not now</button>' +
+          '<button type="button" class="primary" data-role-confirm>Enable ' + (poster ? 'Poster' : 'Tasker') + '</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    function close() { overlay.remove(); }
+    overlay.onclick = function (e) { if (e.target === overlay) close(); };
+    overlay.querySelector('[data-role-cancel]').onclick = close;
+    overlay.querySelector('[data-role-confirm]').onclick = async function () {
+      var btn = overlay.querySelector('[data-role-confirm]');
+      btn.disabled = true;
+      btn.textContent = 'Enabling…';
+      var result = typeof window.QG_enableRole === 'function'
+        ? await window.QG_enableRole(mode)
+        : { success: false, error: 'role_access_unavailable' };
+      if (!result.success) {
+        btn.disabled = false;
+        btn.textContent = result.error === 'teen_poster_unavailable'
+          ? 'Available when you turn 18'
+          : 'Try again';
+        return;
+      }
+      close();
+      showRoleToast(mode);
+      setTimeout(function () { window.location.href = 'dashboard.html'; }, 180);
+    };
   }
 
   function buildDashboardHero(data) {
@@ -184,12 +262,19 @@
       }
     }
 
-    var switchLabel = isPoster
-      ? 'Want to earn instead? Switch to tasker →'
-      : 'Need something done? Switch to poster →';
+    var access = typeof window.QG_getRoleAccess === 'function' ? window.QG_getRoleAccess() : null;
+    if (access && access.is_teen && !isPoster) return html;
+    var targetMode = isPoster ? 'tasker' : 'poster';
+    var hasTarget = !access || (targetMode === 'tasker' ? access.is_tasker : access.is_poster);
+    var switchLabel = hasTarget
+      ? (isPoster ? 'Switch to Tasker mode →' : 'Switch to Poster mode →')
+      : (isPoster ? 'Start finding work →' : 'Become a Poster →');
+    var switchAction = hasTarget
+      ? 'typeof switchToRoleMode===\'function\'&&switchToRoleMode(\'' + targetMode + '\')'
+      : 'typeof QG_offerRoleOptIn===\'function\'&&QG_offerRoleOptIn(\'' + targetMode + '\')';
     return html +
       '<p class="dash-hero-switch">' +
-      '<button type="button" class="dash-hero-switch-btn" onclick="typeof switchRoleMode===\'function\'&&switchRoleMode()">' +
+      '<button type="button" class="dash-hero-switch-btn" onclick="' + switchAction + '">' +
       switchLabel + '</button></p>';
   }
 
@@ -197,4 +282,8 @@
   window.setQuickGigsMode = setQuickGigsMode;
   window.renderRoleFlip = renderRoleFlip;
   window.buildDashboardHero = buildDashboardHero;
+  window.QG_offerRoleOptIn = offerRoleOptIn;
+  document.addEventListener('qg-role-access-changed', function () {
+    if (document.getElementById('roleFlipMount')) renderRoleFlip('roleFlipMount');
+  });
 })();

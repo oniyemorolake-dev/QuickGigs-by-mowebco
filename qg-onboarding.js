@@ -333,6 +333,9 @@
         }
         var guardianStep = root.querySelector('[data-step="guardian"]');
         if (guardianStep) guardianStep.setAttribute('data-skip', age >= 16 && age < 18 ? '0' : '1');
+        document.dispatchEvent(new CustomEvent('qg-signup-age-changed', {
+          detail: { age: age, isTeen: age >= 16 && age < 18 }
+        }));
       }
 
       root.querySelectorAll('[data-qg-next]').forEach(function (btn) {

@@ -29,7 +29,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
-<link rel="stylesheet" href="qg-role-theme.css">
+<link rel="stylesheet" href="qg-role-theme.css?v=20260730roles1">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
 <script src="qg-theme.js"></script>
@@ -99,6 +99,10 @@ body.light .avatar{color:#2d1b4e;}
 }
 .loc-near-btn.active{background:var(--purple);color:#fff;border-color:var(--purple-light);}
 body.light .loc-near-btn.active{color:#fff;}
+.location-radius-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.radius-select{flex:1;min-width:0;background:var(--input-bg);border:0.5px solid var(--border);border-radius:12px;padding:9px 11px;color:var(--purple-light);font:500 12px 'DM Sans',sans-serif;outline:none;}
+.location-status{min-height:16px;margin-top:5px;font-size:11px;color:var(--text-faint);}
+.location-status.is-error{color:#f87171;}
 .mode-row{padding:12px 18px 0;background:var(--nav-bg);display:flex;gap:7px;overflow-x:auto;}
 .light .mode-row{background:#f0eeff;border-radius:12px;margin:8px 18px 0;padding:10px;}
 .mode-row::-webkit-scrollbar{display:none;}
@@ -216,6 +220,9 @@ body.light .submit-btn{color:#2d1b4e;}
 .badge-negotiable{background:rgba(74,222,128,0.12);color:#16a34a;margin-left:4px;}
 .badge-standard{background:rgba(107,63,160,0.2);color:#9b6fc4;}
 body.light .badge-standard{background:#ede9ff;color:var(--purple);}
+.badge-age-adult{background:rgba(148,163,184,.14);color:#94a3b8;margin-left:4px;}
+.badge-age-teen{background:rgba(74,222,128,.12);color:#4ade80;margin-left:4px;}
+body.light .badge-age-teen{color:#15803d;}
 .badge-recurring{background:rgba(74,222,128,0.1);color:#16a34a;}
 .tc-desc{font-size:12px;line-height:1.6;color:var(--desc-color);margin-bottom:11px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .tc-desc.is-empty{display:none;}
@@ -324,6 +331,9 @@ body.qg-apply-open .qg-toast{
 .photo-required-banner p{font-size:11px;color:var(--text-muted);line-height:1.45;margin:0;}
 .photo-required-banner a{flex-shrink:0;padding:8px 12px;border-radius:10px;background:var(--purple);color:#fff;text-decoration:none;font-size:12px;font-weight:500;white-space:nowrap;}
 body.light .photo-required-banner{background:#fffbeb;border-color:#fde68a;}
+.teen-browse-banner{margin:12px 18px 0;padding:14px 16px;border-radius:14px;background:linear-gradient(135deg,rgba(107,63,160,.24),rgba(155,111,196,.12));border:1px solid rgba(200,168,233,.3);display:none;}
+.teen-browse-banner strong{display:block;font-size:14px;margin-bottom:3px;}
+.teen-browse-banner p{margin:0;font-size:11px;line-height:1.5;color:var(--text-muted);}
 .tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--tab-bg);border-top:0.5px solid var(--border);display:flex;padding:8px 0 12px;z-index:100;}
 .tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;text-decoration:none;}
 .tab-icon{font-size:20px;color:var(--text-faint);}
@@ -370,14 +380,34 @@ body.light .app-legal-footer a{color:var(--purple);}
       <span aria-hidden="true" class="meta-pin"><svg class="qg-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
       <label class="sr-only" for="locationFilter">Filter by location</label>
       <input class="location-filter-input" id="locationFilter" type="text" name="qg-browse-loc"
-        placeholder="City or province (optional)"
+        list="browseCanadianLocations" placeholder="Choose a Canadian city or area"
         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
         data-lpignore="true" data-1p-ignore="true" data-form-type="other"
         readonly onfocus="this.removeAttribute('readonly')"
-        oninput="applyFilters()"
-        onchange="if(typeof setUserLocation==='function') setUserLocation(this.value.trim())">
-      <button type="button" class="loc-near-btn" id="nearMeBtn" onclick="toggleNearMe()" aria-pressed="false">Near me</button>
+        onchange="applyBrowseLocation()">
+      <button type="button" class="loc-near-btn" id="nearMeBtn" onclick="toggleNearMe()" aria-pressed="false">Use my location</button>
     </div>
+    <datalist id="browseCanadianLocations">
+      <option value="Calgary, AB"></option>
+      <option value="Edmonton, AB"></option>
+      <option value="Red Deer, AB"></option>
+      <option value="Lethbridge, AB"></option>
+      <option value="Toronto, ON"></option>
+      <option value="Vancouver, BC"></option>
+      <option value="Winnipeg, MB"></option>
+      <option value="Montreal, QC"></option>
+      <option value="Halifax, NS"></option>
+    </datalist>
+    <div class="location-radius-row">
+      <label class="sr-only" for="radiusFilter">Distance radius</label>
+      <select class="radius-select" id="radiusFilter" onchange="setBrowseRadius(this.value)">
+        <option value="20">Within 20 km</option>
+        <option value="50">Within 50 km</option>
+        <option value="100">Within 100 km</option>
+        <option value="any">Anywhere in Canada</option>
+      </select>
+    </div>
+    <div class="location-status" id="locationStatus" role="status" aria-live="polite"></div>
   </div>
   <div style="padding:10px 0 0;display:flex;justify-content:flex-end">
     <a href="categories.html" style="font-size:12px;color:var(--lavender,#c8a8e9);text-decoration:none">Browse categories →</a>
@@ -415,6 +445,10 @@ body.light .app-legal-footer a{color:var(--purple);}
   </div>
   <a href="profile.html?setup=photo&required=1&return=browsetask.html">Add photo</a>
 </div>
+<div class="teen-browse-banner" id="teenBrowseBanner">
+  <strong>Gigs open to teen taskers</strong>
+  <p>Only age-eligible gigs are shown. When you apply, your guardian reviews the request before the poster sees it.</p>
+</div>
 <div class="results-bar">
   <span class="results-txt" id="resultsCount">Loading tasks…</span>
   <div class="filter-sorts">
@@ -425,11 +459,11 @@ body.light .app-legal-footer a{color:var(--purple);}
       <option value="month">This month</option>
     </select>
     <select class="sort-sel" id="sortSel" onchange="applyFilters()" aria-label="Sort tasks">
+      <option value="nearest">Nearest</option>
       <option value="newest">Newest</option>
       <option value="pay">Budget high to low</option>
       <option value="pay_low">Budget low to high</option>
       <option value="deadline">Closest deadline</option>
-      <option value="nearest">Nearest</option>
       <option value="oldest">Oldest</option>
     </select>
   </div>
@@ -547,17 +581,19 @@ onAuthStateChanged(auth, (user) => {
 <script src="qg-ux.js?v=20260728welcome1" defer></script>
 <script src="qg-bigtech.js?v=20260728xss1" defer></script>
 <script src="qg-wave2.js?v=20260728xss1" defer></script>
-<script defer src="qg-config.js?v=20260726e"></script>
+<script defer src="qg-config.js?v=20260730verify1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="qg-categories.js"></script>
-<script defer src="supabase-db.js?v=20260727dup1"></script>
-<script defer src="qg-location.js"></script>
+<script defer src="supabase-db.js?v=20260730verify1"></script>
+<script defer src="qg-age.js?v=1"></script>
+<script defer src="qg-verification.js?v=1"></script>
+<script defer src="qg-location.js?v=2"></script>
 <script defer src="qg-pwa.js?v=4"></script>
 <script defer src="qg-notifications.js"></script>
 <script defer src="qg-share.js"></script>
 <script defer src="qg-saved.js?v=1"></script>
 <script defer src="qg-report.js?v=20260716d"></script>
-<script defer src="qg-stats.js"></script>
+<script defer src="qg-stats.js?v=20260730verify1"></script>
 <script>
 function esc(s){
   return typeof escapeHtml === 'function' ? escapeHtml(s)
@@ -584,6 +620,8 @@ function normaliseTask(row){
     budgetNegotiable:budgetNegotiable,
     priceLabel:(budgetNegotiable?'Around ':'')+'$'+budget+(mode==='recurring'?'/hr':'')+' CAD'+(budgetNegotiable?', open to offers':''),
     location:row.LOCATION||row.location||'Calgary, AB',
+    lat: row.lat != null ? Number(row.lat) : (row.LAT != null ? Number(row.LAT) : null),
+    lng: row.lng != null ? Number(row.lng) : (row.LNG != null ? Number(row.LNG) : null),
     when: row.scheduled_label || row.SCHEDULED_LABEL || '',
     createdAt: row.created_at || row.CREATED_AT || '',
     // Computed at render from createdAt — do not bake a stale relative string here
@@ -598,7 +636,8 @@ function normaliseTask(row){
     rateType: String(row.rate_type || row.RATE_TYPE || (mode === 'recurring' ? 'hourly' : 'fixed')).toLowerCase(),
     hourlyRate: row.hourly_rate != null ? row.hourly_rate : row.HOURLY_RATE,
     estHours: row.est_hours != null ? row.est_hours : row.EST_HOURS,
-    frequency: row.frequency || row.FREQUENCY || ''
+    frequency: row.frequency || row.FREQUENCY || '',
+    agePreference: String(row.age_preference || row.AGE_PREFERENCE || 'adults_only').toLowerCase()
   };
 }
 var allTasks=[],activeMode='all',activeCat='all',activeTask=null;
@@ -607,6 +646,28 @@ var appliedTaskIds = {};
 var userNames={};
 var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
 window._nearMeOnly=false;
+window._qgAgeTier=window._qgAgeTier||'loading';
+
+function bootBrowseAgeTier(attempt) {
+  attempt = attempt || 0;
+  if (window._currentUser && typeof QG_loadAgeTier === 'function') {
+    QG_loadAgeTier(window._currentUser.uid).then(function(result) {
+      var banner = document.getElementById('teenBrowseBanner');
+      if (banner) banner.style.display = result.tier === 'teen' ? 'block' : 'none';
+      if (allTasks.length) renderCards();
+    });
+    return;
+  }
+  if (attempt < 30) setTimeout(function(){ bootBrowseAgeTier(attempt + 1); }, 100);
+}
+document.addEventListener('DOMContentLoaded', function(){ bootBrowseAgeTier(0); });
+document.addEventListener('DOMContentLoaded', function bootBrowseVerification(){
+  if (typeof QG_loadVerification === 'function' && window._currentUser) {
+    QG_loadVerification().then(function(){ if(allTasks.length)renderCards(); });
+  } else {
+    setTimeout(bootBrowseVerification, 120);
+  }
+});
 
 /** Resolve the DB apply fn — never capture at parse time (defer scripts load later). */
 function getDbSubmitApplication() {
@@ -745,26 +806,76 @@ function taskMatchesDateRange(task, range) {
   return true;
 }
 
-window.toggleNearMe=function(){
-  window._nearMeOnly=!window._nearMeOnly;
+function setLocationStatus(message, isError) {
+  var el=document.getElementById('locationStatus');
+  if(!el)return;
+  el.textContent=message||'';
+  el.classList.toggle('is-error',!!isError);
+}
+
+window.applyBrowseLocation=async function(){
+  var locEl=document.getElementById('locationFilter');
+  var value=locEl ? locEl.value.trim() : '';
+  if(!value)return;
+  setLocationStatus('Finding '+value+'…',false);
+  var result=typeof setUserLocation==='function' ? await setUserLocation(value) : null;
+  if(!result){
+    setLocationStatus('Choose a valid Canadian city or area.',true);
+    return;
+  }
+  if(locEl&&result.location)locEl.value=result.location;
+  window._nearMeOnly=false;
   var btn=document.getElementById('nearMeBtn');
   if(btn){
-    btn.classList.toggle('active',window._nearMeOnly);
-    btn.setAttribute('aria-pressed',window._nearMeOnly?'true':'false');
+    btn.classList.remove('active');
+    btn.setAttribute('aria-pressed','false');
   }
-  if(window._nearMeOnly&&typeof getUserLocation==='function'){
-    var locEl=document.getElementById('locationFilter');
-    if(locEl) locEl.value=getUserLocation();
+  setLocationStatus('Showing gigs nearest to '+(result.location||value)+'.',false);
+  var sort=document.getElementById('sortSel');
+  if(sort)sort.value='nearest';
+  renderCards();
+};
+
+window.setBrowseRadius=function(value){
+  if(typeof setNearRadiusKm==='function')setNearRadiusKm(value);
+  if(String(value)!=='any'&&typeof getGeoFilterPos==='function'&&!getGeoFilterPos()){
+    applyBrowseLocation();
+    return;
   }
   renderCards();
 };
 
+window.toggleNearMe=async function(){
+  var btn=document.getElementById('nearMeBtn');
+  if(btn){btn.disabled=true;btn.textContent='Locating…';}
+  setLocationStatus('Requesting your approximate location…',false);
+  var pos=typeof requestGeoForFilter==='function' ? await requestGeoForFilter() : null;
+  if(!pos){
+    if(btn){btn.disabled=false;btn.textContent='Use my location';}
+    setLocationStatus('Location permission was unavailable. Choose a city instead.',true);
+    return;
+  }
+  window._nearMeOnly=true;
+  var result=typeof reverseGeocodeCity==='function' ? await reverseGeocodeCity(pos.lat,pos.lng).catch(function(){return null;}) : null;
+  var locEl=document.getElementById('locationFilter');
+  if(result&&result.location){
+    if(locEl)locEl.value=result.location;
+    if(typeof setUserLocationLabel==='function')setUserLocationLabel(result.location);
+  }
+  if(btn){
+    btn.disabled=false;btn.textContent='Using my location';btn.classList.add('active');
+    btn.setAttribute('aria-pressed','true');
+  }
+  var sort=document.getElementById('sortSel');
+  if(sort)sort.value='nearest';
+  setLocationStatus('Using your approximate location for distance only.',false);
+  renderCards();
+};
+
 function syncLocationFilterDefault(){
-  /* Only fill location when Near me is on — leave empty so all tasks show by default */
-  if (!window._nearMeOnly) return;
   var locEl=document.getElementById('locationFilter');
   if(!locEl) return;
-  if(typeof getUserLocation==='function') locEl.value=getUserLocation();
+  if(!locEl.value&&typeof getUserLocation==='function') locEl.value=getUserLocation();
 }
 
 async function hydratePosterNames() {
@@ -881,10 +992,19 @@ function getBadge(m,t){
   else if(m==='recurring')modeBadge='<span class="tc-badge badge-recurring">🔄 Recurring</span>';
   else modeBadge='<span class="tc-badge badge-standard">📋 Standard</span>';
   if(t&&t.budgetNegotiable)modeBadge+='<span class="tc-badge badge-negotiable">💬 Negotiable</span>';
+  if(t){
+    modeBadge += t.agePreference === 'adults_only'
+      ? '<span class="tc-badge badge-age-adult">18+ only</span>'
+      : '<span class="tc-badge badge-age-teen">16+ welcome</span>';
+  }
   return modeBadge;
 }
 function getBtnClass(m){return 'btn-'+m;}
-function getBtnLabel(m){return m==='quick'?'Apply ⚡':'Apply';}
+function getBtnLabel(m){
+  if(window.QG_verificationState&&window.QG_verificationState.tasker_verified!==true)return 'Verify to apply';
+  if(window._qgAgeTier==='teen')return 'Ask guardian';
+  return m==='quick'?'Apply ⚡':'Apply';
+}
 
 function formatLocationDisplay(loc) {
   if (typeof window.formatLocationDisplay === 'function' && window.formatLocationDisplay !== formatLocationDisplay) {
@@ -974,6 +1094,7 @@ function persistBrowseState(){
     sort: (document.getElementById('sortSel')||{}).value,
     date: (document.getElementById('dateFilter')||{}).value,
     loc: (document.getElementById('locationFilter')||{}).value,
+    radius: (document.getElementById('radiusFilter')||{}).value,
     budgetMin: budgetMinVal, budgetMax: budgetMaxVal, budgetPreset: budgetPreset,
     search: (document.getElementById('searchInput')||{}).value
   });
@@ -990,6 +1111,8 @@ function renderActiveFilters(){
   else if(budgetMinVal>20||budgetMaxVal<300) chips.push({key:'budget',label:'$'+budgetMinVal+'–$'+budgetMaxVal});
   var dateFilter=(document.getElementById('dateFilter')||{}).value;
   if(dateFilter&&dateFilter!=='any') chips.push({key:'date',label:'Posted: '+dateFilter});
+  var radiusFilter=(document.getElementById('radiusFilter')||{}).value;
+  if(radiusFilter&&radiusFilter!=='any')chips.push({key:'radius',label:'Within '+radiusFilter+' km'});
   if(!chips.length){ host.innerHTML=''; return; }
   host.innerHTML=chips.map(function(c){
     return '<button type="button" class="qg-af-chip" data-clear="'+c.key+'" aria-label="Remove '+esc(c.label)+'">'+esc(c.label)+' ×</button>';
@@ -1001,6 +1124,10 @@ function renderActiveFilters(){
       if(k==='cat'){ activeCat='all'; document.querySelectorAll('.cpill').forEach(function(p){ p.classList.remove('cat-active'); }); }
       if(k==='budget'){ budgetMinVal=20; budgetMaxVal=300; budgetPreset=''; syncBudgetUI(); }
       if(k==='date'&&document.getElementById('dateFilter')) document.getElementById('dateFilter').value='any';
+      if(k==='radius'&&document.getElementById('radiusFilter')){
+        document.getElementById('radiusFilter').value='any';
+        if(typeof setNearRadiusKm==='function')setNearRadiusKm('any');
+      }
       renderCards();
     };
   });
@@ -1018,16 +1145,24 @@ function syncBudgetUI(){
   });
 }
 function renderCards(){
+  if(window._qgAgeTier==='loading'){
+    var loadingArea=document.getElementById('cardsArea');
+    if(loadingArea)loadingArea.innerHTML='<div class="loading-state"><div class="loading-spinner">⏳</div><div class="loading-txt">Checking gig eligibility…</div></div>';
+    return;
+  }
   var search=(document.getElementById('searchInput').value||'').toLowerCase().trim();
   var locFilter=(document.getElementById('locationFilter').value||'').trim();
   var dateFilter=(document.getElementById('dateFilter')&&document.getElementById('dateFilter').value)||'any';
-  var sortVal = (document.getElementById('sortSel') && document.getElementById('sortSel').value) || 'newest';
+  var sortVal = (document.getElementById('sortSel') && document.getElementById('sortSel').value) || 'nearest';
+  var radiusKm = typeof getNearRadiusKm==='function' ? getNearRadiusKm() : Infinity;
+  var locationPos = typeof getGeoFilterPos==='function' ? getGeoFilterPos() : null;
   var filtered=allTasks.filter(function(t){
+    if(window._qgAgeTier==='teen'&&typeof QG_taskAllowsTeen==='function'&&!QG_taskAllowsTeen(t))return false;
     if (activeMode==='saved'){
       if (typeof isTaskSaved !== 'function' || !isTaskSaved(t.id)) return false;
     } else if (activeMode!=='all'&&t.mode!==activeMode) return false;
     if (activeCat!=='all'&&t.cat!==activeCat) return false;
-    if (!taskMatchesLocation(t, locFilter, window._nearMeOnly)) return false;
+    if (!locationPos && !taskMatchesLocation(t, locFilter, window._nearMeOnly)) return false;
     if (!taskMatchesDateRange(t, dateFilter)) return false;
     var price=Number(t.price)||0;
     if(price < budgetMinVal) return false;
@@ -1039,6 +1174,19 @@ function renderCards(){
     var hay = (t.title+' '+t.catLabel+' '+t.desc+' '+(t.posterName||'')+' '+(t.location||'')).toLowerCase();
     return hay.indexOf(search) >= 0;
   });
+  if(locationPos){
+    filtered.forEach(function(t){
+      t._distanceKm=typeof taskDistanceKm==='function' ? taskDistanceKm(t,locationPos) : null;
+    });
+    if(isFinite(radiusKm)&&typeof filterTasksByDistance==='function'){
+      filtered=filterTasksByDistance(filtered,{
+        pos:locationPos,
+        radiusKm:radiusKm,
+        cityRef:locFilter,
+        includeUnknown:false
+      });
+    }
+  }
   if (sortVal === 'nearest' && typeof sortTasksByProximity === 'function') {
     filtered = sortTasksByProximity(filtered, locFilter || (typeof getUserLocation==='function'?getUserLocation():''));
   } else if (sortVal === 'pay') {
@@ -1065,14 +1213,14 @@ function renderCards(){
     : (window._nearMeOnly && window.getUserCityLabel ? window.getUserCityLabel() : '');
   var openTotal = (allTasks || []).length;
   var countTxt = openTotal + ' open task' + (openTotal !== 1 ? 's' : '');
-  if (filtered.length !== openTotal && (activeMode !== 'all' || activeCat !== 'all' || search || locFilter || window._nearMeOnly || dateFilter !== 'any' || budgetPreset)) {
+  if (filtered.length !== openTotal && (activeMode !== 'all' || activeCat !== 'all' || search || locFilter || isFinite(radiusKm) || window._nearMeOnly || dateFilter !== 'any' || budgetPreset)) {
     countTxt = filtered.length + ' of ' + openTotal + ' open task' + (openTotal !== 1 ? 's' : '');
   }
   document.getElementById('resultsCount').textContent = scopeLabel
     ? countTxt + ' near ' + scopeLabel
     : countTxt;
   var area=document.getElementById('cardsArea');
-  if (!filtered.length && (locFilter || window._nearMeOnly || dateFilter !== 'any') && allTasks.length) {
+  if (!filtered.length && (locFilter || isFinite(radiusKm) || window._nearMeOnly || dateFilter !== 'any') && allTasks.length) {
     area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('mapPin',{size:24}):'')+'</div><p class="empty-txt">No tasks match your filters — try clearing location, date, or search</p><button type="button" class="empty-btn" onclick="if(typeof clearFilters===\'function\')clearFilters();else location.reload()">Clear filters</button></div>';
     return;
   }
@@ -1133,7 +1281,9 @@ window.clearFilters=function(){
   document.querySelectorAll('.mpill').forEach(function(p,i){ p.className=i===0?'mpill active-all':'mpill'; });
   document.querySelectorAll('.cpill').forEach(function(p){ p.classList.remove('cat-active'); });
   if(document.getElementById('dateFilter')) document.getElementById('dateFilter').value='any';
-  if(document.getElementById('locationFilter')) document.getElementById('locationFilter').value='';
+  if(document.getElementById('locationFilter')&&typeof getUserLocation==='function') document.getElementById('locationFilter').value=getUserLocation();
+  if(document.getElementById('radiusFilter'))document.getElementById('radiusFilter').value='any';
+  if(typeof setNearRadiusKm==='function')setNearRadiusKm('any');
   if(document.getElementById('searchInput')) document.getElementById('searchInput').value='';
   if(document.getElementById('sortSel')) document.getElementById('sortSel').value='newest';
   syncBudgetUI(); renderCards();
@@ -1165,6 +1315,10 @@ window.clearFilters=function(){
     if(saved.sort&&document.getElementById('sortSel')) document.getElementById('sortSel').value=saved.sort;
     if(saved.date&&document.getElementById('dateFilter')) document.getElementById('dateFilter').value=saved.date;
     if(saved.loc&&document.getElementById('locationFilter')) document.getElementById('locationFilter').value=saved.loc;
+    if(saved.radius&&document.getElementById('radiusFilter')){
+      document.getElementById('radiusFilter').value=saved.radius;
+      if(typeof setNearRadiusKm==='function')setNearRadiusKm(saved.radius);
+    }
     if(saved.search&&document.getElementById('searchInput')) document.getElementById('searchInput').value=saved.search;
     if(saved.budgetMin!=null) budgetMinVal=saved.budgetMin;
     if(saved.budgetMax!=null) budgetMaxVal=saved.budgetMax;
@@ -1173,6 +1327,16 @@ window.clearFilters=function(){
       p.className='mpill'+(p.getAttribute('onclick')&&p.getAttribute('onclick').indexOf("'"+activeMode+"'")>=0?' active-'+activeMode:'');
     });
     if(activeMode==='all'){ var first=document.querySelector('.mpill'); if(first) first.className='mpill active-all'; }
+  }
+  syncLocationFilterDefault();
+  var radiusSelect=document.getElementById('radiusFilter');
+  if(radiusSelect&&!(saved&&saved.radius)&&typeof getNearRadiusKm==='function'){
+    var storedRadius=getNearRadiusKm();
+    radiusSelect.value=isFinite(storedRadius)?String(storedRadius):'any';
+  }
+  if(typeof getGeoFilterPos==='function'&&!getGeoFilterPos()){
+    var initialLocation=document.getElementById('locationFilter');
+    if(initialLocation&&initialLocation.value)setTimeout(function(){ applyBrowseLocation(); },0);
   }
   syncBudgetUI();
 })();
@@ -1381,11 +1545,18 @@ function wireApplyModalInputs() {
 window.openModal=async function(id,e){
   if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
   if (typeof getMode === 'function' && getMode() === 'poster') {
+    var taskerAllowed = typeof QG_canUseRole === 'function' ? QG_canUseRole('tasker') : null;
+    if (taskerAllowed === false) {
+      if (typeof QG_offerRoleOptIn === 'function') QG_offerRoleOptIn('tasker');
+      return;
+    }
     if (!confirm('You are in Poster mode. Switch to Tasker mode to apply for tasks?')) return;
-    if (typeof setMode === 'function') setMode('tasker');
-    else if (typeof setSessionMode === 'function') setSessionMode('worker');
-    if (typeof applyRoleTheme === 'function') applyRoleTheme();
-    else localStorage.setItem('qg-mode', 'tasker');
+    if (typeof QG_setActiveRoleMode === 'function') {
+      var switched = await QG_setActiveRoleMode('tasker');
+      if (!switched.success) return;
+    } else {
+      return;
+    }
   }
   activeTask=allTasks.find(function(t){return String(t.id)===String(id);});
   if(!activeTask){
@@ -1405,6 +1576,17 @@ window.openModal=async function(id,e){
   if(isOwnPostedTask(activeTask)){
     showToast('This is your own posting. Switch to Poster mode → My Tasks to manage applicants.', '#f59e0b');
     return;
+  }
+  if (typeof QG_loadVerification === 'function') {
+    var verification = await QG_loadVerification();
+    if (!verification || verification.tasker_verified !== true) {
+      if (typeof QG_openVerificationPrompt === 'function') {
+        QG_openVerificationPrompt('tasker');
+      } else {
+        window.location.href = 'profile.html?verification=tasker';
+      }
+      return;
+    }
   }
 
   var userId = getCurrentUserId();
@@ -1635,6 +1817,11 @@ window.submitBrowseApplication=async function(){
     if (typeof getAccountActionPermission === 'function') {
       var applyPermission = await getAccountActionPermission(userId, 'apply');
       if (!applyPermission.allowed) {
+        if (applyPermission.reason === 'tasker_role_required' &&
+            typeof QG_offerRoleOptIn === 'function') {
+          closeModal();
+          QG_offerRoleOptIn('tasker');
+        }
         applyNotify(applyPermission.message, '#f59e0b');
         unlockApplyBtn();
         return;
@@ -1691,6 +1878,7 @@ window.submitBrowseApplication=async function(){
     var chatNote = '';
     var chatUnlocked = typeof resolveChatUnlockedOnCreate === 'function' && resolveChatUnlockedOnCreate('application');
     var createdRow = null;
+    var guardianPending = false;
     try {
       var result = await dbSubmitApplication(payload);
       console.log('[QuickGigs apply] insert result', result);
@@ -1702,6 +1890,8 @@ window.submitBrowseApplication=async function(){
         throw new Error(errText);
       }
       createdRow = result.data || null;
+      guardianPending = result.guardian_status === 'pending_guardian' ||
+        (createdRow && createdRow.guardian_status === 'pending_guardian');
     } catch (err) {
       console.warn('Application save error:', err);
       if (err && err.message === 'photo_required') {
@@ -1713,6 +1903,12 @@ window.submitBrowseApplication=async function(){
         appliedTaskIds[String(activeTask.id)] = true;
         setApplyModalAlreadyApplied(true);
         applyNotify("You've already applied to this task.", '#f59e0b');
+      } else if (err && err.message === 'tasker_identity_verification_required') {
+        if (typeof QG_openVerificationPrompt === 'function') QG_openVerificationPrompt('tasker');
+        applyNotify('Verify your identity to start working.', '#f59e0b');
+      } else if (err && err.message === 'tasker_role_required') {
+        if (typeof QG_offerRoleOptIn === 'function') QG_offerRoleOptIn('tasker');
+        applyNotify('Enable Tasker mode before applying to gigs.', '#f59e0b');
       } else {
         var failMsg = (err && err.message === 'own_task')
           ? 'You cannot apply to your own task.'
@@ -1726,7 +1922,7 @@ window.submitBrowseApplication=async function(){
     }
 
     try {
-      if (activeTask.posterId && userId) {
+      if (!guardianPending && activeTask.posterId && userId) {
         var posterName = activeTask.posterName || 'Poster';
         if (typeof getUserNameByFirebaseUid === 'function') {
           var fetchedPoster = await getUserNameByFirebaseUid(activeTask.posterId);
@@ -1774,7 +1970,9 @@ window.submitBrowseApplication=async function(){
     document.body.classList.remove('qg-apply-open');
     _applySubmitInFlight = false;
     if (btn) { btn.textContent = 'Send application'; btn.disabled = true; }
-    var okMsg = 'Application sent.' + (chatNote || '');
+    var okMsg = guardianPending
+      ? 'Sent to your guardian for approval. The poster cannot see it yet.'
+      : ('Application sent.' + (chatNote || ''));
     if (createdRow && createdRow.app_id) {
       console.log('[QuickGigs apply] created app_id=', createdRow.app_id,
         'task_id=', createdRow.task_id, 'worker_id=', createdRow.worker_id);

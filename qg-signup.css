@@ -72,6 +72,10 @@
   background:linear-gradient(145deg,rgba(107,63,160,0.4),rgba(107,63,160,0.15));
   border-color:rgba(200,168,233,0.55);box-shadow:0 8px 28px rgba(107,63,160,0.3);
 }
+.signup-role[data-start-role="poster"].active{border-color:#2dd4bf;background:linear-gradient(145deg,rgba(15,118,110,.28),rgba(45,212,191,.12));box-shadow:0 8px 24px rgba(13,148,136,.16);}
+.signup-role.is-teen-hidden{display:none;}
+.signup-role-grid.teen-tasker-only{grid-template-columns:1fr;}
+.signup-role-note{margin:-.7rem 0 1.2rem;color:rgba(255,255,255,.52);font-size:.72rem;line-height:1.45;text-align:center;}
 .signup-role-emoji{font-size:1.75rem;display:block;margin-bottom:6px;}
 .signup-role-label{font-size:0.88rem;font-weight:600;color:#fff;display:block;margin-bottom:2px;}
 .signup-role-desc{font-size:0.72rem;color:rgba(255,255,255,0.5);line-height:1.35;}
@@ -218,6 +222,8 @@ body.light .signup-role{background:#faf8ff;border-color:#e8e2ff;}
 body.light .signup-role-label{color:#1a0a3d;}
 body.light .signup-role-desc{color:#6b7280;}
 body.light .signup-role.active{background:linear-gradient(145deg,#ede9ff,#f5f2ff);border-color:#c8a8e9;}
+body.light .signup-role[data-start-role="poster"].active{background:#ecfdf5;border-color:#0d9488;}
+body.light .signup-role-note{color:#6b7280;}
 body.light .signup-field label{color:#6b7280;}
 body.light .signup-optional{color:#9ca3af;}
 body.light .signup-field input{background:#fff;border-color:#e0d8ff;color:#1a0a3d;}

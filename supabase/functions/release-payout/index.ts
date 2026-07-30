@@ -340,11 +340,21 @@ Deno.serve(async (req) => {
 
     const { data: workerUser } = await supabase
       .from('users')
-      .select('date_of_birth,guardian_consent_status,guardian_stripe_connect_id,guardian_stripe_payouts_enabled,stripe_connect_id,stripe_payouts_enabled')
+      .select('date_of_birth,graduated_at,payout_owner,guardian_consent_status,guardian_stripe_connect_id,guardian_stripe_payouts_enabled,stripe_connect_id,stripe_payouts_enabled')
       .eq('firebase_uid', workerId)
       .maybeSingle();
 
-    const guardianOwnsPayout = isMinor(workerUser?.date_of_birth);
+    const minorWorker = isMinor(workerUser?.date_of_birth);
+    const payoutOwner = String(workerUser?.payout_owner || (minorWorker ? 'guardian' : 'self'));
+    if (!minorWorker && payoutOwner !== 'self') {
+      return json({
+        ok: true,
+        held: true,
+        reason: 'adult_payout_setup_required',
+        message: 'Payout remains held until the worker adds payout details in their own name.',
+      });
+    }
+    const guardianOwnsPayout = minorWorker;
     if (guardianOwnsPayout && workerUser?.guardian_consent_status !== 'approved') {
       return json({ ok: false, error: 'guardian_consent_required' }, 400);
     }
@@ -404,7 +414,7 @@ Deno.serve(async (req) => {
         task_id: taskUuid || inputTaskId,
         worker_id: workerId,
         poster_id: posterId,
-        payout_owner: guardianOwnsPayout ? 'guardian' : 'worker',
+        payout_owner: guardianOwnsPayout ? 'guardian' : 'self',
       },
     });
 
@@ -422,7 +432,7 @@ Deno.serve(async (req) => {
       ok: true,
       transfer_id: transfer.id,
       worker_payout: workerPayout,
-      payout_owner: guardianOwnsPayout ? 'guardian' : 'worker',
+      payout_owner: guardianOwnsPayout ? 'guardian' : 'self',
       platform_fee: Number(getField(payment, 'platform_fee') || 0),
       amount: Number(getField(payment, 'amount') || 0),
     });

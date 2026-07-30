@@ -29,7 +29,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
-<link rel="stylesheet" href="qg-role-theme.css">
+<link rel="stylesheet" href="qg-role-theme.css?v=20260730roles1">
 <link rel="stylesheet" href="qg-mobile.css">
 <link rel="stylesheet" href="qg-menu.css?v=3">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
@@ -281,10 +281,11 @@ body.light .app-legal-footer a{color:var(--purple);}
 <script src="qg-ux.js?v=20260728welcome1" defer></script>
 <script src="qg-bigtech.js?v=20260728xss1" defer></script>
 <script src="qg-wave2.js?v=20260728xss1" defer></script>
-<script defer src="qg-config.js?v=20260728chataccept1"></script>
+<script defer src="qg-config.js?v=20260730verify1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
-<script defer src="supabase-db.js?v=20260728chataccept1"></script>
-<script defer src="qg-stripe.js?v=20260726e"></script>
+<script defer src="supabase-db.js?v=20260730verify1"></script>
+<script defer src="qg-verification.js?v=1"></script>
+<script defer src="qg-stripe.js?v=20260730teen1"></script>
 <script defer src="qg-site.js?v=20260726e"></script>
 <script defer src="qg-nav.js?v=20260726n"></script>
 <script defer src="qg-pwa.js?v=4"></script>
@@ -295,12 +296,15 @@ body.light .app-legal-footer a{color:var(--purple);}
 (function(){document.querySelectorAll('#qgReportOverlay,#qgDisputeOverlay,.qg-report-overlay').forEach(function(n){n.remove()});})();
 </script>
 <script defer src="qg-report.js?v=20260716d"></script>
-<script defer src="qg-stats.js?v=20260726d"></script>
+<script defer src="qg-stats.js?v=20260730verify1"></script>
 <script defer src="qg-confetti.js?v=1"></script>
 <script defer src="qg-disputes.js?v=20260716d"></script>
 <script>
 function paintMyTasksTabBar() {
-  var navActive = (typeof isWorkerMode === 'function' && isWorkerMode()) ? 'jobs' : 'tasks';
+  var showApplicants = new URLSearchParams(window.location.search).get('applicants') === '1';
+  var navActive = (typeof isWorkerMode === 'function' && isWorkerMode())
+    ? 'jobs'
+    : (showApplicants ? 'applicants' : 'tasks');
   if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar(navActive);
 }
 paintMyTasksTabBar();
@@ -602,6 +606,9 @@ function renderApplicantAction(a, taskId, task) {
   }
   if (status === 'declined') return '<span class="accept-status declined">Not selected</span>';
   if (status === 'cancelled') return '<span class="accept-status declined">Withdrawn</span>';
+  if (workerVerifiedMap[String(workerId)] === false) {
+    return '<button type="button" class="accept-btn" disabled style="opacity:.55;cursor:not-allowed">ID verification required</button>';
+  }
 
   var negotiable = isTaskNegotiable(task);
   var neg = getNegotiationState(a);
@@ -747,14 +754,12 @@ async function hydrateApplicantAvatars() {
           : getUserAvatarUrl(uid));
         if (url) userAvatars[uid] = url;
       }
-      if (typeof isWorkerVerified === 'function') {
-        var dbUser = typeof getUserByFirebaseUid === 'function'
-          ? await (typeof withTimeout === 'function'
-            ? withTimeout(getUserByFirebaseUid(uid), 3000, null)
-            : getUserByFirebaseUid(uid))
-          : null;
-        workerVerifiedMap[uid] = await isWorkerVerified(uid, dbUser, null);
-      }
+      var dbUser = typeof getUserByFirebaseUid === 'function'
+        ? await (typeof withTimeout === 'function'
+          ? withTimeout(getUserByFirebaseUid(uid), 3000, null)
+          : getUserByFirebaseUid(uid))
+        : null;
+      workerVerifiedMap[uid] = !!(dbUser && dbUser.tasker_verified === true);
     } catch (e) {}
   }
 }
@@ -833,7 +838,7 @@ async function loadData(){
     }
     if (typeof paintMyTasksTabBar === 'function') paintMyTasksTabBar();
     else if (typeof renderQuickGigsTabBar === 'function') {
-      renderQuickGigsTabBar(typeof isWorkerMode === 'function' && isWorkerMode() ? 'jobs' : 'tasks');
+      paintMyTasksTabBar();
     }
 
     // Show cached tasks immediately — never block UI on payment sync
@@ -1395,6 +1400,18 @@ window.runCounterSubmit = async function() {
 async function runWorkerCounterAction(appId, taskId, action, amount) {
   var userId = window._currentUser ? window._currentUser.uid : null;
   if (!userId || typeof workerRespondToCounter !== 'function') return;
+  if (action === 'accept' && typeof getAccountActionPermission === 'function') {
+    var permission = await getAccountActionPermission(userId, 'accept');
+    if (!permission.allowed) {
+      if (permission.reason === 'tasker_identity_verification_required' &&
+          typeof QG_openVerificationPrompt === 'function') {
+        QG_openVerificationPrompt('tasker');
+      } else {
+        showToast(permission.message || 'Verification is required.', '#f59e0b');
+      }
+      return;
+    }
+  }
   var result = await workerRespondToCounter(appId, userId, action, amount, { taskId: taskId });
   if (!result.success) {
     showToast(typeof formatSupabaseActionError === 'function'
@@ -1591,20 +1608,25 @@ function renderTab(){
       var posterId = getField(task, 'POSTED_BY');
       var posterName = displayName(posterId, task);
       var appStatus = (getField(a,'STATUS') || 'pending').toLowerCase();
+      var guardianStatus = (getField(a,'GUARDIAN_STATUS') || 'approved').toLowerCase();
       var taskStatus = (getField(task,'STATUS') || '').toLowerCase();
       var statusLabel;
       if (taskStatus === 'cancelled' && appStatus !== 'cancelled') {
         statusLabel = '<span class="tc-badge badge-open" style="opacity:0.6">Post cancelled</span>';
+      } else if (guardianStatus === 'pending_guardian') {
+        statusLabel = '<span class="tc-badge badge-open">Guardian review</span>';
+      } else if (guardianStatus === 'rejected') {
+        statusLabel = '<span class="tc-badge badge-open" style="opacity:0.6">Guardian declined</span>';
       } else if (appStatus === 'accepted') statusLabel = '<span class="tc-badge badge-done">✓ Accepted</span>';
       else if (appStatus === 'cancelled') statusLabel = '<span class="tc-badge badge-open" style="opacity:0.6">Withdrawn</span>';
       else if (appStatus === 'declined') statusLabel = '<span class="tc-badge badge-open" style="opacity:0.6">Not selected</span>';
       else statusLabel = '<span class="tc-badge badge-open">Pending</span>';
       var taskIdStr = JSON.stringify(String(getField(a,'TASK_ID')));
       var appIdStr = JSON.stringify(String(getField(a,'APP_ID')));
-      var cardClass = 'task-card' + (appStatus === 'cancelled' || appStatus === 'declined' ? ' is-faded' : '');
+      var cardClass = 'task-card' + (appStatus === 'cancelled' || appStatus === 'declined' || guardianStatus === 'rejected' ? ' is-faded' : '');
       var actions = '';
       var negoBlock = '';
-      if (appStatus === 'pending' && taskStatus !== 'cancelled') {
+      if (appStatus === 'pending' && guardianStatus === 'approved' && taskStatus !== 'cancelled') {
         var neg = getNegotiationState(a);
         if (isTaskNegotiable(task) && neg.counterBy === 'poster') {
           var canCounterBack = neg.counterRound === 1;
@@ -1856,6 +1878,11 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
   }
 
   var workerUser = await getUserByFirebaseUid(workerId);
+  if (!workerUser || workerUser.tasker_verified !== true) {
+    setAcceptLoading(acceptBtn, false);
+    showToast('This tasker must verify their identity before they can be accepted.', '#f59e0b');
+    return;
+  }
   if (workerUser && workerUser.name && typeof isGenericDisplayName === 'function' && !isGenericDisplayName(workerUser.name)) {
     workerName = workerUser.name;
   } else if (typeof getUserNameByFirebaseUid === 'function') {
