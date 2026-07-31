@@ -40,9 +40,10 @@ Deno.serve(async (req) => {
     event.type === 'identity.verification_session.canceled'
   ) {
     const verification = event.data.object as Stripe.Identity.VerificationSession;
+    const purpose = String(verification.metadata?.purpose || '');
     if (
       verification.metadata?.project !== 'quickgigs' ||
-      verification.metadata?.purpose !== 'tasker_identity' ||
+      !['tasker_identity', 'tasker_id_check'].includes(purpose) ||
       !verification.metadata?.firebase_uid
     ) {
       return new Response(JSON.stringify({ ignored: true }), {
@@ -50,15 +51,23 @@ Deno.serve(async (req) => {
       });
     }
     const verified = event.type === 'identity.verification_session.verified';
+    const idStatus = verified
+      ? 'verified'
+      : event.type === 'identity.verification_session.requires_input' ? 'rejected' : 'not_started';
+    // Soft launch: Identity results feed the future ID-check hook — not tasker_verified.
     await supabase.from('users').update({
-      tasker_verified: verified,
-      tasker_verified_at: verified ? new Date().toISOString() : null,
-      tasker_verification_status: verified
-        ? 'verified'
-        : event.type === 'identity.verification_session.requires_input' ? 'rejected' : 'unverified',
-    }).eq('firebase_uid', verification.metadata.firebase_uid)
-      .eq('tasker_identity_session_id', verification.id);
-    return new Response(JSON.stringify({ received: true, verification: 'tasker' }), {
+      tasker_id_check_status: idStatus,
+      tasker_id_checked_at: verified ? new Date().toISOString() : null,
+      tasker_identity_session_id: verification.id,
+    }).eq('firebase_uid', verification.metadata.firebase_uid);
+    try {
+      await supabase.rpc('qg_recompute_tasker_verified', {
+        p_uid: verification.metadata.firebase_uid,
+      });
+    } catch (_rpcErr) {
+      /* soft launch RPC may not be deployed yet */
+    }
+    return new Response(JSON.stringify({ received: true, verification: 'tasker_id_check' }), {
       headers: { 'Content-Type': 'application/json' },
     });
   }

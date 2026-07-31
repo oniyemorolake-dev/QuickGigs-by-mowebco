@@ -1,20 +1,20 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 
-<title>My tasks ‚Äî QuickGigs</title>
+<title>My tasks ó QuickGigs</title>
 <meta name="description" content="Manage posted tasks and applications on QuickGigs.">
 <meta name="robots" content="noindex,nofollow">
 <link rel="canonical" href="https://quickgigs.ca/mytasks.html">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://quickgigs.ca/mytasks.html">
-<meta property="og:title" content="My tasks ‚Äî QuickGigs">
+<meta property="og:title" content="My tasks ó QuickGigs">
 <meta property="og:description" content="Manage posted tasks and applications on QuickGigs.">
 <meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <meta property="og:locale" content="en_CA">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="My tasks ‚Äî QuickGigs">
+<meta name="twitter:title" content="My tasks ó QuickGigs">
 <meta name="twitter:description" content="Manage posted tasks and applications on QuickGigs.">
 <meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -70,7 +70,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .tab-btn{padding:12px 16px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;font-family:'DM Sans',sans-serif;color:var(--text-muted);border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.15s;}
 .tab-btn.active{color:var(--purple-light);border-bottom-color:var(--purple-light);}
 body.light .tab-btn.active{color:var(--purple);border-bottom-color:var(--purple);}
-/* Poster = your listings. Tasker = jobs you applied to ‚Äî never both tab sets at once */
+/* Poster = your listings. Tasker = jobs you applied to ó never both tab sets at once */
 [data-qg-mode="poster"] #tabApplied,
 body.qg-mode-poster #tabApplied{display:none!important;visibility:hidden!important;pointer-events:none!important;width:0!important;padding:0!important;overflow:hidden!important;border:none!important;}
 [data-qg-mode="worker"] #tabPosted,
@@ -231,10 +231,10 @@ body.light .app-legal-footer a{color:var(--purple);}
   <div class="nav-title">My posted tasks</div>
   <div class="nav-right">
     <button type="button" class="mode-btn" id="roleSwitchBtn" onclick="typeof switchRoleMode==='function'&&switchRoleMode()">Switch mode</button>
-    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">‚òÄÔ∏è Light</button>
+    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">?? Light</button>
   </div>
 </nav>
-<div style="padding:8px 16px 0"><span class="mode-tag tag-poster" data-qg-mode-tag>üìã Poster mode</span></div>
+<div style="padding:8px 16px 0"><span class="mode-tag tag-poster" data-qg-mode-tag>?? Poster mode</span></div>
 
 <div class="tabs-wrap">
   <button class="tab-btn active" id="tabPosted" onclick="showTab('posted',this)">Posted</button>
@@ -249,7 +249,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 
 <div class="confirm-overlay" id="confirmOverlay" onclick="if(event.target===this)closeConfirm()">
   <div class="confirm-box" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
-    <button type="button" class="confirm-close" onclick="closeConfirm()" aria-label="Close">‚úï</button>
+    <button type="button" class="confirm-close" onclick="closeConfirm()" aria-label="Close">?</button>
     <div class="confirm-title" id="confirmTitle">Are you sure?</div>
     <div class="confirm-msg" id="confirmMsg"></div>
     <div class="confirm-btns">
@@ -261,7 +261,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 
 <div class="confirm-overlay" id="counterOverlay" onclick="if(event.target===this)closeCounterModal()">
   <div class="confirm-box" role="dialog" aria-modal="true" aria-labelledby="counterTitle">
-    <button type="button" class="confirm-close" onclick="closeCounterModal()" aria-label="Close">‚úï</button>
+    <button type="button" class="confirm-close" onclick="closeCounterModal()" aria-label="Close">?</button>
     <div class="confirm-title" id="counterTitle">Counter offer</div>
     <div class="confirm-msg" id="counterMsg">Enter your counter amount (min $20).</div>
     <input class="field-input" id="counterAmount" type="number" min="20" placeholder="85" style="width:100%;margin:12px 0 4px;padding:12px 14px;border-radius:10px;border:0.5px solid var(--border);background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;">
@@ -281,10 +281,10 @@ body.light .app-legal-footer a{color:var(--purple);}
 <script src="qg-ux.js?v=20260728welcome1" defer></script>
 <script src="qg-bigtech.js?v=20260728xss1" defer></script>
 <script src="qg-wave2.js?v=20260728xss1" defer></script>
-<script defer src="qg-config.js?v=20260730verify1"></script>
+<script defer src="qg-config.js?v=20260731email1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="supabase-db.js?v=20260730verify1"></script>
-<script defer src="qg-verification.js?v=1"></script>
+<script defer src="qg-verification.js?v=20260731email1"></script>
 <script defer src="qg-stripe.js?v=20260730teen1"></script>
 <script defer src="qg-site.js?v=20260726e"></script>
 <script defer src="qg-nav.js?v=20260726n"></script>
@@ -326,7 +326,7 @@ function applyTheme(){
   else {
     document.body.className = isDark ? '' : 'light';
     var btn = document.getElementById('modeBtn');
-    if (btn) btn.textContent = isDark ? '‚òÄÔ∏è Light' : 'üåô Dark';
+    if (btn) btn.textContent = isDark ? '?? Light' : '?? Dark';
   }
 }
 window.toggleTheme = function(){
@@ -460,7 +460,7 @@ function aliasPaymentsToUiTaskIds(userId, rows) {
         if (atid) extra.push(atid);
       });
     }
-    // One in-progress job + paid/held payment ‚Üí UI id must unlock Pay/Message
+    // One in-progress job + paid/held payment ? UI id must unlock Pay/Message
     if (isPaidRow(p) && inProgIds.length === 1) extra.push(inProgIds[0]);
     if (extra.length) indexPaymentRow(p, extra);
   });
@@ -491,7 +491,7 @@ async function syncInProgressPaymentState(userId) {
     if (acc) workerHint = String(getField(acc, 'WORKER_ID') || '');
   }
 
-  // Recover paid Stripe sessions ‚Üí held rows (even if local map is empty)
+  // Recover paid Stripe sessions ? held rows (even if local map is empty)
   var serverSync = null;
   if (typeof window.QG_syncPayment === 'function') {
     try {
@@ -581,7 +581,7 @@ function applyLocalAcceptState(taskId, appId) {
 }
 
 function isPaymentGatedChat() {
-  // When Stripe is live, restore the escrow-gated contact rule ‚Äî chat unlocks only after
+  // When Stripe is live, restore the escrow-gated contact rule ó chat unlocks only after
   // escrow is funded. Currently gated on acceptance because payments are off.
   if (typeof window.isChatPaymentGated === 'function') return window.isChatPaymentGated();
   var c = window.QG_CONFIG || {};
@@ -596,13 +596,13 @@ function renderApplicantAction(a, taskId, task) {
     if (isPaymentGatedChat()) {
       if (typeof isTaskPaid === 'function' && isTaskPaid(taskId)) {
         return '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border)" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">Chat</button>' +
-          '<span class="accept-status">‚úì Accepted ¬∑ Paid</span>';
+          '<span class="accept-status">? Accepted ∑ Paid</span>';
       }
-      return '<button type="button" class="accept-btn" style="background:var(--purple);color:#fff" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks">üí≥ Pay to unlock chat</button>' +
-        '<span class="accept-status">‚úì Accepted</span>';
+      return '<button type="button" class="accept-btn" style="background:var(--purple);color:#fff" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks">?? Pay to unlock chat</button>' +
+        '<span class="accept-status">? Accepted</span>';
     }
     return '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border)" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">Chat</button>' +
-      '<span class="accept-status">‚úì Accepted</span>';
+      '<span class="accept-status">? Accepted</span>';
   }
   if (status === 'declined') return '<span class="accept-status declined">Not selected</span>';
   if (status === 'cancelled') return '<span class="accept-status declined">Withdrawn</span>';
@@ -621,10 +621,10 @@ function renderApplicantAction(a, taskId, task) {
         '<button type="button" class="accept-btn" data-poster-accept-counter="'+escAttr(appId)+'" data-task-id="'+escAttr(taskId)+'" data-worker-id="'+escAttr(workerId)+'">Accept $' + neg.counterPrice + '</button>' +
         '</div>';
     } else if (neg.counterBy === 'poster') {
-      negoHtml = '<div class="nego-actions"><span class="nego-status">Counter sent ‚Äî waiting for tasker</span></div>';
+      negoHtml = '<div class="nego-actions"><span class="nego-status">Counter sent ó waiting for tasker</span></div>';
     } else if (neg.counterRound === 0) {
       negoHtml = '<div class="nego-actions">' +
-        '<button type="button" class="accept-btn counter-btn" data-poster-counter="'+escAttr(appId)+'" data-task-id="'+escAttr(taskId)+'" data-worker-id="'+escAttr(workerId)+'">Counter $‚Ä¶</button>' +
+        '<button type="button" class="accept-btn counter-btn" data-poster-counter="'+escAttr(appId)+'" data-task-id="'+escAttr(taskId)+'" data-worker-id="'+escAttr(workerId)+'">Counter $Ö</button>' +
         '</div>';
     }
   }
@@ -654,7 +654,7 @@ function setAcceptLoading(acceptBtn, loading) {
   var panel = acceptBtn.closest('.applicants-panel');
   if (loading) {
     acceptBtn.disabled = true;
-    acceptBtn.textContent = 'Accepting‚Ä¶';
+    acceptBtn.textContent = 'AcceptingÖ';
     if (row) row.classList.add('is-accepting');
     if (panel) {
       panel.querySelectorAll('.applicant-row').forEach(function(other) {
@@ -685,8 +685,8 @@ window.toggleApplicants = function(taskId) {
     btn.classList.toggle('open', !!expandedApplicantTasks[taskId]);
     var count = btn.getAttribute('data-applicant-count') || '';
     var names = btn.getAttribute('data-applicant-names') || '';
-    // textContent ‚Äî getAttribute decodes entities; never re-inject via innerHTML
-    btn.textContent = 'üë• ' + count + (names ? ' ¬∑ ' + names : '') + ' ‚Äî Tap to ' + (expandedApplicantTasks[taskId] ? 'hide' : 'view');
+    // textContent ó getAttribute decodes entities; never re-inject via innerHTML
+    btn.textContent = '?? ' + count + (names ? ' ∑ ' + names : '') + ' ó Tap to ' + (expandedApplicantTasks[taskId] ? 'hide' : 'view');
   }
 };
 
@@ -818,14 +818,14 @@ async function loadData(){
   renderTabLoading();
   var params = new URLSearchParams(window.location.search);
   var tabParam = params.get('tab') || '';
-  // Only force poster after a payment return ‚Äî NOT every time someone opens In Progress
+  // Only force poster after a payment return ó NOT every time someone opens In Progress
   var preferInProgress = params.get('paid') === '1';
   try {
     if (sessionStorage.getItem('qg-payment-tab') === 'inprogress') preferInProgress = true;
   } catch (e) {}
 
   try {
-    // Never flip stored mode from URL/tab/payment ‚Äî only pick a valid tab for current mode
+    // Never flip stored mode from URL/tab/payment ó only pick a valid tab for current mode
     try {
       if (sessionStorage.getItem('qg-just-posted') === '1') sessionStorage.removeItem('qg-just-posted');
     } catch (e) {}
@@ -841,7 +841,7 @@ async function loadData(){
       paintMyTasksTabBar();
     }
 
-    // Show cached tasks immediately ‚Äî never block UI on payment sync
+    // Show cached tasks immediately ó never block UI on payment sync
     var cached = typeof readTasksCache === 'function' ? readTasksCache(true) : null;
     if (cached && cached.length) {
       allTasks = Array.isArray(cached) ? cached : [];
@@ -924,7 +924,7 @@ async function loadData(){
       if (typeof writeAppsCache === 'function') writeAppsCache(allApplications);
       userNames = results[1] || {};
       userAvatars = results[2] || {};
-      // Don't block the page on Stripe sync ‚Äî buttons must stay clickable
+      // Don't block the page on Stripe sync ó buttons must stay clickable
       try { await refreshPaymentMap(userId); } catch (ePay) {}
       syncInProgressPaymentState(userId).then(function () {
         try { if (activeTab === 'inprogress') renderTab(); } catch (e) {}
@@ -946,7 +946,7 @@ async function loadData(){
     }
 
     if (typeof isSupabaseUsingStaleCache === 'function' && isSupabaseUsingStaleCache()) {
-      showToast('Showing saved tasks ‚Äî reconnect or run tasks-my-tasks-fix.sql if this persists', '#f59e0b');
+      showToast('Showing saved tasks ó reconnect or run tasks-my-tasks-fix.sql if this persists', '#f59e0b');
     }
 
     try {
@@ -1018,7 +1018,7 @@ window.QG_refreshPaymentState = async function(taskId) {
 function getDemoTasks(){
   return [
     {TASK_ID:1,TITLE:'Deep clean 2 bedroom apartment',CATEGORY:'home',TASK_MODE:'standard',BUDGET:120,LOCATION:'Calgary, AB',STATUS:'open',POSTED_BY:window._currentUser?window._currentUser.uid:'me'},
-    {TASK_ID:2,TITLE:'Grocery run ‚Äî Superstore NW',CATEGORY:'errands',TASK_MODE:'quick',BUDGET:30,LOCATION:'Calgary, AB',STATUS:'in_progress',POSTED_BY:window._currentUser?window._currentUser.uid:'me'},
+    {TASK_ID:2,TITLE:'Grocery run ó Superstore NW',CATEGORY:'errands',TASK_MODE:'quick',BUDGET:30,LOCATION:'Calgary, AB',STATUS:'in_progress',POSTED_BY:window._currentUser?window._currentUser.uid:'me'},
     {TASK_ID:3,TITLE:'Math tutor Grade 10',CATEGORY:'tutoring',TASK_MODE:'recurring',BUDGET:35,LOCATION:'Calgary, AB',STATUS:'completed',POSTED_BY:'someone_else'},
   ];
 }
@@ -1028,10 +1028,10 @@ function getDemoApps(){
   ];
 }
 
-var CAT_ICONS = {home:'üè†',errands:'üöó',tutoring:'üéì',beauty:'üíá',moving:'üöö',cooking:'üç≥',tech:'üíª',care:'üë∂',gardening:'üåø',events:'üéâ',trades:'üîß',other:'üì¶'};
+var CAT_ICONS = {home:'??',errands:'??',tutoring:'??',beauty:'??',moving:'??',cooking:'??',tech:'??',care:'??',gardening:'??',events:'??',trades:'??',other:'??'};
 var CAT_BG    = {home:'rgba(107,63,160,0.2)',errands:'rgba(251,191,36,0.15)',tutoring:'rgba(74,222,128,0.1)',beauty:'rgba(200,168,233,0.15)',moving:'rgba(107,63,160,0.2)',cooking:'rgba(251,191,36,0.12)',tech:'rgba(107,63,160,0.2)',care:'rgba(74,222,128,0.1)',gardening:'rgba(74,222,128,0.08)',events:'rgba(200,168,233,0.15)',trades:'rgba(107,63,160,0.2)',other:'rgba(255,255,255,0.06)'};
 
-function getCat(t){ var k=(t.CATEGORY||t.category||'other').toLowerCase(); return {icon:CAT_ICONS[k]||'üì¶',bg:CAT_BG[k]||'rgba(255,255,255,0.06)'}; }
+function getCat(t){ var k=(t.CATEGORY||t.category||'other').toLowerCase(); return {icon:CAT_ICONS[k]||'??',bg:CAT_BG[k]||'rgba(255,255,255,0.06)'}; }
 function getField(row,f){
   var fieldMap = {
     APP_ID:['APP_ID','app_id','id'],
@@ -1093,8 +1093,8 @@ function formatAppPriceHtml(a) {
 
 function formatTaskBudgetMeta(task) {
   var budget = getField(task, 'BUDGET');
-  if (isTaskNegotiable(task)) return 'Around $' + budget + ' CAD ¬∑ negotiable';
-  return '$' + budget + ' CAD ¬∑ fixed';
+  if (isTaskNegotiable(task)) return 'Around $' + budget + ' CAD ∑ negotiable';
+  return '$' + budget + ' CAD ∑ fixed';
 }
 
 function esc(s){
@@ -1231,7 +1231,7 @@ document.getElementById('tabContent').addEventListener('click', function(e) {
     if (typeof window.markComplete === 'function') {
       window.markComplete(markBtn.getAttribute('data-mark-complete'), markBtn);
     } else {
-      showToast('Mark complete not ready ‚Äî hard refresh', '#ef4444');
+      showToast('Mark complete not ready ó hard refresh', '#ef4444');
     }
     return;
   }
@@ -1285,12 +1285,12 @@ function showToast(msg, color){
     } else if (typeof window.QG_formatPayError === 'function') {
       msg = window.QG_formatPayError(msg);
     } else {
-      msg = msg.message || msg.error || 'Something went wrong ‚Äî refresh and try again';
-      if (typeof msg === 'object') msg = 'Something went wrong ‚Äî refresh and try again';
+      msg = msg.message || msg.error || 'Something went wrong ó refresh and try again';
+      if (typeof msg === 'object') msg = 'Something went wrong ó refresh and try again';
     }
   }
   if (msg === '[object Object]' || msg == null || msg === '') {
-    msg = 'Something went wrong ‚Äî refresh and try again';
+    msg = 'Something went wrong ó refresh and try again';
   }
   t.textContent = String(msg);
   t.style.background = color || '#4ade80';
@@ -1332,7 +1332,7 @@ window.openCounterModal = function(opts) {
   document.getElementById('counterTitle').textContent = opts && opts.role === 'worker' ? 'Counter back' : 'Counter offer';
   document.getElementById('counterMsg').textContent = opts && opts.role === 'worker'
     ? 'Send your counter (max 2 rounds in beta).'
-    : 'Propose a different price ‚Äî the tasker gets a notification.';
+    : 'Propose a different price ó the tasker gets a notification.';
   document.getElementById('counterAmount').value = '';
   document.getElementById('counterOverlay').classList.add('open');
   setTimeout(function(){ document.getElementById('counterAmount').focus(); }, 50);
@@ -1371,7 +1371,7 @@ window.runCounterSubmit = async function() {
   }
   var btn = document.getElementById('counterOkBtn');
   btn.disabled = true;
-  btn.textContent = 'Sending‚Ä¶';
+  btn.textContent = 'SendingÖ';
   var userId = window._currentUser ? window._currentUser.uid : null;
   var result;
   if (opts.role === 'worker' && typeof workerRespondToCounter === 'function') {
@@ -1387,7 +1387,7 @@ window.runCounterSubmit = async function() {
   if (!result || !result.success) {
     var msg = typeof formatSupabaseActionError === 'function'
       ? formatSupabaseActionError('send counter', (result && result.error) || 'failed')
-      : 'Could not send counter ‚Äî run supabase/negotiation.sql, then refresh.';
+      : 'Could not send counter ó run supabase/negotiation.sql, then refresh.';
     if (result && result.error === 'max_rounds') msg = 'Max 2 counter rounds reached for beta.';
     showToast(msg, '#ef4444');
     return;
@@ -1419,7 +1419,7 @@ async function runWorkerCounterAction(appId, taskId, action, amount) {
       : 'Could not update counter', '#ef4444');
     return;
   }
-  showToast(action === 'accept' ? 'Counter accepted ‚Äî price updated' : 'Counter declined', '#4ade80');
+  showToast(action === 'accept' ? 'Counter accepted ó price updated' : 'Counter declined', '#4ade80');
   await reloadMyTasksData();
   renderTab();
 }
@@ -1434,7 +1434,7 @@ async function runPosterCounterAction(appId, taskId, workerId, action) {
       : 'Could not update counter', '#ef4444');
     return;
   }
-  showToast(action === 'accept' ? 'Counter accepted ‚Äî price updated' : 'Counter declined', '#4ade80');
+  showToast(action === 'accept' ? 'Counter accepted ó price updated' : 'Counter declined', '#4ade80');
   await reloadMyTasksData();
   renderTab();
 }
@@ -1462,7 +1462,7 @@ function renderTabLoading() {
   var content = document.getElementById('tabContent');
   if (!content) return;
   content.setAttribute('aria-busy', 'true');
-  content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('clock',{size:24}):'')+'</div><div class="empty-title">Loading your tasks‚Ä¶</div><div class="empty-sub">One moment</div></div>';
+  content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('clock',{size:24}):'')+'</div><div class="empty-title">Loading your tasksÖ</div><div class="empty-sub">One moment</div></div>';
 }
 
 function renderTabLoadError(msg) {
@@ -1474,7 +1474,7 @@ function renderTabLoadError(msg) {
     '<div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('alert',{size:24}):'')+'</div>' +
     '<div class="empty-title">Could not load tasks</div>' +
     '<div class="empty-sub">' + (msg || 'Check your connection, then try again. If this keeps happening, hard refresh the page.') + '</div>' +
-    '<button type="button" class="empty-btn" onclick="typeof loadData===\'function\'&&loadData()">‚Üª Refresh list</button>' +
+    '<button type="button" class="empty-btn" onclick="typeof loadData===\'function\'&&loadData()">? Refresh list</button>' +
     '<button type="button" class="empty-btn btn-secondary" style="margin-top:8px;background:var(--surface);color:var(--text-muted);border:1px solid var(--border)" onclick="location.reload()">Hard refresh</button>' +
     '</div>';
 }
@@ -1496,7 +1496,7 @@ function renderTab(){
     if (isWorker) {
       content.innerHTML = typeof roleGateHtml === 'function' ? roleGateHtml({
         targetMode: 'poster',
-        icon: 'üìã',
+        icon: '??',
         title: 'Posting is in Poster mode',
         sub: 'Switch to Poster mode to manage your listings and review applicants. Use Tasker mode to browse and apply to jobs.'
       }) : '';
@@ -1507,15 +1507,15 @@ function renderTab(){
     var anyPosted = tasksForPoster(userId, null);
     if(!myTasks.length){
       var movedLink = inProgPosted.length
-        ? '<p class="empty-sub" style="margin-top:10px">Accepted tasks move to <strong>In Progress</strong> ‚Äî you have ' + inProgPosted.length + ' active.</p>' +
-          '<button type="button" class="empty-btn" onclick="showTab(\'inprogress\',document.getElementById(\'tabInprogress\'))">View In Progress ‚Üí</button>'
+        ? '<p class="empty-sub" style="margin-top:10px">Accepted tasks move to <strong>In Progress</strong> ó you have ' + inProgPosted.length + ' active.</p>' +
+          '<button type="button" class="empty-btn" onclick="showTab(\'inprogress\',document.getElementById(\'tabInprogress\'))">View In Progress ?</button>'
         : (anyPosted.length
           ? '<p class="empty-sub" style="margin-top:10px">Your posting may be under <strong>In Progress</strong> or <strong>Completed</strong>.</p>' +
-            '<button type="button" class="empty-btn" onclick="showTab(\'inprogress\',document.getElementById(\'tabInprogress\'))">Check In Progress ‚Üí</button>'
+            '<button type="button" class="empty-btn" onclick="showTab(\'inprogress\',document.getElementById(\'tabInprogress\'))">Check In Progress ?</button>'
           : '');
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('clipboard',{size:24}):'')+'</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">Post a task in Poster mode. When you accept a tasker, the task moves to In Progress ‚Äî not here.</div>' + movedLink +
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('clipboard',{size:24}):'')+'</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">Post a task in Poster mode. When you accept a tasker, the task moves to In Progress ó not here.</div>' + movedLink +
         '<a class="empty-btn" href="posttask.html">Post a task</a>' +
-        '<button type="button" class="empty-btn btn-secondary" style="margin-top:8px;background:var(--surface);color:var(--text-muted);border:1px solid var(--border)" onclick="typeof loadData===\'function\'&&loadData()">‚Üª Refresh list</button></div>';
+        '<button type="button" class="empty-btn btn-secondary" style="margin-top:8px;background:var(--surface);color:var(--text-muted);border:1px solid var(--border)" onclick="typeof loadData===\'function\'&&loadData()">? Refresh list</button></div>';
       return;
     }
     content.innerHTML = myTasks.map(function(t){
@@ -1554,14 +1554,14 @@ function renderTab(){
         '</div>';
       }).join('') : '<div style="font-size:12px;color:var(--text-faint);padding:10px 0">No pending applicants yet.</div>';
       var toggleLabel = pendingApps.length
-        ? pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : '') + (namePreview ? ' ¬∑ ' + namePreview + (pendingApps.length > 3 ? '‚Ä¶' : '') : '') + ' ‚Äî Tap to ' + (isOpen ? 'hide' : 'view')
-        : (hasAccepted ? 'Worker accepted ‚Äî Tap to view' : 'No applicants yet');
+        ? pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : '') + (namePreview ? ' ∑ ' + namePreview + (pendingApps.length > 3 ? 'Ö' : '') : '') + ' ó Tap to ' + (isOpen ? 'hide' : 'view')
+        : (hasAccepted ? 'Worker accepted ó Tap to view' : 'No applicants yet');
       var postedLabel = typeof formatRelativeTime === 'function'
         ? formatRelativeTime(getField(t, 'CREATED_AT'))
         : '';
       var shareEmpty = (!pendingApps.length && !hasAccepted)
         ? (typeof shareButtonHtml === 'function'
-          ? shareButtonHtml('task', taskId, getField(t,'TITLE')).replace('‚Üó Share', 'Share your task')
+          ? shareButtonHtml('task', taskId, getField(t,'TITLE')).replace('? Share', 'Share your task')
           : '<button type="button" class="act-btn qg-share-trigger" data-share-kind="task" data-share-id="'+escAttr(taskId)+'" data-share-label="'+escAttr(getField(t,'TITLE'))+'">Share your task</button>')
         : '';
       var timeline = typeof qgTaskTimelineHtml === 'function'
@@ -1571,12 +1571,12 @@ function renderTab(){
         ? shareButtonHtml('task', taskId, getField(t,'TITLE'))
         : '';
       return '<div class="task-card">'+
-        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-open">‚óè Open</span></div>'+
+        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-open">? Open</span></div>'+
         timeline +
-        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' ¬∑ <span class="tc-meta-price">'+esc(formatTaskBudgetMeta(t))+'</span>'+(postedLabel ? ' ¬∑ Posted '+esc(postedLabel) : '')+'</div>'+
-        '<button type="button" class="tc-applicants-toggle'+(isOpen?' open':'')+'" data-applicants-toggle="'+escAttr(taskId)+'" data-applicant-count="'+escAttr(pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : ''))+'" data-applicant-names="'+escAttr(namePreview + (pendingApps.length > 3 ? '‚Ä¶' : ''))+'">'+esc(toggleLabel)+'</button>'+
+        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' ∑ <span class="tc-meta-price">'+esc(formatTaskBudgetMeta(t))+'</span>'+(postedLabel ? ' ∑ Posted '+esc(postedLabel) : '')+'</div>'+
+        '<button type="button" class="tc-applicants-toggle'+(isOpen?' open':'')+'" data-applicants-toggle="'+escAttr(taskId)+'" data-applicant-count="'+escAttr(pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : ''))+'" data-applicant-names="'+escAttr(namePreview + (pendingApps.length > 3 ? 'Ö' : ''))+'">'+esc(toggleLabel)+'</button>'+
         '<div class="applicants-panel'+(isOpen?' open':'')+'" id="'+taskDomId(taskId)+'">'+appHtml+'</div>'+
-        '<div class="action-row">'+shareEmpty+shareIcon+'<button type="button" class="act-btn btn-danger" data-cancel-posting="'+escAttr(taskId)+'">‚úï Cancel posting</button></div>'+
+        '<div class="action-row">'+shareEmpty+shareIcon+'<button type="button" class="act-btn btn-danger" data-cancel-posting="'+escAttr(taskId)+'">? Cancel posting</button></div>'+
       '</div>';
     }).join('');
   }
@@ -1585,7 +1585,7 @@ function renderTab(){
     if (isPoster) {
       content.innerHTML = typeof roleGateHtml === 'function' ? roleGateHtml({
         targetMode: 'worker',
-        icon: 'üíº',
+        icon: '??',
         title: 'Applications are in Tasker mode',
         sub: 'Switch to Tasker mode to browse tasks, apply, and track your jobs. Poster mode is for posting and hiring only.'
       }) : '';
@@ -1617,7 +1617,7 @@ function renderTab(){
         statusLabel = '<span class="tc-badge badge-open">Guardian review</span>';
       } else if (guardianStatus === 'rejected') {
         statusLabel = '<span class="tc-badge badge-open" style="opacity:0.6">Guardian declined</span>';
-      } else if (appStatus === 'accepted') statusLabel = '<span class="tc-badge badge-done">‚úì Accepted</span>';
+      } else if (appStatus === 'accepted') statusLabel = '<span class="tc-badge badge-done">? Accepted</span>';
       else if (appStatus === 'cancelled') statusLabel = '<span class="tc-badge badge-open" style="opacity:0.6">Withdrawn</span>';
       else if (appStatus === 'declined') statusLabel = '<span class="tc-badge badge-open" style="opacity:0.6">Not selected</span>';
       else statusLabel = '<span class="tc-badge badge-open">Pending</span>';
@@ -1634,11 +1634,11 @@ function renderTab(){
             '<div class="nego-block-title">Poster countered at $' + neg.counterPrice + '</div>' +
             '<div class="action-row">' +
             '<button type="button" class="act-btn btn-secondary" data-worker-decline-counter="'+escAttr(getField(a,'APP_ID'))+'" data-task-id="'+escAttr(getField(a,'TASK_ID'))+'">Decline</button>' +
-            (canCounterBack ? '<button type="button" class="act-btn btn-secondary counter-btn" data-worker-counter-back="'+escAttr(getField(a,'APP_ID'))+'" data-task-id="'+escAttr(getField(a,'TASK_ID'))+'">Counter $‚Ä¶</button>' : '') +
+            (canCounterBack ? '<button type="button" class="act-btn btn-secondary counter-btn" data-worker-counter-back="'+escAttr(getField(a,'APP_ID'))+'" data-task-id="'+escAttr(getField(a,'TASK_ID'))+'">Counter $Ö</button>' : '') +
             '<button type="button" class="act-btn" style="background:var(--purple);color:#fff" data-worker-accept-counter="'+escAttr(getField(a,'APP_ID'))+'" data-task-id="'+escAttr(getField(a,'TASK_ID'))+'">Accept $' + neg.counterPrice + '</button>' +
             '</div></div>';
         } else if (isTaskNegotiable(task) && neg.counterBy === 'worker') {
-          negoBlock = '<div class="nego-block"><div class="nego-block-title">Counter sent ‚Äî waiting for poster</div></div>';
+          negoBlock = '<div class="nego-block"><div class="nego-block-title">Counter sent ó waiting for poster</div></div>';
         }
         actions = '<div class="action-row">';
         if (!isPaymentGatedChat()) {
@@ -1661,8 +1661,8 @@ function renderTab(){
         }
       }
         return '<div class="'+cardClass+'">'+
-        '<div class="tc-top"><div class="tc-left">'+profileTapIcon(posterId, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">Applied ¬∑ Posted by '+personLink(posterName, posterId)+'</div><div class="tc-title">'+esc(getField(task,'TITLE')||'Task #'+getField(a,'TASK_ID'))+'</div></div></div>'+statusLabel+'</div>'+
-        '<div class="tc-meta">Your offer: '+formatAppPriceHtml(a)+' ¬∑ '+esc(getField(a,'MESSAGE')).substring(0,60)+'...'+(getField(task,'CREATED_AT') && typeof formatRelativeTime === 'function' ? ' ¬∑ Task posted '+esc(formatRelativeTime(getField(task,'CREATED_AT'))) : '')+'</div>'+
+        '<div class="tc-top"><div class="tc-left">'+profileTapIcon(posterId, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">Applied ∑ Posted by '+personLink(posterName, posterId)+'</div><div class="tc-title">'+esc(getField(task,'TITLE')||'Task #'+getField(a,'TASK_ID'))+'</div></div></div>'+statusLabel+'</div>'+
+        '<div class="tc-meta">Your offer: '+formatAppPriceHtml(a)+' ∑ '+esc(getField(a,'MESSAGE')).substring(0,60)+'...'+(getField(task,'CREATED_AT') && typeof formatRelativeTime === 'function' ? ' ∑ Task posted '+esc(formatRelativeTime(getField(task,'CREATED_AT'))) : '')+'</div>'+
         negoBlock+
         actions+
       '</div>';
@@ -1684,12 +1684,12 @@ function renderTab(){
     if(!inProg.length){
       var emptySub = isPoster
         ? (isPaymentGatedChat()
-          ? 'After you accept a tasker, pay to unlock chat ‚Äî then coordinate here until the job is done.'
+          ? 'After you accept a tasker, pay to unlock chat ó then coordinate here until the job is done.'
           : 'After you accept a tasker from Posted, the job appears here.')
         : 'When a poster accepts you, the job shows here. Switch to Tasker mode on Profile if you were browsing as a poster.';
       var openPosted = tasksForPoster(userId, 'open').length;
       var postedLink = openPosted > 0 && isPoster
-        ? '<button type="button" class="empty-btn" onclick="showTab(\'posted\',document.getElementById(\'tabPosted\'))">Review ' + openPosted + ' open posting' + (openPosted !== 1 ? 's' : '') + ' ‚Üí</button>'
+        ? '<button type="button" class="empty-btn" onclick="showTab(\'posted\',document.getElementById(\'tabPosted\'))">Review ' + openPosted + ' open posting' + (openPosted !== 1 ? 's' : '') + ' ?</button>'
         : '';
       content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('clock',{size:24}):'')+'</div><div class="empty-title">Nothing in progress</div><div class="empty-sub">' + emptySub + '</div>' +
         postedLink +
@@ -1728,12 +1728,12 @@ function renderTab(){
       var payAction = '';
       if (isPosterTask && isPaymentGatedChat()) {
         if (selfTask) {
-          payAction = '<span class="act-btn btn-danger" style="opacity:0.95;cursor:default;pointer-events:none;font-size:12px">‚ö† Same account as tasker ‚Äî cancel &amp; use 2 logins</span>';
+          payAction = '<span class="act-btn btn-danger" style="opacity:0.95;cursor:default;pointer-events:none;font-size:12px">? Same account as tasker ó cancel &amp; use 2 logins</span>';
         } else if (taskPaid) {
-          payAction = '<span class="act-btn btn-secondary" style="opacity:0.9;cursor:default;pointer-events:none">‚úì Paid ¬∑ chat unlocked</span>';
+          payAction = '<span class="act-btn btn-secondary" style="opacity:0.9;cursor:default;pointer-events:none">? Paid ∑ chat unlocked</span>';
         } else {
-          payAction = '<button type="button" class="act-btn btn-primary" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks" data-pay-amount="'+escAttr(String(getField(t,'BUDGET')))+'" data-pay-title="'+escAttr(getField(t,'TITLE'))+'">üí≥ Pay to unlock</button>' +
-            '<button type="button" class="act-btn btn-secondary" data-sync-pay-task="'+escAttr(taskId)+'" title="Paid in Stripe but still locked? Tap to sync">‚Üª Sync payment</button>';
+          payAction = '<button type="button" class="act-btn btn-primary" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks" data-pay-amount="'+escAttr(String(getField(t,'BUDGET')))+'" data-pay-title="'+escAttr(getField(t,'TITLE'))+'">?? Pay to unlock</button>' +
+            '<button type="button" class="act-btn btn-secondary" data-sync-pay-task="'+escAttr(taskId)+'" title="Paid in Stripe but still locked? Tap to sync">? Sync payment</button>';
         }
       }
       var chatNeedsPay = isPosterTask && isPaymentGatedChat() && !taskPaid && !selfTask;
@@ -1745,18 +1745,18 @@ function renderTab(){
       var posterActions = isPosterTask
         ? payAction +
           messageBtn +
-          '<button type="button" class="act-btn btn-success" data-mark-complete="'+escAttr(taskId)+'">‚úì Mark complete</button>' +
-          '<button type="button" class="act-btn btn-primary" data-change-tasker="'+escAttr(taskId)+'">‚Ü© Change tasker</button>' +
-          '<button type="button" class="act-btn btn-danger" data-cancel-inprogress="'+escAttr(taskId)+'">‚úï Cancel task</button>'
+          '<button type="button" class="act-btn btn-success" data-mark-complete="'+escAttr(taskId)+'">? Mark complete</button>' +
+          '<button type="button" class="act-btn btn-primary" data-change-tasker="'+escAttr(taskId)+'">? Change tasker</button>' +
+          '<button type="button" class="act-btn btn-danger" data-cancel-inprogress="'+escAttr(taskId)+'">? Cancel task</button>'
         : '';
       var workerActions = !isPosterTask
         ? '<button type="button" class="act-btn btn-secondary" data-open-chat-task="'+escAttr(taskId)+'">Message poster</button>' +
-          '<button type="button" class="act-btn btn-success" data-mark-complete="'+escAttr(taskId)+'">‚úì Mark complete</button>'
+          '<button type="button" class="act-btn btn-success" data-mark-complete="'+escAttr(taskId)+'">? Mark complete</button>'
         : '';
       return '<div class="task-card">'+
-        '<div class="tc-top"><div class="tc-left">'+iconHtml+'<div><div class="tc-cat">'+roleLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-progress">‚è≥ In progress</span></div>'+
+        '<div class="tc-top"><div class="tc-left">'+iconHtml+'<div><div class="tc-cat">'+roleLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-progress">? In progress</span></div>'+
         (typeof qgTaskTimelineHtml === 'function' ? qgTaskTimelineHtml('in_progress') : '')+
-        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' ¬∑ <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
+        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' ∑ <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
         '<div class="qg-action-row">'+disputeBtn+reportBtns+'</div>'+
         '<div class="action-row">' + posterActions + workerActions + '</div>'+
       '</div>';
@@ -1780,10 +1780,10 @@ function renderTab(){
       });
     }
     if(!done.length){
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('checkCircle',{size:24}):'')+'</div><div class="empty-title">No completed tasks yet</div><div class="empty-sub">'+(isPoster?'Completed, cancelled, and expired postings appear here. Expired tasks can be reposted with one tap.':'Completed or cancelled tasks will appear here.')+'</div>'+(isPoster?'<a class="empty-btn" href="posttask.html">Post a task ‚Üí</a>':'<a class="empty-btn" href="browsetask.html">Browse tasks ‚Üí</a>')+'</div>';
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('checkCircle',{size:24}):'')+'</div><div class="empty-title">No completed tasks yet</div><div class="empty-sub">'+(isPoster?'Completed, cancelled, and expired postings appear here. Expired tasks can be reposted with one tap.':'Completed or cancelled tasks will appear here.')+'</div>'+(isPoster?'<a class="empty-btn" href="posttask.html">Post a task ?</a>':'<a class="empty-btn" href="browsetask.html">Browse tasks ?</a>')+'</div>';
       return;
     }
-    content.innerHTML = '<div class="hint-box" style="background:rgba(107,63,160,0.12);border:1px solid rgba(200,168,233,0.2);border-radius:14px;padding:14px;margin-bottom:14px;font-size:13px;line-height:1.55;color:var(--text-muted);"><strong>Please leave a review</strong> on completed jobs ‚Äî honest feedback helps QuickGigs stay safe for everyone.</div>' +
+    content.innerHTML = '<div class="hint-box" style="background:rgba(107,63,160,0.12);border:1px solid rgba(200,168,233,0.2);border-radius:14px;padding:14px;margin-bottom:14px;font-size:13px;line-height:1.55;color:var(--text-muted);"><strong>Please leave a review</strong> on completed jobs ó honest feedback helps QuickGigs stay safe for everyone.</div>' +
     done.map(function(t){
       var cat = getCat(t);
       var st = taskStatus(t);
@@ -1807,21 +1807,21 @@ function renderTab(){
           (otherUid ? reportButtonHtml('user', otherUid, otherNm) : '')
         : '';
       var badge = isExpired
-        ? '<span class="tc-badge badge-open" style="opacity:0.75">‚è± Expired</span>'
+        ? '<span class="tc-badge badge-open" style="opacity:0.75">? Expired</span>'
         : isCancelled
-        ? '<span class="tc-badge badge-open" style="opacity:0.75">‚úï Cancelled</span>'
-        : '<span class="tc-badge badge-done">‚úì Done</span>';
+        ? '<span class="tc-badge badge-open" style="opacity:0.75">? Cancelled</span>'
+        : '<span class="tc-badge badge-done">? Done</span>';
       var actions = isExpired
-        ? '<div class="action-row"><button type="button" class="act-btn btn-primary" data-repost-task="'+escAttr(getField(t,'TASK_ID'))+'">‚Üª Repost task</button></div>'
+        ? '<div class="action-row"><button type="button" class="act-btn btn-primary" data-repost-task="'+escAttr(getField(t,'TASK_ID'))+'">? Repost task</button></div>'
         : isCancelled
         ? ''
         : '<div class="action-row"><a class="act-btn btn-review" href="'+reviewHref+'">Leave a review</a>' +
-          (isPoster ? '<button type="button" class="act-btn btn-secondary" data-post-again="'+escAttr(getField(t,'TASK_ID'))+'">‚Üª Post again</button>' : '') +
+          (isPoster ? '<button type="button" class="act-btn btn-secondary" data-post-again="'+escAttr(getField(t,'TASK_ID'))+'">? Post again</button>' : '') +
           '</div>';
       return '<div class="task-card'+(isCancelled || isExpired ?' is-faded':'')+'">'+
         '<div class="tc-top"><div class="tc-left">'+profileTapIcon(otherUid, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">'+otherLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div>'+badge+'</div>'+
         (typeof qgTaskTimelineHtml === 'function' && !isCancelled && !isExpired ? qgTaskTimelineHtml('completed') : '')+
-        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' ¬∑ <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
+        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' ∑ <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
         '<div class="qg-action-row">'+disputeBtn+reportBtns+'</div>'+
         actions+
       '</div>';
@@ -1850,7 +1850,7 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
   appId = String(appId);
   if (!appId) {
     setAcceptLoading(acceptBtn, false);
-    showToast('Invalid application ‚Äî refresh and try again', '#ef4444');
+    showToast('Invalid application ó refresh and try again', '#ef4444');
     return;
   }
 
@@ -1911,7 +1911,7 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
     setAcceptLoading(acceptBtn, false);
     var progMsg = typeof formatSupabaseActionError === 'function'
       ? formatSupabaseActionError('start this task', taskStatus.error)
-      : 'Accepted applicant but could not move task to In Progress ‚Äî refresh and try again.';
+      : 'Accepted applicant but could not move task to In Progress ó refresh and try again.';
     showToast(progMsg, '#ef4444');
     return;
   }
@@ -1934,7 +1934,7 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
   applyLocalAcceptState(taskId, appId);
 
   if (acceptBtn) {
-    acceptBtn.textContent = '‚úì Accepted';
+    acceptBtn.textContent = '? Accepted';
     acceptBtn.classList.add('is-done');
     acceptBtn.disabled = true;
     var row = acceptBtn.closest('.applicant-row');
@@ -1967,20 +1967,20 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
 
   if(!convResult.success){
     setAcceptLoading(acceptBtn, false);
-    showToast('Accepted but chat setup failed ‚Äî try Messages or refresh', '#f59e0b');
+    showToast('Accepted but chat setup failed ó try Messages or refresh', '#f59e0b');
     loadData();
     return;
   }
 
   if (convResult.data && convResult.data.conv_id && !isPaymentGatedChat()) {
     await unlockConversationIfAllowed(convResult.data.conv_id, convResult.data.status, 'in_progress');
-    showToast('Accepted ' + workerName + '! Opening chat‚Ä¶');
+    showToast('Accepted ' + workerName + '! Opening chatÖ');
     try {
       sessionStorage.setItem('qg-task-conv-' + String(taskId), String(convResult.data.conv_id));
     } catch (e) {}
     window.location.href = 'chat.html?conv=' + encodeURIComponent(convResult.data.conv_id);
   } else if (isPaymentGatedChat()) {
-    showToast('Accepted ' + workerName + '! Opening payment‚Ä¶', '#4ade80');
+    showToast('Accepted ' + workerName + '! Opening paymentÖ', '#4ade80');
     activeTab = 'inprogress';
     syncTabButtons();
     renderTab();
@@ -2001,16 +2001,16 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
         title: getField(task, 'TITLE') || 'Pay to unlock chat'
       }).catch(function (err) {
         console.error('Pay modal failed:', err);
-        showToast('Could not open payment ‚Äî tap Pay on this task', '#ef4444');
+        showToast('Could not open payment ó tap Pay on this task', '#ef4444');
       });
     } else {
-      showToast('Payment module not loaded ‚Äî refresh the page', '#ef4444');
+      showToast('Payment module not loaded ó refresh the page', '#ef4444');
     }
   } else {
     if (acceptBtn && typeof qgMicroConfirm === 'function') qgMicroConfirm(acceptBtn);
     if (typeof qgCelebrate === 'function') qgCelebrate({ count: 36 });
     if (typeof haptic === 'function') haptic([15, 30, 15]);
-    showToast('Accepted ' + workerName + '! Moved to In Progress üí¨');
+    showToast('Accepted ' + workerName + '! Moved to In Progress ??');
   }
   setTimeout(function () { loadData(); }, 100);
 };
@@ -2047,7 +2047,7 @@ function findAcceptedApplication(taskId) {
 window.openChatWithWorker = async function(taskId, workerId){
   var userId = window._currentUser ? window._currentUser.uid : null;
   if(!userId || !taskId || !workerId) {
-    showToast('Could not open chat ‚Äî refresh and try again', '#ef4444');
+    showToast('Could not open chat ó refresh and try again', '#ef4444');
     return;
   }
 
@@ -2059,12 +2059,12 @@ window.openChatWithWorker = async function(taskId, workerId){
 
   var posterId = getField(task, 'POSTED_BY');
   if (String(posterId) === String(workerId)) {
-    showToast('Same account as tasker ‚Äî cancel this task and test with two logins', '#ef4444');
+    showToast('Same account as tasker ó cancel this task and test with two logins', '#ef4444');
     return;
   }
 
   if (typeof window.qgShowGlobalLoading === 'function') {
-    window.qgShowGlobalLoading('Opening chat‚Ä¶');
+    window.qgShowGlobalLoading('Opening chatÖ');
   }
 
   try {
@@ -2094,7 +2094,7 @@ window.openChatWithWorker = async function(taskId, workerId){
         return;
       }
       if (ready && ready.error === 'not_paid') {
-        showToast('Payment not linked yet ‚Äî do not pay twice; use two accounts for a clean test', '#f59e0b');
+        showToast('Payment not linked yet ó do not pay twice; use two accounts for a clean test', '#f59e0b');
         return;
       }
     }
@@ -2116,11 +2116,11 @@ window.openChatWithWorker = async function(taskId, workerId){
       }
     }
 
-    showToast('No chat thread yet ‚Äî check Messages', '#f59e0b');
+    showToast('No chat thread yet ó check Messages', '#f59e0b');
     setTimeout(function(){ window.location.href = 'messages.html'; }, 1200);
   } catch (chatErr) {
     console.error('openChatWithWorker failed:', chatErr);
-    showToast('Could not open chat ‚Äî try Messages', '#ef4444');
+    showToast('Could not open chat ó try Messages', '#ef4444');
   } finally {
     if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
   }
@@ -2144,7 +2144,7 @@ window.openChatForTask = async function(taskId){
 
   var task = allTasks.find(function(t){ return String(getField(t,'TASK_ID')) === taskId; });
   if(!task) {
-    showToast('Task not found ‚Äî refresh and try again', '#ef4444');
+    showToast('Task not found ó refresh and try again', '#ef4444');
     return;
   }
 
@@ -2170,20 +2170,20 @@ window.openChatForTask = async function(taskId){
     return;
   }
 
-  showToast('No chat yet ‚Äî open Messages', '#f59e0b');
+  showToast('No chat yet ó open Messages', '#f59e0b');
   setTimeout(function(){ window.location.href = 'messages.html'; }, 1200);
 };
 
 window.markComplete = async function(taskId, btn){
-  console.log('BUTTON CLICKED ‚Äî markComplete fired', taskId);
+  console.log('BUTTON CLICKED ó markComplete fired', taskId);
   taskId = String(taskId);
   if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
-  if (btn) { btn.disabled = true; btn.textContent = 'Completing‚Ä¶'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'CompletingÖ'; }
   if (typeof haptic === 'function') haptic(12);
   var userId = window._currentUser ? window._currentUser.uid : '';
   if (!userId) {
-    if (btn) { btn.disabled = false; btn.textContent = '‚úì Mark complete'; }
-    showToast('Not signed in ‚Äî refresh and try again', '#ef4444');
+    if (btn) { btn.disabled = false; btn.textContent = '? Mark complete'; }
+    showToast('Not signed in ó refresh and try again', '#ef4444');
     return;
   }
   var taskRow = allTasks.find(function(t){ return String(getField(t,'TASK_ID')) === taskId; });
@@ -2234,7 +2234,7 @@ window.markComplete = async function(taskId, btn){
     if (typeof qgBurstConfetti === 'function') qgBurstConfetti();
     if (typeof qgTrackEvent === 'function') qgTrackEvent('complete_task', { task_id: String(finalTaskId || taskId || '') });
     showToast('Task complete. Leave a review when you can.');
-    if (btn) { btn.disabled = false; btn.textContent = '‚úì Mark complete'; }
+    if (btn) { btn.disabled = false; btn.textContent = '? Mark complete'; }
   }
 
   var completeOpts = {
@@ -2268,16 +2268,16 @@ window.markComplete = async function(taskId, btn){
     console.log('completeTask result:', JSON.stringify(result));
   } catch (completeErr) {
     console.error('markComplete threw:', completeErr);
-    // Still show Completed UI ‚Äî user is blocked otherwise
+    // Still show Completed UI ó user is blocked otherwise
     showCompletedUi(canonicalTaskId || taskId);
-    showToast('Marked complete locally ‚Äî if it reappears, tap again', '#f59e0b');
+    showToast('Marked complete locally ó if it reappears, tap again', '#f59e0b');
     return;
   }
   if (!result || !result.success) {
     // Last resort: keep UX unblocked
     console.error('FULL markComplete failure:', JSON.stringify(result));
     showCompletedUi(canonicalTaskId || taskId);
-    showToast('Marked complete ‚Äî sync may retry in background', '#f59e0b');
+    showToast('Marked complete ó sync may retry in background', '#f59e0b');
     return;
   }
   showCompletedUi(result.task_id || canonicalTaskId || taskId);
@@ -2306,7 +2306,7 @@ window.markComplete = async function(taskId, btn){
     }
   }
 
-  // Soft background refresh ‚Äî do NOT call loadData() (it resets the Completed tab)
+  // Soft background refresh ó do NOT call loadData() (it resets the Completed tab)
   setTimeout(function () {
     try { sessionStorage.removeItem('qg-just-completed'); } catch (e) {}
   }, 8000);
@@ -2316,7 +2316,7 @@ window.declineApplicant = async function(taskId, appId, declineBtn) {
   taskId = String(taskId);
   appId = String(appId);
   if (!appId) {
-    showToast('Invalid application ‚Äî refresh and try again', '#ef4444');
+    showToast('Invalid application ó refresh and try again', '#ef4444');
     return;
   }
   var app = allApplications.find(function(a){ return String(getField(a, 'APP_ID')) === appId; });
@@ -2346,7 +2346,7 @@ window.declineApplicant = async function(taskId, appId, declineBtn) {
     }
   };
   if (typeof qgUndoAction === 'function') {
-    qgUndoAction('Applicant declined ‚Äî Undo', doDecline, function () {
+    qgUndoAction('Applicant declined ó Undo', doDecline, function () {
       allApplications.forEach(function(a) {
         if (String(getField(a, 'APP_ID')) === appId) setRowStatus(a, prevStatus);
       });
@@ -2378,14 +2378,14 @@ window.confirmWithdrawApplication = function(appId) {
           renderTab();
           var withdrawMsg = typeof formatSupabaseActionError === 'function'
             ? formatSupabaseActionError('withdraw application', result.error)
-            : 'Could not withdraw ‚Äî try again.';
+            : 'Could not withdraw ó try again.';
           showToast(withdrawMsg, '#ef4444');
           return;
         }
         loadData();
       };
       if (typeof qgUndoAction === 'function') {
-        qgUndoAction('Application withdrawn ‚Äî Undo', doWithdraw, function () {
+        qgUndoAction('Application withdrawn ó Undo', doWithdraw, function () {
           if (app) setRowStatus(app, prevStatus);
           renderTab();
         });
@@ -2403,12 +2403,12 @@ window.confirmRepostTask = function(taskId) {
   var title = task ? getField(task, 'TITLE') : 'this task';
   showConfirm({
     title: 'Repost this task?',
-    message: '‚Äú' + title + '‚Äù will be posted again as a new open listing with the same details. The expired copy stays in your history.',
+    message: 'ì' + title + 'î will be posted again as a new open listing with the same details. The expired copy stays in your history.',
     confirmLabel: 'Repost now',
     onConfirm: async function() {
       var userId = window._currentUser ? window._currentUser.uid : null;
       if (!userId || typeof repostTask !== 'function') {
-        showToast('Could not repost ‚Äî refresh and try again', '#ef4444');
+        showToast('Could not repost ó refresh and try again', '#ef4444');
         return;
       }
       if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
@@ -2418,11 +2418,11 @@ window.confirmRepostTask = function(taskId) {
           ? 'Only expired tasks can be reposted.'
           : (typeof formatSupabaseActionError === 'function'
             ? formatSupabaseActionError('repost task', result.error)
-            : 'Could not repost ‚Äî try again.');
+            : 'Could not repost ó try again.');
         showToast(msg, '#ef4444');
         return;
       }
-      showToast('Task reposted ‚Äî now live on browse');
+      showToast('Task reposted ó now live on browse');
       await loadData();
       showTab('posted', document.getElementById('tabPosted'));
     }
@@ -2435,7 +2435,7 @@ window.confirmCancelPosting = function(taskId) {
   var title = task ? getField(task, 'TITLE') : 'this task';
   showConfirm({
     title: 'Cancel posting?',
-    message: '‚Äú' + title + '‚Äù will be removed from browse and pending applicants will be notified. You can Undo for 5 seconds after confirming.',
+    message: 'ì' + title + 'î will be removed from browse and pending applicants will be notified. You can Undo for 5 seconds after confirming.',
     confirmLabel: 'Cancel posting',
     danger: true,
     onConfirm: async function() {
@@ -2463,7 +2463,7 @@ window.confirmCancelPosting = function(taskId) {
         await loadData();
       };
       if (typeof qgUndoAction === 'function') {
-        qgUndoAction('Posting cancelled ‚Äî Undo', doCancel, function () {
+        qgUndoAction('Posting cancelled ó Undo', doCancel, function () {
           allTasks.forEach(function(t) {
             if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, prevStatus);
           });
@@ -2488,16 +2488,16 @@ window.confirmChangeTasker = function(taskId) {
   var workerName = acceptedApp ? displayName(workerId, acceptedApp) : 'this tasker';
   var appId = acceptedApp ? getField(acceptedApp, 'APP_ID') : '';
   if (!appId) {
-    showToast('No assigned tasker found ‚Äî refresh and try again', '#ef4444');
+    showToast('No assigned tasker found ó refresh and try again', '#ef4444');
     return;
   }
   if (typeof isTaskPaid === 'function' && isTaskPaid(taskId)) {
-    showToast('Cannot change tasker after payment ‚Äî cancel the task or contact support', '#f59e0b');
+    showToast('Cannot change tasker after payment ó cancel the task or contact support', '#f59e0b');
     return;
   }
   showConfirm({
     title: 'Change tasker?',
-    message: '‚Äú' + title + '‚Äù will go back to Open and ' + workerName + ' will be notified they were not selected. You can review and accept another applicant from Posted.',
+    message: 'ì' + title + 'î will go back to Open and ' + workerName + ' will be notified they were not selected. You can review and accept another applicant from Posted.',
     confirmLabel: 'Change tasker',
     neutral: true,
     onConfirm: async function() {
@@ -2524,7 +2524,7 @@ window.confirmChangeTasker = function(taskId) {
       activeTab = 'posted';
       syncTabButtons();
       renderTab();
-      showToast('Task reopened ‚Äî pick another applicant');
+      showToast('Task reopened ó pick another applicant');
       await loadData();
     }
   });
@@ -2539,7 +2539,7 @@ window.confirmCancelInProgress = function(taskId) {
   payRowPromise.then(function(payRow) {
     var pst = payRow && String(payRow.status || payRow.STATUS || '').toLowerCase();
     if (pst === 'paid') {
-      showToast('Task already paid out ‚Äî open a dispute if you need help', '#f59e0b');
+      showToast('Task already paid out ó open a dispute if you need help', '#f59e0b');
       return;
     }
     var refundNote = (paid || pst === 'held')
@@ -2547,7 +2547,7 @@ window.confirmCancelInProgress = function(taskId) {
       : '';
     showConfirm({
       title: 'Cancel this task?',
-      message: '‚Äú' + title + '‚Äù will be marked cancelled. The assigned worker will be notified.' + refundNote,
+      message: 'ì' + title + 'î will be marked cancelled. The assigned worker will be notified.' + refundNote,
       confirmLabel: 'Cancel task',
       onConfirm: async function() {
         if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
@@ -2555,7 +2555,7 @@ window.confirmCancelInProgress = function(taskId) {
         var result = await cancelTask(taskId, { actorId: userId, refundHeld: true });
         if (!result.success) {
           if (result.needsDispute || result.error === 'paid_task_needs_dispute') {
-            showToast('Already paid out ‚Äî use Dispute or contact support', '#f59e0b');
+            showToast('Already paid out ó use Dispute or contact support', '#f59e0b');
             return;
           }
           console.error('FULL cancelInProgress failure:', JSON.stringify(result));
@@ -2569,7 +2569,7 @@ window.confirmCancelInProgress = function(taskId) {
         activeTab = 'completed';
         syncTabButtons();
         renderTab();
-        showToast((paid || pst === 'held') ? 'Task cancelled ‚Äî refund processing' : 'Task cancelled');
+        showToast((paid || pst === 'held') ? 'Task cancelled ó refund processing' : 'Task cancelled');
         await loadData();
       }
     });
@@ -2629,7 +2629,7 @@ onAuthStateChanged(auth, function (user) {
           }
         }
         if (typeof showToast === 'function') {
-          showToast('Could not load tasks ‚Äî tap Refresh list', '#ef4444');
+          showToast('Could not load tasks ó tap Refresh list', '#ef4444');
         }
       });
     } else {
@@ -2639,7 +2639,7 @@ onAuthStateChanged(auth, function (user) {
       }
     }
   }
-  // Load tasks immediately ‚Äî profile sync must not block the list
+  // Load tasks immediately ó profile sync must not block the list
   bootMyTasks();
   if (typeof syncCurrentUserProfile === 'function') {
     Promise.race([

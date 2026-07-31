@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
         success: false,
         error: 'tasker_identity_verification_required',
         verification_status: actor.tasker_verification_status || 'unverified',
-        message: 'Verify your identity to start working.',
+        message: 'Verify your email to start working.',
       }, 403);
     }
 

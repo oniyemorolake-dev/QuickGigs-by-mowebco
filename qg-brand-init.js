@@ -121,11 +121,11 @@
   var existingRoleTheme = document.querySelector('link[href*="qg-role-theme.css"]');
   if (existingRoleTheme) {
     var roleThemeBase = existingRoleTheme.getAttribute('href').split('?')[0];
-    existingRoleTheme.setAttribute('href', roleThemeBase + '?v=20260731dashGrid1');
+    existingRoleTheme.setAttribute('href', roleThemeBase + '?v=20260731dashGrid2');
   } else {
     var roleTheme = document.createElement('link');
     roleTheme.rel = 'stylesheet';
-    roleTheme.href = 'qg-role-theme.css?v=20260731dashGrid1';
+    roleTheme.href = 'qg-role-theme.css?v=20260731dashGrid2';
     document.head.appendChild(roleTheme);
   }
 
@@ -148,7 +148,7 @@
     var refine = document.createElement('link');
     refine.id = 'qg-refine-css';
     refine.rel = 'stylesheet';
-    refine.href = 'qg-refine.css?v=20260731dashGrid1';
+    refine.href = 'qg-refine.css?v=20260731dashGrid2';
     document.head.appendChild(refine);
   }
 

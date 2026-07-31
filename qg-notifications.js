@@ -103,6 +103,16 @@
           '”\nReason: ' + (p.reason || 'Not specified') + '\n\nBrowse other gigs:\n' +
           (p.link || 'https://quickgigs.ca/browsetask.html') + '\n\n— QuickGigs';
       }
+    },
+    new_gig_match: {
+      subject: function (p) { return 'New gig near you: “' + (p.taskTitle || 'a task') + '”'; },
+      body: function (p) {
+        return 'A new QuickGigs task matches your alerts:\n\n“' + (p.taskTitle || '') + '”\n' +
+          (p.location || 'Near you') + (p.budget ? ' · $' + p.budget : '') +
+          (p.distanceKm != null ? '\nAbout ' + p.distanceKm + ' km away' : '') +
+          '\n\nOpen the gig:\n' + (p.link || 'https://quickgigs.ca/browsetask.html') +
+          '\n\nManage alerts in your Tasker profile settings.\n\n— QuickGigs';
+      }
     }
   };
 
@@ -121,7 +131,8 @@
       counter_offer_reply: 1,
       counter_offer_accepted: 1,
       task_removed_admin: 1,
-      task_removed_applicant: 1
+      task_removed_applicant: 1,
+      new_gig_match: 1
     };
     if (inAppTypes[opts.type] && typeof pushInAppNotification === 'function') {
       try {

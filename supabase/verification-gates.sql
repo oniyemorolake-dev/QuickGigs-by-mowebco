@@ -146,25 +146,30 @@ SET search_path = public
 AS $$
 DECLARE
   poster_is_verified BOOLEAN;
+  new_j JSONB := to_jsonb(NEW);
+  old_j JSONB := to_jsonb(OLD);
 BEGIN
-  IF TG_TABLE_NAME = 'applications' AND (
-    NEW.worker_id IS DISTINCT FROM OLD.worker_id OR
-    NEW.task_id IS DISTINCT FROM OLD.task_id
-  ) THEN
-    RAISE EXCEPTION 'application_identity_is_immutable' USING ERRCODE = '42501';
+  -- Use jsonb so this function can fire on both applications and tasks
+  -- (NEW.worker_id is not a field on tasks rows).
+  IF TG_TABLE_NAME = 'applications' THEN
+    IF (new_j->>'worker_id') IS DISTINCT FROM (old_j->>'worker_id')
+       OR (new_j->>'task_id') IS DISTINCT FROM (old_j->>'task_id') THEN
+      RAISE EXCEPTION 'application_identity_is_immutable' USING ERRCODE = '42501';
+    END IF;
   END IF;
-  IF TG_TABLE_NAME = 'tasks' AND NEW.posted_by IS DISTINCT FROM OLD.posted_by THEN
-    RAISE EXCEPTION 'task_owner_is_immutable' USING ERRCODE = '42501';
-  END IF;
-  IF TG_TABLE_NAME = 'tasks'
-     AND LOWER(COALESCE(NEW.status, '')) = 'open'
-     AND LOWER(COALESCE(OLD.status, '')) <> 'open' THEN
-    SELECT poster_verified INTO poster_is_verified
-    FROM public.users
-    WHERE firebase_uid = NEW.posted_by
-    LIMIT 1;
-    IF poster_is_verified IS DISTINCT FROM TRUE THEN
-      RAISE EXCEPTION 'poster_payment_verification_required' USING ERRCODE = '42501';
+  IF TG_TABLE_NAME = 'tasks' THEN
+    IF (new_j->>'posted_by') IS DISTINCT FROM (old_j->>'posted_by') THEN
+      RAISE EXCEPTION 'task_owner_is_immutable' USING ERRCODE = '42501';
+    END IF;
+    IF LOWER(COALESCE(new_j->>'status', '')) = 'open'
+       AND LOWER(COALESCE(old_j->>'status', '')) <> 'open' THEN
+      SELECT poster_verified INTO poster_is_verified
+      FROM public.users
+      WHERE firebase_uid = new_j->>'posted_by'
+      LIMIT 1;
+      IF poster_is_verified IS DISTINCT FROM TRUE THEN
+        RAISE EXCEPTION 'poster_payment_verification_required' USING ERRCODE = '42501';
+      END IF;
     END IF;
   END IF;
   RETURN NEW;

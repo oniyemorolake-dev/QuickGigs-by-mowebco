@@ -10,6 +10,7 @@ export type FirebaseIdentity = {
   uid: string;
   email: string;
   emailVerified: boolean;
+  phoneNumber: string;
 };
 
 export async function requireFirebaseUser(req: Request): Promise<FirebaseIdentity> {
@@ -28,6 +29,7 @@ export async function requireFirebaseUser(req: Request): Promise<FirebaseIdentit
     uid,
     email: String(payload.email || ''),
     emailVerified: payload.email_verified === true,
+    phoneNumber: String(payload.phone_number || '').trim(),
   };
 }
 

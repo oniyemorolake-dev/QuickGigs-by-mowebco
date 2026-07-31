@@ -1,20 +1,20 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 
-<title>Profile — QuickGigs</title>
+<title>Profile ? QuickGigs</title>
 <meta name="description" content="Your QuickGigs profile, skills, and reviews.">
 <meta name="robots" content="noindex,nofollow">
 <link rel="canonical" href="https://quickgigs.ca/profile.html">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://quickgigs.ca/profile.html">
-<meta property="og:title" content="Profile — QuickGigs">
+<meta property="og:title" content="Profile ? QuickGigs">
 <meta property="og:description" content="Your QuickGigs profile, skills, and reviews.">
 <meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <meta property="og:locale" content="en_CA">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Profile — QuickGigs">
+<meta name="twitter:title" content="Profile ? QuickGigs">
 <meta name="twitter:description" content="Your QuickGigs profile, skills, and reviews.">
 <meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,7 +27,7 @@
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
 <link rel="stylesheet" href="qg-menu.css?v=2">
@@ -93,17 +93,27 @@ body.light .mode-btn{background:rgba(0,0,0,0.2);color:#fff;}
 .avatar-camera{position:absolute;bottom:2px;right:2px;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);border:3px solid var(--bg);display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,0.25);}
 .avatar-edit-hint{font-size:11px;color:var(--text-faint);margin-bottom:8px;}
 .verified{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid var(--bg);}
-.role-verification-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.role-verification-card{padding:14px;border-radius:15px;background:var(--surface);border:1px solid var(--border)}.role-verification-card strong{display:block;font-size:13px;margin-bottom:4px}.role-verification-card p{font-size:11px;line-height:1.5;color:var(--text-muted);margin:0 0 10px}.role-verification-btn{width:100%;padding:9px 11px;border:0;border-radius:10px;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;font:600 11px Poppins,sans-serif;cursor:pointer}.role-verification-btn.is-verified{background:rgba(74,222,128,.14);color:#16a34a;cursor:default}.role-verified-badges{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:7px}.role-verified-pill{padding:5px 9px;border-radius:999px;background:rgba(74,222,128,.12);color:#16a34a;font-size:10px;font-weight:600}@media(max-width:560px){.role-verification-grid{grid-template-columns:1fr}}
+.role-verification-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.role-verification-card{padding:14px;border-radius:15px;background:var(--surface);border:1px solid var(--border)}.role-verification-card strong{display:block;font-size:13px;margin-bottom:4px}.role-verification-card p{font-size:11px;line-height:1.5;color:var(--text-muted);margin:0 0 10px}.role-verification-btn{width:100%;padding:9px 11px;border:0;border-radius:10px;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;font:600 11px Poppins,sans-serif;cursor:pointer}
+html[data-qg-mode="poster"] #posterVerificationBtn,.qg-mode-poster #posterVerificationBtn{background:linear-gradient(135deg,#0f766e,#2dd4bf)}
+html[data-qg-mode="worker"] #taskerVerificationBtn,.qg-mode-worker #taskerVerificationBtn{background:linear-gradient(135deg,#6b3fa0,#9b6fc4)}
+.role-verification-btn.is-verified{background:rgba(74,222,128,.14);color:#16a34a;cursor:default}.role-verified-badges{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:7px}.role-verified-pill{padding:5px 9px;border-radius:999px;background:rgba(74,222,128,.12);color:#16a34a;font-size:10px;font-weight:600}@media(max-width:560px){.role-verification-grid{grid-template-columns:1fr}}
 .profile-name{font-size:22px;font-weight:600;margin-bottom:4px;text-align:center;}
 .profile-pronouns{font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:6px;font-weight:400;}
 .role-tags{display:flex;gap:6px;justify-content:center;margin-bottom:10px;flex-wrap:wrap;}
 .role-tag{font-size:11px;padding:4px 12px;border-radius:20px;background:rgba(107,63,160,0.25);color:var(--lavender);border:0.5px solid rgba(200,168,233,0.2);}
 body.light .role-tag{background:#ede9ff;border-color:#d8cfff;}
-.rating-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
-.stars{font-size:14px;}
-.rating-score{font-size:15px;font-weight:500;color:var(--text);}
-.rating-count{font-size:12px;color:var(--text-faint);}
+.rating-row{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;font-family:'Poppins',sans-serif;}
+.stars{font-size:14px;color:var(--lavender);letter-spacing:1px;}
+.rating-score{font-size:15px;font-weight:600;color:var(--text);}
+.rating-count{font-size:14px;color:var(--lavender);font-weight:500;}
+body.light .rating-count{color:var(--purple);}
 .member-since{font-size:12px;color:var(--text-faint);}
+.sec-count{font-size:11px;color:var(--lavender);font-family:'Poppins',sans-serif;font-weight:500;}
+.rev-stars{font-size:12px;flex-shrink:0;color:var(--lavender);letter-spacing:1px;}
+.rev-date{font-size:10px;color:var(--text-faint);margin-top:2px;}
+.reviews-list{font-family:'Poppins',sans-serif;}
+.reviews-empty p{font-family:'Poppins',sans-serif;font-size:13px;color:var(--text-muted);}
+.reviews-empty-icon{font-size:22px;margin-bottom:8px;opacity:0.85;color:var(--lavender);}
 
 /* EDIT BUTTON */
 .edit-btn{flex:1;padding:13px 16px;border-radius:14px;border:0.5px solid rgba(200,168,233,0.3);background:rgba(107,63,160,0.15);color:var(--lavender);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.22s;}
@@ -115,7 +125,7 @@ body.light .photo-btn{color:#2d1b4e;}
 /* DIVIDER */
 .divider{height:0.5px;background:var(--border);margin:0 20px 16px;}
 
-/* STATS — three-up grid; shrink to fit narrow phones (no horizontal swipe) */
+/* STATS ? three-up grid; shrink to fit narrow phones (no horizontal swipe) */
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0 20px 16px;border-radius:16px;overflow:hidden;border:0.5px solid var(--border);}
 .stat{padding:14px 6px;text-align:center;background:var(--card-bg);min-width:0;}
 .stat+.stat{border-left:0.5px solid var(--border);}
@@ -150,10 +160,10 @@ body.light .stat-num.green{color:#16a34a;}
 .rev-name{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px;}
 .rev-task{font-size:11px;color:var(--purple-light);}
 body.light .rev-task{color:var(--purple);}
-.rev-stars{font-size:12px;flex-shrink:0;}
+.rev-stars{font-size:12px;flex-shrink:0;color:var(--lavender);letter-spacing:1px;}
 .rev-text{font-size:13px;line-height:1.6;color:var(--text-muted);}
 
-/* EDIT PROFILE — profile studio (not task form) */
+/* EDIT PROFILE ? profile studio (not task form) */
 .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
 .sec-content{padding:14px 16px;border-radius:16px;background:var(--card-bg);border:0.5px solid var(--border);}
 .reviews-list{display:flex;flex-direction:column;gap:10px;}
@@ -291,7 +301,7 @@ body.light .photo-optional-banner{background:#f5f0ff;border-color:#ddd6fe;}
 .tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:var(--purple-light);}
 body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color:var(--purple);}
 
-/* Role switch — inlined so profile always renders correctly */
+/* Role switch ? inlined so profile always renders correctly */
 .qg-role-flip{margin:0 20px 18px;padding:18px 16px;border-radius:20px;border:0.5px solid var(--border);background:var(--card-bg);}
 body.light .qg-role-flip{background:#fff;box-shadow:0 2px 8px rgba(107,63,160,0.06);}
 .qg-role-flip-kicker{font-size:10px;text-transform:uppercase;letter-spacing:0.12em;color:var(--lavender);margin-bottom:12px;text-align:center;}
@@ -323,6 +333,19 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 .account-lbl{color:var(--text-muted);flex-shrink:0;}
 .account-val{color:var(--text);text-align:right;word-break:break-all;}
 .account-privacy-note{font-size:11px;color:var(--text-faint);margin-top:10px;line-height:1.45;}
+
+.gig-alerts-box{margin-top:14px;padding:14px;border-radius:14px;background:rgba(107,63,160,0.14);border:0.5px solid rgba(200,168,233,0.28);font-family:'Poppins',sans-serif;}
+.gig-alerts-title{font:600 13px 'Poppins',sans-serif;color:var(--lavender);margin-bottom:6px;}
+.gig-alerts-hint{font-size:11px;line-height:1.5;color:var(--text-muted);margin:0 0 12px;}
+.gig-alert-toggle{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;cursor:pointer;}
+.gig-alert-toggle input{margin-top:3px;accent-color:#9b6fc4;width:16px;height:16px;flex-shrink:0;}
+.gig-alert-toggle span{font-size:13px;font-weight:500;color:var(--text);line-height:1.4;}
+.gig-alert-toggle small{display:block;font-size:11px;font-weight:400;color:var(--text-muted);margin-top:2px;}
+.gig-alert-cats{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+.gig-alert-cat{font:500 11px 'Poppins',sans-serif;padding:7px 12px;border-radius:999px;border:0.5px solid rgba(200,168,233,0.25);background:rgba(255,255,255,0.03);color:var(--text-muted);cursor:pointer;user-select:none;transition:background 0.18s,border-color 0.18s,color 0.18s;}
+.gig-alert-cat.selected{background:rgba(107,63,160,0.45);border-color:rgba(200,168,233,0.55);color:#fff;}
+.gig-alerts-fields[hidden]{display:none!important;}
+
 </style>
 </head>
 <body>
@@ -330,9 +353,9 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 
 <!-- NAV overlaid on banner -->
 <nav class="nav">
-  <a class="back-btn" href="dashboard.html" id="profileBackBtn" aria-label="Back"><span class="back-arrow" aria-hidden="true">←</span><span class="back-label">Back</span></a>
+  <a class="back-btn" href="dashboard.html" id="profileBackBtn" aria-label="Back"><span class="back-arrow" aria-hidden="true">?</span><span class="back-label">Back</span></a>
   <div class="nav-right">
-    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
+    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">?? Light</button>
   </div>
 </nav>
 
@@ -340,11 +363,11 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 <div class="banner"><div class="banner-overlay"></div></div>
 
 <div class="photo-required-banner" id="photoRequiredBanner" style="display:none">
-  <strong>📷 Add your profile photo</strong>
+  <strong>?? Add your profile photo</strong>
   <p>Taskers need a clear photo so posters know who they're hiring. Tap your avatar below to upload one.</p>
 </div>
 <div class="photo-optional-banner" id="photoOptionalBanner" style="display:none">
-  <strong>📷 Add a profile photo (optional)</strong>
+  <strong>?? Add a profile photo (optional)</strong>
   <p>Posters don't need a photo, but adding one helps taskers recognize you.</p>
 </div>
 
@@ -357,8 +380,8 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
         <div class="avatar" id="avatarEl">M</div>
       </div>
     </div>
-    <div class="avatar-camera" id="avatarCamera" style="display:none">📷</div>
-    <div class="verified" id="avatarVerifiedMark" title="Verified user" style="display:none">✓</div>
+    <div class="avatar-camera" id="avatarCamera" style="display:none">??</div>
+    <div class="verified" id="avatarVerifiedMark" title="Verified user" style="display:none">?</div>
   </div>
   <div class="avatar-edit-hint" id="avatarHint" style="display:none">Tap photo to change</div>
   <div class="profile-name" id="profileName">Loading...</div>
@@ -366,9 +389,9 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
   <div id="verifiedBadgeWrap"></div>
   <div class="role-tags" id="roleTags"></div>
   <div id="trustBadges"></div>
-  <div class="rating-row">
-    <span class="stars" id="starsEl">⭐⭐⭐⭐⭐</span>
-    <span class="rating-score" id="ratingScore">—</span>
+  <div class="rating-row" id="ratingRow" aria-label="Reputation">
+    <span class="stars" id="starsEl" aria-hidden="true" style="display:none">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+    <span class="rating-score" id="ratingScore" style="display:none"></span>
     <span class="rating-count" id="ratingCount"></span>
   </div>
   <div class="member-since" id="memberSince"></div>
@@ -377,19 +400,19 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 <div class="profile-account section" id="profileAccountSection" style="display:none">
   <div class="sec-title">Account</div>
   <div id="profileAccountRows"></div>
-  <p class="account-privacy-note">Only you can see this — email and phone are never shown on your public profile.</p>
+  <p class="account-privacy-note">Only you can see this ? email and phone are never shown on your public profile.</p>
 </div>
 <div class="section" id="roleVerificationSection" style="display:none">
   <div class="sec-title">Verification to transact</div>
   <div class="role-verification-grid">
     <div class="role-verification-card" id="taskerVerificationCard">
-      <strong>🪪 Tasker identity</strong>
-      <p id="taskerVerificationCopy">Required before applying to or accepting gigs.</p>
-      <button type="button" class="role-verification-btn" id="taskerVerificationBtn">Verify identity</button>
+      <strong>?? Tasker email</strong>
+      <p id="taskerVerificationCopy">Confirm your email before applying or accepting. Phone + ID checks come later.</p>
+      <button type="button" class="role-verification-btn" id="taskerVerificationBtn">Verify email</button>
     </div>
     <div class="role-verification-card" id="posterVerificationCard">
-      <strong>💳 Poster payment method</strong>
-      <p id="posterVerificationCopy">Required before publishing a task.</p>
+      <strong>?? Poster payment method</strong>
+      <p id="posterVerificationCopy">Add a payment method to publish. Drafts are allowed anytime.</p>
       <button type="button" class="role-verification-btn" id="posterVerificationBtn">Add payment method</button>
     </div>
   </div>
@@ -397,8 +420,8 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 
 <!-- EDIT BUTTONS (own profile only) -->
 <div class="action-row-profile" id="profileActions" style="display:none">
-  <button class="edit-btn" id="editBtn" onclick="openEditModal()">✨ Customize profile</button>
-  <button class="photo-btn" id="photoBtn" onclick="document.getElementById('avatarInput').click()">📷 Change photo</button>
+  <button class="edit-btn" id="editBtn" onclick="openEditModal()">? Customize profile</button>
+  <button class="photo-btn" id="photoBtn" onclick="document.getElementById('avatarInput').click()">?? Change photo</button>
 </div>
 
 <div id="roleSwitchWrap" style="display:none">
@@ -418,7 +441,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 <!-- STATS -->
 <div class="stats">
   <div class="stat"><div class="stat-num" id="statPosted">0</div><div class="stat-lbl">Posted</div></div>
-  <div class="stat"><div class="stat-num" id="statDone">0</div><div class="stat-lbl">Completed</div></div>
+  <div class="stat"><div class="stat-num" id="statDone">0</div><div class="stat-lbl">Jobs done</div></div>
   <div class="stat" id="earnedStat"><div class="stat-num green" id="statEarned">$0</div><div class="stat-lbl">Earned</div></div>
 </div>
 <div class="section" id="bioSection">
@@ -437,7 +460,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
   <div class="sec-content" id="workerTrustText" style="font-size:13px;line-height:1.7;color:var(--text-muted)"></div>
 </div>
 
-<!-- REVIEWS -->
+<!-- REVIEWS (public received reviews ? read-only) -->
 <div class="section" id="reviewsSection">
   <div class="sec-head">
     <span class="sec-title">Reviews</span>
@@ -445,18 +468,18 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
   </div>
   <div class="reviews-list" id="reviewsList">
     <div class="reviews-empty" id="reviewsEmpty">
-      <div class="reviews-empty-icon">⭐</div>
-      <p>No reviews yet — complete a task to get your first one.</p>
+      <div class="reviews-empty-icon" aria-hidden="true">&#9733;</div>
+      <p>No reviews yet ? complete a task to get your first one.</p>
     </div>
   </div>
 </div>
 
 <div class="profile-help section" id="profileHelpSection" style="display:none">
   <div class="profile-help-title">Need help?</div>
-  <p class="profile-help-sub">Beta support is async — we read every message and usually reply within 24 hours.</p>
+  <p class="profile-help-sub">Beta support is async ? we read every message and usually reply within 24 hours.</p>
   <div class="profile-help-links">
-    <a class="profile-help-link" href="feedback.html">💬 Send feedback</a>
-    <a class="profile-help-link" href="mailto:support@quickgigs.ca">✉️ support@quickgigs.ca</a>
+    <a class="profile-help-link" href="feedback.html">?? Send feedback</a>
+    <a class="profile-help-link" href="mailto:support@quickgigs.ca">?? support@quickgigs.ca</a>
   </div>
 </div>
 
@@ -465,16 +488,16 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 <!-- TOAST -->
 <div class="toast" id="toast">Saved</div>
 
-<!-- EDIT PROFILE — profile studio -->
+<!-- EDIT PROFILE ? profile studio -->
 <div class="modal-overlay" id="modalOverlay" onclick="handleOverlay(event)">
   <div class="edit-sheet" onclick="event.stopPropagation()">
     <div class="edit-handle"></div>
     <div class="edit-header">
       <div class="edit-header-glow"></div>
-      <span class="edit-spark s1">✨</span>
-      <span class="edit-spark s2">💫</span>
-      <span class="edit-spark s3">⭐</span>
-      <button type="button" class="edit-close" onclick="closeEditModal()" aria-label="Close">✕</button>
+      <span class="edit-spark s1">?</span>
+      <span class="edit-spark s2">??</span>
+      <span class="edit-spark s3">?</span>
+      <button type="button" class="edit-close" onclick="closeEditModal()" aria-label="Close">?</button>
       <p class="edit-kicker">Profile studio</p>
       <h2 class="edit-headline">Make it you</h2>
     </div>
@@ -484,8 +507,8 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
         <div class="edit-photo-ring" id="editPhotoRing" onclick="document.getElementById('avatarInput').click()" role="button" tabindex="0" aria-label="Change profile photo">
           <div class="edit-photo-inner" id="modalAvatarPreview">M</div>
         </div>
-        <button type="button" class="edit-photo-btn" onclick="document.getElementById('avatarInput').click()">📷 Change photo</button>
-        <p class="edit-photo-hint" id="editPhotoHint">Optional for posters · required for taskers</p>
+        <button type="button" class="edit-photo-btn" onclick="document.getElementById('avatarInput').click()">?? Change photo</button>
+        <p class="edit-photo-hint" id="editPhotoHint">Optional for posters ? required for taskers</p>
       </div>
 
       <div class="edit-progress-card">
@@ -509,7 +532,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
       </div>
 
       <div class="edit-card edit-card-about">
-        <div class="edit-card-head"><span class="edit-card-icon">👋</span><span>About you</span></div>
+        <div class="edit-card-head"><span class="edit-card-icon">??</span><span>About you</span></div>
         <div class="edit-name-wrap">
           <input class="edit-name-input" id="editName" type="text" placeholder="Your name" maxlength="40" autocomplete="name">
         </div>
@@ -523,29 +546,53 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
       </div>
 
       <div class="edit-card edit-card-skills">
-        <div class="edit-card-head"><span class="edit-card-icon">⚡</span><span>Your superpowers</span></div>
-        <p class="edit-skills-sub">Tap the skills that fit you — they pop up on your profile</p>
+        <div class="edit-card-head"><span class="edit-card-icon">?</span><span>Your superpowers</span></div>
+        <p class="edit-skills-sub">Tap the skills that fit you ? they pop up on your profile</p>
         <div class="skills-edit" id="skillsEdit"></div>
         <div class="skills-selected-count" id="skillsCount">0 selected</div>
       </div>
       <div class="edit-card" id="workerFieldsCard" style="display:none">
-        <div class="edit-card-head"><span class="edit-card-icon">📍</span><span>Tasker details</span></div>
+        <div class="edit-card-head"><span class="edit-card-icon">?</span><span>Tasker details</span></div>
         <label class="edit-label" for="editAvailability">Availability</label>
         <select class="edit-input" id="editAvailability" style="margin-bottom:12px">
           <option value="available">Available for tasks</option>
-          <option value="busy">Busy — not taking new tasks</option>
+          <option value="busy">Busy ? not taking new tasks</option>
         </select>
         <label class="edit-label" for="editServiceArea">Service area</label>
         <input class="edit-input" id="editServiceArea" type="text" placeholder="e.g. Calgary NW, Airdrie, Cochrane" maxlength="120" style="margin-bottom:12px">
         <label class="edit-label" for="editLanguages">Languages spoken</label>
-        <input class="edit-input" id="editLanguages" type="text" placeholder="e.g. English, French, Yoruba" maxlength="120">
+        <input class="edit-input" id="editLanguages" type="text" placeholder="e.g. English, French, Yoruba" maxlength="120" style="margin-bottom:14px">
+
+        <div class="gig-alerts-box" id="gigAlertsBox">
+          <div class="gig-alerts-title">New gig alerts</div>
+          <p class="gig-alerts-hint">Get notified when a matching open gig is posted near your service area. Verified taskers only.</p>
+          <label class="gig-alert-toggle">
+            <input type="checkbox" id="editNotifyNewGigs">
+            <span>Notify me about new gigs near me<small>In-app bell notification when a gig matches</small></span>
+          </label>
+          <div class="gig-alerts-fields" id="gigAlertFields" hidden>
+            <label class="gig-alert-toggle">
+              <input type="checkbox" id="editNotifyNewGigsEmail">
+              <span>Also email me<small>Optional ? uses your account email</small></span>
+            </label>
+            <label class="edit-label" for="editAlertRadius">Max distance</label>
+            <select class="edit-input" id="editAlertRadius" style="margin-bottom:12px">
+              <option value="20">Within 20 km</option>
+              <option value="50" selected>Within 50 km</option>
+              <option value="100">Within 100 km</option>
+            </select>
+            <label class="edit-label">Categories you want</label>
+            <p class="gig-alerts-hint" style="margin-top:4px">Leave all unselected to hear about every category.</p>
+            <div class="gig-alert-cats" id="editAlertCategories"></div>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="edit-footer">
       <button type="button" class="edit-save-btn" id="editSaveBtn" onclick="saveProfile()">
         <span class="save-shine"></span>
-        <span class="save-text">Save profile ✨</span>
+        <span class="save-text">Save profile ?</span>
       </button>
     </div>
   </div>
@@ -553,11 +600,11 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 
 <!-- TAB BAR -->
 <nav class="tab-bar">
-  <a class="tab-item" href="dashboard.html"><span class="tab-icon">🏠</span><span class="tab-lbl">Home</span></a>
-  <a class="tab-item" href="browsetask.html"><span class="tab-icon">🔍</span><span class="tab-lbl">Browse</span></a>
-  <a class="tab-item" href="posttask.html"><span class="tab-icon">➕</span><span class="tab-lbl">Post</span></a>
-  <a class="tab-item" href="mytasks.html"><span class="tab-icon">✅</span><span class="tab-lbl">My Tasks</span></a>
-  <a class="tab-item active" href="profile.html"><span class="tab-icon">👤</span><span class="tab-lbl">Profile</span></a>
+  <a class="tab-item" href="dashboard.html"><span class="tab-icon">??</span><span class="tab-lbl">Home</span></a>
+  <a class="tab-item" href="browsetask.html"><span class="tab-icon">??</span><span class="tab-lbl">Browse</span></a>
+  <a class="tab-item" href="posttask.html"><span class="tab-icon">?</span><span class="tab-lbl">Post</span></a>
+  <a class="tab-item" href="mytasks.html"><span class="tab-icon">?</span><span class="tab-lbl">My Tasks</span></a>
+  <a class="tab-item active" href="profile.html"><span class="tab-icon">??</span><span class="tab-lbl">Profile</span></a>
 </nav>
 
 <script defer src="qg-utils.js?v=20260728welcome1"></script>
@@ -602,16 +649,18 @@ onAuthStateChanged(auth, (user) => {
 <script src="qg-ux.js?v=20260728welcome1" defer></script>
 <script src="qg-bigtech.js?v=20260729chatprofile1" defer></script>
 <script src="qg-wave2.js?v=20260728xss1" defer></script>
-<script defer src="qg-config.js?v=20260730verify1"></script>
+<script defer src="qg-config.js?v=20260731email1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
-<script defer src="supabase-db.js?v=20260730verify1"></script>
-<script defer src="qg-verification.js?v=1"></script>
+<script defer src="supabase-db.js?v=20260731alerts1"></script>
+<script defer src="qg-verification.js?v=20260731email1"></script>
 <script defer src="qg-payments-ui.js?v=1"></script>
 <script defer src="qg-stripe.js?v=20260730teen1"></script>
 <script defer src="qg-pwa.js?v=4"></script>
 <script defer src="qg-share.js"></script>
 <script defer src="qg-report.js?v=20260716d"></script>
-<script defer src="qg-stats.js?v=20260730verify1"></script>
+<script defer src="qg-categories.js?v=20260730verify1"></script>
+<script defer src="qg-location.js?v=20260728loc1"></script>
+<script defer src="qg-stats.js?v=20260731rep1"></script>
 <script defer src="qg-confetti.js?v=1"></script>
 <script defer src="qg-nav.js"></script>
 <script defer src="qg-menu.js?v=20260727auth2"></script>
@@ -619,12 +668,12 @@ onAuthStateChanged(auth, (user) => {
 <script>
 var HEADERS = window.HEADERS;
 
-var ALL_SKILLS = ['💻 Tech','🎓 Tutoring','🚗 Errands','🏠 Home','🚚 Moving','🍳 Cooking','👶 Care','🌿 Gardening','🎉 Events','🔧 Trades','💇 Beauty','📋 Admin'];
+var ALL_SKILLS = ['?? Tech','?? Tutoring','?? Errands','?? Home','?? Moving','?? Cooking','?? Care','?? Gardening','?? Events','?? Trades','?? Beauty','?? Admin'];
 var profileData = {};
 var cachedReviews = [];
 var isDark = localStorage.getItem('qg-mode') !== 'light';
 
-function applyTheme(){ document.body.className = isDark ? '' : 'light'; document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark'; }
+function applyTheme(){ document.body.className = isDark ? '' : 'light'; document.getElementById('modeBtn').textContent = isDark ? '?? Light' : '?? Dark'; }
 window.toggleTheme = function(){ isDark = !isDark; localStorage.setItem('qg-mode', isDark?'dark':'light'); applyTheme(); };
 applyTheme();
 
@@ -663,8 +712,8 @@ function renderRoleVerificationState(dbUser, isOwnProfile) {
   var badgeWrap = document.getElementById('verifiedBadgeWrap');
   if (badgeWrap) {
     var badges = [];
-    if (taskerVerified) badges.push('<span class="role-verified-pill">✓ Identity verified</span>');
-    if (posterVerified) badges.push('<span class="role-verified-pill">✓ Payment verified</span>');
+    if (taskerVerified) badges.push('<span class="role-verified-pill">? Tasker verified</span>');
+    if (posterVerified) badges.push('<span class="role-verified-pill">? Payment verified</span>');
     badgeWrap.className = 'role-verified-badges';
     badgeWrap.innerHTML = badges.join('');
   }
@@ -682,19 +731,16 @@ function renderRoleVerificationState(dbUser, isOwnProfile) {
   var taskerCopy = document.getElementById('taskerVerificationCopy');
   taskerButton.classList.remove('is-verified');
   taskerButton.disabled = false;
-  var taskerStatus = String(dbUser.tasker_verification_status || 'unverified');
   if (taskerVerified) {
-    taskerButton.textContent = 'Verified ✓';
+    taskerButton.textContent = 'Verified ?';
     taskerButton.classList.add('is-verified');
     taskerButton.disabled = true;
-    taskerCopy.textContent = 'Identity verified. You can apply to and accept eligible gigs.';
+    taskerCopy.textContent = 'Email verified. You can apply and accept. Guardian approval still applies for teens.';
   } else {
-    taskerButton.textContent = taskerStatus === 'pending' ? 'Check verification status' : 'Verify identity';
+    taskerCopy.textContent = 'Verify your email to start working. Browse and edit profile anytime.';
+    taskerButton.textContent = 'Verify email';
     taskerButton.onclick = async function () {
-      if (taskerStatus === 'pending' && typeof callVerifiedFunction === 'function') {
-        var result = await callVerifiedFunction(window.QG_CONFIG && window.QG_CONFIG.roleVerificationUrl, { action: 'sync_tasker' });
-        if (result && result.tasker_verified && window._currentUser) return loadProfile(window._currentUser);
-      }
+      if (typeof QG_syncTaskerContacts === 'function') await QG_syncTaskerContacts();
       if (typeof QG_openVerificationPrompt === 'function') QG_openVerificationPrompt('tasker');
     };
   }
@@ -704,7 +750,7 @@ function renderRoleVerificationState(dbUser, isOwnProfile) {
   posterButton.classList.remove('is-verified');
   posterButton.disabled = false;
   if (posterVerified) {
-    posterButton.textContent = 'Verified ✓';
+    posterButton.textContent = 'Verified ?';
     posterButton.classList.add('is-verified');
     posterButton.disabled = true;
     posterCopy.textContent = 'Payment method verified. You can publish tasks.';
@@ -736,7 +782,7 @@ function updateAvatarDisplay(name, url) {
 
 var BIO_PROMPTS = [
   'What makes you great at tasks?',
-  'Friendly, reliable, and on time…',
+  'Friendly, reliable, and on time?',
   'Your city local who loves helping out',
   'Tell people why they should pick you'
 ];
@@ -802,13 +848,13 @@ function updateEditProgress() {
   if (pctEl) pctEl.textContent = pct + '%';
   if (!label || !hint) return;
   if (pct >= 100) {
-    label.textContent = 'Profile looking fire 🔥';
+    label.textContent = 'Profile looking fire ??';
     hint.textContent = 'You\'re ready to impress posters and taskers';
   } else if (pct >= 75) {
     label.textContent = 'Almost there';
     hint.textContent = 'One more touch and you\'re golden';
   } else if (pct >= 40) {
-    label.textContent = 'Nice start — keep going';
+    label.textContent = 'Nice start ? keep going';
     hint.textContent = 'Add skills so people know what you\'re great at';
   } else {
     label.textContent = 'Let\'s build your profile';
@@ -868,27 +914,98 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 async function loadReviewsForProfile(targetId) {
-  var reviews = [];
-  if (typeof getReviewsForUser === 'function') {
-    reviews = await getReviewsForUser(targetId);
-  } else if (typeof readReviewsCache === 'function') {
-    reviews = readReviewsCache(targetId);
+  var rep = null;
+  if (typeof getTaskerReputation === 'function') {
+    rep = await getTaskerReputation(targetId);
+  } else {
+    var reviewsFallback = [];
+    if (typeof getReviewsForUser === 'function') {
+      reviewsFallback = await getReviewsForUser(targetId);
+    } else if (typeof readReviewsCache === 'function') {
+      reviewsFallback = readReviewsCache(targetId);
+    }
+    if (!Array.isArray(reviewsFallback)) reviewsFallback = [];
+    var sum = 0;
+    reviewsFallback.forEach(function(r) { sum += Number(r.rating) || 0; });
+    rep = {
+      avgRating: reviewsFallback.length ? Math.round((sum / reviewsFallback.length) * 10) / 10 : null,
+      reviewCount: reviewsFallback.length,
+      completedJobs: 0,
+      reviews: reviewsFallback
+    };
   }
+
+  var reviews = (rep && rep.reviews) || [];
   if (!Array.isArray(reviews)) reviews = [];
   cachedReviews = reviews;
-  if (reviews.length) {
-    var avg = reviews.reduce(function(s, r) { return s + (Number(r.rating) || 0); }, 0) / reviews.length;
-    document.getElementById('ratingScore').textContent = avg.toFixed(1);
-    document.getElementById('starsEl').textContent = '⭐'.repeat(Math.round(avg));
-    document.getElementById('ratingCount').textContent = '· ' + reviews.length + ' review' + (reviews.length !== 1 ? 's' : '');
-    document.getElementById('reviewsCount').textContent = reviews.length + ' total';
+
+  var scoreEl = document.getElementById('ratingScore');
+  var starsEl = document.getElementById('starsEl');
+  var countEl = document.getElementById('ratingCount');
+  var revCountEl = document.getElementById('reviewsCount');
+  var jobs = Number(rep && rep.completedJobs) || 0;
+  var star = String.fromCharCode(0x2605);
+  var mid = ' ' + String.fromCharCode(0x00B7) + ' ';
+
+  var label;
+  if (typeof formatUserRatingLabel === 'function') {
+    label = formatUserRatingLabel(rep.avgRating, rep.reviewCount, jobs);
+  } else if (rep && rep.reviewCount > 0 && rep.avgRating != null) {
+    label = (Math.round(Number(rep.avgRating) * 10) / 10).toFixed(1) + ' ' + star + mid + jobs + ' job' + (jobs === 1 ? '' : 's') + ' completed';
+  } else if (jobs > 0) {
+    label = 'New' + mid + jobs + ' job' + (jobs === 1 ? '' : 's') + ' completed';
   } else {
-    document.getElementById('ratingScore').textContent = 'New';
-    document.getElementById('starsEl').textContent = '☆☆☆☆☆';
-    document.getElementById('ratingCount').textContent = '· No reviews yet';
-    document.getElementById('reviewsCount').textContent = '';
+    label = 'New';
   }
+
+  if (scoreEl) { scoreEl.textContent = ''; scoreEl.style.display = 'none'; }
+  if (starsEl) starsEl.style.display = 'none';
+  if (countEl) countEl.textContent = label;
+  if (revCountEl) {
+    revCountEl.textContent = (rep && rep.reviewCount)
+      ? (rep.reviewCount + ' review' + (rep.reviewCount !== 1 ? 's' : ''))
+      : '';
+  }
+
+  var doneEl = document.getElementById('statDone');
+  if (doneEl) doneEl.textContent = String(jobs);
+
+  window._profileReputation = rep;
   await renderReviews(reviews);
+}
+
+
+function syncGigAlertFieldsVisibility() {
+  var on = document.getElementById('editNotifyNewGigs');
+  var fields = document.getElementById('gigAlertFields');
+  if (fields) fields.hidden = !(on && on.checked);
+}
+
+function renderAlertCategoryChips(selected) {
+  var wrap = document.getElementById('editAlertCategories');
+  if (!wrap) return;
+  selected = selected || [];
+  var sel = {};
+  selected.forEach(function (id) { sel[String(id).toLowerCase()] = true; });
+  var cats = window.QG_CATEGORIES || [];
+  wrap.innerHTML = cats.map(function (c) {
+    var on = sel[c.id] ? ' selected' : '';
+    return '<button type="button" class="gig-alert-cat' + on + '" data-cat="' + c.id + '">' +
+      (c.icon ? c.icon + ' ' : '') + c.label + '</button>';
+  }).join('');
+  wrap.querySelectorAll('.gig-alert-cat').forEach(function (btn) {
+    btn.onclick = function () {
+      btn.classList.toggle('selected');
+    };
+  });
+}
+
+function readAlertCategorySelection() {
+  var wrap = document.getElementById('editAlertCategories');
+  if (!wrap) return [];
+  return Array.from(wrap.querySelectorAll('.gig-alert-cat.selected')).map(function (el) {
+    return el.getAttribute('data-cat');
+  });
 }
 
 function userIsTasker(role) {
@@ -960,6 +1077,13 @@ async function loadProfile(user) {
     if (dbUser.role) dbProfile.role = dbUser.role;
     if (dbUser.bio) dbProfile.bio = String(dbUser.bio).trim();
     if (dbUser.availability) dbProfile.availability = dbUser.availability;
+    if (dbUser.notify_new_gigs != null) dbProfile.notify_new_gigs = dbUser.notify_new_gigs === true;
+    if (dbUser.notify_new_gigs_email != null) dbProfile.notify_new_gigs_email = dbUser.notify_new_gigs_email === true;
+    if (dbUser.alert_radius_km != null) dbProfile.alert_radius_km = dbUser.alert_radius_km;
+    if (dbUser.alert_categories != null) dbProfile.alert_categories = dbUser.alert_categories;
+    if (dbUser.alert_lat != null) dbProfile.alert_lat = dbUser.alert_lat;
+    if (dbUser.alert_lng != null) dbProfile.alert_lng = dbUser.alert_lng;
+    if (dbUser.alert_location) dbProfile.alert_location = String(dbUser.alert_location).trim();
     if (dbUser.service_area) dbProfile.service_area = String(dbUser.service_area).trim();
     if (dbUser.languages) dbProfile.languages = String(dbUser.languages).trim();
     if (dbUser.pronouns) dbProfile.pronouns = String(dbUser.pronouns).trim();
@@ -1028,7 +1152,6 @@ async function loadProfile(user) {
     var tasks = await tasksRes.json();
     if (Array.isArray(tasks)) {
       document.getElementById('statPosted').textContent = tasks.length;
-      document.getElementById('statDone').textContent = tasks.filter(function(t) { return (t.status || '').toLowerCase() === 'completed'; }).length;
     }
   } catch (err) {
     console.warn('Could not load stats:', err);
@@ -1102,12 +1225,12 @@ function renderProfile(user, isOwnProfile) {
     profileData.role = role;
   }
   var roleHtml = '';
-  if (hasPosterRole) roleHtml += '<span class="role-tag">📋 Poster</span>';
-  if (hasTaskerRole) roleHtml += '<span class="role-tag">💼 Tasker</span>';
-  if (!roleHtml) roleHtml = '<span class="role-tag">👤 QuickGigs member</span>';
+  if (hasPosterRole) roleHtml += '<span class="role-tag">?? Poster</span>';
+  if (hasTaskerRole) roleHtml += '<span class="role-tag">?? Tasker</span>';
+  if (!roleHtml) roleHtml = '<span class="role-tag">?? QuickGigs member</span>';
   document.getElementById('roleTags').innerHTML = roleHtml;
 
-  var bioDefault = isOwnProfile ? 'No bio yet — tap Customize profile to add one.' : 'No bio yet.';
+  var bioDefault = isOwnProfile ? 'No bio yet ? tap Customize profile to add one.' : 'No bio yet.';
   document.getElementById('bioText').textContent = profileData.bio || bioDefault;
   var skills = profileData.skills || [];
   document.getElementById('skillsList').innerHTML = skills.length
@@ -1119,9 +1242,9 @@ function renderProfile(user, isOwnProfile) {
   var showWorker = hasTaskerRole;
   if (trustSec && trustTxt && showWorker) {
     trustSec.style.display = 'block';
-    var avail = profileData.availability === 'busy' ? '🔴 Busy — not taking new tasks' : '🟢 Available for tasks';
-    var area = profileData.service_area ? '📍 ' + profileData.service_area : '';
-    var langs = profileData.languages ? '🗣 ' + profileData.languages : '';
+    var avail = profileData.availability === 'busy' ? '?? Busy ? not taking new tasks' : '?? Available for tasks';
+    var area = profileData.service_area ? '?? ' + profileData.service_area : '';
+    var langs = profileData.languages ? '?? ' + profileData.languages : '';
     trustTxt.textContent = '';
     [avail, area, langs].filter(Boolean).forEach(function (line, i) {
       if (i) trustTxt.appendChild(document.createElement('br'));
@@ -1189,11 +1312,11 @@ function renderPayoutSetup(user, isOwnProfile, dbUser) {
   var connectId = dbUser && (dbUser.stripe_connect_id || '');
   var payoutsOk = dbUser && (dbUser.stripe_payouts_enabled === true || dbUser.stripe_payouts_enabled === 1 || dbUser.stripe_payouts_enabled === 'true');
   var boxCls = payoutsOk ? 'payout-box-connected' : (connectId ? 'payout-box-pending' : '');
-  var title = payoutsOk ? '✓ Payouts connected' : (connectId ? '⏳ Finish payout setup' : '💳 Tasker payouts');
+  var title = payoutsOk ? '? Payouts connected' : (connectId ? '? Finish payout setup' : '?? Tasker payouts');
   var desc = payoutsOk
     ? 'Stripe is connected. When a poster marks your task complete, your share is sent to your bank.'
     : (connectId
-      ? 'You started Stripe setup — finish verification so we can pay you when tasks complete.'
+      ? 'You started Stripe setup ? finish verification so we can pay you when tasks complete.'
       : 'Connect Stripe to receive your share when posters mark tasks complete. Required before your first payout.');
   var btnLabel = payoutsOk ? 'Update payout details' : (connectId ? 'Continue Stripe setup' : 'Set up payouts');
 
@@ -1208,7 +1331,7 @@ function renderPayoutSetup(user, isOwnProfile, dbUser) {
   btn._bound = true;
   btn.onclick = async function () {
     btn.disabled = true;
-    btn.textContent = 'Opening Stripe…';
+    btn.textContent = 'Opening Stripe?';
     var result = await window.QG_startConnectOnboarding(user.uid, user.email || '');
     if (result.ok && result.url) {
       window.location.href = result.url;
@@ -1216,7 +1339,7 @@ function renderPayoutSetup(user, isOwnProfile, dbUser) {
     }
     btn.disabled = false;
     btn.textContent = btnLabel;
-    showToast(result.error || 'Could not open Stripe setup — see STRIPE-SETUP.md', '#ef4444');
+    showToast(result.error || 'Could not open Stripe setup ? see STRIPE-SETUP.md', '#ef4444');
   };
 }
 
@@ -1229,7 +1352,7 @@ async function renderProfilePaymentHistory(userId, dbUser) {
     return;
   }
   sec.style.display = 'block';
-  list.innerHTML = '<div class="pay-history-empty">Loading payments…</div>';
+  list.innerHTML = '<div class="pay-history-empty">Loading payments?</div>';
   try {
     var isTaskerView = userIsTasker(profileData.role) || (typeof isWorkerMode === 'function' && isWorkerMode());
     var role = isTaskerView ? 'worker' : 'poster';
@@ -1246,7 +1369,7 @@ async function renderProfilePaymentHistory(userId, dbUser) {
       else if (sums.held > 0) earnedEl.textContent = '$' + sums.held.toFixed(0);
     }
   } catch (e) {
-    list.innerHTML = '<div class="pay-history-empty">Could not load payments — refresh and try again.</div>';
+    list.innerHTML = '<div class="pay-history-empty">Could not load payments ? refresh and try again.</div>';
   }
 }
 
@@ -1260,7 +1383,7 @@ async function renderProfilePaymentHistory(userId, dbUser) {
   document.addEventListener('DOMContentLoaded', function () {
     setTimeout(function () {
       if (stripeParam === 'done' && typeof showToast === 'function') {
-        showToast('Stripe setup saved — checking payout status…', '#4ade80');
+        showToast('Stripe setup saved ? checking payout status?', '#4ade80');
       } else if (stripeParam === 'refresh' && typeof showToast === 'function') {
         showToast('Continue Stripe setup when you\'re ready', '#f59e0b');
       }
@@ -1294,7 +1417,14 @@ async function renderReviews(reviews) {
     var taskTitle = r.task_title || r.TASK_TITLE || ('Task #' + (r.task_id || ''));
     var comment = r.review_comment || r.comment || '';
     var rating = Math.max(1, Math.min(5, Number(r.rating) || 5));
-    var when = typeof formatRelativeTime === 'function' ? formatRelativeTime(r.created_at) : '';
+    var whenRel = typeof formatRelativeTime === 'function' ? formatRelativeTime(r.created_at) : '';
+    var whenAbs = '';
+    try {
+      if (r.created_at) {
+        whenAbs = new Date(r.created_at).toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' });
+      }
+    } catch (eDate) {}
+    var when = whenAbs || whenRel;
     var card = document.createElement('div');
     card.className = 'review-card';
     card.style.animationDelay = (i * 0.05) + 's';
@@ -1306,7 +1436,7 @@ async function renderReviews(reviews) {
         '<div class="rev-avatar" style="background:' + colors[i % colors.length] + '">' + esc(reviewerName.charAt(0).toUpperCase()) + '</div>' +
         '<div class="rev-info"><div class="rev-name">' + reviewerLink + '</div><div class="rev-task">' + esc(String(taskTitle)) + '</div>' +
         (when ? '<div class="rev-meta">' + esc(when) + '</div>' : '') + '</div>' +
-        '<div class="rev-stars">' + '⭐'.repeat(rating) + '</div>' +
+        '<div class="rev-stars" aria-label="' + rating + ' stars">' + String.fromCharCode(0x2605).repeat(rating) + '</div>' +
       '</div>' +
       (comment ? '<div class="rev-text">' + esc(comment) + '</div>' : '');
     listEl.insertBefore(card, emptyEl || null);
@@ -1324,6 +1454,20 @@ window.openEditModal = function() {
     document.getElementById('editAvailability').value = profileData.availability || 'available';
     document.getElementById('editServiceArea').value = profileData.service_area || '';
     document.getElementById('editLanguages').value = profileData.languages || '';
+    var notifyEl = document.getElementById('editNotifyNewGigs');
+    if (notifyEl) {
+      notifyEl.checked = profileData.notify_new_gigs === true;
+      notifyEl.onchange = syncGigAlertFieldsVisibility;
+    }
+    var emailEl = document.getElementById('editNotifyNewGigsEmail');
+    if (emailEl) emailEl.checked = profileData.notify_new_gigs_email === true;
+    var radiusEl = document.getElementById('editAlertRadius');
+    if (radiusEl) {
+      var rk = parseInt(profileData.alert_radius_km, 10);
+      radiusEl.value = String([20, 50, 100].indexOf(rk) >= 0 ? rk : 50);
+    }
+    renderAlertCategoryChips(profileData.alert_categories || []);
+    syncGigAlertFieldsVisibility();
   }
   updateAvatarDisplay(profileData.name, profileData.avatar_url);
 
@@ -1331,7 +1475,7 @@ window.openEditModal = function() {
   if (photoHint) {
     photoHint.textContent = userIsTasker(profileData.role)
       ? 'Taskers need a clear photo so posters know who they\'re hiring'
-      : 'Optional for posters — helps taskers recognize you';
+      : 'Optional for posters ? helps taskers recognize you';
   }
 
   var selectedSkills = profileData.skills || [];
@@ -1399,7 +1543,7 @@ window.saveProfile = async function() {
   var user = window._currentUser;
   if (!user) return;
   var btn = document.getElementById('editSaveBtn');
-  if (btn) { btn.disabled = true; btn.classList.add('is-saving'); btn.querySelector('.save-text').textContent = 'Saving…'; }
+  if (btn) { btn.disabled = true; btn.classList.add('is-saving'); btn.querySelector('.save-text').textContent = 'Saving?'; }
   var name = document.getElementById('editName').value.trim() || profileData.name;
   var pronouns = document.getElementById('editPronouns') ? document.getElementById('editPronouns').value.trim() : '';
   if (typeof formatPersonName === 'function' && name) name = formatPersonName(name);
@@ -1408,12 +1552,26 @@ window.saveProfile = async function() {
   var availability = document.getElementById('editAvailability') ? document.getElementById('editAvailability').value : 'available';
   var service_area = document.getElementById('editServiceArea') ? document.getElementById('editServiceArea').value.trim() : '';
   var languages = document.getElementById('editLanguages') ? document.getElementById('editLanguages').value.trim() : '';
+  var notify_new_gigs = !!(document.getElementById('editNotifyNewGigs') && document.getElementById('editNotifyNewGigs').checked);
+  var notify_new_gigs_email = !!(document.getElementById('editNotifyNewGigsEmail') && document.getElementById('editNotifyNewGigsEmail').checked);
+  var alert_radius_km = 50;
+  var radiusSel = document.getElementById('editAlertRadius');
+  if (radiusSel) {
+    var parsedR = parseInt(radiusSel.value, 10);
+    if ([20, 50, 100].indexOf(parsedR) >= 0) alert_radius_km = parsedR;
+  }
+  var alert_categories = typeof readAlertCategorySelection === 'function' ? readAlertCategorySelection() : [];
 
-  profileData = Object.assign({}, profileData, { name: name, pronouns: pronouns, bio: bio, skills: skills, availability: availability, service_area: service_area, languages: languages });
+  profileData = Object.assign({}, profileData, {
+    name: name, pronouns: pronouns, bio: bio, skills: skills,
+    availability: availability, service_area: service_area, languages: languages,
+    notify_new_gigs: notify_new_gigs, notify_new_gigs_email: notify_new_gigs_email,
+    alert_radius_km: alert_radius_km, alert_categories: alert_categories
+  });
   localStorage.setItem('qg-profile-' + user.uid, JSON.stringify(profileData));
 
   if (typeof upsertUserProfile === 'function') {
-    await upsertUserProfile({
+    var alertPayload = {
       name: name,
       email: user.email || '',
       firebase_uid: user.uid,
@@ -1425,8 +1583,38 @@ window.saveProfile = async function() {
       service_area: service_area,
       languages: languages,
       pronouns: pronouns,
-      identity_collected_at: profileData.identity_collected_at || new Date().toISOString()
-    });
+      identity_collected_at: profileData.identity_collected_at || new Date().toISOString(),
+      notify_new_gigs: notify_new_gigs,
+      notify_new_gigs_email: notify_new_gigs && notify_new_gigs_email,
+      alert_radius_km: alert_radius_km,
+      alert_categories: alert_categories
+    };
+    // Geocode service area for distance matching (rounded city coords ? not live GPS)
+    if (notify_new_gigs && service_area && typeof geocodeDisplayLocation === 'function') {
+      try {
+        var geo = await geocodeDisplayLocation(service_area);
+        if (geo && geo.lat != null && geo.lng != null) {
+          alertPayload.alert_lat = typeof roundCoord === 'function' ? roundCoord(geo.lat, 2) : geo.lat;
+          alertPayload.alert_lng = typeof roundCoord === 'function' ? roundCoord(geo.lng, 2) : geo.lng;
+          alertPayload.alert_location = service_area;
+          profileData.alert_lat = alertPayload.alert_lat;
+          profileData.alert_lng = alertPayload.alert_lng;
+          profileData.alert_location = service_area;
+        }
+      } catch (geoErr) {
+        console.warn('Could not geocode alert location:', geoErr);
+      }
+    }
+    if (notify_new_gigs && (alertPayload.alert_lat == null || alertPayload.alert_lng == null)) {
+      if (profileData.alert_lat != null && profileData.alert_lng != null) {
+        alertPayload.alert_lat = profileData.alert_lat;
+        alertPayload.alert_lng = profileData.alert_lng;
+        alertPayload.alert_location = profileData.alert_location || service_area;
+      } else if (typeof showToast === 'function') {
+        showToast('Add a Canadian city in Service area so we can match nearby gigs', '#f59e0b');
+      }
+    }
+    await upsertUserProfile(alertPayload);
   }
 
   if (btn) {
@@ -1441,7 +1629,7 @@ window.saveProfile = async function() {
     if (btn) {
       btn.disabled = false;
       btn.classList.remove('is-success');
-      btn.querySelector('.save-text').textContent = 'Save profile ✨';
+      btn.querySelector('.save-text').textContent = 'Save profile ?';
     }
     showToast('Saved');
   }, 650);
@@ -1453,13 +1641,13 @@ window.uploadAvatar = async function(input) {
   input.value = '';
   if (!user || !file) return;
   if (typeof uploadProfilePhoto !== 'function') {
-    showToast('Photo upload not ready — run supabase/storage-beta-fix.sql', '#f59e0b');
+    showToast('Photo upload not ready ? run supabase/storage-beta-fix.sql', '#f59e0b');
     return;
   }
   var wrap = document.getElementById('avatarWrap');
   var hint = document.getElementById('avatarHint');
   if (wrap) wrap.classList.add('is-uploading');
-  if (hint) hint.textContent = 'Uploading…';
+  if (hint) hint.textContent = 'Uploading?';
   var upload = await uploadProfilePhoto(file, user.uid);
   if (wrap) wrap.classList.remove('is-uploading');
   if (!upload.success) {
@@ -1484,7 +1672,7 @@ window.uploadAvatar = async function(input) {
   renderProfile(user);
   updateEditProgress();
   if (hint) hint.textContent = 'Tap photo to change';
-  showToast('Profile photo updated! 📷');
+  showToast('Profile photo updated! ??');
 
   if (photoSetupMode || photoRequired) {
     setTimeout(function() {

@@ -283,9 +283,10 @@ body.light.qg-mode-worker .tab-item.active .tab-lbl {
 }
 
 /* ══════════════════════════════════════════════════════
-   DASHBOARD — layout differs; colours stay purple
-   Stats: 2×2 on mobile (no horizontal swipe), 4-up on wide.
-   Applies to poster + tasker (iOS Safari + Android Chrome).
+   DASHBOARD — shared layout for Poster + Tasker
+   Stats: 2×2 on mobile, 4-up on wide.
+   Actions: auto-fit grid at all widths (same alignment in both modes).
+   Mode differences = accent colour + content only.
    ══════════════════════════════════════════════════════ */
 html[data-qg-mode="poster"] .stats,
 body.qg-mode-poster .stats,
@@ -295,6 +296,7 @@ body.qg-mode-worker .stats,
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
   gap: 10px;
+  align-items: stretch;
   overflow-x: visible !important;
   overflow-y: visible !important;
   flex-wrap: unset !important;
@@ -315,22 +317,25 @@ body.qg-mode-worker .stats,
   }
 }
 
-/* Tasker cards keep purple tint — grid cells only (never pill min-width scroll). */
+/* Stat cells: equal width/height in both modes (never pill min-width scroll). */
 html[data-qg-mode="worker"] .stat-card,
 body.qg-mode-worker .stat-card,
+html[data-qg-mode="poster"] .stat-card,
+body.qg-mode-poster .stat-card,
 #statsGrid .stat-card {
   min-width: 0 !important;
   max-width: 100%;
   flex: unset !important;
   width: auto !important;
+  height: 100%;
   box-sizing: border-box;
 }
 
+/* Tasker accent tint on stats — colour only */
 html[data-qg-mode="worker"] .stat-card,
 body.qg-mode-worker .stat-card {
   text-align: center;
   border-radius: 16px;
-  padding: 12px 12px;
   border: 1px solid rgba(200, 168, 233, 0.25);
   background: rgba(107, 63, 160, 0.12);
 }
@@ -338,25 +343,18 @@ body.qg-mode-worker .stat-card {
 html[data-qg-mode="worker"] .stats::-webkit-scrollbar,
 body.qg-mode-worker .stats::-webkit-scrollbar { display: none; }
 
-html[data-qg-mode="worker"] .stat-icon,
-body.qg-mode-worker .stat-icon { font-size: 16px; margin-bottom: 2px; }
-
-html[data-qg-mode="worker"] .stat-val,
-body.qg-mode-worker .stat-val { font-size: 18px; word-break: break-word; }
-
-html[data-qg-mode="worker"] .stat-lbl,
-body.qg-mode-worker .stat-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; }
-
 html[data-qg-mode="worker"] .stat-val.purple,
 body.qg-mode-worker .stat-val.purple { color: var(--lavender); }
 
 body.light.qg-mode-worker .stat-val.purple { color: var(--purple); }
 
-/* Poster/dashboard action cards — even grid at ALL widths (not mobile-only).
-   auto-fit grows columns on desktop; mobile keeps the existing 2-up layout. */
+/* Action cards — SAME aligned grid for Tasker + Poster, all screen sizes */
 body.page-dashboard .actions,
 html[data-qg-mode="poster"] .actions,
-body.qg-mode-poster .actions {
+body.qg-mode-poster .actions,
+html[data-qg-mode="worker"] .actions,
+body.qg-mode-worker .actions,
+#actionsGrid.actions {
   display: grid !important;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
   gap: 12px !important;
@@ -367,27 +365,52 @@ body.qg-mode-poster .actions {
 
 body.page-dashboard .actions .action-card,
 html[data-qg-mode="poster"] .actions .action-card,
-body.qg-mode-poster .actions .action-card {
+body.qg-mode-poster .actions .action-card,
+html[data-qg-mode="worker"] .actions .action-card,
+body.qg-mode-worker .actions .action-card,
+#actionsGrid .action-card {
   height: 100%;
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch;
+  border-radius: 16px !important;
+  gap: 0;
+  padding: 16px 15px;
 }
 
-body.page-dashboard .stats .stat-card,
-html[data-qg-mode="poster"] .stats .stat-card,
-body.qg-mode-poster .stats .stat-card {
-  height: 100%;
-  min-width: 0;
-  box-sizing: border-box;
+body.page-dashboard .actions .action-card .action-icon,
+html[data-qg-mode="worker"] .actions .action-card .action-icon,
+body.qg-mode-worker .actions .action-card .action-icon {
+  margin-bottom: 8px;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+body.page-dashboard .actions .action-card .action-title,
+html[data-qg-mode="worker"] .actions .action-card .action-title,
+body.qg-mode-worker .actions .action-card .action-title {
+  margin-bottom: 3px;
+  font-size: 13px;
+}
+
+body.page-dashboard .actions .action-card .action-desc,
+html[data-qg-mode="worker"] .actions .action-card .action-desc,
+body.qg-mode-worker .actions .action-card .action-desc {
+  display: block !important;
+  margin-top: auto;
+  font-size: 11px;
 }
 
 @media (max-width: 719px) {
   body.page-dashboard .actions,
   html[data-qg-mode="poster"] .actions,
-  body.qg-mode-poster .actions {
+  body.qg-mode-poster .actions,
+  html[data-qg-mode="worker"] .actions,
+  body.qg-mode-worker .actions,
+  #actionsGrid.actions {
     grid-template-columns: 1fr 1fr !important;
     gap: 10px !important;
   }
@@ -399,43 +422,16 @@ body.qg-mode-poster .stats .stat-card {
   html[data-qg-mode="poster"] .actions,
   html[data-qg-mode="poster"] .stats,
   body.qg-mode-poster .actions,
-  body.qg-mode-poster .stats {
+  body.qg-mode-poster .stats,
+  html[data-qg-mode="worker"] .actions,
+  html[data-qg-mode="worker"] .stats,
+  body.qg-mode-worker .actions,
+  body.qg-mode-worker .stats {
     max-width: 960px !important;
   }
 }
 
-/* Tasker action cards: stacked full-width pill buttons */
-html[data-qg-mode="worker"] .actions,
-body.qg-mode-worker .actions {
-  display: flex !important;
-  flex-direction: column;
-  gap: 10px;
-}
-
-html[data-qg-mode="worker"] .action-card,
-body.qg-mode-worker .action-card {
-  border-radius: 999px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 20px;
-  height: auto;
-}
-
-html[data-qg-mode="worker"] .action-card .action-icon,
-body.qg-mode-worker .action-card .action-icon {
-  margin-bottom: 0;
-  font-size: 24px;
-  flex-shrink: 0;
-}
-
-html[data-qg-mode="worker"] .action-card .action-title,
-body.qg-mode-worker .action-card .action-title { margin-bottom: 0; font-size: 14px; }
-
-html[data-qg-mode="worker"] .action-card .action-desc,
-body.qg-mode-worker .action-card .action-desc { display: none; }
-
+/* Tasker accent colours on action cards — colour/shadow only, same card shape */
 html[data-qg-mode="worker"] .action-card.primary,
 body.qg-mode-worker .action-card.primary {
   background: linear-gradient(135deg, #6b3fa0, #9b6fc4);
@@ -444,14 +440,8 @@ body.qg-mode-worker .action-card.primary {
 
 html[data-qg-mode="worker"] .action-card.secondary,
 body.qg-mode-worker .action-card.secondary {
-  background: transparent;
-  border: 1.5px solid rgba(200, 168, 233, 0.35);
-}
-
-html[data-qg-mode="worker"] .action-card[style*="grid-column"],
-body.qg-mode-worker .action-card[style*="grid-column"] {
-  grid-column: unset !important;
-  margin-top: 0 !important;
+  background: var(--card-bg);
+  border: 0.5px solid var(--border);
 }
 
 /* Tasker feed: card blocks instead of divider rows */

@@ -8,6 +8,20 @@
     return window.QG_CONFIG && window.QG_CONFIG.roleVerificationUrl;
   }
 
+  function modeAccent(role) {
+    return role === 'poster'
+      ? { from: '#0f766e', to: '#2dd4bf', soft: 'rgba(45,212,191,.18)', text: '#2dd4bf' }
+      : { from: '#6b3fa0', to: '#9b6fc4', soft: 'rgba(155,111,196,.2)', text: '#c8a8e9' };
+  }
+
+  function posterPmEnabled() {
+    var c = window.QG_CONFIG || {};
+    // Poster payment-method verification reuses existing Stripe Setup flow.
+    // Independent of escrow paymentsEnabled.
+    if (c.posterPaymentVerificationEnabled === false) return false;
+    return !!(c.roleVerificationUrl && c.stripePublishableKey);
+  }
+
   async function request(action, extra) {
     if (!endpoint() || typeof callVerifiedFunction !== 'function') {
       return { ok: false, success: false, error: 'verification_unavailable' };
@@ -35,20 +49,37 @@
   }
 
   async function start(role) {
-    var result = await request(role === 'poster' ? 'start_poster' : 'start_tasker');
-    if (result && result.url) {
-      window.location.href = result.url;
-      return result;
+    if (role === 'poster') {
+      if (!posterPmEnabled()) {
+        return { ok: false, error: 'stripe_not_configured', message: 'Stripe payment verification is not configured.' };
+      }
+      var posterResult = await request('start_poster');
+      if (posterResult && posterResult.url) {
+        window.location.href = posterResult.url;
+        return posterResult;
+      }
+      return publish(posterResult);
     }
-    publish(result);
-    if (result && result.ok !== false && window.history && window.history.replaceState) {
-      params.delete('verification_return');
-      params.delete('verification_cancelled');
-      params.delete('session_id');
-      var next = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
-      window.history.replaceState({}, '', next);
+    var taskerResult = await request('start_tasker');
+    publish(taskerResult);
+    if (taskerResult && taskerResult.already_verified) return taskerResult;
+    openEmailLaunchPanel(taskerResult || {});
+    return taskerResult;
+  }
+
+  async function syncFirebaseEmail() {
+    try {
+      if (window.auth && window.auth.currentUser) {
+        await window.auth.currentUser.reload();
+        if (!window.auth.currentUser.emailVerified && typeof window.auth.currentUser.sendEmailVerification === 'function') {
+          await window.auth.currentUser.sendEmailVerification();
+          return { ok: true, sent: true, message: 'Check your inbox and confirm your email, then tap Refresh status.' };
+        }
+      }
+    } catch (err) {
+      return { ok: false, error: err && err.message ? err.message : 'email_send_failed' };
     }
-    return result;
+    return await request('sync_tasker_contacts').then(publish);
   }
 
   function ensureStyles() {
@@ -56,14 +87,21 @@
     var style = document.createElement('style');
     style.id = 'qgVerificationStyles';
     style.textContent =
-      '.qg-verify-overlay{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(4,0,14,.8);backdrop-filter:blur(10px)}' +
-      '.qg-verify-card{width:min(440px,100%);padding:24px;border-radius:22px;background:linear-gradient(145deg,#17082d,#251146);border:1px solid rgba(200,168,233,.3);box-shadow:0 28px 80px rgba(0,0,0,.48);color:#fff;font-family:Poppins,sans-serif}' +
-      '.qg-verify-icon{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:rgba(155,111,196,.2);color:#c8a8e9;margin-bottom:14px}' +
-      '.qg-verify-card h2{font-size:21px;line-height:1.25;margin:0 0 8px}.qg-verify-card p{font-size:13px;line-height:1.6;color:rgba(255,255,255,.68);margin:0}' +
+      '.qg-verify-overlay{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(4,0,14,.82);backdrop-filter:blur(10px)}' +
+      '.qg-verify-card{width:min(460px,100%);padding:24px;border-radius:22px;background:linear-gradient(145deg,#0b1220,#151b2e);border:1px solid rgba(200,168,233,.28);box-shadow:0 28px 80px rgba(0,0,0,.5);color:#fff;font-family:Poppins,sans-serif}' +
+      '.qg-verify-icon{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;margin-bottom:14px}' +
+      '.qg-verify-card h2{font-size:20px;line-height:1.25;margin:0 0 8px;font-weight:600}.qg-verify-card p{font-size:13px;line-height:1.6;color:rgba(255,255,255,.68);margin:0}' +
       '.qg-verify-note{margin-top:13px!important;padding:11px;border-radius:12px;background:rgba(255,255,255,.05);font-size:11px!important}' +
+      '.qg-verify-steps{display:grid;gap:10px;margin-top:16px}' +
+      '.qg-verify-step{padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03)}' +
+      '.qg-verify-step strong{display:block;font-size:12px;margin-bottom:6px}' +
+      '.qg-verify-step-actions{display:flex;gap:8px;flex-wrap:wrap}' +
+      '.qg-verify-mini{flex:1;min-width:120px;padding:10px;border:0;border-radius:10px;color:#fff;font:600 12px Poppins,sans-serif;cursor:pointer}' +
       '.qg-verify-actions{display:grid;gap:9px;margin-top:18px}.qg-verify-primary,.qg-verify-later{padding:12px;border-radius:12px;font:600 13px Poppins,sans-serif;cursor:pointer}' +
-      '.qg-verify-primary{border:0;color:#fff;background:linear-gradient(135deg,#6b3fa0,#9b6fc4)}.qg-verify-later{border:1px solid rgba(200,168,233,.25);background:transparent;color:rgba(255,255,255,.68)}' +
-      '.qg-verify-primary:disabled{opacity:.6}body.light .qg-verify-card{background:#fff;color:#211033}body.light .qg-verify-card p{color:#6b6580}body.light .qg-verify-later{color:#6b6580;border-color:#ddd3ef}';
+      '.qg-verify-primary{border:0;color:#fff}.qg-verify-later{border:1px solid rgba(200,168,233,.25);background:transparent;color:rgba(255,255,255,.68)}' +
+      '.qg-verify-primary:disabled,.qg-verify-mini:disabled{opacity:.6}.qg-verify-status{font-size:11px;margin-top:6px;color:rgba(255,255,255,.55)}' +
+      '.qg-verify-card.is-poster{border-color:rgba(45,212,191,.35)}.qg-verify-card.is-tasker{border-color:rgba(155,111,196,.35)}' +
+      'body.light .qg-verify-card{background:#fff;color:#211033}body.light .qg-verify-card p,.qg-verify-status{color:#6b6580}body.light .qg-verify-later{color:#6b6580;border-color:#ddd3ef}';
     document.head.appendChild(style);
   }
 
@@ -73,21 +111,24 @@
     var old = document.getElementById('qgVerificationOverlay');
     if (old) old.remove();
     var isPoster = role === 'poster';
+    var accent = modeAccent(role);
     var overlay = document.createElement('div');
     overlay.id = 'qgVerificationOverlay';
     overlay.className = 'qg-verify-overlay';
     overlay.innerHTML =
-      '<div class="qg-verify-card" role="dialog" aria-modal="true" aria-labelledby="qgVerifyTitle">' +
-        '<div class="qg-verify-icon" aria-hidden="true">' + (isPoster ? '💳' : '🪪') + '</div>' +
-        '<h2 id="qgVerifyTitle">' + (isPoster ? 'Add a payment method to post' : 'Verify your identity to start working') + '</h2>' +
+      '<div class="qg-verify-card ' + (isPoster ? 'is-poster' : 'is-tasker') + '" role="dialog" aria-modal="true" aria-labelledby="qgVerifyTitle">' +
+        '<div class="qg-verify-icon" style="background:' + accent.soft + ';color:' + accent.text + '" aria-hidden="true">' + (isPoster ? '💳' : '✉️') + '</div>' +
+        '<h2 id="qgVerifyTitle">' + (isPoster ? 'Add a payment method to post' : 'Verify your email to start working') + '</h2>' +
         '<p>' + (isPoster
           ? 'You can keep drafting your task. A verified payment method is required only when you publish.'
-          : 'You can browse gigs and finish your profile now. A secure ID and selfie check is required before applying or accepting work.') + '</p>' +
+          : 'You can browse gigs and edit your profile. Confirm your email before applying or accepting work.') + '</p>' +
         '<p class="qg-verify-note">' + (isPoster
-          ? 'Your card is verified securely by Stripe. You will not be charged during verification.'
-          : 'QuickGigs receives the verification result, not your raw identity document. Guardian approval still applies to teen applications.') + '</p>' +
+          ? 'Uses your existing Stripe Setup flow (test keys until launch). You will not be charged during verification.'
+          : 'Phone verification and hard ID checks are reserved for later. Teen applications still need guardian approval.') + '</p>' +
         '<div class="qg-verify-actions">' +
-          '<button type="button" class="qg-verify-primary" id="qgVerifyStart">' + (isPoster ? 'Add payment method' : 'Start identity check') + '</button>' +
+          '<button type="button" class="qg-verify-primary" id="qgVerifyStart" style="background:linear-gradient(135deg,' + accent.from + ',' + accent.to + ')">' +
+            (isPoster ? 'Add payment method' : 'Continue verification') +
+          '</button>' +
           '<button type="button" class="qg-verify-later" id="qgVerifyLater">' + (opts.laterLabel || 'Not now') + '</button>' +
         '</div>' +
       '</div>';
@@ -97,17 +138,108 @@
     overlay.querySelector('#qgVerifyStart').onclick = async function () {
       var button = this;
       button.disabled = true;
-      button.textContent = 'Opening secure verification…';
+      button.textContent = isPoster ? 'Opening Stripe…' : 'Opening…';
       var result = await start(role);
-      if (!result || (!result.url && !result.already_verified)) {
-        button.disabled = false;
-        button.textContent = isPoster ? 'Add payment method' : 'Start identity check';
-      } else if (result.already_verified) {
-        await load(true);
+      if (isPoster) {
+        if (!result || (!result.url && !result.already_verified)) {
+          button.disabled = false;
+          button.textContent = 'Add payment method';
+          if (result && result.message) button.title = result.message;
+        } else if (result.already_verified) {
+          await load(true);
+          overlay.remove();
+          if (typeof opts.onVerified === 'function') opts.onVerified();
+        }
+      } else {
         overlay.remove();
-        if (typeof opts.onVerified === 'function') opts.onVerified();
+        if (result && result.already_verified && typeof opts.onVerified === 'function') opts.onVerified();
       }
     };
+  }
+
+  function openEmailLaunchPanel(state) {
+    ensureStyles();
+    var old = document.getElementById('qgVerificationOverlay');
+    if (old) old.remove();
+    var accent = modeAccent('tasker');
+    var emailOk = !!(state && state.email_verified);
+    var overlay = document.createElement('div');
+    overlay.id = 'qgVerificationOverlay';
+    overlay.className = 'qg-verify-overlay';
+    overlay.innerHTML =
+      '<div class="qg-verify-card is-tasker" role="dialog" aria-modal="true" aria-labelledby="qgVerifyEmailTitle">' +
+        '<div class="qg-verify-icon" style="background:' + accent.soft + ';color:' + accent.text + '" aria-hidden="true">✉️</div>' +
+        '<h2 id="qgVerifyEmailTitle">Verify your email to start working</h2>' +
+        '<p>Confirm the email on your account. Teens still need guardian approval before applications go live.</p>' +
+        '<div class="qg-verify-steps">' +
+          '<div class="qg-verify-step">' +
+            '<strong>Email confirmation ' + (emailOk ? '✓' : '') + '</strong>' +
+            '<div class="qg-verify-step-actions">' +
+              '<button type="button" class="qg-verify-mini" id="qgVerifyEmailBtn" style="background:linear-gradient(135deg,' + accent.from + ',' + accent.to + ')">' +
+                (emailOk ? 'Email confirmed' : 'Send confirmation email') +
+              '</button>' +
+              '<button type="button" class="qg-verify-mini" id="qgVerifyEmailRefresh" style="background:linear-gradient(135deg,' + accent.from + ',' + accent.to + ')">Refresh status</button>' +
+            '</div>' +
+            '<div class="qg-verify-status" id="qgVerifyEmailStatus"></div>' +
+          '</div>' +
+        '</div>' +
+        '<p class="qg-verify-note">Later: phone (Firebase Phone Auth) and hard ID check can be required without rebuilding this gate. Care categories are already flagged.</p>' +
+        '<div class="qg-verify-actions">' +
+          '<button type="button" class="qg-verify-primary" id="qgVerifyDone" style="background:linear-gradient(135deg,' + accent.from + ',' + accent.to + ')">Done</button>' +
+          '<button type="button" class="qg-verify-later" id="qgVerifyLaterEmail">Close</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+
+    function setStatus(msg) {
+      var el = document.getElementById('qgVerifyEmailStatus');
+      if (el) el.textContent = msg || '';
+    }
+
+    overlay.querySelector('#qgVerifyLaterEmail').onclick = function () { overlay.remove(); };
+    overlay.querySelector('#qgVerifyDone').onclick = async function () {
+      var latest = await load(true);
+      if (latest && latest.tasker_verified) overlay.remove();
+      else setStatus('Confirm your email, then tap Refresh status.');
+    };
+    overlay.onclick = function (event) { if (event.target === overlay) overlay.remove(); };
+
+    var emailBtn = overlay.querySelector('#qgVerifyEmailBtn');
+    var refreshBtn = overlay.querySelector('#qgVerifyEmailRefresh');
+    if (emailBtn && !emailOk) {
+      emailBtn.onclick = async function () {
+        emailBtn.disabled = true;
+        setStatus('Sending…');
+        var res = await syncFirebaseEmail();
+        if (res && res.sent) setStatus(res.message || 'Verification email sent.');
+        else if (res && (res.email_verified || res.tasker_verified)) {
+          setStatus('Email confirmed ✓');
+          emailBtn.textContent = 'Email confirmed';
+          if (res.tasker_verified) overlay.remove();
+        } else {
+          setStatus((res && (res.message || res.error)) || 'Could not send email. Try again.');
+          emailBtn.disabled = false;
+        }
+      };
+    }
+    if (refreshBtn) {
+      refreshBtn.onclick = async function () {
+        refreshBtn.disabled = true;
+        setStatus('Checking…');
+        try {
+          if (window.auth && window.auth.currentUser) await window.auth.currentUser.reload();
+        } catch (_e) {}
+        var res = await request('sync_tasker_contacts').then(publish);
+        if (res && (res.email_verified || res.tasker_verified)) {
+          setStatus('Email confirmed ✓');
+          if (emailBtn) emailBtn.textContent = 'Email confirmed';
+          if (res.tasker_verified) overlay.remove();
+        } else {
+          setStatus('Not confirmed yet — open the link in your inbox, then refresh.');
+        }
+        refreshBtn.disabled = false;
+      };
+    }
   }
 
   async function syncReturn() {
@@ -117,12 +249,22 @@
     var result;
     if (role === 'poster') {
       result = await request('sync_poster', { session_id: params.get('session_id') || '' });
+    } else if (role === 'tasker_id') {
+      result = await request('sync_tasker_id_check');
     } else if (role === 'tasker') {
-      result = await request('sync_tasker');
+      result = await request('sync_tasker_contacts');
     } else {
       return null;
     }
     publish(result);
+    if (window.history && window.history.replaceState) {
+      params.delete('verification_return');
+      params.delete('verification_cancelled');
+      params.delete('session_id');
+      params.delete('verification');
+      var next = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
+      window.history.replaceState({}, '', next);
+    }
     return result;
   }
 
@@ -130,5 +272,8 @@
   window.QG_isRoleVerified = verified;
   window.QG_startRoleVerification = start;
   window.QG_openVerificationPrompt = openPrompt;
+  window.QG_openEmailLaunchVerification = openEmailLaunchPanel;
   window.QG_syncVerificationReturn = syncReturn;
+  window.QG_syncTaskerContacts = function () { return request('sync_tasker_contacts').then(publish); };
+  window.QG_posterPaymentVerificationEnabled = posterPmEnabled;
 })();

@@ -194,12 +194,23 @@ body.page-messages #conversations {
 }
 
 body.page-dashboard .actions {
+  display: grid !important;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+  gap: 12px !important;
+  align-items: stretch;
+}
+
+body.page-dashboard .actions .action-card {
+  height: 100%;
+  min-width: 0;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 @media (max-width: 719px) {
   body.page-dashboard .actions {
     grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
   }
 }
 

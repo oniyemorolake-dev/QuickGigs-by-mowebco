@@ -30,7 +30,8 @@
       parts.push(trustBadgeHtml('Jobs done', stats.completedCount + ' completed'));
     }
     if (stats.avgRating != null && stats.reviewCount > 0) {
-      parts.push(trustBadgeHtml('Rating', '★ ' + stats.avgRating.toFixed(1) + ' (' + stats.reviewCount + ')'));
+      var avg = (Math.round(Number(stats.avgRating) * 10) / 10).toFixed(1);
+      parts.push(trustBadgeHtml('Rating', '\u2605 ' + avg + ' (' + stats.reviewCount + ')'));
     }
     if (!parts.length) return '';
     return '<div class="qg-trust-row" role="list" aria-label="Trust indicators">' + parts.join('') + '</div>';
@@ -41,9 +42,15 @@
       return { completionRate: null, responseRate: null, completedCount: 0, reviewCount: 0, avgRating: null };
     }
 
-    var apps = await sbGet('applications', 'worker_id=eq.' + encodeURIComponent(userId) + '&select=status,created_at');
+    var reputation = typeof getTaskerReputation === 'function'
+      ? await getTaskerReputation(userId)
+      : null;
+
+    var apps = await sbGet('applications', 'worker_id=eq.' + encodeURIComponent(userId) + '&select=status,created_at,task_id');
     var posted = await sbGet('tasks', 'posted_by=eq.' + encodeURIComponent(userId) + '&select=status');
-    var reviews = await sbGet('reviews', 'reviewee_id=eq.' + encodeURIComponent(userId) + '&select=rating');
+    var reviews = reputation && Array.isArray(reputation.reviews)
+      ? reputation.reviews
+      : await sbGet('reviews', 'reviewee_id=eq.' + encodeURIComponent(userId) + '&select=rating');
 
     var workerApps = Array.isArray(apps) ? apps : [];
     var posterTasks = Array.isArray(posted) ? posted : [];
@@ -51,11 +58,15 @@
 
     var acceptedOrDone = workerApps.filter(function (a) {
       var s = (a.status || '').toLowerCase();
-      return s === 'accepted' || s === 'completed';
+      return s === 'accepted' || s === 'completed' || s === 'in_progress';
     });
-    var completedWorker = workerApps.filter(function (a) {
-      return (a.status || '').toLowerCase() === 'completed';
-    }).length;
+    var completedWorker = reputation && reputation.completedJobs != null
+      ? Number(reputation.completedJobs) || 0
+      : (typeof countCompletedJobsForWorker === 'function'
+          ? await countCompletedJobsForWorker(userId)
+          : workerApps.filter(function (a) {
+              return (a.status || '').toLowerCase() === 'completed';
+            }).length);
 
     var completionRate = pct(completedWorker, acceptedOrDone.length);
 
@@ -77,16 +88,20 @@
     var responseRate = pct(responded, workerApps.length);
 
     var avgRating = null;
-    if (reviewRows.length) {
+    var reviewCount = reviewRows.length;
+    if (reputation && reputation.avgRating != null) {
+      avgRating = reputation.avgRating;
+      reviewCount = reputation.reviewCount || reviewCount;
+    } else if (reviewRows.length) {
       var sum = reviewRows.reduce(function (acc, r) { return acc + (Number(r.rating) || 0); }, 0);
-      avgRating = sum / reviewRows.length;
+      avgRating = Math.round((sum / reviewRows.length) * 10) / 10;
     }
 
     return {
       completionRate: completionRate,
       responseRate: responseRate,
-      completedCount: completedWorker + posterCompleted,
-      reviewCount: reviewRows.length,
+      completedCount: completedWorker,
+      reviewCount: reviewCount,
       avgRating: avgRating
     };
   }

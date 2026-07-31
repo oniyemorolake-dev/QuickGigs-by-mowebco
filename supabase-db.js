@@ -113,15 +113,16 @@ var SELECT_USERS_PUBLIC = SELECT_USERS_PUBLIC_CARD + ',role,status,bio,skills,av
  * Completion reads: name, email, avatar_url, bio, skills, pronouns, email_verified.
  */
 var SELECT_USERS_SELF_CORE =
-  'user_id,firebase_uid,name,email,avatar_url,bio,skills,pronouns,email_verified,role,status,phone,created_at,account_status,' +
+  'user_id,firebase_uid,name,email,avatar_url,bio,skills,pronouns,email_verified,email_verified_at,role,status,phone,phone_e164,phone_verified,phone_verified_at,created_at,account_status,' +
   'is_tasker,is_poster,last_active_mode,roles_updated_at,' +
-  'tasker_verified,tasker_verified_at,tasker_verification_status,tasker_background_check_status,' +
+  'tasker_verified,tasker_verified_at,tasker_verification_status,tasker_background_check_status,tasker_id_check_status,tasker_id_check_required,' +
   'poster_verified,poster_verified_at,poster_verification_status';
 var SELECT_USERS_SELF =
   SELECT_USERS_SELF_CORE +
   ',availability,service_area,languages,gender,date_of_birth,identity_collected_at,' +
   'guardian_name,guardian_email,guardian_phone,guardian_consent_status,guardian_consent_at,guardian_consent_token,' +
-  'stripe_connect_id,stripe_payouts_enabled,graduated_at,payout_owner,is_subscriber';
+  'stripe_connect_id,stripe_payouts_enabled,graduated_at,payout_owner,is_subscriber,' +
+  'notify_new_gigs,notify_new_gigs_email,alert_radius_km,alert_categories,alert_lat,alert_lng,alert_location';
 /** Parent-consent page — no email/phone of the teen exposed beyond name + consent state. */
 var SELECT_USERS_GUARDIAN = 'user_id,firebase_uid,name,guardian_consent_status,guardian_consent_at,account_status';
 var SELECT_USERS_NAME = 'firebase_uid,name';
@@ -1357,7 +1358,7 @@ async function postTask(taskData) {
     task_mode:   taskData.task_mode,
     budget:      Math.round(budgetNum),
     location:    taskData.location || 'Calgary, AB',
-    status:      'open',
+    status:      String(taskData.status || 'open').toLowerCase() === 'draft' ? 'draft' : 'open',
     posted_by:   taskData.posted_by
   };
 
@@ -1730,6 +1731,19 @@ function isGenericDisplayName(name) {
   return !n || n === 'quickgigs user' || n === 'worker' || n === 'poster' || n === 'user' || n === 'tasker';
 }
 
+function normalizeAlertCategories(raw) {
+  var ids = [];
+  var seen = {};
+  var list = Array.isArray(raw) ? raw : (typeof raw === 'string' && raw ? [raw] : []);
+  list.forEach(function (item) {
+    var id = String(item || '').toLowerCase().trim();
+    if (!id || seen[id]) return;
+    seen[id] = true;
+    ids.push(id);
+  });
+  return ids;
+}
+
 async function upsertUserProfile(userData, opts) {
   opts = opts || {};
   var row = {
@@ -1742,9 +1756,21 @@ async function upsertUserProfile(userData, opts) {
   if (userData.avatar_url) row.avatar_url = userData.avatar_url;
   if (userData.bio !== undefined) row.bio = String(userData.bio || '').trim();
   if (userData.skills !== undefined) row.skills = serializeUserSkills(userData.skills);
-  if (userData.availability !== undefined) row.availability = userData.availability;
+    if (userData.availability !== undefined) row.availability = userData.availability;
   if (userData.service_area !== undefined) row.service_area = String(userData.service_area || '').trim();
   if (userData.languages !== undefined) row.languages = String(userData.languages || '').trim();
+  if (userData.notify_new_gigs !== undefined) row.notify_new_gigs = !!userData.notify_new_gigs;
+  if (userData.notify_new_gigs_email !== undefined) row.notify_new_gigs_email = !!userData.notify_new_gigs_email;
+  if (userData.alert_radius_km !== undefined) {
+    var rKm = parseInt(userData.alert_radius_km, 10);
+    row.alert_radius_km = [20, 50, 100].indexOf(rKm) >= 0 ? rKm : 50;
+  }
+  if (userData.alert_categories !== undefined) {
+    row.alert_categories = normalizeAlertCategories(userData.alert_categories);
+  }
+  if (userData.alert_lat !== undefined) row.alert_lat = userData.alert_lat;
+  if (userData.alert_lng !== undefined) row.alert_lng = userData.alert_lng;
+  if (userData.alert_location !== undefined) row.alert_location = String(userData.alert_location || '').trim().slice(0, 120);
   if (userData.pronouns !== undefined) row.pronouns = String(userData.pronouns || '').trim();
   if (userData.gender !== undefined) row.gender = String(userData.gender || '').trim();
   if (userData.date_of_birth) row.date_of_birth = userData.date_of_birth;
@@ -1798,6 +1824,20 @@ async function upsertUserProfile(userData, opts) {
     if (userData.availability !== undefined) patch.availability = userData.availability;
     if (userData.service_area !== undefined) patch.service_area = String(userData.service_area || '').trim();
     if (userData.languages !== undefined) patch.languages = String(userData.languages || '').trim();
+    if (userData.notify_new_gigs !== undefined) patch.notify_new_gigs = !!userData.notify_new_gigs;
+    if (userData.notify_new_gigs_email !== undefined) patch.notify_new_gigs_email = !!userData.notify_new_gigs_email;
+    if (userData.alert_radius_km !== undefined) {
+      var patchKm = parseInt(userData.alert_radius_km, 10);
+      patch.alert_radius_km = [20, 50, 100].indexOf(patchKm) >= 0 ? patchKm : 50;
+    }
+    if (userData.alert_categories !== undefined) {
+      patch.alert_categories = normalizeAlertCategories(userData.alert_categories);
+    }
+    if (userData.alert_lat !== undefined) patch.alert_lat = userData.alert_lat;
+    if (userData.alert_lng !== undefined) patch.alert_lng = userData.alert_lng;
+    if (userData.alert_location !== undefined) {
+      patch.alert_location = String(userData.alert_location || '').trim().slice(0, 120);
+    }
     if (userData.pronouns !== undefined) patch.pronouns = String(userData.pronouns || '').trim();
     if (userData.gender !== undefined) patch.gender = String(userData.gender || '').trim();
     if (userData.date_of_birth) patch.date_of_birth = userData.date_of_birth;
@@ -2102,7 +2142,7 @@ function isAccountPendingGuardian(user) {
 async function getAccountActionPermission(firebaseUid, action) {
   var user = firebaseUid ? await getUserByFirebaseUid(firebaseUid) : null;
   var status = user && user.account_status ? String(user.account_status) : '';
-  var verb = action === 'post' ? 'post gigs' : 'apply to gigs';
+  var verb = (action === 'post' || action === 'draft') ? 'post gigs' : 'apply to gigs';
   if (status !== 'active') {
     return {
       allowed: false,
@@ -2112,7 +2152,7 @@ async function getAccountActionPermission(firebaseUid, action) {
         : 'Your account is not currently allowed to ' + verb + '.'
     };
   }
-  if (action === 'post' && typeof QG_isTeenDob === 'function' && QG_isTeenDob(user.date_of_birth)) {
+  if ((action === 'post' || action === 'draft') && typeof QG_isTeenDob === 'function' && QG_isTeenDob(user.date_of_birth)) {
     return {
       allowed: false,
       status: status,
@@ -2120,7 +2160,7 @@ async function getAccountActionPermission(firebaseUid, action) {
       message: 'Poster mode becomes available when you turn 18.'
     };
   }
-  if (action === 'post' && user.is_poster !== true) {
+  if ((action === 'post' || action === 'draft') && user.is_poster !== true) {
     return {
       allowed: false,
       status: status,
@@ -2128,13 +2168,16 @@ async function getAccountActionPermission(firebaseUid, action) {
       message: 'Enable Poster mode before posting tasks.'
     };
   }
-  if (action !== 'post' && user.is_tasker !== true) {
+  if (action !== 'post' && action !== 'draft' && user.is_tasker !== true) {
     return {
       allowed: false,
       status: status,
       reason: 'tasker_role_required',
       message: 'Enable Tasker mode before applying to gigs.'
     };
+  }
+  if (action === 'draft') {
+    return { allowed: true, status: status, draft: true };
   }
   if (action === 'post' && user.poster_verified !== true) {
     return {
@@ -2151,7 +2194,7 @@ async function getAccountActionPermission(firebaseUid, action) {
       status: status,
       reason: 'tasker_identity_verification_required',
       verificationRole: 'tasker',
-      message: 'Verify your identity to start working.'
+      message: 'Verify your email to start working.'
     };
   }
   return { allowed: true, status: status };
@@ -3239,7 +3282,7 @@ function formatSupabaseActionError(action, err) {
   var lower = msg.toLowerCase();
   var act = String(action || '').toLowerCase();
   if (lower.indexOf('tasker_identity_verification_required') >= 0) {
-    return 'Verify your identity to start working.';
+    return 'Verify your email to start working.';
   }
   if (lower.indexOf('poster_payment_verification_required') >= 0) {
     return 'Add a payment method to post.';
@@ -3574,6 +3617,97 @@ async function getReviewsForUser(userId) {
 }
 
 /**
+ * Tasks a worker was hired on that reached status=completed.
+ * Uses applications (accepted / completed / in_progress) + tasks.status.
+ */
+async function countCompletedJobsForWorker(workerId) {
+  var uid = String(workerId || '');
+  if (!uid || typeof sbGet !== 'function') return 0;
+
+  var apps = typeof getApplicationsByWorker === 'function'
+    ? await getApplicationsByWorker(uid)
+    : await sbGet(
+        'applications',
+        withSelect('worker_id=eq.' + encodeURIComponent(uid), 'task_id,status'),
+        null,
+        500
+      );
+  if (!Array.isArray(apps) || !apps.length) return 0;
+
+  var taskIds = [];
+  var seen = {};
+  var appCompletedFallback = 0;
+  apps.forEach(function (a) {
+    var st = String(a.status || a.STATUS || '').toLowerCase();
+    if (st === 'completed') appCompletedFallback += 1;
+    if (st !== 'accepted' && st !== 'completed' && st !== 'in_progress') return;
+    var tid = String(a.task_id || a.TASK_ID || '');
+    if (!tid || seen[tid]) return;
+    seen[tid] = true;
+    taskIds.push(tid);
+  });
+  if (!taskIds.length) return 0;
+
+  var completed = 0;
+  var CHUNK = 80;
+  for (var i = 0; i < taskIds.length; i += CHUNK) {
+    var chunk = taskIds.slice(i, i + CHUNK);
+    var rows = await sbGet(
+      'tasks',
+      withSelect(
+        'task_id=in.(' + postgrestInList(chunk) + ')&status=eq.completed',
+        'task_id,status'
+      ),
+      null,
+      chunk.length
+    );
+    if (Array.isArray(rows)) completed += rows.length;
+  }
+  // If tasks are unreadable (RLS) but apps were marked completed, use that count.
+  if (completed === 0 && appCompletedFallback > 0) return appCompletedFallback;
+  return completed;
+}
+
+/**
+ * Public reputation for a tasker: avg rating (1 decimal), review count, completed jobs.
+ */
+var _taskerRepCache = {};
+var TASKER_REP_CACHE_MS = 30000;
+
+async function getTaskerReputation(userId) {
+  var uid = String(userId || '');
+  var empty = { avgRating: null, reviewCount: 0, completedJobs: 0, reviews: [] };
+  if (!uid) return empty;
+
+  var cached = _taskerRepCache[uid];
+  if (cached && (Date.now() - cached.at) < TASKER_REP_CACHE_MS) {
+    return cached.data;
+  }
+
+  var reviews = await getReviewsForUser(uid);
+  if (!Array.isArray(reviews)) reviews = [];
+
+  var sum = 0;
+  var n = 0;
+  reviews.forEach(function (r) {
+    var rating = Number(r.rating);
+    if (!rating || rating < 1) return;
+    sum += rating;
+    n += 1;
+  });
+
+  var completedJobs = await countCompletedJobsForWorker(uid);
+  var data = {
+    avgRating: n > 0 ? Math.round((sum / n) * 10) / 10 : null,
+    reviewCount: n,
+    completedJobs: completedJobs,
+    reviews: reviews
+  };
+  _taskerRepCache[uid] = { at: Date.now(), data: data };
+  return data;
+}
+
+/**
  * One query for many users → { [uid]: { avgRating, reviewCount } }.
  * Prefer this over N per-card review fetches.
  */
@@ -3614,25 +3748,34 @@ async function fetchRatingsMap(userIds) {
   }
   Object.keys(map).forEach(function (uid) {
     if (map[uid].reviewCount > 0) {
-      map[uid].avgRating = map[uid]._sum / map[uid].reviewCount;
+      map[uid].avgRating = Math.round((map[uid]._sum / map[uid].reviewCount) * 10) / 10;
     }
     delete map[uid]._sum;
   });
   return map;
 }
 
-/** "4.8 ★ · 23 jobs" or "New" when reviewCount is 0. */
-function formatUserRatingLabel(avgRating, reviewCount) {
-  var n = Number(reviewCount) || 0;
-  if (n <= 0 || avgRating == null || isNaN(Number(avgRating))) return 'New';
+/** "4.9 ★ · 12 jobs completed" or "New" when no reviews. */
+function formatUserRatingLabel(avgRating, reviewCount, completedJobs) {
+  var reviews = Number(reviewCount) || 0;
+  var jobs = completedJobs != null && completedJobs !== ''
+    ? (Number(completedJobs) || 0)
+    : reviews;
+  if (reviews <= 0 || avgRating == null || isNaN(Number(avgRating))) {
+    if (jobs > 0) {
+      return 'New \u00B7 ' + jobs + ' job' + (jobs === 1 ? '' : 's') + ' completed';
+    }
+    return 'New';
+  }
   var a = (Math.round(Number(avgRating) * 10) / 10).toFixed(1);
-  return a + ' ★ · ' + n + ' job' + (n === 1 ? '' : 's');
+  return a + ' \u2605 \u00B7 ' + jobs + ' job' + (jobs === 1 ? '' : 's') + ' completed';
 }
 
 function formatUserRatingHtml(avgRating, reviewCount, opts) {
   opts = opts || {};
-  var label = formatUserRatingLabel(avgRating, reviewCount);
-  var cls = 'qg-trust-rating' + (label === 'New' ? ' is-new' : '');
+  var completedJobs = opts.completedJobs;
+  var label = formatUserRatingLabel(avgRating, reviewCount, completedJobs);
+  var cls = 'qg-trust-rating' + (label === 'New' || label.indexOf('New') === 0 ? ' is-new' : '');
   if (opts.className) cls += ' ' + opts.className;
   return '<span class="' + cls + '">' + label + '</span>';
 }
@@ -4281,6 +4424,13 @@ var INAPP_BODY = {
   },
   task_removed_applicant: function (p) {
     return '“' + (p.taskTitle || 'A task') + '” was removed — ' + (p.reason || 'see email for details');
+  },
+  new_gig_match: function (p) {
+    var bits = [];
+    if (p.location) bits.push(p.location);
+    if (p.budget) bits.push('$' + p.budget);
+    if (p.distanceKm != null) bits.push('~' + p.distanceKm + ' km');
+    return '“' + (p.taskTitle || 'New gig') + '”' + (bits.length ? ' · ' + bits.join(' · ') : '') + '. Tap to view.';
   }
 };
 
@@ -4293,7 +4443,8 @@ var INAPP_TITLE = {
   counter_offer_reply: function (p) { return '↩️ Counter back'; },
   counter_offer_accepted: function (p) { return '✓ Price agreed'; },
   task_removed_admin: function (p) { return '🚫 Task removed'; },
-  task_removed_applicant: function (p) { return '🚫 Task removed'; }
+  task_removed_applicant: function (p) { return '🚫 Task removed'; },
+  new_gig_match: function (p) { return '📍 New gig near you'; }
 };
 
 async function pushInAppNotification(opts) {
@@ -4452,6 +4603,7 @@ window.parsePhotoUrls = parsePhotoUrls;
 window.updateTaskStatus = updateTaskStatus;
 window.getUsers = getUsers;
 window.saveUser = saveUser;
+window.normalizeAlertCategories = normalizeAlertCategories;
 window.upsertUserProfile = upsertUserProfile;
 window.syncCurrentUserProfile = syncCurrentUserProfile;
 window.getUserLoginGate = getUserLoginGate;
@@ -4513,6 +4665,8 @@ window.resolveTaskContext = resolveTaskContext;
 window.releaseAcceptedTasker = releaseAcceptedTasker;
 window.declinePendingApplicationsForTask = declinePendingApplicationsForTask;
 window.getReviewsForUser = getReviewsForUser;
+window.countCompletedJobsForWorker = countCompletedJobsForWorker;
+window.getTaskerReputation = getTaskerReputation;
 window.fetchRatingsMap = fetchRatingsMap;
 window.formatUserRatingLabel = formatUserRatingLabel;
 window.formatUserRatingHtml = formatUserRatingHtml;

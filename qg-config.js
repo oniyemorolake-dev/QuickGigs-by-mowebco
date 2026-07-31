@@ -30,8 +30,11 @@ window.QG_CONFIG = {
   ga4ConversionLabel: '',
   // P2 — trust & moderation
   autoBanAfterWarnings: 3,
-  // Stripe / escrow — OFF while disconnected. Flip true + chatUnlockAfter:'payment' for launch.
+  // Stripe / escrow checkout — OFF until launch (chat still unlocks on accept).
   paymentsEnabled: false,
+  // Poster payment-method verification (Setup mode) — ON for publish gate. Uses existing
+  // role-verification start_poster + Stripe test keys (sk_test in Supabase secrets).
+  posterPaymentVerificationEnabled: true,
   // Paste pk_test_... for testing (must match sk_test_ in Supabase secrets — not pk_live_ until launch)
   stripePublishableKey: 'pk_test_51Tlh7hCPjV7Oq67QZsRZgVeZMY0AgYDwl0YgOtV33gXPdDhJF7tMzw0BfjTZkVE3hcIXkhsx6XNJZCM1lSTVpfk200OajLTBz9',
   createCheckoutUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-checkout',

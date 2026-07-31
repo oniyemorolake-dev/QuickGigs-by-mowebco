@@ -1,50 +1,55 @@
-# Verification gates deployment
+# Verification gates deployment (email-only launch)
 
-1. Apply SQL after the teen-account migrations:
+Anyone may sign up and **browse** freely. Verification is required only when they **act**.
+
+## Launch rules
+
+| Role | Gate | Requirement |
+|------|------|-------------|
+| Tasker | Apply / Accept | Confirmed **email**. Sets `tasker_verified`. Copy: “Verify your email to start working.” |
+| Poster | Publish (`status=open`) | Stripe payment method via existing Setup Checkout. Sets `poster_verified`. |
+| Poster | Draft (`status=draft`) | Allowed without payment method. |
+| Teen | Apply | Email verification **plus** existing guardian consent/approval. |
+
+### Hooks (structured, not required yet)
+
+- `phone_verification_required` → future Firebase Phone Auth
+- `tasker_id_check_required` + `start_tasker_id_check` → future hard ID (Stripe Identity)
+- `task_categories.requires_enhanced_verification` / `tasks.requires_enhanced_verification` — Care flagged now
+
+## SQL order
 
 ```text
-teen-accounts-secure.sql
-teen-task-approvals.sql
-verification-gates.sql
+verification-gates.sql          (if not already)
+dual-role-accounts.sql
+role-access-trigger-fix.sql
+protect-transaction-ownership-fix.sql   (if you hit worker_id errors)
+verification-soft-launch.sql
+verification-email-launch.sql             ← email-only recompute + backfill
 ```
 
-Existing users default to unverified. Users already marked `is_verified = true`
-are preserved as identity-verified taskers; poster verification is never inferred
-from a payout account.
+## Secrets
 
-2. Ensure these Edge Function secrets are configured:
-
-- `FIREBASE_PROJECT_ID`
-- `STRIPE_SECRET_KEY`
+- `STRIPE_SECRET_KEY=sk_test_…` (Supabase secrets — never commit)
 - `STRIPE_WEBHOOK_SECRET`
-- `SITE_URL=https://quickgigs.ca`
+- `FIREBASE_PROJECT_ID`
+- `SITE_URL`
 
-3. Enable Stripe Identity in the Stripe Dashboard, then deploy:
+Escrow stays off (`paymentsEnabled: false`). Poster PM verification is on via `posterPaymentVerificationEnabled: true` and existing `role-verification` `start_poster` / `sync_poster`.
+
+## Deploy
 
 ```sh
 supabase functions deploy role-verification
 supabase functions deploy submit-application
 supabase functions deploy post-task
-supabase functions deploy register-account
-supabase functions deploy create-checkout
 supabase functions deploy stripe-webhook
 ```
 
-4. Subscribe the Stripe webhook endpoint to:
+## Verify
 
-- `checkout.session.completed`
-- `identity.verification_session.verified`
-- `identity.verification_session.requires_input`
-- `identity.verification_session.canceled`
-- `payment_method.detached`
-
-5. Verify enforcement:
-
-- An unverified user can sign up, browse, and edit their profile.
-- Direct task insertion fails with `poster_payment_verification_required`.
-- Direct application insertion fails with `tasker_identity_verification_required`.
-- Changing an application to `accepted` fails while its tasker is unverified.
-- Checkout rejects callers who are not the authenticated, payment-verified task poster.
-- Stripe Identity completion sets only `tasker_verified`.
-- Stripe Setup completion sets only `poster_verified`.
-- Teen applications still enter `pending_guardian` after identity verification.
+- Unverified users browse + edit profile.
+- Apply fails without email verification.
+- Publish fails without `poster_verified`; draft succeeds.
+- Stripe Setup completion sets `poster_verified`.
+- Teen apps still need guardian approval after email verify.
