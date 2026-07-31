@@ -38,10 +38,14 @@
     mode = (mode === 'worker' || mode === 'tasker') ? 'tasker' : 'poster';
     var current = getCurrentMode();
     if (mode === current && !options.force) return { changed: false, mode: mode };
+    document.documentElement.classList.add('qg-role-transitioning');
 
     if (typeof window.QG_setActiveRoleMode === 'function') {
       var roleResult = await window.QG_setActiveRoleMode(mode);
-      if (!roleResult.success) return { changed: false, mode: current, error: roleResult.error };
+      if (!roleResult.success) {
+        document.documentElement.classList.remove('qg-role-transitioning');
+        return { changed: false, mode: current, error: roleResult.error };
+      }
     } else if (typeof setMode === 'function') setMode(mode);
     else if (typeof setSessionMode === 'function') setSessionMode(mode === 'tasker' ? 'worker' : 'poster');
     else {
@@ -66,6 +70,9 @@
     }
 
     document.dispatchEvent(new CustomEvent('qg-mode-changed', { detail: { mode: mode } }));
+    setTimeout(function () {
+      document.documentElement.classList.remove('qg-role-transitioning');
+    }, 260);
 
     if (options.toast !== false) showRoleToast(mode);
 

@@ -42,11 +42,13 @@
       localStorage.setItem('qg-session-mode', mode === 'tasker' ? 'worker' : 'poster');
       localStorage.setItem('qg-role', mode === 'tasker' ? 'worker' : 'poster');
     } catch (e) {}
+    document.documentElement.setAttribute('data-qg-mode', cssMode(mode));
+    if (document.body) applyRoleLabels();
     return mode;
   }
 
   function roleLabel(mode) {
-    return (mode || getMode()) === 'tasker' ? 'Tasker · Beta' : 'Poster · Beta';
+    return (mode || getMode()) === 'tasker' ? 'Tasker' : 'Poster';
   }
 
   // CSS still uses worker|poster on data-qg-mode
@@ -58,21 +60,71 @@
   document.documentElement.setAttribute('data-qg-mode', cssMode(mode));
 
   function applyRoleLabels() {
+    var activeMode = getMode();
     document.querySelectorAll('.nav-role').forEach(function (el) {
-      el.textContent = roleLabel(getMode());
+      el.textContent = roleLabel(activeMode);
+    });
+    document.querySelectorAll('.qg-mode-banner').forEach(function (el) {
+      el.textContent = activeMode === 'tasker' ? "You're in Tasker mode" : "You're in Poster mode";
+      el.setAttribute('data-mode', activeMode);
     });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', applyRoleLabels);
-  } else {
+  function applyModeChrome() {
+    var activeMode = getMode();
+    document.documentElement.setAttribute('data-qg-mode', cssMode(activeMode));
+    document.querySelectorAll('.nav').forEach(function (nav, index) {
+      var brand = nav.querySelector('.nav-brand');
+      var logo = nav.querySelector(':scope > .nav-logo');
+      if (!brand && logo) {
+        brand = document.createElement('div');
+        brand.className = 'nav-brand';
+        logo.parentNode.insertBefore(brand, logo);
+        brand.appendChild(logo);
+      }
+      if (brand && !brand.querySelector('.nav-role')) {
+        var role = document.createElement('span');
+        role.className = 'nav-role';
+        brand.appendChild(role);
+      }
+      var next = nav.nextElementSibling;
+      var banner = next && next.classList && next.classList.contains('qg-mode-banner') ? next : null;
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.className = 'qg-mode-banner';
+        banner.id = index === 0 ? 'qgModeBanner' : '';
+        banner.setAttribute('role', 'status');
+        banner.setAttribute('aria-live', 'polite');
+        nav.insertAdjacentElement('afterend', banner);
+      }
+      banner.textContent = activeMode === 'tasker' ? "You're in Tasker mode" : "You're in Poster mode";
+      banner.setAttribute('data-mode', activeMode);
+    });
     applyRoleLabels();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyModeChrome);
+  } else {
+    applyModeChrome();
   }
 
   window.getMode = getMode;
   window.setMode = setMode;
   window.QG_getBrandMode = function () { return cssMode(getMode()); };
   window.QG_applyRoleLabels = applyRoleLabels;
+  window.QG_applyModeChrome = applyModeChrome;
+
+  var existingRoleTheme = document.querySelector('link[href*="qg-role-theme.css"]');
+  if (existingRoleTheme) {
+    var roleThemeBase = existingRoleTheme.getAttribute('href').split('?')[0];
+    existingRoleTheme.setAttribute('href', roleThemeBase + '?v=20260730modeskin1');
+  } else {
+    var roleTheme = document.createElement('link');
+    roleTheme.rel = 'stylesheet';
+    roleTheme.href = 'qg-role-theme.css?v=20260730modeskin1';
+    document.head.appendChild(roleTheme);
+  }
 
   if (!document.querySelector('link[href*="qg-chrome.css"]')) {
     var chrome = document.createElement('link');

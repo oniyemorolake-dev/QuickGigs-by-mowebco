@@ -101,7 +101,7 @@
     setTimeout(function () {
       document.documentElement.classList.remove('qg-role-transitioning');
       window.location.reload();
-    }, 180);
+    }, 260);
     return result;
   }
 
@@ -116,7 +116,7 @@
     document.querySelectorAll('#roleSwitchBtn,[onclick*="switchRoleMode"]').forEach(function (el) {
       if (!el.classList.contains('qg-header-role-opt')) el.style.display = hasBoth ? 'none' : 'none';
     });
-    if (!hasBoth) return;
+    if (!state || (!state.is_tasker && !state.is_poster)) return;
     document.querySelectorAll('.nav').forEach(function (nav) {
       var host = nav.querySelector('.nav-right') || nav;
       var current = getMode();
@@ -124,11 +124,29 @@
       toggle.className = 'qg-header-role-toggle';
       toggle.setAttribute('role', 'group');
       toggle.setAttribute('aria-label', 'Current QuickGigs mode');
+      var taskerAvailable = state.is_tasker === true;
+      var posterVisible = state.is_teen !== true;
+      var posterAvailable = state.is_poster === true;
+      toggle.style.gridTemplateColumns = posterVisible ? '1fr 1fr' : '1fr';
       toggle.innerHTML =
-        '<button type="button" class="qg-header-role-opt' + (current === 'tasker' ? ' active' : '') + '" data-role-mode="tasker" aria-pressed="' + (current === 'tasker') + '">Tasker</button>' +
-        '<button type="button" class="qg-header-role-opt' + (current === 'poster' ? ' active' : '') + '" data-role-mode="poster" aria-pressed="' + (current === 'poster') + '">Poster</button>';
+        '<button type="button" class="qg-header-role-opt' + (current === 'tasker' ? ' active' : '') +
+          (taskerAvailable ? '' : ' is-unavailable') + '" data-role-mode="tasker" aria-pressed="' +
+          (current === 'tasker') + '" aria-disabled="' + (!taskerAvailable) + '">Tasker</button>' +
+        (posterVisible
+          ? '<button type="button" class="qg-header-role-opt' + (current === 'poster' ? ' active' : '') +
+            (posterAvailable ? '' : ' is-unavailable') + '" data-role-mode="poster" aria-pressed="' +
+            (current === 'poster') + '" aria-disabled="' + (!posterAvailable) + '">Poster</button>'
+          : '');
       toggle.querySelectorAll('[data-role-mode]').forEach(function (btn) {
-        btn.onclick = function () { switchToRoleMode(btn.getAttribute('data-role-mode')); };
+        btn.onclick = function () {
+          var target = btn.getAttribute('data-role-mode');
+          var available = target === 'poster' ? posterAvailable : taskerAvailable;
+          if (!available && typeof window.QG_offerRoleOptIn === 'function') {
+            window.QG_offerRoleOptIn(target);
+            return;
+          }
+          switchToRoleMode(target);
+        };
       });
       host.insertBefore(toggle, host.firstChild);
     });
@@ -174,7 +192,8 @@
         wrap.appendChild(role);
       }
     });
-    if (typeof window.QG_applyRoleLabels === 'function') window.QG_applyRoleLabels();
+    if (typeof window.QG_applyModeChrome === 'function') window.QG_applyModeChrome();
+    else if (typeof window.QG_applyRoleLabels === 'function') window.QG_applyRoleLabels();
     else {
       var label = isWorkerMode() ? 'TASKER' : 'POSTER';
       document.querySelectorAll('.nav-role').forEach(function (el) { el.textContent = label; });
