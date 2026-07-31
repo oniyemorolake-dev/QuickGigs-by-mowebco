@@ -190,6 +190,17 @@ body.page-messages #conversations {
 .stats,
 .actions {
   gap: 12px !important;
+  align-items: stretch;
+}
+
+body.page-dashboard .actions {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+}
+
+@media (max-width: 719px) {
+  body.page-dashboard .actions {
+    grid-template-columns: 1fr 1fr !important;
+  }
 }
 
 .task-card { margin-bottom: 12px !important; }

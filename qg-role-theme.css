@@ -352,10 +352,62 @@ body.qg-mode-worker .stat-val.purple { color: var(--lavender); }
 
 body.light.qg-mode-worker .stat-val.purple { color: var(--purple); }
 
+/* Poster/dashboard action cards — even grid at ALL widths (not mobile-only).
+   auto-fit grows columns on desktop; mobile keeps the existing 2-up layout. */
+body.page-dashboard .actions,
+html[data-qg-mode="poster"] .actions,
+body.qg-mode-poster .actions {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+  gap: 12px !important;
+  align-items: stretch;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+body.page-dashboard .actions .action-card,
+html[data-qg-mode="poster"] .actions .action-card,
+body.qg-mode-poster .actions .action-card {
+  height: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+body.page-dashboard .stats .stat-card,
+html[data-qg-mode="poster"] .stats .stat-card,
+body.qg-mode-poster .stats .stat-card {
+  height: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+@media (max-width: 719px) {
+  body.page-dashboard .actions,
+  html[data-qg-mode="poster"] .actions,
+  body.qg-mode-poster .actions {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+}
+
+@media (min-width: 720px) {
+  body.page-dashboard .actions,
+  body.page-dashboard .stats,
+  html[data-qg-mode="poster"] .actions,
+  html[data-qg-mode="poster"] .stats,
+  body.qg-mode-poster .actions,
+  body.qg-mode-poster .stats {
+    max-width: 960px !important;
+  }
+}
+
 /* Tasker action cards: stacked full-width pill buttons */
 html[data-qg-mode="worker"] .actions,
 body.qg-mode-worker .actions {
-  display: flex;
+  display: flex !important;
   flex-direction: column;
   gap: 10px;
 }
@@ -364,9 +416,11 @@ html[data-qg-mode="worker"] .action-card,
 body.qg-mode-worker .action-card {
   border-radius: 999px;
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 14px;
   padding: 14px 20px;
+  height: auto;
 }
 
 html[data-qg-mode="worker"] .action-card .action-icon,

@@ -34,11 +34,11 @@
 <meta name="theme-color" content="#6b3fa0">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
-<link rel="stylesheet" href="qg-role-theme.css?v=20260731posterMobile1">
+<link rel="stylesheet" href="qg-role-theme.css?v=20260731dashGrid1">
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
 <script src="qg-theme.js"></script>
 <script src="qg-brand-init.js"></script>
-<script defer src="qg-pwa.js?v=4"></script>
+<script defer src="qg-pwa.js?v=112"></script>
 <link rel="stylesheet" href="qg-cookies.css">
 <link rel="stylesheet" href="qg-menu.css?v=2">
 <style>
@@ -129,10 +129,23 @@ body.light .stat-val.purple{color:var(--purple);}
 .stat-lbl{font-size:11px;color:var(--text-faint);}
 .stat-sub{font-size:10px;color:var(--text-faint);opacity:0.85;margin-top:2px;}
 
-/* ACTION CARDS */
-.actions{padding:0 20px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+/* ACTION CARDS — aligned grid at all widths; more columns as space allows */
+.actions{
+  padding:0 20px 16px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:12px;
+  align-items:stretch;
+}
+@media (max-width:719px){
+  .actions{grid-template-columns:1fr 1fr;gap:10px;}
+}
 .actions .action-card[style*="grid-column"]{margin-top:0;}
-.action-card{border-radius:16px;padding:16px 15px;cursor:pointer;text-decoration:none;display:block;transition:all 0.2s;}
+.action-card{
+  border-radius:16px;padding:16px 15px;cursor:pointer;text-decoration:none;
+  display:flex;flex-direction:column;height:100%;min-width:0;box-sizing:border-box;
+  transition:all 0.2s;
+}
 .light .action-card{box-shadow:0 1px 3px rgba(107,63,160,0.08);}
 .action-card:hover{transform:translateY(-1px);}
 .action-card.primary{background:linear-gradient(135deg,#6b3fa0,#9b6fc4);}
@@ -142,7 +155,7 @@ body.light .stat-val.purple{color:var(--purple);}
 .action-title{font-size:13px;font-weight:500;margin-bottom:3px;}
 .action-card.primary .action-title{color:#fff;}
 .action-card.secondary .action-title{color:var(--text);}
-.action-desc{font-size:11px;}
+.action-desc{font-size:11px;margin-top:auto;}
 .action-card.primary .action-desc{color:rgba(255,255,255,0.65);}
 .action-card.secondary .action-desc{color:var(--text-muted);}
 
