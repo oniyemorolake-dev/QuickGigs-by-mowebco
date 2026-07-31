@@ -66,13 +66,19 @@ async function callVerifiedFunction(url, body, firebaseUser) {
       body: JSON.stringify(body || {})
     });
     var data = await res.json().catch(function () { return {}; });
+    data.http_status = res.status;
     if (!res.ok) {
-      return Object.assign({ success: false, ok: false, error: data.error || ('http_' + res.status) }, data);
+      return Object.assign({
+        success: false,
+        ok: false,
+        http_status: res.status,
+        error: data.error || ('http_' + res.status)
+      }, data);
     }
     if (data.success == null) data.success = data.ok !== false;
     return data;
   } catch (err) {
-    return { success: false, ok: false, error: err && err.message ? err.message : String(err) };
+    return { success: false, ok: false, http_status: 0, error: err && err.message ? err.message : String(err) };
   }
 }
 

@@ -3,6 +3,8 @@
 Apply this after the teen-account and verification migrations:
 
 1. Run `supabase/dual-role-accounts.sql` in Supabase SQL Editor.
+   If an earlier deployment returns `role_fields_are_server_managed`, run
+   `supabase/role-access-trigger-fix.sql` once before testing the function.
 2. Deploy the authenticated functions:
 
 ```sh

@@ -31,6 +31,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') || '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '',
+      { auth: { persistSession: false, autoRefreshToken: false } },
     );
     const { data: user, error } = await supabase
       .from('users')
@@ -51,6 +52,14 @@ Deno.serve(async (req) => {
       last_active_mode: String(user.last_active_mode || (user.is_poster ? 'poster' : 'tasker')),
       roles_updated_at: user.roles_updated_at,
     };
+    console.info('role-access request', {
+      uid: identity.uid,
+      action,
+      is_tasker: next.is_tasker,
+      is_poster: next.is_poster,
+      is_teen: isTeen,
+      last_active_mode: next.last_active_mode,
+    });
 
     if (isTeen && next.is_poster) {
       const { data: corrected, error: correctionError } = await supabase
@@ -108,7 +117,26 @@ Deno.serve(async (req) => {
       .eq('firebase_uid', identity.uid)
       .select('is_tasker,is_poster,last_active_mode,roles_updated_at')
       .single();
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.error('role-access update failed', {
+        uid: identity.uid,
+        action,
+        patch,
+        code: updateError.code,
+        message: updateError.message,
+        details: updateError.details,
+        hint: updateError.hint,
+      });
+      return json({
+        success: false,
+        error: updateError.message || 'role_update_failed',
+        code: updateError.code || null,
+        details: updateError.details || null,
+        hint: updateError.hint || null,
+        action,
+      }, 500);
+    }
+    console.info('role-access update succeeded', { uid: identity.uid, action, updated });
     return json({ success: true, ...updated, is_teen: isTeen });
   } catch (err) {
     console.error('role-access error:', err);

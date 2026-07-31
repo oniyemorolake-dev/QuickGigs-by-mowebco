@@ -90,14 +90,15 @@
     }
   }
 
-  function roleSwitchErrorMessage(error, mode) {
+  function roleSwitchErrorMessage(error, mode, httpStatus) {
     var label = mode === 'poster' ? 'Poster' : 'Tasker';
     if (error === 'teen_poster_unavailable') return 'Poster mode becomes available when you turn 18.';
     if (error === 'firebase_auth_required' || error === 'missing_authorization') return 'Please sign in again to switch modes.';
     if (error === 'role_access_unavailable' || error === 'function_not_configured') {
       return 'Mode switching is temporarily unavailable. Please refresh and try again.';
     }
-    return 'Could not switch to ' + label + ' mode. Please try again.';
+    return 'Could not switch to ' + label + ' mode — ' + String(error || 'unknown_error') +
+      (httpStatus ? ' (HTTP ' + httpStatus + ')' : '') + '.';
   }
 
   async function switchToRoleMode(next) {
@@ -142,7 +143,12 @@
     var result = await window.QG_setActiveRoleMode(next);
     if (!result.success) {
       document.documentElement.classList.remove('qg-role-transitioning');
-      showModeFeedback(roleSwitchErrorMessage(result.error, next), true);
+      if (result.error === next + '_role_required') {
+        if (typeof window.QG_offerRoleOptIn === 'function') window.QG_offerRoleOptIn(next);
+        else showModeFeedback((next === 'poster' ? 'Poster' : 'Tasker') + ' mode must be enabled first.', false);
+        return result;
+      }
+      showModeFeedback(roleSwitchErrorMessage(result.error, next, result.http_status), true);
       return result;
     }
     setMode(next);
@@ -450,14 +456,14 @@
 
   if (!document.querySelector('script[src*="qg-role-access.js"]')) {
     var roleAccessScript = document.createElement('script');
-    roleAccessScript.src = 'qg-role-access.js?v=2';
+    roleAccessScript.src = 'qg-role-access.js?v=3';
     roleAccessScript.async = false;
     roleAccessScript.defer = true;
     document.head.appendChild(roleAccessScript);
   }
   if (!document.querySelector('script[src*="qg-role-switch.js"]')) {
     var roleSwitchScript = document.createElement('script');
-    roleSwitchScript.src = 'qg-role-switch.js?v=3';
+    roleSwitchScript.src = 'qg-role-switch.js?v=4';
     roleSwitchScript.async = false;
     roleSwitchScript.defer = true;
     document.head.appendChild(roleSwitchScript);

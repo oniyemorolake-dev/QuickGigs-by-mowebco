@@ -78,11 +78,24 @@
     if (!user || !endpoint() || typeof callVerifiedFunction !== 'function') {
       return { success: false, error: 'role_access_unavailable' };
     }
-    return await callVerifiedFunction(
+    var payload = Object.assign({ action: action }, extra || {});
+    console.info('[QuickGigs role-access] request', {
+      url: endpoint(),
+      method: 'POST',
+      uid: user.uid,
+      authorization: 'Firebase ID token attached',
+      body: payload
+    });
+    var result = await callVerifiedFunction(
       endpoint(),
-      Object.assign({ action: action }, extra || {}),
+      payload,
       user
     );
+    console.info('[QuickGigs role-access] response', {
+      status: result.http_status == null ? 'unknown' : result.http_status,
+      body: result
+    });
+    return result;
   }
 
   async function load(force) {

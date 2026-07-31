@@ -71,9 +71,15 @@ LANGUAGE plpgsql
 SET search_path = public
 AS $$
 DECLARE
-  request_role TEXT := COALESCE(current_setting('request.jwt.claim.role', true), '');
+  request_role TEXT := COALESCE(
+    NULLIF(current_setting('request.jwt.claim.role', true), ''),
+    NULLIF(current_setting('request.jwt.claims', true), '')::JSONB ->> 'role',
+    ''
+  );
 BEGIN
-  IF request_role <> 'service_role' AND (
+  IF request_role <> 'service_role'
+     AND CURRENT_USER NOT IN ('service_role', 'postgres', 'supabase_admin')
+     AND (
     NEW.is_tasker IS DISTINCT FROM OLD.is_tasker OR
     NEW.is_poster IS DISTINCT FROM OLD.is_poster OR
     NEW.last_active_mode IS DISTINCT FROM OLD.last_active_mode OR

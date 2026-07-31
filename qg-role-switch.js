@@ -22,13 +22,14 @@
     else alert(msg);
   }
 
-  function showRoleError(error, mode) {
+  function showRoleError(error, mode, httpStatus) {
     var label = mode === 'tasker' || mode === 'worker' ? 'Tasker' : 'Poster';
     var msg = error === 'teen_poster_unavailable'
       ? 'Poster mode becomes available when you turn 18.'
       : (error === 'role_access_unavailable' || error === 'function_not_configured'
         ? 'Mode switching is temporarily unavailable. Please refresh and try again.'
-        : 'Could not switch to ' + label + ' mode. Please try again.');
+        : 'Could not switch to ' + label + ' mode — ' + String(error || 'unknown_error') +
+          (httpStatus ? ' (HTTP ' + httpStatus + ')' : '') + '.');
     if (typeof showToast === 'function') showToast(msg, '#ef4444');
     else if (typeof qgNotify === 'function') qgNotify(msg, '#ef4444');
     else alert(msg);
@@ -56,7 +57,11 @@
       var roleResult = await window.QG_setActiveRoleMode(mode);
       if (!roleResult.success) {
         document.documentElement.classList.remove('qg-role-transitioning');
-        showRoleError(roleResult.error, mode);
+        if (roleResult.error === mode + '_role_required' && typeof window.QG_offerRoleOptIn === 'function') {
+          window.QG_offerRoleOptIn(mode);
+        } else {
+          showRoleError(roleResult.error, mode, roleResult.http_status);
+        }
         return { changed: false, mode: current, error: roleResult.error };
       }
     } else if (typeof setMode === 'function') setMode(mode);
@@ -214,7 +219,8 @@
           errorNode.hidden = false;
           errorNode.textContent = result.error === 'teen_poster_unavailable'
             ? 'Poster mode becomes available when you turn 18.'
-            : 'Could not enable this mode. Please refresh and try again.';
+            : 'Could not enable this mode — ' + String(result.error || 'unknown_error') +
+              (result.http_status ? ' (HTTP ' + result.http_status + ')' : '') + '.';
         }
         btn.disabled = false;
         btn.textContent = result.error === 'teen_poster_unavailable'
