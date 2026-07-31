@@ -6,6 +6,28 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS is_poster BOOLEAN;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS last_active_mode TEXT;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS roles_updated_at TIMESTAMPTZ;
 
+-- A previous partial run may have installed this function under a different trigger
+-- name. Remove every trigger that calls it before the migration-managed backfills.
+DO $$
+DECLARE
+  trigger_record RECORD;
+BEGIN
+  FOR trigger_record IN
+    SELECT trigger_row.tgname
+    FROM pg_trigger trigger_row
+    JOIN pg_proc function_row ON function_row.oid = trigger_row.tgfoid
+    JOIN pg_class table_row ON table_row.oid = trigger_row.tgrelid
+    JOIN pg_namespace schema_row ON schema_row.oid = table_row.relnamespace
+    WHERE schema_row.nspname = 'public'
+      AND table_row.relname = 'users'
+      AND function_row.proname = 'protect_qg_role_fields'
+      AND NOT trigger_row.tgisinternal
+  LOOP
+    EXECUTE format('DROP TRIGGER IF EXISTS %I ON public.users', trigger_record.tgname);
+  END LOOP;
+END;
+$$;
+
 UPDATE public.users
 SET is_tasker = TRUE,
     is_poster = TRUE,

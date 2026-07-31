@@ -43,6 +43,7 @@
       localStorage.setItem('qg-role', mode === 'tasker' ? 'worker' : 'poster');
     } catch (e) {}
     document.documentElement.setAttribute('data-qg-mode', cssMode(mode));
+    document.documentElement.setAttribute('data-mode', mode);
     if (document.body) applyRoleLabels();
     return mode;
   }
@@ -58,6 +59,7 @@
 
   var mode = getMode();
   document.documentElement.setAttribute('data-qg-mode', cssMode(mode));
+  document.documentElement.setAttribute('data-mode', mode);
 
   function applyRoleLabels() {
     var activeMode = getMode();
@@ -73,6 +75,7 @@
   function applyModeChrome() {
     var activeMode = getMode();
     document.documentElement.setAttribute('data-qg-mode', cssMode(activeMode));
+    document.documentElement.setAttribute('data-mode', activeMode);
     document.querySelectorAll('.nav').forEach(function (nav, index) {
       var brand = nav.querySelector('.nav-brand');
       var logo = nav.querySelector(':scope > .nav-logo');

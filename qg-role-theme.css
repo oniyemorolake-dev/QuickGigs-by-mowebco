@@ -712,10 +712,21 @@ html[data-qg-mode] :is(input, textarea, select, button, a):focus-visible {
   opacity: .56;
 }
 
+.qg-header-role-opt.is-switching {
+  cursor: wait;
+  opacity: .72;
+}
+
 .qg-header-role-opt.is-unavailable::after {
   content: '+';
   margin-left: 3px;
   font-weight: 700;
+}
+
+.qg-role-opt-in-error {
+  margin: 12px 0 0;
+  color: #fca5a5;
+  font: 500 12px/1.5 'Poppins', sans-serif;
 }
 
 html[data-qg-mode] .qg-role-flip-slider {

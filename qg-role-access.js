@@ -26,6 +26,11 @@
       var raw = localStorage.getItem(cacheKey(uid));
       memory = raw ? JSON.parse(raw) : null;
       memoryUid = String(uid);
+      if (memory) {
+        window._qgRoleAccessState = memory;
+        document.documentElement.setAttribute('data-tasker-enabled', String(memory.is_tasker === true));
+        document.documentElement.setAttribute('data-poster-enabled', String(memory.is_poster === true));
+      }
     } catch (e2) {
       memory = null;
     }
@@ -52,6 +57,9 @@
     var state = normalize(data);
     if (!state) return null;
     memory = state;
+    window._qgRoleAccessState = state;
+    document.documentElement.setAttribute('data-tasker-enabled', String(state.is_tasker));
+    document.documentElement.setAttribute('data-poster-enabled', String(state.is_poster));
     var user = currentUser();
     if (user && user.uid) {
       memoryUid = String(user.uid);
@@ -83,8 +91,17 @@
     if (loading) return loading;
     loading = call('status').then(function (result) {
       loading = null;
-      if (!result.success) return cached;
+      if (!result.success) {
+        console.error('[QuickGigs role-access] status failed', result.error || result);
+        return cached;
+      }
       var state = normalize(result);
+      console.info('[QuickGigs role-access] current account state', {
+        is_tasker: !!(state && state.is_tasker),
+        is_poster: !!(state && state.is_poster),
+        is_teen: !!(state && state.is_teen),
+        last_active_mode: state && state.last_active_mode
+      });
       var previous = typeof getMode === 'function' ? getMode() : '';
       if (state && typeof setMode === 'function') setMode(state.last_active_mode);
       state = writeCache(state);
@@ -98,8 +115,9 @@
         }
       }
       return state;
-    }).catch(function () {
+    }).catch(function (err) {
       loading = null;
+      console.error('[QuickGigs role-access] status request failed', err);
       return cached;
     });
     return loading;
@@ -112,7 +130,10 @@
       return { success: false, error: mode + '_role_required' };
     }
     var result = await call('set_mode', { mode: mode });
-    if (!result.success) return result;
+    if (!result.success) {
+      console.error('[QuickGigs role-access] set_mode failed', { mode: mode, error: result.error });
+      return result;
+    }
     if (typeof setMode === 'function') setMode(mode);
     state = writeCache(result);
     if (typeof applyRoleTheme === 'function') applyRoleTheme();
@@ -123,7 +144,10 @@
   async function enableRole(mode) {
     mode = mode === 'poster' ? 'poster' : 'tasker';
     var result = await call(mode === 'poster' ? 'enable_poster' : 'enable_tasker');
-    if (!result.success) return result;
+    if (!result.success) {
+      console.error('[QuickGigs role-access] enable role failed', { mode: mode, error: result.error });
+      return result;
+    }
     if (typeof setMode === 'function') setMode(mode);
     var state = writeCache(result);
     if (typeof applyRoleTheme === 'function') applyRoleTheme();

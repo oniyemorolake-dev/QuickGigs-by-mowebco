@@ -79,28 +79,80 @@
     return isWorkerMode() ? 'worker' : 'poster';
   }
 
+  function showModeFeedback(message, isError) {
+    if (!message) return;
+    if (typeof window.showToast === 'function') {
+      window.showToast(message, isError ? '#ef4444' : undefined);
+    } else if (typeof window.qgNotify === 'function') {
+      window.qgNotify(message, isError ? '#ef4444' : undefined);
+    } else {
+      window.alert(message);
+    }
+  }
+
+  function roleSwitchErrorMessage(error, mode) {
+    var label = mode === 'poster' ? 'Poster' : 'Tasker';
+    if (error === 'teen_poster_unavailable') return 'Poster mode becomes available when you turn 18.';
+    if (error === 'firebase_auth_required' || error === 'missing_authorization') return 'Please sign in again to switch modes.';
+    if (error === 'role_access_unavailable' || error === 'function_not_configured') {
+      return 'Mode switching is temporarily unavailable. Please refresh and try again.';
+    }
+    return 'Could not switch to ' + label + ' mode. Please try again.';
+  }
+
   async function switchToRoleMode(next) {
     next = normalizeMode(next);
-    var allowed = typeof window.QG_canUseRole === 'function' ? window.QG_canUseRole(next) : null;
+    var state = typeof window.QG_loadRoleAccess === 'function'
+      ? await window.QG_loadRoleAccess(true)
+      : (typeof window.QG_getRoleAccess === 'function' ? window.QG_getRoleAccess() : null);
+    console.info('[QuickGigs mode toggle] account roles', {
+      is_tasker: !!(state && state.is_tasker),
+      is_poster: !!(state && state.is_poster),
+      requested_mode: next,
+      active_mode: getMode()
+    });
+    var allowed = state
+      ? (next === 'poster' ? state.is_poster === true : state.is_tasker === true)
+      : null;
     if (allowed === false) {
-      if (typeof window.QG_offerRoleOptIn === 'function') window.QG_offerRoleOptIn(next);
-      else window.location.href = 'profile.html#roleFlipMount';
+      if (typeof window.QG_offerRoleOptIn === 'function') {
+        window.QG_offerRoleOptIn(next);
+      } else {
+        showModeFeedback(
+          (next === 'poster' ? 'Poster' : 'Tasker') + ' mode is not enabled yet. Open your profile to enable it.',
+          false
+        );
+        setTimeout(function () { window.location.href = 'profile.html#roleFlipMount'; }, 900);
+      }
       return { success: false, error: next + '_role_required' };
     }
+    if (!state || typeof window.QG_setActiveRoleMode !== 'function') {
+      var unavailable = 'role_access_unavailable';
+      showModeFeedback(roleSwitchErrorMessage(unavailable, next), true);
+      return { success: false, error: unavailable };
+    }
+    if (getMode() === next) {
+      setMode(next);
+      applyRoleTheme();
+      showModeFeedback("You're already in " + (next === 'poster' ? 'Poster' : 'Tasker') + ' mode.', false);
+      setTimeout(function () { window.location.href = 'dashboard.html'; }, 180);
+      return { success: true, mode: next, unchanged: true };
+    }
     document.documentElement.classList.add('qg-role-transitioning');
-    var result = typeof window.QG_setActiveRoleMode === 'function'
-      ? await window.QG_setActiveRoleMode(next)
-      : { success: true };
+    var result = await window.QG_setActiveRoleMode(next);
     if (!result.success) {
       document.documentElement.classList.remove('qg-role-transitioning');
+      showModeFeedback(roleSwitchErrorMessage(result.error, next), true);
       return result;
     }
     setMode(next);
     applyRoleTheme();
+    document.documentElement.setAttribute('data-mode', next);
     document.dispatchEvent(new CustomEvent('qg-mode-changed', { detail: { mode: next } }));
+    showModeFeedback("Switched to " + (next === 'poster' ? 'Poster' : 'Tasker') + ' mode.', false);
     setTimeout(function () {
       document.documentElement.classList.remove('qg-role-transitioning');
-      window.location.reload();
+      window.location.href = 'dashboard.html';
     }, 260);
     return result;
   }
@@ -122,6 +174,8 @@
       var current = getMode();
       var toggle = document.createElement('div');
       toggle.className = 'qg-header-role-toggle';
+      toggle.setAttribute('data-tasker-enabled', String(state.is_tasker === true));
+      toggle.setAttribute('data-poster-enabled', String(state.is_poster === true));
       toggle.setAttribute('role', 'group');
       toggle.setAttribute('aria-label', 'Current QuickGigs mode');
       var taskerAvailable = state.is_tasker === true;
@@ -138,14 +192,26 @@
             (current === 'poster') + '" aria-disabled="' + (!posterAvailable) + '">Poster</button>'
           : '');
       toggle.querySelectorAll('[data-role-mode]').forEach(function (btn) {
-        btn.onclick = function () {
+        btn.onclick = async function () {
           var target = btn.getAttribute('data-role-mode');
           var available = target === 'poster' ? posterAvailable : taskerAvailable;
           if (!available && typeof window.QG_offerRoleOptIn === 'function') {
             window.QG_offerRoleOptIn(target);
             return;
           }
-          switchToRoleMode(target);
+          btn.disabled = true;
+          btn.classList.add('is-switching');
+          try {
+            await switchToRoleMode(target);
+          } catch (err) {
+            console.error('[QuickGigs mode toggle] click failed', err);
+            showModeFeedback('Mode switching failed. Please refresh and try again.', true);
+          } finally {
+            if (btn && btn.isConnected) {
+              btn.disabled = false;
+              btn.classList.remove('is-switching');
+            }
+          }
         };
       });
       host.insertBefore(toggle, host.firstChild);
@@ -214,6 +280,7 @@
     }
     if (document.documentElement) {
       document.documentElement.setAttribute('data-qg-mode', mode);
+      document.documentElement.setAttribute('data-mode', mode === 'worker' ? 'tasker' : 'poster');
     }
     applyNavBrand();
   }
@@ -383,14 +450,14 @@
 
   if (!document.querySelector('script[src*="qg-role-access.js"]')) {
     var roleAccessScript = document.createElement('script');
-    roleAccessScript.src = 'qg-role-access.js?v=1';
+    roleAccessScript.src = 'qg-role-access.js?v=2';
     roleAccessScript.async = false;
     roleAccessScript.defer = true;
     document.head.appendChild(roleAccessScript);
   }
   if (!document.querySelector('script[src*="qg-role-switch.js"]')) {
     var roleSwitchScript = document.createElement('script');
-    roleSwitchScript.src = 'qg-role-switch.js?v=2';
+    roleSwitchScript.src = 'qg-role-switch.js?v=3';
     roleSwitchScript.async = false;
     roleSwitchScript.defer = true;
     document.head.appendChild(roleSwitchScript);
