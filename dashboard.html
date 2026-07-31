@@ -34,7 +34,7 @@
 <meta name="theme-color" content="#6b3fa0">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
-<link rel="stylesheet" href="qg-role-theme.css?v=20260730roles1">
+<link rel="stylesheet" href="qg-role-theme.css?v=20260731posterMobile1">
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
 <script src="qg-theme.js"></script>
 <script src="qg-brand-init.js"></script>
@@ -248,6 +248,12 @@ body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#ee
 <div class="greeting qg-page-wide">
   <div class="mode-tag tag-poster" id="modeTag" data-qg-mode-tag>📋 Poster mode</div>
   <div class="greet-name" id="greetName">Good evening 👋</div>
+  <div class="greet-note" id="greetNote" hidden>
+    <span class="greet-note-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="currentColor" focusable="false"><path d="M12 2.2l1.4 5.1 5.1 1.4-5.1 1.4L12 15.2l-1.4-5.1L5.5 8.7l5.1-1.4L12 2.2zm6.8 10.3l.9 3.2 3.2.9-3.2.9-.9 3.2-.9-3.2-3.2-.9 3.2-.9.9-3.2zM5.2 14.4l.7 2.4 2.4.7-2.4.7-.7 2.4-.7-2.4-2.4-.7 2.4-.7.7-2.4z"/></svg>
+    </span>
+    <span class="greet-note-text" id="greetNoteText"></span>
+  </div>
   <div class="greet-sub" id="greetSub">Loading your dashboard…</div>
   <div id="dashHero"><div class="qg-skel qg-skel-hero" aria-hidden="true"></div></div>
 </div>
@@ -480,7 +486,7 @@ onAuthStateChanged(auth, async (user) => {
 <script defer src="qg-push.js?v=1"></script>
 <script defer src="qg-cookies.js"></script>
 <script defer src="qg-site.js"></script>
-<script defer src="qg-role-switch.js?v=2"></script>
+<script defer src="qg-role-switch.js?v=20260731posterMobile1"></script>
 <script>
 // ── THEME ──────────────────────────────────────────────
 window._qgAgeTier=window._qgAgeTier||'loading';
@@ -661,6 +667,51 @@ function getTimeGreeting(){
   return 'Good evening';
 }
 
+/* 'random' = one note per load; 'cycle' = rotate every ~5s with 0.4s fade */
+var QG_POSTER_NOTE_MODE = 'random';
+var QG_POSTER_NOTES = [
+  'Ready to get something done today?',
+  'Someone nearby can help — post it.',
+  'Errands, repairs, tutoring — all covered.',
+  'The right tasker is a post away.',
+  'What can we take off your plate today?'
+];
+var _posterNoteTimer = null;
+var _posterNoteIdx = -1;
+
+function isMobilePosterDash() {
+  return !!(isPoster && window.matchMedia('(max-width: 719px)').matches);
+}
+
+function renderPosterNote() {
+  var noteEl = document.getElementById('greetNote');
+  var textEl = document.getElementById('greetNoteText');
+  if (!noteEl || !textEl) return;
+  if (_posterNoteTimer) {
+    clearInterval(_posterNoteTimer);
+    _posterNoteTimer = null;
+  }
+  if (!isMobilePosterDash()) {
+    noteEl.hidden = true;
+    noteEl.classList.remove('is-fading');
+    return;
+  }
+  noteEl.hidden = false;
+  if (_posterNoteIdx < 0) {
+    _posterNoteIdx = Math.floor(Math.random() * QG_POSTER_NOTES.length);
+  }
+  textEl.textContent = QG_POSTER_NOTES[_posterNoteIdx];
+  if (QG_POSTER_NOTE_MODE !== 'cycle') return;
+  _posterNoteTimer = setInterval(function () {
+    noteEl.classList.add('is-fading');
+    setTimeout(function () {
+      _posterNoteIdx = (_posterNoteIdx + 1) % QG_POSTER_NOTES.length;
+      textEl.textContent = QG_POSTER_NOTES[_posterNoteIdx];
+      noteEl.classList.remove('is-fading');
+    }, 400);
+  }, 5000);
+}
+
 function renderGreeting(contextOpts){
   var name = window._userName || '';
   var first = String(name || '').trim().split(/\s+/)[0] || '';
@@ -673,6 +724,7 @@ function renderGreeting(contextOpts){
     else if (contextOpts.inProgress > 0) sub = 'You have a task in progress';
   }
   document.getElementById('greetSub').textContent = sub;
+  renderPosterNote();
   updateModeTag();
   updateAvatarMenuSwitchLabel();
 }
@@ -835,7 +887,8 @@ function renderDashboardHero(userId) {
     pendingApplicants: pendingApplicants,
     inProgressPosted: inProgressPosted,
     workerInProgress: workerInProgress,
-    openNearby: openNearby
+    openNearby: openNearby,
+    mobilePoster: isMobilePosterDash()
   });
 }
 
@@ -1079,6 +1132,26 @@ function deferDashLocation() {
   else setTimeout(run, 600);
 }
 deferDashLocation();
+
+(function bindPosterMobileLayout() {
+  var mq = window.matchMedia('(max-width: 719px)');
+  var lastMobilePoster = null;
+  function sync() {
+    if (typeof getMode === 'function') isPoster = getMode() === 'poster';
+    var now = isMobilePosterDash();
+    if (lastMobilePoster === now) return;
+    lastMobilePoster = now;
+    renderPosterNote();
+    if (dashData && dashData.userId) renderDashboardHero(dashData.userId);
+    else if (typeof renderDashboardHero === 'function') renderDashboardHero(window._currentUser && window._currentUser.uid);
+  }
+  if (mq.addEventListener) mq.addEventListener('change', sync);
+  else if (mq.addListener) mq.addListener(sync);
+  document.addEventListener('qg-mode-changed', function () {
+    lastMobilePoster = null;
+    sync();
+  });
+})();
 
 if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('home');
 else {

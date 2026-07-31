@@ -121,11 +121,11 @@
   var existingRoleTheme = document.querySelector('link[href*="qg-role-theme.css"]');
   if (existingRoleTheme) {
     var roleThemeBase = existingRoleTheme.getAttribute('href').split('?')[0];
-    existingRoleTheme.setAttribute('href', roleThemeBase + '?v=20260730modeskin1');
+    existingRoleTheme.setAttribute('href', roleThemeBase + '?v=20260731posterMobile1');
   } else {
     var roleTheme = document.createElement('link');
     roleTheme.rel = 'stylesheet';
-    roleTheme.href = 'qg-role-theme.css?v=20260730modeskin1';
+    roleTheme.href = 'qg-role-theme.css?v=20260731posterMobile1';
     document.head.appendChild(roleTheme);
   }
 

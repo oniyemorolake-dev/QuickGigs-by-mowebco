@@ -247,6 +247,18 @@
     if (isPoster) {
       var pending = data.pendingApplicants || 0;
       var inProg = data.inProgressPosted || 0;
+      var mobilePoster = !!data.mobilePoster;
+      if (mobilePoster) {
+        /* Mobile poster: always show the prominent post card (toggle covers mode switch). */
+        html = '<a class="dash-hero dash-hero-primary dash-hero-mobile-post" href="posttask.html">' +
+          '<span class="dash-hero-emoji" aria-hidden="true">✨</span>' +
+          '<span class="dash-hero-body">' +
+            '<strong>Post a task in under a minute</strong>' +
+            '<span>Get help near ' + city + ' — errands, home, tutoring & more</span>' +
+          '</span>' +
+          '<span class="dash-hero-cta">Post a task →</span></a>';
+        return html;
+      }
       if (pending > 0) {
         html = '<a class="dash-hero dash-hero-pulse" href="mytasks.html?tab=posted&applicants=1">' +
           '<span class="dash-hero-emoji">👥</span>' +
