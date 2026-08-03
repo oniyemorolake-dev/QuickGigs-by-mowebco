@@ -148,7 +148,7 @@
     var refine = document.createElement('link');
     refine.id = 'qg-refine-css';
     refine.rel = 'stylesheet';
-    refine.href = 'qg-refine.css?v=20260731dashGrid2';
+    refine.href = 'qg-refine.css?v=20260803posterLayout1';
     document.head.appendChild(refine);
   }
 

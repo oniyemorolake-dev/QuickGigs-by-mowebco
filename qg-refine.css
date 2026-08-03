@@ -269,6 +269,13 @@ body:not(.light) .qg-activity-card {
   line-height: 1;
 }
 
+html[data-qg-mode="poster"] .stat-icon,
+html[data-qg-mode="poster"] .action-icon,
+body.qg-mode-poster .stat-icon,
+body.qg-mode-poster .action-icon {
+  color: var(--lavender, #99f6e4);
+}
+
 .stat-icon .qg-ico { width: 20px; height: 20px; }
 .action-icon .qg-ico { width: 22px; height: 22px; }
 .empty-icon {

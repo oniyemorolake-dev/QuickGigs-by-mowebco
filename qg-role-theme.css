@@ -283,10 +283,9 @@ body.light.qg-mode-worker .tab-item.active .tab-lbl {
 }
 
 /* ══════════════════════════════════════════════════════
-   DASHBOARD — shared layout for Poster + Tasker
-   Stats: 2×2 on mobile, 4-up on wide.
-   Actions: auto-fit grid at all widths (same alignment in both modes).
-   Mode differences = accent colour + content only.
+   DASHBOARD — Tasker (purple 2×2) vs Poster (teal command)
+   Tasker: centered square stats + equal action tiles.
+   Poster: horizontal metric chips + full-width Post CTA, then 2-up.
    ══════════════════════════════════════════════════════ */
 html[data-qg-mode="poster"] .stats,
 body.qg-mode-poster .stats,
@@ -308,16 +307,18 @@ body.qg-mode-worker .stats,
 }
 
 @media (min-width: 720px) {
-  html[data-qg-mode="poster"] .stats,
-  body.qg-mode-poster .stats,
   html[data-qg-mode="worker"] .stats,
-  body.qg-mode-worker .stats,
-  #statsGrid.stats {
+  body.qg-mode-worker .stats {
     grid-template-columns: repeat(4, 1fr) !important;
+  }
+  /* Poster: one compact strip of 4 metrics */
+  html[data-qg-mode="poster"] .stats,
+  body.qg-mode-poster .stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 8px;
   }
 }
 
-/* Stat cells: equal width/height in both modes (never pill min-width scroll). */
 html[data-qg-mode="worker"] .stat-card,
 body.qg-mode-worker .stat-card,
 html[data-qg-mode="poster"] .stat-card,
@@ -331,13 +332,16 @@ body.qg-mode-poster .stat-card,
   box-sizing: border-box;
 }
 
-/* Tasker accent tint on stats — colour only */
+/* Tasker — centered purple tiles */
 html[data-qg-mode="worker"] .stat-card,
 body.qg-mode-worker .stat-card {
   text-align: center;
   border-radius: 16px;
   border: 1px solid rgba(200, 168, 233, 0.25);
   background: rgba(107, 63, 160, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 html[data-qg-mode="worker"] .stats::-webkit-scrollbar,
@@ -348,7 +352,63 @@ body.qg-mode-worker .stat-val.purple { color: var(--lavender); }
 
 body.light.qg-mode-worker .stat-val.purple { color: var(--purple); }
 
-/* Action cards — SAME aligned grid for Tasker + Poster, all screen sizes */
+/* Poster — teal horizontal metric chips (layout differs from Tasker) */
+html[data-qg-mode="poster"] .stat-card,
+body.qg-mode-poster .stat-card {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 12px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(45, 212, 191, 0.24);
+  background: rgba(13, 148, 136, 0.10);
+}
+
+html.light[data-qg-mode="poster"] .stat-card,
+html[data-qg-mode="poster"] body.light .stat-card,
+body.light.qg-mode-poster .stat-card {
+  border-color: rgba(13, 148, 136, 0.22);
+  background: rgba(13, 148, 136, 0.06);
+}
+
+html[data-qg-mode="poster"] .stat-icon,
+body.qg-mode-poster .stat-icon {
+  margin-bottom: 0 !important;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(45, 212, 191, 0.14);
+  color: var(--lavender, #99f6e4) !important;
+  flex-shrink: 0;
+}
+
+html[data-qg-mode="poster"] .stat-meta,
+body.qg-mode-poster .stat-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+html[data-qg-mode="poster"] .stat-val,
+body.qg-mode-poster .stat-val {
+  font: 600 18px 'Poppins', sans-serif;
+  margin-bottom: 1px;
+  line-height: 1.15;
+}
+
+html[data-qg-mode="poster"] .stat-val.purple,
+body.qg-mode-poster .stat-val.purple {
+  color: var(--lavender, #99f6e4);
+}
+
+html[data-qg-mode="poster"] .stat-lbl,
+body.qg-mode-poster .stat-lbl {
+  font: 500 10px 'Poppins', sans-serif;
+  letter-spacing: 0.01em;
+}
+
+/* Actions — Tasker keeps equal tiles; Poster: full-width Post CTA */
 body.page-dashboard .actions,
 html[data-qg-mode="poster"] .actions,
 body.qg-mode-poster .actions,
@@ -356,11 +416,69 @@ html[data-qg-mode="worker"] .actions,
 body.qg-mode-worker .actions,
 #actionsGrid.actions {
   display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
   gap: 12px !important;
   align-items: stretch;
   width: 100%;
   box-sizing: border-box;
+}
+
+html[data-qg-mode="worker"] .actions,
+body.qg-mode-worker .actions {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+}
+
+html[data-qg-mode="poster"] .actions,
+body.qg-mode-poster .actions {
+  grid-template-columns: 1fr 1fr !important;
+}
+
+html[data-qg-mode="poster"] .actions .action-card.primary,
+body.qg-mode-poster .actions .action-card.primary {
+  grid-column: 1 / -1;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 14px;
+  padding: 18px 18px !important;
+  border-radius: 18px !important;
+}
+
+html[data-qg-mode="poster"] .actions .action-card.primary .action-icon,
+body.qg-mode-poster .actions .action-card.primary .action-icon {
+  margin-bottom: 0 !important;
+  margin-left: auto;
+  order: 2;
+  color: #fff !important;
+  opacity: 0.95;
+}
+
+html[data-qg-mode="poster"] .actions .action-card.primary .action-copy,
+body.qg-mode-poster .actions .action-card.primary .action-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+html[data-qg-mode="poster"] .actions .action-card.primary .action-title,
+body.qg-mode-poster .actions .action-card.primary .action-title {
+  font: 600 16px 'Poppins', sans-serif;
+  margin-bottom: 0;
+}
+
+html[data-qg-mode="poster"] .actions .action-card.primary .action-desc,
+body.qg-mode-poster .actions .action-card.primary .action-desc {
+  margin-top: 0;
+  font: 400 12px 'Poppins', sans-serif;
+}
+
+html[data-qg-mode="poster"] .actions .action-card.secondary,
+body.qg-mode-poster .actions .action-card.secondary {
+  border-color: rgba(45, 212, 191, 0.2);
+}
+
+html[data-qg-mode="poster"] .actions .action-card.secondary .action-icon,
+body.qg-mode-poster .actions .action-card.secondary .action-icon {
+  color: var(--lavender, #99f6e4) !important;
 }
 
 body.page-dashboard .actions .action-card,
@@ -379,6 +497,42 @@ body.qg-mode-worker .actions .action-card,
   border-radius: 16px !important;
   gap: 0;
   padding: 16px 15px;
+}
+
+/* Poster primary must win over the shared column rule above */
+html[data-qg-mode="poster"] .actions .action-card.primary,
+body.qg-mode-poster .actions .action-card.primary,
+#actionsGrid[data-dash-layout="poster"] .action-card.primary {
+  grid-column: 1 / -1 !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 18px 18px !important;
+  border-radius: 18px !important;
+}
+
+html[data-qg-mode="poster"] .actions .action-card.primary .action-icon,
+body.qg-mode-poster .actions .action-card.primary .action-icon,
+#actionsGrid[data-dash-layout="poster"] .action-card.primary .action-icon {
+  margin-bottom: 0 !important;
+  margin-left: auto;
+  order: 2;
+  color: #fff !important;
+}
+
+html[data-qg-mode="worker"] .stat-meta,
+body.qg-mode-worker .stat-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+html[data-qg-mode="worker"] .action-copy,
+body.qg-mode-worker .action-copy {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 body.page-dashboard .actions .action-card .action-icon,
@@ -405,12 +559,14 @@ body.qg-mode-worker .actions .action-card .action-desc {
 }
 
 @media (max-width: 719px) {
-  body.page-dashboard .actions,
-  html[data-qg-mode="poster"] .actions,
-  body.qg-mode-poster .actions,
   html[data-qg-mode="worker"] .actions,
   body.qg-mode-worker .actions,
   #actionsGrid.actions {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+  html[data-qg-mode="poster"] .actions,
+  body.qg-mode-poster .actions {
     grid-template-columns: 1fr 1fr !important;
     gap: 10px !important;
   }

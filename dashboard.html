@@ -34,7 +34,7 @@
 <meta name="theme-color" content="#6b3fa0">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
-<link rel="stylesheet" href="qg-role-theme.css?v=20260731dashGrid2">
+<link rel="stylesheet" href="qg-role-theme.css?v=20260803posterLayout1">
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
 <script src="qg-theme.js"></script>
 <script src="qg-brand-init.js"></script>
@@ -1073,9 +1073,11 @@ function renderAll(){
   document.getElementById('statsGrid').innerHTML = stats.map(function(s){
     return '<a class="stat-card stat-card-link" href="'+s.href+'">' +
       '<div class="stat-icon">'+ico(s.icon)+'</div>' +
-      '<div class="stat-val '+s.cls+'">'+s.val+'</div>' +
-      '<div class="stat-lbl">'+s.lbl+'</div>' +
-      (s.sub ? '<div class="stat-sub">'+s.sub+'</div>' : '') +
+      '<div class="stat-meta">' +
+        '<div class="stat-val '+s.cls+'">'+s.val+'</div>' +
+        '<div class="stat-lbl">'+s.lbl+'</div>' +
+        (s.sub ? '<div class="stat-sub">'+s.sub+'</div>' : '') +
+      '</div>' +
       '</a>';
   }).join('');
 
@@ -1096,13 +1098,19 @@ function renderAll(){
         {icon:'briefcase',title:'My tasks',desc:'Applications & active work',href:'mytasks.html?tab=applied&mode=worker',cls:'secondary'}
       ];
   document.getElementById('actionsGrid').innerHTML = actions.map(function(a){
-    return '<a class="action-card '+a.cls+'" href="'+a.href+'"><div class="action-icon">'+ico(a.icon)+'</div><div class="action-title">'+a.title+'</div><div class="action-desc">'+a.desc+'</div></a>';
+    var copy = '<div class="action-copy"><div class="action-title">'+a.title+'</div><div class="action-desc">'+a.desc+'</div></div>';
+    return '<a class="action-card '+a.cls+'" href="'+a.href+'"><div class="action-icon">'+ico(a.icon)+'</div>'+copy+'</a>';
   }).join('') +
     (window.QG_CONFIG && !window.QG_CONFIG.paymentsEnabled
-      ? '<div class="action-card secondary" style="grid-column:1/-1;cursor:default;opacity:0.92"><div class="action-icon">'+ico('creditCard')+'</div><div class="action-title">Payments coming at launch</div><div class="action-desc">Escrow and Stripe checkout ship with public launch ? beta uses accept-to-chat flow.</div></div>'
+      ? '<div class="action-card secondary" style="grid-column:1/-1;cursor:default;opacity:0.92"><div class="action-icon">'+ico('creditCard')+'</div><div class="action-copy"><div class="action-title">Payments coming at launch</div><div class="action-desc">Escrow and Stripe checkout ship with public launch ? beta uses accept-to-chat flow.</div></div></div>'
       : '') +
-    '<button type="button" class="action-card secondary" style="grid-column:1/-1;margin-top:2px;border:none;width:100%;text-align:left;font:inherit;color:inherit" onclick="typeof promptQuickGigsInstall===\'function\'&&promptQuickGigsInstall()"><div class="action-icon">'+ico('smartphone')+'</div><div class="action-title">Add to Home Screen</div><div class="action-desc">Install QuickGigs on iPhone (Safari Share menu) or Android</div></button>' +
-    '<a class="action-card secondary" href="feedback.html" style="grid-column:1/-1;margin-top:2px"><div class="action-icon">'+ico('bug')+'</div><div class="action-title">Beta feedback</div><div class="action-desc">Report a bug or share an idea ? we read every message</div></a>';
+    '<button type="button" class="action-card secondary" style="grid-column:1/-1;margin-top:2px;border:none;width:100%;text-align:left;font:inherit;color:inherit" onclick="typeof promptQuickGigsInstall===\'function\'&&promptQuickGigsInstall()"><div class="action-icon">'+ico('smartphone')+'</div><div class="action-copy"><div class="action-title">Add to Home Screen</div><div class="action-desc">Install QuickGigs on iPhone (Safari Share menu) or Android</div></div></button>' +
+    '<a class="action-card secondary" href="feedback.html" style="grid-column:1/-1;margin-top:2px"><div class="action-icon">'+ico('bug')+'</div><div class="action-copy"><div class="action-title">Beta feedback</div><div class="action-desc">Report a bug or share an idea ? we read every message</div></div></a>';
+
+  var statsEl = document.getElementById('statsGrid');
+  var actionsEl = document.getElementById('actionsGrid');
+  if (statsEl) statsEl.setAttribute('data-dash-layout', isPoster ? 'poster' : 'tasker');
+  if (actionsEl) actionsEl.setAttribute('data-dash-layout', isPoster ? 'poster' : 'tasker');
 
   var paySection = document.getElementById('paymentHistorySection');
   var payList = document.getElementById('paymentHistoryList');
