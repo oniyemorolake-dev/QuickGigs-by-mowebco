@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 
-<title>Dashboard ? QuickGigs</title>
+<title>Dashboard — QuickGigs</title>
 <meta name="description" content="Your QuickGigs dashboard for posting tasks and finding work as a tasker.">
 <meta name="robots" content="noindex,nofollow">
 <link rel="canonical" href="https://quickgigs.ca/dashboard.html">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://quickgigs.ca/dashboard.html">
-<meta property="og:title" content="Dashboard ? QuickGigs">
+<meta property="og:title" content="Dashboard — QuickGigs">
 <meta property="og:description" content="Your QuickGigs dashboard for posting tasks and finding work as a tasker.">
 <meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <meta property="og:locale" content="en_CA">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Dashboard ? QuickGigs">
+<meta name="twitter:title" content="Dashboard — QuickGigs">
 <meta name="twitter:description" content="Your QuickGigs dashboard for posting tasks and finding work as a tasker.">
 <meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -225,7 +225,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 .legal-footer a{color:var(--purple-light);text-decoration:none;}
 .legal-footer a:hover{text-decoration:underline;}
 
-/* Skeleton loaders ? instant feedback on cellular */
+/* Skeleton loaders — instant feedback on cellular */
 .qg-skel{background:linear-gradient(90deg,rgba(200,168,233,0.08) 25%,rgba(200,168,233,0.16) 50%,rgba(200,168,233,0.08) 75%);background-size:200% 100%;animation:qgSkel 1.2s ease-in-out infinite;border-radius:10px;}
 @keyframes qgSkel{0%{background-position:200% 0}100%{background-position:-200% 0}}
 body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#eeeaf8 75%);background-size:200% 100%;}
@@ -246,14 +246,14 @@ body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#ee
     <span class="nav-role">POSTER</span>
   </div>
   <div class="nav-right">
-    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">?? Light</button>
+    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
     <div class="avatar" id="avatarEl" onclick="toggleAvatarMenu()" style="cursor:pointer">M</div>
     <div id="avatarMenu" style="display:none;position:absolute;top:56px;right:20px;background:#150830;border:0.5px solid rgba(200,168,233,0.2);border-radius:14px;padding:6px;min-width:180px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
-      <a href="profile.html" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;text-decoration:none;color:rgba(255,255,255,0.8);font-size:13px;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='rgba(107,63,160,0.2)'" onmouseout="this.style.background='transparent'">?? View profile</a>
-      <div id="avatarMenuSwitch" onclick="quickSwitchFromMenu()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:rgba(255,255,255,0.8);font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='rgba(107,63,160,0.2)'" onmouseout="this.style.background='transparent'">?? Switch mode</div>
-      <div id="avatarMenuInstall" onclick="typeof promptQuickGigsInstall===\'function\'&&promptQuickGigsInstall()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:rgba(255,255,255,0.8);font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='rgba(107,63,160,0.2)'" onmouseout="this.style.background='transparent'">?? Add to Home Screen</div>
-      <a href="feedback.html" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;text-decoration:none;color:rgba(255,255,255,0.8);font-size:13px;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='rgba(107,63,160,0.2)'" onmouseout="this.style.background='transparent'">?? Beta feedback</a>
-      <div onclick="doLogout()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:#ef4444;font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.background='transparent'">?? Log out</div>
+      <a href="profile.html" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;text-decoration:none;color:rgba(255,255,255,0.8);font-size:13px;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='rgba(107,63,160,0.2)'" onmouseout="this.style.background='transparent'">👤 View profile</a>
+      <div id="avatarMenuSwitch" onclick="quickSwitchFromMenu()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:rgba(255,255,255,0.8);font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='rgba(107,63,160,0.2)'" onmouseout="this.style.background='transparent'">🔄 Switch mode</div>
+      <div id="avatarMenuInstall" onclick="typeof promptQuickGigsInstall===\'function\'&&promptQuickGigsInstall()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:rgba(255,255,255,0.8);font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='rgba(107,63,160,0.2)'" onmouseout="this.style.background='transparent'">📲 Add to Home Screen</div>
+      <a href="feedback.html" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;text-decoration:none;color:rgba(255,255,255,0.8);font-size:13px;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='rgba(107,63,160,0.2)'" onmouseout="this.style.background='transparent'">🐛 Beta feedback</a>
+      <div onclick="doLogout()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:#ef4444;font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.background='transparent'">🚪 Log out</div>
     </div>
   </div>
 </nav>
@@ -265,23 +265,23 @@ body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#ee
   <p>Browse age-eligible gigs and track which applications are waiting for guardian review.</p>
 </div>
 <div id="graduationPayoutBanner" class="graduation-banner qg-page-wide">
-  <strong>Your completed-gig payouts are on hold.</strong> Add your own payout details now that you are 18. <a href="profile.html#payouts">Set up payouts ?</a>
+  <strong>Your completed-gig payouts are on hold.</strong> Add your own payout details now that you are 18. <a href="profile.html#payouts">Set up payouts →</a>
 </div>
 <div id="verificationGateBanner" class="verification-gate-banner qg-page-wide"></div>
 <div class="greeting qg-page-wide">
-  <div class="mode-tag tag-poster" id="modeTag" data-qg-mode-tag>?? Poster mode</div>
-  <div class="greet-name" id="greetName">Good evening ??</div>
+  <div class="mode-tag tag-poster" id="modeTag" data-qg-mode-tag>📋 Poster mode</div>
+  <div class="greet-name" id="greetName">Good evening 👋</div>
   <div class="greet-note" id="greetNote" hidden>
     <span class="greet-note-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="currentColor" focusable="false"><path d="M12 2.2l1.4 5.1 5.1 1.4-5.1 1.4L12 15.2l-1.4-5.1L5.5 8.7l5.1-1.4L12 2.2zm6.8 10.3l.9 3.2 3.2.9-3.2.9-.9 3.2-.9-3.2-3.2-.9 3.2-.9.9-3.2zM5.2 14.4l.7 2.4 2.4.7-2.4.7-.7 2.4-.7-2.4-2.4-.7 2.4-.7.7-2.4z"/></svg>
     </span>
     <span class="greet-note-text" id="greetNoteText"></span>
   </div>
-  <div class="greet-sub" id="greetSub">Loading your dashboard?</div>
+  <div class="greet-sub" id="greetSub">Loading your dashboard…</div>
   <div class="dash-reputation" id="dashReputation" aria-label="Your reputation"></div>
   <div id="dashHero"><div class="qg-skel qg-skel-hero" aria-hidden="true"></div></div>
 </div>
-<p class="dash-loading-hint" id="dashLoadHint">Fetching your tasks?</p>
+<p class="dash-loading-hint" id="dashLoadHint">Fetching your tasks…</p>
 
 <!-- STATS -->
 <div class="stats" id="statsGrid">
@@ -323,7 +323,7 @@ body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#ee
 </div>
 
 <footer class="legal-footer site-footer" id="siteFooter">
-  <a href="terms.html">Terms of Service</a> ? <a href="privacy.html">Privacy Policy</a> ? <a href="feedback.html">Report issue</a>
+  <a href="terms.html">Terms of Service</a> · <a href="privacy.html">Privacy Policy</a> · <a href="feedback.html">Report issue</a>
 </footer>
 
 <!-- TAB BAR -->
@@ -331,7 +331,7 @@ body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#ee
 <div class="graduation-overlay" id="graduationOverlay" role="dialog" aria-modal="true" aria-labelledby="graduationTitle">
   <div class="graduation-card">
     <div class="eyebrow">Full account access</div>
-    <h2 id="graduationTitle">You?re now an adult on QuickGigs</h2>
+    <h2 id="graduationTitle">You’re now an adult on QuickGigs</h2>
     <p>Guardian approval no longer applies to new gigs, and teen filters have been removed. Before completed-gig payouts can be released, add payout details in your own name.</p>
     <div class="graduation-actions">
       <a class="graduation-primary" href="profile.html#payouts">Set up my payouts</a>
@@ -397,8 +397,8 @@ onAuthStateChanged(auth, async (user) => {
   window._userName = firstName;
   document.getElementById('avatarEl').textContent = firstName.charAt(0).toUpperCase();
   var hint = document.getElementById('dashLoadHint');
-  if (hint) hint.textContent = 'Loading your tasks?';
-  // First paint data ? do not await profile sync.
+  if (hint) hint.textContent = 'Loading your tasks…';
+  // First paint data — do not await profile sync.
   loadDashboardData(live.uid);
 
   function applyDbUserAfterLogin(dbUser) {
@@ -406,7 +406,7 @@ onAuthStateChanged(auth, async (user) => {
       qgMarkOnboardingDone(live.uid);
     }
     if (dbUser && dbUser.role) {
-      // Profile role is account metadata ? do NOT overwrite workspace qg-mode
+      // Profile role is account metadata — do NOT overwrite workspace qg-mode
       localStorage.setItem('qg-role', dbUser.role);
       if (typeof applyRoleTheme === 'function') applyRoleTheme();
     }
@@ -426,7 +426,7 @@ onAuthStateChanged(auth, async (user) => {
         banner.className = 'guardian-banner qg-page-wide';
         banner.textContent = '';
         var strong = document.createElement('strong');
-        strong.textContent = '? Waiting for parent approval';
+        strong.textContent = '⏳ Waiting for parent approval';
         banner.appendChild(strong);
         banner.appendChild(document.createTextNode(
           'You can browse, but posting and applying are paused until ' + String(email) + ' approves from the secure email link.'
@@ -436,12 +436,12 @@ onAuthStateChanged(auth, async (user) => {
         resend.textContent = 'Resend approval email';
         resend.onclick = async function () {
           resend.disabled = true;
-          resend.textContent = 'Sending?';
+          resend.textContent = 'Sending…';
           var url = window.QG_CONFIG && window.QG_CONFIG.resendGuardianConsentUrl;
           var result = typeof callVerifiedFunction === 'function'
             ? await callVerifiedFunction(url, {})
             : { success: false };
-          resend.textContent = result.success ? 'Email sent ?' : 'Could not send ? try again';
+          resend.textContent = result.success ? 'Email sent ✓' : 'Could not send — try again';
           if (!result.success) setTimeout(function () {
             resend.disabled = false;
             resend.textContent = 'Resend approval email';
@@ -457,7 +457,7 @@ onAuthStateChanged(auth, async (user) => {
     }
   }
 
-  // Light gate in parallel with dashboard fetch ? ban only. Never bounce existing
+  // Light gate in parallel with dashboard fetch — ban only. Never bounce existing
   // users (row by firebase_uid) to signup for missing DOB / profile fields.
   function runEarlyLoginGate() {
     var run = function () {
@@ -477,7 +477,7 @@ onAuthStateChanged(auth, async (user) => {
   }
   runEarlyLoginGate();
 
-  // Background profile sync AFTER first paint ? never blocks dashboard render.
+  // Background profile sync AFTER first paint — never blocks dashboard render.
   function runDeferredProfileSync() {
     if (typeof syncCurrentUserProfile !== 'function') {
       if (typeof getUserByFirebaseUid === 'function') {
@@ -520,7 +520,7 @@ function applyTheme(){
   else {
     document.body.className = isDark ? '' : 'light';
     var btn = document.getElementById('modeBtn');
-    if (btn) btn.textContent = isDark ? '?? Light' : '?? Dark';
+    if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
   }
 }
 window.toggleTheme = function(){
@@ -566,7 +566,7 @@ function renderDashboardVerificationGate(state) {
   var isVerified = posterMode ? state.poster_verified === true : state.tasker_verified === true;
   if (isVerified) { banner.style.display = 'none'; return; }
   banner.style.display = 'block';
-  banner.innerHTML = '<strong>' + (posterMode ? '?? Add a payment method to post' : '?? Verify your email to start working') + '</strong>' +
+  banner.innerHTML = '<strong>' + (posterMode ? '💳 Add a payment method to post' : '✉️ Verify your email to start working') + '</strong>' +
     (posterMode
       ? 'Draft freely now; verification is required only when you publish.'
       : 'Browse and build your profile freely; verification is required before applying or accepting gigs.') +
@@ -639,8 +639,8 @@ function updateAvatarMenuSwitchLabel() {
   var target = isPoster ? 'tasker' : 'poster';
   var hasTarget = !access || (target === 'tasker' ? access.is_tasker : access.is_poster);
   el.textContent = hasTarget
-    ? (isPoster ? '?? Switch to Tasker' : '?? Switch to Poster')
-    : (isPoster ? '?? Start finding work' : '?? Become a Poster');
+    ? (isPoster ? '🔄 Switch to Tasker' : '🔄 Switch to Poster')
+    : (isPoster ? '💼 Start finding work' : '📋 Become a Poster');
 }
 document.addEventListener('qg-role-access-changed', updateAvatarMenuSwitchLabel);
 
@@ -739,7 +739,7 @@ function renderPosterNote() {
 function renderGreeting(contextOpts){
   var name = window._userName || '';
   var first = String(name || '').trim().split(/\s+/)[0] || '';
-  document.getElementById('greetName').textContent = getTimeGreeting() + (first ? ', ' + first : '') + ' ??';
+  document.getElementById('greetName').textContent = getTimeGreeting() + (first ? ', ' + first : '') + ' 👋';
   var sub = 'Ready to get something done today?';
   if (contextOpts && typeof qgContextualGreetingLine === 'function') {
     sub = qgContextualGreetingLine(contextOpts);
@@ -763,7 +763,7 @@ async function loadDashboardData(userId) {
     dashData.posted = cached;
     if (cachedApps && cachedApps.length) dashData.apps = cachedApps;
     renderAll();
-    if (hint) hint.textContent = 'Refreshing?';
+    if (hint) hint.textContent = 'Refreshing…';
   }
 
   function finishLoad() {
@@ -1056,7 +1056,7 @@ function renderAll(){
     if (String(p.status || '').toLowerCase() !== 'held') return s;
     return s + (parseFloat(p.worker_payout != null ? p.worker_payout : p.WORKER_PAYOUT) || 0);
   }, 0);
-  var earnedLabel = totalEarned > 0 ? '$' + totalEarned.toFixed(0) : (pendingEarned > 0 ? '$' + pendingEarned.toFixed(0) + ' pending' : '?');
+  var earnedLabel = totalEarned > 0 ? '$' + totalEarned.toFixed(0) : (pendingEarned > 0 ? '$' + pendingEarned.toFixed(0) + ' pending' : '—');
 
   var ico = function(name){ return typeof qgIcon==='function' ? qgIcon(name,{size:20}) : ''; };
   var stats = isPoster
@@ -1096,7 +1096,7 @@ function renderAll(){
         {icon:'folder',title:'Review applicants',desc:'See who applied to your tasks',href:'mytasks.html?tab=posted',cls:'secondary'}
       ]
     : [
-        {icon:'search',title:isTeenDashboard?'Browse teen-friendly gigs':'Browse tasks',desc:isTeenDashboard?'Only gigs that welcome ages 16?17':'Find tasks near you',href:'browsetask.html',cls:'primary'},
+        {icon:'search',title:isTeenDashboard?'Browse teen-friendly gigs':'Browse tasks',desc:isTeenDashboard?'Only gigs that welcome ages 16–17':'Find tasks near you',href:'browsetask.html',cls:'primary'},
         {icon:'list',title:'Categories',desc:'Explore tasks by skill type',href:'categories.html',cls:'secondary'},
         {icon:'briefcase',title:'My tasks',desc:'Applications & active work',href:'mytasks.html?tab=applied&mode=worker',cls:'secondary'}
       ];
@@ -1141,8 +1141,8 @@ function renderAll(){
           return;
         }
         connectBanner.style.display = 'block';
-        connectBanner.innerHTML = '?? <strong>Set up payouts</strong> ? connect Stripe so you get paid when tasks complete. ' +
-          '<a href="profile.html#payouts">Set up now ?</a>';
+        connectBanner.innerHTML = '💳 <strong>Set up payouts</strong> — connect Stripe so you get paid when tasks complete. ' +
+          '<a href="profile.html#payouts">Set up now →</a>';
       }).catch(function() { connectBanner.style.display = 'none'; });
     } else {
       connectBanner.style.display = 'none';
@@ -1168,12 +1168,12 @@ function renderAll(){
         var taskHref = 'mytasks.html?tab=posted' + (appsOnTask ? '&expand=' + encodeURIComponent(String(taskId)) : '');
         return '<a class="task-row" href="'+taskHref+'" style="text-decoration:none">' +
           '<div class="task-dot" style="background:rgba(107,63,160,0.2)">'+ico('clipboard')+'</div>' +
-          '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title'))+'</div><div class="task-meta">Open ? $'+dashEsc(taskField(t,'budget'))+(appsOnTask ? ' ? '+appsOnTask+' applicant'+(appsOnTask!==1?'s':'') : '')+'</div></div>' +
+          '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title'))+'</div><div class="task-meta">Open · $'+dashEsc(taskField(t,'budget'))+(appsOnTask ? ' · '+appsOnTask+' applicant'+(appsOnTask!==1?'s':'') : '')+'</div></div>' +
           '<div class="task-right"><div class="task-price">Review</div></div>' +
         '</a>';
       }).join('');
     } else {
-      html = '<div class="empty"><div class="empty-icon">'+ico('clipboard')+'</div><div class="empty-txt">No open tasks yet ? post one in under a minute</div><a class="empty-btn" href="posttask.html">Post a task</a></div>';
+      html = '<div class="empty"><div class="empty-icon">'+ico('clipboard')+'</div><div class="empty-txt">No open tasks yet — post one in under a minute</div><a class="empty-btn" href="posttask.html">Post a task</a></div>';
     }
   } else {
     sectionTitle.textContent = 'Tasks near you';
@@ -1187,7 +1187,7 @@ function renderAll(){
       html = openNearby.map(function(t){
         var mode = taskField(t, 'mode') || 'standard';
         var badge = mode === 'quick' ? 'badge-quick' : mode === 'recurring' ? 'badge-recurring' : 'badge-standard';
-        var badgeLabel = mode === 'quick' ? '? Quick' : mode === 'recurring' ? '?? Recurring' : 'Standard';
+        var badgeLabel = mode === 'quick' ? '⚡ Quick' : mode === 'recurring' ? '🔄 Recurring' : 'Standard';
         var pin = typeof qgIcon==='function' ? '<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>' : '';
         var locTxt = typeof formatLocationDisplay==='function'?formatLocationDisplay(taskField(t,'location')||city):String(taskField(t,'location')||city);
         return '<a class="task-row" href="browsetask.html" style="text-decoration:none">' +
@@ -1197,14 +1197,14 @@ function renderAll(){
         '</a>';
       }).join('');
     } else {
-      html = '<div class="empty"><div class="empty-icon">'+ico('search')+'</div><div class="empty-txt">No tasks nearby yet ? post one or widen your area</div><a class="empty-btn" href="browsetask.html">Browse all tasks</a></div>';
+      html = '<div class="empty"><div class="empty-icon">'+ico('search')+'</div><div class="empty-txt">No tasks nearby yet — post one or widen your area</div><a class="empty-btn" href="browsetask.html">Browse all tasks</a></div>';
     }
     if (myPosted.length) {
       html += '<div style="margin-top:16px"></div><div class="section-hdr"><span class="section-title">Tasks you posted</span><a class="see-all" href="mytasks.html?tab=posted">See all</a></div>';
       html += myOpenPosted.slice(0, 2).map(function(t){
         return '<a class="task-row" href="mytasks.html?tab=posted" style="text-decoration:none">' +
           '<div class="task-dot" style="background:rgba(107,63,160,0.2)">'+ico('clipboard')+'</div>' +
-          '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title'))+'</div><div class="task-meta">You posted ? $'+dashEsc(taskField(t,'budget'))+'</div></div></a>';
+          '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title'))+'</div><div class="task-meta">You posted · $'+dashEsc(taskField(t,'budget'))+'</div></div></a>';
       }).join('');
     }
   }
@@ -1212,7 +1212,7 @@ function renderAll(){
   document.getElementById('tasksList').innerHTML = html;
 }
 
-// Geolocation / Nominatim ? after first paint (cellular-friendly)
+// Geolocation / Nominatim — after first paint (cellular-friendly)
 function deferDashLocation() {
   if (typeof initUserLocation !== 'function') return;
   var run = function () {

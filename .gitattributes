@@ -1,0 +1,14 @@
+# Keep text files as UTF-8 LF so emojis / en-dashes are not mangled.
+* text=auto eol=lf
+*.html text eol=lf
+*.js text eol=lf
+*.css text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.svg text eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.woff2 binary

@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 
-<title>Profile ? QuickGigs</title>
+<title>Profile — QuickGigs</title>
 <meta name="description" content="Your QuickGigs profile, skills, and reviews.">
 <meta name="robots" content="noindex,nofollow">
 <link rel="canonical" href="https://quickgigs.ca/profile.html">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://quickgigs.ca/profile.html">
-<meta property="og:title" content="Profile ? QuickGigs">
+<meta property="og:title" content="Profile — QuickGigs">
 <meta property="og:description" content="Your QuickGigs profile, skills, and reviews.">
 <meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <meta property="og:locale" content="en_CA">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Profile ? QuickGigs">
+<meta name="twitter:title" content="Profile — QuickGigs">
 <meta name="twitter:description" content="Your QuickGigs profile, skills, and reviews.">
 <meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -125,7 +125,7 @@ body.light .photo-btn{color:#2d1b4e;}
 /* DIVIDER */
 .divider{height:0.5px;background:var(--border);margin:0 20px 16px;}
 
-/* STATS ? three-up grid; shrink to fit narrow phones (no horizontal swipe) */
+/* STATS — three-up grid; shrink to fit narrow phones (no horizontal swipe) */
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0 20px 16px;border-radius:16px;overflow:hidden;border:0.5px solid var(--border);}
 .stat{padding:14px 6px;text-align:center;background:var(--card-bg);min-width:0;}
 .stat+.stat{border-left:0.5px solid var(--border);}
@@ -163,7 +163,7 @@ body.light .rev-task{color:var(--purple);}
 .rev-stars{font-size:12px;flex-shrink:0;color:var(--lavender);letter-spacing:1px;}
 .rev-text{font-size:13px;line-height:1.6;color:var(--text-muted);}
 
-/* EDIT PROFILE ? profile studio (not task form) */
+/* EDIT PROFILE — profile studio (not task form) */
 .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
 .sec-content{padding:14px 16px;border-radius:16px;background:var(--card-bg);border:0.5px solid var(--border);}
 .reviews-list{display:flex;flex-direction:column;gap:10px;}
@@ -301,7 +301,7 @@ body.light .photo-optional-banner{background:#f5f0ff;border-color:#ddd6fe;}
 .tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:var(--purple-light);}
 body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color:var(--purple);}
 
-/* Role switch ? inlined so profile always renders correctly */
+/* Role switch — inlined so profile always renders correctly */
 .qg-role-flip{margin:0 20px 18px;padding:18px 16px;border-radius:20px;border:0.5px solid var(--border);background:var(--card-bg);}
 body.light .qg-role-flip{background:#fff;box-shadow:0 2px 8px rgba(107,63,160,0.06);}
 .qg-role-flip-kicker{font-size:10px;text-transform:uppercase;letter-spacing:0.12em;color:var(--lavender);margin-bottom:12px;text-align:center;}
@@ -353,9 +353,9 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 
 <!-- NAV overlaid on banner -->
 <nav class="nav">
-  <a class="back-btn" href="dashboard.html" id="profileBackBtn" aria-label="Back"><span class="back-arrow" aria-hidden="true">?</span><span class="back-label">Back</span></a>
+  <a class="back-btn" href="dashboard.html" id="profileBackBtn" aria-label="Back"><span class="back-arrow" aria-hidden="true">←</span><span class="back-label">Back</span></a>
   <div class="nav-right">
-    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">?? Light</button>
+    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
   </div>
 </nav>
 
@@ -363,11 +363,11 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 <div class="banner"><div class="banner-overlay"></div></div>
 
 <div class="photo-required-banner" id="photoRequiredBanner" style="display:none">
-  <strong>?? Add your profile photo</strong>
+  <strong>📷 Add your profile photo</strong>
   <p>Taskers need a clear photo so posters know who they're hiring. Tap your avatar below to upload one.</p>
 </div>
 <div class="photo-optional-banner" id="photoOptionalBanner" style="display:none">
-  <strong>?? Add a profile photo (optional)</strong>
+  <strong>📷 Add a profile photo (optional)</strong>
   <p>Posters don't need a photo, but adding one helps taskers recognize you.</p>
 </div>
 
@@ -380,8 +380,8 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
         <div class="avatar" id="avatarEl">M</div>
       </div>
     </div>
-    <div class="avatar-camera" id="avatarCamera" style="display:none">??</div>
-    <div class="verified" id="avatarVerifiedMark" title="Verified user" style="display:none">?</div>
+    <div class="avatar-camera" id="avatarCamera" style="display:none">📷</div>
+    <div class="verified" id="avatarVerifiedMark" title="Verified user" style="display:none">✓</div>
   </div>
   <div class="avatar-edit-hint" id="avatarHint" style="display:none">Tap photo to change</div>
   <div class="profile-name" id="profileName">Loading...</div>
@@ -400,18 +400,18 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 <div class="profile-account section" id="profileAccountSection" style="display:none">
   <div class="sec-title">Account</div>
   <div id="profileAccountRows"></div>
-  <p class="account-privacy-note">Only you can see this ? email and phone are never shown on your public profile.</p>
+  <p class="account-privacy-note">Only you can see this — email and phone are never shown on your public profile.</p>
 </div>
 <div class="section" id="roleVerificationSection" style="display:none">
   <div class="sec-title">Verification to transact</div>
   <div class="role-verification-grid">
     <div class="role-verification-card" id="taskerVerificationCard">
-      <strong>?? Tasker email</strong>
+      <strong>✉️ Tasker email</strong>
       <p id="taskerVerificationCopy">Confirm your email before applying or accepting. Phone + ID checks come later.</p>
       <button type="button" class="role-verification-btn" id="taskerVerificationBtn">Verify email</button>
     </div>
     <div class="role-verification-card" id="posterVerificationCard">
-      <strong>?? Poster payment method</strong>
+      <strong>💳 Poster payment method</strong>
       <p id="posterVerificationCopy">Add a payment method to publish. Drafts are allowed anytime.</p>
       <button type="button" class="role-verification-btn" id="posterVerificationBtn">Add payment method</button>
     </div>
@@ -420,8 +420,8 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 
 <!-- EDIT BUTTONS (own profile only) -->
 <div class="action-row-profile" id="profileActions" style="display:none">
-  <button class="edit-btn" id="editBtn" onclick="openEditModal()">? Customize profile</button>
-  <button class="photo-btn" id="photoBtn" onclick="document.getElementById('avatarInput').click()">?? Change photo</button>
+  <button class="edit-btn" id="editBtn" onclick="openEditModal()">✨ Customize profile</button>
+  <button class="photo-btn" id="photoBtn" onclick="document.getElementById('avatarInput').click()">📷 Change photo</button>
 </div>
 
 <div id="roleSwitchWrap" style="display:none">
@@ -469,17 +469,17 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
   <div class="reviews-list" id="reviewsList">
     <div class="reviews-empty" id="reviewsEmpty">
       <div class="reviews-empty-icon" aria-hidden="true">&#9733;</div>
-      <p>No reviews yet ? complete a task to get your first one.</p>
+      <p>No reviews yet — complete a task to get your first one.</p>
     </div>
   </div>
 </div>
 
 <div class="profile-help section" id="profileHelpSection" style="display:none">
   <div class="profile-help-title">Need help?</div>
-  <p class="profile-help-sub">Beta support is async ? we read every message and usually reply within 24 hours.</p>
+  <p class="profile-help-sub">Beta support is async — we read every message and usually reply within 24 hours.</p>
   <div class="profile-help-links">
-    <a class="profile-help-link" href="feedback.html">?? Send feedback</a>
-    <a class="profile-help-link" href="mailto:support@quickgigs.ca">?? support@quickgigs.ca</a>
+    <a class="profile-help-link" href="feedback.html">💬 Send feedback</a>
+    <a class="profile-help-link" href="mailto:support@quickgigs.ca">✉️ support@quickgigs.ca</a>
   </div>
 </div>
 
@@ -488,16 +488,16 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 <!-- TOAST -->
 <div class="toast" id="toast">Saved</div>
 
-<!-- EDIT PROFILE ? profile studio -->
+<!-- EDIT PROFILE — profile studio -->
 <div class="modal-overlay" id="modalOverlay" onclick="handleOverlay(event)">
   <div class="edit-sheet" onclick="event.stopPropagation()">
     <div class="edit-handle"></div>
     <div class="edit-header">
       <div class="edit-header-glow"></div>
-      <span class="edit-spark s1">?</span>
-      <span class="edit-spark s2">??</span>
-      <span class="edit-spark s3">?</span>
-      <button type="button" class="edit-close" onclick="closeEditModal()" aria-label="Close">?</button>
+      <span class="edit-spark s1">✨</span>
+      <span class="edit-spark s2">💫</span>
+      <span class="edit-spark s3">⭐</span>
+      <button type="button" class="edit-close" onclick="closeEditModal()" aria-label="Close">✕</button>
       <p class="edit-kicker">Profile studio</p>
       <h2 class="edit-headline">Make it you</h2>
     </div>
@@ -507,8 +507,8 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
         <div class="edit-photo-ring" id="editPhotoRing" onclick="document.getElementById('avatarInput').click()" role="button" tabindex="0" aria-label="Change profile photo">
           <div class="edit-photo-inner" id="modalAvatarPreview">M</div>
         </div>
-        <button type="button" class="edit-photo-btn" onclick="document.getElementById('avatarInput').click()">?? Change photo</button>
-        <p class="edit-photo-hint" id="editPhotoHint">Optional for posters ? required for taskers</p>
+        <button type="button" class="edit-photo-btn" onclick="document.getElementById('avatarInput').click()">📷 Change photo</button>
+        <p class="edit-photo-hint" id="editPhotoHint">Optional for posters · required for taskers</p>
       </div>
 
       <div class="edit-progress-card">
@@ -532,7 +532,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
       </div>
 
       <div class="edit-card edit-card-about">
-        <div class="edit-card-head"><span class="edit-card-icon">??</span><span>About you</span></div>
+        <div class="edit-card-head"><span class="edit-card-icon">👋</span><span>About you</span></div>
         <div class="edit-name-wrap">
           <input class="edit-name-input" id="editName" type="text" placeholder="Your name" maxlength="40" autocomplete="name">
         </div>
@@ -546,17 +546,17 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
       </div>
 
       <div class="edit-card edit-card-skills">
-        <div class="edit-card-head"><span class="edit-card-icon">?</span><span>Your superpowers</span></div>
-        <p class="edit-skills-sub">Tap the skills that fit you ? they pop up on your profile</p>
+        <div class="edit-card-head"><span class="edit-card-icon">⚡</span><span>Your superpowers</span></div>
+        <p class="edit-skills-sub">Tap the skills that fit you — they pop up on your profile</p>
         <div class="skills-edit" id="skillsEdit"></div>
         <div class="skills-selected-count" id="skillsCount">0 selected</div>
       </div>
       <div class="edit-card" id="workerFieldsCard" style="display:none">
-        <div class="edit-card-head"><span class="edit-card-icon">?</span><span>Tasker details</span></div>
+        <div class="edit-card-head"><span class="edit-card-icon">📍</span><span>Tasker details</span></div>
         <label class="edit-label" for="editAvailability">Availability</label>
         <select class="edit-input" id="editAvailability" style="margin-bottom:12px">
           <option value="available">Available for tasks</option>
-          <option value="busy">Busy ? not taking new tasks</option>
+          <option value="busy">Busy — not taking new tasks</option>
         </select>
         <label class="edit-label" for="editServiceArea">Service area</label>
         <input class="edit-input" id="editServiceArea" type="text" placeholder="e.g. Calgary NW, Airdrie, Cochrane" maxlength="120" style="margin-bottom:12px">
@@ -592,7 +592,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
     <div class="edit-footer">
       <button type="button" class="edit-save-btn" id="editSaveBtn" onclick="saveProfile()">
         <span class="save-shine"></span>
-        <span class="save-text">Save profile ?</span>
+        <span class="save-text">Save profile ✨</span>
       </button>
     </div>
   </div>
@@ -600,11 +600,11 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 
 <!-- TAB BAR -->
 <nav class="tab-bar">
-  <a class="tab-item" href="dashboard.html"><span class="tab-icon">??</span><span class="tab-lbl">Home</span></a>
-  <a class="tab-item" href="browsetask.html"><span class="tab-icon">??</span><span class="tab-lbl">Browse</span></a>
-  <a class="tab-item" href="posttask.html"><span class="tab-icon">?</span><span class="tab-lbl">Post</span></a>
-  <a class="tab-item" href="mytasks.html"><span class="tab-icon">?</span><span class="tab-lbl">My Tasks</span></a>
-  <a class="tab-item active" href="profile.html"><span class="tab-icon">??</span><span class="tab-lbl">Profile</span></a>
+  <a class="tab-item" href="dashboard.html"><span class="tab-icon">🏠</span><span class="tab-lbl">Home</span></a>
+  <a class="tab-item" href="browsetask.html"><span class="tab-icon">🔍</span><span class="tab-lbl">Browse</span></a>
+  <a class="tab-item" href="posttask.html"><span class="tab-icon">➕</span><span class="tab-lbl">Post</span></a>
+  <a class="tab-item" href="mytasks.html"><span class="tab-icon">✅</span><span class="tab-lbl">My Tasks</span></a>
+  <a class="tab-item active" href="profile.html"><span class="tab-icon">👤</span><span class="tab-lbl">Profile</span></a>
 </nav>
 
 <script defer src="qg-utils.js?v=20260728welcome1"></script>
@@ -668,12 +668,12 @@ onAuthStateChanged(auth, (user) => {
 <script>
 var HEADERS = window.HEADERS;
 
-var ALL_SKILLS = ['?? Tech','?? Tutoring','?? Errands','?? Home','?? Moving','?? Cooking','?? Care','?? Gardening','?? Events','?? Trades','?? Beauty','?? Admin'];
+var ALL_SKILLS = ['💻 Tech','🎓 Tutoring','🚗 Errands','🏠 Home','🚚 Moving','🍳 Cooking','👶 Care','🌿 Gardening','🎉 Events','🔧 Trades','💇 Beauty','📋 Admin'];
 var profileData = {};
 var cachedReviews = [];
 var isDark = localStorage.getItem('qg-mode') !== 'light';
 
-function applyTheme(){ document.body.className = isDark ? '' : 'light'; document.getElementById('modeBtn').textContent = isDark ? '?? Light' : '?? Dark'; }
+function applyTheme(){ document.body.className = isDark ? '' : 'light'; document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark'; }
 window.toggleTheme = function(){ isDark = !isDark; localStorage.setItem('qg-mode', isDark?'dark':'light'); applyTheme(); };
 applyTheme();
 
@@ -712,8 +712,8 @@ function renderRoleVerificationState(dbUser, isOwnProfile) {
   var badgeWrap = document.getElementById('verifiedBadgeWrap');
   if (badgeWrap) {
     var badges = [];
-    if (taskerVerified) badges.push('<span class="role-verified-pill">? Tasker verified</span>');
-    if (posterVerified) badges.push('<span class="role-verified-pill">? Payment verified</span>');
+    if (taskerVerified) badges.push('<span class="role-verified-pill">✅ Tasker verified</span>');
+    if (posterVerified) badges.push('<span class="role-verified-pill">✓ Payment verified</span>');
     badgeWrap.className = 'role-verified-badges';
     badgeWrap.innerHTML = badges.join('');
   }
@@ -732,7 +732,7 @@ function renderRoleVerificationState(dbUser, isOwnProfile) {
   taskerButton.classList.remove('is-verified');
   taskerButton.disabled = false;
   if (taskerVerified) {
-    taskerButton.textContent = 'Verified ?';
+    taskerButton.textContent = 'Verified ✓';
     taskerButton.classList.add('is-verified');
     taskerButton.disabled = true;
     taskerCopy.textContent = 'Email verified. You can apply and accept. Guardian approval still applies for teens.';
@@ -750,7 +750,7 @@ function renderRoleVerificationState(dbUser, isOwnProfile) {
   posterButton.classList.remove('is-verified');
   posterButton.disabled = false;
   if (posterVerified) {
-    posterButton.textContent = 'Verified ?';
+    posterButton.textContent = 'Verified ✓';
     posterButton.classList.add('is-verified');
     posterButton.disabled = true;
     posterCopy.textContent = 'Payment method verified. You can publish tasks.';
@@ -782,7 +782,7 @@ function updateAvatarDisplay(name, url) {
 
 var BIO_PROMPTS = [
   'What makes you great at tasks?',
-  'Friendly, reliable, and on time?',
+  'Friendly, reliable, and on time…',
   'Your city local who loves helping out',
   'Tell people why they should pick you'
 ];
@@ -848,13 +848,13 @@ function updateEditProgress() {
   if (pctEl) pctEl.textContent = pct + '%';
   if (!label || !hint) return;
   if (pct >= 100) {
-    label.textContent = 'Profile looking fire ??';
+    label.textContent = 'Profile looking fire 🔥';
     hint.textContent = 'You\'re ready to impress posters and taskers';
   } else if (pct >= 75) {
     label.textContent = 'Almost there';
     hint.textContent = 'One more touch and you\'re golden';
   } else if (pct >= 40) {
-    label.textContent = 'Nice start ? keep going';
+    label.textContent = 'Nice start — keep going';
     hint.textContent = 'Add skills so people know what you\'re great at';
   } else {
     label.textContent = 'Let\'s build your profile';
@@ -1225,12 +1225,12 @@ function renderProfile(user, isOwnProfile) {
     profileData.role = role;
   }
   var roleHtml = '';
-  if (hasPosterRole) roleHtml += '<span class="role-tag">?? Poster</span>';
-  if (hasTaskerRole) roleHtml += '<span class="role-tag">?? Tasker</span>';
-  if (!roleHtml) roleHtml = '<span class="role-tag">?? QuickGigs member</span>';
+  if (hasPosterRole) roleHtml += '<span class="role-tag">📋 Poster</span>';
+  if (hasTaskerRole) roleHtml += '<span class="role-tag">💼 Tasker</span>';
+  if (!roleHtml) roleHtml = '<span class="role-tag">👤 QuickGigs member</span>';
   document.getElementById('roleTags').innerHTML = roleHtml;
 
-  var bioDefault = isOwnProfile ? 'No bio yet ? tap Customize profile to add one.' : 'No bio yet.';
+  var bioDefault = isOwnProfile ? 'No bio yet — tap Customize profile to add one.' : 'No bio yet.';
   document.getElementById('bioText').textContent = profileData.bio || bioDefault;
   var skills = profileData.skills || [];
   document.getElementById('skillsList').innerHTML = skills.length
@@ -1242,9 +1242,9 @@ function renderProfile(user, isOwnProfile) {
   var showWorker = hasTaskerRole;
   if (trustSec && trustTxt && showWorker) {
     trustSec.style.display = 'block';
-    var avail = profileData.availability === 'busy' ? '?? Busy ? not taking new tasks' : '?? Available for tasks';
-    var area = profileData.service_area ? '?? ' + profileData.service_area : '';
-    var langs = profileData.languages ? '?? ' + profileData.languages : '';
+    var avail = profileData.availability === 'busy' ? '🔴 Busy — not taking new tasks' : '🟢 Available for tasks';
+    var area = profileData.service_area ? '📍 ' + profileData.service_area : '';
+    var langs = profileData.languages ? '🗣 ' + profileData.languages : '';
     trustTxt.textContent = '';
     [avail, area, langs].filter(Boolean).forEach(function (line, i) {
       if (i) trustTxt.appendChild(document.createElement('br'));
@@ -1312,11 +1312,11 @@ function renderPayoutSetup(user, isOwnProfile, dbUser) {
   var connectId = dbUser && (dbUser.stripe_connect_id || '');
   var payoutsOk = dbUser && (dbUser.stripe_payouts_enabled === true || dbUser.stripe_payouts_enabled === 1 || dbUser.stripe_payouts_enabled === 'true');
   var boxCls = payoutsOk ? 'payout-box-connected' : (connectId ? 'payout-box-pending' : '');
-  var title = payoutsOk ? '? Payouts connected' : (connectId ? '? Finish payout setup' : '?? Tasker payouts');
+  var title = payoutsOk ? '✓ Payouts connected' : (connectId ? '⏳ Finish payout setup' : '💳 Tasker payouts');
   var desc = payoutsOk
     ? 'Stripe is connected. When a poster marks your task complete, your share is sent to your bank.'
     : (connectId
-      ? 'You started Stripe setup ? finish verification so we can pay you when tasks complete.'
+      ? 'You started Stripe setup — finish verification so we can pay you when tasks complete.'
       : 'Connect Stripe to receive your share when posters mark tasks complete. Required before your first payout.');
   var btnLabel = payoutsOk ? 'Update payout details' : (connectId ? 'Continue Stripe setup' : 'Set up payouts');
 
@@ -1331,7 +1331,7 @@ function renderPayoutSetup(user, isOwnProfile, dbUser) {
   btn._bound = true;
   btn.onclick = async function () {
     btn.disabled = true;
-    btn.textContent = 'Opening Stripe?';
+    btn.textContent = 'Opening Stripe…';
     var result = await window.QG_startConnectOnboarding(user.uid, user.email || '');
     if (result.ok && result.url) {
       window.location.href = result.url;
@@ -1339,7 +1339,7 @@ function renderPayoutSetup(user, isOwnProfile, dbUser) {
     }
     btn.disabled = false;
     btn.textContent = btnLabel;
-    showToast(result.error || 'Could not open Stripe setup ? see STRIPE-SETUP.md', '#ef4444');
+    showToast(result.error || 'Could not open Stripe setup — see STRIPE-SETUP.md', '#ef4444');
   };
 }
 
@@ -1352,7 +1352,7 @@ async function renderProfilePaymentHistory(userId, dbUser) {
     return;
   }
   sec.style.display = 'block';
-  list.innerHTML = '<div class="pay-history-empty">Loading payments?</div>';
+  list.innerHTML = '<div class="pay-history-empty">Loading payments…</div>';
   try {
     var isTaskerView = userIsTasker(profileData.role) || (typeof isWorkerMode === 'function' && isWorkerMode());
     var role = isTaskerView ? 'worker' : 'poster';
@@ -1369,7 +1369,7 @@ async function renderProfilePaymentHistory(userId, dbUser) {
       else if (sums.held > 0) earnedEl.textContent = '$' + sums.held.toFixed(0);
     }
   } catch (e) {
-    list.innerHTML = '<div class="pay-history-empty">Could not load payments ? refresh and try again.</div>';
+    list.innerHTML = '<div class="pay-history-empty">Could not load payments — refresh and try again.</div>';
   }
 }
 
@@ -1383,7 +1383,7 @@ async function renderProfilePaymentHistory(userId, dbUser) {
   document.addEventListener('DOMContentLoaded', function () {
     setTimeout(function () {
       if (stripeParam === 'done' && typeof showToast === 'function') {
-        showToast('Stripe setup saved ? checking payout status?', '#4ade80');
+        showToast('Stripe setup saved — checking payout status…', '#4ade80');
       } else if (stripeParam === 'refresh' && typeof showToast === 'function') {
         showToast('Continue Stripe setup when you\'re ready', '#f59e0b');
       }
@@ -1475,7 +1475,7 @@ window.openEditModal = function() {
   if (photoHint) {
     photoHint.textContent = userIsTasker(profileData.role)
       ? 'Taskers need a clear photo so posters know who they\'re hiring'
-      : 'Optional for posters ? helps taskers recognize you';
+      : 'Optional for posters — helps taskers recognize you';
   }
 
   var selectedSkills = profileData.skills || [];
@@ -1543,7 +1543,7 @@ window.saveProfile = async function() {
   var user = window._currentUser;
   if (!user) return;
   var btn = document.getElementById('editSaveBtn');
-  if (btn) { btn.disabled = true; btn.classList.add('is-saving'); btn.querySelector('.save-text').textContent = 'Saving?'; }
+  if (btn) { btn.disabled = true; btn.classList.add('is-saving'); btn.querySelector('.save-text').textContent = 'Saving…'; }
   var name = document.getElementById('editName').value.trim() || profileData.name;
   var pronouns = document.getElementById('editPronouns') ? document.getElementById('editPronouns').value.trim() : '';
   if (typeof formatPersonName === 'function' && name) name = formatPersonName(name);
@@ -1629,7 +1629,7 @@ window.saveProfile = async function() {
     if (btn) {
       btn.disabled = false;
       btn.classList.remove('is-success');
-      btn.querySelector('.save-text').textContent = 'Save profile ?';
+      btn.querySelector('.save-text').textContent = 'Save profile ✨';
     }
     showToast('Saved');
   }, 650);
@@ -1641,13 +1641,13 @@ window.uploadAvatar = async function(input) {
   input.value = '';
   if (!user || !file) return;
   if (typeof uploadProfilePhoto !== 'function') {
-    showToast('Photo upload not ready ? run supabase/storage-beta-fix.sql', '#f59e0b');
+    showToast('Photo upload not ready — run supabase/storage-beta-fix.sql', '#f59e0b');
     return;
   }
   var wrap = document.getElementById('avatarWrap');
   var hint = document.getElementById('avatarHint');
   if (wrap) wrap.classList.add('is-uploading');
-  if (hint) hint.textContent = 'Uploading?';
+  if (hint) hint.textContent = 'Uploading…';
   var upload = await uploadProfilePhoto(file, user.uid);
   if (wrap) wrap.classList.remove('is-uploading');
   if (!upload.success) {
@@ -1672,7 +1672,7 @@ window.uploadAvatar = async function(input) {
   renderProfile(user);
   updateEditProgress();
   if (hint) hint.textContent = 'Tap photo to change';
-  showToast('Profile photo updated! ??');
+  showToast('Profile photo updated! 📷');
 
   if (photoSetupMode || photoRequired) {
     setTimeout(function() {
