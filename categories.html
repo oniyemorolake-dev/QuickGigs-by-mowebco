@@ -52,7 +52,12 @@ body.light .mode-btn{background:#f0eeff;color:#6b3fa0;}
 <script src="qg-pwa.js?v=4"></script>
 <script src="supabase-db.js"></script>
 <script>
-renderQuickGigsTabBar('browse');
+if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('browse');
+else {
+  document.addEventListener('DOMContentLoaded', function () {
+    if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('browse');
+  });
+}
 
 var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
 function applyTheme() {

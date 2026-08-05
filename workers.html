@@ -91,7 +91,12 @@ onAuthStateChanged(auth, function (user) {
 <script src="qg-report.js?v=20260716d"></script>
 <script src="supabase-db.js"></script>
 <script>
-renderQuickGigsTabBar('home');
+if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('home');
+else {
+  document.addEventListener('DOMContentLoaded', function () {
+    if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('home');
+  });
+}
 
 var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
 function applyTheme() {

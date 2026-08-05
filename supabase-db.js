@@ -2140,7 +2140,7 @@ function isAccountPendingGuardian(user) {
 }
 
 async function getAccountActionPermission(firebaseUid, action) {
-  var user = firebaseUid ? await getUserByFirebaseUid(firebaseUid) : null;
+  var user = firebaseUid ? await getUserByFirebaseUid(firebaseUid, { fresh: true }) : null;
   var status = user && user.account_status ? String(user.account_status) : '';
   var verb = (action === 'post' || action === 'draft') ? 'post gigs' : 'apply to gigs';
   if (status !== 'active') {

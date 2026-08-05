@@ -48,12 +48,31 @@
     return !!(cached && cached[role === 'poster' ? 'poster_verified' : 'tasker_verified']);
   }
 
+  function currentReturnPath() {
+    try {
+      var page = String(window.location.pathname || '').split('/').pop() || '';
+      if (/^(posttask|profile|dashboard|mytasks)\.html$/i.test(page)) return page.toLowerCase();
+    } catch (_e) {}
+    return 'profile.html';
+  }
+
+  function rememberPosterReturnPath(path) {
+    try {
+      localStorage.setItem('qg-verification-return-path', path);
+      if (path === 'posttask.html') {
+        localStorage.setItem('qg-resume-post-after-verification', '1');
+      }
+    } catch (_e) {}
+  }
+
   async function start(role) {
     if (role === 'poster') {
       if (!posterPmEnabled()) {
         return { ok: false, error: 'stripe_not_configured', message: 'Stripe payment verification is not configured.' };
       }
-      var posterResult = await request('start_poster');
+      var returnPath = currentReturnPath();
+      rememberPosterReturnPath(returnPath);
+      var posterResult = await request('start_poster', { return_path: returnPath });
       if (posterResult && posterResult.url) {
         window.location.href = posterResult.url;
         return posterResult;
@@ -242,10 +261,45 @@
     }
   }
 
+  function hideVerificationPrompt() {
+    var overlay = document.getElementById('qgVerificationOverlay');
+    if (overlay) overlay.remove();
+  }
+
+  function resumePostDraftIfNeeded(fresh) {
+    if (!fresh || fresh.poster_verified !== true) return false;
+    var resume = false;
+    try {
+      resume = localStorage.getItem('qg-resume-post-after-verification') === '1';
+      localStorage.removeItem('qg-resume-post-after-verification');
+    } catch (_e) {}
+    if (!resume) return false;
+    var onPost = /posttask\.html$/i.test(String(window.location.pathname || ''));
+    if (!onPost) {
+      // Stripe may still land on profile if the Edge Function return_path is not deployed yet.
+      window.location.replace('posttask.html?verified_payment=1');
+      return true;
+    }
+    return false;
+  }
+
   async function syncReturn() {
     var params = new URLSearchParams(window.location.search);
-    if (params.get('verification_return') !== '1') return null;
+    var cancelled = params.get('verification_cancelled') === '1';
     var role = params.get('verification');
+    if (cancelled) {
+      if (window.history && window.history.replaceState) {
+        params.delete('verification_return');
+        params.delete('verification_cancelled');
+        params.delete('session_id');
+        params.delete('verification');
+        var cancelNext = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
+        window.history.replaceState({}, '', cancelNext);
+      }
+      // Keep prompts / Publish disabled — verification did not succeed.
+      return { ok: false, cancelled: true, poster_verified: false };
+    }
+    if (params.get('verification_return') !== '1') return null;
     var result;
     if (role === 'poster') {
       result = await request('sync_poster', { session_id: params.get('session_id') || '' });
@@ -257,6 +311,11 @@
       return null;
     }
     publish(result);
+    if (window._currentUser && typeof window.invalidateUserProfileCache === 'function') {
+      window.invalidateUserProfileCache(window._currentUser.uid);
+    }
+    // Re-read authoritative status from the server — do not trust a stale client cache.
+    var fresh = await load(true);
     if (window.history && window.history.replaceState) {
       params.delete('verification_return');
       params.delete('verification_cancelled');
@@ -265,7 +324,15 @@
       var next = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
       window.history.replaceState({}, '', next);
     }
-    return result;
+    if (role === 'poster') {
+      if (fresh && fresh.poster_verified === true) {
+        hideVerificationPrompt();
+        if (resumePostDraftIfNeeded(fresh)) return fresh;
+        window.dispatchEvent(new CustomEvent('qg-poster-payment-verified', { detail: fresh }));
+      }
+      // Failed / still pending: leave prompt + Publish gate as-is.
+    }
+    return fresh || result;
   }
 
   window.QG_loadVerification = load;
@@ -276,4 +343,5 @@
   window.QG_syncVerificationReturn = syncReturn;
   window.QG_syncTaskerContacts = function () { return request('sync_tasker_contacts').then(publish); };
   window.QG_posterPaymentVerificationEnabled = posterPmEnabled;
+  window.QG_hideVerificationPrompt = hideVerificationPrompt;
 })();

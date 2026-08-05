@@ -280,20 +280,28 @@ Deno.serve(async (req) => {
           .eq('firebase_uid', identity.uid);
         if (error) throw error;
       }
+      const allowedReturns = new Set(['posttask.html', 'profile.html', 'dashboard.html', 'mytasks.html']);
+      const rawReturn = String(body.return_path || '')
+        .trim()
+        .replace(/^\//, '')
+        .split('?')[0]
+        .split('#')[0];
+      const returnPath = allowedReturns.has(rawReturn) ? rawReturn : 'profile.html';
       const session = await stripe.checkout.sessions.create({
         mode: 'setup',
         customer: customerId,
         payment_method_types: ['card'],
-        success_url: `${siteUrl}/profile.html?verification=poster&verification_return=1&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${siteUrl}/profile.html?verification=poster&verification_cancelled=1`,
+        success_url: `${siteUrl}/${returnPath}?verification=poster&verification_return=1&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${siteUrl}/${returnPath}?verification=poster&verification_cancelled=1`,
         metadata: {
           project: 'quickgigs',
           purpose: 'poster_payment_method',
           firebase_uid: identity.uid,
+          return_path: returnPath,
         },
       });
       await supabase.from('users').update({ poster_verification_status: 'pending' }).eq('firebase_uid', identity.uid);
-      return json({ ok: true, url: session.url, status: 'pending' });
+      return json({ ok: true, url: session.url, status: 'pending', return_path: returnPath });
     }
 
     if (action === 'sync_poster') {
@@ -318,9 +326,22 @@ Deno.serve(async (req) => {
           poster_verification_status: 'verified',
           poster_payment_method_id: paymentMethod,
         }).eq('firebase_uid', identity.uid);
-        return json({ ok: true, poster_verified: true, poster_verified_at: now, poster_verification_status: 'verified' });
+        user = await loadUser(supabase, identity.uid);
+        return json({
+          ok: true,
+          poster_verified: true,
+          poster_verified_at: now,
+          poster_verification_status: 'verified',
+          ...publicStatus(user || {}),
+        });
       }
-      return json({ ok: true, poster_verified: false, poster_verification_status: 'pending' });
+      user = await loadUser(supabase, identity.uid);
+      return json({
+        ok: true,
+        poster_verified: false,
+        poster_verification_status: String(user?.poster_verification_status || 'pending'),
+        ...publicStatus(user || {}),
+      });
     }
 
     return json({ ok: false, error: 'invalid_action' }, 400);
