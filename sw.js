@@ -1,8 +1,9 @@
 /* QuickGigs service worker
- * HTML + JS/CSS: network-first (never serve stale app shell when online).
- * Static assets only: logo + manifest. Old caches are wiped on activate.
+ * BUILD_ID is auto-stamped by scripts/stamp-cache-version.js (+ .githooks/pre-commit).
+ * HTML + JS/CSS: network-first (no-store). Old Cache Storage entries are purged on activate.
  */
-var CACHE_NAME = 'quickgigs-v124-tabbar';
+var BUILD_ID = '5842830-1785893858';
+var CACHE_NAME = 'quickgigs-' + BUILD_ID;
 var OFFLINE_FALLBACK = '/dashboard.html';
 
 var STATIC_ASSETS = [
@@ -20,6 +21,10 @@ function isCodeRequest(url) {
   return path.endsWith('.js') || path.endsWith('.css');
 }
 
+function isOurCache(name) {
+  return name === CACHE_NAME;
+}
+
 self.addEventListener('install', function (event) {
   event.waitUntil(
     caches.open(CACHE_NAME).then(function (cache) {
@@ -33,9 +38,9 @@ self.addEventListener('install', function (event) {
 self.addEventListener('activate', function (event) {
   event.waitUntil(
     caches.keys().then(function (keys) {
-      // Delete every cache that is not the current version
+      // Delete EVERY cache that is not the current BUILD_ID version
       return Promise.all(keys.map(function (k) {
-        if (k === CACHE_NAME) return Promise.resolve();
+        if (isOurCache(k)) return Promise.resolve();
         return caches.delete(k);
       }));
     }).then(function () {
@@ -49,8 +54,12 @@ self.addEventListener('activate', function (event) {
 });
 
 self.addEventListener('message', function (event) {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
+  if (!event.data) return;
+  if (event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  if (event.data.type === 'GET_BUILD_ID' && event.ports && event.ports[0]) {
+    event.ports[0].postMessage({ buildId: BUILD_ID, cacheName: CACHE_NAME });
   }
 });
 
@@ -61,11 +70,13 @@ self.addEventListener('fetch', function (event) {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.indexOf('/rest/v1/') >= 0 || url.pathname.indexOf('/storage/') >= 0) return;
 
-  // JS / CSS — always network-first with no-store; cache only as offline fallback
+  // Never intercept the service worker script itself
+  if (url.pathname.endsWith('/sw.js') || url.pathname === '/sw.js') return;
+
+  // JS / CSS — network-first with no-store; cache only as offline fallback
   if (isCodeRequest(url)) {
     event.respondWith(
       fetch(event.request, { cache: 'no-store' }).then(function (response) {
-        // Do not put JS/CSS into Cache Storage when online — avoids stale UI forever
         return response;
       }).catch(function () {
         return caches.match(event.request);
@@ -74,7 +85,7 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  // HTML — network-first; cache successful responses for offline only
+  // HTML — network-first; update offline cache but never prefer it while online
   if (isHtmlRequest(url)) {
     event.respondWith(
       fetch(event.request, { cache: 'no-store' }).then(function (response) {
@@ -98,15 +109,17 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  // Other static (images etc.) — cache-first
+  // Other static (images etc.) — stale-while-revalidate
   event.respondWith(
-    caches.match(event.request).then(function (cached) {
-      if (cached) return cached;
-      return fetch(event.request).then(function (response) {
-        if (!response || response.status !== 200 || response.type !== 'basic') return response;
-        var copy = response.clone();
-        caches.open(CACHE_NAME).then(function (cache) { cache.put(event.request, copy); });
-        return response;
+    caches.open(CACHE_NAME).then(function (cache) {
+      return cache.match(event.request).then(function (cached) {
+        var network = fetch(event.request).then(function (response) {
+          if (response && response.status === 200 && response.type === 'basic') {
+            cache.put(event.request, response.clone());
+          }
+          return response;
+        }).catch(function () { return cached; });
+        return cached || network;
       });
     })
   );

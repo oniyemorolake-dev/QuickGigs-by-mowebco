@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- qg-build:5842830-1785893858 -->
 
 <title>My tasks ? QuickGigs</title>
 <meta name="description" content="Manage posted tasks and applications on QuickGigs.">
@@ -288,7 +289,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 <script defer src="qg-stripe.js?v=20260730teen1"></script>
 <script defer src="qg-site.js?v=20260726e"></script>
 <script defer src="qg-nav.js?v=20260726n"></script>
-<script defer src="qg-pwa.js?v=4"></script>
+<script defer src="qg-pwa.js?v=5842830-1785893858"></script>
 <script defer src="qg-notifications.js"></script>
 <script defer src="qg-push.js?v=1"></script>
 <script defer src="qg-share.js"></script>
@@ -596,7 +597,7 @@ function renderApplicantAction(a, taskId, task) {
     if (isPaymentGatedChat()) {
       if (typeof isTaskPaid === 'function' && isTaskPaid(taskId)) {
         return '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border)" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">Chat</button>' +
-          '<span class="accept-status">? Accepted · Paid</span>';
+          '<span class="accept-status">? Accepted ï¿½ Paid</span>';
       }
       return '<button type="button" class="accept-btn" style="background:var(--purple);color:#fff" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks">?? Pay to unlock chat</button>' +
         '<span class="accept-status">? Accepted</span>';
@@ -686,7 +687,7 @@ window.toggleApplicants = function(taskId) {
     var count = btn.getAttribute('data-applicant-count') || '';
     var names = btn.getAttribute('data-applicant-names') || '';
     // textContent ? getAttribute decodes entities; never re-inject via innerHTML
-    btn.textContent = '?? ' + count + (names ? ' · ' + names : '') + ' ? Tap to ' + (expandedApplicantTasks[taskId] ? 'hide' : 'view');
+    btn.textContent = '?? ' + count + (names ? ' ï¿½ ' + names : '') + ' ? Tap to ' + (expandedApplicantTasks[taskId] ? 'hide' : 'view');
   }
 };
 
@@ -1093,8 +1094,8 @@ function formatAppPriceHtml(a) {
 
 function formatTaskBudgetMeta(task) {
   var budget = getField(task, 'BUDGET');
-  if (isTaskNegotiable(task)) return 'Around $' + budget + ' CAD · negotiable';
-  return '$' + budget + ' CAD · fixed';
+  if (isTaskNegotiable(task)) return 'Around $' + budget + ' CAD ï¿½ negotiable';
+  return '$' + budget + ' CAD ï¿½ fixed';
 }
 
 function esc(s){
@@ -1554,7 +1555,7 @@ function renderTab(){
         '</div>';
       }).join('') : '<div style="font-size:12px;color:var(--text-faint);padding:10px 0">No pending applicants yet.</div>';
       var toggleLabel = pendingApps.length
-        ? pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : '') + (namePreview ? ' · ' + namePreview + (pendingApps.length > 3 ? '?' : '') : '') + ' ? Tap to ' + (isOpen ? 'hide' : 'view')
+        ? pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : '') + (namePreview ? ' ï¿½ ' + namePreview + (pendingApps.length > 3 ? '?' : '') : '') + ' ? Tap to ' + (isOpen ? 'hide' : 'view')
         : (hasAccepted ? 'Worker accepted ? Tap to view' : 'No applicants yet');
       var postedLabel = typeof formatRelativeTime === 'function'
         ? formatRelativeTime(getField(t, 'CREATED_AT'))
@@ -1573,7 +1574,7 @@ function renderTab(){
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-open">? Open</span></div>'+
         timeline +
-        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' · <span class="tc-meta-price">'+esc(formatTaskBudgetMeta(t))+'</span>'+(postedLabel ? ' · Posted '+esc(postedLabel) : '')+'</div>'+
+        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' ï¿½ <span class="tc-meta-price">'+esc(formatTaskBudgetMeta(t))+'</span>'+(postedLabel ? ' ï¿½ Posted '+esc(postedLabel) : '')+'</div>'+
         '<button type="button" class="tc-applicants-toggle'+(isOpen?' open':'')+'" data-applicants-toggle="'+escAttr(taskId)+'" data-applicant-count="'+escAttr(pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : ''))+'" data-applicant-names="'+escAttr(namePreview + (pendingApps.length > 3 ? '?' : ''))+'">'+esc(toggleLabel)+'</button>'+
         '<div class="applicants-panel'+(isOpen?' open':'')+'" id="'+taskDomId(taskId)+'">'+appHtml+'</div>'+
         '<div class="action-row">'+shareEmpty+shareIcon+'<button type="button" class="act-btn btn-danger" data-cancel-posting="'+escAttr(taskId)+'">? Cancel posting</button></div>'+
@@ -1661,8 +1662,8 @@ function renderTab(){
         }
       }
         return '<div class="'+cardClass+'">'+
-        '<div class="tc-top"><div class="tc-left">'+profileTapIcon(posterId, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">Applied · Posted by '+personLink(posterName, posterId)+'</div><div class="tc-title">'+esc(getField(task,'TITLE')||'Task #'+getField(a,'TASK_ID'))+'</div></div></div>'+statusLabel+'</div>'+
-        '<div class="tc-meta">Your offer: '+formatAppPriceHtml(a)+' · '+esc(getField(a,'MESSAGE')).substring(0,60)+'...'+(getField(task,'CREATED_AT') && typeof formatRelativeTime === 'function' ? ' · Task posted '+esc(formatRelativeTime(getField(task,'CREATED_AT'))) : '')+'</div>'+
+        '<div class="tc-top"><div class="tc-left">'+profileTapIcon(posterId, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">Applied ï¿½ Posted by '+personLink(posterName, posterId)+'</div><div class="tc-title">'+esc(getField(task,'TITLE')||'Task #'+getField(a,'TASK_ID'))+'</div></div></div>'+statusLabel+'</div>'+
+        '<div class="tc-meta">Your offer: '+formatAppPriceHtml(a)+' ï¿½ '+esc(getField(a,'MESSAGE')).substring(0,60)+'...'+(getField(task,'CREATED_AT') && typeof formatRelativeTime === 'function' ? ' ï¿½ Task posted '+esc(formatRelativeTime(getField(task,'CREATED_AT'))) : '')+'</div>'+
         negoBlock+
         actions+
       '</div>';
@@ -1730,7 +1731,7 @@ function renderTab(){
         if (selfTask) {
           payAction = '<span class="act-btn btn-danger" style="opacity:0.95;cursor:default;pointer-events:none;font-size:12px">? Same account as tasker ? cancel &amp; use 2 logins</span>';
         } else if (taskPaid) {
-          payAction = '<span class="act-btn btn-secondary" style="opacity:0.9;cursor:default;pointer-events:none">? Paid · chat unlocked</span>';
+          payAction = '<span class="act-btn btn-secondary" style="opacity:0.9;cursor:default;pointer-events:none">? Paid ï¿½ chat unlocked</span>';
         } else {
           payAction = '<button type="button" class="act-btn btn-primary" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks" data-pay-amount="'+escAttr(String(getField(t,'BUDGET')))+'" data-pay-title="'+escAttr(getField(t,'TITLE'))+'">?? Pay to unlock</button>' +
             '<button type="button" class="act-btn btn-secondary" data-sync-pay-task="'+escAttr(taskId)+'" title="Paid in Stripe but still locked? Tap to sync">? Sync payment</button>';
@@ -1762,7 +1763,7 @@ function renderTab(){
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left">'+iconHtml+'<div><div class="tc-cat">'+roleLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-progress">'+(frozen?'Disputed ? frozen':'In progress')+'</span></div>'+
         (typeof qgTaskTimelineHtml === 'function' ? qgTaskTimelineHtml('in_progress') : '')+
-        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' · <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
+        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' ï¿½ <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
         evidenceHtml +
         '<div class="qg-action-row">'+disputeBtn+reportBtns+'</div>'+
         '<div class="action-row">' + posterActions + workerActions + '</div>'+
@@ -1829,7 +1830,7 @@ function renderTab(){
       return '<div class="task-card'+(isCancelled || isExpired ?' is-faded':'')+'">'+
         '<div class="tc-top"><div class="tc-left">'+profileTapIcon(otherUid, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">'+otherLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div>'+badge+'</div>'+
         (typeof qgTaskTimelineHtml === 'function' && !isCancelled && !isExpired ? qgTaskTimelineHtml('completed') : '')+
-        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' · <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
+        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' ï¿½ <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
         '<div class="qg-action-row">'+disputeBtn+reportBtns+'</div>'+
         actions+
       '</div>';

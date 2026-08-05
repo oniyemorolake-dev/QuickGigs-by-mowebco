@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- qg-build:5842830-1785893858 -->
 
 <title>Dashboard ? QuickGigs</title>
 <meta name="description" content="Your QuickGigs dashboard for posting tasks and finding work as a tasker.">
@@ -38,7 +39,7 @@
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
 <script src="qg-theme.js"></script>
 <script src="qg-brand-init.js"></script>
-<script defer src="qg-pwa.js?v=115"></script>
+<script defer src="qg-pwa.js?v=5842830-1785893858"></script>
 <link rel="stylesheet" href="qg-cookies.css">
 <link rel="stylesheet" href="qg-menu.css?v=2">
 <style>
@@ -323,7 +324,7 @@ body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#ee
 </div>
 
 <footer class="legal-footer site-footer" id="siteFooter">
-  <a href="terms.html">Terms of Service</a> · <a href="privacy.html">Privacy Policy</a> · <a href="feedback.html">Report issue</a>
+  <a href="terms.html">Terms of Service</a> ï¿½ <a href="privacy.html">Privacy Policy</a> ï¿½ <a href="feedback.html">Report issue</a>
 </footer>
 
 <!-- TAB BAR -->
@@ -1186,7 +1187,7 @@ function renderAll(){
         var taskHref = 'mytasks.html?tab=posted' + (appsOnTask ? '&expand=' + encodeURIComponent(String(taskId)) : '');
         return '<a class="task-row" href="'+taskHref+'" style="text-decoration:none">' +
           '<div class="task-dot" style="background:rgba(107,63,160,0.2)">'+ico('clipboard')+'</div>' +
-          '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title'))+'</div><div class="task-meta">Open · $'+dashEsc(taskField(t,'budget'))+(appsOnTask ? ' · '+appsOnTask+' applicant'+(appsOnTask!==1?'s':'') : '')+'</div></div>' +
+          '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title'))+'</div><div class="task-meta">Open ï¿½ $'+dashEsc(taskField(t,'budget'))+(appsOnTask ? ' ï¿½ '+appsOnTask+' applicant'+(appsOnTask!==1?'s':'') : '')+'</div></div>' +
           '<div class="task-right"><div class="task-price">Review</div></div>' +
         '</a>';
       }).join('');
@@ -1222,7 +1223,7 @@ function renderAll(){
       html += myOpenPosted.slice(0, 2).map(function(t){
         return '<a class="task-row" href="mytasks.html?tab=posted" style="text-decoration:none">' +
           '<div class="task-dot" style="background:rgba(107,63,160,0.2)">'+ico('clipboard')+'</div>' +
-          '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title'))+'</div><div class="task-meta">You posted · $'+dashEsc(taskField(t,'budget'))+'</div></div></a>';
+          '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title'))+'</div><div class="task-meta">You posted ï¿½ $'+dashEsc(taskField(t,'budget'))+'</div></div></a>';
       }).join('');
     }
   }

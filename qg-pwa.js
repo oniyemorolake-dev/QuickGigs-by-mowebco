@@ -2,7 +2,8 @@
 (function () {
   var DISMISS_KEY = 'qg-pwa-dismissed';
   var IOS_DISMISS_KEY = 'qg-ios-install-dismissed';
-  var SHEET_VER = '124';
+  // Auto-stamped by scripts/stamp-cache-version.js — do not hand-edit.
+  var SHEET_VER = '5842830-1785893858';
 
   function assetUrl(path) {
     try {
@@ -88,27 +89,54 @@
     return /FBAN|FBAV|Instagram|Line\/|Twitter|LinkedInApp|GSA\/|CriOS|FxiOS/i.test(ua);
   }
 
+  function askSkipWaiting(worker) {
+    if (worker) {
+      try { worker.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {}
+    }
+  }
+
+  function wireRegistration(reg) {
+    if (reg.waiting) askSkipWaiting(reg.waiting);
+    reg.addEventListener('updatefound', function () {
+      var w = reg.installing;
+      if (!w) return;
+      w.addEventListener('statechange', function () {
+        if (w.state === 'installed' && navigator.serviceWorker.controller) {
+          askSkipWaiting(w);
+        }
+      });
+    });
+    try { reg.update(); } catch (_e) {}
+  }
+
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
+
+    // When a new SW takes control, one normal reload is enough to pick up fresh HTML/JS.
+    var refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (refreshing) return;
+      if (sessionStorage.getItem('qg-sw-reloaded') === SHEET_VER) return;
+      refreshing = true;
+      try { sessionStorage.setItem('qg-sw-reloaded', SHEET_VER); } catch (_e) {}
+      window.location.reload();
+    });
+
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register(assetUrl('/sw.js?v=' + SHEET_VER)).then(function (reg) {
-        // Activate new SW immediately so HTML/JS updates are not stuck waiting
-        function askSkipWaiting(worker) {
-          if (worker) {
-            try { worker.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {}
+      navigator.serviceWorker.register(assetUrl('/sw.js?v=' + SHEET_VER), {
+        // Critical: do not let HTTP cache hide a newly deployed sw.js
+        updateViaCache: 'none'
+      }).then(function (reg) {
+        wireRegistration(reg);
+        // Re-check on tab focus so a plain return/refresh finds new deploys
+        document.addEventListener('visibilitychange', function () {
+          if (document.visibilityState === 'visible') {
+            try { reg.update(); } catch (_e2) {}
           }
-        }
-        if (reg.waiting) askSkipWaiting(reg.waiting);
-        reg.addEventListener('updatefound', function () {
-          var w = reg.installing;
-          if (!w) return;
-          w.addEventListener('statechange', function () {
-            if (w.state === 'installed' && navigator.serviceWorker.controller) {
-              askSkipWaiting(w);
-            }
-          });
         });
-        reg.update();
+        window.addEventListener('focus', function () {
+          try { reg.update(); } catch (_e3) {}
+        });
       }).catch(function (err) {
         console.warn('SW registration failed:', err);
       });
@@ -275,6 +303,7 @@
 
   window.showIosInstallSheet = showIosInstallSheet;
   window.isQuickGigsInstalled = isStandalone;
+  window.QG_BUILD_ID = SHEET_VER;
 
   injectPwaHead();
   registerServiceWorker();

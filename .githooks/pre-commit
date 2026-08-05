@@ -1,0 +1,17 @@
+#!/bin/sh
+# Auto-bump SW / PWA cache-bust id on every commit so deploys always purge stale caches.
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+cd "$ROOT" || exit 0
+
+if command -v node >/dev/null 2>&1; then
+  node scripts/stamp-cache-version.js || exit 1
+  git add sw.js qg-pwa.js qg-build-id.json
+  # Re-stage any HTML files whose qg-pwa.js?v= query was rewritten
+  git diff --name-only --diff-filter=M | grep -E '\.html$' | while read -r f; do
+    git add -- "$f"
+  done
+  # Also add HTML that stamp touched even if previously unstaged
+  git add -- *.html 2>/dev/null || true
+fi
+
+exit 0

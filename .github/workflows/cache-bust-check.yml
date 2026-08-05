@@ -1,0 +1,25 @@
+name: Cache bust check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check-build-id:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure BUILD_ID was stamped
+        run: |
+          set -euo pipefail
+          if grep -q "var BUILD_ID = 'pending'" sw.js; then
+            echo "sw.js still has BUILD_ID=pending — run: node scripts/stamp-cache-version.js"
+            exit 1
+          fi
+          if grep -q "var SHEET_VER = 'pending'" qg-pwa.js; then
+            echo "qg-pwa.js still has SHEET_VER=pending — run: node scripts/stamp-cache-version.js"
+            exit 1
+          fi
+          test -f qg-build-id.json
+          echo "OK: $(cat qg-build-id.json)"
