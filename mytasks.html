@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- qg-build:be967f0-1785894097 -->
+<!-- qg-build:425d6b5-1785895130 -->
 
 <title>My tasks ? QuickGigs</title>
 <meta name="description" content="Manage posted tasks and applications on QuickGigs.">
@@ -232,10 +232,10 @@ body.light .app-legal-footer a{color:var(--purple);}
   <div class="nav-title">My posted tasks</div>
   <div class="nav-right">
     <button type="button" class="mode-btn" id="roleSwitchBtn" onclick="typeof switchRoleMode==='function'&&switchRoleMode()">Switch mode</button>
-    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">?? Light</button>
+    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
   </div>
 </nav>
-<div style="padding:8px 16px 0"><span class="mode-tag tag-poster" data-qg-mode-tag>?? Poster mode</span></div>
+<div style="padding:8px 16px 0"><span class="mode-tag tag-poster" data-qg-mode-tag>📌 Poster mode</span></div>
 
 <div class="tabs-wrap">
   <button class="tab-btn active" id="tabPosted" onclick="showTab('posted',this)">Posted</button>
@@ -289,7 +289,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 <script defer src="qg-stripe.js?v=20260730teen1"></script>
 <script defer src="qg-site.js?v=20260726e"></script>
 <script defer src="qg-nav.js?v=20260726n"></script>
-<script defer src="qg-pwa.js?v=be967f0-1785894097"></script>
+<script defer src="qg-pwa.js?v=425d6b5-1785895130"></script>
 <script defer src="qg-notifications.js"></script>
 <script defer src="qg-push.js?v=1"></script>
 <script defer src="qg-share.js"></script>
@@ -328,7 +328,7 @@ function applyTheme(){
   else {
     document.body.className = isDark ? '' : 'light';
     var btn = document.getElementById('modeBtn');
-    if (btn) btn.textContent = isDark ? '?? Light' : '?? Dark';
+    if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
   }
 }
 window.toggleTheme = function(){
@@ -599,7 +599,7 @@ function renderApplicantAction(a, taskId, task) {
         return '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border)" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">Chat</button>' +
           '<span class="accept-status">? Accepted � Paid</span>';
       }
-      return '<button type="button" class="accept-btn" style="background:var(--purple);color:#fff" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks">?? Pay to unlock chat</button>' +
+      return '<button type="button" class="accept-btn" style="background:var(--purple);color:#fff" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks">💳 Pay to unlock chat</button>' +
         '<span class="accept-status">? Accepted</span>';
     }
     return '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border)" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">Chat</button>' +
@@ -687,7 +687,7 @@ window.toggleApplicants = function(taskId) {
     var count = btn.getAttribute('data-applicant-count') || '';
     var names = btn.getAttribute('data-applicant-names') || '';
     // textContent ? getAttribute decodes entities; never re-inject via innerHTML
-    btn.textContent = '?? ' + count + (names ? ' � ' + names : '') + ' ? Tap to ' + (expandedApplicantTasks[taskId] ? 'hide' : 'view');
+    btn.textContent = '👥 ' + count + (names ? ' � ' + names : '') + ' ? Tap to ' + (expandedApplicantTasks[taskId] ? 'hide' : 'view');
   }
 };
 
@@ -1029,10 +1029,10 @@ function getDemoApps(){
   ];
 }
 
-var CAT_ICONS = {home:'??',errands:'??',tutoring:'??',beauty:'??',moving:'??',cooking:'??',tech:'??',care:'??',gardening:'??',events:'??',trades:'??',other:'??'};
+var CAT_ICONS = {home:'🏠',errands:'🚗',tutoring:'🎓',beauty:'💇',moving:'🚚',cooking:'🍳',tech:'💻',care:'👶',gardening:'🌿',events:'🎉',trades:'🔧',other:'📦'};
 var CAT_BG    = {home:'rgba(107,63,160,0.2)',errands:'rgba(251,191,36,0.15)',tutoring:'rgba(74,222,128,0.1)',beauty:'rgba(200,168,233,0.15)',moving:'rgba(107,63,160,0.2)',cooking:'rgba(251,191,36,0.12)',tech:'rgba(107,63,160,0.2)',care:'rgba(74,222,128,0.1)',gardening:'rgba(74,222,128,0.08)',events:'rgba(200,168,233,0.15)',trades:'rgba(107,63,160,0.2)',other:'rgba(255,255,255,0.06)'};
 
-function getCat(t){ var k=(t.CATEGORY||t.category||'other').toLowerCase(); return {icon:CAT_ICONS[k]||'??',bg:CAT_BG[k]||'rgba(255,255,255,0.06)'}; }
+function getCat(t){ var k=(t.CATEGORY||t.category||'other').toLowerCase(); return {icon:CAT_ICONS[k]||'📦',bg:CAT_BG[k]||'rgba(255,255,255,0.06)'}; }
 function getField(row,f){
   var fieldMap = {
     APP_ID:['APP_ID','app_id','id'],
@@ -1497,7 +1497,7 @@ function renderTab(){
     if (isWorker) {
       content.innerHTML = typeof roleGateHtml === 'function' ? roleGateHtml({
         targetMode: 'poster',
-        icon: '??',
+        icon: '📋',
         title: 'Posting is in Poster mode',
         sub: 'Switch to Poster mode to manage your listings and review applicants. Use Tasker mode to browse and apply to jobs.'
       }) : '';
@@ -1586,7 +1586,7 @@ function renderTab(){
     if (isPoster) {
       content.innerHTML = typeof roleGateHtml === 'function' ? roleGateHtml({
         targetMode: 'worker',
-        icon: '??',
+        icon: '📋',
         title: 'Applications are in Tasker mode',
         sub: 'Switch to Tasker mode to browse tasks, apply, and track your jobs. Poster mode is for posting and hiring only.'
       }) : '';
@@ -1733,7 +1733,7 @@ function renderTab(){
         } else if (taskPaid) {
           payAction = '<span class="act-btn btn-secondary" style="opacity:0.9;cursor:default;pointer-events:none">? Paid � chat unlocked</span>';
         } else {
-          payAction = '<button type="button" class="act-btn btn-primary" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks" data-pay-amount="'+escAttr(String(getField(t,'BUDGET')))+'" data-pay-title="'+escAttr(getField(t,'TITLE'))+'">?? Pay to unlock</button>' +
+          payAction = '<button type="button" class="act-btn btn-primary" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks" data-pay-amount="'+escAttr(String(getField(t,'BUDGET')))+'" data-pay-title="'+escAttr(getField(t,'TITLE'))+'">💳 Pay to unlock</button>' +
             '<button type="button" class="act-btn btn-secondary" data-sync-pay-task="'+escAttr(taskId)+'" title="Paid in Stripe but still locked? Tap to sync">? Sync payment</button>';
         }
       }
@@ -1747,7 +1747,7 @@ function renderTab(){
         ? payAction +
           messageBtn +
           '<button type="button" class="act-btn btn-success" data-mark-complete="'+escAttr(taskId)+'">? Mark complete</button>' +
-          '<button type="button" class="act-btn btn-primary" data-change-tasker="'+escAttr(taskId)+'">?? Change tasker</button>' +
+          '<button type="button" class="act-btn btn-primary" data-change-tasker="'+escAttr(taskId)+'">🔁 Change tasker</button>' +
           '<button type="button" class="act-btn btn-danger" data-cancel-inprogress="'+escAttr(taskId)+'">? Cancel task</button>'
         : '';
       var workerActions = !isPosterTask
@@ -2019,7 +2019,7 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
     if (acceptBtn && typeof qgMicroConfirm === 'function') qgMicroConfirm(acceptBtn);
     if (typeof qgCelebrate === 'function') qgCelebrate({ count: 36 });
     if (typeof haptic === 'function') haptic([15, 30, 15]);
-    showToast('Accepted ' + workerName + '! Moved to In Progress ??');
+    showToast('Accepted ' + workerName + '! Moved to In Progress 💬');
   }
   setTimeout(function () { loadData(); }, 100);
 };

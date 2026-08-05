@@ -1,4 +1,5 @@
 # Keep text files as UTF-8 LF so emojis / en-dashes are not mangled.
+# Editors: also see .editorconfig (charset=utf-8) and .vscode/settings.json.
 * text=auto eol=lf
 *.html text eol=lf
 *.js text eol=lf

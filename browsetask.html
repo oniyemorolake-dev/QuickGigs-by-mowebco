@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- qg-build:be967f0-1785894097 -->
+<!-- qg-build:425d6b5-1785895130 -->
 
 <title>Browse tasks ? QuickGigs</title>
 <meta name="description" content="Browse open tasks near you on QuickGigs ? Canada's marketplace to earn money doing errands, home help, and more.">
@@ -168,7 +168,7 @@ body.light .tc-media{background:#f0eeff;}
 }
 /* Compact zoom hint ? full ?Tap to enlarge? chip is too wide for ~40% media */
 .tc-media.tc-photo-tappable::before{
-  content:'??';
+  content:'✨';
   top:8px;right:8px;
   padding:4px 6px;
   font-size:11px;
@@ -357,8 +357,8 @@ body.light .app-legal-footer a{color:var(--purple);}
     <span class="nav-role">TASKER</span>
   </div>
   <div class="nav-right">
-    <button class="nav-icon">??</button>
-    <button class="mode-btn" id="modeBtn" onclick="toggleMode()">?? Light</button>
+    <button class="nav-icon">🔔</button>
+    <button class="mode-btn" id="modeBtn" onclick="toggleMode()">☀️ Light</button>
     <div class="avatar" id="avatarEl">M</div>
   </div>
 </nav>
@@ -417,26 +417,26 @@ body.light .app-legal-footer a{color:var(--purple);}
 <div class="mode-row" id="modeRow">
   <span class="mpill active-all" onclick="setMode(this,'all')">All tasks</span>
   <span class="mpill" onclick="setMode(this,'quick')">? Quick</span>
-  <span class="mpill" onclick="setMode(this,'standard')">?? Standard</span>
-  <span class="mpill" onclick="setMode(this,'recurring')">?? Recurring</span>
+  <span class="mpill" onclick="setMode(this,'standard')">📋 Standard</span>
+  <span class="mpill" onclick="setMode(this,'recurring')">🔄 Recurring</span>
   <span class="mpill" onclick="setMode(this,'saved')">? Saved</span>
 </div>
 <div class="cat-wrap-outer">
   <span class="cat-label-txt">Category</span>
   <div class="cat-row">
     <span class="cpill cat-active" onclick="setCat(this,'all')">All</span>
-    <span class="cpill" onclick="setCat(this,'errands')">?? Errands</span>
-    <span class="cpill" onclick="setCat(this,'home')">?? Home</span>
-    <span class="cpill" onclick="setCat(this,'tutoring')">?? Tutoring</span>
-    <span class="cpill" onclick="setCat(this,'beauty')">?? Beauty</span>
-    <span class="cpill" onclick="setCat(this,'moving')">?? Moving</span>
-    <span class="cpill" onclick="setCat(this,'cooking')">?? Cooking</span>
-    <span class="cpill" onclick="setCat(this,'tech')">?? Tech</span>
-    <span class="cpill" onclick="setCat(this,'care')">?? Care</span>
-    <span class="cpill" onclick="setCat(this,'gardening')">?? Garden</span>
-    <span class="cpill" onclick="setCat(this,'events')">?? Events</span>
-    <span class="cpill" onclick="setCat(this,'trades')">?? Trades</span>
-    <span class="cpill" onclick="setCat(this,'other')">?? Other</span>
+    <span class="cpill" onclick="setCat(this,'errands')">🚗 Errands</span>
+    <span class="cpill" onclick="setCat(this,'home')">🏠 Home</span>
+    <span class="cpill" onclick="setCat(this,'tutoring')">📚 Tutoring</span>
+    <span class="cpill" onclick="setCat(this,'beauty')">💅 Beauty</span>
+    <span class="cpill" onclick="setCat(this,'moving')">📦 Moving</span>
+    <span class="cpill" onclick="setCat(this,'cooking')">🍳 Cooking</span>
+    <span class="cpill" onclick="setCat(this,'tech')">💻 Tech</span>
+    <span class="cpill" onclick="setCat(this,'care')">👶 Care</span>
+    <span class="cpill" onclick="setCat(this,'gardening')">🌱 Garden</span>
+    <span class="cpill" onclick="setCat(this,'events')">🎉 Events</span>
+    <span class="cpill" onclick="setCat(this,'trades')">🔧 Trades</span>
+    <span class="cpill" onclick="setCat(this,'other')">📋 Other</span>
   </div>
 </div>
 <div class="photo-required-banner" id="photoRequiredBanner" style="display:none">
@@ -477,13 +477,13 @@ body.light .app-legal-footer a{color:var(--purple);}
   </div>
   <div class="qg-budget-chips" id="budgetChips">
     <button type="button" class="qg-bchip" data-budget="under50">Under $50</button>
-    <button type="button" class="qg-bchip" data-budget="50to100">$50?100</button>
+    <button type="button" class="qg-bchip" data-budget="50to100">$50–100</button>
     <button type="button" class="qg-bchip" data-budget="100plus">$100+</button>
   </div>
 </div>
 <div class="qg-active-filters" id="activeFilters" aria-label="Active filters"></div>
 <div class="cards-area" id="cardsArea">
-  <div class="loading-state"><div class="loading-spinner">?</div><div class="loading-txt">Loading tasks near you...</div></div>
+  <div class="loading-state"><div class="loading-spinner">⏳</div><div class="loading-txt">Loading tasks near you...</div></div>
 </div>
 <div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" onclick="event.stopPropagation()">
@@ -497,7 +497,7 @@ body.light .app-legal-footer a{color:var(--purple);}
       <p class="modal-sub" id="modalNegoHint" style="display:none;margin-top:-6px;font-size:11px;color:var(--text-muted)"></p>
 
       <div class="apply-already" id="applyAlreadyState" aria-live="polite">
-        <div class="apply-already-icon">?</div>
+        <div class="apply-already-icon">✅</div>
         <div class="apply-already-title">You've already applied to this task</div>
         <div class="apply-already-sub">Check <a href="mytasks.html?tab=applied" style="color:var(--purple-light)">My Tasks ? Applied</a> for status updates.</div>
       </div>
@@ -597,7 +597,7 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-age.js?v=1"></script>
 <script defer src="qg-verification.js?v=20260804pm1"></script>
 <script defer src="qg-location.js?v=2"></script>
-<script defer src="qg-pwa.js?v=be967f0-1785894097"></script>
+<script defer src="qg-pwa.js?v=425d6b5-1785895130"></script>
 <script defer src="qg-notifications.js"></script>
 <script defer src="qg-share.js"></script>
 <script defer src="qg-saved.js?v=1"></script>
@@ -981,12 +981,12 @@ async function loadTasks(){
 
 function getDemoTasks(){
   return [
-    {id:1,mode:'quick',cat:'errands',catLabel:'Errands',icon:'??',iconBg:'rgba(251,191,36,0.15)',title:'Pick up prescription from Shoppers Drug Mart',desc:'Grab my prescription on 17th Ave SW and drop off at my condo. 20 mins max.',price:20,priceLabel:'$20',location:'Calgary, AB',posted:'5 mins ago',applicants:0,status:'open'},
-    {id:2,mode:'quick',cat:'tech',catLabel:'Tech',icon:'??',iconBg:'rgba(107,63,160,0.2)',title:'Fix cracked screen on Samsung S22 ? need it today',desc:'Screen is badly cracked, phone still works. Need someone experienced.',price:60,priceLabel:'$60',location:'Calgary, AB',posted:'12 mins ago',applicants:1,status:'open'},
-    {id:3,mode:'standard',cat:'home',catLabel:'Home',icon:'??',iconBg:'rgba(107,63,160,0.2)',title:'Deep clean 2 bedroom apartment before move out',desc:'Full deep clean before handing over keys this Saturday.',price:120,priceLabel:'$120',location:'Calgary, AB',posted:'2 hrs ago',applicants:3,status:'open'},
-    {id:4,mode:'standard',cat:'beauty',catLabel:'Beauty',icon:'??',iconBg:'rgba(200,168,233,0.15)',title:'Box braids ? medium length, natural hair',desc:'Looking for someone experienced with box braids on natural hair.',price:80,priceLabel:'$80',location:'Calgary, AB',posted:'3 hrs ago',applicants:2,status:'open'},
-    {id:5,mode:'recurring',cat:'care',catLabel:'Care',icon:'??',iconBg:'rgba(74,222,128,0.1)',title:'Reliable nanny needed Monday to Friday 9am?3pm',desc:'Caring nanny for two kids aged 4 and 7. Starting next Monday.',price:20,priceLabel:'$20/hr',location:'Calgary, AB',posted:'1 hr ago',applicants:1,status:'open'},
-    {id:6,mode:'recurring',cat:'tutoring',catLabel:'Tutoring',icon:'??',iconBg:'rgba(74,222,128,0.1)',title:'Math tutor for Grade 10 student ? twice a week',desc:'My daughter needs a patient tutor for algebra. Twice a week after school.',price:35,priceLabel:'$35/hr',location:'Calgary, AB',posted:'30 mins ago',applicants:0,status:'open'},
+    {id:1,mode:'quick',cat:'errands',catLabel:'Errands',icon:'🚗',iconBg:'rgba(251,191,36,0.15)',title:'Pick up prescription from Shoppers Drug Mart',desc:'Grab my prescription on 17th Ave SW and drop off at my condo. 20 mins max.',price:20,priceLabel:'$20',location:'Calgary, AB',posted:'5 mins ago',applicants:0,status:'open'},
+    {id:2,mode:'quick',cat:'tech',catLabel:'Tech',icon:'💻',iconBg:'rgba(107,63,160,0.2)',title:'Fix cracked screen on Samsung S22 ? need it today',desc:'Screen is badly cracked, phone still works. Need someone experienced.',price:60,priceLabel:'$60',location:'Calgary, AB',posted:'12 mins ago',applicants:1,status:'open'},
+    {id:3,mode:'standard',cat:'home',catLabel:'Home',icon:'🏠',iconBg:'rgba(107,63,160,0.2)',title:'Deep clean 2 bedroom apartment before move out',desc:'Full deep clean before handing over keys this Saturday.',price:120,priceLabel:'$120',location:'Calgary, AB',posted:'2 hrs ago',applicants:3,status:'open'},
+    {id:4,mode:'standard',cat:'beauty',catLabel:'Beauty',icon:'💅',iconBg:'rgba(200,168,233,0.15)',title:'Box braids ? medium length, natural hair',desc:'Looking for someone experienced with box braids on natural hair.',price:80,priceLabel:'$80',location:'Calgary, AB',posted:'3 hrs ago',applicants:2,status:'open'},
+    {id:5,mode:'recurring',cat:'care',catLabel:'Care',icon:'👶',iconBg:'rgba(74,222,128,0.1)',title:'Reliable nanny needed Monday to Friday 9am?3pm',desc:'Caring nanny for two kids aged 4 and 7. Starting next Monday.',price:20,priceLabel:'$20/hr',location:'Calgary, AB',posted:'1 hr ago',applicants:1,status:'open'},
+    {id:6,mode:'recurring',cat:'tutoring',catLabel:'Tutoring',icon:'📚',iconBg:'rgba(74,222,128,0.1)',title:'Math tutor for Grade 10 student ? twice a week',desc:'My daughter needs a patient tutor for algebra. Twice a week after school.',price:35,priceLabel:'$35/hr',location:'Calgary, AB',posted:'30 mins ago',applicants:0,status:'open'},
   ];
 }
 
@@ -998,9 +998,9 @@ function esc(s){
 function getBadge(m,t){
   var modeBadge='';
   if(m==='quick')modeBadge='<span class="tc-badge badge-quick">? Quick</span>';
-  else if(m==='recurring')modeBadge='<span class="tc-badge badge-recurring">?? Recurring</span>';
-  else modeBadge='<span class="tc-badge badge-standard">?? Standard</span>';
-  if(t&&t.budgetNegotiable)modeBadge+='<span class="tc-badge badge-negotiable">?? Negotiable</span>';
+  else if(m==='recurring')modeBadge='<span class="tc-badge badge-recurring">🔄 Recurring</span>';
+  else modeBadge='<span class="tc-badge badge-standard">📋 Standard</span>';
+  if(t&&t.budgetNegotiable)modeBadge+='<span class="tc-badge badge-negotiable">💬 Negotiable</span>';
   if(t){
     modeBadge += t.agePreference === 'adults_only'
       ? '<span class="tc-badge badge-age-adult">18+ only</span>'
@@ -1115,7 +1115,7 @@ function renderActiveFilters(){
   if(activeMode!=='all') chips.push({key:'mode',label:'Mode: '+activeMode});
   if(activeCat!=='all') chips.push({key:'cat',label:'Category: '+activeCat});
   if(budgetPreset==='under50') chips.push({key:'budget',label:'Under $50'});
-  else if(budgetPreset==='50to100') chips.push({key:'budget',label:'$50?100'});
+  else if(budgetPreset==='50to100') chips.push({key:'budget',label:'$50–100'});
   else if(budgetPreset==='100plus') chips.push({key:'budget',label:'$100+'});
   else if(budgetMinVal>20||budgetMaxVal<300) chips.push({key:'budget',label:'$'+budgetMinVal+'?$'+budgetMaxVal});
   var dateFilter=(document.getElementById('dateFilter')||{}).value;
@@ -1156,7 +1156,7 @@ function syncBudgetUI(){
 function renderCards(){
   if(window._qgAgeTier==='loading'){
     var loadingArea=document.getElementById('cardsArea');
-    if(loadingArea)loadingArea.innerHTML='<div class="loading-state"><div class="loading-spinner">?</div><div class="loading-txt">Checking gig eligibility?</div></div>';
+    if(loadingArea)loadingArea.innerHTML='<div class="loading-state"><div class="loading-spinner">⏳</div><div class="loading-txt">Checking gig eligibility…</div></div>';
     return;
   }
   var search=(document.getElementById('searchInput').value||'').toLowerCase().trim();
@@ -1618,8 +1618,8 @@ window.openModal=async function(id,e){
   _applySubmitInFlight = false;
   document.getElementById('modalTitle').textContent=activeTask.catLabel+' ? '+activeTask.title.substring(0,40)+(activeTask.title.length>40?'?':'');
   var sub = (activeTask.budgetNegotiable ? 'Budget: Around ' : 'Budget: ') + activeTask.priceLabel + ' ? ' + activeTask.location;
-  if (activeTask.when) sub += ' ? ?? ' + activeTask.when;
-  if (activeTask.requiresPhotos) sub += ' ? ?? Photo updates requested';
+  if (activeTask.when) sub += ' · 🗓 ' + activeTask.when;
+  if (activeTask.requiresPhotos) sub += ' ? 📷 Photo updates requested';
   if (activeTask.desc) sub += '\n\n' + activeTask.desc;
   if (activeTask.posterName) sub += '\nPosted by ' + activeTask.posterName;
   document.getElementById('modalSub').textContent=sub;
@@ -2029,7 +2029,7 @@ function applyTheme(){
   else {
     document.body.className = isDark ? '' : 'light';
     var btn = document.getElementById('modeBtn');
-    if (btn) btn.textContent = isDark ? '?? Light' : '?? Dark';
+    if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
     if (typeof QG_setThemeDark === 'function') QG_setThemeDark(isDark);
     else localStorage.setItem('qg-theme', isDark ? 'dark' : 'light');
   }

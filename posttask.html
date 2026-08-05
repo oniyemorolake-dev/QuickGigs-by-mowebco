@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- qg-build:be967f0-1785894097 -->
+<!-- qg-build:425d6b5-1785895130 -->
 
 <title>Post a task ? QuickGigs</title>
 <meta name="description" content="Post a task in minutes on QuickGigs. Hire local taskers for errands, cleaning, tutoring, and more across Canada.">
@@ -257,7 +257,7 @@ body{padding-bottom:76px;}
     <span class="nav-logo">QuickGigs</span>
     <span class="nav-role">POSTER</span>
   </div>
-  <button class="mode-toggle" onclick="toggleMode()" id="modeBtn">?? Light</button>
+  <button class="mode-toggle" onclick="toggleMode()" id="modeBtn">☀️ Light</button>
 </nav>
 
 <!-- MAIN FORM -->
@@ -265,10 +265,10 @@ body{padding-bottom:76px;}
 <div class="content" id="formContent">
 
   <div id="postModeBanner" class="hint-box" style="display:none;margin-bottom:16px">
-    <span style="font-size:16px">??</span>
+    <span style="font-size:16px">💡</span>
     <p class="hint-text">Posting a task switches you to poster mode. <button type="button" class="error-skip-btn" style="margin-left:8px" onclick="switchToPosterForPost()">Switch to poster now</button></p>
   </div>
-  <span class="step-pill">?? Post a task</span>
+  <span class="step-pill">✏️ Post a task</span>
   <p class="page-title">What do you need done?</p>
   <p class="page-sub">Takes less than 60 seconds to post</p>
 
@@ -285,17 +285,17 @@ body{padding-bottom:76px;}
     <span class="section-label">How urgent is this?</span>
     <div class="mode-grid">
       <div class="mode-card selected" data-mode="quick" onclick="selectMode(this)">
-        <span class="mode-emoji">?</span>
+        <span class="mode-emoji">⚡</span>
         <span class="mode-name">Quick</span>
         <span class="mode-desc">Within hours</span>
       </div>
       <div class="mode-card" data-mode="standard" onclick="selectMode(this)">
-        <span class="mode-emoji">?</span>
+        <span class="mode-emoji">📋</span>
         <span class="mode-name">Standard</span>
         <span class="mode-desc">This week</span>
       </div>
       <div class="mode-card" data-mode="recurring" onclick="selectMode(this)">
-        <span class="mode-emoji">?</span>
+        <span class="mode-emoji">🔄</span>
         <span class="mode-name">Recurring</span>
         <span class="mode-desc">Ongoing</span>
       </div>
@@ -319,18 +319,18 @@ body{padding-bottom:76px;}
   <div class="section">
     <span class="section-label">Category</span>
     <div class="cat-wrap" id="catWrap">
-      <span class="cat-chip" onclick="selectCat(this)">?? Errands</span>
-      <span class="cat-chip" onclick="selectCat(this)">?? Home</span>
-      <span class="cat-chip" onclick="selectCat(this)">?? Tutoring</span>
-      <span class="cat-chip" onclick="selectCat(this)">?? Beauty</span>
-      <span class="cat-chip" onclick="selectCat(this)">?? Moving</span>
-      <span class="cat-chip" onclick="selectCat(this)">?? Cooking</span>
-      <span class="cat-chip" onclick="selectCat(this)">?? Tech</span>
-      <span class="cat-chip" onclick="selectCat(this)">?? Care</span>
-      <span class="cat-chip" onclick="selectCat(this)">?? Gardening</span>
-      <span class="cat-chip" onclick="selectCat(this)">?? Events</span>
-      <span class="cat-chip" onclick="selectCat(this)">?? Trades</span>
-      <span class="cat-chip" onclick="selectCat(this)">?? Other</span>
+      <span class="cat-chip" onclick="selectCat(this)">🚗 Errands</span>
+      <span class="cat-chip" onclick="selectCat(this)">🏠 Home</span>
+      <span class="cat-chip" onclick="selectCat(this)">📚 Tutoring</span>
+      <span class="cat-chip" onclick="selectCat(this)">💅 Beauty</span>
+      <span class="cat-chip" onclick="selectCat(this)">📦 Moving</span>
+      <span class="cat-chip" onclick="selectCat(this)">🍳 Cooking</span>
+      <span class="cat-chip" onclick="selectCat(this)">💻 Tech</span>
+      <span class="cat-chip" onclick="selectCat(this)">👶 Care</span>
+      <span class="cat-chip" onclick="selectCat(this)">🌱 Gardening</span>
+      <span class="cat-chip" onclick="selectCat(this)">🎉 Events</span>
+      <span class="cat-chip" onclick="selectCat(this)">🔧 Trades</span>
+      <span class="cat-chip" onclick="selectCat(this)">📋 Other</span>
     </div>
     <div class="field-error" id="catError">Select a category</div>
   </div>
@@ -338,7 +338,7 @@ body{padding-bottom:76px;}
   <!-- AGE PREFERENCE -->
   <div class="section">
     <span class="section-label">Who can apply?</span>
-    <p class="field-hint">Taskers aged 16?17 always need guardian approval for each application.</p>
+    <p class="field-hint">Taskers aged 16–17 always need guardian approval for each application.</p>
     <div class="age-pref-grid" id="agePreferenceGrid">
       <button type="button" class="age-pref-card selected" data-age-preference="adults_only" onclick="selectAgePreference(this)">
         <strong>18+ only</strong><span>Only adult taskers will see this gig.</span>
@@ -371,7 +371,7 @@ body{padding-bottom:76px;}
     <span class="section-label">Photos <span style="font-weight:400;text-transform:none;letter-spacing:0;opacity:0.85">(optional but recommended)</span></span>
     <p class="field-hint">Add photos here so taskers see the task before they apply ? room, item, or area. <strong>No IDs, mail, or personal documents.</strong> You can also send more in chat after payment.</p>
     <input type="file" id="taskPhotos" accept="image/*" multiple style="display:none" onchange="handlePhotoPick(this)">
-    <button type="button" class="photo-upload-btn" onclick="document.getElementById('taskPhotos').click()">?? Add photos (up to 3)</button>
+    <button type="button" class="photo-upload-btn" onclick="document.getElementById('taskPhotos').click()">📷 Add photos (up to 3)</button>
     <div id="photoPreview" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;"></div>
     <label class="field-check">
       <input type="checkbox" id="requiresPhotos">
@@ -385,7 +385,7 @@ body{padding-bottom:76px;}
     <p class="field-hint" id="scheduleHint">Pick a date and time so taskers know when to show up.</p>
 
     <div class="schedule-preview" id="schedulePreview" aria-live="polite">
-      <span class="schedule-preview-icon" aria-hidden="true">??</span>
+      <span class="schedule-preview-icon" aria-hidden="true">📅</span>
       <div class="schedule-preview-text" id="schedulePreviewText">
         <span class="schedule-preview-main" id="schedulePreviewMain">Select a date</span>
         <span class="schedule-preview-sub" id="schedulePreviewSub">Tap a day below</span>
@@ -463,25 +463,25 @@ body{padding-bottom:76px;}
 
   <!-- HINT -->
   <div class="hint-box" id="hintBox">
-    <span style="font-size:16px;">??</span>
-    <p class="hint-text" id="hintText">Similar tasks in Calgary go for <strong>$20 ? $40</strong>. Minimum budget is $20.</p>
+    <span style="font-size:16px;">💡</span>
+    <p class="hint-text" id="hintText">Similar tasks in Calgary go for <strong>$20 – $40</strong>. Minimum budget is $20.</p>
   </div>
 
   <!-- SUBMIT -->
   <div class="post-submit-row" style="display:grid;gap:10px">
-    <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">Post task ?</button>
+    <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">Post task →</button>
     <button type="button" class="submit-btn" id="draftBtn" onclick="handleSubmit(false,'draft')" style="background:transparent;border:1px solid rgba(45,212,191,.45);color:var(--text,#fff);box-shadow:none">Save draft</button>
   </div>
-  <p class="qg-beta-free-note">Browse freely anytime. Publishing requires a verified payment method ? drafts do not.</p>
+  <p class="qg-beta-free-note">Browse freely anytime. Publishing requires a verified payment method — drafts do not.</p>
   <p class="footer-note">After beta, payment is held in escrow when you accept ? released only after you confirm the task is done. <span data-qg-tip="Escrow means funds are held safely until you mark the task complete. During beta, posting is free.">What is escrow?</span></p>
 
 </div>
 
 <!-- SUCCESS SCREEN -->
 <div class="success-screen content" id="successScreen">
-  <div class="success-icon">??</div>
+  <div class="success-icon">🎉</div>
   <p class="success-title">Task posted</p>
-  <p class="success-sub">Your task is live under <strong>My Tasks ? Posted</strong> (Poster mode). Browse only shows other people's tasks ? not your own.</p>
+  <p class="success-sub">Your task is live under <strong>My Tasks → Posted</strong> (Poster mode). Browse only shows other people's tasks — not your own.</p>
   <button class="success-btn" onclick="window.location.href='mytasks.html?tab=posted'">View in My Tasks</button>
   <button class="success-btn" style="margin-left:8px;background:rgba(255,255,255,0.1)" onclick="window.location.href='dashboard.html'">Back to dashboard</button>
 </div>
@@ -565,7 +565,7 @@ function applyTheme() {
   } else {
     document.body.className = (isDark ? 'dark' : 'light') + ' theme-posttask';
     var btn = document.getElementById('modeBtn');
-    if (btn) btn.textContent = isDark ? '?? Light' : '?? Dark';
+    if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
   }
 }
 window.toggleMode = function() {
@@ -586,7 +586,7 @@ document.addEventListener('DOMContentLoaded', function bootPosterVerification(){
     var button = document.getElementById('submitBtn');
     if (!button) return;
     var verified = !!(state && state.poster_verified === true);
-    button.textContent = verified ? 'Post task ?' : 'Add payment method to post';
+    button.textContent = verified ? 'Post task →' : 'Add payment method to post';
     button.disabled = false;
     if (verified && typeof QG_hideVerificationPrompt === 'function') {
       QG_hideVerificationPrompt();
@@ -646,10 +646,10 @@ var selectedRec  = 'Daily';
 var selectedTimeSlot = 'exact';
 var TIME_SLOT_LABELS = {
   exact: 'Exact time',
-  morning: 'Morning (8am ? 12pm)',
-  afternoon: 'Afternoon (12pm ? 5pm)',
-  evening: 'Evening (5pm ? 9pm)',
-  flexible: 'Flexible ? tasker can suggest'
+  morning: 'Morning (8am – 12pm)',
+  afternoon: 'Afternoon (12pm – 5pm)',
+  evening: 'Evening (5pm – 9pm)',
+  flexible: 'Flexible — tasker can suggest'
 };
 var DATE_STRIP_DAYS = 14;
 var QUICK_TIMES = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'];
@@ -826,7 +826,7 @@ function renderDateStrip() {
       '<span class="date-chip-label">' + monthLabel + '</span></div>';
   }
 
-  html += '<div class="date-chip date-more-chip" onclick="openMoreDates()">??<br><span style="font-size:10px;margin-top:4px;display:block">More</span></div>';
+  html += '<div class="date-chip date-more-chip" onclick="openMoreDates()">📅<br><span style="font-size:10px;margin-top:4px;display:block">More</span></div>';
   strip.innerHTML = html;
 
   var active = strip.querySelector('.date-chip.selected');
@@ -1076,8 +1076,8 @@ window.selectRec = function(el) {
 function updateHint(city) {
   city = city || (window.getUserCityLabel ? window.getUserCityLabel() : 'Calgary');
   var hints = {
-    'quick':     'Quick tasks in ' + city + ' usually go for <strong>$20 ? $60</strong>',
-    'standard':  'Standard tasks in ' + city + ' usually go for <strong>$40 ? $150</strong>',
+    'quick':     'Quick tasks in ' + city + ' usually go for <strong>$20 – $60</strong>',
+    'standard':  'Standard tasks in ' + city + ' usually go for <strong>$40 – $150</strong>',
     'recurring': 'Recurring tasks ? set a per-session rate, minimum <strong>$20</strong>'
   };
   document.getElementById('hintText').innerHTML = (hints[selectedMode] || '') + '. Minimum budget is $20.';
@@ -1096,7 +1096,7 @@ window.handleSubmit = async function(skipPhotos, publishMode) {
   var btnDefaultLabel = window.QG_verificationState &&
     window.QG_verificationState.poster_verified !== true
     ? 'Add payment method to post'
-    : 'Post task ?';
+    : 'Post task →';
   function unlockSubmit() {
     window._postTaskInFlight = false;
     if (btn) {
@@ -1111,7 +1111,7 @@ window.handleSubmit = async function(skipPhotos, publishMode) {
   function lockSubmitPosting() {
     if (btn) {
       btn.disabled = true;
-      btn.textContent = asDraft ? 'Saving draft?' : 'Posting?';
+      btn.textContent = asDraft ? 'Saving draft…' : 'Posting…';
     }
     if (draftBtn) draftBtn.disabled = true;
   }
@@ -1323,10 +1323,10 @@ window.handleSubmit = async function(skipPhotos, publishMode) {
       var successSub = document.querySelector('#successScreen .success-sub');
       if (asDraft) {
         if (successTitle) successTitle.textContent = 'Draft saved';
-        if (successSub) successSub.innerHTML = 'Your draft is saved under <strong>My Tasks ? Posted</strong>. Add a payment method when you are ready to publish.';
+        if (successSub) successSub.innerHTML = 'Your draft is saved under <strong>My Tasks → Posted</strong>. Add a payment method when you are ready to publish.';
       } else {
         if (successTitle) successTitle.textContent = 'Task posted';
-        if (successSub) successSub.innerHTML = 'Your task is live under <strong>My Tasks ? Posted</strong> (Poster mode). Browse only shows other people\'s tasks ? not your own.';
+        if (successSub) successSub.innerHTML = 'Your task is live under <strong>My Tasks → Posted</strong> (Poster mode). Browse only shows other people\'s tasks — not your own.';
       }
       document.getElementById('formContent').style.display = 'none';
       document.getElementById('successScreen').style.display = 'block';
@@ -1417,6 +1417,6 @@ window.handleSubmit = async function(skipPhotos, publishMode) {
 })();
 </script>
 <script defer src="qg-help.js?v=20260726seo"></script>
-<script defer src="qg-pwa.js?v=be967f0-1785894097"></script>
+<script defer src="qg-pwa.js?v=425d6b5-1785895130"></script>
 </body>
 </html>

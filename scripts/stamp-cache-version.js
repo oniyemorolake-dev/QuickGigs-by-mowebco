@@ -23,13 +23,33 @@ function buildId() {
   return gitShort() + '-' + Math.floor(Date.now() / 1000);
 }
 
+function readUtf8NoBom(full) {
+  var buf = fs.readFileSync(full);
+  if (buf.length >= 3 && buf[0] === 0xEF && buf[1] === 0xBB && buf[2] === 0xBF) {
+    buf = buf.subarray(3);
+  }
+  return buf.toString('utf8');
+}
+
+function writeUtf8NoBom(full, text) {
+  // Explicit UTF-8 Buffer write — never rely on platform default encoding.
+  fs.writeFileSync(full, Buffer.from(String(text), 'utf8'));
+}
+
 function rewrite(file, replacer) {
   var full = path.join(root, file);
   if (!fs.existsSync(full)) return false;
-  var before = fs.readFileSync(full, 'utf8');
+  var before = readUtf8NoBom(full);
   var after = replacer(before);
   if (after === before) return false;
-  fs.writeFileSync(full, after, 'utf8');
+  // Guard: refuse to write if this pass introduced new U+FFFD replacement chars
+  var beforeBad = (before.match(/\uFFFD/g) || []).length;
+  var afterBad = (after.match(/\uFFFD/g) || []).length;
+  if (afterBad > beforeBad) {
+    console.error('Refusing to write ' + file + ' — would increase replacement characters');
+    return false;
+  }
+  writeUtf8NoBom(full, after);
   return true;
 }
 
@@ -61,7 +81,9 @@ if (rewrite('qg-pwa.js', function (src) {
 })) changed.push('qg-pwa.js');
 
 // Keep HTML registrar references in sync so browsers don't stick on qg-pwa.js?v=4
-var htmlFiles = fs.readdirSync(root).filter(function (f) { return f.endsWith('.html'); });
+var htmlFiles = fs.readdirSync(root).filter(function (f) {
+  return f.endsWith('.html') && !f.startsWith('_') && !f.startsWith('tmp');
+});
 htmlFiles.forEach(function (file) {
   if (rewrite(file, function (src) {
     return src.replace(/qg-pwa\.js\?v=[^"'>\s]+/g, 'qg-pwa.js?v=' + id);
@@ -69,10 +91,9 @@ htmlFiles.forEach(function (file) {
 });
 
 // Machine-readable stamp for debugging / future tooling
-fs.writeFileSync(
+writeUtf8NoBom(
   path.join(root, 'qg-build-id.json'),
-  JSON.stringify({ buildId: id, stampedAt: new Date().toISOString() }, null, 2) + '\n',
-  'utf8'
+  JSON.stringify({ buildId: id, stampedAt: new Date().toISOString() }, null, 2) + '\n'
 );
 changed.push('qg-build-id.json');
 
