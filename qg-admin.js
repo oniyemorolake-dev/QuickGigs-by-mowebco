@@ -1194,8 +1194,7 @@
   }
 
   /**
-   * Disputes queue — open/reviewing by default. Status updates only (no money movement).
-   * ADMIN-NOTE: anon client for now; after RLS, use service-role Edge Function for admin reads/writes.
+   * Disputes queue — evidence drawer + Stripe resolve (release / refund / split).
    */
   function renderDisputesEnhanced() {
     var open = countOpenDisputes();
@@ -1251,17 +1250,18 @@
         : 's-resolved';
 
       var actions = '';
-      if (st === 'open') {
+      if (st === 'open' || st === 'reviewing') {
         actions =
-          '<button type="button" class="act-btn btn-view" data-did="' + attr(did) + '" onclick="adminUpdateDisputeStatus(this.getAttribute(\'data-did\'),\'reviewing\')">Start review</button>' +
-          '<button type="button" class="act-btn btn-resolve" data-did="' + attr(did) + '" onclick="adminUpdateDisputeStatus(this.getAttribute(\'data-did\'),\'resolved\')">Resolve</button>' +
-          '<button type="button" class="act-btn btn-remove" data-did="' + attr(did) + '" onclick="adminUpdateDisputeStatus(this.getAttribute(\'data-did\'),\'rejected\')">Reject</button>';
-      } else if (st === 'reviewing') {
-        actions =
-          '<button type="button" class="act-btn btn-resolve" data-did="' + attr(did) + '" onclick="adminUpdateDisputeStatus(this.getAttribute(\'data-did\'),\'resolved\')">Resolve</button>' +
+          '<button type="button" class="act-btn btn-view" data-did="' + attr(did) + '" data-tid="' + attr(tid) + '" onclick="adminOpenDisputeEvidence(this.getAttribute(\'data-did\'),this.getAttribute(\'data-tid\'))">Evidence</button>' +
+          (st === 'open'
+            ? '<button type="button" class="act-btn btn-view" data-did="' + attr(did) + '" onclick="adminUpdateDisputeStatus(this.getAttribute(\'data-did\'),\'reviewing\')">Start review</button>'
+            : '') +
+          '<button type="button" class="act-btn btn-resolve" data-did="' + attr(did) + '" onclick="adminResolveDisputeMoney(this.getAttribute(\'data-did\'))">Resolve $</button>' +
           '<button type="button" class="act-btn btn-remove" data-did="' + attr(did) + '" onclick="adminUpdateDisputeStatus(this.getAttribute(\'data-did\'),\'rejected\')">Reject</button>';
       } else {
-        actions = '<span class="status-pill ' + stPill + '">' + esc(adminReasonLabel(st)) + '</span>';
+        actions = '<span class="status-pill ' + stPill + '">' + esc(adminReasonLabel(st)) +
+          (d.resolution ? ' · ' + esc(d.resolution) : '') + '</span>' +
+          '<button type="button" class="act-btn btn-view" data-did="' + attr(did) + '" data-tid="' + attr(tid) + '" onclick="adminOpenDisputeEvidence(this.getAttribute(\'data-did\'),this.getAttribute(\'data-tid\'))">Evidence</button>';
       }
 
       return '<div class="data-row g-disputes">' +
@@ -1280,6 +1280,140 @@
     }).join('');
   }
 
+  async function adminOpenDisputeEvidence(disputeId, taskId) {
+    if (!requireAdmin()) return;
+    var url = (window.QG_CONFIG && window.QG_CONFIG.taskEvidenceUrl) ||
+      'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/task-evidence';
+    var user = typeof getCurrentUser === 'function' ? getCurrentUser() : window._currentUser;
+    if (!user || typeof callVerifiedFunction !== 'function') {
+      showToast('Sign in required', 'red');
+      return;
+    }
+    showToast('Loading evidence…', 'amber');
+    var data = await callVerifiedFunction(url, { action: 'get', task_id: String(taskId) }, user);
+    if (!data || !data.ok) {
+      showToast((data && data.error) || 'Could not load evidence', 'red');
+      return;
+    }
+    var stamps = (data.stamps || []).map(function (s) {
+      var loc = '';
+      if (s.stamp_type === 'arrived') {
+        if (s.location_status === 'ok' && s.distance_m != null) loc = ' · ' + Math.round(s.distance_m) + 'm from address';
+        else loc = ' · location ' + (s.location_status || 'n/a');
+      }
+      return '<div><strong>' + esc(s.stamp_type) + '</strong> ' + esc(s.stamped_at || '') + esc(loc) + '</div>';
+    }).join('') || '<div>No stamps</div>';
+    var photos = (data.evidence_photos || []).map(function (p) {
+      return '<div><a href="' + attrUrl(p.url) + '" target="_blank" rel="noopener">' + esc(p.kind) + '</a> · ' + esc(p.created_at || '') + '</div>';
+    }).join('') || '<div>No evidence photos</div>';
+    var msgs = (data.messages || []).slice(-30).map(function (m) {
+      return '<div style="font-size:12px;margin:4px 0"><strong>' + esc(String(m.sender_id || '').slice(0, 8)) + '</strong>: ' + esc(String(m.body || '').slice(0, 160)) + '</div>';
+    }).join('') || '<div>No chat</div>';
+    var reviews = (data.reviews || []).map(function (r) {
+      return '<div>' + esc(String(r.rating)) + '★ · ' + esc(r.review_comment || '') + '</div>';
+    }).join('') || '<div>No reviews yet</div>';
+    var pays = (data.payments || []).map(function (p) {
+      return '<div>$' + esc(String(p.amount)) + ' · ' + esc(p.status) + ' · fee $' + esc(String(p.platform_fee)) + '</div>';
+    }).join('') || '<div>No payment</div>';
+
+    function attrUrl(u) {
+      return String(u || '').replace(/"/g, '&quot;');
+    }
+
+    openModal(
+      'Evidence — ' + esc((data.task && data.task.title) || taskId),
+      'Dispute ' + String(disputeId).slice(0, 8) + '… · decide from evidence, not claims.',
+      '<div style="display:grid;gap:14px;max-height:60vh;overflow:auto;text-align:left">' +
+        '<div><div class="modal-label">Payment</div>' + pays + '</div>' +
+        '<div><div class="modal-label">Status stamps</div>' + stamps + '</div>' +
+        '<div><div class="modal-label">Photos</div>' + photos + '</div>' +
+        '<div><div class="modal-label">Chat (recent)</div>' + msgs + '</div>' +
+        '<div><div class="modal-label">Reviews</div>' + reviews + '</div>' +
+      '</div>',
+      'Close',
+      'purple',
+      function () {},
+      true
+    );
+  }
+
+  async function adminResolveDisputeMoney(disputeId) {
+    if (!requireAdmin()) return;
+    var d = (window.disputes || []).find(function (x) {
+      return String(x.dispute_id || x.id) === String(disputeId);
+    });
+    if (!d) return;
+    var tid = String(d.task_id || '');
+    var pay = (window.payments || []).find(function (p) {
+      return String(p.task_id) === tid && ['held', 'disputed'].indexOf(String(p.status || '').toLowerCase()) >= 0;
+    });
+    var amount = pay ? Number(pay.amount || 0) : 0;
+    var workerPay = pay ? Number(pay.worker_payout || 0) : 0;
+
+    openModal(
+      'Resolve escrow',
+      'Release to tasker, refund poster, or split. Runs server-side via Stripe.',
+      '<div style="display:grid;gap:10px;text-align:left">' +
+        '<div class="modal-label">Task total $' + amount.toFixed(2) + ' · tasker payout $' + workerPay.toFixed(2) + '</div>' +
+        '<label>Outcome<select id="qgResolveOutcome" style="width:100%;margin-top:6px;padding:10px;border-radius:10px">' +
+          '<option value="release">Release to tasker</option>' +
+          '<option value="refund">Refund poster</option>' +
+          '<option value="split">Split</option>' +
+        '</select></label>' +
+        '<label>Release amount (CAD, split only)<input id="qgResolveRelease" type="number" step="0.01" min="0" value="' + workerPay.toFixed(2) + '" style="width:100%;margin-top:6px;padding:10px;border-radius:10px"></label>' +
+        '<label>Refund amount (CAD, split only)<input id="qgResolveRefund" type="number" step="0.01" min="0" value="0" style="width:100%;margin-top:6px;padding:10px;border-radius:10px"></label>' +
+        '<label>Reason<textarea id="qgResolveReason" rows="3" style="width:100%;margin-top:6px;padding:10px;border-radius:10px" placeholder="Why this outcome?"></textarea></label>' +
+      '</div>',
+      'Execute',
+      'success',
+      async function () {
+        var outcome = (document.getElementById('qgResolveOutcome') || {}).value || 'release';
+        var reason = ((document.getElementById('qgResolveReason') || {}).value || '').trim();
+        var releaseAmt = Number((document.getElementById('qgResolveRelease') || {}).value || 0);
+        var refundAmt = Number((document.getElementById('qgResolveRefund') || {}).value || 0);
+        if (reason.length < 3) {
+          showToast('Add a short reason', 'amber');
+          return;
+        }
+        var url = (window.QG_CONFIG && window.QG_CONFIG.resolveDisputeUrl) ||
+          'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/resolve-dispute';
+        var user = typeof getCurrentUser === 'function' ? getCurrentUser() : window._currentUser;
+        if (!user || typeof callVerifiedFunction !== 'function') {
+          showToast('Sign in required', 'red');
+          return;
+        }
+        var payload = {
+          dispute_id: String(disputeId),
+          resolution: outcome,
+          reason: reason
+        };
+        if (outcome === 'split') {
+          payload.release_amount = releaseAmt;
+          payload.refund_amount = refundAmt;
+        }
+        var result = await callVerifiedFunction(url, payload, user);
+        if (!result || !result.ok) {
+          showToast((result && (result.message || result.error)) || 'Resolve failed', 'red');
+          return;
+        }
+        d.status = 'resolved';
+        d.resolution = outcome;
+        d.resolved_at = new Date().toISOString();
+        if (pay) {
+          pay.status = result.payment_status || (outcome === 'refund' ? 'refunded' : 'paid');
+        }
+        await logAdminAction('dispute_money_' + outcome, 'dispute', disputeId, {
+          release_amount: result.release_amount,
+          refund_amount: result.refund_amount
+        });
+        showToast('Dispute resolved · ' + outcome, 'green');
+        renderDisputesEnhanced();
+        if (typeof renderOverview === 'function') renderOverview();
+      },
+      true
+    );
+  }
+
   /**
    * Dispute status only — never moves money / escrow.
    * reviewing | resolved | rejected (+ resolved_at when closed).
@@ -1291,8 +1425,13 @@
     var st = String(newStatus || '').toLowerCase();
     if (!did || ['reviewing', 'resolved', 'rejected'].indexOf(st) < 0) return;
 
+    if (st === 'resolved') {
+      showToast('Use Resolve $ to move escrow, or Reject to close without payout change', 'amber');
+      return;
+    }
+
     var patch = { status: st };
-    if (st === 'resolved' || st === 'rejected') {
+    if (st === 'rejected') {
       patch.resolved_at = new Date().toISOString();
     }
 
@@ -1309,7 +1448,7 @@
       if (patch.resolved_at) d.resolved_at = patch.resolved_at;
     }
     await logAdminAction('dispute_' + st, 'dispute', did, { money: false });
-    showToast('Dispute ' + adminReasonLabel(st) + (st === 'resolved' || st === 'rejected' ? ' (no payment change)' : ''), st === 'rejected' ? 'amber' : 'green');
+    showToast('Dispute ' + adminReasonLabel(st), st === 'rejected' ? 'amber' : 'green');
     renderDisputesEnhanced();
     if (typeof renderOverview === 'function') renderOverview();
   }
@@ -1605,6 +1744,8 @@
   window.renderReportsEnhanced = renderReportsEnhanced;
   window.renderDisputesEnhanced = renderDisputesEnhanced;
   window.adminUpdateDisputeStatus = adminUpdateDisputeStatus;
+  window.adminOpenDisputeEvidence = adminOpenDisputeEvidence;
+  window.adminResolveDisputeMoney = adminResolveDisputeMoney;
   window.adminReasonLabel = adminReasonLabel;
   window.isTempEmail = isTempEmail;
   window.findUser = findUser;

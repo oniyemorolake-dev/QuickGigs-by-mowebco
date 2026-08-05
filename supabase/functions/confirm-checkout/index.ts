@@ -253,14 +253,26 @@ Deno.serve(async (req) => {
       }
 
       if (!updated) {
-        const amountTotal = session.amount_total != null ? session.amount_total / 100 : 0;
+        const { data: pendingPair } = await supabase
+          .from('payments')
+          .select('amount,platform_fee,worker_payout')
+          .eq('poster_id', posterId)
+          .eq('worker_id', workerId)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(1);
+        const amountTotal = session.amount_total != null
+          ? session.amount_total / 100
+          : Number(pendingPair?.[0]?.amount || 0);
+        const platformFee = Number(pendingPair?.[0]?.platform_fee);
+        const workerPayout = Number(pendingPair?.[0]?.worker_payout);
         await supabase.from('payments').insert({
           task_id: taskId,
           poster_id: posterId,
           worker_id: workerId,
           amount: amountTotal,
-          platform_fee: 0,
-          worker_payout: 0,
+          platform_fee: Number.isFinite(platformFee) ? platformFee : 0,
+          worker_payout: Number.isFinite(workerPayout) ? workerPayout : 0,
           stripe_id: paymentIntentId,
           status: 'held',
           completed_at: new Date().toISOString(),

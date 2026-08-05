@@ -40,7 +40,7 @@ body.light .note{color:#6b6580;}
 <body>
 <script src="qg-theme.js"></script>
 <script src="qg-brand-init.js"></script>
-<script src="qg-config.js"></script>
+<script src="qg-config.js?v=20260803escrow1"></script>
 <script src="qg-mobile.js"></script>
 <script src="supabase-db.js"></script>
 <script src="qg-stripe.js"></script>
@@ -118,7 +118,7 @@ async function loadPaymentPage(user) {
   }
 
   if (!window.QG_paymentsLive || !window.QG_paymentsLive()) {
-    setMsg('Payments not live yet. Deploy Edge Functions and add your <strong>pk_test_</strong> key — see <strong>STRIPE-SETUP.md</strong>.', 'warn');
+    setMsg('Checkout is unavailable — check <strong>paymentsEnabled</strong> and the test publishable key in config.', 'warn');
     payBtn.textContent = 'Setup required';
     payBtn.disabled = true;
     return;

@@ -26,10 +26,12 @@
     var label = mode === 'tasker' || mode === 'worker' ? 'Tasker' : 'Poster';
     var msg = error === 'teen_poster_unavailable'
       ? 'Poster mode becomes available when you turn 18.'
-      : (error === 'role_access_unavailable' || error === 'function_not_configured'
-        ? 'Mode switching is temporarily unavailable. Please refresh and try again.'
-        : 'Could not switch to ' + label + ' mode — ' + String(error || 'unknown_error') +
-          (httpStatus ? ' (HTTP ' + httpStatus + ')' : '') + '.');
+      : (error === 'tasker_consent_required' || error === 'poster_consent_required'
+        ? 'Agree to the required terms to enable ' + label + ' mode.'
+        : (error === 'role_access_unavailable' || error === 'function_not_configured'
+          ? 'Mode switching is temporarily unavailable. Please refresh and try again.'
+          : 'Could not switch to ' + label + ' mode — ' + String(error || 'unknown_error') +
+            (httpStatus ? ' (HTTP ' + httpStatus + ')' : '') + '.'));
     if (typeof showToast === 'function') showToast(msg, '#ef4444');
     else if (typeof qgNotify === 'function') qgNotify(msg, '#ef4444');
     else alert(msg);
@@ -177,6 +179,11 @@
   function offerRoleOptIn(mode) {
     mode = mode === 'poster' ? 'poster' : 'tasker';
     var access = typeof window.QG_getRoleAccess === 'function' ? window.QG_getRoleAccess() : null;
+    // Already enabled → instant switch (no first-time screen).
+    if (access && ((mode === 'poster' && access.is_poster) || (mode === 'tasker' && access.is_tasker))) {
+      setQuickGigsMode(mode, { toast: true, redirect: 'dashboard' });
+      return;
+    }
     if (mode === 'poster' && access && access.is_teen) {
       var teenMessage = 'Poster mode becomes available when you turn 18.';
       if (typeof qgNotify === 'function') qgNotify(teenMessage, '#f59e0b');
@@ -190,28 +197,62 @@
     overlay.id = 'qgRoleOptInOverlay';
     overlay.className = 'qg-role-opt-in-overlay open';
     var poster = mode === 'poster';
+    var roleLabel = poster ? 'Poster' : 'Tasker';
+    var points = poster
+      ? [
+          'Post local tasks in under a minute',
+          'Review applicants and hire who you trust',
+          'Pay securely — funds stay in escrow until the job is done'
+        ]
+      : [
+          'Browse and apply to gigs near you',
+          'Get paid through escrow when the poster confirms',
+          'Build your rating and get hired again'
+        ];
+    var agreementHref = poster ? 'poster-terms.html' : 'contractor-agreement.html';
+    var agreementName = poster ? 'Poster &amp; Payment Terms' : 'Independent Contractor Agreement';
     overlay.innerHTML =
-      '<div class="qg-role-opt-in-dialog" role="dialog" aria-modal="true" aria-labelledby="qgRoleOptInTitle">' +
-        '<span class="qg-role-opt-in-icon">' + (poster ? '📋' : '💼') + '</span>' +
-        '<h2 id="qgRoleOptInTitle">' + (poster ? 'Become a Poster?' : 'Start finding work?') + '</h2>' +
-        '<p>' + (poster
-          ? 'This adds Poster mode to your account. You will need to verify a payment method before publishing.'
-          : 'This adds Tasker mode to your account. Identity verification is required before applying.') + '</p>' +
+      '<div class="qg-role-opt-in-dialog qg-role-first-enable" data-enable-role="' + mode + '" role="dialog" aria-modal="true" aria-labelledby="qgRoleOptInTitle">' +
+        '<p class="qg-role-first-kicker">' + roleLabel + ' mode</p>' +
+        '<h2 id="qgRoleOptInTitle">' + (poster ? 'Need something done?' : 'Want to earn from tasks?') + '</h2>' +
+        '<p class="qg-role-first-sub">' + (poster
+          ? 'Post tasks and hire taskers near you. Your poster profile is set up automatically.'
+          : 'Apply to gigs near you and get paid for completed work. Your tasker profile is set up automatically.') + '</p>' +
+        '<ul class="qg-role-first-points">' +
+          points.map(function (p) { return '<li>' + p + '</li>'; }).join('') +
+        '</ul>' +
+        '<label class="qg-role-first-agree">' +
+          '<input type="checkbox" data-role-agree>' +
+          '<span>I agree to the QuickGigs <a href="terms.html" target="_blank" rel="noopener">Terms</a> AND the <a href="' + agreementHref + '" target="_blank" rel="noopener">' + agreementName + '</a>.</span>' +
+        '</label>' +
         '<div class="qg-role-opt-in-actions">' +
-          '<button type="button" data-role-cancel>Not now</button>' +
-          '<button type="button" class="primary" data-role-confirm>Enable ' + (poster ? 'Poster' : 'Tasker') + '</button>' +
-        '</div><p class="qg-role-opt-in-error" data-role-error role="alert" hidden></p>' +
+          '<button type="button" data-role-cancel>Maybe later</button>' +
+          '<button type="button" class="primary" data-role-confirm disabled>Enable ' + roleLabel + ' mode</button>' +
+        '</div>' +
+        '<p class="qg-role-opt-in-error" data-role-error role="alert" hidden></p>' +
       '</div>';
     document.body.appendChild(overlay);
+    var agree = overlay.querySelector('[data-role-agree]');
+    var confirmBtn = overlay.querySelector('[data-role-confirm]');
+    function syncConfirm() {
+      confirmBtn.disabled = !(agree && agree.checked);
+    }
+    agree.addEventListener('change', syncConfirm);
+    syncConfirm();
     function close() { overlay.remove(); }
     overlay.onclick = function (e) { if (e.target === overlay) close(); };
     overlay.querySelector('[data-role-cancel]').onclick = close;
-    overlay.querySelector('[data-role-confirm]').onclick = async function () {
-      var btn = overlay.querySelector('[data-role-confirm]');
-      btn.disabled = true;
-      btn.textContent = 'Enabling…';
+    confirmBtn.onclick = async function () {
+      if (!agree.checked) return;
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Enabling…';
+      var versions = (window.QG_CONFIG && window.QG_CONFIG.termsVersions) || {};
       var result = typeof window.QG_enableRole === 'function'
-        ? await window.QG_enableRole(mode)
+        ? await window.QG_enableRole(mode, {
+            termsAccepted: true,
+            tosVersion: versions.tos,
+            agreementVersion: poster ? versions.posterPayment : versions.ica
+          })
         : { success: false, error: 'role_access_unavailable' };
       if (!result.success) {
         var errorNode = overlay.querySelector('[data-role-error]');
@@ -219,17 +260,22 @@
           errorNode.hidden = false;
           errorNode.textContent = result.error === 'teen_poster_unavailable'
             ? 'Poster mode becomes available when you turn 18.'
-            : 'Could not enable this mode — ' + String(result.error || 'unknown_error') +
-              (result.http_status ? ' (HTTP ' + result.http_status + ')' : '') + '.';
+            : (result.error === 'tasker_consent_required' || result.error === 'poster_consent_required'
+              ? 'Please agree to the required terms to continue.'
+              : (result.error === 'consent_schema_missing'
+                ? 'Role consent is not set up on the server yet. Please try again shortly.'
+                : 'Could not enable this mode — ' + String(result.error || 'unknown_error') +
+                  (result.http_status ? ' (HTTP ' + result.http_status + ')' : '') + '.'));
         }
-        btn.disabled = false;
-        btn.textContent = result.error === 'teen_poster_unavailable'
+        confirmBtn.disabled = !agree.checked;
+        confirmBtn.textContent = result.error === 'teen_poster_unavailable'
           ? 'Available when you turn 18'
-          : 'Try again';
+          : 'Enable ' + roleLabel + ' mode';
         return;
       }
       close();
       document.documentElement.setAttribute('data-mode', mode);
+      if (typeof applyRoleTheme === 'function') applyRoleTheme();
       showRoleToast(mode);
       setTimeout(function () { window.location.href = 'dashboard.html'; }, 180);
     };

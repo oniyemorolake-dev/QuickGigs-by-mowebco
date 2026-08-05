@@ -262,7 +262,10 @@ async function markTaskCompleted(supabase: Sb, task: Record<string, unknown>) {
 
   const { data, error } = await supabase
     .from('tasks')
-    .update({ status: 'completed' })
+    .update({
+      status: 'completed',
+      poster_confirmed_at: new Date().toISOString(),
+    })
     .eq('task_id', tid)
     .select('task_id,status')
     .limit(1);

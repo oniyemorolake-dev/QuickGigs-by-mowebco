@@ -12,6 +12,7 @@
   function paymentStatusLabel(status) {
     var st = String(status || '').toLowerCase();
     if (st === 'held') return { text: 'In escrow', cls: 'pay-st-held' };
+    if (st === 'disputed') return { text: 'Disputed · frozen', cls: 'pay-st-refunded' };
     if (st === 'paid') return { text: 'Paid out', cls: 'pay-st-paid' };
     if (st === 'pending') return { text: 'Processing', cls: 'pay-st-pending' };
     if (st === 'refunded') return { text: 'Refunded', cls: 'pay-st-refunded' };
@@ -63,7 +64,7 @@
         pending += amt;
         return;
       }
-      if (st === 'held') {
+      if (st === 'held' || st === 'disputed') {
         held += amt;
         return;
       }

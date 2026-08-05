@@ -85,7 +85,7 @@ async function callVerifiedFunction(url, body, firebaseUser) {
 /** Explicit column lists — only fields the UI actually renders / needs. Never select=*. */
 var SELECT_TASKS_BROWSE = 'task_id,title,budget,location,lat,lng,task_mode,status,created_at,category,description,posted_by,poster_name,age_preference,budget_negotiable,photo_urls,scheduled_label,requires_photos,rate_type,is_recurring,hourly_rate,frequency,est_hours';
 /** Detail includes precise_address for post-accept reveal — public cards use BROWSE (no precise_address). */
-var SELECT_TASKS_DETAIL = SELECT_TASKS_BROWSE + ',scheduled_at,precise_address';
+var SELECT_TASKS_DETAIL = SELECT_TASKS_BROWSE + ',scheduled_at,precise_address,worker_completed_at,poster_confirmed_at,evidence_frozen';
 /** Dashboard first paint — no description/photos/geo (smaller cellular payload). */
 var SELECT_TASKS_DASH = 'task_id,title,budget,location,task_mode,status,created_at,category,posted_by,age_preference,budget_negotiable';
 var SELECT_APPLICATIONS = 'app_id,task_id,worker_id,worker_name,message,price,status,guardian_status,guardian_reviewed_at,guardian_distance_km,created_at,counter_price,counter_by,counter_round,last_counter_at';
@@ -4158,7 +4158,7 @@ async function syncConversationUnlock(convId, actorId) {
 
 function isPaymentStatusComplete(status) {
   var st = String(status || '').toLowerCase();
-  return st === 'held' || st === 'paid' || st === 'completed';
+  return st === 'held' || st === 'disputed' || st === 'paid' || st === 'completed';
 }
 
 async function isTaskPaymentComplete(taskId) {
@@ -4322,6 +4322,13 @@ async function releaseTaskPayout(taskId, actorId, options) {
 
   var st = String(payment.status || '').toLowerCase();
   if (st === 'paid' || st === 'completed') return { ok: true, already: true };
+  if (st === 'disputed') {
+    return {
+      ok: false,
+      error: 'payment_disputed',
+      message: 'Escrow is frozen while a dispute is open.'
+    };
+  }
   if (st !== 'held') return { ok: true, skipped: true };
 
   if (typeof getSupabaseHeaders !== 'function') {

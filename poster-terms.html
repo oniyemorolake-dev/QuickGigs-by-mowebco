@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Poster &amp; Payment Terms — QuickGigs</title>
+<meta name="description" content="Poster and payment terms for hiring taskers on QuickGigs.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://quickgigs.ca/poster-terms.html">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="qg-polish.css?v=20260726contrast">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--bg:#041210;--border:rgba(45,212,191,0.14);--text:#fff;--text-muted:rgba(255,255,255,0.68);--accent:#2dd4bf;--accent-deep:#0f766e;--nav-bg:#041210;}
+body.light{--bg:#f4fbfa;--border:#d8f3ef;--text:#0f2f2c;--text-muted:#4a6b66;--nav-bg:#fff;--accent:#0f766e;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.nav{position:sticky;top:0;z-index:50;background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{font-family:'Playfair Display',serif;font-style:italic;font-size:1.25rem;color:var(--accent);}
+.back-btn{font-size:13px;color:var(--accent);text-decoration:none;}
+.content{max-width:680px;margin:0 auto;padding:32px 20px 60px;}
+.page-label{font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent);margin-bottom:10px;display:block;}
+.page-title{font-family:'Playfair Display',serif;font-size:2rem;margin-bottom:8px;}
+.page-date{font-size:13px;color:var(--text-muted);margin-bottom:32px;}
+.section{margin-bottom:28px;}
+.section-title{font-size:16px;font-weight:500;margin-bottom:10px;padding-bottom:8px;border-bottom:0.5px solid var(--border);}
+p,li{font-size:14px;line-height:1.8;color:var(--text-muted);margin-bottom:12px;}
+ul{padding-left:20px;margin-bottom:12px;}
+strong{color:var(--text);font-weight:500;}
+a{color:var(--accent);}
+.info-box{border-radius:14px;padding:16px 18px;margin-bottom:20px;border:0.5px solid rgba(45,212,191,0.25);background:rgba(15,118,110,0.18);}
+.info-box p{margin:0;color:var(--accent);}
+body.light .info-box{background:#e7f8f5;border-color:#b6e8df;}
+</style>
+<script src="qg-config.js"></script>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-logo">QuickGigs</div>
+  <a class="back-btn" href="terms.html">← Terms</a>
+</nav>
+<div class="content">
+  <span class="page-label">Legal · Posters</span>
+  <h1 class="page-title">Poster &amp; Payment Terms</h1>
+  <p class="page-date">Version 2026-08-03 · Effective August 3, 2026</p>
+  <p>These Poster &amp; Payment Terms apply when you enable Poster mode on QuickGigs. They supplement the <a href="terms.html">QuickGigs Terms of Service</a>.</p>
+
+  <div class="section">
+    <div class="section-title">1. Posting and hiring</div>
+    <p>You may post local tasks (minimum <strong>$20 CAD</strong>), review applicants, and accept one Tasker per task. You are responsible for accurate listings and for confirming when work is complete.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">2. Escrow</div>
+    <p>After you accept a Tasker, you fund the task through Stripe. Payment is <strong>held in escrow</strong> until you confirm completion. Funds are then released to the Tasker (or their approved guardian for teens). Chat unlocks after funding when escrow is enabled.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">3. Platform fees</div>
+    <div class="info-box">
+      <p><strong>Fee model (CAD):</strong> one-off tasks 25% · recurring 10% · subscribers 20% one-off / 8% recurring. Recurring hourly jobs charge the fee on each period’s total.</p>
+    </div>
+    <p>Fees are calculated server-side and recorded on the payment. Platform fees are generally non-refundable once a task is completed and paid out.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">4. Payment method verification</div>
+    <p>Before posting, you may be required to verify a payment method. Verification does not charge the task amount; escrow charges happen when you fund an accepted task.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">5. Conduct</div>
+    <ul>
+      <li>Do not solicit off-platform payment to avoid fees.</li>
+      <li>Do not request adult or sexual content — zero tolerance.</li>
+      <li>Treat Taskers fairly and release or dispute funds in good faith.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-title">6. Acceptance</div>
+    <p>Enabling Poster mode and checking the consent box records your acceptance of these Poster &amp; Payment Terms and the general Terms at the versions shown on that screen.</p>
+  </div>
+</div>
+<script>
+var isDark = localStorage.getItem('qg-theme') !== 'light' && localStorage.getItem('qg-mode') !== 'light';
+document.body.className = isDark ? '' : 'light';
+</script>
+</body>
+</html>

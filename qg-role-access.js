@@ -154,9 +154,23 @@
     return { success: true, state: state, mode: mode };
   }
 
-  async function enableRole(mode) {
+  async function enableRole(mode, options) {
     mode = mode === 'poster' ? 'poster' : 'tasker';
-    var result = await call(mode === 'poster' ? 'enable_poster' : 'enable_tasker');
+    options = options || {};
+    var versions = (window.QG_CONFIG && window.QG_CONFIG.termsVersions) || {};
+    var consent = {
+      terms_accepted: options.termsAccepted === true,
+      tos_version: String(options.tosVersion || versions.tos || ''),
+      agreement_version: String(
+        options.agreementVersion ||
+        (mode === 'poster' ? versions.posterPayment : versions.ica) ||
+        ''
+      )
+    };
+    var result = await call(
+      mode === 'poster' ? 'enable_poster' : 'enable_tasker',
+      consent
+    );
     if (!result.success) {
       console.error('[QuickGigs role-access] enable role failed', { mode: mode, error: result.error });
       return result;

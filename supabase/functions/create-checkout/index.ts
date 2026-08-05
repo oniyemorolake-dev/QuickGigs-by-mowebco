@@ -299,6 +299,14 @@ Deno.serve(async (req) => {
   try {
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeKey) return json({ ok: false, error: 'stripe_not_configured' }, 503);
+    // Hard-block live keys until public launch — escrow is TEST mode only.
+    if (stripeKey.startsWith('sk_live_')) {
+      return json({
+        ok: false,
+        error: 'live_keys_blocked',
+        message: 'Escrow is running in Stripe TEST mode only.',
+      }, 503);
+    }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -403,7 +411,15 @@ Deno.serve(async (req) => {
 
     const amount = resolveAmount(task, app);
     if (!amount || amount <= 0) return json({ ok: false, error: 'invalid_amount' }, 400);
-    if (amount < 0.5) return json({ ok: false, error: 'amount_below_minimum' }, 400);
+    // Platform minimum $20 CAD (same as post-task / abuseLimits.minBudget)
+    if (amount < 20) {
+      return json({
+        ok: false,
+        error: 'amount_below_minimum',
+        message: 'Tasks must be at least $20 CAD.',
+        min_amount: 20,
+      }, 400);
+    }
 
     let workerUser: Record<string, unknown> | null = null;
     {
@@ -425,12 +441,11 @@ Deno.serve(async (req) => {
     }
 
     const workerConnectId = String(workerUser?.stripe_connect_id || '');
-    const isRecurring = !!(getField(task, 'is_recurring'));
+    const taskMode = String(getField(task, 'task_mode') || '').toLowerCase();
+    const isRecurring = !!(getField(task, 'is_recurring')) || taskMode === 'recurring';
     const isSubscriber = !!(workerUser && workerUser.is_subscriber);
-    // FUTURE: per-period Stripe charging for recurring jobs (subscriptions / scheduled
-    // invoices) hooks here — display + data model only while checkout may be disconnected.
-    // Durable fee model — never hardcode 25%. Env PLATFORM_FEE_PERCENT is ignored when
-    // feeBreakdown rates apply (kept only as emergency override if FEE_FORCE_ENV=1).
+    // Fees computed server-side only — client must never recompute for storage.
+    // one-off 25% | recurring 10% | one-off sub 20% | recurring sub 8%
     let breakdown = feeBreakdown(amount, { isRecurring, isSubscriber });
     if (Deno.env.get('FEE_FORCE_ENV') === '1') {
       const envPct = Number(Deno.env.get('PLATFORM_FEE_PERCENT') || '25');
@@ -526,6 +541,8 @@ Deno.serve(async (req) => {
       is_recurring: isRecurring,
       is_subscriber: isSubscriber,
       worker_has_payouts: !!workerConnectId,
+      livemode: !!session.livemode,
+      test_mode: !session.livemode,
     });
   } catch (err) {
     console.error('create-checkout error:', err);

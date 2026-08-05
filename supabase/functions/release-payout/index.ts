@@ -277,6 +277,13 @@ Deno.serve(async (req) => {
     }
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeKey) return json({ ok: false, error: 'stripe_not_configured' }, 503);
+    if (stripeKey.startsWith('sk_live_')) {
+      return json({
+        ok: false,
+        error: 'live_keys_blocked',
+        message: 'Escrow is running in Stripe TEST mode only.',
+      }, 503);
+    }
 
     const body = await req.json();
     const inputTaskId = String(body.task_id || '').trim();
@@ -325,6 +332,13 @@ Deno.serve(async (req) => {
     if (!payment) return json({ ok: true, skipped: true, reason: 'no_payment' });
 
     const payStatus = String(getField(payment, 'status') || '').toLowerCase();
+    if (payStatus === 'disputed') {
+      return json({
+        ok: false,
+        error: 'payment_disputed',
+        message: 'Escrow is frozen while a dispute is open. An admin must resolve it.',
+      }, 409);
+    }
     if (payStatus === 'paid' || payStatus === 'completed') {
       return json({
         ok: true,
@@ -336,6 +350,22 @@ Deno.serve(async (req) => {
 
     if (payStatus !== 'held') {
       return json({ ok: true, skipped: true, reason: 'payment_not_held' });
+    }
+
+    // Open dispute freeze (even if status not yet flipped)
+    const { data: openDispute } = await supabase
+      .from('disputes')
+      .select('dispute_id')
+      .eq('task_id', taskUuid || inputTaskId)
+      .in('status', ['open', 'reviewing'])
+      .limit(1);
+    if (openDispute && openDispute.length) {
+      return json({
+        ok: false,
+        error: 'payment_disputed',
+        message: 'Escrow is frozen while a dispute is open.',
+        dispute_id: openDispute[0].dispute_id,
+      }, 409);
     }
 
     const { data: workerUser } = await supabase

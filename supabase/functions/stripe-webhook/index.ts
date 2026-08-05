@@ -2,9 +2,8 @@
 // Deploy: supabase functions deploy stripe-webhook --no-verify-jwt
 // Secrets: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
 // Stripe Dashboard → Webhooks → endpoint URL = .../functions/v1/stripe-webhook
-// Events: checkout.session.completed, identity.verification_session.verified,
-// identity.verification_session.requires_input, identity.verification_session.canceled,
-// payment_method.detached
+// Events: checkout.session.completed, checkout.session.expired,
+// payment_intent.payment_failed, identity.*, payment_method.detached
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
@@ -14,6 +13,9 @@ Deno.serve(async (req) => {
   const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
   if (!stripeKey || !webhookSecret) {
     return new Response('Stripe not configured', { status: 503 });
+  }
+  if (stripeKey.startsWith('sk_live_')) {
+    return new Response('Live Stripe keys blocked — TEST mode only', { status: 503 });
   }
 
   const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
@@ -85,6 +87,39 @@ Deno.serve(async (req) => {
     });
   }
 
+  // Escrow failure / abandoned checkout — mark pending rows failed
+  if (
+    event.type === 'checkout.session.expired' ||
+    event.type === 'payment_intent.payment_failed'
+  ) {
+    const obj = event.data.object as Stripe.Checkout.Session | Stripe.PaymentIntent;
+    const meta = (obj as { metadata?: Record<string, string> }).metadata || {};
+    if (meta.project !== 'quickgigs') {
+      return new Response(JSON.stringify({ ignored: true }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    const stripeRef = String(obj.id || '');
+    if (stripeRef) {
+      await supabase
+        .from('payments')
+        .update({ status: 'failed' })
+        .eq('stripe_id', stripeRef)
+        .eq('status', 'pending');
+    }
+    if (meta.task_id && meta.poster_id) {
+      await supabase
+        .from('payments')
+        .update({ status: 'failed' })
+        .eq('task_id', meta.task_id)
+        .eq('poster_id', meta.poster_id)
+        .eq('status', 'pending');
+    }
+    return new Response(JSON.stringify({ received: true, status: 'failed' }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   if (event.type !== 'checkout.session.completed') {
     return new Response(JSON.stringify({ received: true }), {
       headers: { 'Content-Type': 'application/json' },
@@ -152,17 +187,35 @@ Deno.serve(async (req) => {
       .update(heldPatch)
       .eq('task_id', taskId)
       .eq('poster_id', posterId)
-      .select('payment_id');
+      .eq('status', 'pending')
+      .select('payment_id,amount,platform_fee,worker_payout');
 
     if (!byTask || !byTask.length) {
-      const amountTotal = session.amount_total != null ? session.amount_total / 100 : 0;
+      // Fallback insert — preserve fee fields from any pending row for this pair,
+      // otherwise leave fee columns for release-payout to read from amount only via stored worker_payout.
+      const { data: pendingPair } = await supabase
+        .from('payments')
+        .select('amount,platform_fee,worker_payout')
+        .eq('poster_id', posterId)
+        .eq('worker_id', workerId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      const amountTotal = session.amount_total != null
+        ? session.amount_total / 100
+        : Number(pendingPair?.[0]?.amount || 0);
+      const platformFee = Number(pendingPair?.[0]?.platform_fee);
+      const workerPayout = Number(pendingPair?.[0]?.worker_payout);
+      // Never invent fees client-side; if unknown, store amount and 0 fees only as last resort
+      // (release-payout uses stored worker_payout — create-checkout should have written them).
       await supabase.from('payments').insert({
         task_id: taskId,
         poster_id: posterId,
         worker_id: workerId,
         amount: amountTotal,
-        platform_fee: 0,
-        worker_payout: 0,
+        platform_fee: Number.isFinite(platformFee) ? platformFee : 0,
+        worker_payout: Number.isFinite(workerPayout) ? workerPayout : 0,
         stripe_id: paymentIntentId,
         status: 'held',
         completed_at: new Date().toISOString(),

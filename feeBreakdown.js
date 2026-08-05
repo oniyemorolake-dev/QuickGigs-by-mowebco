@@ -12,7 +12,7 @@
  * amount = total for THIS charge (hourly → hourly_rate * est_hours).
  *
  * FUTURE: per-period Stripe billing (subscriptions / scheduled invoices) for recurring
- * jobs hooks in after accept — display + data model only while Stripe checkout is disconnected.
+ * jobs — fee applies to each period total. Escrow checkout is live in TEST mode.
  * Do NOT process charges here.
  */
 (function (global) {

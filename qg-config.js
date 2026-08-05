@@ -1,9 +1,8 @@
 // QuickGigs — platform rules (single place to change launch behaviour)
 window.QG_CONFIG = {
-  // When chat unlocks: 'payment' (launch) | 'accept' (beta) | 'apply' (internal testing only)
-  // When Stripe is live, restore the escrow-gated contact rule — chat unlocks only after
-  // escrow is funded. Currently gated on acceptance because payments are off.
-  chatUnlockAfter: 'accept',
+  // When chat unlocks: 'payment' (escrow) | 'accept' | 'apply' (internal only)
+  // Escrow TEST mode: chat unlocks after poster funds the task (held).
+  chatUnlockAfter: 'payment',
   // Set true ONLY after Supabase Auth → Firebase is enabled AND rls-secure.sql is applied
   supabaseFirebaseAuth: false,
   blockOffPlatformContact: true,
@@ -30,12 +29,12 @@ window.QG_CONFIG = {
   ga4ConversionLabel: '',
   // P2 — trust & moderation
   autoBanAfterWarnings: 3,
-  // Stripe / escrow checkout — OFF until launch (chat still unlocks on accept).
-  paymentsEnabled: false,
-  // Poster payment-method verification (Setup mode) — ON for publish gate. Uses existing
-  // role-verification start_poster + Stripe test keys (sk_test in Supabase secrets).
+  // Stripe / escrow checkout — TEST MODE ONLY (pk_test_ + sk_test_ in Supabase secrets).
+  // Do NOT switch to pk_live_ / sk_live_ until public launch.
+  paymentsEnabled: true,
+  // Poster payment-method verification (Setup mode) — ON for publish gate.
   posterPaymentVerificationEnabled: true,
-  // Paste pk_test_... for testing (must match sk_test_ in Supabase secrets — not pk_live_ until launch)
+  // TEST publishable key only — must match sk_test_ in Supabase secrets (never pk_live_)
   stripePublishableKey: 'pk_test_51Tlh7hCPjV7Oq67QZsRZgVeZMY0AgYDwl0YgOtV33gXPdDhJF7tMzw0BfjTZkVE3hcIXkhsx6XNJZCM1lSTVpfk200OajLTBz9',
   createCheckoutUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-checkout',
   confirmCheckoutUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/confirm-checkout',
@@ -45,6 +44,18 @@ window.QG_CONFIG = {
   connectLinkUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-connect-link',
   releasePayoutUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/release-payout',
   completeTaskUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/complete-task',
+  // Role-enable legal versions — must match role-access TERMS constants.
+  termsVersions: {
+    tos: '2026-07-02',
+    ica: '2026-08-03',
+    posterPayment: '2026-08-03'
+  },
+  // Evidence + disputes (TEST escrow)
+  disputeAutoReleaseDays: 3,
+  taskEvidenceUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/task-evidence',
+  raiseDisputeUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/raise-dispute',
+  resolveDisputeUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/resolve-dispute',
+  disputeAutoRulesUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/dispute-auto-rules',
   // Legacy single % (one-off default only — DO NOT use for fee math).
   // All fee math must go through feeBreakdown.js:
   // one-off 25% | recurring 10% | one-off sub 20% | recurring sub 8%.
@@ -80,8 +91,6 @@ window.QG_CONFIG = {
 
 /**
  * True only when chat must wait for escrow/payment.
- * When Stripe is live, restore the escrow-gated contact rule — chat unlocks only after
- * escrow is funded. Currently gated on acceptance because payments are off.
  */
 window.isChatPaymentGated = function () {
   var c = window.QG_CONFIG || {};
@@ -90,7 +99,6 @@ window.isChatPaymentGated = function () {
 };
 
 window.getChatUnlockRule = function () {
-  // When payments are disconnected, force accept-mode unlock regardless of stale values.
   if (window.isChatPaymentGated && window.isChatPaymentGated()) return 'payment';
   var rule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept';
   if (rule === 'payment' && !(window.QG_CONFIG && window.QG_CONFIG.paymentsEnabled)) return 'accept';
@@ -160,8 +168,6 @@ window.getMessagesBannerCopy = function () {
   }
   return {
     title: 'Chat opens after acceptance',
-    // When Stripe is live, restore the escrow-gated contact rule — chat unlocks only after
-    // escrow is funded. Currently gated on acceptance because payments are off.
-    sub: 'Once a worker is accepted, you can message each other here. Escrow payment is paused while payments are offline.'
+    sub: 'Once a worker is accepted, you can message each other here.'
   };
 };

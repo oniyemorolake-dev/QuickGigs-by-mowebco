@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 
-<title>Browse tasks — QuickGigs</title>
-<meta name="description" content="Browse open tasks near you on QuickGigs — Canada's marketplace to earn money doing errands, home help, and more.">
+<title>Browse tasks ? QuickGigs</title>
+<meta name="description" content="Browse open tasks near you on QuickGigs ? Canada's marketplace to earn money doing errands, home help, and more.">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://quickgigs.ca/browsetask.html">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://quickgigs.ca/browsetask.html">
-<meta property="og:title" content="Browse tasks — QuickGigs">
-<meta property="og:description" content="Browse open tasks near you on QuickGigs — Canada's marketplace to earn money doing errands, home help, and more.">
+<meta property="og:title" content="Browse tasks ? QuickGigs">
+<meta property="og:description" content="Browse open tasks near you on QuickGigs ? Canada's marketplace to earn money doing errands, home help, and more.">
 <meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <meta property="og:locale" content="en_CA">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Browse tasks — QuickGigs">
-<meta name="twitter:description" content="Browse open tasks near you on QuickGigs — Canada's marketplace to earn money doing errands, home help, and more.">
+<meta name="twitter:title" content="Browse tasks ? QuickGigs">
+<meta name="twitter:description" content="Browse open tasks near you on QuickGigs ? Canada's marketplace to earn money doing errands, home help, and more.">
 <meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,7 +29,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
-<link rel="stylesheet" href="qg-role-theme.css?v=20260730roles1">
+<link rel="stylesheet" href="qg-role-theme.css?v=20260803role1">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
 <script src="qg-theme.js"></script>
@@ -130,7 +130,7 @@ body.light .mpill.active-standard{background:#ede9ff;color:#5a2d8a;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .loading-txt{font-size:13px;color:var(--results-color);}
 .cards-area{padding:10px 18px 0;}
-/* eBay-style: fixed-ratio media left, details right — photo + placeholder same box */
+/* eBay-style: fixed-ratio media left, details right ? photo + placeholder same box */
 .task-card{
   display:flex;align-items:center;gap:0;
   border-radius:16px;padding:0;margin-bottom:12px;
@@ -165,7 +165,7 @@ body.light .tc-media{background:#f0eeff;}
   object-fit:cover;object-position:center;
   display:block;border-radius:12px;
 }
-/* Compact zoom hint — full “Tap to enlarge” chip is too wide for ~40% media */
+/* Compact zoom hint ? full ?Tap to enlarge? chip is too wide for ~40% media */
 .tc-media.tc-photo-tappable::before{
   content:'??';
   top:8px;right:8px;
@@ -207,7 +207,7 @@ body.light .tc-media-placeholder-label{color:rgba(45,27,78,0.45);}
 }
 .tc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:0;}
 .tc-left{display:flex;align-items:flex-start;gap:0;flex:1;min-width:0;}
-.tc-icon{display:none;} /* legacy small icon — media column replaces it */
+.tc-icon{display:none;} /* legacy small icon ? media column replaces it */
 .tc-meta{flex:1;min-width:0;}
 .tc-cat{font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);margin-bottom:3px;}
 .tc-title{font-size:15px;font-weight:500;color:var(--text);line-height:1.35;
@@ -367,7 +367,7 @@ body.light .app-legal-footer a{color:var(--purple);}
       <span class="search-icon" aria-hidden="true"><svg class="qg-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
       <label class="sr-only" for="searchInput">Search tasks</label>
       <input class="search-input" id="searchInput" type="text" name="qg-browse-q"
-        placeholder="Search tasks…"
+        placeholder="Search tasks?"
         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
         data-lpignore="true" data-1p-ignore="true" data-form-type="other"
         readonly onfocus="this.removeAttribute('readonly')"
@@ -441,7 +441,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 <div class="photo-required-banner" id="photoRequiredBanner" style="display:none">
   <div>
     <strong>Profile photo required</strong>
-    <p>Add a clear photo before you apply — posters need to see who they're hiring.</p>
+    <p>Add a clear photo before you apply ? posters need to see who they're hiring.</p>
   </div>
   <a href="profile.html?setup=photo&required=1&return=browsetask.html">Add photo</a>
 </div>
@@ -450,7 +450,7 @@ body.light .app-legal-footer a{color:var(--purple);}
   <p>Only age-eligible gigs are shown. When you apply, your guardian reviews the request before the poster sees it.</p>
 </div>
 <div class="results-bar">
-  <span class="results-txt" id="resultsCount">Loading tasks…</span>
+  <span class="results-txt" id="resultsCount">Loading tasks?</span>
   <div class="filter-sorts">
     <select class="date-filter" id="dateFilter" onchange="applyFilters()" aria-label="Filter by post date">
       <option value="any">Any time</option>
@@ -476,7 +476,7 @@ body.light .app-legal-footer a{color:var(--purple);}
   </div>
   <div class="qg-budget-chips" id="budgetChips">
     <button type="button" class="qg-bchip" data-budget="under50">Under $50</button>
-    <button type="button" class="qg-bchip" data-budget="50to100">$50–100</button>
+    <button type="button" class="qg-bchip" data-budget="50to100">$50?100</button>
     <button type="button" class="qg-bchip" data-budget="100plus">$100+</button>
   </div>
 </div>
@@ -581,7 +581,7 @@ onAuthStateChanged(auth, (user) => {
 <script src="qg-ux.js?v=20260728welcome1" defer></script>
 <script src="qg-bigtech.js?v=20260728xss1" defer></script>
 <script src="qg-wave2.js?v=20260728xss1" defer></script>
-<script defer src="qg-config.js?v=20260731email1"></script>
+<script defer src="qg-config.js?v=20260803escrow1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="qg-categories.js"></script>
 <script defer src="supabase-db.js?v=20260730verify1"></script>
@@ -624,7 +624,7 @@ function normaliseTask(row){
     lng: row.lng != null ? Number(row.lng) : (row.LNG != null ? Number(row.LNG) : null),
     when: row.scheduled_label || row.SCHEDULED_LABEL || '',
     createdAt: row.created_at || row.CREATED_AT || '',
-    // Computed at render from createdAt — do not bake a stale relative string here
+    // Computed at render from createdAt ? do not bake a stale relative string here
     posted: '',
     applicants:0,
     status:(row.STATUS||row.status||'open').toLowerCase(),
@@ -669,7 +669,7 @@ document.addEventListener('DOMContentLoaded', function bootBrowseVerification(){
   }
 });
 
-/** Resolve the DB apply fn — never capture at parse time (defer scripts load later). */
+/** Resolve the DB apply fn ? never capture at parse time (defer scripts load later). */
 function getDbSubmitApplication() {
   if (typeof window.submitApplicationToDb === 'function' &&
       window.submitApplicationToDb !== window.submitBrowseApplication) {
@@ -705,7 +705,7 @@ function applyNotify(msg, color) {
   if (c.indexOf('4ade80') >= 0 || c.indexOf('16a34a') >= 0) tone = 'is-ok';
   else if (c.indexOf('f59e0b') >= 0 || c.indexOf('d97706') >= 0) tone = 'is-warn';
 
-  // Always show inside the modal footer first — never rely on bottom toasts under the keyboard.
+  // Always show inside the modal footer first ? never rely on bottom toasts under the keyboard.
   var inline = document.getElementById('applyInlineAlert');
   var overlayOpen = document.getElementById('modalOverlay');
   var modalOpen = overlayOpen && overlayOpen.classList.contains('open');
@@ -817,7 +817,7 @@ window.applyBrowseLocation=async function(){
   var locEl=document.getElementById('locationFilter');
   var value=locEl ? locEl.value.trim() : '';
   if(!value)return;
-  setLocationStatus('Finding '+value+'…',false);
+  setLocationStatus('Finding '+value+'?',false);
   var result=typeof setUserLocation==='function' ? await setUserLocation(value) : null;
   if(!result){
     setLocationStatus('Choose a valid Canadian city or area.',true);
@@ -847,8 +847,8 @@ window.setBrowseRadius=function(value){
 
 window.toggleNearMe=async function(){
   var btn=document.getElementById('nearMeBtn');
-  if(btn){btn.disabled=true;btn.textContent='Locating…';}
-  setLocationStatus('Requesting your approximate location…',false);
+  if(btn){btn.disabled=true;btn.textContent='Locating?';}
+  setLocationStatus('Requesting your approximate location?',false);
   var pos=typeof requestGeoForFilter==='function' ? await requestGeoForFilter() : null;
   if(!pos){
     if(btn){btn.disabled=false;btn.textContent='Use my location';}
@@ -973,11 +973,11 @@ async function loadTasks(){
 function getDemoTasks(){
   return [
     {id:1,mode:'quick',cat:'errands',catLabel:'Errands',icon:'??',iconBg:'rgba(251,191,36,0.15)',title:'Pick up prescription from Shoppers Drug Mart',desc:'Grab my prescription on 17th Ave SW and drop off at my condo. 20 mins max.',price:20,priceLabel:'$20',location:'Calgary, AB',posted:'5 mins ago',applicants:0,status:'open'},
-    {id:2,mode:'quick',cat:'tech',catLabel:'Tech',icon:'??',iconBg:'rgba(107,63,160,0.2)',title:'Fix cracked screen on Samsung S22 — need it today',desc:'Screen is badly cracked, phone still works. Need someone experienced.',price:60,priceLabel:'$60',location:'Calgary, AB',posted:'12 mins ago',applicants:1,status:'open'},
+    {id:2,mode:'quick',cat:'tech',catLabel:'Tech',icon:'??',iconBg:'rgba(107,63,160,0.2)',title:'Fix cracked screen on Samsung S22 ? need it today',desc:'Screen is badly cracked, phone still works. Need someone experienced.',price:60,priceLabel:'$60',location:'Calgary, AB',posted:'12 mins ago',applicants:1,status:'open'},
     {id:3,mode:'standard',cat:'home',catLabel:'Home',icon:'??',iconBg:'rgba(107,63,160,0.2)',title:'Deep clean 2 bedroom apartment before move out',desc:'Full deep clean before handing over keys this Saturday.',price:120,priceLabel:'$120',location:'Calgary, AB',posted:'2 hrs ago',applicants:3,status:'open'},
-    {id:4,mode:'standard',cat:'beauty',catLabel:'Beauty',icon:'??',iconBg:'rgba(200,168,233,0.15)',title:'Box braids — medium length, natural hair',desc:'Looking for someone experienced with box braids on natural hair.',price:80,priceLabel:'$80',location:'Calgary, AB',posted:'3 hrs ago',applicants:2,status:'open'},
-    {id:5,mode:'recurring',cat:'care',catLabel:'Care',icon:'??',iconBg:'rgba(74,222,128,0.1)',title:'Reliable nanny needed Monday to Friday 9am–3pm',desc:'Caring nanny for two kids aged 4 and 7. Starting next Monday.',price:20,priceLabel:'$20/hr',location:'Calgary, AB',posted:'1 hr ago',applicants:1,status:'open'},
-    {id:6,mode:'recurring',cat:'tutoring',catLabel:'Tutoring',icon:'??',iconBg:'rgba(74,222,128,0.1)',title:'Math tutor for Grade 10 student — twice a week',desc:'My daughter needs a patient tutor for algebra. Twice a week after school.',price:35,priceLabel:'$35/hr',location:'Calgary, AB',posted:'30 mins ago',applicants:0,status:'open'},
+    {id:4,mode:'standard',cat:'beauty',catLabel:'Beauty',icon:'??',iconBg:'rgba(200,168,233,0.15)',title:'Box braids ? medium length, natural hair',desc:'Looking for someone experienced with box braids on natural hair.',price:80,priceLabel:'$80',location:'Calgary, AB',posted:'3 hrs ago',applicants:2,status:'open'},
+    {id:5,mode:'recurring',cat:'care',catLabel:'Care',icon:'??',iconBg:'rgba(74,222,128,0.1)',title:'Reliable nanny needed Monday to Friday 9am?3pm',desc:'Caring nanny for two kids aged 4 and 7. Starting next Monday.',price:20,priceLabel:'$20/hr',location:'Calgary, AB',posted:'1 hr ago',applicants:1,status:'open'},
+    {id:6,mode:'recurring',cat:'tutoring',catLabel:'Tutoring',icon:'??',iconBg:'rgba(74,222,128,0.1)',title:'Math tutor for Grade 10 student ? twice a week',desc:'My daughter needs a patient tutor for algebra. Twice a week after school.',price:35,priceLabel:'$35/hr',location:'Calgary, AB',posted:'30 mins ago',applicants:0,status:'open'},
   ];
 }
 
@@ -1067,7 +1067,7 @@ function renderCardMedia(t) {
       var src = esc(typeof safeMediaUrl === 'function' ? (safeMediaUrl(thumb) || raw) : thumb);
       var fallbackSafe = esc(raw);
       var fallbackAttr = (src !== fallbackSafe) ? ' data-fallback="'+fallbackSafe+'" onerror="if(this.dataset.fallback){this.src=this.dataset.fallback;delete this.dataset.fallback;this.onerror=null;}"' : '';
-      return '<div class="tc-media tc-photo-tappable" role="button" tabindex="0" aria-label="View task photos — tap to enlarge" data-photos="'+photosJson+'" data-photo-caption="'+esc(t.title)+'">' +
+      return '<div class="tc-media tc-photo-tappable" role="button" tabindex="0" aria-label="View task photos ? tap to enlarge" data-photos="'+photosJson+'" data-photo-caption="'+esc(t.title)+'">' +
         '<div class="tc-media-inner">' +
           '<img class="tc-media-img" src="'+src+'" alt="'+esc(t.title)+' photo" loading="lazy" decoding="async" width="168" height="168"'+fallbackAttr+'>' +
         '</div>' + dots +
@@ -1082,7 +1082,7 @@ function renderCardMedia(t) {
   '</div>';
 }
 
-/** @deprecated use renderCardMedia — kept so older call sites don't break */
+/** @deprecated use renderCardMedia ? kept so older call sites don't break */
 function renderCardPhotoHero(t) {
   return renderCardMedia(t);
 }
@@ -1106,16 +1106,16 @@ function renderActiveFilters(){
   if(activeMode!=='all') chips.push({key:'mode',label:'Mode: '+activeMode});
   if(activeCat!=='all') chips.push({key:'cat',label:'Category: '+activeCat});
   if(budgetPreset==='under50') chips.push({key:'budget',label:'Under $50'});
-  else if(budgetPreset==='50to100') chips.push({key:'budget',label:'$50–100'});
+  else if(budgetPreset==='50to100') chips.push({key:'budget',label:'$50?100'});
   else if(budgetPreset==='100plus') chips.push({key:'budget',label:'$100+'});
-  else if(budgetMinVal>20||budgetMaxVal<300) chips.push({key:'budget',label:'$'+budgetMinVal+'–$'+budgetMaxVal});
+  else if(budgetMinVal>20||budgetMaxVal<300) chips.push({key:'budget',label:'$'+budgetMinVal+'?$'+budgetMaxVal});
   var dateFilter=(document.getElementById('dateFilter')||{}).value;
   if(dateFilter&&dateFilter!=='any') chips.push({key:'date',label:'Posted: '+dateFilter});
   var radiusFilter=(document.getElementById('radiusFilter')||{}).value;
   if(radiusFilter&&radiusFilter!=='any')chips.push({key:'radius',label:'Within '+radiusFilter+' km'});
   if(!chips.length){ host.innerHTML=''; return; }
   host.innerHTML=chips.map(function(c){
-    return '<button type="button" class="qg-af-chip" data-clear="'+c.key+'" aria-label="Remove '+esc(c.label)+'">'+esc(c.label)+' ×</button>';
+    return '<button type="button" class="qg-af-chip" data-clear="'+c.key+'" aria-label="Remove '+esc(c.label)+'">'+esc(c.label)+' ?</button>';
   }).join('')+'<button type="button" class="qg-af-clear" id="clearAllFilters">Clear all</button>';
   host.querySelectorAll('[data-clear]').forEach(function(btn){
     btn.onclick=function(){
@@ -1147,7 +1147,7 @@ function syncBudgetUI(){
 function renderCards(){
   if(window._qgAgeTier==='loading'){
     var loadingArea=document.getElementById('cardsArea');
-    if(loadingArea)loadingArea.innerHTML='<div class="loading-state"><div class="loading-spinner">?</div><div class="loading-txt">Checking gig eligibility…</div></div>';
+    if(loadingArea)loadingArea.innerHTML='<div class="loading-state"><div class="loading-spinner">?</div><div class="loading-txt">Checking gig eligibility?</div></div>';
     return;
   }
   var search=(document.getElementById('searchInput').value||'').toLowerCase().trim();
@@ -1221,14 +1221,14 @@ function renderCards(){
     : countTxt;
   var area=document.getElementById('cardsArea');
   if (!filtered.length && (locFilter || isFinite(radiusKm) || window._nearMeOnly || dateFilter !== 'any') && allTasks.length) {
-    area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('mapPin',{size:24}):'')+'</div><p class="empty-txt">No tasks match your filters — try clearing location, date, or search</p><button type="button" class="empty-btn" onclick="if(typeof clearFilters===\'function\')clearFilters();else location.reload()">Clear filters</button></div>';
+    area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('mapPin',{size:24}):'')+'</div><p class="empty-txt">No tasks match your filters ? try clearing location, date, or search</p><button type="button" class="empty-btn" onclick="if(typeof clearFilters===\'function\')clearFilters();else location.reload()">Clear filters</button></div>';
     return;
   }
   if(!filtered.length && activeMode==='saved'){
-    area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('star',{size:24}):'')+'</div><p class="empty-txt">No saved tasks yet — tap ? Save on any task to bookmark it here.</p><button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.href=\'browsetask.html\'">Browse open tasks ?</button></div>';
+    area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('star',{size:24}):'')+'</div><p class="empty-txt">No saved tasks yet ? tap ? Save on any task to bookmark it here.</p><button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.href=\'browsetask.html\'">Browse open tasks ?</button></div>';
     return;
   }
-  if(!filtered.length){area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('search',{size:24}):'')+'</div><p class="empty-txt">'+(allTasks.length===0?'No open tasks yet — post the first one':'No tasks match this filter')+'</p>'+(allTasks.length===0?'<a class="empty-btn" href="posttask.html" style="display:inline-block;margin-top:14px;padding:12px 20px;border-radius:12px;background:var(--purple);color:#fff;text-decoration:none">Post a task ?</a>':'<button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.reload()">Reset browse</button>')+'</div>';return;}
+  if(!filtered.length){area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('search',{size:24}):'')+'</div><p class="empty-txt">'+(allTasks.length===0?'No open tasks yet ? post the first one':'No tasks match this filter')+'</p>'+(allTasks.length===0?'<a class="empty-btn" href="posttask.html" style="display:inline-block;margin-top:14px;padding:12px 20px;border-radius:12px;background:var(--purple);color:#fff;text-decoration:none">Post a task ?</a>':'<button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.reload()">Reset browse</button>')+'</div>';return;}
   area.innerHTML=filtered.map(function(t){
     var loc = formatLocationDisplay(t.location);
     var shareBtn = typeof shareButtonHtml === 'function' ? shareButtonHtml('task', t.id, t.title) : '';
@@ -1254,7 +1254,7 @@ function renderCards(){
         '<div class="tc-bottom">'+
           '<div style="min-width:0;flex:1">'+
             '<div class="tc-price">'+esc(t.priceLabel)+(typeof qgNewPillHtml==='function'?qgNewPillHtml(t.createdAt||t.created_at):'')+'</div>'+
-            '<div class="tc-info">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(metaBits.join(' · '))+'</div>'+
+            '<div class="tc-info">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(metaBits.join(' ? '))+'</div>'+
             '<div class="qg-action-row">'+saveBtn+shareBtn+'</div>'+
           '</div>'+
           '<button type="button" class="apply-btn '+getBtnClass(t.mode)+'" onclick="openModal(\''+esc(String(t.id))+'\',event)">'+getBtnLabel(t.mode)+'</button>'+
@@ -1365,7 +1365,7 @@ function updateOfferFeeLine() {
   var opts = applyFeeOptsForActiveTask();
   if (typeof feeBreakdown !== 'function') {
     el.classList.add('is-muted');
-    el.textContent = 'Fee breakdown loading…';
+    el.textContent = 'Fee breakdown loading?';
     return;
   }
   var b = feeBreakdown(priceNum, opts);
@@ -1373,7 +1373,7 @@ function updateOfferFeeLine() {
   el.textContent = "You'll receive $" + b.payout.toFixed(2) +
     ' after the QuickGigs fee (' + b.ratePct + '%)';
   if (opts.isRecurring && typeof RECURRING_FEE_NOTE === 'string') {
-    el.textContent += ' · ' + RECURRING_FEE_NOTE;
+    el.textContent += ' ? ' + RECURRING_FEE_NOTE;
   }
 }
 
@@ -1421,7 +1421,7 @@ function refreshApplySubmitEnabled() {
     if (!msg) hint.textContent = 'At least 20 characters';
     else if (!msgOk) hint.textContent = (APPLY_MSG_MIN - msg.length) + ' more characters needed';
     else if (blocked) hint.textContent = 'Fix the message above to continue';
-    else hint.textContent = 'Looks good — ready to send';
+    else hint.textContent = 'Looks good ? ready to send';
   }
 
   // Only hard-disable while a submit is in flight. Invalid drafts stay clickable so
@@ -1477,7 +1477,7 @@ function wireApplyModalInputs() {
     avail._qgApplyBound = true;
     avail.addEventListener('input', onChange);
   }
-  // Prefer addEventListener — bind pointerup + click so iOS/Android taps always fire.
+  // Prefer addEventListener ? bind pointerup + click so iOS/Android taps always fire.
   // (Some WebViews delay/suppress click after keyboard blur; pointerup is reliable.)
   if (sendBtn && !sendBtn._qgApplyClickBound) {
     sendBtn._qgApplyClickBound = true;
@@ -1506,15 +1506,15 @@ function wireApplyModalInputs() {
         hasDbFn: typeof getDbSubmitApplication() === 'function'
       });
 
-      // Immediate loading affordance — even before validation awaits
+      // Immediate loading affordance ? even before validation awaits
       if (!_applySubmitInFlight && sendBtn) {
-        sendBtn.textContent = 'Sending…';
+        sendBtn.textContent = 'Sending?';
       }
 
       if (typeof window.submitBrowseApplication === 'function') {
         window.submitBrowseApplication();
       } else {
-        applyNotify('Apply handler missing — hard-refresh the page and try again.', '#ef4444');
+        applyNotify('Apply handler missing ? hard-refresh the page and try again.', '#ef4444');
         if (sendBtn) sendBtn.textContent = 'Send application';
       }
     }
@@ -1560,7 +1560,7 @@ window.openModal=async function(id,e){
   }
   activeTask=allTasks.find(function(t){return String(t.id)===String(id);});
   if(!activeTask){
-    // May be filtered out after apply — try unfiltered cache by id for already-applied message
+    // May be filtered out after apply ? try unfiltered cache by id for already-applied message
     var cached = typeof readTasksCache === 'function' ? readTasksCache(true) : null;
     if (cached && cached.length) {
       var raw = cached.find(function(r){
@@ -1607,10 +1607,10 @@ window.openModal=async function(id,e){
 
   wireApplyModalInputs();
   _applySubmitInFlight = false;
-  document.getElementById('modalTitle').textContent=activeTask.catLabel+' — '+activeTask.title.substring(0,40)+(activeTask.title.length>40?'…':'');
-  var sub = (activeTask.budgetNegotiable ? 'Budget: Around ' : 'Budget: ') + activeTask.priceLabel + ' · ' + activeTask.location;
-  if (activeTask.when) sub += ' · ?? ' + activeTask.when;
-  if (activeTask.requiresPhotos) sub += ' · ?? Photo updates requested';
+  document.getElementById('modalTitle').textContent=activeTask.catLabel+' ? '+activeTask.title.substring(0,40)+(activeTask.title.length>40?'?':'');
+  var sub = (activeTask.budgetNegotiable ? 'Budget: Around ' : 'Budget: ') + activeTask.priceLabel + ' ? ' + activeTask.location;
+  if (activeTask.when) sub += ' ? ?? ' + activeTask.when;
+  if (activeTask.requiresPhotos) sub += ' ? ?? Photo updates requested';
   if (activeTask.desc) sub += '\n\n' + activeTask.desc;
   if (activeTask.posterName) sub += '\nPosted by ' + activeTask.posterName;
   document.getElementById('modalSub').textContent=sub;
@@ -1632,10 +1632,10 @@ window.openModal=async function(id,e){
   if (negoHint) {
     if (activeTask.budgetNegotiable) {
       negoHint.style.display = 'block';
-      negoHint.textContent = 'Negotiate your offer here — use chat later for schedule and details, not price.';
+      negoHint.textContent = 'Negotiate your offer here ? use chat later for schedule and details, not price.';
     } else {
       negoHint.style.display = 'block';
-      negoHint.textContent = 'Fixed budget — your offer matches the poster\'s price. Chat is for schedule and details.';
+      negoHint.textContent = 'Fixed budget ? your offer matches the poster\'s price. Chat is for schedule and details.';
     }
   }
   document.getElementById('offerMsg').value='';
@@ -1649,7 +1649,7 @@ window.openModal=async function(id,e){
         : (typeof safeUrl === 'function' ? safeUrl(url) : '');
     }).filter(Boolean);
     photoWrap.innerHTML = safePhotos.length
-      ? ('<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Reference photos — tap to enlarge</div><div style="display:flex;gap:8px;overflow-x:auto;align-items:center;">' +
+      ? ('<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Reference photos ? tap to enlarge</div><div style="display:flex;gap:8px;overflow-x:auto;align-items:center;">' +
       safePhotos.map(function(url, i){ return '<img class="qg-modal-photo-tap" src="'+esc(url)+'" alt="Task photo" data-photos="'+esc(JSON.stringify(safePhotos))+'" data-photo-index="'+i+'" data-photo-caption="'+esc(activeTask.title)+'" style="width:auto;max-width:100%;height:auto;max-height:160px;object-fit:contain;border-radius:10px;border:0.5px solid var(--border);flex-shrink:0;cursor:zoom-in;">'; }).join('') +
       '</div>')
       : '';
@@ -1687,7 +1687,7 @@ window.handleOverlayClick=function(e){if(e.target===document.getElementById('mod
 window.submitBrowseApplication=async function(){
   console.log('[QuickGigs apply] submitBrowseApplication entered');
   if (_applySubmitInFlight) {
-    applyNotify('Still sending your application…', '#f59e0b');
+    applyNotify('Still sending your application?', '#f59e0b');
     return;
   }
   var btn = document.getElementById('applySubmitBtn');
@@ -1704,7 +1704,7 @@ window.submitBrowseApplication=async function(){
   // Immediate loading state on tap (before validation / network)
   _applySubmitInFlight = true;
   if (btn) {
-    btn.textContent = 'Sending…';
+    btn.textContent = 'Sending?';
     btn.disabled = true;
   }
   clearApplyInlineAlert();
@@ -1738,7 +1738,7 @@ window.submitBrowseApplication=async function(){
     var msgEl = document.getElementById('offerMsg');
     var availEl = document.getElementById('offerAvail');
     if (!priceEl || !msgEl) {
-      applyNotify('Apply form failed to load — refresh and try again.', '#ef4444');
+      applyNotify('Apply form failed to load ? refresh and try again.', '#ef4444');
       unlockApplyBtn();
       return;
     }
@@ -1836,7 +1836,7 @@ window.submitBrowseApplication=async function(){
     var taskId = String(activeTask.id);
     // Live DB: applications.task_id is UUID (FK ? tasks.task_id)
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(taskId)) {
-      applyNotify('This task has an invalid id — refresh Browse and try again.', '#ef4444');
+      applyNotify('This task has an invalid id ? refresh Browse and try again.', '#ef4444');
       console.error('[QuickGigs apply] non-UUID task_id', taskId, activeTask);
       unlockApplyBtn();
       return;
@@ -1847,7 +1847,7 @@ window.submitBrowseApplication=async function(){
       'Tasker';
     if (typeof formatPersonName === 'function' && workerName) workerName = formatPersonName(workerName);
 
-    // Do NOT await full profile sync here — it slowed/blocked apply with no UI feedback.
+    // Do NOT await full profile sync here ? it slowed/blocked apply with no UI feedback.
     if (typeof ensureTaskerProfilePhoto === 'function') {
       var photoGate = await ensureTaskerProfilePhoto();
       if (!photoGate.ok) {
@@ -1861,7 +1861,7 @@ window.submitBrowseApplication=async function(){
     bindBrowseSubmitApplication();
     var dbSubmitApplication = getDbSubmitApplication();
     if (typeof dbSubmitApplication !== 'function') {
-      applyNotify('Still loading — wait a second and try again.', '#f59e0b');
+      applyNotify('Still loading ? wait a second and try again.', '#f59e0b');
       unlockApplyBtn();
       return;
     }
@@ -1870,7 +1870,7 @@ window.submitBrowseApplication=async function(){
       task_id: taskId,
       worker_id: userId,
       worker_name: workerName,
-      message: msg + (avail ? ' — Available: ' + avail : ''),
+      message: msg + (avail ? ' ? Available: ' + avail : ''),
       price: priceNum
     };
     console.log('[QuickGigs apply] inserting applications row', payload);
@@ -1940,15 +1940,15 @@ window.submitBrowseApplication=async function(){
             status: 'application'
           });
           if (convResult.success && convResult.data && convResult.data.conv_id && chatUnlocked && typeof sendChatMessage === 'function') {
-            var offerMsg = msg + (avail ? ' — Available: ' + avail : '') + ' — My offer: $' + priceNum;
+            var offerMsg = msg + (avail ? ' ? Available: ' + avail : '') + ' ? My offer: $' + priceNum;
             var msgResult = await sendChatMessage(convResult.data.conv_id, userId, offerMsg);
             if (msgResult && msgResult.blocked) {
-              chatNote = ' Application saved — chat stays locked until payment.';
+              chatNote = ' Application saved ? chat stays locked until payment.';
             } else {
               chatNote = ' Open Messages to chat with the poster.';
             }
           } else if (convResult.success) {
-            chatNote = ' Application saved — chat opens after acceptance and payment.';
+            chatNote = ' Application saved ? chat opens after acceptance and payment.';
           } else {
             console.warn('Chat setup failed:', convResult.error);
             chatNote = ' Open Messages to track your application.';

@@ -33,7 +33,7 @@
           '<button type="button" class="qg-report-close" id="qgDisputeClose" aria-label="Close">✕</button>' +
           '<div class="qg-report-kicker">Safety</div>' +
           '<h2 class="qg-report-title" id="qgDisputeTitle">Report a problem</h2>' +
-          '<p class="qg-report-sub">Tell us what went wrong. An admin will review — we do not move money automatically.</p>' +
+          '<p class="qg-report-sub">Escrow freezes immediately. An admin reviews stamps, location check-in, photos, chat, and reviews before releasing or refunding.</p>' +
         '</div>' +
         '<div class="qg-report-body">' +
           '<div class="qg-report-target" id="qgDisputeTarget">' +
@@ -144,33 +144,49 @@
     btn.disabled = true;
     btn.textContent = 'Submitting…';
 
-    // Canonical schema: raised_by + detail (reports-blocks-disputes.sql)
-    var row = {
-      task_id: String(ctx.taskId),
-      raised_by: user.uid,
-      reason: reason,
-      detail: detail,
-      status: 'open',
-      created_at: new Date().toISOString()
-    };
-
-    var result = { success: false };
-    if (typeof sbPostReturn === 'function') {
-      result = await sbPostReturn('disputes', row);
-    } else if (typeof sbPost === 'function') {
-      result = await sbPost('disputes', row);
+    var result = { success: false, ok: false };
+    var raiseUrl = (window.QG_CONFIG && window.QG_CONFIG.raiseDisputeUrl) ||
+      'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/raise-dispute';
+    if (typeof callVerifiedFunction === 'function') {
+      result = await callVerifiedFunction(raiseUrl, {
+        task_id: String(ctx.taskId),
+        reason: reason,
+        detail: detail
+      }, user);
+      if (result && (result.ok || result.success || result.already)) {
+        result.success = true;
+      }
+    } else if (typeof sbPostReturn === 'function') {
+      // Fallback without freeze — prefer Edge Function
+      result = await sbPostReturn('disputes', {
+        task_id: String(ctx.taskId),
+        raised_by: user.uid,
+        reason: reason,
+        detail: detail,
+        status: 'open',
+        created_at: new Date().toISOString()
+      });
     }
 
     btn.disabled = false;
     btn.textContent = 'Submit';
 
-    if (result.success) {
+    if (result.success || result.ok) {
       closeDisputeModal();
-      var msg = "We've received this — an admin will review";
+      var msg = result.already
+        ? 'A dispute is already open — escrow stays frozen.'
+        : "Escrow frozen. We've notified admin with the evidence record.";
       if (typeof showToast === 'function') showToast(msg);
       else qgNotify(msg, '#4ade80');
+      if (typeof window.onDisputeRaised === 'function') {
+        try { window.onDisputeRaised(ctx.taskId, result); } catch (e) {}
+      }
     } else {
-      qgNotify('Could not submit. Run supabase/reports-blocks-disputes.sql in Supabase, then try again.', '#ef4444');
+      var err = result.error || result.message || 'Could not submit';
+      if (err === 'no_funded_payment') {
+        err = 'Disputes need a funded escrow payment on this task.';
+      }
+      qgNotify(err, '#ef4444');
     }
   }
 

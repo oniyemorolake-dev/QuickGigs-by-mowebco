@@ -456,14 +456,14 @@
 
   if (!document.querySelector('script[src*="qg-role-access.js"]')) {
     var roleAccessScript = document.createElement('script');
-    roleAccessScript.src = 'qg-role-access.js?v=3';
+    roleAccessScript.src = 'qg-role-access.js?v=20260803role1';
     roleAccessScript.async = false;
     roleAccessScript.defer = true;
     document.head.appendChild(roleAccessScript);
   }
   if (!document.querySelector('script[src*="qg-role-switch.js"]')) {
     var roleSwitchScript = document.createElement('script');
-    roleSwitchScript.src = 'qg-role-switch.js?v=4';
+    roleSwitchScript.src = 'qg-role-switch.js?v=20260803role1';
     roleSwitchScript.async = false;
     roleSwitchScript.defer = true;
     document.head.appendChild(roleSwitchScript);
