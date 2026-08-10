@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- qg-build:25e1de5-1786329278 -->
+<!-- qg-build:5c3a7ae-1786330136 -->
 
 <title>Profile — QuickGigs</title>
 <meta name="description" content="Your QuickGigs profile, skills, and reviews.">
@@ -34,6 +34,7 @@
 <link rel="stylesheet" href="qg-menu.css?v=2">
 <link rel="stylesheet" href="qg-role-theme.css?v=20260803role1">
 <script src="qg-brand-init.js"></script>
+<script src="qg-icons.js?v=20260809profile2"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -47,8 +48,11 @@ body.light{
   --text-muted:#6b6580;--text-faint:#6b6580;--nav-bg:#fff;--tab-bg:#fff;
   --card-bg:#fff;--lavender:#6b3fa0;
 }
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:76px;transition:background 0.3s,color 0.3s;}
-.profile-page{animation:pageIn 0.5s cubic-bezier(0.22,1,0.36,1);}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:76px;transition:background 0.3s,color 0.3s;overflow-x:hidden;max-width:100%;}
+.profile-page{animation:pageIn 0.5s cubic-bezier(0.22,1,0.36,1);max-width:100%;overflow-x:hidden;}
+img,video{max-width:100%;height:auto;}
+svg:not(.qg-ico){max-width:100%;height:auto;}
+.qg-ico{display:inline-block;vertical-align:middle;flex-shrink:0;max-width:none;overflow:visible;color:currentColor;}
 @keyframes pageIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
 @keyframes ringGlow{0%,100%{background-position:0% 50%;}50%{background-position:100% 50%;}}
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -74,7 +78,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 body.light .back-btn{background:rgba(255,255,255,0.88);color:#2d1b4e;border-color:rgba(255,255,255,0.65);}
 body.light .back-btn:hover{background:#fff;}
 .nav-right{display:flex;align-items:center;gap:10px;}
-.mode-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(0,0,0,0.3);color:rgba(255,255,255,0.8);}
+.mode-btn{min-height:44px;min-width:44px;padding:10px 14px;border-radius:20px;font-size:12px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(0,0,0,0.3);color:rgba(255,255,255,0.8);box-sizing:border-box;}
 body.light .mode-btn{background:rgba(0,0,0,0.2);color:#fff;}
 
 /* BANNER */
@@ -83,7 +87,7 @@ body.light .mode-btn{background:rgba(0,0,0,0.2);color:#fff;}
 .banner-overlay{position:absolute;inset:0;background:rgba(11,1,24,0.25);}
 
 /* AVATAR SECTION */
-.avatar-section{display:flex;flex-direction:column;align-items:center;margin-top:-52px;padding:0 20px 20px;position:relative;z-index:2;}
+.avatar-section{display:flex;flex-direction:column;align-items:center;margin-top:-52px;padding:0 16px 20px;position:relative;z-index:2;max-width:100%;box-sizing:border-box;}
 .avatar-wrap{position:relative;margin-bottom:14px;}
 .avatar-ring{width:108px;height:108px;border-radius:50%;padding:3px;background:linear-gradient(135deg,#c8a8e9,#6b3fa0,#9b6fc4,#c8a8e9);background-size:200% 200%;animation:ringGlow 4s ease infinite;transition:transform 0.28s,box-shadow 0.28s;}
 .avatar-wrap.can-edit{cursor:pointer;}
@@ -95,12 +99,12 @@ body.light .mode-btn{background:rgba(0,0,0,0.2);color:#fff;}
 .avatar-camera{position:absolute;bottom:2px;right:2px;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);border:3px solid var(--bg);display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,0.25);}
 .avatar-edit-hint{font-size:11px;color:var(--text-faint);margin-bottom:8px;}
 .verified{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid var(--bg);}
-.role-verification-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.role-verification-card{padding:14px;border-radius:15px;background:var(--surface);border:1px solid var(--border)}.role-verification-card strong{display:block;font-size:13px;margin-bottom:4px}.role-verification-card p{font-size:11px;line-height:1.5;color:var(--text-muted);margin:0 0 10px}.role-verification-btn{width:100%;padding:9px 11px;border:0;border-radius:10px;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;font:600 11px Poppins,sans-serif;cursor:pointer}
+.role-verification-grid{display:grid;grid-template-columns:1fr;gap:10px}.role-verification-card{padding:12px;border-radius:15px;background:var(--surface);border:1px solid var(--border);min-width:0;max-width:100%}.role-verification-card strong{display:block;font-size:13px;margin-bottom:4px;overflow-wrap:anywhere}.role-verification-card p{font-size:11px;line-height:1.5;color:var(--text-muted);margin:0 0 10px;overflow-wrap:anywhere}.role-verification-btn{width:100%;min-height:44px;padding:12px 14px;border:0;border-radius:10px;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;font:600 12px Poppins,sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-sizing:border-box}
 html[data-qg-mode="poster"] #posterVerificationBtn,.qg-mode-poster #posterVerificationBtn{background:linear-gradient(135deg,#0f766e,#2dd4bf)}
 html[data-qg-mode="worker"] #taskerVerificationBtn,.qg-mode-worker #taskerVerificationBtn{background:linear-gradient(135deg,#6b3fa0,#9b6fc4)}
 #posterVerificationBtn.is-verified,html[data-qg-mode="poster"] #posterVerificationBtn.is-verified,.qg-mode-poster #posterVerificationBtn.is-verified{background:linear-gradient(135deg,#0f766e,#2dd4bf);color:#064e3b;font-weight:700;cursor:default}
 #taskerVerificationBtn.is-verified,html[data-qg-mode="worker"] #taskerVerificationBtn.is-verified,.qg-mode-worker #taskerVerificationBtn.is-verified{background:#064e3b;color:#6ee7b7;border:1px solid #10b981;font-weight:700;cursor:default}
-.role-verified-badges{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:7px}.role-verified-pill{padding:5px 9px;border-radius:999px;background:rgba(74,222,128,.12);color:#16a34a;font-size:10px;font-weight:600}@media(max-width:560px){.role-verification-grid{grid-template-columns:1fr}}
+.role-verified-badges{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:7px}.role-verified-pill{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:44px;padding:10px 14px;border-radius:999px;background:rgba(74,222,128,.12);color:#16a34a;font-size:10px;font-weight:600;box-sizing:border-box}
 .profile-name{font-size:22px;font-weight:600;margin-bottom:4px;text-align:center;}
 .profile-pronouns{font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:6px;font-weight:400;}
 .role-tags{display:flex;gap:6px;justify-content:center;margin-bottom:10px;flex-wrap:wrap;}
@@ -120,17 +124,21 @@ body.light .rating-count{color:var(--purple);}
 .reviews-empty-icon{font-size:22px;margin-bottom:8px;opacity:0.85;color:var(--lavender);}
 
 /* EDIT BUTTON */
-.edit-btn{flex:1;padding:13px 16px;border-radius:14px;border:0.5px solid rgba(200,168,233,0.3);background:rgba(107,63,160,0.15);color:var(--lavender);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.22s;}
-.photo-btn{flex:1;padding:13px 16px;border-radius:14px;border:none;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;box-shadow:0 6px 20px rgba(107,63,160,0.35);transition:all 0.22s;}
-.action-row-profile{display:flex;gap:10px;margin:0 20px 18px;}
+.edit-btn{flex:1;width:100%;min-height:44px;padding:13px 16px;border-radius:14px;border:0.5px solid rgba(200,168,233,0.3);background:rgba(107,63,160,0.15);color:var(--lavender);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.22s;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-sizing:border-box;max-width:100%;}
+.photo-btn{flex:1;width:100%;min-height:44px;padding:13px 16px;border-radius:14px;border:none;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;box-shadow:0 6px 20px rgba(107,63,160,0.35);transition:all 0.22s;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-sizing:border-box;max-width:100%;}
+.payout-setup-btn{display:flex;align-items:center;justify-content:center;width:100%;max-width:100%;margin:0 auto;min-height:44px;padding:12px 22px;border:none;border-radius:14px;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 6px 20px rgba(107,63,160,0.35);text-decoration:none;transition:box-shadow 0.2s ease,transform 0.1s ease,opacity 0.15s ease;box-sizing:border-box;}
+.payout-setup-btn:hover{box-shadow:0 8px 24px rgba(107,63,160,0.45);transform:translateY(-1px);}
+.payout-setup-btn:disabled{opacity:.65;cursor:default;transform:none;box-shadow:0 4px 14px rgba(107,63,160,0.25);}
+.action-row-profile{display:flex;flex-direction:column;gap:10px;margin:0 16px 18px;}
 body.light .edit-btn{background:#ede9ff;border-color:#d8cfff;color:var(--purple);}
 body.light .photo-btn{color:#2d1b4e;}
+body.light .payout-setup-btn{color:#fff;}
 
 /* DIVIDER */
-.divider{height:0.5px;background:var(--border);margin:0 20px 16px;}
+.divider{height:0.5px;background:var(--border);margin:0 16px 16px;}
 
-/* STATS ? three-up grid; shrink to fit narrow phones (no horizontal swipe) */
-.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0 20px 16px;border-radius:16px;overflow:hidden;border:0.5px solid var(--border);}
+/* STATS — three-up grid; shrink to fit narrow phones (no horizontal swipe) */
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0 16px 16px;border-radius:16px;overflow:hidden;border:0.5px solid var(--border);max-width:100%;}
 .stat{padding:14px 6px;text-align:center;background:var(--card-bg);min-width:0;}
 .stat+.stat{border-left:0.5px solid var(--border);}
 .stat-num{font-size:20px;font-weight:500;color:var(--text);margin-bottom:3px;word-break:break-word;}
@@ -144,7 +152,7 @@ body.light .stat-num.green{color:#16a34a;}
 }
 
 /* SECTION */
-.section{margin:0 20px 16px;animation:sectionIn 0.5s cubic-bezier(0.22,1,0.36,1) backwards;}
+.section{margin:0 16px 16px;animation:sectionIn 0.5s cubic-bezier(0.22,1,0.36,1) backwards;max-width:100%;box-sizing:border-box;}
 #bioSection{animation-delay:0.06s;}
 #skillsSection{animation-delay:0.1s;}
 #reviewsSection{animation-delay:0.14s;}
@@ -167,7 +175,7 @@ body.light .rev-task{color:var(--purple);}
 .rev-stars{font-size:12px;flex-shrink:0;color:var(--lavender);letter-spacing:1px;}
 .rev-text{font-size:13px;line-height:1.6;color:var(--text-muted);}
 
-/* EDIT PROFILE ? profile studio (not task form) */
+/* EDIT PROFILE — profile studio (not task form) */
 .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
 .sec-content{padding:14px 16px;border-radius:16px;background:var(--card-bg);border:0.5px solid var(--border);}
 .reviews-list{display:flex;flex-direction:column;gap:10px;}
@@ -285,14 +293,14 @@ body.light .edit-footer{background:linear-gradient(180deg,transparent,#faf8ff 30
 .toast.show{display:block;animation:toastIn 0.35s cubic-bezier(0.22,1,0.36,1);}
 
 /* TOAST */
-.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:#4ade80;color:#0b0118;padding:11px 24px;border-radius:20px;font-size:13px;font-weight:500;display:none;z-index:300;white-space:nowrap;}
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:#4ade80;color:#0b0118;padding:11px 20px;border-radius:20px;font-size:13px;font-weight:500;display:none;z-index:300;max-width:calc(100vw - 32px);white-space:normal;text-align:center;box-sizing:border-box;}
 
-.photo-required-banner{margin:0 20px 16px;padding:14px 16px;border-radius:14px;background:rgba(251,191,36,0.1);border:0.5px solid rgba(251,191,36,0.25);text-align:center;}
+.photo-required-banner{margin:0 16px 16px;padding:12px 14px;border-radius:14px;background:rgba(251,191,36,0.1);border:0.5px solid rgba(251,191,36,0.25);text-align:center;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;}
 .photo-required-banner strong{display:block;font-size:14px;color:var(--text);margin-bottom:6px;}
 .photo-required-banner p{font-size:12px;color:var(--text-muted);line-height:1.55;margin-bottom:10px;}
 .photo-required-banner a{display:inline-block;padding:8px 16px;border-radius:10px;background:var(--purple);color:#fff;text-decoration:none;font-size:13px;font-weight:500;}
 body.light .photo-required-banner{background:#fffbeb;border-color:#fde68a;}
-.photo-optional-banner{margin:0 20px 16px;padding:14px 16px;border-radius:14px;background:rgba(107,63,160,0.12);border:0.5px solid rgba(200,168,233,0.25);text-align:center;}
+.photo-optional-banner{margin:0 16px 16px;padding:12px 14px;border-radius:14px;background:rgba(107,63,160,0.12);border:0.5px solid rgba(200,168,233,0.25);text-align:center;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;}
 .photo-optional-banner strong{display:block;font-size:14px;color:var(--text);margin-bottom:6px;}
 .photo-optional-banner p{font-size:12px;color:var(--text-muted);line-height:1.55;margin:0;}
 body.light .photo-optional-banner{background:#f5f0ff;border-color:#ddd6fe;}
@@ -305,50 +313,86 @@ body.light .photo-optional-banner{background:#f5f0ff;border-color:#ddd6fe;}
 .tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:var(--purple-light);}
 body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color:var(--purple);}
 
-/* Role switch ? inlined so profile always renders correctly */
-.qg-role-flip{margin:0 20px 18px;padding:18px 16px;border-radius:20px;border:0.5px solid var(--border);background:var(--card-bg);}
+/* Role switch — inlined so profile always renders correctly */
+.qg-role-flip{margin:0 16px 18px;padding:14px 12px;border-radius:20px;border:0.5px solid var(--border);background:var(--card-bg);max-width:100%;box-sizing:border-box;}
 body.light .qg-role-flip{background:#fff;box-shadow:0 2px 8px rgba(107,63,160,0.06);}
 .qg-role-flip-kicker{font-size:10px;text-transform:uppercase;letter-spacing:0.12em;color:var(--lavender);margin-bottom:12px;text-align:center;}
-.qg-role-flip-track{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px;border-radius:16px;background:rgba(0,0,0,0.2);border:0.5px solid rgba(200,168,233,0.12);}
+.qg-role-flip-track{position:relative;display:grid;grid-template-columns:1fr;gap:6px;padding:4px;border-radius:16px;background:rgba(0,0,0,0.2);border:0.5px solid rgba(200,168,233,0.12);min-width:0;max-width:100%;}
 body.light .qg-role-flip-track{background:#f0eeff;border-color:#e8e2ff;}
-.qg-role-flip-opt{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:14px 8px;border:none;border-radius:12px;background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--text-muted);transition:color 0.25s,transform 0.2s;}
+.qg-role-flip-opt{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px;padding:14px 10px;border:none;border-radius:12px;background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--text-muted);transition:color 0.25s,transform 0.2s,background 0.25s;width:100%;box-sizing:border-box;overflow-wrap:anywhere;}
 .qg-role-flip-opt:hover{transform:translateY(-1px);}
-.qg-role-flip-opt.active{color:var(--text);}
-body.light .qg-role-flip-opt.active{color:#2d1b4e;}
+.qg-role-flip-opt.active{color:var(--text);background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;}
+body.light .qg-role-flip-opt.active{color:#fff;}
 .qg-role-flip-icon{font-size:22px;line-height:1;}
 .qg-role-flip-label{font-size:12px;font-weight:600;}
-.qg-role-flip-desc{font-size:10px;opacity:0.75;}
-.qg-role-flip-slider{position:absolute;top:4px;left:4px;width:calc(50% - 4px);height:calc(100% - 8px);border-radius:12px;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);box-shadow:0 4px 16px rgba(107,63,160,0.35);transition:transform 0.35s cubic-bezier(0.22,1,0.36,1);pointer-events:none;}
+.qg-role-flip-desc{font-size:10px;opacity:0.75;text-align:center;overflow-wrap:anywhere;}
+.qg-role-flip-slider{display:none;position:absolute;top:4px;left:4px;width:calc(50% - 4px);height:calc(100% - 8px);border-radius:12px;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);box-shadow:0 4px 16px rgba(107,63,160,0.35);transition:transform 0.35s cubic-bezier(0.22,1,0.36,1);pointer-events:none;}
 .qg-role-flip-track.is-worker .qg-role-flip-slider{transform:translateX(calc(100% + 6px));}
-.qg-role-flip-note{margin-top:12px;font-size:11px;line-height:1.5;text-align:center;color:var(--text-faint);}
+.qg-role-flip-note{margin-top:12px;font-size:11px;line-height:1.5;text-align:center;color:var(--text-faint);overflow-wrap:anywhere;}
 
 /* Help / support card */
-.profile-help{margin:0 20px 20px;padding:16px;border-radius:16px;border:0.5px solid var(--border);background:var(--card-bg);}
+.profile-help{margin:0 16px 20px;padding:14px 12px;border-radius:16px;border:0.5px solid var(--border);background:var(--card-bg);max-width:100%;box-sizing:border-box;}
 .profile-help-title{font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text);}
-.profile-help-sub{font-size:12px;line-height:1.55;color:var(--text-muted);margin-bottom:12px;}
+.profile-help-sub{font-size:12px;line-height:1.55;color:var(--text-muted);margin-bottom:12px;overflow-wrap:anywhere;}
 .profile-help-links{display:flex;flex-wrap:wrap;gap:8px;}
-.profile-help-link{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:999px;border:0.5px solid var(--border);background:rgba(107,63,160,0.12);color:var(--lavender);font-size:12px;font-weight:500;text-decoration:none;transition:transform 0.18s,border-color 0.18s;}
+.profile-help-link{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:10px 16px;border-radius:999px;border:0.5px solid var(--border);background:rgba(107,63,160,0.12);color:var(--lavender);font-size:12px;font-weight:500;text-decoration:none;transition:transform 0.18s,border-color 0.18s;box-sizing:border-box;}
 .profile-help-link:hover{transform:translateY(-1px);border-color:var(--purple-light);}
 body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
-.profile-account{margin:0 20px 16px;padding:16px;border-radius:16px;border:0.5px solid var(--border);background:var(--card-bg);}
+.profile-account{margin:0 16px 16px;padding:14px 12px;border-radius:16px;border:0.5px solid var(--border);background:var(--card-bg);max-width:100%;box-sizing:border-box;}
 .profile-account .sec-title{margin-bottom:10px;}
-.account-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px;}
+.account-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px;min-width:0;}
 .account-row:last-of-type{border-bottom:none;}
 .account-lbl{color:var(--text-muted);flex-shrink:0;}
-.account-val{color:var(--text);text-align:right;word-break:break-all;}
-.account-privacy-note{font-size:11px;color:var(--text-faint);margin-top:10px;line-height:1.45;display:flex;align-items:flex-start;gap:6px;}.qg-ico{display:inline-block;vertical-align:middle;flex-shrink:0;color:currentColor}.edit-btn .qg-ico,.role-verification-btn .qg-ico,.role-verified-pill .qg-ico,.account-privacy-note .qg-ico{width:14px;height:14px;margin-right:2px}
+.account-val{color:var(--text);text-align:right;word-break:break-word;overflow-wrap:anywhere;min-width:0;}
+.account-privacy-note{font-size:11px;color:var(--text-faint);margin-top:10px;line-height:1.45;display:flex;align-items:flex-start;gap:6px;overflow-wrap:anywhere;}.qg-ico{display:inline-block;vertical-align:middle;flex-shrink:0;max-width:none;overflow:visible;color:currentColor}.edit-btn .qg-ico,.role-verification-btn .qg-ico,.role-verified-pill .qg-ico,.account-privacy-note .qg-ico{margin-right:2px}
 
-.gig-alerts-box{margin-top:14px;padding:14px;border-radius:14px;background:rgba(107,63,160,0.14);border:0.5px solid rgba(200,168,233,0.28);font-family:'Poppins',sans-serif;}
+.gig-alerts-box{margin-top:14px;padding:12px;border-radius:14px;background:rgba(107,63,160,0.14);border:0.5px solid rgba(200,168,233,0.28);font-family:'Poppins',sans-serif;max-width:100%;box-sizing:border-box;}
 .gig-alerts-title{font:600 13px 'Poppins',sans-serif;color:var(--lavender);margin-bottom:6px;}
-.gig-alerts-hint{font-size:11px;line-height:1.5;color:var(--text-muted);margin:0 0 12px;}
+.gig-alerts-hint{font-size:11px;line-height:1.5;color:var(--text-muted);margin:0 0 12px;overflow-wrap:anywhere;}
 .gig-alert-toggle{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;cursor:pointer;}
 .gig-alert-toggle input{margin-top:3px;accent-color:#9b6fc4;width:16px;height:16px;flex-shrink:0;}
 .gig-alert-toggle span{font-size:13px;font-weight:500;color:var(--text);line-height:1.4;}
 .gig-alert-toggle small{display:block;font-size:11px;font-weight:400;color:var(--text-muted);margin-top:2px;}
 .gig-alert-cats{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
-.gig-alert-cat{font:500 11px 'Poppins',sans-serif;padding:7px 12px;border-radius:999px;border:0.5px solid rgba(200,168,233,0.25);background:rgba(255,255,255,0.03);color:var(--text-muted);cursor:pointer;user-select:none;transition:background 0.18s,border-color 0.18s,color 0.18s;}
+.gig-alert-cat{font:500 11px 'Poppins',sans-serif;min-height:44px;padding:10px 14px;border-radius:999px;border:0.5px solid rgba(200,168,233,0.25);background:rgba(255,255,255,0.03);color:var(--text-muted);cursor:pointer;user-select:none;transition:background 0.18s,border-color 0.18s,color 0.18s;display:inline-flex;align-items:center;box-sizing:border-box;}
 .gig-alert-cat.selected{background:rgba(107,63,160,0.45);border-color:rgba(200,168,233,0.55);color:#fff;}
 .gig-alerts-fields[hidden]{display:none!important;}
+
+/* Mobile-first spacing + overflow guards */
+.divider{margin:0 16px 16px;}
+.sec-content{overflow-wrap:anywhere;max-width:100%;box-sizing:border-box;}
+.profile-name,.profile-pronouns,.member-since,.sec-title{overflow-wrap:anywhere;}
+.back-btn{min-height:44px;display:inline-flex;align-items:center;box-sizing:border-box;}
+
+/* Payout / share rows: tighter on mobile */
+#profilePayoutBox,#profilePaymentsSection,#profileShareReport{
+  padding-left:16px!important;
+  padding-right:16px!important;
+  max-width:100%!important;
+  box-sizing:border-box;
+}
+#profilePayoutBox > div,#payouts{max-width:100%;box-sizing:border-box;}
+
+/* Desktop / tablet: restore two-column layouts */
+@media (min-width:640px){
+  .section,.stats,.qg-role-flip,.profile-help,.profile-account,.action-row-profile,
+  .photo-required-banner,.photo-optional-banner{margin-left:20px;margin-right:20px;}
+  .divider{margin-left:20px;margin-right:20px;}
+  .avatar-section{padding-left:20px;padding-right:20px;}
+  .qg-role-flip{padding:18px 16px;}
+  .profile-help,.profile-account{padding:16px;}
+  .photo-required-banner,.photo-optional-banner{padding:14px 16px;}
+  .role-verification-grid{grid-template-columns:1fr 1fr;}
+  .role-verification-card{padding:14px;}
+  .action-row-profile{flex-direction:row;align-items:stretch;}
+  .edit-btn,.photo-btn{width:auto;}
+  .payout-setup-btn{width:auto;display:inline-flex;}
+  .qg-role-flip-track{grid-template-columns:1fr 1fr;}
+  .qg-role-flip-slider{display:block;}
+  .qg-role-flip-opt.active{background:transparent;color:var(--text);}
+  body.light .qg-role-flip-opt.active{color:#2d1b4e;}
+  #profilePayoutBox,#profilePaymentsSection,#profileShareReport{padding-left:20px!important;padding-right:20px!important;}
+}
 
 </style>
 </head>
@@ -404,7 +448,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 <div class="profile-account section" id="profileAccountSection" style="display:none">
   <div class="sec-title">Account</div>
   <div id="profileAccountRows"></div>
-  <p class="account-privacy-note" id="accountPrivacyNote"><span class="account-privacy-ico" aria-hidden="true"></span><span>Only you can see this — email and phone are never shown on your public profile.</span></p>
+  <p class="account-privacy-note" id="accountPrivacyNote"><span class="account-privacy-ico" aria-hidden="true"><svg class="qg-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><span>Only you can see this — email and phone are never shown on your public profile.</span></p>
 </div>
 <div class="section" id="roleVerificationSection" style="display:none">
   <div class="sec-title">Verification to transact</div>
@@ -424,7 +468,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 
 <!-- EDIT BUTTONS (own profile only) -->
 <div class="action-row-profile" id="profileActions" style="display:none">
-  <button class="edit-btn" id="editBtn" onclick="openEditModal()">Customize profile</button>
+  <button class="edit-btn" id="editBtn" onclick="openEditModal()" data-qg-ico="1"><svg class="qg-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><path d="m6.5 6.5 2 2M15.5 15.5l2 2M17.5 6.5l-2 2M8.5 15.5l-2 2"/><path d="M12 8.5 13.5 12 17 13.5 13.5 15 12 18.5 10.5 15 7 13.5 10.5 12Z"/></svg> Customize profile</button>
   <button class="photo-btn" id="photoBtn" onclick="document.getElementById('avatarInput').click()">📷 Change photo</button>
 </div>
 
@@ -464,7 +508,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
   <div class="sec-content" id="workerTrustText" style="font-size:13px;line-height:1.7;color:var(--text-muted)"></div>
 </div>
 
-<!-- REVIEWS (public received reviews ? read-only) -->
+<!-- REVIEWS (public received reviews — read-only) -->
 <div class="section" id="reviewsSection">
   <div class="sec-head">
     <span class="sec-title">Reviews</span>
@@ -473,14 +517,14 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
   <div class="reviews-list" id="reviewsList">
     <div class="reviews-empty" id="reviewsEmpty">
       <div class="reviews-empty-icon" aria-hidden="true">&#9733;</div>
-      <p>No reviews yet ? complete a task to get your first one.</p>
+      <p>No reviews yet — complete a task to get your first one.</p>
     </div>
   </div>
 </div>
 
 <div class="profile-help section" id="profileHelpSection" style="display:none">
   <div class="profile-help-title">Need help?</div>
-  <p class="profile-help-sub">Beta support is async ? we read every message and usually reply within 24 hours.</p>
+  <p class="profile-help-sub">Beta support is async — we read every message and usually reply within 24 hours.</p>
   <div class="profile-help-links">
     <a class="profile-help-link" href="feedback.html">💬 Send feedback</a>
     <a class="profile-help-link" href="mailto:support@quickgigs.ca">✉️ support@quickgigs.ca</a>
@@ -492,7 +536,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 <!-- TOAST -->
 <div class="toast" id="toast">Saved</div>
 
-<!-- EDIT PROFILE ? profile studio -->
+<!-- EDIT PROFILE — profile studio -->
 <div class="modal-overlay" id="modalOverlay" onclick="handleOverlay(event)">
   <div class="edit-sheet" onclick="event.stopPropagation()">
     <div class="edit-handle"></div>
@@ -501,7 +545,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
       <span class="edit-spark s1">✨</span>
       <span class="edit-spark s2">💫</span>
       <span class="edit-spark s3">⭐</span>
-      <button type="button" class="edit-close" onclick="closeEditModal()" aria-label="Close">?</button>
+      <button type="button" class="edit-close" onclick="closeEditModal()" aria-label="Close"><svg class="qg-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
       <p class="edit-kicker">Profile studio</p>
       <h2 class="edit-headline">Make it you</h2>
     </div>
@@ -512,7 +556,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
           <div class="edit-photo-inner" id="modalAvatarPreview">M</div>
         </div>
         <button type="button" class="edit-photo-btn" onclick="document.getElementById('avatarInput').click()">📷 Change photo</button>
-        <p class="edit-photo-hint" id="editPhotoHint">Optional for posters ? required for taskers</p>
+        <p class="edit-photo-hint" id="editPhotoHint">Optional for posters — required for taskers</p>
       </div>
 
       <div class="edit-progress-card">
@@ -551,7 +595,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 
       <div class="edit-card edit-card-skills">
         <div class="edit-card-head"><span class="edit-card-icon">⚡</span><span>Your superpowers</span></div>
-        <p class="edit-skills-sub">Tap the skills that fit you ? they pop up on your profile</p>
+        <p class="edit-skills-sub">Tap the skills that fit you — they pop up on your profile</p>
         <div class="skills-edit" id="skillsEdit"></div>
         <div class="skills-selected-count" id="skillsCount">0 selected</div>
       </div>
@@ -560,7 +604,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
         <label class="edit-label" for="editAvailability">Availability</label>
         <select class="edit-input" id="editAvailability" style="margin-bottom:12px">
           <option value="available">Available for tasks</option>
-          <option value="busy">Busy ? not taking new tasks</option>
+          <option value="busy">Busy — not taking new tasks</option>
         </select>
         <label class="edit-label" for="editServiceArea">Service area</label>
         <input class="edit-input" id="editServiceArea" type="text" placeholder="e.g. Calgary NW, Airdrie, Cochrane" maxlength="120" style="margin-bottom:12px">
@@ -577,7 +621,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
           <div class="gig-alerts-fields" id="gigAlertFields" hidden>
             <label class="gig-alert-toggle">
               <input type="checkbox" id="editNotifyNewGigsEmail">
-              <span>Also email me<small>Optional ? uses your account email</small></span>
+              <span>Also email me<small>Optional — uses your account email</small></span>
             </label>
             <label class="edit-label" for="editAlertRadius">Max distance</label>
             <select class="edit-input" id="editAlertRadius" style="margin-bottom:12px">
@@ -596,7 +640,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
     <div class="edit-footer">
       <button type="button" class="edit-save-btn" id="editSaveBtn" onclick="saveProfile()">
         <span class="save-shine"></span>
-        <span class="save-text">Save profile ?</span>
+        <span class="save-text">Save profile</span>
       </button>
     </div>
   </div>
@@ -651,7 +695,7 @@ onAuthStateChanged(auth, (user) => {
 
 <script defer src="qg-polish.js?v=20260728xss1"></script>
 <script src="qg-ux.js?v=20260728welcome1" defer></script>
-<script src="qg-bigtech.js?v=20260729chatprofile1" defer></script>
+<script src="qg-bigtech.js?v=20260810session1" defer></script>
 <script src="qg-wave2.js?v=20260728xss1" defer></script>
 <script defer src="qg-config.js?v=20260803role1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
@@ -659,7 +703,7 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-verification.js?v=20260804pm1"></script>
 <script defer src="qg-payments-ui.js?v=1"></script>
 <script defer src="qg-stripe.js?v=20260730teen1"></script>
-<script defer src="qg-pwa.js?v=25e1de5-1786329278"></script>
+<script defer src="qg-pwa.js?v=5c3a7ae-1786330136"></script>
 <script defer src="qg-share.js"></script>
 <script defer src="qg-report.js?v=20260716d"></script>
 <script defer src="qg-categories.js?v=20260730verify1"></script>
@@ -683,14 +727,10 @@ applyTheme();
 
 function decorateProfileChromeIcons() {
   function ico(name, size) {
-    return (typeof qgIcon === 'function') ? qgIcon(name, { size: size || 14 }) : '';
-  }
-  if (typeof qgIcon !== 'function') {
-    setTimeout(decorateProfileChromeIcons, 50);
-    return;
+    return profileIco(name, size || 14);
   }
   var edit = document.getElementById('editBtn');
-  if (edit && !edit.getAttribute('data-qg-ico')) {
+  if (edit && !edit.querySelector('.qg-ico')) {
     var editSvg = ico('sparkles', 14);
     if (editSvg) {
       edit.setAttribute('data-qg-ico', '1');
@@ -698,7 +738,7 @@ function decorateProfileChromeIcons() {
     }
   }
   var noteIco = document.querySelector('#accountPrivacyNote .account-privacy-ico');
-  if (noteIco && !noteIco.getAttribute('data-qg-ico')) {
+  if (noteIco && !noteIco.querySelector('.qg-ico')) {
     var lockSvg = ico('lock', 13);
     if (lockSvg) {
       noteIco.setAttribute('data-qg-ico', '1');
@@ -715,7 +755,7 @@ document.addEventListener('DOMContentLoaded', function bootVerificationReturn(){
     return;
   }
   QG_syncVerificationReturn().then(function(result){
-    // Poster started verify from Post Task ? syncReturn redirects; skip mid-nav profile reload.
+    // Poster started verify from Post Task — syncReturn redirects; skip mid-nav profile reload.
     try {
       if (result && result.poster_verified === true &&
           localStorage.getItem('qg-verification-return-path') === 'posttask.html' &&
@@ -753,7 +793,22 @@ function esc(s) {
 }
 
 function profileIco(name, size) {
-  return (typeof qgIcon === 'function') ? qgIcon(name, { size: size || 14 }) : '';
+  size = size || 14;
+  if (typeof qgIcon === 'function') {
+    var fromLib = qgIcon(name, { size: size });
+    if (fromLib) return fromLib;
+  }
+  // Inline fallbacks if qg-icons.js is unavailable (same paths as qg-icons.js)
+  var paths = {
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    checkCircle: '<circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 5-5"/>',
+    lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+    sparkles: '<path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><path d="m6.5 6.5 2 2M15.5 15.5l2 2M17.5 6.5l-2 2M8.5 15.5l-2 2"/><path d="M12 8.5 13.5 12 17 13.5 13.5 15 12 18.5 10.5 15 7 13.5 10.5 12Z"/>'
+  };
+  if (!paths[name]) return '';
+  return '<svg class="qg-ico" width="' + size + '" height="' + size +
+    '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths[name] + '</svg>';
 }
 
 function renderRoleVerificationState(dbUser, isOwnProfile) {
@@ -910,7 +965,7 @@ function updateEditProgress() {
     label.textContent = 'Almost there';
     hint.textContent = 'One more touch and you\'re golden';
   } else if (pct >= 40) {
-    label.textContent = 'Nice start ? keep going';
+    label.textContent = 'Nice start — keep going';
     hint.textContent = 'Add skills so people know what you\'re great at';
   } else {
     label.textContent = 'Let\'s build your profile';
@@ -1286,7 +1341,7 @@ function renderProfile(user, isOwnProfile) {
   if (!roleHtml) roleHtml = '<span class="role-tag">👤 QuickGigs member</span>';
   document.getElementById('roleTags').innerHTML = roleHtml;
 
-  var bioDefault = isOwnProfile ? 'No bio yet ? tap Customize profile to add one.' : 'No bio yet.';
+  var bioDefault = isOwnProfile ? 'No bio yet — tap Customize profile to add one.' : 'No bio yet.';
   document.getElementById('bioText').textContent = profileData.bio || bioDefault;
   var skills = profileData.skills || [];
   document.getElementById('skillsList').innerHTML = skills.length
@@ -1298,7 +1353,7 @@ function renderProfile(user, isOwnProfile) {
   var showWorker = hasTaskerRole;
   if (trustSec && trustTxt && showWorker) {
     trustSec.style.display = 'block';
-    var avail = profileData.availability === 'busy' ? '🔴 Busy ? not taking new tasks' : '🟢 Available for tasks';
+    var avail = profileData.availability === 'busy' ? '🔴 Busy — not taking new tasks' : '🟢 Available for tasks';
     var area = profileData.service_area ? '📍 ' + profileData.service_area : '';
     var langs = profileData.languages ? '🗣 ' + profileData.languages : '';
     trustTxt.textContent = '';
@@ -1368,11 +1423,11 @@ function renderPayoutSetup(user, isOwnProfile, dbUser) {
   var connectId = dbUser && (dbUser.stripe_connect_id || '');
   var payoutsOk = dbUser && (dbUser.stripe_payouts_enabled === true || dbUser.stripe_payouts_enabled === 1 || dbUser.stripe_payouts_enabled === 'true');
   var boxCls = payoutsOk ? 'payout-box-connected' : (connectId ? 'payout-box-pending' : '');
-  var title = payoutsOk ? '? Payouts connected' : (connectId ? '? Finish payout setup' : '💳 Tasker payouts');
+  var title = payoutsOk ? 'Payouts connected' : (connectId ? 'Finish payout setup' : '💳 Tasker payouts');
   var desc = payoutsOk
     ? 'Stripe is connected. When a poster marks your task complete, your share is sent to your bank.'
     : (connectId
-      ? 'You started Stripe setup ? finish verification so we can pay you when tasks complete.'
+      ? 'You started Stripe setup — finish verification so we can pay you when tasks complete.'
       : 'Connect Stripe to receive your share when posters mark tasks complete. Required before your first payout.');
   var btnLabel = payoutsOk ? 'Update payout details' : (connectId ? 'Continue Stripe setup' : 'Set up payouts');
 
@@ -1380,7 +1435,7 @@ function renderPayoutSetup(user, isOwnProfile, dbUser) {
     '<div id="payouts" style="background:rgba(107,63,160,0.12);border:1px solid rgba(200,168,233,0.2);border-radius:14px;padding:14px;text-align:center" class="' + boxCls + '">' +
       '<div style="font-size:13px;font-weight:500;margin-bottom:6px">' + title + '</div>' +
       '<div style="font-size:12px;color:var(--text-muted);line-height:1.55;margin-bottom:12px">' + desc + '</div>' +
-      '<button type="button" class="empty-btn" id="stripeConnectBtn" style="margin:0 auto">' + btnLabel + '</button>' +
+      '<button type="button" class="payout-setup-btn" id="stripeConnectBtn">' + btnLabel + '</button>' +
     '</div>';
   var btn = document.getElementById('stripeConnectBtn');
   if (!btn || btn._bound) return;
@@ -1395,7 +1450,11 @@ function renderPayoutSetup(user, isOwnProfile, dbUser) {
     }
     btn.disabled = false;
     btn.textContent = btnLabel;
-    showToast(result.error || 'Could not open Stripe setup ? see STRIPE-SETUP.md', '#ef4444');
+    var errMsg = result.message || result.error || 'Could not open Stripe setup — see STRIPE-SETUP.md';
+    if (result.error === 'minor_requires_guardian_payout') {
+      errMsg = result.message || 'Stripe requires account holders to be 18+. Ask your parent/guardian to set up payouts from their consent link.';
+    }
+    showToast(errMsg, '#ef4444');
   };
 }
 
@@ -1408,7 +1467,7 @@ async function renderProfilePaymentHistory(userId, dbUser) {
     return;
   }
   sec.style.display = 'block';
-  list.innerHTML = '<div class="pay-history-empty">Loading payments?</div>';
+  list.innerHTML = '<div class="pay-history-empty">Loading payments…</div>';
   try {
     var isTaskerView = userIsTasker(profileData.role) || (typeof isWorkerMode === 'function' && isWorkerMode());
     var role = isTaskerView ? 'worker' : 'poster';
@@ -1425,7 +1484,7 @@ async function renderProfilePaymentHistory(userId, dbUser) {
       else if (sums.held > 0) earnedEl.textContent = '$' + sums.held.toFixed(0);
     }
   } catch (e) {
-    list.innerHTML = '<div class="pay-history-empty">Could not load payments ? refresh and try again.</div>';
+    list.innerHTML = '<div class="pay-history-empty">Could not load payments — refresh and try again.</div>';
   }
 }
 
@@ -1439,7 +1498,7 @@ async function renderProfilePaymentHistory(userId, dbUser) {
   document.addEventListener('DOMContentLoaded', function () {
     setTimeout(function () {
       if (stripeParam === 'done' && typeof showToast === 'function') {
-        showToast('Stripe setup saved ? checking payout status?', '#4ade80');
+        showToast('Stripe setup saved — checking payout status…', '#4ade80');
       } else if (stripeParam === 'refresh' && typeof showToast === 'function') {
         showToast('Continue Stripe setup when you\'re ready', '#f59e0b');
       }
@@ -1531,7 +1590,7 @@ window.openEditModal = function() {
   if (photoHint) {
     photoHint.textContent = userIsTasker(profileData.role)
       ? 'Taskers need a clear photo so posters know who they\'re hiring'
-      : 'Optional for posters ? helps taskers recognize you';
+      : 'Optional for posters — helps taskers recognize you';
   }
 
   var selectedSkills = profileData.skills || [];
@@ -1645,7 +1704,7 @@ window.saveProfile = async function() {
       alert_radius_km: alert_radius_km,
       alert_categories: alert_categories
     };
-    // Geocode service area for distance matching (rounded city coords ? not live GPS)
+    // Geocode service area for distance matching (rounded city coords — not live GPS)
     if (notify_new_gigs && service_area && typeof geocodeDisplayLocation === 'function') {
       try {
         var geo = await geocodeDisplayLocation(service_area);
@@ -1685,7 +1744,7 @@ window.saveProfile = async function() {
     if (btn) {
       btn.disabled = false;
       btn.classList.remove('is-success');
-      btn.querySelector('.save-text').textContent = 'Save profile ?';
+      btn.querySelector('.save-text').textContent = 'Save profile';
     }
     showToast('Saved');
   }, 650);
@@ -1697,7 +1756,7 @@ window.uploadAvatar = async function(input) {
   input.value = '';
   if (!user || !file) return;
   if (typeof uploadProfilePhoto !== 'function') {
-    showToast('Photo upload not ready ? run supabase/storage-beta-fix.sql', '#f59e0b');
+    showToast('Photo upload not ready — run supabase/storage-beta-fix.sql', '#f59e0b');
     return;
   }
   var wrap = document.getElementById('avatarWrap');

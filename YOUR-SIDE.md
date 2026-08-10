@@ -4,6 +4,48 @@
 
 ---
 
+## CRITICAL — Security lockdown (do before more UI)
+
+Production is **not** launch-safe until these are applied. Code is ready; Supabase must be updated.
+
+1. **Supabase → Authentication → Third-party → Firebase**  
+   Enable for project **quickgigs-7b12d** (required for RLS `auth.uid()`).
+2. Run **`supabase/security-lockdown.sql`** in the SQL Editor (idempotent).  
+   - Drops anon `USING (true)` policies  
+   - Locks `users.role` / privileged columns via trigger  
+   - Payments mutate only via service_role  
+   - Blocks client `conversations.is_unlocked = true`  
+   - Messages require unlocked conversation
+3. Insert your admin UID:  
+   `INSERT INTO public.admins (user_id) VALUES ('<your-firebase-uid>');`
+4. Redeploy Edge Functions (JWT verify can stay **off** — functions verify Firebase JWKS themselves):
+
+```text
+refund-payment, complete-task, confirm-checkout, sync-payment,
+release-payout, secure-messaging, send-notification,
+create-checkout, create-escrow-intent, sync-connect-status
+```
+
+5. Set secret **`NOTIFICATION_SEND_SECRET`** (16+ chars) for `send-notification`.  
+   Callers must send header `x-qg-notification-secret`.
+6. Only then set **`supabaseFirebaseAuth: true`** in `qg-config.js` and push.
+7. Run role-matrix tests: **`supabase/SECURITY-UNAUTHORIZED-TESTS.md`**
+
+Do **not** treat frontend checks as a fix. Authorization is Edge Function + RLS + triggers.
+
+### If you see “Your session needs a refresh” after enabling Firebase auth
+
+Firebase UIDs are **not** UUIDs, and Firebase tokens lack `role: authenticated` by default.
+Run this **after** `security-lockdown.sql`:
+
+**`supabase/firebase-rls-uid-fix.sql`** (entire file in SQL Editor)
+
+Then: Log in again → hard refresh (Ctrl+Shift+R).
+
+Optional later (official Supabase docs): set Firebase custom claim `role: 'authenticated'` on all users via Admin SDK / Cloud Function.
+
+---
+
 ## Deploy often
 
 Push local commits so [quickgigs.ca](https://quickgigs.ca) updates (GitHub Pages, ~2–5 min lag):

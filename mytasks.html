@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- qg-build:25e1de5-1786329278 -->
+<!-- qg-build:5c3a7ae-1786330136 -->
 
 <title>My tasks ? QuickGigs</title>
 <meta name="description" content="Manage posted tasks and applications on QuickGigs.">
@@ -280,7 +280,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 <script defer src="qg-utils.js?v=20260728welcome1"></script>
 <script defer src="qg-polish.js?v=20260728xss1"></script>
 <script src="qg-ux.js?v=20260728welcome1" defer></script>
-<script src="qg-bigtech.js?v=20260728xss1" defer></script>
+<script src="qg-bigtech.js?v=20260810session1" defer></script>
 <script src="qg-wave2.js?v=20260728xss1" defer></script>
 <script defer src="qg-config.js?v=20260804evidence1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
@@ -289,7 +289,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 <script defer src="qg-stripe.js?v=20260730teen1"></script>
 <script defer src="qg-site.js?v=20260726e"></script>
 <script defer src="qg-nav.js?v=20260726n"></script>
-<script defer src="qg-pwa.js?v=25e1de5-1786329278"></script>
+<script defer src="qg-pwa.js?v=5c3a7ae-1786330136"></script>
 <script defer src="qg-notifications.js"></script>
 <script defer src="qg-push.js?v=1"></script>
 <script defer src="qg-share.js"></script>
@@ -1892,6 +1892,22 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
     showToast('This tasker must verify their identity before they can be accepted.', '#f59e0b');
     return;
   }
+  // Gate: tasker (or guardian) must have Connect payouts ready before paid accept
+  var paymentsOn = typeof QG_paymentsLive === 'function' ? QG_paymentsLive() : (window.QG_CONFIG && window.QG_CONFIG.paymentsEnabled);
+  if (paymentsOn) {
+    var guardianOwns = String(workerUser.payout_owner || '') === 'guardian';
+    var payoutReady = guardianOwns
+      ? (workerUser.guardian_stripe_payouts_enabled === true || workerUser.guardian_stripe_payouts_enabled === 1)
+      : (workerUser.stripe_payouts_enabled === true || workerUser.stripe_payouts_enabled === 1 ||
+         workerUser.guardian_stripe_payouts_enabled === true || workerUser.guardian_stripe_payouts_enabled === 1);
+    if (!payoutReady) {
+      setAcceptLoading(acceptBtn, false);
+      showToast(guardianOwns
+        ? 'This teen tasker needs a parent/guardian to finish payout setup before you can accept.'
+        : 'This tasker must finish "Set up payouts" before they can take paid tasks.', '#f59e0b');
+      return;
+    }
+  }
   if (workerUser && workerUser.name && typeof isGenericDisplayName === 'function' && !isGenericDisplayName(workerUser.name)) {
     workerName = workerUser.name;
   } else if (typeof getUserNameByFirebaseUid === 'function') {
@@ -2293,6 +2309,27 @@ window.markComplete = async function(taskId, btn){
   if (btn && typeof qgMicroConfirm === 'function') qgMicroConfirm(btn);
   if (typeof qgCelebrate === 'function') qgCelebrate({ count: 40 });
   if (typeof haptic === 'function') haptic([15, 30, 15]);
+
+  // Always attempt escrow release (completeTask path already does; updateTaskStatus / server path may not)
+  if (typeof releaseTaskPayout === 'function') {
+    try {
+      var releaseId = result.task_id || canonicalTaskId || taskId;
+      var release = await releaseTaskPayout(releaseId, userId, {
+        posterId: posterId || userId,
+        workerId: workerId
+      });
+      if (release && release.transfer_id) {
+        showToast('Task complete — tasker payout released.');
+      } else if (release && (release.error === 'worker_payout_setup_required' || release.error === 'guardian_payout_setup_required' || release.reason === 'adult_payout_setup_required')) {
+        showToast('Task complete — payout held until the tasker finishes payout setup.', '#f59e0b');
+      } else if (release && release.ok === false && !release.skipped && !release.already) {
+        console.warn('releaseTaskPayout after markComplete:', release);
+        showToast('Task complete — payout release pending. Try sync from profile if needed.', '#f59e0b');
+      }
+    } catch (releaseErr) {
+      console.warn('releaseTaskPayout after markComplete failed:', releaseErr);
+    }
+  }
 
   if (typeof notifyTaskCompleted === 'function') {
     try {

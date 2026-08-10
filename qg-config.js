@@ -3,7 +3,8 @@ window.QG_CONFIG = {
   // When chat unlocks: 'payment' (escrow) | 'accept' | 'apply' (internal only)
   // Escrow TEST mode: chat unlocks after poster funds the task (held).
   chatUnlockAfter: 'payment',
-  // Set true ONLY after Supabase Auth → Firebase is enabled AND security-lockdown.sql is applied
+  // Set true ONLY after Supabase Auth → Firebase is enabled AND security-lockdown.sql
+  // AND firebase-rls-uid-fix.sql are applied. Firebase JWTs need qg_uid() (not auth.uid()).
   supabaseFirebaseAuth: true,
   blockOffPlatformContact: true,
   posterOnlyChatImages: false,

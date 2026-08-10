@@ -131,12 +131,18 @@
   if (typeof window.fetch === 'function' && !window.__qgFetchWrapped) {
     window.__qgFetchWrapped = true;
     var _fetch = window.fetch.bind(window);
+    var _sessionModalShown = false;
     window.fetch = function (input, init) {
       return _fetch(input, init).then(function (res) {
         try {
           var url = typeof input === 'string' ? input : (input && input.url) || '';
-          if ((res.status === 401 || res.status === 403) && /supabase\.co|\/rest\/v1\//i.test(url)) {
-            if (window._currentUser) showSessionModal();
+          // Only true REST auth failures mean "session dead".
+          // Do NOT treat Edge Function 401/403 (role-access, payments, etc.) as logout —
+          // those are often authorization / business rules while Firebase login is still valid.
+          var isRest = /\/rest\/v1\//i.test(url);
+          if (isRest && res.status === 401 && window._currentUser && !_sessionModalShown) {
+            _sessionModalShown = true;
+            showSessionModal();
           }
         } catch (e) {}
         return res;
