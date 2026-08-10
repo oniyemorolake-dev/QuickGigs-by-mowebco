@@ -3,8 +3,8 @@ window.QG_CONFIG = {
   // When chat unlocks: 'payment' (escrow) | 'accept' | 'apply' (internal only)
   // Escrow TEST mode: chat unlocks after poster funds the task (held).
   chatUnlockAfter: 'payment',
-  // Set true ONLY after Supabase Auth → Firebase is enabled AND rls-secure.sql is applied
-  supabaseFirebaseAuth: false,
+  // Set true ONLY after Supabase Auth → Firebase is enabled AND security-lockdown.sql is applied
+  supabaseFirebaseAuth: true,
   blockOffPlatformContact: true,
   posterOnlyChatImages: false,
   maxTaskPhotos: 3,
@@ -58,14 +58,15 @@ window.QG_CONFIG = {
   disputeAutoRulesUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/dispute-auto-rules',
   // Legacy single % (one-off default only — DO NOT use for fee math).
   // All fee math must go through feeBreakdown.js:
-  // one-off 25% | recurring 10% | one-off sub 20% | recurring sub 8%.
-  platformFeePercent: 25,
+  // one-off 15% | recurring 10% | one-off sub 12% | recurring sub 8%.
+  platformFeePercent: 15,
   feeRates: {
-    oneoff: 0.25,
+    oneoff: 0.15,
     recurring: 0.10,
-    oneoff_sub: 0.20,
+    oneoff_sub: 0.12,
     recurring_sub: 0.08
   },
+  createEscrowIntentUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-escrow-intent',
   // UX-only admin allow-list (see qg-admin-gate.js). Prefer adminUids (Firebase UID).
   // Real enforcement: admins table + service-role function / custom claim admin:true.
   adminEmail: 'mowebsiteco@gmail.com',
