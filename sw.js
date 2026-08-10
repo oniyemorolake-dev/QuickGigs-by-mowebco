@@ -2,7 +2,7 @@
  * BUILD_ID is auto-stamped by scripts/stamp-cache-version.js (+ .githooks/pre-commit).
  * HTML + JS/CSS: network-first (no-store). Old Cache Storage entries are purged on activate.
  */
-var BUILD_ID = '425d6b5-1785895130';
+var BUILD_ID = '25e1de5-1786329278';
 var CACHE_NAME = 'quickgigs-' + BUILD_ID;
 var OFFLINE_FALLBACK = '/dashboard.html';
 
