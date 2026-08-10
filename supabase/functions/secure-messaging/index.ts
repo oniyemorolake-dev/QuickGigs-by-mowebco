@@ -24,9 +24,10 @@ function cleanPatch(input: Record<string, unknown>) {
   }
   if (input.status != null) {
     const status = String(input.status).toLowerCase();
+    // Clients may not unlock chat — escrow webhook / confirm-checkout only.
     if (['application', 'in_progress', 'completed', 'closed'].includes(status)) patch.status = status;
   }
-  if (typeof input.is_unlocked === 'boolean') patch.is_unlocked = input.is_unlocked;
+  // Intentionally ignore input.is_unlocked
   return patch;
 }
 
@@ -194,7 +195,8 @@ Deno.serve(async (req) => {
         task_title: String(input.task_title || '').slice(0, 160),
         task_category: String(input.task_category || '').slice(0, 80),
         status: ['in_progress', 'completed'].includes(String(input.status || '')) ? input.status : 'in_progress',
-        is_unlocked: input.is_unlocked === true,
+        // Always start locked — unlock only via verified payment (webhook / confirm-checkout)
+        is_unlocked: false,
       };
       const { data, error } = await supabase.from('conversations').insert(row).select('*').single();
       if (error) throw error;

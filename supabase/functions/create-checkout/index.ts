@@ -5,6 +5,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { feeBreakdown, periodTotal } from '../_shared/fee.ts';
+import { taskTransferGroup } from '../_shared/connect-ready.ts';
 import { authErrorStatus, requireFirebaseUser } from '../_shared/firebase-auth.ts';
 
 const corsHeaders = {
@@ -445,10 +446,10 @@ Deno.serve(async (req) => {
     const isRecurring = !!(getField(task, 'is_recurring')) || taskMode === 'recurring';
     const isSubscriber = !!(workerUser && workerUser.is_subscriber);
     // Fees computed server-side only — client must never recompute for storage.
-    // one-off 25% | recurring 10% | one-off sub 20% | recurring sub 8%
+    // Default one-off 15% platform fee (escrow); recurring / subscriber rates lower.
     let breakdown = feeBreakdown(amount, { isRecurring, isSubscriber });
     if (Deno.env.get('FEE_FORCE_ENV') === '1') {
-      const envPct = Number(Deno.env.get('PLATFORM_FEE_PERCENT') || '25');
+      const envPct = Number(Deno.env.get('PLATFORM_FEE_PERCENT') || '15');
       const fee = Math.round(amount * (envPct / 100) * 100) / 100;
       breakdown = {
         total: amount,
@@ -487,13 +488,20 @@ Deno.serve(async (req) => {
             quantity: 1,
           },
         ],
+        // Escrow: no transfer_data / on_behalf_of — funds stay on the platform balance.
+        // transfer_group links this PaymentIntent to the later Connect Transfer on complete.
         payment_intent_data: {
+          transfer_group: taskTransferGroup(paymentTaskId),
           metadata: {
             project: 'quickgigs',
+            purpose: 'task_escrow',
             task_id: paymentTaskId,
             poster_id: posterId,
             worker_id: workerId,
             worker_connect_id: workerConnectId || '',
+            transfer_group: taskTransferGroup(paymentTaskId),
+            platform_fee: String(breakdown.fee),
+            worker_payout: String(breakdown.payout),
             legacy_task_id: isNumericId(taskId) ? taskId : '',
           },
         },

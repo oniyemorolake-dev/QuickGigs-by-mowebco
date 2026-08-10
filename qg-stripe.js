@@ -381,20 +381,14 @@
   }
 
   async function confirmCheckoutSession(sessionId) {
-    if (!sessionId || typeof getSupabaseHeaders !== 'function') return { ok: false };
+    if (!sessionId) return { ok: false };
     var url = fnUrl(
       'confirmCheckoutUrl',
       'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/confirm-checkout'
     );
     try {
-      var headers = await getSupabaseHeaders();
-      var res = await fetch(url, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({ session_id: String(sessionId) })
-      });
-      var data = {};
-      try { data = await res.json(); } catch (e) { data = { ok: false }; }
+      var data = await callVerifiedFunction(url, { session_id: String(sessionId) });
+      if (data.ok == null) data.ok = data.success === true;
       return data;
     } catch (err) {
       console.warn('confirmCheckoutSession failed:', err);
@@ -679,29 +673,17 @@
 
   async function syncPaymentFromServer(posterId, options) {
     options = options || {};
-    if (!posterId || typeof getSupabaseHeaders !== 'function') {
-      return { ok: false, error: 'missing_poster_or_auth' };
-    }
+    // posterId ignored for auth — sync-payment uses Firebase JWT as poster
     var url = fnUrl(
       'syncPaymentUrl',
       'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/sync-payment'
     );
     try {
-      var headers = await getSupabaseHeaders();
-      var res = await fetch(url, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({
-          poster_id: String(posterId),
-          actor_id: String(posterId),
-          task_id: options.taskId ? String(options.taskId) : '',
-          worker_id: options.workerId ? String(options.workerId) : ''
-        })
+      var data = await callVerifiedFunction(url, {
+        task_id: options.taskId ? String(options.taskId) : '',
+        worker_id: options.workerId ? String(options.workerId) : ''
       });
-      var data = {};
-      try { data = await res.json(); } catch (e) { data = { ok: false, error: 'Invalid response' }; }
-      if (!res.ok && data.ok !== false) data.ok = false;
-      data.httpStatus = res.status;
+      if (data.ok == null) data.ok = data.success === true;
       return data;
     } catch (err) {
       console.warn('syncPaymentFromServer failed:', err);

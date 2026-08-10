@@ -106,7 +106,7 @@ var SELECT_USERS_PUBLIC_CARD = 'user_id,firebase_uid,name,avatar_url,is_tasker,i
 /**
  * Public profile / worker discovery — rendered fields only, still NEVER email/phone.
  */
-var SELECT_USERS_PUBLIC = SELECT_USERS_PUBLIC_CARD + ',role,status,bio,skills,availability,service_area,languages,pronouns,account_status,created_at';
+var SELECT_USERS_PUBLIC = SELECT_USERS_PUBLIC_CARD + ',role,status,bio,skills,availability,service_area,languages,pronouns,account_status,created_at,stripe_payouts_enabled,guardian_stripe_payouts_enabled,payout_owner';
 /**
  * Own profile — completion meter columns + common settings.
  * Keep this list conservative: a missing optional column must not blank the profile (0%).
@@ -121,7 +121,7 @@ var SELECT_USERS_SELF =
   SELECT_USERS_SELF_CORE +
   ',availability,service_area,languages,gender,date_of_birth,identity_collected_at,' +
   'guardian_name,guardian_email,guardian_phone,guardian_consent_status,guardian_consent_at,guardian_consent_token,' +
-  'stripe_connect_id,stripe_payouts_enabled,graduated_at,payout_owner,is_subscriber,' +
+  'stripe_connect_id,stripe_payouts_enabled,guardian_stripe_connect_id,guardian_stripe_payouts_enabled,graduated_at,payout_owner,is_subscriber,' +
   'notify_new_gigs,notify_new_gigs_email,alert_radius_km,alert_categories,alert_lat,alert_lng,alert_location';
 /** Parent-consent page — no email/phone of the teen exposed beyond name + consent state. */
 var SELECT_USERS_GUARDIAN = 'user_id,firebase_uid,name,guardian_consent_status,guardian_consent_at,account_status';
@@ -1115,38 +1115,21 @@ async function completeTaskViaServer(taskId, actorId, options) {
   var cfg = window.QG_CONFIG || {};
   var url = cfg.completeTaskUrl ||
     'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/complete-task';
-  if (typeof getSupabaseHeaders !== 'function') {
-    return { ok: false, success: false, error: 'auth_not_ready' };
+  // Firebase JWT required — server derives actor from token (ignore actorId spoof)
+  var body = { task_id: String(taskId) };
+  if (options.posterId) body.poster_id = String(options.posterId);
+  if (options.workerId) body.worker_id = String(options.workerId);
+  if (options.canonicalTaskId) body.canonical_task_id = String(options.canonicalTaskId);
+  var data = await callVerifiedFunction(url, body);
+  if (data.ok == null) data.ok = data.success === true;
+  if (data.success == null) data.success = !!data.ok;
+  if (!data.success) {
+    var parts = [data.error || ('HTTP ' + (data.http_status || ''))];
+    if (data.details) parts.push(String(data.details));
+    data.error = parts.filter(Boolean).join(' — ');
   }
-  try {
-    var headers = await getSupabaseHeaders();
-    var body = {
-      task_id: String(taskId),
-      actor_id: String(actorId || '')
-    };
-    if (options.posterId) body.poster_id = String(options.posterId);
-    if (options.workerId) body.worker_id = String(options.workerId);
-    if (options.canonicalTaskId) body.canonical_task_id = String(options.canonicalTaskId);
-    var res = await fetch(url, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(body)
-    });
-    var data = {};
-    try { data = await res.json(); } catch (e) {
-      data = { ok: false, success: false, error: 'Invalid response (' + res.status + ')' };
-    }
-    if (!res.ok && data.ok !== false) data.ok = false;
-    if (data.success == null) data.success = !!data.ok;
-    if (!data.success) {
-      var parts = [data.error || ('HTTP ' + res.status)];
-      if (data.details) parts.push(String(data.details));
-      data.error = parts.join(' — ');
-    }
-    return data;
-  } catch (err) {
-    return { ok: false, success: false, error: err.message || String(err) };
-  }
+  void actorId;
+  return data;
 }
 
 async function secureMessagingRequest(action, payload) {
@@ -2092,6 +2075,8 @@ function applyDbUserToProfileData(dbUser, target, opts) {
     if (dbUser.guardian_consent_status) target.guardian_consent_status = dbUser.guardian_consent_status;
     if (dbUser.stripe_connect_id) target.stripe_connect_id = dbUser.stripe_connect_id;
     if (dbUser.stripe_payouts_enabled != null) target.stripe_payouts_enabled = dbUser.stripe_payouts_enabled;
+    if (dbUser.guardian_stripe_connect_id) target.guardian_stripe_connect_id = dbUser.guardian_stripe_connect_id;
+    if (dbUser.guardian_stripe_payouts_enabled != null) target.guardian_stripe_payouts_enabled = dbUser.guardian_stripe_payouts_enabled;
     if (dbUser.graduated_at) target.graduated_at = dbUser.graduated_at;
     if (dbUser.payout_owner) target.payout_owner = dbUser.payout_owner;
     if (dbUser.email_verified === true || dbUser.verified === true) {
@@ -2435,8 +2420,6 @@ function parseConversationUnlocked(conv) {
 
 async function forceUnlockConversationForTask(conv, taskStatus) {
   if (!conv || !conv.conv_id) return { success: false, error: 'No conversation' };
-  // When Stripe is live, restore the escrow-gated contact rule — chat unlocks only after
-  // escrow is funded. Currently gated on acceptance because payments are off.
   var rule = typeof window.getChatUnlockRule === 'function'
     ? window.getChatUnlockRule()
     : ((window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept');
@@ -2445,11 +2428,8 @@ async function forceUnlockConversationForTask(conv, taskStatus) {
     return { success: true, conv: conv };
   }
 
-  async function verifyUnlocked() {
-    var fresh = await getConversation(conv.conv_id);
-    return !!(fresh && parseConversationUnlocked(fresh));
-  }
-
+  // Payment gate: unlock only via confirm-checkout (server verifies held escrow).
+  // Clients must never PATCH is_unlocked — DB trigger + secure-messaging strip it.
   if (rule === 'payment') {
     var taskId = conv.task_id || conv.TASK_ID;
     if (taskId && typeof getPaymentByTask === 'function') {
@@ -2459,73 +2439,46 @@ async function forceUnlockConversationForTask(conv, taskStatus) {
       });
       var pst = payment && String(payment.status || '').toLowerCase();
       if (pst === 'held' || pst === 'paid' || pst === 'completed') {
-        var patch = { is_unlocked: true, status: 'in_progress' };
-        var payUnlock = await updateConversation(conv.conv_id, patch);
-        if (payUnlock.success) {
-          return { success: true, conv: Object.assign({}, conv, patch) };
+        var serverUnlock = await syncConversationUnlock(conv.conv_id);
+        if (serverUnlock && serverUnlock.ok) {
+          var verified = await getConversation(conv.conv_id);
+          return {
+            success: true,
+            conv: verified || Object.assign({}, conv, { is_unlocked: true, status: 'in_progress' })
+          };
         }
-        if (typeof tryPatchRow === 'function') {
-          payUnlock = await tryPatchRow(
-            'conversations',
-            patch,
-            'conv_id=eq.' + encodeURIComponent(conv.conv_id),
-            verifyUnlocked
-          );
-          if (payUnlock.success) {
-            var verified = await getConversation(conv.conv_id);
-            return { success: true, conv: verified || Object.assign({}, conv, patch) };
-          }
+        var fresh = await getConversation(conv.conv_id);
+        if (fresh && parseConversationUnlocked(fresh)) {
+          return { success: true, conv: fresh };
         }
-        if (await verifyUnlocked()) {
-          var unlockedConv = await getConversation(conv.conv_id);
-          return { success: true, conv: unlockedConv || conv };
-        }
-        // Paid in Stripe/DB but PATCH blocked — still allow chat client-side
-        return { success: true, conv: Object.assign({}, conv, { is_unlocked: true, status: 'in_progress' }), unverified: true };
+        return {
+          success: false,
+          error: (serverUnlock && serverUnlock.error) || 'unlock_requires_server',
+          conv: conv
+        };
       }
     }
     return { success: parseConversationUnlocked(conv), conv: conv, skipped: !parseConversationUnlocked(conv) };
   }
 
-  // When Stripe is live, restore the escrow-gated contact rule — chat unlocks only after
-  // escrow is funded. Currently gated on acceptance because payments are off.
+  // Non-payment rules still go through secure-messaging update (is_unlocked stripped server-side).
+  // Status-only updates are allowed; unlock remains false until payment path runs.
   var convStatus = String(conv.status || '').toLowerCase();
   var ts = String(taskStatus || '').toLowerCase();
-  if (parseConversationUnlocked(conv) && convStatus !== 'application') {
-    return { success: true, conv: conv };
-  }
   if (typeof window.shouldUnlockChatNow === 'function' &&
       !window.shouldUnlockChatNow(convStatus, ts)) {
     return { success: false, conv: conv, skipped: true };
   }
 
-  var patch = { is_unlocked: true };
+  var patch = {};
   if (convStatus === 'application' || ts === 'in_progress') patch.status = 'in_progress';
-
-  var result = await updateConversation(conv.conv_id, patch);
-  if (result.success) {
-    if (typeof clearConversationFraudBuffers === 'function') {
-      clearConversationFraudBuffers(conv.conv_id, conv.poster_id, conv.worker_id);
+  if (Object.keys(patch).length) {
+    var result = await updateConversation(conv.conv_id, patch);
+    if (result.success) {
+      return { success: true, conv: Object.assign({}, conv, patch) };
     }
-    return { success: true, conv: Object.assign({}, conv, patch) };
   }
-  result = await updateConversation(conv.conv_id, { is_unlocked: true });
-  if (result.success) {
-    if (typeof clearConversationFraudBuffers === 'function') {
-      clearConversationFraudBuffers(conv.conv_id, conv.poster_id, conv.worker_id);
-    }
-    return { success: true, conv: Object.assign({}, conv, { is_unlocked: true }) };
-  }
-  // Accept-mode: PATCH may fail (RLS / column) but parties must still chat while payments are off.
-  if (rule !== 'payment') {
-    console.warn('forceUnlockConversationForTask PATCH failed — opening chat client-side:', result && result.error);
-    return {
-      success: true,
-      conv: Object.assign({}, conv, { is_unlocked: true, status: patch.status || conv.status }),
-      unverified: true
-    };
-  }
-  return { success: false, error: result.error, conv: conv };
+  return { success: parseConversationUnlocked(conv), conv: conv, skipped: true };
 }
 
 async function updateConversation(convId, patch) {
@@ -2542,11 +2495,8 @@ async function unlockConversationIfAllowed(convId, convStatus, taskStatus) {
 async function createConversation(convData) {
   var taskId = normalizeTaskId(convData.task_id);
   var status = convData.status || 'in_progress';
-  var shouldUnlock = typeof convData.is_unlocked === 'boolean'
-    ? convData.is_unlocked
-    : (typeof resolveChatUnlockedOnCreate === 'function'
-      ? resolveChatUnlockedOnCreate(status)
-      : false);
+  // Unlock is server-managed (payment webhook / confirm-checkout). Always create locked.
+  var shouldUnlock = false;
 
   if (convData.poster_id && convData.worker_id &&
       await areUsersBlocked(convData.poster_id, convData.worker_id)) {
@@ -2561,12 +2511,7 @@ async function createConversation(convData) {
     if (convData.worker_name) patch.worker_name = convData.worker_name;
     if (convData.task_title) patch.task_title = convData.task_title;
     if (convData.task_category) patch.task_category = convData.task_category;
-    if (shouldUnlock) patch.is_unlocked = true;
-    else if (typeof window.shouldUnlockChatNow === 'function' &&
-      window.shouldUnlockChatNow(convData.status || existing.status)) {
-      patch.is_unlocked = true;
-      if ((existing.status || '').toLowerCase() === 'application') patch.status = 'in_progress';
-    }
+    // Do not set is_unlocked from client
     if (Object.keys(patch).length) {
       var upd = await updateConversation(existing.conv_id, patch);
       if (upd.success) existing = Object.assign({}, existing, patch);
@@ -4133,27 +4078,12 @@ async function syncConversationUnlock(convId, actorId) {
   var cfg = window.QG_CONFIG || {};
   var url = cfg.confirmCheckoutUrl ||
     'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/confirm-checkout';
-  if (!convId || typeof getSupabaseHeaders !== 'function') {
-    return { ok: false, error: 'missing_conv_or_auth' };
-  }
-  try {
-    var headers = await getSupabaseHeaders();
-    var res = await fetch(url, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify({
-        conv_id: String(convId),
-        actor_id: String(actorId || '')
-      })
-    });
-    var data = {};
-    try { data = await res.json(); } catch (e) { data = { ok: false, error: 'Invalid response' }; }
-    if (!res.ok && data.ok !== false) data.ok = false;
-    return data;
-  } catch (err) {
-    console.error('syncConversationUnlock failed:', err);
-    return { ok: false, error: err.message || String(err) };
-  }
+  if (!convId) return { ok: false, error: 'missing_conv_or_auth' };
+  // Server verifies payment + party from Firebase JWT — never trust body actor_id
+  var data = await callVerifiedFunction(url, { conv_id: String(convId) });
+  if (data.ok == null) data.ok = data.success === true;
+  void actorId;
+  return data;
 }
 
 function isPaymentStatusComplete(status) {
@@ -4282,30 +4212,13 @@ async function refundTaskPayment(taskId, actorId) {
   if (st === 'paid') return { ok: false, error: 'already_released_use_dispute' };
   if (st !== 'held') return { ok: true, skipped: true };
 
-  if (typeof getSupabaseHeaders !== 'function') {
-    return { ok: false, error: 'Database not loaded' };
-  }
-
   var url = cfg.refundPaymentUrl ||
     'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/refund-payment';
-  try {
-    var headers = await getSupabaseHeaders();
-    var res = await fetch(url, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify({
-        task_id: String(taskId),
-        actor_id: String(actorId || '')
-      })
-    });
-    var data = {};
-    try { data = await res.json(); } catch (e) { data = { ok: false, error: 'Invalid response' }; }
-    if (!res.ok && data.ok !== false) data.ok = false;
-    return data;
-  } catch (err) {
-    console.error('refundTaskPayment failed:', err);
-    return { ok: false, error: err.message || String(err) };
-  }
+  // Server derives poster from Firebase JWT — ignore spoofable actor_id
+  var data = await callVerifiedFunction(url, { task_id: String(taskId) });
+  if (data.ok == null) data.ok = data.success === true;
+  void actorId;
+  return data;
 }
 
 async function releaseTaskPayout(taskId, actorId, options) {
@@ -4331,40 +4244,17 @@ async function releaseTaskPayout(taskId, actorId, options) {
   }
   if (st !== 'held') return { ok: true, skipped: true };
 
-  if (typeof getSupabaseHeaders !== 'function') {
-    return { ok: false, error: 'Database not loaded' };
-  }
-
   var url = cfg.releasePayoutUrl ||
     'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/release-payout';
   try {
-    if (typeof callVerifiedFunction === 'function') {
-      var verifiedRelease = await callVerifiedFunction(url, {
-        task_id: String(payment.task_id || taskId),
-        poster_id: String(options.posterId || payment.poster_id || ''),
-        worker_id: String(options.workerId || payment.worker_id || '')
-      });
-      if (verifiedRelease.ok == null) verifiedRelease.ok = verifiedRelease.success === true;
-      return verifiedRelease;
-    }
-    var headers = await getSupabaseHeaders();
-    var res = await fetch(url, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify({
-        task_id: String(payment.task_id || taskId),
-        actor_id: String(actorId || ''),
-        poster_id: String(options.posterId || payment.poster_id || ''),
-        worker_id: String(options.workerId || payment.worker_id || '')
-      })
+    // Poster Firebase JWT required; server rejects worker self-release / in_progress
+    var verifiedRelease = await callVerifiedFunction(url, {
+      task_id: String(payment.task_id || taskId),
+      poster_id: String(options.posterId || payment.poster_id || ''),
+      worker_id: String(options.workerId || payment.worker_id || '')
     });
-    var data = {};
-    try { data = await res.json(); } catch (e) { data = { ok: false, error: 'Invalid response' }; }
-    if (!res.ok && data.ok !== false) data.ok = false;
-    if (data.error && typeof data.error === 'object') {
-      data.error = data.error.message || data.error.error || JSON.stringify(data.error);
-    }
-    return data;
+    if (verifiedRelease.ok == null) verifiedRelease.ok = verifiedRelease.success === true;
+    return verifiedRelease;
   } catch (err) {
     console.error('releaseTaskPayout failed:', err);
     return { ok: false, error: err.message || String(err) };

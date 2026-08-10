@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
     );
     const { data: actor } = await supabase
       .from('users')
-      .select('name,avatar_url,account_status,status,date_of_birth,guardian_email,guardian_consent_status,is_tasker,tasker_verified,tasker_verification_status')
+      .select('name,avatar_url,account_status,status,date_of_birth,guardian_email,guardian_consent_status,guardian_stripe_payouts_enabled,is_tasker,tasker_verified,tasker_verification_status,stripe_connect_id,stripe_payouts_enabled,payout_owner')
       .eq('firebase_uid', identity.uid)
       .maybeSingle();
     if (
@@ -101,6 +101,23 @@ Deno.serve(async (req) => {
       }, 403);
     }
 
+    // Paid-task readiness: Connect Express must be charges_enabled && payouts_enabled
+    // (synced to stripe_payouts_enabled). Under-18 → guardian_stripe_payouts_enabled.
+    const actorAge = ageFromDateOfBirth(actor.date_of_birth);
+    const actorUnder18 = actorAge != null ? actorAge < 18 : isTeenDateOfBirth(actor.date_of_birth);
+    const payoutReady = actorUnder18
+      ? (actor.guardian_consent_status === 'approved' && actor.guardian_stripe_payouts_enabled === true)
+      : (actor.stripe_payouts_enabled === true);
+    if (!payoutReady) {
+      return json({
+        success: false,
+        error: actorUnder18 ? 'guardian_payout_setup_required' : 'worker_payout_setup_required',
+        message: actorUnder18
+          ? 'A parent/guardian must finish Stripe payout setup before you can take paid gigs. Stripe requires account holders to be 18+.'
+          : 'Set up payouts on your profile before applying to paid gigs. Your Stripe Express account must be fully enabled.',
+      }, 403);
+    }
+
     const { data: task } = await supabase
       .from('tasks')
       .select('task_id,title,posted_by,status,age_preference,lat,lng')
@@ -111,7 +128,6 @@ Deno.serve(async (req) => {
       return json({ success: false, error: 'cannot_apply_own_task' }, 400);
     }
     if (task.status !== 'open') return json({ success: false, error: 'task_not_open' }, 409);
-    const actorAge = ageFromDateOfBirth(actor.date_of_birth);
     if (actorAge != null && actorAge < 16) {
       return json({ success: false, error: 'underage' }, 403);
     }

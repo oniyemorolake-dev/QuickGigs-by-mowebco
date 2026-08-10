@@ -2,6 +2,7 @@
 // Deploy: supabase functions deploy complete-task --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { authErrorStatus, requireFirebaseUser } from '../_shared/firebase-auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -333,15 +334,27 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const body = await req.json();
+    let identity;
+    try {
+      identity = await requireFirebaseUser(req);
+    } catch (authErr) {
+      return json({
+        ok: false,
+        success: false,
+        error: authErr instanceof Error ? authErr.message : 'unauthorized',
+      }, authErrorStatus(authErr));
+    }
+
+    const body = await req.json().catch(() => ({}));
     const inputTaskId = String(body.task_id || '').trim();
-    const actorId = String(body.actor_id || '').trim();
+    // Server-derived identity — never trust body.actor_id
+    const actorId = identity.uid;
     const hintPosterId = String(body.poster_id || '').trim();
     const hintWorkerId = String(body.worker_id || '').trim();
     const canonicalFromClient = String(body.canonical_task_id || '').trim();
 
-    if (!inputTaskId || !actorId) {
-      return json({ ok: false, success: false, error: 'missing_task_or_actor' }, 400);
+    if (!inputTaskId) {
+      return json({ ok: false, success: false, error: 'missing_task' }, 400);
     }
 
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -363,7 +376,6 @@ Deno.serve(async (req) => {
         ok: false,
         success: false,
         error: 'task_not_found',
-        details: `Could not resolve task ${inputTaskId} poster=${hintPosterId} worker=${hintWorkerId}`,
       }, 404);
     }
 
@@ -400,12 +412,13 @@ Deno.serve(async (req) => {
     }
 
     if (!posterId) return json({ ok: false, success: false, error: 'poster_missing' }, 400);
-    if (actorId !== posterId && actorId !== workerId) {
+    // Only the poster may mark complete (drives poster_confirmed_at → payout eligibility)
+    if (actorId !== posterId) {
       return json({
         ok: false,
         success: false,
         error: 'not_authorized',
-        details: `actor=${actorId} poster=${posterId} worker=${workerId}`,
+        message: 'Only the poster can mark a task complete.',
       }, 403);
     }
 
@@ -415,7 +428,6 @@ Deno.serve(async (req) => {
         ok: false,
         success: false,
         error: 'task_not_in_progress',
-        details: `status=${status}`,
       }, 400);
     }
 
@@ -425,12 +437,33 @@ Deno.serve(async (req) => {
         ok: false,
         success: false,
         error: updated.error,
-        details: `task_id=${canonicalTaskId(task)}`,
       }, 500);
     }
 
     await completeApps(supabase, task, inputTaskId, workerId);
     await lockChats(supabase, posterId, workerId, inputTaskId);
+
+    // Poster-confirmed → immediately attempt escrow release (same JWT; release-payout enforces gates)
+    let payout: Record<string, unknown> | null = null;
+    try {
+      const releaseUrl = `${(Deno.env.get('SUPABASE_URL') || '').replace(/\/$/, '')}/functions/v1/release-payout`;
+      const releaseRes = await fetch(releaseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: req.headers.get('authorization') || '',
+        },
+        body: JSON.stringify({
+          task_id: updated.task_id || inputTaskId,
+          poster_id: posterId,
+          worker_id: workerId,
+        }),
+      });
+      payout = await releaseRes.json().catch(() => ({}));
+    } catch (relErr) {
+      console.warn('complete-task auto release-payout failed:', relErr);
+      payout = { ok: false, error: 'release_call_failed' };
+    }
 
     return json({
       ok: true,
@@ -439,13 +472,14 @@ Deno.serve(async (req) => {
       poster_id: posterId,
       worker_id: workerId,
       already: !!updated.already,
+      payout,
     });
   } catch (err) {
     console.error('complete-task error:', err);
     return json({
       ok: false,
       success: false,
-      error: err instanceof Error ? err.message : String(err),
+      error: 'complete_failed',
     }, 500);
   }
 });

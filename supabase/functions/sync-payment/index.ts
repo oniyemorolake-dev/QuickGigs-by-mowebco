@@ -4,6 +4,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
+import { authErrorStatus, requireFirebaseUser } from '../_shared/firebase-auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -223,18 +224,28 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
+    let identity;
+    try {
+      identity = await requireFirebaseUser(req);
+    } catch (authErr) {
+      return json({
+        ok: false,
+        success: false,
+        error: authErr instanceof Error ? authErr.message : 'unauthorized',
+      }, authErrorStatus(authErr));
+    }
+
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeKey) return json({ ok: false, error: 'stripe_not_configured' }, 503);
 
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     if (!serviceKey) return json({ ok: false, success: false, error: 'service_role_missing' }, 503);
 
-    const body = await req.json();
-    const posterId = String(body.poster_id || body.actor_id || '').trim();
+    const body = await req.json().catch(() => ({}));
+    // Server-derived — ignore spoofable body.poster_id / actor_id
+    const posterId = identity.uid;
     const workerIdHint = String(body.worker_id || '').trim();
     const taskIdHint = String(body.task_id || '').trim();
-
-    if (!posterId) return json({ ok: false, error: 'missing_poster' }, 400);
 
     const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', serviceKey);
     const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
@@ -305,9 +316,7 @@ Deno.serve(async (req) => {
       const listed = await stripe.checkout.sessions.list({ limit: 100 });
       for (const session of listed.data || []) {
         const metaPoster = String(session.metadata?.poster_id || '');
-        if (metaPoster && metaPoster !== posterId) continue;
-        // Also accept sessions with no metadata poster if we already have a pending row for this cs_
-        if (!metaPoster) continue;
+        if (metaPoster !== posterId) continue;
         if (workerIdHint && String(session.metadata?.worker_id || '') !== workerIdHint) continue;
         const marked = await markSessionHeld(supabase, stripe, session);
         if (marked) recovered.push(marked);
@@ -367,7 +376,7 @@ Deno.serve(async (req) => {
     return json({
       ok: false,
       success: false,
-      error: err instanceof Error ? err.message : String(err),
+      error: 'sync_failed',
     }, 500);
   }
 });

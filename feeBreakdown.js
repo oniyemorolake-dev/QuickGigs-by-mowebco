@@ -1,25 +1,25 @@
 /**
  * QuickGigs — platform fee math (SINGLE SOURCE OF TRUTH for the client).
- * Route ALL fee display / commitment math through feeBreakdown() — never hardcode 0.25.
- * Server mirror: supabase/functions/_shared/fee.ts + create-checkout.
+ * Route ALL fee display / commitment math through feeBreakdown() — never hardcode rates.
+ * Server mirror: supabase/functions/_shared/fee.ts + create-checkout / create-escrow-intent.
  *
  * Rates:
- *   one-off                 25%
+ *   one-off                 15%  (escrow default — poster pays full; tasker gets 85%)
  *   recurring               10%
- *   one-off + subscriber    20%
+ *   one-off + subscriber    12%
  *   recurring + subscriber   8%
  *
  * amount = total for THIS charge (hourly → hourly_rate * est_hours).
  *
  * FUTURE: per-period Stripe billing (subscriptions / scheduled invoices) for recurring
  * jobs — fee applies to each period total. Escrow checkout is live in TEST mode.
- * Do NOT process charges here.
+ * Do NOT process charges here. Never store card/bank numbers — Stripe hosts that.
  */
 (function (global) {
   var FEE = {
-    oneoff: 0.25,
+    oneoff: 0.15,
     recurring: 0.10,
-    oneoff_sub: 0.20,
+    oneoff_sub: 0.12,
     recurring_sub: 0.08
   };
 

@@ -4,6 +4,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
+import { authErrorStatus, requireFirebaseUser } from '../_shared/firebase-auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -151,7 +152,7 @@ async function syncUnlockByConversation(
     .maybeSingle();
 
   if (convErr || !conv) return json({ ok: false, error: 'conv_not_found' }, 404);
-  if (actorId && actorId !== conv.poster_id && actorId !== conv.worker_id) {
+  if (actorId !== conv.poster_id && actorId !== conv.worker_id) {
     return json({ ok: false, error: 'not_participant' }, 403);
   }
 
@@ -175,13 +176,23 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
+    let identity;
+    try {
+      identity = await requireFirebaseUser(req);
+    } catch (authErr) {
+      return json({
+        ok: false,
+        error: authErr instanceof Error ? authErr.message : 'unauthorized',
+      }, authErrorStatus(authErr));
+    }
+
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeKey) return json({ ok: false, error: 'stripe_not_configured' }, 503);
 
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const sessionId = String(body.session_id || '').trim();
     const convId = String(body.conv_id || '').trim();
-    const actorId = String(body.actor_id || '').trim();
+    const actorId = identity.uid; // server-derived
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -222,6 +233,11 @@ Deno.serve(async (req) => {
 
     if (!taskId || !posterId || !workerId) {
       return json({ ok: false, error: 'missing_metadata' }, 400);
+    }
+
+    // Only poster or worker on this payment may confirm
+    if (actorId !== posterId && actorId !== workerId) {
+      return json({ ok: false, error: 'not_authorized' }, 403);
     }
 
     const heldPatch = {
@@ -285,6 +301,6 @@ Deno.serve(async (req) => {
     return json({ ok: true, task_id: taskId, status: 'held', conv_id: unlockedConvId });
   } catch (err) {
     console.error('confirm-checkout error:', err);
-    return json({ ok: false, error: String(err) }, 500);
+    return json({ ok: false, error: 'confirm_failed' }, 500);
   }
 });

@@ -1,10 +1,13 @@
-// QuickGigs — Release worker payout when task is marked complete (escrow → 75/25 split)
+// QuickGigs — Release worker payout when task is marked complete (escrow → 85/15 split)
 // Deploy: supabase functions deploy release-payout --no-verify-jwt
 // Secrets: STRIPE_SECRET_KEY
+// Transfer uses transfer_group = task_<taskId>; idempotent via transfer_id + Stripe idempotency key.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { authErrorStatus, requireFirebaseUser } from '../_shared/firebase-auth.ts';
+import { connectAccountReady, taskTransferGroup } from '../_shared/connect-ready.ts';
+import { feeBreakdown } from '../_shared/fee.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -314,8 +317,21 @@ Deno.serve(async (req) => {
 
     const taskUuid = canonicalTaskId(task);
     const taskStatus = String(getField(task, 'status') || '').toLowerCase();
-    if (taskStatus !== 'in_progress' && taskStatus !== 'completed') {
-      return json({ ok: false, error: 'task_not_releasable' }, 400);
+    // Poster must confirm completion before payout is eligible
+    if (taskStatus !== 'completed') {
+      return json({
+        ok: false,
+        error: 'task_not_completed',
+        message: 'Payout releases only after the poster marks the task complete.',
+      }, 400);
+    }
+    const posterConfirmed = getField(task, 'poster_confirmed_at');
+    if (!posterConfirmed) {
+      return json({
+        ok: false,
+        error: 'poster_confirmation_required',
+        message: 'Waiting for poster confirmation before releasing escrow.',
+      }, 400);
     }
 
     const posterId = String(getField(task, 'posted_by') || hintPosterId || '');
@@ -324,9 +340,16 @@ Deno.serve(async (req) => {
 
     if (!workerId) return json({ ok: false, error: 'no_accepted_worker' }, 400);
 
+    // Only the poster (or service auto-release after confirmation) may trigger release.
+    // Workers cannot self-release while / after in_progress.
     const isPoster = actorId === posterId;
-    const isWorker = actorId === workerId;
-    if (!isPoster && !isWorker) return json({ ok: false, error: 'not_authorized' }, 403);
+    if (!isPoster) {
+      return json({
+        ok: false,
+        error: 'not_authorized',
+        message: 'Only the poster can release the tasker payout after marking the task complete.',
+      }, 403);
+    }
 
     const payment = await findHeldPayment(supabase, posterId, workerId, inputTaskId, taskUuid);
     if (!payment) return json({ ok: true, skipped: true, reason: 'no_payment' });
@@ -343,6 +366,19 @@ Deno.serve(async (req) => {
       return json({
         ok: true,
         already: true,
+        worker_payout: getField(payment, 'worker_payout'),
+        platform_fee: getField(payment, 'platform_fee'),
+        transfer_id: getField(payment, 'transfer_id') || null,
+      });
+    }
+
+    // Idempotent: already has a transfer_id even if status lag
+    const existingTransferId = String(getField(payment, 'transfer_id') || '');
+    if (existingTransferId) {
+      return json({
+        ok: true,
+        already: true,
+        transfer_id: existingTransferId,
         worker_payout: getField(payment, 'worker_payout'),
         platform_fee: getField(payment, 'platform_fee'),
       });
@@ -398,27 +434,54 @@ Deno.serve(async (req) => {
       }, 400);
     }
 
-    const workerPayout = Number(getField(payment, 'worker_payout') || 0);
+    const paymentAmount = Number(getField(payment, 'amount') || 0);
+    let workerPayout = Number(getField(payment, 'worker_payout') || 0);
+    let platformFee = Number(getField(payment, 'platform_fee') || 0);
+    // If fee fields missing, apply default 15% platform fee (amount − 15% → tasker).
+    if (!(workerPayout > 0) && paymentAmount > 0) {
+      const split = feeBreakdown(paymentAmount, { isRecurring: false, isSubscriber: false });
+      workerPayout = split.payout;
+      platformFee = split.fee;
+    }
     const workerPayoutCents = Math.round(workerPayout * 100);
     if (!workerPayoutCents || workerPayoutCents <= 0) {
       return json({ ok: false, error: 'invalid_payout_amount' }, 400);
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
-    const destinationAccount = await stripe.accounts.retrieve(connectId);
-    if (!destinationAccount.payouts_enabled) {
+    let destinationAccount: Stripe.Account;
+    try {
+      destinationAccount = await stripe.accounts.retrieve(connectId);
+    } catch (acctErr) {
+      console.error('accounts.retrieve failed:', acctErr);
+      return json({
+        ok: false,
+        error: 'stripe_account_retrieve_failed',
+        details: errorMessage(acctErr),
+      }, 502);
+    }
+    const ready = connectAccountReady(destinationAccount);
+    if (!ready.ready) {
       return json({
         ok: false,
         error: guardianOwnsPayout ? 'guardian_payout_setup_incomplete' : 'worker_payout_setup_incomplete',
+        charges_enabled: ready.charges_enabled,
+        payouts_enabled: ready.payouts_enabled,
       }, 400);
     }
     const paymentIntentId = String(getField(payment, 'stripe_id') || '');
+    const releaseTaskKey = taskUuid || inputTaskId;
+    const transferGroup = taskTransferGroup(releaseTaskKey);
 
     let sourceTransaction: string | undefined;
     if (paymentIntentId.startsWith('pi_')) {
-      const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
-      const charge = pi.latest_charge;
-      sourceTransaction = typeof charge === 'string' ? charge : charge?.id;
+      try {
+        const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+        const charge = pi.latest_charge;
+        sourceTransaction = typeof charge === 'string' ? charge : charge?.id;
+      } catch (piErr) {
+        console.warn('Could not resolve PaymentIntent charge:', piErr);
+      }
     } else if (paymentIntentId.startsWith('cs_')) {
       try {
         const session = await stripe.checkout.sessions.retrieve(paymentIntentId);
@@ -434,37 +497,76 @@ Deno.serve(async (req) => {
       }
     }
 
-    const transfer = await stripe.transfers.create({
-      amount: workerPayoutCents,
-      currency: 'cad',
-      destination: connectId,
-      ...(sourceTransaction ? { source_transaction: sourceTransaction } : {}),
-      metadata: {
-        project: 'quickgigs',
-        task_id: taskUuid || inputTaskId,
-        worker_id: workerId,
-        poster_id: posterId,
-        payout_owner: guardianOwnsPayout ? 'guardian' : 'self',
-      },
-    });
+    const paymentId = String(getField(payment, 'payment_id') || '');
+    let transfer: Stripe.Transfer;
+    try {
+      transfer = await stripe.transfers.create(
+        {
+          amount: workerPayoutCents,
+          currency: 'cad',
+          destination: connectId,
+          transfer_group: transferGroup,
+          ...(sourceTransaction ? { source_transaction: sourceTransaction } : {}),
+          metadata: {
+            project: 'quickgigs',
+            task_id: releaseTaskKey,
+            worker_id: workerId,
+            poster_id: posterId,
+            payment_id: paymentId,
+            transfer_group: transferGroup,
+            payout_owner: guardianOwnsPayout ? 'guardian' : 'self',
+          },
+        },
+        {
+          // Prevent double-pay on retries
+          idempotencyKey: paymentId ? `qg-release-${paymentId}` : `qg-release-task-${releaseTaskKey}`,
+        },
+      );
+    } catch (xferErr) {
+      console.error('stripe.transfers.create failed:', xferErr);
+      return json({
+        ok: false,
+        error: 'stripe_transfer_failed',
+        details: errorMessage(xferErr),
+      }, 502);
+    }
 
     const now = new Date().toISOString();
-    await supabase
+    const { error: payUpdateErr } = await supabase
       .from('payments')
       .update({
         status: 'paid',
         transfer_id: transfer.id,
         completed_at: now,
+        worker_payout: workerPayout,
+        platform_fee: platformFee,
       })
-      .eq('payment_id', getField(payment, 'payment_id'));
+      .eq('payment_id', paymentId);
+
+    if (payUpdateErr) {
+      console.error('Payment row update after transfer failed:', payUpdateErr);
+      // Transfer already created — report success with warning so caller does not retry blindly.
+      return json({
+        ok: true,
+        transfer_id: transfer.id,
+        warning: 'transfer_created_db_update_failed',
+        details: payUpdateErr.message,
+        worker_payout: workerPayout,
+        payout_owner: guardianOwnsPayout ? 'guardian' : 'self',
+        platform_fee: platformFee,
+        amount: paymentAmount,
+        transfer_group: transferGroup,
+      });
+    }
 
     return json({
       ok: true,
       transfer_id: transfer.id,
       worker_payout: workerPayout,
       payout_owner: guardianOwnsPayout ? 'guardian' : 'self',
-      platform_fee: Number(getField(payment, 'platform_fee') || 0),
-      amount: Number(getField(payment, 'amount') || 0),
+      platform_fee: platformFee,
+      amount: paymentAmount,
+      transfer_group: transferGroup,
     });
   } catch (err) {
     console.error('release-payout error:', err);

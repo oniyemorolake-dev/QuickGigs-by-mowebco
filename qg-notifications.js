@@ -179,18 +179,25 @@
       return { success: false, error: 'no_db' };
     }
 
+    // Emails stay queued for a secret-authenticated worker / cron.
+    // Browser must NOT call send-notification (open relay removed).
     var fnUrl = window.QG_CONFIG && window.QG_CONFIG.notificationFunctionUrl;
-    if (result.success && fnUrl) {
+    if (result.success && fnUrl && window.QG_CONFIG && window.QG_CONFIG.notificationSendSecret) {
       try {
         var nid = result.data && (result.data.notification_id || result.data.id);
         await fetch(fnUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ notification_id: nid, type: opts.type, email: email, subject: subject, body: bodyText })
+          headers: {
+            'Content-Type': 'application/json',
+            'x-qg-notification-secret': String(window.QG_CONFIG.notificationSendSecret)
+          },
+          body: JSON.stringify({ notification_id: nid })
         });
       } catch (err) {
         console.warn('Notification function call failed (queued in DB):', err);
       }
+    } else if (result.success) {
+      console.info('Notification queued; send-notification requires NOTIFICATION_SEND_SECRET (server/cron).');
     }
 
     return result;

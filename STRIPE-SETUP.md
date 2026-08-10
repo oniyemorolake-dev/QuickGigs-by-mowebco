@@ -1,122 +1,100 @@
-# QuickGigs — Stripe setup (Phase 4)
+# QuickGigs — Stripe Connect Express escrow (CA / CAD)
 
-You finished beta prep. Follow these steps to turn on **Test payments**.
+Poster pays → funds held on the **platform** → poster marks complete → **Transfer** of tasker share (amount − **15%** platform fee) to the tasker's Express account.
+
+**Never store card or bank numbers** — Stripe hosts all of that.
 
 ---
 
 ## 1. SQL (Supabase SQL Editor)
 
-Run once (if not already):
-
 | File | Purpose |
 |------|---------|
-| `supabase/payments.sql` | Payment records ✅ (you ran this) |
-| `supabase/payments-release.sql` | Transfer ID column for payout release |
-| `supabase/stripe-connect.sql` | Worker payout accounts |
+| `supabase/payments.sql` | Payment / escrow records |
+| `supabase/payments-release.sql` | `transfer_id` column |
+| `supabase/stripe-connect.sql` | `stripe_connect_id`, `stripe_payouts_enabled` |
+| `supabase/teen-accounts-secure.sql` | Guardian Connect columns (minors) |
 
 ---
 
 ## 2. Supabase secrets
 
-Supabase Dashboard → **Project Settings → Edge Functions → Secrets** (or CLI):
-
 ```bash
 supabase secrets set STRIPE_SECRET_KEY=sk_test_YOUR_KEY
 supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_YOUR_WEBHOOK_SECRET
 supabase secrets set SITE_URL=https://quickgigs.ca
-supabase secrets set PLATFORM_FEE_PERCENT=25
+# Optional flat override when FEE_FORCE_ENV=1:
+# supabase secrets set FEE_FORCE_ENV=1
+# supabase secrets set PLATFORM_FEE_PERCENT=15
 ```
 
-Never commit `sk_test_` or `whsec_` to GitHub.
+Never commit secrets.
 
 ---
 
 ## 3. Deploy Edge Functions
 
-**Important:** After pulling the embedded checkout update, redeploy `create-checkout`:
-
-From your machine (with [Supabase CLI](https://supabase.com/docs/guides/cli) linked to the project):
-
 ```bash
 cd "c:\QuickGigs by mowebco"
+supabase functions deploy create-connect-link --no-verify-jwt
+supabase functions deploy sync-connect-status --no-verify-jwt
 supabase functions deploy create-checkout --no-verify-jwt
+supabase functions deploy create-escrow-intent --no-verify-jwt
+supabase functions deploy confirm-checkout --no-verify-jwt
 supabase functions deploy release-payout --no-verify-jwt
 supabase functions deploy stripe-webhook --no-verify-jwt
-supabase functions deploy create-connect-link --no-verify-jwt
+supabase functions deploy submit-application --no-verify-jwt
 ```
 
 ---
 
-## 4. Stripe webhook
+## 4. Stripe webhook events
 
-1. Stripe Dashboard → **Developers → Webhooks → Add endpoint**
-2. URL: `https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/stripe-webhook`
-3. Event: **`checkout.session.completed`**
-4. Copy **Signing secret** → `STRIPE_WEBHOOK_SECRET` in Supabase
+Endpoint: `https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/stripe-webhook`
+
+Subscribe to at least:
+
+- `checkout.session.completed` / `checkout.session.expired`
+- `payment_intent.succeeded` / `payment_intent.payment_failed`
+- `account.updated`
+- `payment_method.detached` (poster verification revoke)
+- Identity events if using Stripe Identity
 
 ---
 
-## 5. Frontend config
+## 5. Flow
 
-In `qg-config.js`:
+1. **Tasker** → Profile → **Set up payouts** → `create-connect-link` → Stripe Express hosted onboarding (`business_type: individual`, `country: CA`, `transfers` capability).  
+   - Under-18: blocked; guardian must onboard (`guardian_token` path). Stripe requires 18+ account holders.
+2. **Readiness** = `charges_enabled && payouts_enabled` → synced to `users.stripe_payouts_enabled` (`sync-connect-status` + `account.updated` webhook). Required to **apply** / be **accepted** on paid tasks.
+3. **Poster** accepts tasker → **Pay** (`create-checkout` embedded Checkout, or `create-escrow-intent` PaymentIntent).  
+   - No `transfer_data` — funds stay on platform.  
+   - `transfer_group = task_<taskId>`.
+4. Webhook marks `payments.status = held` and unlocks chat.
+5. **Mark complete** → `release-payout` creates Transfer of **85%** to Connect account (same `transfer_group`), idempotent via `transfer_id` + Stripe idempotency key.
+
+### Test card
+
+`4242 4242 4242 4242`
+
+---
+
+## 6. Frontend config (`qg-config.js`)
 
 ```js
-stripePublishableKey: 'pk_test_PASTE_YOURS_HERE',
 paymentsEnabled: true,
-chatUnlockAfter: 'payment',  // flip when ready to test pay-gated chat
+chatUnlockAfter: 'payment',
+platformFeePercent: 15,
+createCheckoutUrl: '.../create-checkout',
+createEscrowIntentUrl: '.../create-escrow-intent',
+connectLinkUrl: '.../create-connect-link',
+releasePayoutUrl: '.../release-payout',
 ```
 
-Push to GitHub → wait ~2 min → hard refresh quickgigs.ca.
-
----
-
-## 6. Test flow (Test mode)
-
-1. **Tasker** → Profile → **Set up payouts** (Stripe Connect Express test onboarding)
-2. **Poster** → accept a worker on My Tasks
-3. **Pay modal opens** (no redirect) — use test card `4242 4242 4242 4242` or Apple Pay on iPhone Safari
-4. Chat unlocks after payment (webhook)
-5. **Mark complete** → worker receives **75%** payout (platform keeps **25%**)
-
-### Escrow flow
-
-1. Poster pays → funds held on platform (`payments.status = held`)
-2. Task marked complete → `release-payout` sends worker share to Connect account
-3. Tasker dashboard **Total earned** updates after payout
-
-### Apple Pay / Google Pay
-
-Embedded Checkout shows wallet buttons automatically when:
-
-- Stripe Dashboard → **Settings → Payment methods** → Apple Pay / Google Pay enabled
-- For Apple Pay on web: **Settings → Payment method domains** → add `quickgigs.ca`
-- User pays on a supported browser/device (Safari + Apple Pay on iPhone, Chrome + Google Pay on Android)
+Push → hard refresh (service worker).
 
 ---
 
 ## Resume app on same Stripe?
 
-Fine. Use metadata `project: quickgigs` on all QuickGigs payments. Keep a **separate webhook endpoint** for QuickGigs (step 4).
-
----
-
-## Troubleshooting
-
-| Issue | Fix |
-|-------|-----|
-| Checkout redirects to old Stripe page | Redeploy `create-checkout` Edge Function (embedded mode) |
-| Pay button says “not configured” | Deploy functions + set secrets + `paymentsEnabled: true` + `pk_test_` in config |
-| Checkout fails `stripe_not_configured` | Set `STRIPE_SECRET_KEY` in Supabase secrets |
-| Chat stays locked after pay | Check webhook fired; Stripe → Webhooks → event log |
-| Mark complete fails payout | Tasker must finish **Set up payouts** in Profile first |
-| Worker payout missing | Tasker must complete Connect onboarding first |
-
----
-
-## Launch day
-
-- Switch Stripe to **Live** keys
-- Update Supabase secrets with live `sk_live_` and live webhook secret
-- Update `stripePublishableKey` to `pk_live_...`
-- Run `rls-secure.sql` (after Firebase auth in Supabase)
-- Turn off soft close in admin when ready to reopen sign-ups
+Use metadata `project: quickgigs` on all QuickGigs objects. Keep a **separate webhook endpoint** for QuickGigs.

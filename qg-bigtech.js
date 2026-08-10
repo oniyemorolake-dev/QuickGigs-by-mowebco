@@ -105,9 +105,20 @@
   };
 
   /* ── Session keep-alive modal ── */
-  function showSessionModal() {
-    if (document.getElementById('qgSessionOverlay')) {
-      document.getElementById('qgSessionOverlay').classList.add('open');
+  function showSessionModal(opts) {
+    opts = opts || {};
+    var title = opts.title || 'Your session needs a refresh';
+    var body = opts.body || 'For your security, please log in again to continue using QuickGigs.';
+    var btn = opts.button || 'Log in again';
+    var existing = document.getElementById('qgSessionOverlay');
+    if (existing) {
+      var h = existing.querySelector('#qgSessionTitle');
+      var p = existing.querySelector('p');
+      var b = existing.querySelector('#qgSessionLogin');
+      if (h) h.textContent = title;
+      if (p) p.textContent = body;
+      if (b) b.textContent = btn;
+      existing.classList.add('open');
       return;
     }
     var o = document.createElement('div');
@@ -118,13 +129,17 @@
     o.setAttribute('aria-labelledby', 'qgSessionTitle');
     o.innerHTML =
       '<div class="qg-session-card">' +
-      '<h2 id="qgSessionTitle">Your session needs a refresh</h2>' +
-      '<p>For your security, please log in again to continue using QuickGigs.</p>' +
-      '<button type="button" id="qgSessionLogin">Log in again</button>' +
+      '<h2 id="qgSessionTitle"></h2>' +
+      '<p></p>' +
+      '<button type="button" id="qgSessionLogin"></button>' +
       '</div>';
     document.body.appendChild(o);
+    o.querySelector('#qgSessionTitle').textContent = title;
+    o.querySelector('p').textContent = body;
+    o.querySelector('#qgSessionLogin').textContent = btn;
     document.getElementById('qgSessionLogin').onclick = function () {
-      window.location.href = 'login.html';
+      if (typeof opts.onClick === 'function') opts.onClick();
+      else window.location.href = 'login.html';
     };
   }
 
@@ -132,20 +147,66 @@
     window.__qgFetchWrapped = true;
     var _fetch = window.fetch.bind(window);
     var _sessionModalShown = false;
+    var _rest401Retrying = false;
     window.fetch = function (input, init) {
       return _fetch(input, init).then(function (res) {
         try {
           var url = typeof input === 'string' ? input : (input && input.url) || '';
-          // Only true REST auth failures mean "session dead".
-          // Do NOT treat Edge Function 401/403 (role-access, payments, etc.) as logout —
-          // those are often authorization / business rules while Firebase login is still valid.
           var isRest = /\/rest\/v1\//i.test(url);
-          if (isRest && res.status === 401 && window._currentUser && !_sessionModalShown) {
-            _sessionModalShown = true;
-            showSessionModal();
+          // Edge Function 401/403 must NEVER force re-login.
+          if (!isRest || res.status !== 401 || !window._currentUser || _sessionModalShown) {
+            return res;
           }
-        } catch (e) {}
-        return res;
+
+          // Supabase rejected the Firebase JWT (or it expired). Try one force-refresh + retry.
+          if (_rest401Retrying || (init && init.__qgAuthRetry)) {
+            console.error('[QG auth] REST 401 after token refresh', url);
+            if (window.__qgSupabaseFirebaseRejected) {
+              _sessionModalShown = true;
+              showSessionModal({
+                title: 'Database auth needs a fix',
+                body: 'You are logged into Firebase, but Supabase rejected your token. Re-login will not help. In Supabase → Authentication → Third-party, confirm Firebase project ID is quickgigs-7b12d.',
+                button: 'Reload page',
+                onClick: function () { window.location.reload(); }
+              });
+            } else if (!_sessionModalShown) {
+              _sessionModalShown = true;
+              showSessionModal();
+            }
+            return res;
+          }
+
+          _rest401Retrying = true;
+          console.warn('[QG auth] REST 401 — force-refreshing Firebase token and retrying once', url);
+          var user = window._auth && window._auth.currentUser
+            ? window._auth.currentUser
+            : window._currentUser;
+          var retryPromise = (user && typeof user.getIdToken === 'function'
+            ? user.getIdToken(true)
+            : Promise.reject(new Error('no_user')))
+            .then(function (token) {
+              window.__qgSupabaseFirebaseRejected = false;
+              var nextInit = Object.assign({}, init || {}, { __qgAuthRetry: true });
+              nextInit.headers = Object.assign({}, (init && init.headers) || {}, {
+                Authorization: 'Bearer ' + token
+              });
+              return _fetch(input, nextInit);
+            })
+            .catch(function (err) {
+              console.error('[QG auth] token refresh failed after REST 401', err);
+              if (!_sessionModalShown) {
+                _sessionModalShown = true;
+                showSessionModal();
+              }
+              return res;
+            })
+            .finally(function () {
+              _rest401Retrying = false;
+            });
+          return retryPromise;
+        } catch (e) {
+          return res;
+        }
       });
     };
   }

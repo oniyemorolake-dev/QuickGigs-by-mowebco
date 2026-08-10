@@ -1,12 +1,132 @@
-// QuickGigs — Stripe payments plus role-verification webhook.
+// QuickGigs — Stripe payments + Connect + role-verification webhook.
 // Deploy: supabase functions deploy stripe-webhook --no-verify-jwt
 // Secrets: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
 // Stripe Dashboard → Webhooks → endpoint URL = .../functions/v1/stripe-webhook
-// Events: checkout.session.completed, checkout.session.expired,
-// payment_intent.payment_failed, identity.*, payment_method.detached
+// Events:
+//   checkout.session.completed, checkout.session.expired,
+//   payment_intent.succeeded, payment_intent.payment_failed,
+//   account.updated,
+//   identity.*, payment_method.detached
+//
+// Never store card/bank numbers — Stripe hosts all sensitive payment data.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
+import { connectAccountReady } from '../_shared/connect-ready.ts';
+
+async function markPaymentHeld(
+  supabase: ReturnType<typeof createClient>,
+  opts: {
+    stripeRef: string;
+    taskId: string;
+    posterId: string;
+    workerId: string;
+    amountTotal?: number;
+  },
+) {
+  const heldPatch = {
+    status: 'held',
+    stripe_id: opts.stripeRef,
+    completed_at: new Date().toISOString(),
+  };
+
+  const { data: byStripe } = await supabase
+    .from('payments')
+    .update(heldPatch)
+    .eq('stripe_id', opts.stripeRef)
+    .select('payment_id');
+
+  if (byStripe && byStripe.length) return { updated: true };
+
+  // Also match pending checkout session ids that will be rewritten to pi_
+  if (opts.taskId && opts.posterId) {
+    const { data: byTask } = await supabase
+      .from('payments')
+      .update(heldPatch)
+      .eq('task_id', opts.taskId)
+      .eq('poster_id', opts.posterId)
+      .eq('status', 'pending')
+      .select('payment_id');
+    if (byTask && byTask.length) return { updated: true };
+  }
+
+  if (!opts.taskId || !opts.posterId || !opts.workerId) return { updated: false };
+
+  const { data: pendingPair } = await supabase
+    .from('payments')
+    .select('amount,platform_fee,worker_payout')
+    .eq('poster_id', opts.posterId)
+    .eq('worker_id', opts.workerId)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  const amountTotal = opts.amountTotal != null
+    ? opts.amountTotal
+    : Number(pendingPair?.[0]?.amount || 0);
+  const platformFee = Number(pendingPair?.[0]?.platform_fee);
+  const workerPayout = Number(pendingPair?.[0]?.worker_payout);
+
+  await supabase.from('payments').insert({
+    task_id: opts.taskId,
+    poster_id: opts.posterId,
+    worker_id: opts.workerId,
+    amount: amountTotal,
+    platform_fee: Number.isFinite(platformFee) ? platformFee : 0,
+    worker_payout: Number.isFinite(workerPayout) ? workerPayout : 0,
+    stripe_id: opts.stripeRef,
+    status: 'held',
+    completed_at: new Date().toISOString(),
+  });
+  return { updated: true, inserted: true };
+}
+
+async function unlockChat(
+  supabase: ReturnType<typeof createClient>,
+  taskId: string,
+  posterId: string,
+  workerId: string,
+) {
+  const taskIdKeys = (val: string): (string | number)[] => {
+    const keys: (string | number)[] = [val];
+    if (/^\d+$/.test(val)) keys.push(parseInt(val, 10));
+    return keys;
+  };
+
+  let convId: string | null = null;
+  for (const key of taskIdKeys(taskId)) {
+    const { data: convs } = await supabase
+      .from('conversations')
+      .select('conv_id')
+      .eq('task_id', key)
+      .eq('poster_id', posterId)
+      .eq('worker_id', workerId)
+      .limit(1);
+    if (convs && convs[0]?.conv_id) {
+      convId = convs[0].conv_id;
+      break;
+    }
+  }
+
+  if (!convId) {
+    const { data: byPair } = await supabase
+      .from('conversations')
+      .select('conv_id')
+      .eq('poster_id', posterId)
+      .eq('worker_id', workerId)
+      .in('status', ['in_progress', 'application'])
+      .order('created_at', { ascending: false })
+      .limit(1);
+    convId = byPair?.[0]?.conv_id || null;
+  }
+
+  if (convId) {
+    await supabase
+      .from('conversations')
+      .update({ is_unlocked: true, status: 'in_progress' })
+      .eq('conv_id', convId);
+  }
+}
 
 Deno.serve(async (req) => {
   const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
@@ -33,8 +153,46 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
   );
+
+  // --- Connect Express: sync charges_enabled && payouts_enabled onto tasker ---
+  if (event.type === 'account.updated') {
+    const account = event.data.object as Stripe.Account;
+    const uid = String(account.metadata?.firebase_uid || '');
+    const payoutOwner = String(account.metadata?.payout_owner || 'worker');
+    const ready = connectAccountReady(account);
+
+    if (uid && account.metadata?.project === 'quickgigs') {
+      if (payoutOwner === 'guardian') {
+        await supabase.from('users').update({
+          guardian_stripe_connect_id: account.id,
+          guardian_stripe_payouts_enabled: ready.ready,
+        }).eq('firebase_uid', uid);
+      } else {
+        await supabase.from('users').update({
+          stripe_connect_id: account.id,
+          stripe_payouts_enabled: ready.ready,
+        }).eq('firebase_uid', uid);
+      }
+    } else {
+      // Fallback: match by stored connect id if metadata missing
+      await supabase.from('users').update({
+        stripe_payouts_enabled: ready.ready,
+      }).eq('stripe_connect_id', account.id);
+      await supabase.from('users').update({
+        guardian_stripe_payouts_enabled: ready.ready,
+      }).eq('guardian_stripe_connect_id', account.id);
+    }
+
+    return new Response(JSON.stringify({
+      received: true,
+      account: account.id,
+      ready: ready.ready,
+      charges_enabled: ready.charges_enabled,
+      payouts_enabled: ready.payouts_enabled,
+    }), { headers: { 'Content-Type': 'application/json' } });
+  }
 
   if (
     event.type === 'identity.verification_session.verified' ||
@@ -56,7 +214,6 @@ Deno.serve(async (req) => {
     const idStatus = verified
       ? 'verified'
       : event.type === 'identity.verification_session.requires_input' ? 'rejected' : 'not_started';
-    // Soft launch: Identity results feed the future ID-check hook — not tasker_verified.
     await supabase.from('users').update({
       tasker_id_check_status: idStatus,
       tasker_id_checked_at: verified ? new Date().toISOString() : null,
@@ -87,7 +244,6 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Escrow failure / abandoned checkout — mark pending rows failed
   if (
     event.type === 'checkout.session.expired' ||
     event.type === 'payment_intent.payment_failed'
@@ -118,6 +274,36 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ received: true, status: 'failed' }), {
       headers: { 'Content-Type': 'application/json' },
     });
+  }
+
+  // --- Escrow funded via raw PaymentIntent ---
+  if (event.type === 'payment_intent.succeeded') {
+    const pi = event.data.object as Stripe.PaymentIntent;
+    const meta = pi.metadata || {};
+    if (meta.project !== 'quickgigs' || meta.purpose === 'poster_payment_method') {
+      return new Response(JSON.stringify({ ignored: true }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    const taskId = String(meta.task_id || '');
+    const posterId = String(meta.poster_id || '');
+    const workerId = String(meta.worker_id || '');
+    await markPaymentHeld(supabase, {
+      stripeRef: pi.id,
+      taskId,
+      posterId,
+      workerId,
+      amountTotal: pi.amount_received != null ? pi.amount_received / 100 : (pi.amount / 100),
+    });
+    if (taskId && posterId && workerId) {
+      await unlockChat(supabase, taskId, posterId, workerId);
+    }
+    return new Response(JSON.stringify({
+      received: true,
+      funded: true,
+      payment_intent: pi.id,
+      task_id: taskId,
+    }), { headers: { 'Content-Type': 'application/json' } });
   }
 
   if (event.type !== 'checkout.session.completed') {
@@ -168,13 +354,12 @@ Deno.serve(async (req) => {
     return new Response('Missing metadata', { status: 400 });
   }
 
+  // Prefer updating the pending checkout session row first (stripe_id = cs_…)
   const heldPatch = {
     status: 'held',
     stripe_id: paymentIntentId,
     completed_at: new Date().toISOString(),
   };
-
-  // Prefer updating the pending checkout session row
   const { data: bySession } = await supabase
     .from('payments')
     .update(heldPatch)
@@ -182,88 +367,18 @@ Deno.serve(async (req) => {
     .select('payment_id');
 
   if (!bySession || !bySession.length) {
-    const { data: byTask } = await supabase
-      .from('payments')
-      .update(heldPatch)
-      .eq('task_id', taskId)
-      .eq('poster_id', posterId)
-      .eq('status', 'pending')
-      .select('payment_id,amount,platform_fee,worker_payout');
-
-    if (!byTask || !byTask.length) {
-      // Fallback insert — preserve fee fields from any pending row for this pair,
-      // otherwise leave fee columns for release-payout to read from amount only via stored worker_payout.
-      const { data: pendingPair } = await supabase
-        .from('payments')
-        .select('amount,platform_fee,worker_payout')
-        .eq('poster_id', posterId)
-        .eq('worker_id', workerId)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      const amountTotal = session.amount_total != null
-        ? session.amount_total / 100
-        : Number(pendingPair?.[0]?.amount || 0);
-      const platformFee = Number(pendingPair?.[0]?.platform_fee);
-      const workerPayout = Number(pendingPair?.[0]?.worker_payout);
-      // Never invent fees client-side; if unknown, store amount and 0 fees only as last resort
-      // (release-payout uses stored worker_payout — create-checkout should have written them).
-      await supabase.from('payments').insert({
-        task_id: taskId,
-        poster_id: posterId,
-        worker_id: workerId,
-        amount: amountTotal,
-        platform_fee: Number.isFinite(platformFee) ? platformFee : 0,
-        worker_payout: Number.isFinite(workerPayout) ? workerPayout : 0,
-        stripe_id: paymentIntentId,
-        status: 'held',
-        completed_at: new Date().toISOString(),
-      });
-    }
+    await markPaymentHeld(supabase, {
+      stripeRef: paymentIntentId,
+      taskId,
+      posterId,
+      workerId,
+      amountTotal: session.amount_total != null ? session.amount_total / 100 : undefined,
+    });
   }
 
-  const taskIdKeys = (val: string): (string | number)[] => {
-    const keys: (string | number)[] = [val];
-    if (/^\d+$/.test(val)) keys.push(parseInt(val, 10));
-    return keys;
-  };
+  await unlockChat(supabase, taskId, posterId, workerId);
 
-  let convId: string | null = null;
-  for (const key of taskIdKeys(taskId)) {
-    const { data: convs } = await supabase
-      .from('conversations')
-      .select('conv_id')
-      .eq('task_id', key)
-      .eq('poster_id', posterId)
-      .eq('worker_id', workerId)
-      .limit(1);
-    if (convs && convs[0]?.conv_id) {
-      convId = convs[0].conv_id;
-      break;
-    }
-  }
-
-  if (!convId) {
-    const { data: byPair } = await supabase
-      .from('conversations')
-      .select('conv_id')
-      .eq('poster_id', posterId)
-      .eq('worker_id', workerId)
-      .in('status', ['in_progress', 'application'])
-      .order('created_at', { ascending: false })
-      .limit(1);
-    convId = byPair?.[0]?.conv_id || null;
-  }
-
-  if (convId) {
-    await supabase
-      .from('conversations')
-      .update({ is_unlocked: true, status: 'in_progress' })
-      .eq('conv_id', convId);
-  }
-
-  return new Response(JSON.stringify({ ok: true, task_id: taskId }), {
+  return new Response(JSON.stringify({ ok: true, task_id: taskId, funded: true }), {
     headers: { 'Content-Type': 'application/json' },
   });
 });

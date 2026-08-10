@@ -1,12 +1,13 @@
 /**
  * QuickGigs — platform fee math (server). Keep in sync with /feeBreakdown.js
  *
- * one-off 25% | recurring 10% | one-off subscriber 20% | recurring subscriber 8%
+ * Escrow default: 15% platform fee (poster pays full amount; tasker receives 85%).
+ * Recurring / subscriber rates remain lower.
  */
 export const FEE = {
-  oneoff: 0.25,
+  oneoff: 0.15,
   recurring: 0.10,
-  oneoff_sub: 0.20,
+  oneoff_sub: 0.12,
   recurring_sub: 0.08,
 } as const;
 
@@ -32,6 +33,11 @@ export function feeBreakdown(
   const payout = round2(safeTotal - fee);
   const ratePct = Math.round(rate * 100);
   return { total: safeTotal, fee, payout, rate, ratePct, percent: ratePct };
+}
+
+/** Flat 15% escrow split (amount minus platform fee → tasker). */
+export function escrowSplit15(amount: number) {
+  return feeBreakdown(amount, { isRecurring: false, isSubscriber: false });
 }
 
 export function periodTotal(hourlyRate: number, hours: number): number {

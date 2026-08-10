@@ -1017,6 +1017,22 @@ function setCurrentUser(user) {
   window._qgAuthUid = nextUid;
   window._currentUser = user;
   writeStoredAuthUid(nextUid);
+
+  // After Firebase resolves a real user, probe whether Supabase accepts the ID token.
+  // Prevents the "log in again" loop when REST 401 is a third-party config problem.
+  try {
+    if (
+      window.QG_CONFIG &&
+      window.QG_CONFIG.supabaseFirebaseAuth === true &&
+      typeof window.qgProbeSupabaseFirebaseAuth === 'function' &&
+      !window.__qgSupabaseJwtProbeDone
+    ) {
+      window.qgProbeSupabaseFirebaseAuth(user).then(function (ok) {
+        console.info('[QG auth] session:verified', { supabaseAcceptsFirebaseJwt: ok });
+      });
+    }
+  } catch (eProbe) {}
+
   return user;
 }
 

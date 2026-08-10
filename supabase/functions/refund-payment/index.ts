@@ -1,8 +1,10 @@
 // QuickGigs — Refund escrow payment when task cancelled before completion
 // Deploy: supabase functions deploy refund-payment --no-verify-jwt
+// Auth: Firebase JWT required. actor_id from token only — never trust body.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
+import { authErrorStatus, requireFirebaseUser } from '../_shared/firebase-auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,17 +22,33 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
+    let identity;
+    try {
+      identity = await requireFirebaseUser(req);
+    } catch (authErr) {
+      return json({
+        ok: false,
+        error: authErr instanceof Error ? authErr.message : 'unauthorized',
+      }, authErrorStatus(authErr));
+    }
+
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeKey) return json({ ok: false, error: 'stripe_not_configured' }, 503);
 
-    const body = await req.json();
+    let body: Record<string, unknown> = {};
+    try {
+      body = await req.json();
+    } catch {
+      return json({ ok: false, error: 'invalid_json' }, 400);
+    }
+
     const taskId = String(body.task_id || '').trim();
-    const actorId = String(body.actor_id || '').trim();
-    if (!taskId || !actorId) return json({ ok: false, error: 'missing_task_or_actor' }, 400);
+    const actorId = identity.uid; // server-derived — ignore body.actor_id
+    if (!taskId) return json({ ok: false, error: 'missing_task' }, 400);
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
     const { data: tasks } = await supabase.from('tasks').select('*').eq('task_id', taskId).limit(1);
@@ -65,31 +83,41 @@ Deno.serve(async (req) => {
     const stripeRef = String(payment.stripe_id || '');
     let paymentIntentId = stripeRef;
 
-    if (stripeRef.startsWith('cs_')) {
-      const session = await stripe.checkout.sessions.retrieve(stripeRef);
-      paymentIntentId = typeof session.payment_intent === 'string'
-        ? session.payment_intent
-        : session.payment_intent?.id || stripeRef;
+    try {
+      if (stripeRef.startsWith('cs_')) {
+        const session = await stripe.checkout.sessions.retrieve(stripeRef);
+        paymentIntentId = typeof session.payment_intent === 'string'
+          ? session.payment_intent
+          : session.payment_intent?.id || stripeRef;
+      }
+    } catch (stripeErr) {
+      console.error('refund session resolve failed:', stripeErr);
+      return json({ ok: false, error: 'stripe_lookup_failed' }, 502);
     }
 
     if (!paymentIntentId.startsWith('pi_')) {
       return json({ ok: false, error: 'invalid_payment_reference' }, 400);
     }
 
-    const refund = await stripe.refunds.create({
-      payment_intent: paymentIntentId,
-      metadata: { project: 'quickgigs', task_id: taskId, poster_id: posterId },
-    });
+    let refund: Stripe.Refund;
+    try {
+      refund = await stripe.refunds.create(
+        { payment_intent: paymentIntentId },
+        { idempotencyKey: `qg-refund-${payment.payment_id}` },
+      );
+    } catch (refundErr) {
+      console.error('stripe.refunds.create failed:', refundErr);
+      return json({ ok: false, error: 'stripe_refund_failed' }, 502);
+    }
 
-    const now = new Date().toISOString();
     await supabase
       .from('payments')
-      .update({ status: 'refunded', completed_at: now })
+      .update({ status: 'refunded', completed_at: new Date().toISOString() })
       .eq('payment_id', payment.payment_id);
 
-    return json({ ok: true, refund_id: refund.id, task_id: taskId });
+    return json({ ok: true, refund_id: refund.id, status: 'refunded' });
   } catch (err) {
     console.error('refund-payment error:', err);
-    return json({ ok: false, error: String(err) }, 500);
+    return json({ ok: false, error: 'refund_failed' }, 500);
   }
 });
