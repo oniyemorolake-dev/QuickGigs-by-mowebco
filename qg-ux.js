@@ -373,17 +373,30 @@
       if (localStorage.getItem('qg-browse-hint-seen') === '1') return;
     } catch (e) {}
     if (document.querySelector('.qg-hint-banner')) return;
-    var host = document.querySelector('.cards-area') || document.getElementById('cardsArea');
-    if (!host || !host.parentNode) return;
+    var host = document.getElementById('browseHintSlot')
+      || document.querySelector('.cards-area')
+      || document.getElementById('cardsArea');
+    if (!host) return;
     var banner = document.createElement('div');
     banner.className = 'qg-hint-banner';
-    banner.innerHTML = 'Tap any task to see details and apply — it takes under a minute. <button type="button" id="qgBrowseHintDismiss" style="margin-left:8px;border:none;background:transparent;color:inherit;text-decoration:underline;cursor:pointer;font:inherit">Got it</button>';
-    host.parentNode.insertBefore(banner, host);
+    banner.setAttribute('role', 'status');
+    banner.innerHTML =
+      '<div class="qg-hint-banner-copy">Tap any task to see details and apply — it takes under a minute.</div>' +
+      '<button type="button" class="qg-hint-banner-dismiss" id="qgBrowseHintDismiss" aria-label="Dismiss tip">&times;</button>';
+    if (host.id === 'browseHintSlot') {
+      host.appendChild(banner);
+    } else if (host.parentNode) {
+      host.parentNode.insertBefore(banner, host);
+    } else {
+      return;
+    }
     var d = document.getElementById('qgBrowseHintDismiss');
-    if (d) d.onclick = function () {
-      try { localStorage.setItem('qg-browse-hint-seen', '1'); } catch (e2) {}
-      banner.remove();
-    };
+    if (d) {
+      d.onclick = function () {
+        try { localStorage.setItem('qg-browse-hint-seen', '1'); } catch (e2) {}
+        banner.remove();
+      };
+    }
   }
 
   function debounce(fn, ms) {

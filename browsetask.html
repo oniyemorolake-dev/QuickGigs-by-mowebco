@@ -34,7 +34,7 @@
 <link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
 <link rel="stylesheet" href="qg-flows.css?v=20260811flows1" id="qg-flows-css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-<link rel="stylesheet" href="qg-browse-views.css?v=20260811browse3" id="qg-browse-views-css">
+<link rel="stylesheet" href="qg-browse-views.css?v=20260811browse4" id="qg-browse-views-css">
 <link rel="stylesheet" href="qg-trust-profile.css?v=20260811trust3" id="qg-trust-profile-css">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
@@ -76,6 +76,8 @@ body.light .mode-btn{background:#f0eeff;color:var(--purple);}
 .avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#c8a8e9);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:#fff;}
 body.light .avatar{color:#2d1b4e;}
 .search-wrap{padding:14px 18px 0;background:var(--nav-bg);transition:background 0.25s;}
+.qg-browse-search-row{display:flex;align-items:stretch;gap:8px;}
+.qg-browse-search-row .search-box{flex:1;min-width:0;}
 .search-form{margin:0;}
 .search-box{display:flex;align-items:center;gap:8px;background:var(--input-bg);border:0.5px solid var(--border);border-radius:14px;padding:11px 15px;transition:border-color 0.2s,box-shadow 0.2s;}
 .search-box:focus-within{border-color:var(--purple-light);box-shadow:0 0 0 3px rgba(107,63,160,0.12);}
@@ -99,7 +101,7 @@ body.light .avatar{color:#2d1b4e;}
 .location-filter-input:focus,.location-filter-input:focus-visible{outline:none!important;border:none!important;box-shadow:none!important;}
 .location-filter-input::placeholder{color:var(--text-faint);opacity:0.8;}
 .loc-near-btn{
-  flex-shrink:0;padding:6px 12px;border-radius:999px;border:0.5px solid var(--border);
+  flex-shrink:0;padding:8px 12px;min-height:44px;border-radius:999px;border:0.5px solid var(--border);
   background:rgba(107,63,160,0.18);color:var(--lavender);font-family:'DM Sans',sans-serif;
   font-size:11px;font-weight:500;cursor:pointer;white-space:nowrap;transition:all 0.18s;
 }
@@ -109,10 +111,13 @@ body.light .loc-near-btn.active{color:#fff;}
 .radius-select{flex:1;min-width:0;background:var(--input-bg);border:0.5px solid var(--border);border-radius:12px;padding:9px 11px;color:var(--purple-light);font:500 12px 'DM Sans',sans-serif;outline:none;}
 .location-status{min-height:16px;margin-top:5px;font-size:11px;color:var(--text-faint);}
 .location-status.is-error{color:#f87171;}
-.mode-row{padding:12px 18px 0;background:var(--nav-bg);display:flex;gap:7px;overflow-x:auto;}
-.light .mode-row{background:#f0eeff;border-radius:12px;margin:8px 18px 0;padding:10px;}
+.mode-row{display:flex;gap:7px;overflow-x:auto;padding:0;-webkit-overflow-scrolling:touch;}
 .mode-row::-webkit-scrollbar{display:none;}
-.mpill{padding:9px 18px;border-radius:20px;font-size:13px;cursor:pointer;white-space:nowrap;border:0.5px solid var(--pill-inactive-border);background:var(--pill-inactive-bg);color:var(--pill-inactive-color);transition:all 0.18s;user-select:none;}
+.mpill{
+  min-height:44px;padding:10px 16px;border-radius:20px;font-size:13px;cursor:pointer;white-space:nowrap;
+  border:0.5px solid var(--pill-inactive-border);background:var(--pill-inactive-bg);color:var(--pill-inactive-color);
+  transition:all 0.18s;user-select:none;font:inherit;-webkit-tap-highlight-color:transparent;
+}
 .mpill.active-all{background:rgba(107,63,160,0.35);color:var(--lavender);border-color:var(--purple);}
 body.light .mpill.active-all{background:var(--purple);color:#5a2d8a;}
 .mpill.active-quick{background:rgba(251,191,36,0.15);color:#d97706;border-color:rgba(251,191,36,0.45);}
@@ -136,9 +141,10 @@ body.light .mpill.active-standard{background:#ede9ff;color:#5a2d8a;}
   box-shadow:0 4px 12px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 .results-bar{padding:12px 18px 0;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.qg-browse-results-meta{padding:8px 18px 0;}
 .results-txt{font-size:12px;color:var(--results-color);flex:1;min-width:140px;}
 .filter-sorts{display:flex;align-items:center;gap:8px;flex-shrink:0;}
-.date-filter,.sort-sel{font-size:12px;background:var(--input-bg);border:0.5px solid var(--border);border-radius:10px;padding:6px 10px;color:var(--purple-light);font-family:'DM Sans',sans-serif;cursor:pointer;outline:none;}
+.date-filter,.sort-sel{font-size:12px;background:var(--input-bg);border:0.5px solid var(--border);border-radius:10px;padding:10px 12px;min-height:44px;color:var(--purple-light);font-family:'DM Sans',sans-serif;cursor:pointer;outline:none;width:100%;}
 .loading-state{text-align:center;padding:48px 0;}
 .loading-spinner{font-size:32px;animation:spin 1.2s linear infinite;display:inline-block;margin-bottom:10px;}
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -378,52 +384,24 @@ body.light .app-legal-footer a{color:var(--purple);}
 </nav>
 <div class="search-wrap">
   <form class="search-form" autocomplete="off" onsubmit="return false" role="search">
-    <div class="search-box">
-      <span class="search-icon" aria-hidden="true"><svg class="qg-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
-      <label class="sr-only" for="searchInput">Search tasks</label>
-      <input class="search-input" id="searchInput" type="text" name="qg-browse-q"
-        placeholder="Search tasks?"
-        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-        data-lpignore="true" data-1p-ignore="true" data-form-type="other"
-        readonly onfocus="this.removeAttribute('readonly')"
-        oninput="applyFilters()">
+    <div class="qg-browse-search-row">
+      <div class="search-box">
+        <span class="search-icon" aria-hidden="true"><svg class="qg-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
+        <label class="sr-only" for="searchInput">Search tasks</label>
+        <input class="search-input" id="searchInput" type="text" name="qg-browse-q"
+          placeholder="Search tasks"
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+          data-lpignore="true" data-1p-ignore="true" data-form-type="other"
+          readonly onfocus="this.removeAttribute('readonly')"
+          oninput="applyFilters()">
+      </div>
+      <button type="button" class="qg-browse-filters-btn" id="browseFiltersBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="browseFiltersPanel">
+        <span class="qg-browse-filters-ico" aria-hidden="true" data-qg-ico="sliders"></span>
+        <span class="qg-browse-filters-label">Filters</span>
+        <span class="qg-browse-filters-badge" id="browseFiltersBadge" hidden>0</span>
+      </button>
     </div>
   </form>
-  <div class="location-filter-row">
-    <span class="loc-filter-label" id="locationFilterLabel">Filter by location</span>
-    <div class="location-filter-box">
-      <span aria-hidden="true" class="meta-pin"><svg class="qg-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
-      <label class="sr-only" for="locationFilter">Filter by location</label>
-      <input class="location-filter-input" id="locationFilter" type="text" name="qg-browse-loc"
-        list="browseCanadianLocations" placeholder="Choose a Canadian city or area"
-        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-        data-lpignore="true" data-1p-ignore="true" data-form-type="other"
-        readonly onfocus="this.removeAttribute('readonly')"
-        onchange="applyBrowseLocation()">
-      <button type="button" class="loc-near-btn" id="nearMeBtn" onclick="toggleNearMe()" aria-pressed="false">Use my location</button>
-    </div>
-    <datalist id="browseCanadianLocations">
-      <option value="Calgary, AB"></option>
-      <option value="Edmonton, AB"></option>
-      <option value="Red Deer, AB"></option>
-      <option value="Lethbridge, AB"></option>
-      <option value="Toronto, ON"></option>
-      <option value="Vancouver, BC"></option>
-      <option value="Winnipeg, MB"></option>
-      <option value="Montreal, QC"></option>
-      <option value="Halifax, NS"></option>
-    </datalist>
-    <div class="location-radius-row">
-      <label class="sr-only" for="radiusFilter">Distance radius</label>
-      <select class="radius-select" id="radiusFilter" onchange="setBrowseRadius(this.value)">
-        <option value="20">Within 20 km</option>
-        <option value="50">Within 50 km</option>
-        <option value="100">Within 100 km</option>
-        <option value="any">Anywhere in Canada</option>
-      </select>
-    </div>
-    <div class="location-status" id="locationStatus" role="status" aria-live="polite"></div>
-  </div>
 </div>
 <div class="qg-browse-toolbar">
   <div class="qg-browse-view-toggle" role="group" aria-label="Browse view">
@@ -450,13 +428,6 @@ body.light .app-legal-footer a{color:var(--purple);}
     <button type="button" class="cpill" onclick="setCat(this,'other')">Other</button>
   </div>
 </div>
-<div class="mode-row" id="modeRow">
-  <span class="mpill active-all" onclick="setMode(this,'all')">All tasks</span>
-  <span class="mpill" onclick="setMode(this,'quick')" data-qg-ico="zap">Quick</span>
-  <span class="mpill" onclick="setMode(this,'standard')" data-qg-ico="clipboard">Standard</span>
-  <span class="mpill" onclick="setMode(this,'recurring')" data-qg-ico="repeat">Recurring</span>
-  <span class="mpill" onclick="setMode(this,'saved')" data-qg-ico="star">Saved</span>
-</div>
 <div class="photo-required-banner" id="photoRequiredBanner" style="display:none">
   <div>
     <strong>Profile photo required</strong>
@@ -468,38 +439,120 @@ body.light .app-legal-footer a{color:var(--purple);}
   <strong>Gigs open to teen taskers</strong>
   <p>Only age-eligible gigs are shown. When you apply, your guardian reviews the request before the poster sees it.</p>
 </div>
-<div class="results-bar">
+<div id="browseHintSlot" class="qg-browse-hint-slot"></div>
+<div class="qg-browse-results-meta">
   <span class="results-txt" id="resultsCount">Loading tasks…</span>
-  <div class="filter-sorts">
-    <select class="date-filter" id="dateFilter" onchange="applyFilters()" aria-label="Filter by post date">
-      <option value="any">Any time</option>
-      <option value="today">Posted today</option>
-      <option value="week">This week</option>
-      <option value="month">This month</option>
-    </select>
-    <select class="sort-sel" id="sortSel" onchange="applyFilters()" aria-label="Sort tasks">
-      <option value="nearest">Nearest</option>
-      <option value="newest">Newest</option>
-      <option value="pay">Budget high to low</option>
-      <option value="pay_low">Budget low to high</option>
-      <option value="deadline">Closest deadline</option>
-      <option value="oldest">Oldest</option>
-    </select>
-  </div>
-</div>
-<div class="qg-budget-row">
-  <div class="qg-budget-labels"><span id="budgetMinLabel">$20</span><span id="budgetMaxLabel">$300+</span></div>
-  <div class="qg-dual-range" aria-label="Budget range">
-    <input type="range" id="budgetMin" min="20" max="300" value="20" step="5" aria-label="Minimum budget">
-    <input type="range" id="budgetMax" min="20" max="300" value="300" step="5" aria-label="Maximum budget">
-  </div>
-  <div class="qg-budget-chips" id="budgetChips">
-    <button type="button" class="qg-bchip" data-budget="under50">Under $50</button>
-    <button type="button" class="qg-bchip" data-budget="50to100">$50–100</button>
-    <button type="button" class="qg-bchip" data-budget="100plus">$100+</button>
-  </div>
 </div>
 <div class="qg-active-filters" id="activeFilters" aria-label="Active filters"></div>
+
+<!-- Advanced filters: dropdown (desktop) / bottom sheet (mobile) -->
+<div class="qg-browse-filters-overlay" id="browseFiltersOverlay" hidden>
+  <div class="qg-browse-filters-panel" id="browseFiltersPanel" role="dialog" aria-modal="true" aria-labelledby="browseFiltersTitle" tabindex="-1">
+    <div class="qg-browse-filters-handle" aria-hidden="true"></div>
+    <div class="qg-browse-filters-head">
+      <h2 class="qg-browse-filters-title" id="browseFiltersTitle">Filters</h2>
+      <button type="button" class="qg-browse-filters-close" id="browseFiltersClose" aria-label="Close filters">×</button>
+    </div>
+    <div class="qg-browse-filters-body">
+      <section class="qg-browse-filters-section" aria-labelledby="browseLocHeading">
+        <h3 class="qg-browse-filters-sec-title" id="browseLocHeading">Location</h3>
+        <div class="location-filter-row" id="browseLocationBlock">
+          <span class="loc-filter-label" id="locationFilterLabel">Filter by location</span>
+          <div class="location-filter-box">
+            <span aria-hidden="true" class="meta-pin"><svg class="qg-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+            <label class="sr-only" for="locationFilter">Filter by location</label>
+            <input class="location-filter-input" id="locationFilter" type="text" name="qg-browse-loc"
+              list="browseCanadianLocations" placeholder="Choose a Canadian city or area"
+              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+              data-lpignore="true" data-1p-ignore="true" data-form-type="other"
+              readonly onfocus="this.removeAttribute('readonly')"
+              onchange="applyBrowseLocation()">
+            <button type="button" class="loc-near-btn" id="nearMeBtn" onclick="toggleNearMe()" aria-pressed="false">Use my location</button>
+          </div>
+          <datalist id="browseCanadianLocations">
+            <option value="Calgary, AB"></option>
+            <option value="Edmonton, AB"></option>
+            <option value="Red Deer, AB"></option>
+            <option value="Lethbridge, AB"></option>
+            <option value="Toronto, ON"></option>
+            <option value="Vancouver, BC"></option>
+            <option value="Winnipeg, MB"></option>
+            <option value="Montreal, QC"></option>
+            <option value="Halifax, NS"></option>
+          </datalist>
+          <div class="location-radius-row">
+            <label class="sr-only" for="radiusFilter">Distance radius</label>
+            <select class="radius-select" id="radiusFilter" onchange="setBrowseRadius(this.value)">
+              <option value="20">Within 20 km</option>
+              <option value="50">Within 50 km</option>
+              <option value="100">Within 100 km</option>
+              <option value="any">Anywhere in Canada</option>
+            </select>
+          </div>
+          <div class="location-status" id="locationStatus" role="status" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="qg-browse-filters-section" aria-labelledby="browseTypeHeading">
+        <h3 class="qg-browse-filters-sec-title" id="browseTypeHeading">Task type</h3>
+        <div class="mode-row" id="modeRow">
+          <button type="button" class="mpill active-all" onclick="setMode(this,'all')">All tasks</button>
+          <button type="button" class="mpill" onclick="setMode(this,'quick')" data-qg-ico="zap">Quick</button>
+          <button type="button" class="mpill" onclick="setMode(this,'standard')" data-qg-ico="clipboard">Standard</button>
+          <button type="button" class="mpill" onclick="setMode(this,'recurring')" data-qg-ico="repeat">Recurring</button>
+          <button type="button" class="mpill" onclick="setMode(this,'saved')" data-qg-ico="star">Saved</button>
+        </div>
+      </section>
+
+      <section class="qg-browse-filters-section" aria-labelledby="browseBudgetHeading">
+        <h3 class="qg-browse-filters-sec-title" id="browseBudgetHeading">Price</h3>
+        <div class="qg-budget-row">
+          <div class="qg-budget-labels"><span id="budgetMinLabel">$20</span><span id="budgetMaxLabel">$300+</span></div>
+          <div class="qg-dual-range" aria-label="Budget range">
+            <input type="range" id="budgetMin" min="20" max="300" value="20" step="5" aria-label="Minimum budget">
+            <input type="range" id="budgetMax" min="20" max="300" value="300" step="5" aria-label="Maximum budget">
+          </div>
+          <div class="qg-budget-chips" id="budgetChips">
+            <button type="button" class="qg-bchip" data-budget="under50">Under $50</button>
+            <button type="button" class="qg-bchip" data-budget="50to100">$50–100</button>
+            <button type="button" class="qg-bchip" data-budget="100plus">$100+</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="qg-browse-filters-section" aria-labelledby="browseSortHeading">
+        <h3 class="qg-browse-filters-sec-title" id="browseSortHeading">Sort &amp; timing</h3>
+        <div class="qg-browse-filters-sorts">
+          <label class="qg-browse-filters-field">
+            <span class="qg-browse-filters-field-lbl">Posted</span>
+            <select class="date-filter" id="dateFilter" onchange="applyFilters()" aria-label="Filter by post date">
+              <option value="any">Any time</option>
+              <option value="today">Posted today</option>
+              <option value="week">This week</option>
+              <option value="month">This month</option>
+            </select>
+          </label>
+          <label class="qg-browse-filters-field">
+            <span class="qg-browse-filters-field-lbl">Sort</span>
+            <select class="sort-sel" id="sortSel" onchange="applyFilters()" aria-label="Sort tasks">
+              <option value="nearest">Nearest</option>
+              <option value="newest">Newest</option>
+              <option value="pay">Budget high to low</option>
+              <option value="pay_low">Budget low to high</option>
+              <option value="deadline">Closest deadline</option>
+              <option value="oldest">Oldest</option>
+            </select>
+          </label>
+        </div>
+      </section>
+    </div>
+    <div class="qg-browse-filters-foot">
+      <button type="button" class="qg-browse-filters-clear" id="browseFiltersClear">Clear all</button>
+      <button type="button" class="qg-browse-filters-apply" id="browseFiltersApply">Apply</button>
+    </div>
+  </div>
+</div>
+
 <div class="cards-area" id="cardsArea">
   <div class="loading-state qg-browse-loading" id="browseLoadingState">
     <div class="qg-list-skel" role="status" aria-busy="true" aria-label="Loading tasks near you">
@@ -629,7 +682,7 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="feeBreakdown.js?v=20260811fee2"></script>
 <script defer src="contentModeration.js?v=20260727cm1"></script>
 <script defer src="qg-polish.js?v=20260728xss1"></script>
-<script src="qg-ux.js?v=20260728welcome1" defer></script>
+<script src="qg-ux.js?v=20260811browse4" defer></script>
 <script src="qg-bigtech.js?v=20260810session1" defer></script>
 <script src="qg-wave2.js?v=20260811trust2" defer></script>
 <script defer src="qg-config.js?v=20260811fee2"></script>
@@ -640,7 +693,7 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-verification.js?v=20260811pay1"></script>
 <script defer src="qg-location.js?v=2"></script>
 <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script defer src="qg-browse-views.js?v=20260811browse3"></script>
+<script defer src="qg-browse-views.js?v=20260811browse4"></script>
 <script defer src="qg-activity-ticker.js?v=20260811trust1"></script>
 <script defer src="qg-pwa.js?v=cd3efe6-1786397433"></script>
 <script defer src="qg-notifications.js"></script>
@@ -871,7 +924,7 @@ window.applyBrowseLocation=async function(){
   var locEl=document.getElementById('locationFilter');
   var value=locEl ? locEl.value.trim() : '';
   if(!value)return;
-  setLocationStatus('Finding '+value+'?',false);
+  setLocationStatus('Finding '+value+'\u2026',false);
   var result=typeof setUserLocation==='function' ? await setUserLocation(value) : null;
   if(!result){
     setLocationStatus('Choose a valid Canadian city or area.',true);
@@ -901,8 +954,8 @@ window.setBrowseRadius=function(value){
 
 window.toggleNearMe=async function(){
   var btn=document.getElementById('nearMeBtn');
-  if(btn){btn.disabled=true;btn.textContent='Locating?';}
-  setLocationStatus('Requesting your approximate location?',false);
+  if(btn){btn.disabled=true;btn.textContent='Locating\u2026';}
+  setLocationStatus('Requesting your approximate location\u2026',false);
   var pos=typeof requestGeoForFilter==='function' ? await requestGeoForFilter() : null;
   if(!pos){
     if(btn){btn.disabled=false;btn.textContent='Use my location';}
@@ -1043,9 +1096,9 @@ function getDemoTasks(){
     {id:1,mode:'quick',cat:'errands',catLabel:'Errands',icon:'🚗',iconBg:'rgba(251,191,36,0.15)',title:'Pick up prescription from Shoppers Drug Mart',desc:'Grab my prescription on 17th Ave SW and drop off at my condo. 20 mins max.',price:20,priceLabel:'$20',location:'Calgary, AB',posted:'5 mins ago',applicants:0,status:'open'},
     {id:2,mode:'quick',cat:'tech',catLabel:'Tech',icon:'💻',iconBg:'rgba(107,63,160,0.2)',title:'Fix cracked screen on Samsung S22 — need it today',desc:'Screen is badly cracked, phone still works. Need someone experienced.',price:60,priceLabel:'$60',location:'Calgary, AB',posted:'12 mins ago',applicants:1,status:'open'},
     {id:3,mode:'standard',cat:'home',catLabel:'Home',icon:'🏠',iconBg:'rgba(107,63,160,0.2)',title:'Deep clean 2 bedroom apartment before move out',desc:'Full deep clean before handing over keys this Saturday.',price:120,priceLabel:'$120',location:'Calgary, AB',posted:'2 hrs ago',applicants:3,status:'open'},
-    {id:4,mode:'standard',cat:'beauty',catLabel:'Beauty',icon:'💅',iconBg:'rgba(200,168,233,0.15)',title:'Box braids ? medium length, natural hair',desc:'Looking for someone experienced with box braids on natural hair.',price:80,priceLabel:'$80',location:'Calgary, AB',posted:'3 hrs ago',applicants:2,status:'open'},
-    {id:5,mode:'recurring',cat:'care',catLabel:'Care',icon:'👶',iconBg:'rgba(74,222,128,0.1)',title:'Reliable nanny needed Monday to Friday 9am?3pm',desc:'Caring nanny for two kids aged 4 and 7. Starting next Monday.',price:20,priceLabel:'$20/hr',location:'Calgary, AB',posted:'1 hr ago',applicants:1,status:'open'},
-    {id:6,mode:'recurring',cat:'tutoring',catLabel:'Tutoring',icon:'📚',iconBg:'rgba(74,222,128,0.1)',title:'Math tutor for Grade 10 student ? twice a week',desc:'My daughter needs a patient tutor for algebra. Twice a week after school.',price:35,priceLabel:'$35/hr',location:'Calgary, AB',posted:'30 mins ago',applicants:0,status:'open'},
+    {id:4,mode:'standard',cat:'beauty',catLabel:'Beauty',icon:'💅',iconBg:'rgba(200,168,233,0.15)',title:'Box braids — medium length, natural hair',desc:'Looking for someone experienced with box braids on natural hair.',price:80,priceLabel:'$80',location:'Calgary, AB',posted:'3 hrs ago',applicants:2,status:'open'},
+    {id:5,mode:'recurring',cat:'care',catLabel:'Care',icon:'👶',iconBg:'rgba(74,222,128,0.1)',title:'Reliable nanny needed Monday to Friday 9am–3pm',desc:'Caring nanny for two kids aged 4 and 7. Starting next Monday.',price:20,priceLabel:'$20/hr',location:'Calgary, AB',posted:'1 hr ago',applicants:1,status:'open'},
+    {id:6,mode:'recurring',cat:'tutoring',catLabel:'Tutoring',icon:'📚',iconBg:'rgba(74,222,128,0.1)',title:'Math tutor for Grade 10 student — twice a week',desc:'My daughter needs a patient tutor for algebra. Twice a week after school.',price:35,priceLabel:'$35/hr',location:'Calgary, AB',posted:'30 mins ago',applicants:0,status:'open'},
   ];
 }
 
@@ -1155,6 +1208,37 @@ function renderCardPhotoHero(t) {
   return renderCardMedia(t);
 }
 
+function countAdvancedBrowseFilters(){
+  var n = 0;
+  if (activeMode !== 'all') n += 1;
+  var loc = (document.getElementById('locationFilter') && document.getElementById('locationFilter').value || '').trim();
+  if (loc || window._nearMeOnly) n += 1;
+  var radiusFilter = (document.getElementById('radiusFilter') || {}).value;
+  if (radiusFilter && radiusFilter !== 'any') n += 1;
+  if (budgetPreset || budgetMinVal > 20 || budgetMaxVal < 300) n += 1;
+  var dateFilter = (document.getElementById('dateFilter') || {}).value;
+  if (dateFilter && dateFilter !== 'any') n += 1;
+  var sortVal = (document.getElementById('sortSel') || {}).value;
+  if (sortVal && sortVal !== 'nearest') n += 1;
+  return n;
+}
+
+function updateBrowseFiltersBadge(){
+  var badge = document.getElementById('browseFiltersBadge');
+  var btn = document.getElementById('browseFiltersBtn');
+  var n = countAdvancedBrowseFilters();
+  if (badge) {
+    if (n > 0) {
+      badge.hidden = false;
+      badge.textContent = String(n);
+    } else {
+      badge.hidden = true;
+      badge.textContent = '0';
+    }
+  }
+  if (btn) btn.classList.toggle('has-active', n > 0);
+}
+
 function persistBrowseState(){
   if (typeof qgSaveBrowseFilters !== 'function') return;
   qgSaveBrowseFilters({
@@ -1170,20 +1254,26 @@ function persistBrowseState(){
 function renderActiveFilters(){
   var host=document.getElementById('activeFilters');
   if(!host) return;
+  updateBrowseFiltersBadge();
   var chips=[];
-  if(activeMode!=='all') chips.push({key:'mode',label:'Mode: '+activeMode});
-  if(activeCat!=='all') chips.push({key:'cat',label:'Category: '+activeCat});
+  // Category stays visible in the pill row — don't duplicate it here.
+  if(activeMode!=='all') chips.push({key:'mode',label: activeMode.charAt(0).toUpperCase()+activeMode.slice(1)});
+  var loc=(document.getElementById('locationFilter')&&document.getElementById('locationFilter').value||'').trim();
+  if(loc) chips.push({key:'loc',label:loc.split(',')[0].trim() || loc});
+  else if(window._nearMeOnly) chips.push({key:'loc',label:'Near me'});
   if(budgetPreset==='under50') chips.push({key:'budget',label:'Under $50'});
   else if(budgetPreset==='50to100') chips.push({key:'budget',label:'$50–100'});
   else if(budgetPreset==='100plus') chips.push({key:'budget',label:'$100+'});
-  else if(budgetMinVal>20||budgetMaxVal<300) chips.push({key:'budget',label:'$'+budgetMinVal+'?$'+budgetMaxVal});
+  else if(budgetMinVal>20||budgetMaxVal<300) chips.push({key:'budget',label:'$'+budgetMinVal+'–$'+budgetMaxVal});
   var dateFilter=(document.getElementById('dateFilter')||{}).value;
   if(dateFilter&&dateFilter!=='any') chips.push({key:'date',label:'Posted: '+dateFilter});
   var radiusFilter=(document.getElementById('radiusFilter')||{}).value;
   if(radiusFilter&&radiusFilter!=='any')chips.push({key:'radius',label:'Within '+radiusFilter+' km'});
+  var sortVal=(document.getElementById('sortSel')||{}).value;
+  if(sortVal&&sortVal!=='nearest') chips.push({key:'sort',label:'Sort: '+sortVal});
   if(!chips.length){ host.innerHTML=''; return; }
   host.innerHTML=chips.map(function(c){
-    return '<button type="button" class="qg-af-chip" data-clear="'+c.key+'" aria-label="Remove '+esc(c.label)+'">'+esc(c.label)+' ?</button>';
+    return '<button type="button" class="qg-af-chip" data-clear="'+c.key+'" aria-label="Remove '+esc(c.label)+'">'+esc(c.label)+' <span class="qg-af-x" aria-hidden="true">&times;</span></button>';
   }).join('')+'<button type="button" class="qg-af-clear" id="clearAllFilters">Clear all</button>';
   host.querySelectorAll('[data-clear]').forEach(function(btn){
     btn.onclick=function(){
@@ -1192,6 +1282,15 @@ function renderActiveFilters(){
       if(k==='cat'){ activeCat='all'; document.querySelectorAll('.cpill').forEach(function(p){ p.classList.remove('cat-active'); }); }
       if(k==='budget'){ budgetMinVal=20; budgetMaxVal=300; budgetPreset=''; syncBudgetUI(); }
       if(k==='date'&&document.getElementById('dateFilter')) document.getElementById('dateFilter').value='any';
+      if(k==='sort'&&document.getElementById('sortSel')) document.getElementById('sortSel').value='nearest';
+      if(k==='loc'){
+        window._nearMeOnly=false;
+        var nearBtn=document.getElementById('nearMeBtn');
+        if(nearBtn){ nearBtn.classList.remove('active'); nearBtn.setAttribute('aria-pressed','false'); }
+        if(document.getElementById('locationFilter')) document.getElementById('locationFilter').value='';
+        if(typeof clearGeoFilterPos==='function') clearGeoFilterPos();
+        else if(typeof setUserLocation==='function'){ try{ setUserLocation(''); }catch(e){} }
+      }
       if(k==='radius'&&document.getElementById('radiusFilter')){
         document.getElementById('radiusFilter').value='any';
         if(typeof setNearRadiusKm==='function')setNearRadiusKm('any');
@@ -1413,16 +1512,76 @@ window.applyFilters=renderCards;
 window.renderCards=renderCards;
 window.clearFilters=function(){
   activeMode='all'; activeCat='all'; budgetMinVal=20; budgetMaxVal=300; budgetPreset='';
+  window._nearMeOnly=false;
   document.querySelectorAll('.mpill').forEach(function(p,i){ p.className=i===0?'mpill active-all':'mpill'; });
   document.querySelectorAll('.cpill').forEach(function(p){ p.classList.remove('cat-active'); });
+  var nearBtn=document.getElementById('nearMeBtn');
+  if(nearBtn){ nearBtn.classList.remove('active'); nearBtn.setAttribute('aria-pressed','false'); }
   if(document.getElementById('dateFilter')) document.getElementById('dateFilter').value='any';
-  if(document.getElementById('locationFilter')&&typeof getUserLocation==='function') document.getElementById('locationFilter').value=getUserLocation();
+  if(document.getElementById('locationFilter')) document.getElementById('locationFilter').value='';
+  if(typeof clearGeoFilterPos==='function') clearGeoFilterPos();
   if(document.getElementById('radiusFilter'))document.getElementById('radiusFilter').value='any';
   if(typeof setNearRadiusKm==='function')setNearRadiusKm('any');
   if(document.getElementById('searchInput')) document.getElementById('searchInput').value='';
-  if(document.getElementById('sortSel')) document.getElementById('sortSel').value='newest';
+  if(document.getElementById('sortSel')) document.getElementById('sortSel').value='nearest';
   syncBudgetUI(); renderCards();
 };
+
+(function initBrowseFiltersPanel(){
+  var overlay = document.getElementById('browseFiltersOverlay');
+  var panel = document.getElementById('browseFiltersPanel');
+  var openBtn = document.getElementById('browseFiltersBtn');
+  var closeBtn = document.getElementById('browseFiltersClose');
+  var applyBtn = document.getElementById('browseFiltersApply');
+  var clearBtn = document.getElementById('browseFiltersClear');
+  if (!overlay || !openBtn) return;
+
+  var icoHost = openBtn.querySelector('.qg-browse-filters-ico');
+  if (icoHost && typeof qgIcon === 'function' && !icoHost.querySelector('.qg-ico')) {
+    icoHost.innerHTML = qgIcon('sliders', { size: 18 });
+  }
+
+  function isOpen() {
+    return !overlay.hasAttribute('hidden');
+  }
+
+  function openPanel() {
+    overlay.removeAttribute('hidden');
+    openBtn.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+    if (panel) {
+      try { panel.focus(); } catch (e) {}
+    }
+  }
+
+  function closePanel() {
+    overlay.setAttribute('hidden', '');
+    openBtn.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  }
+
+  openBtn.addEventListener('click', function () {
+    if (isOpen()) closePanel();
+    else openPanel();
+  });
+  if (closeBtn) closeBtn.addEventListener('click', closePanel);
+  if (applyBtn) applyBtn.addEventListener('click', function () {
+    if (typeof renderCards === 'function') renderCards();
+    closePanel();
+  });
+  if (clearBtn) clearBtn.addEventListener('click', function () {
+    if (typeof clearFilters === 'function') clearFilters();
+  });
+  overlay.addEventListener('click', function (e) {
+    if (e.target === overlay) closePanel();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && isOpen()) closePanel();
+  });
+  window.openBrowseFilters = openPanel;
+  window.closeBrowseFilters = closePanel;
+})();
+
 (function initBudgetControls(){
   var a=document.getElementById('budgetMin'), b=document.getElementById('budgetMax');
   function onRange(){

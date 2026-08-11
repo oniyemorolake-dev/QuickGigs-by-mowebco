@@ -336,7 +336,7 @@
     var browseViewsCss = document.createElement('link');
     browseViewsCss.id = 'qg-browse-views-css';
     browseViewsCss.rel = 'stylesheet';
-    browseViewsCss.href = 'qg-browse-views.css?v=20260811browse3';
+    browseViewsCss.href = 'qg-browse-views.css?v=20260811browse4';
     document.head.appendChild(browseViewsCss);
   }
 
@@ -361,10 +361,10 @@
   // Sync load so qgIcon is available before deferred page scripts run
   if (!document.querySelector('script[src*="qg-icons.js"]') && typeof window.qgIcon !== 'function') {
     try {
-      document.write('<script src="qg-icons.js?v=20260809profile1"><\/script>');
+      document.write('<script src="qg-icons.js?v=20260811browse4"><\/script>');
     } catch (eWrite) {
       var icons = document.createElement('script');
-      icons.src = 'qg-icons.js?v=20260809profile1';
+      icons.src = 'qg-icons.js?v=20260811browse4';
       document.head.appendChild(icons);
     }
   }
