@@ -226,9 +226,10 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 <script src="qg-wave2.js?v=20260811trust2" defer></script>
 <script defer src="qg-config.js"></script>
 <script defer src="qg-analytics.js"></script>
-<script defer src="qg-auth-google.js?v=20260728fix1"></script>
+<script defer src="qg-auth-google.js?v=20260811google1"></script>
 <script defer src="qg-onboarding.js?v=2"></script>
 <script defer src="qg-cookies.js"></script>
+<script defer src="supabaseClient.js?v=20260810auth1"></script>
 <script defer src="supabase-db.js?v=20260728fix1"></script>
 <script defer src="qg-announcement.js?v=20260728xss1"></script>
 <script defer src="qg-notifications.js"></script>
@@ -256,15 +257,33 @@ const auth = initializeAuth(app, {
   persistence: browserLocalPersistence,
   popupRedirectResolver: browserPopupRedirectResolver
 });
+window._auth = auth;
 
 var oauthSignupUser = null;
 var oauthSignupMode = false;
 
+/** Clear prior Auth session before Google (same as login). */
+async function beginFreshCredentialSignup() {
+  if (typeof qgPrepareLogin === 'function') qgPrepareLogin();
+  else if (typeof clearQgUserScopedStorage === 'function') clearQgUserScopedStorage();
+  window._currentUser = null;
+  if (!auth.currentUser) return;
+  try {
+    await Promise.race([
+      auth.signOut(),
+      new Promise(function (resolve) { setTimeout(resolve, 250); })
+    ]);
+  } catch (e) {}
+}
+
 async function beginOAuthSignup(user) {
   oauthSignupUser = user;
   oauthSignupMode = true;
-  if (typeof window.QG_setCurrentUserForSoftClose === 'function') {
+  if (typeof setCurrentUser === 'function') setCurrentUser(user);
+  else if (typeof window.QG_setCurrentUserForSoftClose === 'function') {
     window.QG_setCurrentUserForSoftClose(user);
+  } else {
+    window._currentUser = user;
   }
   var notice = document.getElementById('qgSignupSoftCloseNotice');
   if (notice) notice.remove();
@@ -286,6 +305,16 @@ async function beginOAuthSignup(user) {
 async function finishGoogleSignup(user) {
   var errorMsg = document.getElementById('errorMsg');
   var okMsg = document.getElementById('okMsg');
+  if (typeof setCurrentUser === 'function') setCurrentUser(user);
+  else window._currentUser = user;
+
+  // Wait briefly for DB helpers on cold start
+  var gateWait = 0;
+  while (typeof getUserByFirebaseUid !== 'function' && typeof getUserLoginGate !== 'function' && gateWait < 50) {
+    await new Promise(function (r) { setTimeout(r, 40); });
+    gateWait++;
+  }
+
   // Lookup by firebase_uid (Auth uid) — never users.user_id UUID.
   var existing = typeof getUserByFirebaseUid === 'function'
     ? await getUserByFirebaseUid(user.uid, { self: true })
@@ -308,9 +337,10 @@ async function finishGoogleSignup(user) {
     return;
   }
 
+  // No users row → new Google user must complete wizard (mode, phone, DOB, teen guardian, terms).
   await beginOAuthSignup(user);
   if (okMsg) {
-    okMsg.textContent = 'Google connected — enter your phone number and finish the steps below.';
+    okMsg.textContent = 'Google connected — finish the steps below (including date of birth).';
     okMsg.style.display = 'block';
   }
   if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleSignupBtn');
@@ -325,19 +355,25 @@ async function handleGoogleSignupClick() {
   btn.disabled = true;
   btn.textContent = 'Connecting…';
 
-  var provider = new GoogleAuthProvider();
-  provider.addScope('profile');
-  provider.addScope('email');
-  provider.setCustomParameters({ prompt: 'select_account' });
+  var provider = typeof qgBuildGoogleProvider === 'function'
+    ? qgBuildGoogleProvider(GoogleAuthProvider)
+    : (function () {
+        var p = new GoogleAuthProvider();
+        p.addScope('profile');
+        p.addScope('email');
+        p.setCustomParameters({ prompt: 'select_account' });
+        return p;
+      })();
 
   var useRedirect = typeof qgGooglePreferRedirect === 'function' && qgGooglePreferRedirect();
   if (useRedirect) {
     try {
+      await beginFreshCredentialSignup();
       await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
     } catch (redirectErr) {
       var redirectMsg = typeof qgGoogleAuthErrorMessage === 'function'
         ? qgGoogleAuthErrorMessage(redirectErr)
-        : (typeof qgGoogleFirebaseSetupHint === 'string' ? qgGoogleFirebaseSetupHint : 'Google sign-in failed.');
+        : 'Google sign-in failed. Try again.';
       if (redirectMsg) {
         errorMsg.textContent = redirectMsg;
         errorMsg.style.display = 'block';
@@ -348,29 +384,22 @@ async function handleGoogleSignupClick() {
   }
 
   try {
+    await beginFreshCredentialSignup();
     var result = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
     await finishGoogleSignup(result.user);
   } catch (error) {
+    var popupMsg = typeof qgGoogleAuthErrorMessage === 'function'
+      ? qgGoogleAuthErrorMessage(error)
+      : 'Google sign-in failed. Try again.';
     if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+      if (popupMsg) { errorMsg.textContent = popupMsg; errorMsg.style.display = 'block'; }
       if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleSignupBtn');
       return;
     }
-    var popupMsg = typeof qgGoogleAuthErrorMessage === 'function' ? qgGoogleAuthErrorMessage(error) : '';
     if (popupMsg && error.code !== 'auth/popup-blocked') {
       errorMsg.textContent = popupMsg;
       errorMsg.style.display = 'block';
       if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleSignupBtn');
-      return;
-    }
-    if (error.code === 'auth/popup-blocked') {
-      try {
-        await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
-      } catch (redirectErr) {
-        errorMsg.textContent = typeof qgGoogleAuthErrorMessage === 'function'
-          ? qgGoogleAuthErrorMessage(redirectErr) : 'Popup blocked — allow popups for quickgigs.ca or try again.';
-        errorMsg.style.display = 'block';
-        if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleSignupBtn');
-      }
       return;
     }
     try {
@@ -378,7 +407,7 @@ async function handleGoogleSignupClick() {
     } catch (redirectErr) {
       var message = typeof qgGoogleAuthErrorMessage === 'function'
         ? qgGoogleAuthErrorMessage(redirectErr)
-        : (typeof qgGoogleFirebaseSetupHint === 'string' ? qgGoogleFirebaseSetupHint : 'Google sign-in failed.');
+        : 'Google sign-in failed. Try again.';
       errorMsg.textContent = message;
       errorMsg.style.display = 'block';
       if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleSignupBtn');
@@ -595,6 +624,22 @@ document.getElementById('submitBtn').onclick = async function() {
   }
 
   var identity = wizard.getIdentityPayload();
+  if (!identity || !identity.date_of_birth) {
+    errorMsg.textContent = 'Enter your date of birth — we need it for age verification.';
+    errorMsg.style.display = 'block';
+    if (wizard.showStep) { wizard.showStep(4); updateSignupStepUI(4); }
+    submitBtn.textContent = 'Create account ✨';
+    submitBtn.disabled = false;
+    return;
+  }
+  if (identity.account_status === 'pending_guardian' && (!identity.guardian_email || !identity.guardian_name)) {
+    errorMsg.textContent = 'Parent/guardian details are required for ages 16–17.';
+    errorMsg.style.display = 'block';
+    if (wizard.showStep) { wizard.showStep(5); updateSignupStepUI(5); }
+    submitBtn.textContent = 'Create account ✨';
+    submitBtn.disabled = false;
+    return;
+  }
   submitBtn.textContent = 'Creating account…';
   submitBtn.disabled = true;
 
@@ -693,8 +738,13 @@ document.getElementById('submitBtn').onclick = async function() {
     if (error.code === 'auth/invalid-email') message = 'Enter a valid email address.';
     if (error.code === 'auth/weak-password') message = 'Password is too weak. Use at least 8 characters.';
     if (error.code === 'underage') message = 'You must be at least 16 to join QuickGigs';
+    if (error.code === 'invalid_date_of_birth') message = 'Enter a valid date of birth.';
+    if (error.code === 'guardian_name_required' || error.code === 'guardian_email_required') {
+      message = 'Parent/guardian name and email are required for ages 16–17.';
+    }
     if (error.code === 'secure_registration_unavailable') message = 'Secure signup is temporarily unavailable. Please try again.';
     if (error.code === 'teen_poster_unavailable') message = 'Teen accounts start in Tasker mode. Poster mode becomes available at 18.';
+    if (error.code === 'auth/network-request-failed') message = 'Network error — check your connection and try again.';
     errorMsg.textContent = message;
     errorMsg.style.display = 'block';
     submitBtn.textContent = 'Create account ✨';

@@ -117,7 +117,7 @@ body.light .login-progress-spinner{border-color:rgba(107,63,160,0.2);border-top-
 <script defer src="qg-utils.js?v=20260810auth1"></script>
 <script defer src="qg-config.js?v=20260810auth1"></script>
 <script defer src="qg-analytics.js"></script>
-<script defer src="qg-auth-google.js?v=20260728fix1"></script>
+<script defer src="qg-auth-google.js?v=20260811google1"></script>
 <script defer src="supabaseClient.js?v=20260810auth1"></script>
 <script defer src="supabase-db.js?v=20260730verify1"></script>
 <script defer src="qg-cookies.js"></script>
@@ -279,12 +279,16 @@ async function finishGoogleLogin(user) {
     return;
   }
 
-  // No users row for this firebase_uid → genuine new Google account → finish signup.
-  // If helpers never loaded, still prefer dashboard over a false "new user" signup loop.
+    // No users row for this firebase_uid → genuine new Google account → finish signup.
+  // If helpers never loaded, do NOT invent a returning user (that skips DOB/teen gating).
   if (typeof getUserLoginGate !== 'function' && typeof getUserByFirebaseUid !== 'function') {
-    showLoginProgress('Opening dashboard…');
-    await runGraduationCheck(user);
-    window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
+    var overlayFail = document.getElementById('loginProgress');
+    if (overlayFail) overlayFail.hidden = true;
+    errorMsg.textContent = 'Could not verify your account. Check your connection and try again.';
+    errorMsg.style.display = 'block';
+    if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+    var submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Log in →'; }
     return;
   }
   showLoginProgress('Almost there…');
@@ -401,10 +405,15 @@ document.getElementById('googleLoginBtn').addEventListener('click', async functi
   btn.disabled = true;
   btn.textContent = 'Connecting…';
 
-  var provider = new GoogleAuthProvider();
-  provider.addScope('profile');
-  provider.addScope('email');
-  provider.setCustomParameters({ prompt: 'select_account' });
+  var provider = typeof qgBuildGoogleProvider === 'function'
+    ? qgBuildGoogleProvider(GoogleAuthProvider)
+    : (function () {
+        var p = new GoogleAuthProvider();
+        p.addScope('profile');
+        p.addScope('email');
+        p.setCustomParameters({ prompt: 'select_account' });
+        return p;
+      })();
 
   var useRedirect = typeof qgGooglePreferRedirect === 'function' && qgGooglePreferRedirect();
   if (useRedirect) {
@@ -424,34 +433,25 @@ document.getElementById('googleLoginBtn').addEventListener('click', async functi
     var result = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
     await finishGoogleLogin(result.user);
   } catch (error) {
+    var popupMsg = typeof qgGoogleAuthErrorMessage === 'function' ? qgGoogleAuthErrorMessage(error) : 'Google sign-in failed. Try again.';
     if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+      if (popupMsg) { errorMsg.textContent = popupMsg; errorMsg.style.display = 'block'; }
       if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
       return;
     }
-    var popupMsg = typeof qgGoogleAuthErrorMessage === 'function' ? qgGoogleAuthErrorMessage(error) : '';
     if (popupMsg && error.code !== 'auth/popup-blocked') {
       errorMsg.textContent = popupMsg;
       errorMsg.style.display = 'block';
       if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
       return;
     }
-    if (error.code === 'auth/popup-blocked') {
-      try {
-        await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
-      } catch (redirectErr) {
-        errorMsg.textContent = typeof qgGoogleAuthErrorMessage === 'function'
-          ? qgGoogleAuthErrorMessage(redirectErr) : 'Popup blocked — allow popups or try again.';
-        errorMsg.style.display = 'block';
-        if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
-      }
-      return;
-    }
+    // Popup blocked or unknown — fall back to redirect
     try {
       await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
     } catch (redirectErr) {
       var message = typeof qgGoogleAuthErrorMessage === 'function'
         ? qgGoogleAuthErrorMessage(redirectErr)
-        : (typeof qgGoogleFirebaseSetupHint === 'string' ? qgGoogleFirebaseSetupHint : 'Google sign-in failed.');
+        : 'Google sign-in failed. Try again.';
       errorMsg.textContent = message;
       errorMsg.style.display = 'block';
       if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
