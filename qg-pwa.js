@@ -235,15 +235,21 @@
     banner.setAttribute('aria-label', 'Install QuickGigs app');
     banner.innerHTML =
       '<div class="qg-pwa-banner-text">' +
-        '<strong>Install QuickGigs</strong>' +
-        'Add to your home screen for faster access to tasks and messages.' +
+        '<strong class="qg-pwa-banner-title">Install QuickGigs</strong>' +
+        '<span class="qg-pwa-banner-body">Add to your home screen for faster access to tasks and messages.</span>' +
       '</div>' +
-      '<button type="button" class="qg-pwa-install" id="qgPwaInstallBtn">Install</button>' +
-      '<button type="button" class="qg-pwa-dismiss" id="qgPwaDismissBtn" aria-label="Dismiss">×</button>';
+      '<div class="qg-pwa-banner-actions">' +
+        '<button type="button" class="qg-pwa-install" id="qgPwaInstallBtn">Install</button>' +
+        '<button type="button" class="qg-pwa-dismiss" id="qgPwaDismissBtn" aria-label="Dismiss">' +
+          (typeof qgIcon === 'function' ? qgIcon('x', { size: 16 }) : '×') +
+        '</button>' +
+      '</div>';
 
+    var modeBanner = document.getElementById('qgModeBanner') || document.querySelector('.qg-mode-banner');
     var anchor = document.querySelector('.greeting') ||
       document.querySelector('.qg-page-hero') ||
       document.querySelector('.dash-hero') ||
+      modeBanner ||
       document.querySelector('.nav');
     if (anchor && anchor.parentNode) {
       anchor.parentNode.insertBefore(banner, anchor.nextSibling);

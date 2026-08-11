@@ -428,7 +428,13 @@ body.light .app-legal-footer a{color:var(--purple);}
       </div>
     </div>
     <div class="im-list" id="convList" role="list">
-      <div class="im-list-loading" id="listBoot">Loading conversations…</div>
+      <div class="qg-list-skel" id="listBoot" role="status" aria-busy="true" aria-label="Loading conversations">
+        <div class="qg-list-skel-label">Loading conversations…</div>
+        <div class="qg-list-skel-row" aria-hidden="true"><div class="qg-list-skel-avatar"></div><div class="qg-list-skel-lines"><div class="qg-list-skel-line w80"></div><div class="qg-list-skel-line w60"></div></div></div>
+        <div class="qg-list-skel-row" aria-hidden="true"><div class="qg-list-skel-avatar"></div><div class="qg-list-skel-lines"><div class="qg-list-skel-line w60"></div><div class="qg-list-skel-line w40"></div></div></div>
+        <div class="qg-list-skel-row" aria-hidden="true"><div class="qg-list-skel-avatar"></div><div class="qg-list-skel-lines"><div class="qg-list-skel-line w80"></div><div class="qg-list-skel-line w60"></div></div></div>
+        <div class="qg-list-skel-row" aria-hidden="true"><div class="qg-list-skel-avatar"></div><div class="qg-list-skel-lines"><div class="qg-list-skel-line w40"></div><div class="qg-list-skel-line w80"></div></div></div>
+      </div>
     </div>
     <div class="im-error" id="listError" role="alert"></div>
   </aside>
@@ -803,7 +809,9 @@ applyTheme();
     var list = $('convList');
     setVisibleError('listError', '');
     if (!currentUserId) {
-      if (list) list.innerHTML = '<div class="im-list-loading">Signing you in…</div>';
+      if (list) list.innerHTML = typeof QG_listSkeletonHtml === 'function'
+        ? QG_listSkeletonHtml({ rows: 3, label: 'Signing you in…' })
+        : '<div class="im-list-loading">Signing you in…</div>';
       return;
     }
     if (typeof getConversationsForUser !== 'function') {

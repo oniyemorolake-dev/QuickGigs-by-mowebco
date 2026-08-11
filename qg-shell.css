@@ -369,3 +369,211 @@ html.light .qg-menu-action {
   color: var(--danger) !important;
   background: var(--danger-soft) !important;
 }
+
+/* ── Empty-state action stack (primary + secondary) ── */
+.empty-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.empty-actions .empty-btn {
+  margin: 0 !important;
+  min-width: min(240px, 100%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+html[data-qg-mode] .empty-btn.btn-secondary,
+html[data-qg-mode] .empty-btn.empty-btn-secondary,
+.empty-btn.btn-secondary,
+.empty-btn.empty-btn-secondary {
+  background: var(--surface-1) !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--line-strong) !important;
+  box-shadow: none !important;
+}
+
+html[data-qg-mode="poster"] .empty-btn:not(.btn-secondary):not(.empty-btn-secondary),
+html[data-mode="poster"] .empty-btn:not(.btn-secondary):not(.empty-btn-secondary) {
+  background: var(--grad-poster) !important;
+  color: var(--on-accent) !important;
+  border: none !important;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--accent-poster) 28%, transparent) !important;
+}
+
+html[data-qg-mode="worker"] .empty-btn:not(.btn-secondary):not(.empty-btn-secondary),
+html[data-mode="tasker"] .empty-btn:not(.btn-secondary):not(.empty-btn-secondary) {
+  background: var(--grad-tasker) !important;
+  color: var(--on-accent) !important;
+  border: none !important;
+}
+
+.empty-btn .qg-ico,
+.empty-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  stroke: currentColor;
+}
+
+/* ── PWA install banner (token restyle) ── */
+.qg-pwa-banner {
+  display: none;
+  align-items: flex-start;
+  gap: 14px;
+  margin: 12px 20px 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--surface-1) !important;
+  border: 1px solid var(--line) !important;
+  color: var(--text-primary);
+  box-shadow: none !important;
+}
+
+.qg-pwa-banner.show {
+  display: flex;
+}
+
+.qg-pwa-banner-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.qg-pwa-banner-title,
+.qg-pwa-banner-text strong,
+.qg-pwa-banner-text .qg-pwa-banner-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.qg-pwa-banner-body {
+  display: block;
+  color: var(--text-secondary);
+}
+
+.qg-pwa-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.qg-pwa-install {
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: none;
+  background: var(--grad-accent) !important;
+  color: var(--on-accent) !important;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.qg-pwa-dismiss {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 10px;
+  color: var(--text-muted) !important;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.qg-pwa-dismiss .qg-ico,
+.qg-pwa-dismiss svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+}
+
+/* ── List loading skeletons ── */
+.qg-list-skel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 16px 20px;
+}
+
+.qg-list-skel-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+}
+
+.qg-list-skel-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    color-mix(in srgb, var(--accent) 18%, var(--surface-2)) 50%,
+    var(--surface-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: qgListSkel 1.2s ease-in-out infinite;
+}
+
+.qg-list-skel-lines {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qg-list-skel-line {
+  height: 10px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    color-mix(in srgb, var(--accent) 18%, var(--surface-2)) 50%,
+    var(--surface-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: qgListSkel 1.2s ease-in-out infinite;
+}
+
+.qg-list-skel-line.w60 { width: 60%; }
+.qg-list-skel-line.w80 { width: 80%; }
+.qg-list-skel-line.w40 { width: 40%; }
+
+@keyframes qgListSkel {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.qg-list-skel-label {
+  margin: 0 4px 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}

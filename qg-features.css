@@ -561,13 +561,13 @@ body.light .qg-report-cancel {
 /* ── PWA install banner ── */
 .qg-pwa-banner {
   display: none;
-  align-items: center;
-  gap: 12px;
-  margin: 0 20px 14px;
+  align-items: flex-start;
+  gap: 14px;
+  margin: 12px 20px 14px;
   padding: 14px 16px;
   border-radius: 16px;
-  background: linear-gradient(135deg, rgba(107, 63, 160, 0.25), rgba(155, 111, 196, 0.12));
-  border: 0.5px solid rgba(200, 168, 233, 0.28);
+  background: var(--surface-1);
+  border: 1px solid var(--line);
   animation: qgSlideUp 0.4s ease;
 }
 
@@ -577,23 +577,42 @@ body.light .qg-report-cancel {
 
 .qg-pwa-banner-text {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   font-size: 13px;
   line-height: 1.45;
-  color: var(--text, #fff);
+  color: var(--text-secondary, var(--text-muted));
 }
 
-.qg-pwa-banner-text strong {
+.qg-pwa-banner-text strong,
+.qg-pwa-banner-title {
   display: block;
   font-size: 14px;
-  margin-bottom: 2px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary, var(--text));
+}
+
+.qg-pwa-banner-body {
+  display: block;
+  color: var(--text-secondary, var(--text-muted));
+}
+
+.qg-pwa-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .qg-pwa-install {
-  padding: 9px 16px;
-  border-radius: 999px;
+  padding: 10px 16px;
+  border-radius: 12px;
   border: none;
-  background: #9b6fc4;
-  color: #fff;
+  background: var(--grad-accent, var(--accent));
+  color: var(--on-accent);
   font-family: 'DM Sans', sans-serif;
   font-size: 12px;
   font-weight: 600;
@@ -602,12 +621,18 @@ body.light .qg-report-cancel {
 }
 
 .qg-pwa-dismiss {
-  background: none;
-  border: none;
-  color: var(--text-faint);
-  font-size: 18px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2, var(--surface));
+  border: 1px solid var(--line, var(--border));
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-size: 16px;
   cursor: pointer;
-  padding: 4px;
+  padding: 0;
   line-height: 1;
 }
 

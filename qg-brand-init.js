@@ -76,7 +76,9 @@
     var activeMode = getMode();
     document.documentElement.setAttribute('data-qg-mode', cssMode(activeMode));
     document.documentElement.setAttribute('data-mode', activeMode);
-    document.querySelectorAll('.nav').forEach(function (nav, index) {
+
+    var nav = document.querySelector('nav.nav, .nav');
+    if (nav) {
       var brand = nav.querySelector('.nav-brand');
       var logo = nav.querySelector(':scope > .nav-logo');
       if (!brand && logo) {
@@ -90,19 +92,33 @@
         role.className = 'nav-role';
         brand.appendChild(role);
       }
-      var next = nav.nextElementSibling;
-      var banner = next && next.classList && next.classList.contains('qg-mode-banner') ? next : null;
-      if (!banner) {
-        banner = document.createElement('div');
-        banner.className = 'qg-mode-banner';
-        banner.id = index === 0 ? 'qgModeBanner' : '';
-        banner.setAttribute('role', 'status');
-        banner.setAttribute('aria-live', 'polite');
-        nav.insertAdjacentElement('afterend', banner);
-      }
+    }
+
+    /* Exactly one mode banner app-wide (re-runs used to duplicate when
+       something else inserted itself between .nav and the banner). */
+    var banners = Array.prototype.slice.call(document.querySelectorAll('.qg-mode-banner'));
+    var banner = document.getElementById('qgModeBanner') || banners[0] || null;
+    banners.forEach(function (el) {
+      if (banner && el !== banner) el.parentNode && el.parentNode.removeChild(el);
+    });
+    if (!banner && nav) {
+      banner = document.createElement('div');
+      banner.className = 'qg-mode-banner';
+      banner.id = 'qgModeBanner';
+      banner.setAttribute('role', 'status');
+      banner.setAttribute('aria-live', 'polite');
+      nav.insertAdjacentElement('afterend', banner);
+    } else if (banner && nav && banner.previousElementSibling !== nav) {
+      nav.insertAdjacentElement('afterend', banner);
+    }
+    if (banner) {
+      banner.id = 'qgModeBanner';
+      banner.className = 'qg-mode-banner';
+      banner.setAttribute('role', 'status');
+      banner.setAttribute('aria-live', 'polite');
       banner.textContent = activeMode === 'tasker' ? "You're in Tasker mode" : "You're in Poster mode";
       banner.setAttribute('data-mode', activeMode);
-    });
+    }
     applyRoleLabels();
   }
 
@@ -117,6 +133,26 @@
   window.QG_getBrandMode = function () { return cssMode(getMode()); };
   window.QG_applyRoleLabels = applyRoleLabels;
   window.QG_applyModeChrome = applyModeChrome;
+  window.QG_listSkeletonHtml = function (opts) {
+    opts = opts || {};
+    var n = opts.rows || 4;
+    var label = opts.label || 'Loading…';
+    var widths = ['w80', 'w60', 'w80', 'w40'];
+    var rows = '';
+    var i;
+    for (i = 0; i < n; i++) {
+      rows +=
+        '<div class="qg-list-skel-row" aria-hidden="true">' +
+          '<div class="qg-list-skel-avatar"></div>' +
+          '<div class="qg-list-skel-lines">' +
+            '<div class="qg-list-skel-line ' + widths[i % widths.length] + '"></div>' +
+            '<div class="qg-list-skel-line ' + widths[(i + 1) % widths.length] + '"></div>' +
+          '</div>' +
+        '</div>';
+    }
+    return '<div class="qg-list-skel" role="status" aria-busy="true" aria-label="' + label + '">' +
+      '<div class="qg-list-skel-label">' + label + '</div>' + rows + '</div>';
+  };
 
   var existingRoleTheme = document.querySelector('link[href*="qg-role-theme.css"]');
   if (existingRoleTheme) {
@@ -165,7 +201,7 @@
     var shell = document.createElement('link');
     shell.id = 'qg-shell-css';
     shell.rel = 'stylesheet';
-    shell.href = 'qg-shell.css?v=20260811shell1';
+    shell.href = 'qg-shell.css?v=20260811fix1';
     document.head.appendChild(shell);
   }
 

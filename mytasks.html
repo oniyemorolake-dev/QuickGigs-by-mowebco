@@ -251,7 +251,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 
 <div class="confirm-overlay" id="confirmOverlay" onclick="if(event.target===this)closeConfirm()">
   <div class="confirm-box" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
-    <button type="button" class="confirm-close" onclick="closeConfirm()" aria-label="Close">?</button>
+    <button type="button" class="confirm-close" onclick="closeConfirm()" aria-label="Close">×</button>
     <div class="confirm-title" id="confirmTitle">Are you sure?</div>
     <div class="confirm-msg" id="confirmMsg"></div>
     <div class="confirm-btns">
@@ -263,7 +263,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 
 <div class="confirm-overlay" id="counterOverlay" onclick="if(event.target===this)closeCounterModal()">
   <div class="confirm-box" role="dialog" aria-modal="true" aria-labelledby="counterTitle">
-    <button type="button" class="confirm-close" onclick="closeCounterModal()" aria-label="Close">?</button>
+    <button type="button" class="confirm-close" onclick="closeCounterModal()" aria-label="Close">×</button>
     <div class="confirm-title" id="counterTitle">Counter offer</div>
     <div class="confirm-msg" id="counterMsg">Enter your counter amount (min $20).</div>
     <input class="field-input" id="counterAmount" type="number" min="20" placeholder="85" style="width:100%;margin:12px 0 4px;padding:12px 14px;border-radius:10px;border:0.5px solid var(--border);background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;">
@@ -626,7 +626,7 @@ function renderApplicantAction(a, taskId, task) {
       negoHtml = '<div class="nego-actions"><span class="nego-status">Counter sent — waiting for tasker</span></div>';
     } else if (neg.counterRound === 0) {
       negoHtml = '<div class="nego-actions">' +
-        '<button type="button" class="accept-btn counter-btn" data-poster-counter="'+escAttr(appId)+'" data-task-id="'+escAttr(taskId)+'" data-worker-id="'+escAttr(workerId)+'">Counter $?</button>' +
+        '<button type="button" class="accept-btn counter-btn" data-poster-counter="'+escAttr(appId)+'" data-task-id="'+escAttr(taskId)+'" data-worker-id="'+escAttr(workerId)+'">Counter…</button>' +
         '</div>';
     }
   }
@@ -656,7 +656,7 @@ function setAcceptLoading(acceptBtn, loading) {
   var panel = acceptBtn.closest('.applicants-panel');
   if (loading) {
     acceptBtn.disabled = true;
-    acceptBtn.textContent = 'Accepting?';
+    acceptBtn.textContent = 'Accepting…';
     if (row) row.classList.add('is-accepting');
     if (panel) {
       panel.querySelectorAll('.applicant-row').forEach(function(other) {
@@ -688,7 +688,11 @@ window.toggleApplicants = function(taskId) {
     var count = btn.getAttribute('data-applicant-count') || '';
     var names = btn.getAttribute('data-applicant-names') || '';
     // textContent ? getAttribute decodes entities; never re-inject via innerHTML
-    btn.textContent = '👥 ' + count + (names ? ' · ' + names : '') + ' ? Tap to ' + (expandedApplicantTasks[taskId] ? 'hide' : 'view');
+    if (typeof qgIcon === 'function') {
+      btn.innerHTML = qgIcon('users', { size: 14 }) + ' ' + count + (names ? ' · ' + names : '') + ' — Tap to ' + (expandedApplicantTasks[taskId] ? 'hide' : 'view');
+    } else {
+      btn.textContent = count + (names ? ' · ' + names : '') + ' — Tap to ' + (expandedApplicantTasks[taskId] ? 'hide' : 'view');
+    }
   }
 };
 
@@ -1020,7 +1024,7 @@ window.QG_refreshPaymentState = async function(taskId) {
 function getDemoTasks(){
   return [
     {TASK_ID:1,TITLE:'Deep clean 2 bedroom apartment',CATEGORY:'home',TASK_MODE:'standard',BUDGET:120,LOCATION:'Calgary, AB',STATUS:'open',POSTED_BY:window._currentUser?window._currentUser.uid:'me'},
-    {TASK_ID:2,TITLE:'Grocery run ? Superstore NW',CATEGORY:'errands',TASK_MODE:'quick',BUDGET:30,LOCATION:'Calgary, AB',STATUS:'in_progress',POSTED_BY:window._currentUser?window._currentUser.uid:'me'},
+    {TASK_ID:2,TITLE:'Grocery run — Superstore NW',CATEGORY:'errands',TASK_MODE:'quick',BUDGET:30,LOCATION:'Calgary, AB',STATUS:'in_progress',POSTED_BY:window._currentUser?window._currentUser.uid:'me'},
     {TASK_ID:3,TITLE:'Math tutor Grade 10',CATEGORY:'tutoring',TASK_MODE:'recurring',BUDGET:35,LOCATION:'Calgary, AB',STATUS:'completed',POSTED_BY:'someone_else'},
   ];
 }
@@ -1287,12 +1291,12 @@ function showToast(msg, color){
     } else if (typeof window.QG_formatPayError === 'function') {
       msg = window.QG_formatPayError(msg);
     } else {
-      msg = msg.message || msg.error || 'Something went wrong ? refresh and try again';
-      if (typeof msg === 'object') msg = 'Something went wrong ? refresh and try again';
+      msg = msg.message || msg.error || 'Something went wrong — refresh and try again';
+      if (typeof msg === 'object') msg = 'Something went wrong — refresh and try again';
     }
   }
   if (msg === '[object Object]' || msg == null || msg === '') {
-    msg = 'Something went wrong ? refresh and try again';
+    msg = 'Something went wrong — refresh and try again';
   }
   t.textContent = String(msg);
   t.style.background = color || '#4ade80';
@@ -1334,7 +1338,7 @@ window.openCounterModal = function(opts) {
   document.getElementById('counterTitle').textContent = opts && opts.role === 'worker' ? 'Counter back' : 'Counter offer';
   document.getElementById('counterMsg').textContent = opts && opts.role === 'worker'
     ? 'Send your counter (max 2 rounds in beta).'
-    : 'Propose a different price ? the tasker gets a notification.';
+    : 'Propose a different price — the tasker gets a notification.';
   document.getElementById('counterAmount').value = '';
   document.getElementById('counterOverlay').classList.add('open');
   setTimeout(function(){ document.getElementById('counterAmount').focus(); }, 50);
@@ -1373,7 +1377,7 @@ window.runCounterSubmit = async function() {
   }
   var btn = document.getElementById('counterOkBtn');
   btn.disabled = true;
-  btn.textContent = 'Sending?';
+  btn.textContent = 'Sending…';
   var userId = window._currentUser ? window._currentUser.uid : null;
   var result;
   if (opts.role === 'worker' && typeof workerRespondToCounter === 'function') {
@@ -1389,7 +1393,7 @@ window.runCounterSubmit = async function() {
   if (!result || !result.success) {
     var msg = typeof formatSupabaseActionError === 'function'
       ? formatSupabaseActionError('send counter', (result && result.error) || 'failed')
-      : 'Could not send counter ? run supabase/negotiation.sql, then refresh.';
+      : 'Could not send counter — run supabase/negotiation.sql, then refresh.';
     if (result && result.error === 'max_rounds') msg = 'Max 2 counter rounds reached for beta.';
     showToast(msg, '#ef4444');
     return;
@@ -1421,7 +1425,7 @@ async function runWorkerCounterAction(appId, taskId, action, amount) {
       : 'Could not update counter', '#ef4444');
     return;
   }
-  showToast(action === 'accept' ? 'Counter accepted ? price updated' : 'Counter declined', '#4ade80');
+  showToast(action === 'accept' ? 'Counter accepted — price updated' : 'Counter declined', '#4ade80');
   await reloadMyTasksData();
   renderTab();
 }
@@ -1436,7 +1440,7 @@ async function runPosterCounterAction(appId, taskId, workerId, action) {
       : 'Could not update counter', '#ef4444');
     return;
   }
-  showToast(action === 'accept' ? 'Counter accepted ? price updated' : 'Counter declined', '#4ade80');
+  showToast(action === 'accept' ? 'Counter accepted — price updated' : 'Counter declined', '#4ade80');
   await reloadMyTasksData();
   renderTab();
 }
@@ -1464,7 +1468,9 @@ function renderTabLoading() {
   var content = document.getElementById('tabContent');
   if (!content) return;
   content.setAttribute('aria-busy', 'true');
-  content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('clock',{size:24}):'')+'</div><div class="empty-title">Loading your tasks…</div><div class="empty-sub">One moment</div></div>';
+  content.innerHTML = typeof QG_listSkeletonHtml === 'function'
+    ? QG_listSkeletonHtml({ rows: 4, label: 'Loading your tasks…' })
+    : '<div class="empty-state"><div class="empty-title">Loading your tasks…</div></div>';
 }
 
 function renderTabLoadError(msg) {
@@ -1476,9 +1482,10 @@ function renderTabLoadError(msg) {
     '<div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('alert',{size:24}):'')+'</div>' +
     '<div class="empty-title">Could not load tasks</div>' +
     '<div class="empty-sub">' + (msg || 'Check your connection, then try again. If this keeps happening, hard refresh the page.') + '</div>' +
+    '<div class="empty-actions">' +
     '<button type="button" class="empty-btn" onclick="typeof loadData===\'function\'&&loadData()">'+(typeof qgIcon==='function'?qgIcon('refresh',{size:14}):'')+' Refresh list</button>' +
-    '<button type="button" class="empty-btn btn-secondary" style="margin-top:8px;background:var(--surface);color:var(--text-muted);border:1px solid var(--border)" onclick="location.reload()">Hard refresh</button>' +
-    '</div>';
+    '<button type="button" class="empty-btn empty-btn-secondary" onclick="location.reload()">Hard refresh</button>' +
+    '</div></div>';
 }
 
 function renderTab(){
@@ -1509,15 +1516,17 @@ function renderTab(){
     var anyPosted = tasksForPoster(userId, null);
     if(!myTasks.length){
       var movedLink = inProgPosted.length
-        ? '<p class="empty-sub" style="margin-top:10px">Accepted tasks move to <strong>In Progress</strong> ? you have ' + inProgPosted.length + ' active.</p>' +
-          '<button type="button" class="empty-btn" onclick="showTab(\'inprogress\',document.getElementById(\'tabInprogress\'))">View In Progress ?</button>'
+        ? '<p class="empty-sub" style="margin-top:10px">Accepted tasks move to <strong>In Progress</strong> — you have ' + inProgPosted.length + ' active.</p>' +
+          '<div class="empty-actions"><button type="button" class="empty-btn" onclick="showTab(\'inprogress\',document.getElementById(\'tabInprogress\'))">View In Progress →</button></div>'
         : (anyPosted.length
           ? '<p class="empty-sub" style="margin-top:10px">Your posting may be under <strong>In Progress</strong> or <strong>Completed</strong>.</p>' +
-            '<button type="button" class="empty-btn" onclick="showTab(\'inprogress\',document.getElementById(\'tabInprogress\'))">Check In Progress ?</button>'
+            '<div class="empty-actions"><button type="button" class="empty-btn" onclick="showTab(\'inprogress\',document.getElementById(\'tabInprogress\'))">Check In Progress →</button></div>'
           : '');
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('clipboard',{size:24}):'')+'</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">Post a task in Poster mode. When you accept a tasker, the task moves to In Progress ? not here.</div>' + movedLink +
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('clipboard',{size:24}):'')+'</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">Post a task in Poster mode. When you accept a tasker, the task moves to In Progress — not here.</div>' + movedLink +
+        '<div class="empty-actions">' +
         '<a class="empty-btn" href="posttask.html">Post a task</a>' +
-        '<button type="button" class="empty-btn btn-secondary" style="margin-top:8px;background:var(--surface);color:var(--text-muted);border:1px solid var(--border)" onclick="typeof loadData===\'function\'&&loadData()">'+(typeof qgIcon==='function'?qgIcon('refresh',{size:14}):'')+' Refresh list</button></div>';
+        '<button type="button" class="empty-btn empty-btn-secondary" onclick="typeof loadData===\'function\'&&loadData()">'+(typeof qgIcon==='function'?qgIcon('refresh',{size:14}):'')+' Refresh list</button>' +
+        '</div></div>';
       return;
     }
     content.innerHTML = myTasks.map(function(t){
@@ -1556,7 +1565,7 @@ function renderTab(){
         '</div>';
       }).join('') : '<div style="font-size:12px;color:var(--text-faint);padding:10px 0">No pending applicants yet.</div>';
       var toggleLabel = pendingApps.length
-        ? pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : '') + (namePreview ? ' · ' + namePreview + (pendingApps.length > 3 ? '?' : '') : '') + ' ? Tap to ' + (isOpen ? 'hide' : 'view')
+        ? pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : '') + (namePreview ? ' · ' + namePreview + (pendingApps.length > 3 ? '…' : '') : '') + ' — Tap to ' + (isOpen ? 'hide' : 'view')
         : (hasAccepted ? 'Worker accepted — Tap to view' : 'No applicants yet');
       var postedLabel = typeof formatRelativeTime === 'function'
         ? formatRelativeTime(getField(t, 'CREATED_AT'))
@@ -1576,7 +1585,7 @@ function renderTab(){
         '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(typeof formatTaskDisplayTitle==='function'?formatTaskDisplayTitle(t):getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-open">Open</span></div>'+
         timeline +
         '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' · <span class="tc-meta-price">'+esc(formatTaskBudgetMeta(t))+'</span>'+(postedLabel ? ' · Posted '+esc(postedLabel) : '')+'</div>'+
-        '<button type="button" class="tc-applicants-toggle'+(isOpen?' open':'')+'" data-applicants-toggle="'+escAttr(taskId)+'" data-applicant-count="'+escAttr(pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : ''))+'" data-applicant-names="'+escAttr(namePreview + (pendingApps.length > 3 ? '?' : ''))+'">'+esc(toggleLabel)+'</button>'+
+        '<button type="button" class="tc-applicants-toggle'+(isOpen?' open':'')+'" data-applicants-toggle="'+escAttr(taskId)+'" data-applicant-count="'+escAttr(pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : ''))+'" data-applicant-names="'+escAttr(namePreview + (pendingApps.length > 3 ? '…' : ''))+'">'+esc(toggleLabel)+'</button>'+
         '<div class="applicants-panel'+(isOpen?' open':'')+'" id="'+taskDomId(taskId)+'">'+appHtml+'</div>'+
         '<div class="action-row">'+shareEmpty+shareIcon+'<button type="button" class="act-btn btn-danger" data-cancel-posting="'+escAttr(taskId)+'">Cancel posting</button></div>'+
       '</div>';
@@ -1636,7 +1645,7 @@ function renderTab(){
             '<div class="nego-block-title">Poster countered at $' + neg.counterPrice + '</div>' +
             '<div class="action-row">' +
             '<button type="button" class="act-btn btn-secondary" data-worker-decline-counter="'+escAttr(getField(a,'APP_ID'))+'" data-task-id="'+escAttr(getField(a,'TASK_ID'))+'">Decline</button>' +
-            (canCounterBack ? '<button type="button" class="act-btn btn-secondary counter-btn" data-worker-counter-back="'+escAttr(getField(a,'APP_ID'))+'" data-task-id="'+escAttr(getField(a,'TASK_ID'))+'">Counter $?</button>' : '') +
+            (canCounterBack ? '<button type="button" class="act-btn btn-secondary counter-btn" data-worker-counter-back="'+escAttr(getField(a,'APP_ID'))+'" data-task-id="'+escAttr(getField(a,'TASK_ID'))+'">Counter…</button>' : '') +
             '<button type="button" class="act-btn" style="background:var(--purple);color:#fff" data-worker-accept-counter="'+escAttr(getField(a,'APP_ID'))+'" data-task-id="'+escAttr(getField(a,'TASK_ID'))+'">Accept $' + neg.counterPrice + '</button>' +
             '</div></div>';
         } else if (isTaskNegotiable(task) && neg.counterBy === 'worker') {
@@ -1691,12 +1700,13 @@ function renderTab(){
         : 'When a poster accepts you, the job shows here. Switch to Tasker mode on Profile if you were browsing as a poster.';
       var openPosted = tasksForPoster(userId, 'open').length;
       var postedLink = openPosted > 0 && isPoster
-        ? '<button type="button" class="empty-btn" onclick="showTab(\'posted\',document.getElementById(\'tabPosted\'))">Review ' + openPosted + ' open posting' + (openPosted !== 1 ? 's' : '') + ' ?</button>'
+        ? '<button type="button" class="empty-btn" onclick="showTab(\'posted\',document.getElementById(\'tabPosted\'))">Review ' + openPosted + ' open posting' + (openPosted !== 1 ? 's' : '') + ' →</button>'
         : '';
       content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('clock',{size:24}):'')+'</div><div class="empty-title">Nothing in progress</div><div class="empty-sub">' + emptySub + '</div>' +
+        '<div class="empty-actions">' +
         postedLink +
         (isPoster ? '' : '<a class="empty-btn" href="browsetask.html">Browse tasks</a>') +
-        '</div>';
+        '</div></div>';
       return;
     }
     content.innerHTML = inProg.map(function(t){
@@ -1860,7 +1870,7 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
   appId = String(appId);
   if (!appId) {
     setAcceptLoading(acceptBtn, false);
-    showToast('Invalid application ? refresh and try again', '#ef4444');
+    showToast('Invalid application — refresh and try again', '#ef4444');
     return;
   }
 
@@ -1937,7 +1947,7 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
     setAcceptLoading(acceptBtn, false);
     var progMsg = typeof formatSupabaseActionError === 'function'
       ? formatSupabaseActionError('start this task', taskStatus.error)
-      : 'Accepted applicant but could not move task to In Progress ? refresh and try again.';
+      : 'Accepted applicant but could not move task to In Progress — refresh and try again.';
     showToast(progMsg, '#ef4444');
     return;
   }
@@ -1993,7 +2003,7 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
 
   if(!convResult.success){
     setAcceptLoading(acceptBtn, false);
-    showToast('Accepted but chat setup failed ? try Messages or refresh', '#f59e0b');
+    showToast('Accepted but chat setup failed — try Messages or refresh', '#f59e0b');
     loadData();
     return;
   }
@@ -2027,10 +2037,10 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
         title: getField(task, 'TITLE') || 'Pay to unlock chat'
       }).catch(function (err) {
         console.error('Pay modal failed:', err);
-        showToast('Could not open payment ? tap Pay on this task', '#ef4444');
+        showToast('Could not open payment — tap Pay on this task', '#ef4444');
       });
     } else {
-      showToast('Payment module not loaded ? refresh the page', '#ef4444');
+      showToast('Payment module not loaded — refresh the page', '#ef4444');
     }
   } else {
     if (acceptBtn && typeof qgMicroConfirm === 'function') qgMicroConfirm(acceptBtn);
@@ -2073,7 +2083,7 @@ function findAcceptedApplication(taskId) {
 window.openChatWithWorker = async function(taskId, workerId){
   var userId = window._currentUser ? window._currentUser.uid : null;
   if(!userId || !taskId || !workerId) {
-    showToast('Could not open chat ? refresh and try again', '#ef4444');
+    showToast('Could not open chat — refresh and try again', '#ef4444');
     return;
   }
 
@@ -2085,7 +2095,7 @@ window.openChatWithWorker = async function(taskId, workerId){
 
   var posterId = getField(task, 'POSTED_BY');
   if (String(posterId) === String(workerId)) {
-    showToast('Same account as tasker ? cancel this task and test with two logins', '#ef4444');
+    showToast('Same account as tasker — cancel this task and test with two logins', '#ef4444');
     return;
   }
 
@@ -2120,7 +2130,7 @@ window.openChatWithWorker = async function(taskId, workerId){
         return;
       }
       if (ready && ready.error === 'not_paid') {
-        showToast('Payment not linked yet ? do not pay twice; use two accounts for a clean test', '#f59e0b');
+        showToast('Payment not linked yet — do not pay twice; use two accounts for a clean test', '#f59e0b');
         return;
       }
     }
@@ -2142,11 +2152,11 @@ window.openChatWithWorker = async function(taskId, workerId){
       }
     }
 
-    showToast('No chat thread yet ? check Messages', '#f59e0b');
+    showToast('No chat thread yet — check Messages', '#f59e0b');
     setTimeout(function(){ window.location.href = 'messages.html'; }, 1200);
   } catch (chatErr) {
     console.error('openChatWithWorker failed:', chatErr);
-    showToast('Could not open chat ? try Messages', '#ef4444');
+    showToast('Could not open chat — try Messages', '#ef4444');
   } finally {
     if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
   }
@@ -2170,7 +2180,7 @@ window.openChatForTask = async function(taskId){
 
   var task = allTasks.find(function(t){ return String(getField(t,'TASK_ID')) === taskId; });
   if(!task) {
-    showToast('Task not found ? refresh and try again', '#ef4444');
+    showToast('Task not found — refresh and try again', '#ef4444');
     return;
   }
 
@@ -2196,7 +2206,7 @@ window.openChatForTask = async function(taskId){
     return;
   }
 
-  showToast('No chat yet ? open Messages', '#f59e0b');
+  showToast('No chat yet — open Messages', '#f59e0b');
   setTimeout(function(){ window.location.href = 'messages.html'; }, 1200);
 };
 
@@ -2209,7 +2219,7 @@ window.markComplete = async function(taskId, btn){
   var userId = window._currentUser ? window._currentUser.uid : '';
   if (!userId) {
     if (btn) { btn.disabled = false; btn.innerHTML = (typeof qgIcon==='function'?qgIcon('check',{size:12}):'')+' Mark complete'; }
-    showToast('Not signed in ? refresh and try again', '#ef4444');
+    showToast('Not signed in — refresh and try again', '#ef4444');
     return;
   }
   var taskRow = allTasks.find(function(t){ return String(getField(t,'TASK_ID')) === taskId; });
@@ -2296,14 +2306,14 @@ window.markComplete = async function(taskId, btn){
     console.error('markComplete threw:', completeErr);
     // Still show Completed UI ? user is blocked otherwise
     showCompletedUi(canonicalTaskId || taskId);
-    showToast('Marked complete locally ? if it reappears, tap again', '#f59e0b');
+    showToast('Marked complete locally — if it reappears, tap again', '#f59e0b');
     return;
   }
   if (!result || !result.success) {
     // Last resort: keep UX unblocked
     console.error('FULL markComplete failure:', JSON.stringify(result));
     showCompletedUi(canonicalTaskId || taskId);
-    showToast('Marked complete ? sync may retry in background', '#f59e0b');
+    showToast('Marked complete — sync may retry in background', '#f59e0b');
     return;
   }
   showCompletedUi(result.task_id || canonicalTaskId || taskId);
@@ -2363,7 +2373,7 @@ window.declineApplicant = async function(taskId, appId, declineBtn) {
   taskId = String(taskId);
   appId = String(appId);
   if (!appId) {
-    showToast('Invalid application ? refresh and try again', '#ef4444');
+    showToast('Invalid application — refresh and try again', '#ef4444');
     return;
   }
   var app = allApplications.find(function(a){ return String(getField(a, 'APP_ID')) === appId; });
@@ -2455,7 +2465,7 @@ window.confirmRepostTask = function(taskId) {
     onConfirm: async function() {
       var userId = window._currentUser ? window._currentUser.uid : null;
       if (!userId || typeof repostTask !== 'function') {
-        showToast('Could not repost ? refresh and try again', '#ef4444');
+        showToast('Could not repost — refresh and try again', '#ef4444');
         return;
       }
       if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
@@ -2469,7 +2479,7 @@ window.confirmRepostTask = function(taskId) {
         showToast(msg, '#ef4444');
         return;
       }
-      showToast('Task reposted ? now live on browse');
+      showToast('Task reposted — now live on browse');
       await loadData();
       showTab('posted', document.getElementById('tabPosted'));
     }
@@ -2535,11 +2545,11 @@ window.confirmChangeTasker = function(taskId) {
   var workerName = acceptedApp ? displayName(workerId, acceptedApp) : 'this tasker';
   var appId = acceptedApp ? getField(acceptedApp, 'APP_ID') : '';
   if (!appId) {
-    showToast('No assigned tasker found ? refresh and try again', '#ef4444');
+    showToast('No assigned tasker found — refresh and try again', '#ef4444');
     return;
   }
   if (typeof isTaskPaid === 'function' && isTaskPaid(taskId)) {
-    showToast('Cannot change tasker after payment ? cancel the task or contact support', '#f59e0b');
+    showToast('Cannot change tasker after payment — cancel the task or contact support', '#f59e0b');
     return;
   }
   showConfirm({
@@ -2571,7 +2581,7 @@ window.confirmChangeTasker = function(taskId) {
       activeTab = 'posted';
       syncTabButtons();
       renderTab();
-      showToast('Task reopened ? pick another applicant');
+      showToast('Task reopened — pick another applicant');
       await loadData();
     }
   });
@@ -2586,7 +2596,7 @@ window.confirmCancelInProgress = function(taskId) {
   payRowPromise.then(function(payRow) {
     var pst = payRow && String(payRow.status || payRow.STATUS || '').toLowerCase();
     if (pst === 'paid') {
-      showToast('Task already paid out ? open a dispute if you need help', '#f59e0b');
+      showToast('Task already paid out — open a dispute if you need help', '#f59e0b');
       return;
     }
     var refundNote = (paid || pst === 'held')
@@ -2602,7 +2612,7 @@ window.confirmCancelInProgress = function(taskId) {
         var result = await cancelTask(taskId, { actorId: userId, refundHeld: true });
         if (!result.success) {
           if (result.needsDispute || result.error === 'paid_task_needs_dispute') {
-            showToast('Already paid out ? use Dispute or contact support', '#f59e0b');
+            showToast('Already paid out — use Dispute or contact support', '#f59e0b');
             return;
           }
           console.error('FULL cancelInProgress failure:', JSON.stringify(result));
@@ -2676,7 +2686,7 @@ onAuthStateChanged(auth, function (user) {
           }
         }
         if (typeof showToast === 'function') {
-          showToast('Could not load tasks ? tap Refresh list', '#ef4444');
+          showToast('Could not load tasks — tap Refresh list', '#ef4444');
         }
       });
     } else {

@@ -604,7 +604,7 @@ document.addEventListener('DOMContentLoaded', function bootPosterVerification(){
   window.addEventListener('qg-poster-payment-verified', function (ev) {
     applyPosterPublishGate(ev.detail || window.QG_verificationState);
     if (typeof showToast === 'function') {
-      showToast('Payment method verified ? you can publish now', '#0f766e');
+      showToast('Payment method verified — you can publish now', '#0f766e');
     }
   });
 
@@ -633,7 +633,7 @@ document.addEventListener('DOMContentLoaded', function bootPosterVerification(){
       var next = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
       window.history.replaceState({}, '', next);
       if (typeof showToast === 'function') {
-        showToast('Payment method verified ? you can publish now', '#0f766e');
+        showToast('Payment method verified — you can publish now', '#0f766e');
       }
     }
   } catch (_e) {}

@@ -452,7 +452,7 @@ body.light .app-legal-footer a{color:var(--purple);}
   <p>Only age-eligible gigs are shown. When you apply, your guardian reviews the request before the poster sees it.</p>
 </div>
 <div class="results-bar">
-  <span class="results-txt" id="resultsCount">Loading tasks?</span>
+  <span class="results-txt" id="resultsCount">Loading tasks…</span>
   <div class="filter-sorts">
     <select class="date-filter" id="dateFilter" onchange="applyFilters()" aria-label="Filter by post date">
       <option value="any">Any time</option>
@@ -484,7 +484,14 @@ body.light .app-legal-footer a{color:var(--purple);}
 </div>
 <div class="qg-active-filters" id="activeFilters" aria-label="Active filters"></div>
 <div class="cards-area" id="cardsArea">
-  <div class="loading-state"><div class="loading-spinner">⏳</div><div class="loading-txt">Loading tasks near you...</div></div>
+  <div class="loading-state qg-browse-loading" id="browseLoadingState">
+    <div class="qg-list-skel" role="status" aria-busy="true" aria-label="Loading tasks near you">
+      <div class="qg-list-skel-label">Loading tasks near you…</div>
+      <div class="qg-list-skel-row" aria-hidden="true"><div class="qg-list-skel-avatar"></div><div class="qg-list-skel-lines"><div class="qg-list-skel-line w80"></div><div class="qg-list-skel-line w60"></div></div></div>
+      <div class="qg-list-skel-row" aria-hidden="true"><div class="qg-list-skel-avatar"></div><div class="qg-list-skel-lines"><div class="qg-list-skel-line w60"></div><div class="qg-list-skel-line w40"></div></div></div>
+      <div class="qg-list-skel-row" aria-hidden="true"><div class="qg-list-skel-avatar"></div><div class="qg-list-skel-lines"><div class="qg-list-skel-line w80"></div><div class="qg-list-skel-line w60"></div></div></div>
+    </div>
+  </div>
 </div>
 <div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" onclick="event.stopPropagation()">
@@ -492,7 +499,7 @@ body.light .app-legal-footer a{color:var(--purple);}
     <div class="modal-scroll">
       <div class="modal-head">
         <p class="modal-title" id="modalTitle">Apply for task</p>
-        <button type="button" class="modal-close" id="modalCloseBtn" onclick="closeModal()" aria-label="Close">?</button>
+        <button type="button" class="modal-close" id="modalCloseBtn" onclick="closeModal()" aria-label="Close">×</button>
       </div>
       <p class="modal-sub" id="modalSub">Send your offer to the poster</p>
       <p class="modal-sub" id="modalNegoHint" style="display:none;margin-top:-6px;font-size:11px;color:var(--text-muted)"></p>
@@ -983,7 +990,7 @@ async function loadTasks(){
 function getDemoTasks(){
   return [
     {id:1,mode:'quick',cat:'errands',catLabel:'Errands',icon:'🚗',iconBg:'rgba(251,191,36,0.15)',title:'Pick up prescription from Shoppers Drug Mart',desc:'Grab my prescription on 17th Ave SW and drop off at my condo. 20 mins max.',price:20,priceLabel:'$20',location:'Calgary, AB',posted:'5 mins ago',applicants:0,status:'open'},
-    {id:2,mode:'quick',cat:'tech',catLabel:'Tech',icon:'💻',iconBg:'rgba(107,63,160,0.2)',title:'Fix cracked screen on Samsung S22 ? need it today',desc:'Screen is badly cracked, phone still works. Need someone experienced.',price:60,priceLabel:'$60',location:'Calgary, AB',posted:'12 mins ago',applicants:1,status:'open'},
+    {id:2,mode:'quick',cat:'tech',catLabel:'Tech',icon:'💻',iconBg:'rgba(107,63,160,0.2)',title:'Fix cracked screen on Samsung S22 — need it today',desc:'Screen is badly cracked, phone still works. Need someone experienced.',price:60,priceLabel:'$60',location:'Calgary, AB',posted:'12 mins ago',applicants:1,status:'open'},
     {id:3,mode:'standard',cat:'home',catLabel:'Home',icon:'🏠',iconBg:'rgba(107,63,160,0.2)',title:'Deep clean 2 bedroom apartment before move out',desc:'Full deep clean before handing over keys this Saturday.',price:120,priceLabel:'$120',location:'Calgary, AB',posted:'2 hrs ago',applicants:3,status:'open'},
     {id:4,mode:'standard',cat:'beauty',catLabel:'Beauty',icon:'💅',iconBg:'rgba(200,168,233,0.15)',title:'Box braids ? medium length, natural hair',desc:'Looking for someone experienced with box braids on natural hair.',price:80,priceLabel:'$80',location:'Calgary, AB',posted:'3 hrs ago',applicants:2,status:'open'},
     {id:5,mode:'recurring',cat:'care',catLabel:'Care',icon:'👶',iconBg:'rgba(74,222,128,0.1)',title:'Reliable nanny needed Monday to Friday 9am?3pm',desc:'Caring nanny for two kids aged 4 and 7. Starting next Monday.',price:20,priceLabel:'$20/hr',location:'Calgary, AB',posted:'1 hr ago',applicants:1,status:'open'},
@@ -1077,7 +1084,7 @@ function renderCardMedia(t) {
       var src = esc(typeof safeMediaUrl === 'function' ? (safeMediaUrl(thumb) || raw) : thumb);
       var fallbackSafe = esc(raw);
       var fallbackAttr = (src !== fallbackSafe) ? ' data-fallback="'+fallbackSafe+'" onerror="if(this.dataset.fallback){this.src=this.dataset.fallback;delete this.dataset.fallback;this.onerror=null;}"' : '';
-      return '<div class="tc-media tc-photo-tappable" role="button" tabindex="0" aria-label="View task photos ? tap to enlarge" data-photos="'+photosJson+'" data-photo-caption="'+esc(t.title)+'">' +
+      return '<div class="tc-media tc-photo-tappable" role="button" tabindex="0" aria-label="View task photos — tap to enlarge" data-photos="'+photosJson+'" data-photo-caption="'+esc(t.title)+'">' +
         '<div class="tc-media-inner">' +
           '<img class="tc-media-img" src="'+src+'" alt="'+esc(t.title)+' photo" loading="lazy" decoding="async" width="168" height="168"'+fallbackAttr+'>' +
         '</div>' + dots +
@@ -1157,7 +1164,9 @@ function syncBudgetUI(){
 function renderCards(){
   if(window._qgAgeTier==='loading'){
     var loadingArea=document.getElementById('cardsArea');
-    if(loadingArea)loadingArea.innerHTML='<div class="loading-state"><div class="loading-spinner">⏳</div><div class="loading-txt">Checking gig eligibility…</div></div>';
+    if(loadingArea)loadingArea.innerHTML = typeof QG_listSkeletonHtml === 'function'
+      ? QG_listSkeletonHtml({ rows: 3, label: 'Checking gig eligibility…' })
+      : '<div class="loading-state"><div class="loading-txt">Checking gig eligibility…</div></div>';
     return;
   }
   var search=(document.getElementById('searchInput').value||'').toLowerCase().trim();
@@ -1518,13 +1527,13 @@ function wireApplyModalInputs() {
 
       // Immediate loading affordance ? even before validation awaits
       if (!_applySubmitInFlight && sendBtn) {
-        sendBtn.textContent = 'Sending?';
+        sendBtn.textContent = 'Sending…';
       }
 
       if (typeof window.submitBrowseApplication === 'function') {
         window.submitBrowseApplication();
       } else {
-        applyNotify('Apply handler missing ? hard-refresh the page and try again.', '#ef4444');
+        applyNotify('Apply handler missing — hard-refresh the page and try again.', '#ef4444');
         if (sendBtn) sendBtn.textContent = 'Send application';
       }
     }
@@ -1584,7 +1593,7 @@ window.openModal=async function(id,e){
   if (typeof qgTrackTaskView === 'function') qgTrackTaskView(activeTask);
   if (typeof haptic === 'function') haptic(10);
   if(isOwnPostedTask(activeTask)){
-    showToast('This is your own posting. Switch to Poster mode ? My Tasks to manage applicants.', '#f59e0b');
+    showToast('This is your own posting. Switch to Poster mode → My Tasks to manage applicants.', '#f59e0b');
     return;
   }
   if (typeof QG_loadVerification === 'function') {
@@ -1659,7 +1668,7 @@ window.openModal=async function(id,e){
         : (typeof safeUrl === 'function' ? safeUrl(url) : '');
     }).filter(Boolean);
     photoWrap.innerHTML = safePhotos.length
-      ? ('<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Reference photos ? tap to enlarge</div><div style="display:flex;gap:8px;overflow-x:auto;align-items:center;">' +
+      ? ('<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Reference photos — tap to enlarge</div><div style="display:flex;gap:8px;overflow-x:auto;align-items:center;">' +
       safePhotos.map(function(url, i){ return '<img class="qg-modal-photo-tap" src="'+esc(url)+'" alt="Task photo" data-photos="'+esc(JSON.stringify(safePhotos))+'" data-photo-index="'+i+'" data-photo-caption="'+esc(activeTask.title)+'" style="width:auto;max-width:100%;height:auto;max-height:160px;object-fit:contain;border-radius:10px;border:0.5px solid var(--border);flex-shrink:0;cursor:zoom-in;">'; }).join('') +
       '</div>')
       : '';
@@ -1714,7 +1723,7 @@ window.submitBrowseApplication=async function(){
   // Immediate loading state on tap (before validation / network)
   _applySubmitInFlight = true;
   if (btn) {
-    btn.textContent = 'Sending?';
+    btn.textContent = 'Sending…';
     btn.disabled = true;
   }
   clearApplyInlineAlert();

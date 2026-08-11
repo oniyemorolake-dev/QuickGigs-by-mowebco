@@ -268,7 +268,7 @@ body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#ee
   <p>Browse age-eligible gigs and track which applications are waiting for guardian review.</p>
 </div>
 <div id="graduationPayoutBanner" class="graduation-banner qg-page-wide">
-  <strong>Your completed-gig payouts are on hold.</strong> Add your own payout details now that you are 18. <a href="profile.html#payouts">Set up payouts ?</a>
+  <strong>Your completed-gig payouts are on hold.</strong> Add your own payout details now that you are 18. <a href="profile.html#payouts">Set up payouts →</a>
 </div>
 <div id="verificationGateBanner" class="verification-gate-banner qg-page-wide"></div>
 <div class="greeting qg-page-wide">
@@ -280,13 +280,13 @@ body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#ee
     </span>
     <span class="greet-note-text" id="greetNoteText"></span>
   </div>
-  <div class="greet-sub" id="greetSub">Loading your dashboard?</div>
+  <div class="greet-sub" id="greetSub">Loading your dashboard…</div>
   <div class="dash-reputation" id="dashReputation" aria-label="Your reputation"></div>
   <div id="dashHero"><div class="qg-skel qg-skel-hero" aria-hidden="true"></div></div>
 </div>
 <div id="dashApplicantsAlert" hidden></div>
 <div id="dashEarnings" hidden></div>
-<p class="dash-loading-hint" id="dashLoadHint">Fetching your tasks?</p>
+<p class="dash-loading-hint" id="dashLoadHint">Fetching your tasks…</p>
 
 <!-- STATS -->
 <div class="stats" id="statsGrid">
@@ -442,7 +442,7 @@ onAuthStateChanged(auth, async (user) => {
         resend.textContent = 'Resend approval email';
         resend.onclick = async function () {
           resend.disabled = true;
-          resend.textContent = 'Sending?';
+          resend.textContent = 'Sending…';
           var url = window.QG_CONFIG && window.QG_CONFIG.resendGuardianConsentUrl;
           var result = typeof callVerifiedFunction === 'function'
             ? await callVerifiedFunction(url, {})
