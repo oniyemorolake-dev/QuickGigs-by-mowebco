@@ -1,6 +1,12 @@
 /**
  * QuickGigs — Tasker trust profile + earned badges (tokens only).
- * Only surfaces stats/badges that can be computed from real data.
+ * Real data only — never fabricate ratings, streaks, response time, or rehire %.
+ *
+ * Bound now:
+ *   Rating, Jobs done, Job-day streak, Top category specialty,
+ *   Always on time (review tags), Rehire % (repeat posters), Top rated, Reliable closer
+ * Not yet derivable (never shown):
+ *   Fast responder / response latency (avgResponseMs not stored)
  */
 (function (global) {
   'use strict';
@@ -13,6 +19,15 @@
       .replace(/"/g, '&quot;');
   }
 
+  function ico(name, size, className) {
+    size = size || 14;
+    if (typeof qgIcon === 'function') {
+      var mark = qgIcon(name, { size: size, className: className || 'qg-trust-ico' });
+      if (mark) return mark;
+    }
+    return '';
+  }
+
   /** First name + last initial (privacy). */
   function privacyDisplayName(fullName) {
     var raw = String(fullName || '').trim();
@@ -23,8 +38,7 @@
     var first = parts[0];
     if (parts.length === 1) return first;
     var last = parts[parts.length - 1];
-    var initial = last.charAt(0).toUpperCase();
-    return first + ' ' + initial + '.';
+    return first + ' ' + last.charAt(0).toUpperCase() + '.';
   }
 
   function stripSkillEmoji(label) {
@@ -44,6 +58,19 @@
     return '';
   }
 
+  function resolveSpecialty(opts) {
+    opts = opts || {};
+    var stats = opts.stats || {};
+    if (stats.topCategoryLabel) return String(stats.topCategoryLabel);
+    if (opts.specialty) return stripSkillEmoji(opts.specialty);
+    return primarySpecialty(opts.skills);
+  }
+
+  /**
+   * Title line from real history.
+   * "Top Tasker · [specialty]" only when verified + strong rating + enough jobs.
+   * Never invent Top Tasker for empty histories.
+   */
   function buildTaskerTitleLine(opts) {
     opts = opts || {};
     var stats = opts.stats || {};
@@ -51,15 +78,23 @@
     var jobs = Number(stats.completedCount) || 0;
     var rating = stats.avgRating != null ? Number(stats.avgRating) : null;
     var reviews = Number(stats.reviewCount) || 0;
-    var specialty = primarySpecialty(opts.skills);
+    var specialty = resolveSpecialty(opts);
+    var isNew = jobs <= 0 && reviews <= 0;
 
-    var rank = 'New Tasker';
-    if (jobs <= 0 && reviews <= 0) rank = 'New Tasker';
-    else if (verified && rating != null && rating >= 4.5 && jobs >= 5) rank = 'Top Tasker';
-    else if (jobs >= 1 || reviews >= 1) rank = 'Tasker';
+    if (isNew) return 'New Tasker';
 
-    if (specialty) return rank + ' · ' + specialty + ' specialist';
-    return rank;
+    var isTop =
+      verified &&
+      rating != null &&
+      rating >= 4.5 &&
+      jobs >= 5 &&
+      reviews >= 1;
+
+    if (isTop) {
+      return specialty ? 'Top Tasker · ' + specialty : 'Top Tasker';
+    }
+    if (specialty) return 'Tasker · ' + specialty;
+    return 'Tasker';
   }
 
   function parseReviewTags(review) {
@@ -70,8 +105,8 @@
   }
 
   /**
-   * Earned badges from real metrics / review tags only.
-   * Not shown (no data): streak, response time, true rehire %.
+   * Earned badges from real metrics only.
+   * Dropped when data missing: Fast responder (no latency), fabricated rehire %.
    */
   function deriveEarnedBadges(stats, reviews) {
     stats = stats || {};
@@ -80,22 +115,16 @@
     var jobs = Number(stats.completedCount) || 0;
     var rating = stats.avgRating != null ? Number(stats.avgRating) : null;
     var reviewCount = Number(stats.reviewCount) || reviews.length || 0;
-    var responseRate = stats.responseRate;
     var completionRate = stats.completionRate;
+    var onTimeRate = stats.onTimeRate;
+    var rehireRate = stats.rehireRate;
 
-    if (responseRate != null && responseRate >= 70 && (jobs >= 1 || reviewCount >= 1)) {
-      badges.push({
-        id: 'fast-responder',
-        label: 'Fast responder',
-        tone: 'accent',
-        source: 'response_rate'
-      });
-    }
     if (completionRate != null && completionRate >= 80 && jobs >= 3) {
       badges.push({
         id: 'reliable-closer',
         label: 'Reliable closer',
         tone: 'accent',
+        icon: 'checkCircle',
         source: 'completion_rate'
       });
     }
@@ -104,43 +133,61 @@
         id: 'top-rated',
         label: 'Top rated',
         tone: 'accent',
+        icon: 'star',
         source: 'avg_rating'
       });
     }
 
-    var tagged = 0;
-    var onTime = 0;
-    var hireAgain = 0;
-    reviews.forEach(function (r) {
-      var tags = parseReviewTags(r);
-      if (!tags.length) return;
-      tagged += 1;
-      tags.forEach(function (t) {
-        if (/on\s*time/i.test(t)) onTime += 1;
-        if (/hire again|would hire/i.test(t)) hireAgain += 1;
+    // Prefer precomputed on-time %; else derive from review tags.
+    if (onTimeRate == null) {
+      var tagged = 0;
+      var onTime = 0;
+      reviews.forEach(function (r) {
+        var tags = parseReviewTags(r);
+        if (!tags.length) return;
+        tagged += 1;
+        if (tags.some(function (t) { return /on\s*time/i.test(t); })) onTime += 1;
       });
-    });
-    if (tagged >= 2 && onTime / tagged >= 0.5) {
+      if (tagged >= 2) onTimeRate = Math.round((onTime / tagged) * 100);
+    }
+    if (onTimeRate != null && onTimeRate >= 50) {
       badges.push({
         id: 'on-time',
         label: 'Always on time',
-        tone: 'attention',
-        source: 'review_tags'
-      });
-    }
-    if (tagged >= 2 && hireAgain / tagged >= 0.5) {
-      badges.push({
-        id: 'hire-again',
-        label: 'Would hire again',
         tone: 'accent',
-        source: 'review_tags'
+        icon: 'clock',
+        source: 'review_tags_on_time'
       });
     }
 
+    if (rehireRate != null && rehireRate > 0) {
+      badges.push({
+        id: 'rehired',
+        label: rehireRate + '% rehired',
+        tone: 'accent',
+        icon: 'repeat',
+        source: 'repeat_posters'
+      });
+    }
+
+    // Fast responder intentionally omitted — avgResponseMs is not stored.
+
     if (jobs >= 10) {
-      badges.push({ id: 'jobs-10', label: '10+ jobs done', tone: 'accent', source: 'completed_jobs' });
+      badges.push({
+        id: 'jobs-10',
+        label: '10+ jobs done',
+        tone: 'accent',
+        icon: 'briefcase',
+        source: 'completed_jobs'
+      });
     } else if (jobs >= 5) {
-      badges.push({ id: 'jobs-5', label: '5+ jobs done', tone: 'accent', source: 'completed_jobs' });
+      badges.push({
+        id: 'jobs-5',
+        label: '5+ jobs done',
+        tone: 'accent',
+        icon: 'briefcase',
+        source: 'completed_jobs'
+      });
     }
 
     return badges;
@@ -148,7 +195,11 @@
 
   function renderEarnedBadgesHtml(badges) {
     if (!badges || !badges.length) {
-      return '<div class="qg-earned-badges is-empty" aria-label="Earned badges"><span class="qg-earned-empty">Badges unlock as you complete jobs and earn reviews</span></div>';
+      return (
+        '<div class="qg-earned-badges is-empty" aria-label="Earned badges">' +
+        '<span class="qg-earned-empty">No badges yet — complete jobs and earn reviews to unlock them</span>' +
+        '</div>'
+      );
     }
     return (
       '<div class="qg-earned-badges" role="list" aria-label="Earned badges">' +
@@ -158,6 +209,7 @@
             '<span class="qg-earned-pill tone-' +
             esc(b.tone || 'accent') +
             '" role="listitem">' +
+            (b.icon ? ico(b.icon, 12) : '') +
             esc(b.label) +
             '</span>'
           );
@@ -167,40 +219,60 @@
     );
   }
 
+  /**
+   * 3-stat row: Rating / Jobs done / Streak (flame line icon in --attention).
+   */
   function renderTrustStatRowHtml(stats) {
     stats = stats || {};
-    var rating =
-      stats.avgRating != null && (stats.reviewCount || 0) > 0
-        ? (Math.round(Number(stats.avgRating) * 10) / 10).toFixed(1)
-        : 'New';
-    var jobs = String(Number(stats.completedCount) || 0);
-    // Streak is not server-backed — use completion % when available, else reviews.
-    var thirdLabel = 'Completion';
-    var thirdValue = '—';
-    var thirdTone = '';
-    if (stats.completionRate != null && (stats.completedCount || 0) > 0) {
-      thirdValue = String(stats.completionRate) + '%';
-      thirdTone = stats.completionRate >= 80 ? ' is-hot' : '';
-    } else if ((stats.reviewCount || 0) > 0) {
-      thirdLabel = 'Reviews';
-      thirdValue = String(stats.reviewCount);
-    }
+    var jobs = Number(stats.completedCount) || 0;
+    var reviews = Number(stats.reviewCount) || 0;
+    var isNew = jobs <= 0 && reviews <= 0;
+    var hasRating = stats.avgRating != null && reviews > 0;
+    var rating = hasRating
+      ? (Math.round(Number(stats.avgRating) * 10) / 10).toFixed(1)
+      : 'New';
+
+    var streak = stats.jobStreak;
+    var hasStreak = streak != null && isFinite(Number(streak)) && Number(streak) > 0;
+    var streakVal = hasStreak ? String(Math.round(Number(streak))) : '—';
+
+    var newNote = isNew
+      ? '<p class="qg-trust-new-note">New · no reviews yet</p>'
+      : (!hasRating && jobs > 0
+        ? '<p class="qg-trust-new-note">New · no reviews yet</p>'
+        : '');
 
     return (
-      '<div class="qg-trust-stats" role="group" aria-label="Tasker reputation">' +
-      '<div class="qg-trust-stat"><div class="qg-trust-stat-val">' +
+      '<div class="qg-trust-stats-block">' +
+      '<div class="qg-trust-stats' +
+      (isNew ? ' is-new' : '') +
+      '" role="group" aria-label="Tasker reputation">' +
+      '<div class="qg-trust-stat">' +
+      '<div class="qg-trust-stat-val">' +
+      (hasRating ? ico('star', 14) : '') +
       esc(rating) +
-      '</div><div class="qg-trust-stat-lbl">Rating</div></div>' +
-      '<div class="qg-trust-stat"><div class="qg-trust-stat-val">' +
-      esc(jobs) +
-      '</div><div class="qg-trust-stat-lbl">Jobs done</div></div>' +
-      '<div class="qg-trust-stat' +
-      thirdTone +
-      '"><div class="qg-trust-stat-val">' +
-      esc(thirdValue) +
-      '</div><div class="qg-trust-stat-lbl">' +
-      esc(thirdLabel) +
-      '</div></div>' +
+      '</div>' +
+      '<div class="qg-trust-stat-lbl">Rating</div>' +
+      '</div>' +
+      '<div class="qg-trust-stat">' +
+      '<div class="qg-trust-stat-val">' +
+      esc(String(jobs)) +
+      '</div>' +
+      '<div class="qg-trust-stat-lbl">Done</div>' +
+      '</div>' +
+      '<div class="qg-trust-stat qg-trust-stat-streak' +
+      (hasStreak ? ' is-hot' : '') +
+      '">' +
+      '<div class="qg-trust-stat-val">' +
+      '<span class="qg-trust-flame" aria-hidden="true">' +
+      ico('flame', 16, 'qg-trust-flame-ico') +
+      '</span>' +
+      esc(streakVal) +
+      '</div>' +
+      '<div class="qg-trust-stat-lbl">Streak</div>' +
+      '</div>' +
+      '</div>' +
+      newNote +
       '</div>'
     );
   }
@@ -248,63 +320,125 @@
   function renderVerifiedBadgeHtml(isVerified) {
     if (!isVerified) return '';
     if (typeof renderVerifiedBadge === 'function') return renderVerifiedBadge(true);
-    return '<span class="qg-verified-badge">Verified</span>';
+    return (
+      '<span class="qg-verified-badge">' +
+      ico('checkCircle', 12) +
+      'Verified</span>'
+    );
+  }
+
+  function avatarInitials(name) {
+    var parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  }
+
+  function renderAvatarHtml(name, avatarUrl, className) {
+    var cls = className || 'qg-trust-avatar';
+    if (typeof renderUserAvatarHtml === 'function') {
+      return renderUserAvatarHtml(name, avatarUrl, { className: cls });
+    }
+    var url = String(avatarUrl || '').trim();
+    if (url) {
+      return (
+        '<div class="' +
+        esc(cls) +
+        ' has-photo" style="background-image:url(\'' +
+        esc(url.replace(/'/g, '%27')) +
+        '\')" role="img" aria-label="' +
+        esc(name || 'Avatar') +
+        '"></div>'
+      );
+    }
+    return (
+      '<div class="' +
+      esc(cls) +
+      '" aria-hidden="true">' +
+      esc(avatarInitials(name)) +
+      '</div>'
+    );
   }
 
   /**
-   * Compact trust strip for poster-facing applicant rows.
+   * Full trust card — used for poster-facing applicant rows (and optional embeds).
    */
-  function renderApplicantTrustHtml(opts) {
+  function renderTrustCardHtml(opts) {
     opts = opts || {};
     var stats = opts.stats || {};
     var verified = !!opts.verified;
-    var name = privacyDisplayName(opts.name);
+    var name = opts.name || 'Someone';
     var title = buildTaskerTitleLine({
       stats: stats,
       verified: verified,
-      skills: opts.skills
+      skills: opts.skills,
+      specialty: opts.specialty
     });
-    var rating =
-      stats.avgRating != null && (stats.reviewCount || 0) > 0
-        ? (Math.round(Number(stats.avgRating) * 10) / 10).toFixed(1)
-        : 'New';
-    var jobs = Number(stats.completedCount) || 0;
-    var badges = deriveEarnedBadges(stats, opts.reviews).slice(0, 3);
+    var badges = deriveEarnedBadges(stats, opts.reviews);
+    if (opts.maxBadges != null) badges = badges.slice(0, opts.maxBadges);
     var payout = '';
-    if (opts.userRow) payout = renderPayoutStatusHtml(opts.userRow, { ownProfile: false });
+    if (opts.userRow) {
+      payout = renderPayoutStatusHtml(opts.userRow, { ownProfile: !!opts.ownProfile });
+    }
 
     return (
-      '<div class="qg-applicant-trust">' +
-      '<div class="qg-applicant-trust-title">' +
-      esc(title) +
+      '<div class="qg-trust-card' +
+      (opts.compact ? ' is-compact' : '') +
+      '">' +
+      '<div class="qg-trust-card-head">' +
+      renderAvatarHtml(name, opts.avatarUrl, 'qg-trust-avatar') +
+      '<div class="qg-trust-card-id">' +
+      '<div class="qg-trust-card-name">' +
+      esc(name) +
       (verified ? ' ' + renderVerifiedBadgeHtml(true) : '') +
       '</div>' +
-      '<div class="qg-applicant-trust-meta">' +
-      '<span class="qg-applicant-rating">' +
-      esc(rating) +
-      '</span>' +
-      '<span class="qg-applicant-jobs">' +
-      esc(String(jobs)) +
-      ' job' +
-      (jobs === 1 ? '' : 's') +
-      '</span>' +
+      '<div class="qg-trust-card-title">' +
+      esc(title) +
       '</div>' +
-      (badges.length
-        ? '<div class="qg-applicant-badges">' +
-          badges
-            .map(function (b) {
-              return '<span class="qg-earned-pill tone-' + esc(b.tone) + '">' + esc(b.label) + '</span>';
-            })
-            .join('') +
-          '</div>'
-        : '') +
+      '</div>' +
+      '</div>' +
+      renderTrustStatRowHtml(stats) +
+      renderEarnedBadgesHtml(badges) +
       payout +
       '</div>'
     );
   }
 
   /**
-   * Apply reputation-forward chrome on profile.html.
+   * Compact trust for poster-facing applicant rows.
+   * Parent row already shows avatar + name — embed title, 3-stats, badges.
+   */
+  function renderApplicantTrustHtml(opts) {
+    opts = opts || {};
+    var stats = opts.stats || {};
+    var verified = !!opts.verified;
+    var title = buildTaskerTitleLine({
+      stats: stats,
+      verified: verified,
+      skills: opts.skills,
+      specialty: opts.specialty
+    });
+    var badges = deriveEarnedBadges(stats, opts.reviews).slice(0, opts.maxBadges != null ? opts.maxBadges : 4);
+    var payout = '';
+    if (opts.userRow) {
+      payout = renderPayoutStatusHtml(opts.userRow, { ownProfile: false });
+    }
+
+    return (
+      '<div class="qg-trust-card is-compact is-embed">' +
+      '<div class="qg-trust-card-title qg-trust-embed-title">' +
+      esc(title) +
+      (verified ? ' ' + renderVerifiedBadgeHtml(true) : '') +
+      '</div>' +
+      renderTrustStatRowHtml(stats) +
+      renderEarnedBadgesHtml(badges) +
+      payout +
+      '</div>'
+    );
+  }
+
+  /**
+   * Apply reputation-forward chrome on profile.html (own + public view).
    */
   async function mountProfileTrust(targetId, profileData, dbUser, isOwnProfile) {
     var wrap = document.getElementById('trustProfileMount');
@@ -313,7 +447,17 @@
     var stats =
       typeof fetchUserTrustStats === 'function'
         ? await fetchUserTrustStats(targetId)
-        : { completedCount: 0, reviewCount: 0, avgRating: null };
+        : {
+            completedCount: 0,
+            reviewCount: 0,
+            avgRating: null,
+            completionRate: null,
+            responseRate: null,
+            jobStreak: null,
+            rehireRate: null,
+            onTimeRate: null,
+            topCategoryLabel: ''
+          };
 
     var reviews = [];
     if (global._profileReputation && Array.isArray(global._profileReputation.reviews)) {
@@ -326,6 +470,18 @@
         stats.avgRating = rep.avgRating;
         stats.reviewCount = rep.reviewCount || stats.reviewCount;
       }
+    }
+
+    if (stats.onTimeRate == null && reviews.length) {
+      var tagged = 0;
+      var onTime = 0;
+      reviews.forEach(function (r) {
+        var tags = parseReviewTags(r);
+        if (!tags.length) return;
+        tagged += 1;
+        if (tags.some(function (t) { return /on\s*time/i.test(t); })) onTime += 1;
+      });
+      if (tagged >= 2) stats.onTimeRate = Math.round((onTime / tagged) * 100);
     }
 
     var verified = !!(
@@ -346,7 +502,7 @@
     }
 
     var verifiedWrap = document.getElementById('verifiedBadgeWrap');
-    if (verifiedWrap && verified && !verifiedWrap.innerHTML.trim()) {
+    if (verifiedWrap && verified && !verifiedWrap.querySelector('.qg-verified-badge, .role-verified-pill')) {
       verifiedWrap.innerHTML = renderVerifiedBadgeHtml(true);
     }
 
@@ -362,11 +518,14 @@
       payoutEl.hidden = !payoutEl.innerHTML;
     }
 
-    // Keep legacy trustBadges for completion/response chips, but hide duplicates when earned pills exist.
     var legacy = document.getElementById('trustBadges');
-    if (legacy && typeof renderTrustBadges === 'function') {
-      legacy.innerHTML = renderTrustBadges(stats, { hideCompleted: true });
+    if (legacy) {
+      legacy.innerHTML = '';
+      legacy.hidden = true;
     }
+
+    var ratingRow = document.getElementById('ratingRow');
+    if (ratingRow) ratingRow.hidden = true;
 
     return { stats: stats, badges: badges, title: title };
   }
@@ -378,6 +537,7 @@
     renderEarnedBadgesHtml: renderEarnedBadgesHtml,
     renderTrustStatRowHtml: renderTrustStatRowHtml,
     renderPayoutStatusHtml: renderPayoutStatusHtml,
+    renderTrustCardHtml: renderTrustCardHtml,
     renderApplicantTrustHtml: renderApplicantTrustHtml,
     mountProfileTrust: mountProfileTrust,
     payoutConnected: payoutConnected

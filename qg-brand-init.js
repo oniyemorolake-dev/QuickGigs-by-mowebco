@@ -336,7 +336,7 @@
     var browseViewsCss = document.createElement('link');
     browseViewsCss.id = 'qg-browse-views-css';
     browseViewsCss.rel = 'stylesheet';
-    browseViewsCss.href = 'qg-browse-views.css?v=20260811browse1';
+    browseViewsCss.href = 'qg-browse-views.css?v=20260811browse3';
     document.head.appendChild(browseViewsCss);
   }
 
@@ -354,7 +354,7 @@
     var trustCss = document.createElement('link');
     trustCss.id = 'qg-trust-profile-css';
     trustCss.rel = 'stylesheet';
-    trustCss.href = 'qg-trust-profile.css?v=20260811trust1';
+    trustCss.href = 'qg-trust-profile.css?v=20260811trust3';
     document.head.appendChild(trustCss);
   }
 

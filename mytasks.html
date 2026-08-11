@@ -32,7 +32,7 @@
 <link rel="stylesheet" href="qg-layout.css">
 <link rel="stylesheet" href="qg-role-theme.css?v=20260811tokens1">
 <link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
-<link rel="stylesheet" href="qg-trust-profile.css?v=20260811trust2" id="qg-trust-profile-css">
+<link rel="stylesheet" href="qg-trust-profile.css?v=20260811trust3" id="qg-trust-profile-css">
 <link rel="stylesheet" href="qg-mobile.css">
 <link rel="stylesheet" href="qg-menu.css?v=3">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
@@ -299,8 +299,8 @@ body.light .app-legal-footer a{color:var(--purple);}
 (function(){document.querySelectorAll('#qgReportOverlay,#qgDisputeOverlay,.qg-report-overlay').forEach(function(n){n.remove()});})();
 </script>
 <script defer src="qg-report.js?v=20260716d"></script>
-<script defer src="qg-stats.js?v=20260811trust2"></script>
-<script defer src="qg-trust-profile.js?v=20260811trust2"></script>
+<script defer src="qg-stats.js?v=20260811trust3"></script>
+<script defer src="qg-trust-profile.js?v=20260811trust3"></script>
 <script defer src="qg-confetti.js?v=1"></script>
 <script defer src="qg-disputes.js?v=20260804evidence1"></script>
 <script defer src="qg-evidence.js?v=20260804evidence1"></script>
@@ -820,6 +820,7 @@ async function hydrateApplicantTrustHosts() {
     if (typeof QGTrustProfile !== 'undefined' && typeof QGTrustProfile.renderApplicantTrustHtml === 'function') {
       host.innerHTML = QGTrustProfile.renderApplicantTrustHtml({
         name: displayName(uid),
+        avatarUrl: userAvatars[String(uid)] || '',
         verified: !!workerVerifiedMap[uid],
         stats: cached.stats,
         reviews: cached.reviews,

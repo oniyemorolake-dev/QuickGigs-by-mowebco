@@ -41,6 +41,15 @@
     return isFinite(lat) && isFinite(lng) && !(lat === 0 && lng === 0);
   }
 
+  /** Compact distance for map list rows (e.g. "4.1km"). */
+  function compactDist(t) {
+    var km = t && t._distanceKm;
+    if (km == null || !isFinite(km)) return '';
+    if (km < 1) return Math.max(0.1, Math.round(km * 10) / 10) + 'km';
+    if (km < 100) return Math.round(km * 10) / 10 + 'km';
+    return Math.round(km) + 'km';
+  }
+
   function getView() {
     return browseView;
   }
@@ -99,9 +108,17 @@
   }
 
   function ensureMap() {
-    if (mapInstance || typeof L === 'undefined') return mapInstance;
+    if (mapInstance) return mapInstance;
     var el = document.getElementById('browseMap');
     if (!el) return null;
+    if (typeof L === 'undefined') {
+      el.innerHTML =
+        '<div class="qg-browse-map-empty empty-state" style="padding:40px 18px">' +
+        '<p class="empty-txt">Map unavailable</p>' +
+        '<p class="empty-txt" style="margin-top:8px;opacity:.85">Check your connection and refresh to load the map.</p>' +
+        '</div>';
+      return null;
+    }
     mapInstance = L.map(el, {
       zoomControl: true,
       attributionControl: true,
@@ -124,12 +141,42 @@
     }
   }
 
+  function updateGigCount(filtered) {
+    var el = document.getElementById('browseGigCount');
+    if (!el) return;
+    if (window._qgAgeTier === 'loading') {
+      el.textContent = '…';
+      return;
+    }
+    var n = (filtered && filtered.length) || 0;
+    el.textContent = n + ' gig' + (n === 1 ? '' : 's');
+  }
+
+  function updateTotalBar(filtered) {
+    var amtEl = document.getElementById('browseTotalAmt');
+    var btn = document.getElementById('findBestMatchBtn');
+    if (window._qgAgeTier === 'loading') {
+      if (amtEl) amtEl.textContent = '…';
+      if (btn) btn.disabled = true;
+      return;
+    }
+    var sum = 0;
+    (filtered || []).forEach(function (t) {
+      var p = Number(t && t.price);
+      if (isFinite(p) && p > 0) sum += p;
+    });
+    if (amtEl) {
+      amtEl.textContent = '$' + (sum % 1 ? sum.toFixed(2) : Math.round(sum));
+    }
+    if (btn) btn.disabled = !(filtered && filtered.length);
+  }
+
   function pinIcon(priceText, active) {
     return L.divIcon({
-      className: '',
+      className: 'qg-price-pin-wrap',
       html: '<div class="qg-price-pin' + (active ? ' is-active' : '') + '">' + esc(priceText) + '</div>',
-      iconSize: [64, 28],
-      iconAnchor: [32, 28]
+      iconSize: [72, 30],
+      iconAnchor: [36, 30]
     });
   }
 
@@ -177,28 +224,23 @@
     }
     list.innerHTML = filtered
       .map(function (t) {
-        var dist =
-          t._distanceKm != null && typeof formatDistanceKm === 'function'
-            ? formatDistanceKm(t._distanceKm)
-            : '';
-        var loc = typeof formatLocationDisplay === 'function' ? formatLocationDisplay(t.location) : t.location || '';
-        var meta = [loc, dist].filter(Boolean).join(' · ');
-        var noPin = !hasCoords(t) ? ' <span class="row-meta">(no map pin)</span>' : '';
+        var dist = compactDist(t);
         var best =
           bestMatchId && String(t.id) === String(bestMatchId) ? ' is-best-match' : '';
+        var active = String(t.id) === String(selectedTaskId) ? ' is-active' : '';
         return (
           '<button type="button" class="qg-browse-map-row' +
           best +
+          active +
           '" data-task-id="' +
           esc(String(t.id)) +
           '">' +
           '<p class="row-title">' +
           esc(t.title) +
-          noPin +
+          (!hasCoords(t) ? ' · no pin' : '') +
           '</p>' +
           '<div class="row-meta">' +
-          esc(t.catLabel || '') +
-          (meta ? ' · ' + esc(meta) : '') +
+          esc(dist || 'Distance unknown') +
           '</div>' +
           '<div class="row-price">' +
           esc(pinMoney(t)) +
@@ -210,10 +252,7 @@
     list.querySelectorAll('.qg-browse-map-row').forEach(function (row) {
       row.addEventListener('click', function () {
         var id = row.getAttribute('data-task-id');
-        selectMapTask(id, false);
-        if (hasCoords(filtered.find(function (x) { return String(x.id) === String(id); }))) {
-          selectMapTask(id, false);
-        }
+        selectMapTask(id, true);
       });
       row.addEventListener('dblclick', function () {
         if (typeof openModal === 'function') openModal(row.getAttribute('data-task-id'));
@@ -225,6 +264,7 @@
     var wrap = document.getElementById('browseMapView');
     if (!wrap) return;
     wrap.removeAttribute('hidden');
+    updateTotalBar(filtered);
     if (window._qgAgeTier === 'loading') {
       var listEl = document.getElementById('browseMapList');
       if (listEl) {
@@ -447,6 +487,8 @@
    */
   function renderBrowseView(filtered) {
     global._browseFiltered = filtered || [];
+    updateGigCount(filtered || []);
+    updateTotalBar(filtered || []);
     if (browseView === 'map') {
       hideSpotlightView();
       renderMapView(filtered || []);

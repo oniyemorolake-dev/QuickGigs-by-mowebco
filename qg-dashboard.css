@@ -425,6 +425,13 @@ body.page-dashboard .dash-section-gap {
 
 body.page-dashboard .qg-streak-flame {
   color: var(--attention);
+  display: inline-flex;
+  align-items: center;
+}
+
+body.page-dashboard .qg-streak-flame .qg-ico,
+body.page-dashboard .qg-streak-flame-ico {
+  color: var(--attention);
 }
 
 body.page-dashboard #statsGrid[data-dash-layout="poster"] {

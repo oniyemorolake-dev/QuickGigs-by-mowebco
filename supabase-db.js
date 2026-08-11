@@ -3570,7 +3570,7 @@ async function getReviewsForUser(userId) {
   var uid = encodeURIComponent(String(userId));
   var rows = await sbGet(
     'reviews',
-    withSelect('reviewee_id=eq.' + uid, 'reviewee_id,rating,review_comment,reviewer_id,reviewer_name,task_id,task_title,created_at'),
+    withSelect('reviewee_id=eq.' + uid, 'reviewee_id,rating,review_comment,reviewer_id,reviewer_name,task_id,task_title,tags,created_at'),
     'created_at.desc',
     100
   );
@@ -3720,7 +3720,7 @@ async function fetchRatingsMap(userIds) {
   return map;
 }
 
-/** "4.9 ★ · 12 jobs completed" or "New" when no reviews. */
+/** "4.9 · 12 jobs completed" or "New" when no reviews. */
 function formatUserRatingLabel(avgRating, reviewCount, completedJobs) {
   var reviews = Number(reviewCount) || 0;
   var jobs = completedJobs != null && completedJobs !== ''
@@ -3733,7 +3733,7 @@ function formatUserRatingLabel(avgRating, reviewCount, completedJobs) {
     return 'New';
   }
   var a = (Math.round(Number(avgRating) * 10) / 10).toFixed(1);
-  return a + ' \u2605 \u00B7 ' + jobs + ' job' + (jobs === 1 ? '' : 's') + ' completed';
+  return a + ' \u00B7 ' + jobs + ' job' + (jobs === 1 ? '' : 's') + ' completed';
 }
 
 function formatUserRatingHtml(avgRating, reviewCount, opts) {
@@ -3742,7 +3742,11 @@ function formatUserRatingHtml(avgRating, reviewCount, opts) {
   var label = formatUserRatingLabel(avgRating, reviewCount, completedJobs);
   var cls = 'qg-trust-rating' + (label === 'New' || label.indexOf('New') === 0 ? ' is-new' : '');
   if (opts.className) cls += ' ' + opts.className;
-  return '<span class="' + cls + '">' + label + '</span>';
+  var mark = '';
+  if (label !== 'New' && label.indexOf('New') !== 0 && typeof qgIcon === 'function') {
+    mark = qgIcon('star', { size: 12, className: 'qg-trust-ico' });
+  }
+  return '<span class="' + cls + '">' + mark + label + '</span>';
 }
 
 // ── User blocks ──────────────────────────────────────────────────

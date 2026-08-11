@@ -34,8 +34,8 @@
 <link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
 <link rel="stylesheet" href="qg-flows.css?v=20260811flows1" id="qg-flows-css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-<link rel="stylesheet" href="qg-browse-views.css?v=20260811browse1" id="qg-browse-views-css">
-<link rel="stylesheet" href="qg-trust-profile.css?v=20260811trust2" id="qg-trust-profile-css">
+<link rel="stylesheet" href="qg-browse-views.css?v=20260811browse3" id="qg-browse-views-css">
+<link rel="stylesheet" href="qg-trust-profile.css?v=20260811trust3" id="qg-trust-profile-css">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
 <script src="qg-theme.js"></script>
@@ -120,13 +120,21 @@ body.light .mpill.active-all{background:var(--purple);color:#5a2d8a;}
 body.light .mpill.active-standard{background:#ede9ff;color:#5a2d8a;}
 .mpill.active-recurring{background:rgba(74,222,128,0.12);color:#16a34a;border-color:rgba(74,222,128,0.4);}
 .mpill.active-saved{background:rgba(251,191,36,0.15);color:#fbbf24;border-color:rgba(251,191,36,0.45);}
-.cat-wrap-outer{background:var(--nav-bg);padding:10px 18px 12px;border-bottom:0.5px solid var(--border);}
-.light .cat-wrap-outer{background:#f0eeff;border-radius:12px;margin:8px 18px 0;padding:10px;}
-.cat-label-txt{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);margin-bottom:8px;display:block;}
-.cat-row{display:flex;gap:7px;overflow-x:auto;}
+.cat-wrap-outer{padding:0 16px 10px;background:transparent;border:none;}
+.light .cat-wrap-outer{background:transparent;border-radius:0;margin:0;padding:0 16px 10px;}
+.cat-label-txt{display:none;}
+.cat-row{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
 .cat-row::-webkit-scrollbar{display:none;}
-.cpill{padding:9px 18px;border-radius:20px;font-size:13px;cursor:pointer;white-space:nowrap;border:0.5px solid var(--cat-inactive-border);background:var(--cat-inactive-bg);color:var(--cat-inactive-color);transition:all 0.18s;user-select:none;}
-.cpill.cat-active{background:var(--cat-active-bg);color:var(--cat-active-color);border-color:var(--purple-light);}
+.cpill{
+  min-height:44px;padding:10px 16px;border-radius:999px;font-size:13px;font-weight:500;
+  cursor:pointer;white-space:nowrap;user-select:none;font-family:inherit;
+  border:1px solid var(--line-strong);background:transparent;color:var(--text-muted);
+  transition:background 0.15s,color 0.15s,border-color 0.15s;-webkit-tap-highlight-color:transparent;
+}
+.cpill.cat-active{
+  background:var(--accent);color:var(--on-accent);border-color:transparent;
+  box-shadow:0 4px 12px color-mix(in srgb, var(--accent) 28%, transparent);
+}
 .results-bar{padding:12px 18px 0;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
 .results-txt{font-size:12px;color:var(--results-color);flex:1;min-width:140px;}
 .filter-sorts{display:flex;align-items:center;gap:8px;flex-shrink:0;}
@@ -416,8 +424,30 @@ body.light .app-legal-footer a{color:var(--purple);}
     </div>
     <div class="location-status" id="locationStatus" role="status" aria-live="polite"></div>
   </div>
-  <div style="padding:10px 0 0;display:flex;justify-content:flex-end">
-    <a href="categories.html" style="font-size:12px;color:var(--lavender,#c8a8e9);text-decoration:none">Browse categories</a>
+</div>
+<div class="qg-browse-toolbar">
+  <div class="qg-browse-view-toggle" role="group" aria-label="Browse view">
+    <button type="button" class="qg-browse-view-opt active" data-view="list" aria-pressed="true">List</button>
+    <button type="button" class="qg-browse-view-opt" data-view="map" aria-pressed="false">Map</button>
+    <button type="button" class="qg-browse-view-opt" data-view="spotlight" aria-pressed="false">Spotlight</button>
+  </div>
+  <span class="qg-browse-gig-count" id="browseGigCount" aria-live="polite">…</span>
+</div>
+<div class="cat-wrap-outer" id="browseCatPills">
+  <div class="cat-row" role="toolbar" aria-label="Category filter">
+    <button type="button" class="cpill cat-active" onclick="setCat(this,'all')">All</button>
+    <button type="button" class="cpill" onclick="setCat(this,'home')">Cleaning</button>
+    <button type="button" class="cpill" onclick="setCat(this,'moving')">Moving</button>
+    <button type="button" class="cpill" onclick="setCat(this,'trades')">Handywork</button>
+    <button type="button" class="cpill" onclick="setCat(this,'errands')">Delivery</button>
+    <button type="button" class="cpill" onclick="setCat(this,'tutoring')">Tutoring</button>
+    <button type="button" class="cpill" onclick="setCat(this,'beauty')">Beauty</button>
+    <button type="button" class="cpill" onclick="setCat(this,'cooking')">Cooking</button>
+    <button type="button" class="cpill" onclick="setCat(this,'tech')">Tech</button>
+    <button type="button" class="cpill" onclick="setCat(this,'care')">Care</button>
+    <button type="button" class="cpill" onclick="setCat(this,'gardening')">Garden</button>
+    <button type="button" class="cpill" onclick="setCat(this,'events')">Events</button>
+    <button type="button" class="cpill" onclick="setCat(this,'other')">Other</button>
   </div>
 </div>
 <div class="mode-row" id="modeRow">
@@ -426,24 +456,6 @@ body.light .app-legal-footer a{color:var(--purple);}
   <span class="mpill" onclick="setMode(this,'standard')" data-qg-ico="clipboard">Standard</span>
   <span class="mpill" onclick="setMode(this,'recurring')" data-qg-ico="repeat">Recurring</span>
   <span class="mpill" onclick="setMode(this,'saved')" data-qg-ico="star">Saved</span>
-</div>
-<div class="cat-wrap-outer">
-  <span class="cat-label-txt">Category</span>
-  <div class="cat-row">
-    <span class="cpill cat-active" onclick="setCat(this,'all')">All</span>
-    <span class="cpill" onclick="setCat(this,'errands')">🚗 Errands</span>
-    <span class="cpill" onclick="setCat(this,'home')">🏠 Home</span>
-    <span class="cpill" onclick="setCat(this,'tutoring')">📚 Tutoring</span>
-    <span class="cpill" onclick="setCat(this,'beauty')">💅 Beauty</span>
-    <span class="cpill" onclick="setCat(this,'moving')">📦 Moving</span>
-    <span class="cpill" onclick="setCat(this,'cooking')">🍳 Cooking</span>
-    <span class="cpill" onclick="setCat(this,'tech')">💻 Tech</span>
-    <span class="cpill" onclick="setCat(this,'care')">👶 Care</span>
-    <span class="cpill" onclick="setCat(this,'gardening')">🌱 Garden</span>
-    <span class="cpill" onclick="setCat(this,'events')">🎉 Events</span>
-    <span class="cpill" onclick="setCat(this,'trades')">🔧 Trades</span>
-    <span class="cpill" onclick="setCat(this,'other')">📋 Other</span>
-  </div>
 </div>
 <div class="photo-required-banner" id="photoRequiredBanner" style="display:none">
   <div>
@@ -456,14 +468,8 @@ body.light .app-legal-footer a{color:var(--purple);}
   <strong>Gigs open to teen taskers</strong>
   <p>Only age-eligible gigs are shown. When you apply, your guardian reviews the request before the poster sees it.</p>
 </div>
-<div class="qg-browse-view-toggle" role="group" aria-label="Browse view">
-  <button type="button" class="qg-browse-view-opt active" data-view="list" aria-pressed="true">List</button>
-  <button type="button" class="qg-browse-view-opt" data-view="map" aria-pressed="false">Map</button>
-  <button type="button" class="qg-browse-view-opt" data-view="spotlight" aria-pressed="false">Spotlight</button>
-</div>
 <div class="results-bar">
   <span class="results-txt" id="resultsCount">Loading tasks…</span>
-  <button type="button" class="qg-best-match-btn" id="findBestMatchBtn" aria-label="Find best match">Find best match</button>
   <div class="filter-sorts">
     <select class="date-filter" id="dateFilter" onchange="applyFilters()" aria-label="Filter by post date">
       <option value="any">Any time</option>
@@ -505,8 +511,17 @@ body.light .app-legal-footer a{color:var(--purple);}
   </div>
 </div>
 <div class="qg-browse-map-view" id="browseMapView" hidden>
-  <div id="browseMap" class="qg-browse-map" role="application" aria-label="Task map"></div>
-  <div id="browseMapList" class="qg-browse-map-list" aria-label="Tasks on map"></div>
+  <div class="qg-browse-map-split">
+    <div id="browseMap" class="qg-browse-map" role="application" aria-label="Task map"></div>
+    <div id="browseMapList" class="qg-browse-map-list" aria-label="Tasks on map"></div>
+  </div>
+  <div class="qg-browse-total-bar" id="browseTotalBar">
+    <div class="qg-browse-total-copy">
+      <span class="qg-browse-total-label">Total available in view</span>
+      <span class="qg-browse-total-amt is-money" id="browseTotalAmt">$0</span>
+    </div>
+    <button type="button" class="qg-best-match-btn" id="findBestMatchBtn" aria-label="Find best match">Find best match</button>
+  </div>
 </div>
 <div class="qg-browse-spotlight" id="browseSpotlightView" hidden>
   <div id="spotlightCard" aria-live="polite"></div>
@@ -625,14 +640,14 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-verification.js?v=20260811pay1"></script>
 <script defer src="qg-location.js?v=2"></script>
 <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script defer src="qg-browse-views.js?v=20260811browse1"></script>
+<script defer src="qg-browse-views.js?v=20260811browse3"></script>
 <script defer src="qg-activity-ticker.js?v=20260811trust1"></script>
 <script defer src="qg-pwa.js?v=cd3efe6-1786397433"></script>
 <script defer src="qg-notifications.js"></script>
 <script defer src="qg-share.js"></script>
 <script defer src="qg-saved.js?v=1"></script>
 <script defer src="qg-report.js?v=20260716d"></script>
-<script defer src="qg-stats.js?v=20260811trust2"></script>
+<script defer src="qg-stats.js?v=20260811trust3"></script>
 <script>
 function esc(s){
   return typeof escapeHtml === 'function' ? escapeHtml(s)

@@ -158,7 +158,9 @@
       'Come back tomorrow to keep your streak.';
     host.innerHTML =
       '<div class="qg-streak-card" role="status">' +
-      '<div class="qg-streak-title"><span class="qg-streak-flame" aria-hidden="true">✦</span> ' + n + ' day streak</div>' +
+      '<div class="qg-streak-title"><span class="qg-streak-flame" aria-hidden="true">' +
+      (typeof qgIcon === 'function' ? qgIcon('flame', { size: 16, className: 'qg-streak-flame-ico' }) : '') +
+      '</span> ' + n + ' day streak</div>' +
       '<div class="qg-streak-sub">' + esc(line) + '</div></div>';
   };
 
