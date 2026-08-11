@@ -40,33 +40,73 @@
   --money-soft: color-mix(in srgb, var(--money) 14%, transparent);
   --attention-soft: color-mix(in srgb, var(--attention) 14%, transparent);
   --danger-soft: color-mix(in srgb, var(--danger) 14%, transparent);
+
+  /* Legacy aliases used by older page CSS */
+  --text: var(--text-primary);
+  --text-faint: var(--text-muted);
+  --purple: var(--accent-tasker);
+  --purple-light: #a78bfa;
+  --lavender: #c8a8e9;
+  --border: var(--line);
+  --nav-bg: var(--bg);
+  --tab-bg: var(--bg);
+  --card-bg: var(--surface-1);
+  --surface: var(--surface-1);
 }
 
 /* ── Light theme (same mechanism as qg-theme.js paint) ── */
 html.light,
 html[data-qg-theme="light"],
 body.light {
-  --brand: #6d28d9;
-  --accent-tasker: #6d28d9;
+  /* Darker accents for WCAG AA on white / surface-1 */
+  --brand: #5b21b6;
+  --accent-tasker: #5b21b6;
   --accent-poster: #0f766e;
-  /* Keep AA contrast on white / surface-1 */
-  --money: #15803d;
-  --attention: #b45309;
-  --danger: #dc2626;
+  --money: #166534;
+  --attention: #92400e;
+  --danger: #b91c1c;
 
   --bg: #f7f5ff;
   --surface-1: #ffffff;
   --surface-2: #f0eeff;
-  --line: #e4dff5;
-  --line-strong: #c4b8e8;
+  --line: #ddd6f3;
+  --line-strong: #b8a9e0;
 
   --text-primary: #1e1533;
-  --text-secondary: #4a4263;
-  --text-muted: #6b6580;
+  --text-secondary: #3f3858;
+  --text-muted: #5c5670;
   --on-accent: #ffffff;
 
-  --grad-tasker: linear-gradient(135deg, #5b21b6 0%, #6d28d9 55%, #7c3aed 100%);
-  --grad-poster: linear-gradient(135deg, #0f766e 0%, #0d9488 55%, #14b8a6 100%);
+  /* Keep CTA gradient ends dark enough for white label text (AA) */
+  --grad-tasker: linear-gradient(135deg, #4c1d95 0%, #5b21b6 55%, #6d28d9 100%);
+  --grad-poster: linear-gradient(135deg, #115e59 0%, #0f766e 55%, #0d9488 100%);
+
+  /* Stronger soft fills so chips/unread tints read on white */
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, #ffffff);
+  --money-soft: color-mix(in srgb, var(--money) 12%, #ffffff);
+  --attention-soft: color-mix(in srgb, var(--attention) 12%, #ffffff);
+  --danger-soft: color-mix(in srgb, var(--danger) 12%, #ffffff);
+
+  --text: var(--text-primary);
+  --text-faint: var(--text-muted);
+  --purple: var(--accent);
+  --purple-light: var(--accent);
+  --lavender: var(--accent);
+  --border: var(--line);
+  --nav-bg: var(--surface-1);
+  --tab-bg: var(--surface-1);
+  --card-bg: var(--surface-1);
+  --surface: var(--surface-1);
+}
+
+/* Poster light: teal legacy aliases */
+html.light[data-qg-mode="poster"],
+html[data-qg-theme="light"][data-qg-mode="poster"],
+html.light[data-mode="poster"],
+body.light.qg-mode-poster {
+  --purple: var(--accent-poster);
+  --purple-light: #0d9488;
+  --lavender: #0f766e;
 }
 
 /* ── Mode-aware accent (Tasker purple vs Poster teal) ── */

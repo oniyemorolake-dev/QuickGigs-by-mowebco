@@ -31,7 +31,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
 <link rel="stylesheet" href="qg-role-theme.css?v=20260811tokens1">
-<link rel="stylesheet" href="qg-tokens.css?v=20260811shell1" id="qg-tokens-css">
+<link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
 <link rel="stylesheet" href="qg-trust-profile.css?v=20260811trust1" id="qg-trust-profile-css">
 <link rel="stylesheet" href="qg-mobile.css">
 <link rel="stylesheet" href="qg-menu.css?v=3">
@@ -100,8 +100,8 @@ body.light .badge-open{background:#ede9ff;color:var(--purple);}
 .badge-progress{background:rgba(251,191,36,0.15);color:#d97706;}
 .badge-done{background:rgba(74,222,128,0.12);color:#16a34a;}
 .tc-meta{font-size:11px;color:var(--text-faint);margin-bottom:10px;}
-.tc-meta-price{color:#4ade80;font-weight:500;}
-body.light .tc-meta-price{color:#16a34a;}
+.tc-meta-price{color:var(--money);font-weight:500;}
+body.light .tc-meta-price{color:var(--money);}
 .tc-bottom{display:flex;align-items:center;justify-content:space-between;}
 .tc-price{font-size:15px;font-weight:500;color:var(--text);}
 .tc-applicants{font-size:11px;color:var(--purple-light);margin-top:8px;}
@@ -158,14 +158,10 @@ body.light .tc-applicants-toggle{color:var(--purple);}
 .applicant-row.is-accepting{background:rgba(107,63,160,0.12);border-radius:10px;}
 .app-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#c8a8e9);background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#fff;flex-shrink:0;text-decoration:none;}
 .app-avatar.has-photo{color:transparent;}
-body.light .app-avatar{color:#2d1b4e;}
+body.light .app-avatar{color:var(--text-primary);}
 .app-info{flex:1;min-width:0;}
 .app-name{font-size:15px;font-weight:500;color:var(--text);}
 
-body.light .empty-btn,
-body.light .btn-primary,
-body.light .btn-success,
-body.light .accept-btn{color:#2d1b4e;}
 .app-msg{font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .app-price{font-size:13px;font-weight:500;color:var(--text);flex-shrink:0;}
 .accept-btn{padding:6px 14px;border-radius:8px;background:var(--purple);color:#fff;border:none;font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;transition:opacity 0.2s,background 0.2s;}

@@ -1186,10 +1186,10 @@ body.light .qg-role-flip-opt.active {
   padding: 2px 8px;
   border-radius: 999px;
 }
-.pay-st-held { background: rgba(251,191,36,0.15); color: #fbbf24; }
-.pay-st-paid { background: rgba(74,222,128,0.12); color: #4ade80; }
-.pay-st-pending { background: rgba(155,111,196,0.15); color: #c8a8e9; }
-.pay-st-refunded { background: rgba(239,68,68,0.12); color: #f87171; }
+.pay-st-held { background: var(--attention-soft); color: var(--attention); }
+.pay-st-paid { background: var(--money-soft); color: var(--money); }
+.pay-st-pending { background: var(--accent-soft); color: var(--accent); }
+.pay-st-refunded { background: var(--danger-soft); color: var(--danger); }
 .pay-history-empty {
   text-align: center;
   padding: 28px 16px;

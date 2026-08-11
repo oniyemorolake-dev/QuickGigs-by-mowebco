@@ -17,8 +17,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>QuickGigs — Admin Console</title>
-<link rel="stylesheet" href="qg-tokens.css?v=20260811shell1" id="qg-tokens-css">
+<link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
 <link rel="stylesheet" href="qg-states.css?v=20260811states1" id="qg-states-css">
+<link rel="stylesheet" href="qg-light-fix.css?v=20260811light1" id="qg-light-fix-css">
 <link rel="stylesheet" href="qg-admin.css?v=3">
 <link rel="stylesheet" href="qg-admin-console.css?v=20260811admin1" id="qg-admin-console-css">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -35,12 +36,24 @@
   --green:#4ade80;--green-dim:#16a34a;--amber:#fbbf24;--amber-dim:#d97706;
   --red:#ef4444;--red-dim:#dc2626;--blue:#60a5fa;
 }
+html.light,
+html[data-qg-theme="light"],
+body.light{
+  --bg:#f7f5ff;--bg2:#ffffff;--surface:#ffffff;--surface2:#f0eeff;
+  --border:#ddd6f3;--border2:#e4dff5;
+  --text:#1e1533;--text-muted:#5c5670;--text-faint:#5c5670;
+  --purple:#5b21b6;--purple-light:#6d28d9;--lavender:#5b21b6;
+  --green:#166534;--green-dim:#15803d;--amber:#92400e;--amber-dim:#b45309;
+  --red:#b91c1c;--red-dim:#dc2626;
+}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 .layout{display:flex;min-height:100vh;}
 .sidebar{width:220px;background:var(--bg2);border-right:0.5px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
 .sidebar-logo{padding:20px 18px 16px;border-bottom:0.5px solid var(--border);}
 .logo-text{font-family:'Playfair Display',serif;font-style:italic;font-size:1.2rem;color:var(--lavender);}
 .admin-badge{font-size:9px;padding:2px 8px;border-radius:20px;background:rgba(239,68,68,0.15);color:var(--red);border:0.5px solid rgba(239,68,68,0.25);margin-top:4px;display:inline-block;}
+html.light .sidebar{box-shadow:1px 0 0 var(--border);}
+html.light .main{background:var(--bg);}
 .sidebar-nav{flex:1;padding:12px 10px;overflow-y:auto;}
 .nav-section{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);padding:10px 8px 6px;}
 .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;cursor:pointer;margin-bottom:2px;transition:all 0.15s;color:var(--text-muted);font-size:13px;border:none;background:none;width:100%;text-align:left;font-family:inherit;}
@@ -206,7 +219,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .toast.red{background:var(--red);color:#fff;}
 .toast.amber{background:var(--amber);color:#0b0118;}
 </style>
-<link rel="stylesheet" href="qg-tokens.css?v=20260811shell1" id="qg-tokens-css">
 </head>
 <body class="page-admin">
 <div class="layout">

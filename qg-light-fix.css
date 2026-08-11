@@ -1,0 +1,156 @@
+/**
+ * QuickGigs — light-mode production fixes (tokens + shared chrome).
+ * Loaded after tokens/shell so filled CTAs keep --on-accent text.
+ */
+
+/* Filled accent buttons must stay white-on-accent in light (page CSS often forced dark text) */
+html.light .empty-btn:not(.empty-btn-secondary):not(.btn-secondary),
+html.light .btn-primary,
+html.light .btn-success,
+html.light .accept-btn,
+html.light .submit-btn,
+html.light .success-btn,
+html.light .qg-state-btn:not(.is-secondary),
+html.light .act-btn.btn-primary,
+html.light .confirm-ok,
+body.light .empty-btn:not(.empty-btn-secondary):not(.btn-secondary),
+body.light .btn-primary,
+body.light .btn-success,
+body.light .accept-btn,
+body.light .submit-btn,
+body.light .success-btn,
+body.light .qg-state-btn:not(.is-secondary),
+body.light .act-btn.btn-primary {
+  color: var(--on-accent) !important;
+}
+
+html.light .empty-btn:not(.empty-btn-secondary):not(.btn-secondary),
+html.light .btn-primary,
+html.light .accept-btn,
+html.light .submit-btn,
+html.light .qg-state-btn:not(.is-secondary),
+body.light .empty-btn:not(.empty-btn-secondary):not(.btn-secondary),
+body.light .btn-primary,
+body.light .accept-btn,
+body.light .submit-btn,
+body.light .qg-state-btn:not(.is-secondary) {
+  background: var(--grad-accent) !important;
+  border-color: transparent !important;
+}
+
+html.light .btn-success,
+html.light .accept-btn.is-done,
+body.light .btn-success,
+body.light .accept-btn.is-done {
+  background: var(--money) !important;
+  color: var(--on-accent) !important;
+}
+
+/* Money / attention text — never leave dark-mode lime/amber on white */
+html.light .tc-price,
+html.light .tc-meta-price,
+html.light .task-price,
+html.light .stat-val.green,
+html.light .stat-val.is-money,
+html.light .pay-history-amt.is-money,
+html.light .qg-escrow-amt,
+body.light .tc-price,
+body.light .tc-meta-price,
+body.light .task-price,
+body.light .stat-val.green,
+body.light .stat-val.is-money {
+  color: var(--money) !important;
+}
+
+html.light .pay-st-held,
+html.light .stat-val.is-attention,
+html.light .app-counter-pending,
+body.light .pay-st-held,
+body.light .stat-val.is-attention,
+body.light .app-counter-pending {
+  color: var(--attention) !important;
+}
+
+/* Unread / badge counts on accent fills */
+html.light .im-badge,
+html.light .tab-unread-badge,
+html.light .qg-bell-dot.has-count,
+body.light .im-badge,
+body.light .tab-unread-badge,
+body.light .qg-bell-dot.has-count {
+  color: var(--on-accent) !important;
+  background: var(--accent) !important;
+}
+
+/* Surfaces: cards need a visible edge on white */
+html.light .task-card,
+html.light .stat-card,
+html.light .action-card,
+html.light .qg-spotlight-card,
+html.light .im-row,
+body.light .task-card,
+body.light .stat-card,
+body.light .action-card {
+  border-color: var(--line) !important;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+
+/* Map price pins on light OSM tiles */
+html.light .qg-price-pin,
+body.light .qg-price-pin {
+  background: var(--surface-1);
+  color: var(--money);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 2px 10px rgba(30, 21, 51, 0.22);
+}
+
+html.light .qg-price-pin.is-active,
+body.light .qg-price-pin.is-active {
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  border-color: transparent;
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+html.light .leaflet-control-attribution,
+body.light .leaflet-control-attribution {
+  background: color-mix(in srgb, #fff 88%, transparent) !important;
+  color: var(--text-muted) !important;
+}
+
+/* Skeleton shimmer — readable on white */
+html.light .qg-list-skel-avatar,
+html.light .qg-list-skel-line,
+html.light .qg-skel,
+html.light .qg-bell-skel-ico,
+html.light .qg-bell-skel-line,
+body.light .qg-list-skel-avatar,
+body.light .qg-list-skel-line,
+body.light .qg-skel {
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    color-mix(in srgb, var(--accent) 12%, var(--surface-2)) 50%,
+    var(--surface-2) 75%
+  ) !important;
+  background-size: 200% 100% !important;
+}
+
+html.light .qg-list-skel-row,
+body.light .qg-list-skel-row {
+  background: var(--surface-1) !important;
+  border-color: var(--line) !important;
+}
+
+/* Toast defaults usable on light pages */
+html.light .toast,
+body.light .toast {
+  box-shadow: 0 8px 28px rgba(30, 21, 51, 0.18);
+}
+
+html.light .toast.green,
+html.light .toast.amber,
+body.light .toast.green,
+body.light .toast.amber {
+  color: #ffffff !important;
+}

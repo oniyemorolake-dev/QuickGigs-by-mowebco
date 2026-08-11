@@ -266,7 +266,7 @@
     var tokens = document.createElement('link');
     tokens.id = 'qg-tokens-css';
     tokens.rel = 'stylesheet';
-    tokens.href = 'qg-tokens.css?v=20260811shell1';
+    tokens.href = 'qg-tokens.css?v=20260811light1';
     document.head.appendChild(tokens);
   }
 
@@ -293,6 +293,15 @@
     statesCss.rel = 'stylesheet';
     statesCss.href = 'qg-states.css?v=20260811states1';
     document.head.appendChild(statesCss);
+  }
+
+  /* Light-mode contrast / CTA fixes (after tokens + states) */
+  if (!document.getElementById('qg-light-fix-css') && !document.querySelector('link[href*="qg-light-fix.css"]')) {
+    var lightFix = document.createElement('link');
+    lightFix.id = 'qg-light-fix-css';
+    lightFix.rel = 'stylesheet';
+    lightFix.href = 'qg-light-fix.css?v=20260811light1';
+    document.head.appendChild(lightFix);
   }
 
   /* Shell chrome last so token-based nav/menu/tabs win over page + role-theme hex */

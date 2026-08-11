@@ -7,7 +7,7 @@
       var link = document.createElement('link');
       link.id = 'qg-tokens-css';
       link.rel = 'stylesheet';
-      link.href = 'qg-tokens.css?v=20260811shell1';
+      link.href = 'qg-tokens.css?v=20260811light1';
       var head = document.head || document.getElementsByTagName('head')[0];
       if (!head) return;
       head.appendChild(link);

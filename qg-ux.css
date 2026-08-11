@@ -497,27 +497,27 @@ html.light .qg-bell-empty {
 .tc-price,
 .tc-meta-price,
 .task-price {
-  color: #4ade80;
+  color: var(--money);
   font-weight: 500;
 }
 body.light .tc-price,
 body.light .tc-meta-price,
 body.light .task-price {
-  color: #16a34a;
+  color: var(--money);
   font-weight: 500;
 }
 .tc-meta {
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--text-muted);
 }
 body.light .tc-meta {
-  color: #6b6580;
+  color: var(--text-muted);
 }
 .tc-info {
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--text-muted);
   font-size: 11px;
 }
 body.light .tc-info {
-  color: #6b6580;
+  color: var(--text-muted);
 }
 
 .empty-state .empty-btn { margin-top: 14px; }
