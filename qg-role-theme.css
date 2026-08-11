@@ -81,17 +81,17 @@ body.qg-mode-poster .empty-btn {
   box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 14%, transparent);
 }
 
-.qg-header-role-opt[data-role-mode="tasker"] .qg-role-unread-dot { background: #a78bfa; }
-.qg-header-role-opt[data-role-mode="poster"] .qg-role-unread-dot { background: #2dd4bf; }
+.qg-header-role-opt[data-role-mode="tasker"] .qg-role-unread-dot { background: var(--accent-tasker, #a78bfa); }
+.qg-header-role-opt[data-role-mode="poster"] .qg-role-unread-dot { background: var(--accent-poster, #2dd4bf); }
 
 .qg-header-role-opt.active[data-role-mode="tasker"] {
   color: #fff;
-  background: linear-gradient(135deg, #6b3fa0, #9b6fc4);
+  background: var(--grad-tasker);
 }
 
 .qg-header-role-opt.active[data-role-mode="poster"] {
   color: #fff;
-  background: linear-gradient(135deg, #0f766e, #2dd4bf);
+  background: var(--grad-poster);
 }
 
 html.qg-role-transitioning body {
@@ -840,21 +840,21 @@ body.qg-mode-worker {
    GLOBAL MODE THEME — one skin, driven only by data-qg-mode
    ══════════════════════════════════════════════════════ */
 html[data-qg-mode="worker"] {
-  --qg-mode-accent: #a78bfa;
-  --qg-mode-accent-strong: #6b3fa0;
-  --qg-mode-accent-bright: #c8a8e9;
-  --qg-mode-accent-rgb: 167, 139, 250;
-  --qg-mode-gradient: linear-gradient(135deg, #6b3fa0, #a78bfa);
+  --qg-mode-accent: var(--accent, var(--accent-tasker, #8b5cf6));
+  --qg-mode-accent-strong: var(--accent-tasker, #6b3fa0);
+  --qg-mode-accent-bright: var(--accent-tasker, #a78bfa);
+  --qg-mode-accent-rgb: 139, 92, 246;
+  --qg-mode-gradient: var(--grad-accent, var(--grad-tasker));
   --qg-mode-header: linear-gradient(110deg, rgba(42, 18, 74, .98), rgba(21, 8, 42, .98));
   --qg-mode-page-tint: radial-gradient(circle at 18% -10%, rgba(139, 92, 246, .16), transparent 38%);
 }
 
 html[data-qg-mode="poster"] {
-  --qg-mode-accent: #2dd4bf;
-  --qg-mode-accent-strong: #0f766e;
-  --qg-mode-accent-bright: #5eead4;
+  --qg-mode-accent: var(--accent, var(--accent-poster, #2dd4bf));
+  --qg-mode-accent-strong: var(--accent-poster, #0f766e);
+  --qg-mode-accent-bright: var(--accent-poster, #5eead4);
   --qg-mode-accent-rgb: 45, 212, 191;
-  --qg-mode-gradient: linear-gradient(135deg, #0f766e, #2dd4bf);
+  --qg-mode-gradient: var(--grad-accent, var(--grad-poster));
   --qg-mode-header: linear-gradient(110deg, rgba(7, 58, 60, .98), rgba(5, 28, 39, .98));
   --qg-mode-page-tint: radial-gradient(circle at 18% -10%, rgba(45, 212, 191, .14), transparent 38%);
 }
@@ -1012,7 +1012,7 @@ html[data-qg-mode] :is(input, textarea, select, button, a):focus-visible {
 
 .qg-header-role-opt.active {
   color: #fff !important;
-  background: var(--qg-mode-gradient) !important;
+  background: var(--grad-accent, var(--qg-mode-gradient)) !important;
   box-shadow: 0 4px 14px rgba(var(--qg-mode-accent-rgb), .3);
 }
 

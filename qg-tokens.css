@@ -1,0 +1,112 @@
+/**
+ * QuickGigs design tokens — single source of truth for color + gradients.
+ * Light/dark: hooks existing body.light / html.light / html[data-qg-theme].
+ * Tasker/Poster: hooks html[data-qg-mode="worker"|"poster"] (worker = tasker)
+ *                and html[data-mode="tasker"|"poster"] / body.qg-mode-*.
+ *
+ * Do not restyle screens here beyond the one proof element at the bottom.
+ */
+:root {
+  /* ── Brand & semantic accents (dark = default) ── */
+  --brand: #8b5cf6;
+  --accent-tasker: #8b5cf6;
+  --accent-poster: #2dd4bf;
+  --accent: var(--accent-tasker);
+  --money: #4ade80;
+  --attention: #fbbf24;
+  --danger: #f87171;
+
+  /* ── Surfaces & structure ── */
+  --bg: #0d0b1a;
+  --surface-1: #181428;
+  --surface-2: #120f22;
+  --line: #2a2442;
+  --line-strong: #3d3560;
+
+  /* ── Text ── */
+  --text-primary: #f5f3ff;
+  --text-secondary: #cfc6e8;
+  --text-muted: #9a91b8;
+
+  /* ── Gradients (buttons / CTAs) ── */
+  --grad-tasker: linear-gradient(135deg, #6b3fa0 0%, #8b5cf6 52%, #a78bfa 100%);
+  --grad-poster: linear-gradient(135deg, #0f766e 0%, #14b8a6 52%, #2dd4bf 100%);
+  --grad-accent: var(--grad-tasker);
+
+  /* Soft fills (optional helpers for next migration phase) */
+  --accent-soft: color-mix(in srgb, var(--accent) 16%, transparent);
+  --money-soft: color-mix(in srgb, var(--money) 14%, transparent);
+  --attention-soft: color-mix(in srgb, var(--attention) 14%, transparent);
+  --danger-soft: color-mix(in srgb, var(--danger) 14%, transparent);
+}
+
+/* ── Light theme (same mechanism as qg-theme.js paint) ── */
+html.light,
+html[data-qg-theme="light"],
+body.light {
+  --brand: #6d28d9;
+  --accent-tasker: #6d28d9;
+  --accent-poster: #0f766e;
+  /* Keep AA contrast on white / surface-1 */
+  --money: #15803d;
+  --attention: #b45309;
+  --danger: #dc2626;
+
+  --bg: #f7f5ff;
+  --surface-1: #ffffff;
+  --surface-2: #f0eeff;
+  --line: #e4dff5;
+  --line-strong: #c4b8e8;
+
+  --text-primary: #1e1533;
+  --text-secondary: #4a4263;
+  --text-muted: #6b6580;
+
+  --grad-tasker: linear-gradient(135deg, #5b21b6 0%, #6d28d9 55%, #7c3aed 100%);
+  --grad-poster: linear-gradient(135deg, #0f766e 0%, #0d9488 55%, #14b8a6 100%);
+}
+
+/* ── Mode-aware accent (Tasker purple vs Poster teal) ── */
+html[data-qg-mode="worker"],
+html[data-mode="tasker"],
+body.qg-mode-worker {
+  --accent: var(--accent-tasker);
+  --grad-accent: var(--grad-tasker);
+}
+
+html[data-qg-mode="poster"],
+html[data-mode="poster"],
+body.qg-mode-poster {
+  --accent: var(--accent-poster);
+  --grad-accent: var(--grad-poster);
+}
+
+/*
+ * Bridge to existing role-theme variable names so shared chrome can
+ * gradually adopt tokens without a full restyle pass.
+ */
+html {
+  --qg-mode-accent: var(--accent);
+  --qg-mode-gradient: var(--grad-accent);
+  --role-accent: var(--accent);
+  --role-accent-soft: var(--accent-soft);
+}
+
+/* ══════════════════════════════════════════════════════
+   TOKEN PROOF (one shared element only)
+   Header Tasker/Poster toggle active pill — must flip with
+   dark/light × tasker/poster via --grad-accent / --accent.
+   ══════════════════════════════════════════════════════ */
+.qg-header-role-opt.active {
+  color: #fff !important;
+  background: var(--grad-accent) !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 32%, transparent) !important;
+}
+
+.qg-header-role-opt[data-role-mode="tasker"] .qg-role-unread-dot {
+  background: var(--accent-tasker);
+}
+
+.qg-header-role-opt[data-role-mode="poster"] .qg-role-unread-dot {
+  background: var(--accent-poster);
+}

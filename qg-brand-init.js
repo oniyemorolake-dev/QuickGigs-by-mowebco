@@ -136,6 +136,14 @@
     document.head.appendChild(chrome);
   }
 
+  if (!document.getElementById('qg-tokens-css') && !document.querySelector('link[href*="qg-tokens.css"]')) {
+    var tokens = document.createElement('link');
+    tokens.id = 'qg-tokens-css';
+    tokens.rel = 'stylesheet';
+    tokens.href = 'qg-tokens.css?v=20260811tokens1';
+    document.head.appendChild(tokens);
+  }
+
   if (!document.getElementById('qg-light-nav-css')) {
     var link = document.createElement('link');
     link.id = 'qg-light-nav-css';

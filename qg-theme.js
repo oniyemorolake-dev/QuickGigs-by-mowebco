@@ -1,5 +1,20 @@
 // QuickGigs — light/dark theme (qg-theme). Role mode uses qg-mode separately.
 (function () {
+  /** Ensure design tokens load on every page that includes this file. */
+  function ensureTokensStylesheet() {
+    try {
+      if (document.getElementById('qg-tokens-css') || document.querySelector('link[href*="qg-tokens.css"]')) return;
+      var link = document.createElement('link');
+      link.id = 'qg-tokens-css';
+      link.rel = 'stylesheet';
+      link.href = 'qg-tokens.css?v=20260811tokens1';
+      var head = document.head || document.getElementsByTagName('head')[0];
+      if (!head) return;
+      head.appendChild(link);
+    } catch (e) {}
+  }
+  ensureTokensStylesheet();
+
   function migrateThemeFromLegacy() {
     try {
       var theme = localStorage.getItem('qg-theme');
