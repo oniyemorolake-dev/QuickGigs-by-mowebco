@@ -124,7 +124,9 @@
       accountItems.push({
         type: 'action',
         action: 'switchMode',
-        icon: hasTarget ? 'refresh' : (worker ? 'clipboard' : 'briefcase'),
+        icon: hasTarget
+          ? (worker ? 'briefcase' : 'zap')
+          : (worker ? 'clipboard' : 'briefcase'),
         label: hasTarget
           ? (worker ? 'Switch to Poster' : 'Switch to Tasker')
           : (worker ? 'Become a Poster' : 'Start finding work')
@@ -228,13 +230,17 @@
   }
 
   function renderSections(sections) {
+    var worker = typeof isWorkerMode === 'function' && isWorkerMode();
     return sections.map(function (section) {
       var label = section.label
         ? '<div class="qg-menu-section-label">' + section.label + '</div>'
         : '';
       var links = section.items.map(function (item) {
         var cls = item.danger ? ' danger' : '';
-        var ico = '<span class="ico" aria-hidden="true">' + renderMenuIcon(item.icon) + '</span>';
+        if (item.action === 'switchMode') {
+          cls += worker ? ' qg-menu-switch-poster' : ' qg-menu-switch-tasker';
+        }
+        var ico = '<span class="ico qg-menu-ico-chip" aria-hidden="true">' + renderMenuIcon(item.icon) + '</span>';
         if (item.type === 'link') {
           return '<a class="qg-menu-link' + cls + '" href="' + item.href + '">' +
             ico +

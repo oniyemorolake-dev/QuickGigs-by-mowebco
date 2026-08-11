@@ -27,6 +27,8 @@
   --text-primary: #f5f3ff;
   --text-secondary: #cfc6e8;
   --text-muted: #9a91b8;
+  /* Text on accent/gradient/danger fills (buttons, active toggle, badge counts) */
+  --on-accent: #f5f3ff;
 
   /* ── Gradients (buttons / CTAs) ── */
   --grad-tasker: linear-gradient(135deg, #6b3fa0 0%, #8b5cf6 52%, #a78bfa 100%);
@@ -61,6 +63,7 @@ body.light {
   --text-primary: #1e1533;
   --text-secondary: #4a4263;
   --text-muted: #6b6580;
+  --on-accent: #ffffff;
 
   --grad-tasker: linear-gradient(135deg, #5b21b6 0%, #6d28d9 55%, #7c3aed 100%);
   --grad-poster: linear-gradient(135deg, #0f766e 0%, #0d9488 55%, #14b8a6 100%);
@@ -92,21 +95,4 @@ html {
   --role-accent-soft: var(--accent-soft);
 }
 
-/* ══════════════════════════════════════════════════════
-   TOKEN PROOF (one shared element only)
-   Header Tasker/Poster toggle active pill — must flip with
-   dark/light × tasker/poster via --grad-accent / --accent.
-   ══════════════════════════════════════════════════════ */
-.qg-header-role-opt.active {
-  color: #fff !important;
-  background: var(--grad-accent) !important;
-  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 32%, transparent) !important;
-}
-
-.qg-header-role-opt[data-role-mode="tasker"] .qg-role-unread-dot {
-  background: var(--accent-tasker);
-}
-
-.qg-header-role-opt[data-role-mode="poster"] .qg-role-unread-dot {
-  background: var(--accent-poster);
-}
+/* Active header toggle proof styles moved to qg-shell.css */

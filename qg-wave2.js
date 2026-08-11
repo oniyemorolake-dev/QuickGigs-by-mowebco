@@ -158,7 +158,7 @@
       'Come back tomorrow to keep your streak.';
     host.innerHTML =
       '<div class="qg-streak-card" role="status">' +
-      '<div class="qg-streak-title">🔥 ' + n + ' day streak</div>' +
+      '<div class="qg-streak-title"><span class="qg-streak-flame" aria-hidden="true">✦</span> ' + n + ' day streak</div>' +
       '<div class="qg-streak-sub">' + esc(line) + '</div></div>';
   };
 

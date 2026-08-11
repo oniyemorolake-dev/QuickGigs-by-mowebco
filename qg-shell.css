@@ -1,0 +1,371 @@
+/**
+ * QuickGigs — shared app shell (Phase 3 / step 1).
+ * Nav, mode banner, bottom tabs, slide-out menu only.
+ * Colors: design tokens exclusively (qg-tokens.css).
+ */
+/* ── Top nav ───────────────────────────────────────── */
+.nav {
+  background: var(--surface-1) !important;
+  border-bottom: 1px solid var(--line) !important;
+  box-shadow: none !important;
+}
+
+html[data-qg-mode] .nav,
+html.light[data-qg-mode] .nav,
+html[data-qg-mode] body.light .nav,
+body.light .nav {
+  background: var(--surface-1) !important;
+  border-bottom: 1px solid var(--line) !important;
+  box-shadow: none !important;
+}
+
+.nav-brand .nav-logo,
+.nav .nav-logo {
+  color: var(--brand) !important;
+}
+
+body.light .nav-brand .nav-logo,
+body.light .nav .nav-logo,
+html.light .nav-brand .nav-logo {
+  color: var(--brand) !important;
+}
+
+.nav-brand .nav-role,
+.nav .nav-role,
+html[data-qg-mode] .nav-role {
+  color: var(--accent) !important;
+  background: var(--accent-soft) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent) !important;
+  border-radius: 999px !important;
+  font-weight: 600 !important;
+}
+
+html.light[data-qg-mode] .nav-role,
+html[data-qg-mode] body.light .nav-role,
+body.light .nav-brand .nav-role {
+  color: var(--accent) !important;
+  background: var(--accent-soft) !important;
+}
+
+/* Tasker / Poster header toggle */
+.qg-header-role-toggle {
+  background: var(--surface-2) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+}
+
+.qg-header-role-opt {
+  color: var(--text-muted) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.qg-header-role-opt.active,
+.qg-header-role-opt.active[data-role-mode="tasker"],
+.qg-header-role-opt.active[data-role-mode="poster"],
+html[data-qg-mode] .qg-header-role-opt.active {
+  color: var(--on-accent) !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 28%, transparent) !important;
+}
+
+.qg-header-role-opt.active[data-role-mode="tasker"] {
+  background: var(--grad-tasker) !important;
+}
+
+.qg-header-role-opt.active[data-role-mode="poster"] {
+  background: var(--grad-poster) !important;
+}
+
+.qg-header-role-opt[data-role-mode="tasker"] .qg-role-unread-dot {
+  background: var(--accent-tasker) !important;
+}
+
+.qg-header-role-opt[data-role-mode="poster"] .qg-role-unread-dot {
+  background: var(--accent-poster) !important;
+}
+
+/* Bell + hamburger */
+.qg-bell-btn,
+.qg-menu-btn {
+  color: var(--text-secondary) !important;
+  background: transparent !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 10px !important;
+}
+
+.qg-bell-btn:hover,
+.qg-menu-btn:hover {
+  background: var(--surface-2) !important;
+}
+
+.qg-bell-btn .qg-ico,
+.qg-bell-btn svg {
+  color: var(--text-secondary) !important;
+  stroke: currentColor !important;
+}
+
+.nav .qg-menu-btn {
+  background: transparent !important;
+  border-color: var(--line) !important;
+}
+
+.qg-menu-btn span {
+  background: var(--text-secondary) !important;
+}
+
+body.light .qg-menu-btn span,
+html.light .qg-menu-btn span {
+  background: var(--text-secondary) !important;
+}
+
+.qg-bell-dot {
+  background: var(--danger) !important;
+  border-color: var(--surface-1) !important;
+  color: var(--on-accent) !important;
+}
+
+body.light .qg-bell-dot,
+html.light .qg-bell-dot {
+  border-color: var(--surface-1) !important;
+}
+
+/* ── Mode banner ───────────────────────────────────── */
+.qg-mode-banner,
+html[data-qg-mode] .qg-mode-banner,
+html.light[data-qg-mode] .qg-mode-banner,
+html[data-qg-mode] body.light .qg-mode-banner {
+  color: var(--accent) !important;
+  background: var(--accent-soft) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 28%, transparent) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.qg-mode-banner::before {
+  background: var(--accent) !important;
+  box-shadow: none !important;
+}
+
+/* ── Bottom nav (mobile) ───────────────────────────── */
+.tab-bar,
+html[data-qg-mode] .tab-bar,
+html[data-qg-mode="worker"] .tab-bar,
+body.qg-mode-worker .tab-bar,
+body.light .tab-bar {
+  background: var(--surface-1) !important;
+  border-top: 1px solid var(--line) !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: auto !important;
+  padding: 4px 0 calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+.tab-item {
+  position: relative;
+  min-height: 44px;
+  justify-content: center;
+  padding: 6px 0 !important;
+  box-sizing: border-box;
+}
+
+.tab-item .tab-icon,
+.tab-item .tab-lbl,
+html[data-qg-mode] .tab-item .tab-icon,
+html[data-qg-mode] .tab-item .tab-lbl,
+body.light .tab-item .tab-icon,
+body.light .tab-item .tab-lbl {
+  color: var(--text-muted) !important;
+  border-color: transparent !important;
+}
+
+.tab-item .tab-icon .qg-ico,
+.tab-item .tab-icon svg {
+  color: inherit !important;
+  stroke: currentColor !important;
+}
+
+.tab-item.active,
+html[data-qg-mode] .tab-item.active,
+html[data-qg-mode="worker"] .tab-item.active,
+body.qg-mode-worker .tab-item.active,
+body.light.qg-mode-worker .tab-item.active {
+  background: transparent !important;
+}
+
+.tab-item.active .tab-icon,
+.tab-item.active .tab-lbl,
+html[data-qg-mode] .tab-item.active .tab-icon,
+html[data-qg-mode] .tab-item.active .tab-lbl,
+html[data-qg-mode="worker"] .tab-item.active .tab-icon,
+html[data-qg-mode="worker"] .tab-item.active .tab-lbl,
+body.qg-mode-worker .tab-item.active .tab-icon,
+body.qg-mode-worker .tab-item.active .tab-lbl,
+body.light .tab-item.active .tab-icon,
+body.light .tab-item.active .tab-lbl,
+body.light.qg-mode-worker .tab-item.active .tab-icon,
+body.light.qg-mode-worker .tab-item.active .tab-lbl {
+  color: var(--accent) !important;
+  border-color: transparent !important;
+}
+
+.tab-unread-badge {
+  position: absolute;
+  top: 4px;
+  right: calc(50% - 18px);
+  min-width: 8px;
+  height: 8px;
+  padding: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 0;
+  line-height: 1;
+  display: none;
+}
+
+.tab-item.has-unread .tab-unread-badge {
+  display: block;
+}
+
+.tab-item.has-unread .tab-unread-badge:not(:empty) {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  top: 2px;
+  right: calc(50% - 22px);
+}
+
+/* ── Slide-out menu ────────────────────────────────── */
+.qg-menu-overlay {
+  background: color-mix(in srgb, var(--bg) 35%, transparent) !important;
+}
+
+.qg-menu-drawer {
+  background: var(--surface-2) !important;
+  border-left: 1px solid var(--line) !important;
+  box-shadow: -8px 0 40px color-mix(in srgb, var(--bg) 55%, transparent) !important;
+}
+
+body.light .qg-menu-drawer,
+html.light .qg-menu-drawer {
+  background: var(--surface-2) !important;
+  border-left-color: var(--line) !important;
+}
+
+.qg-menu-head {
+  border-bottom: 1px solid var(--line) !important;
+}
+
+.qg-menu-title {
+  color: var(--brand) !important;
+}
+
+body.light .qg-menu-title,
+html.light .qg-menu-title {
+  color: var(--brand) !important;
+}
+
+.qg-menu-role {
+  color: var(--accent) !important;
+  font-weight: 600 !important;
+}
+
+.qg-menu-close {
+  background: var(--surface-1) !important;
+  color: var(--text-secondary) !important;
+}
+
+body.light .qg-menu-close,
+html.light .qg-menu-close {
+  background: var(--surface-1) !important;
+  color: var(--text-secondary) !important;
+}
+
+.qg-menu-section-label {
+  color: var(--text-muted) !important;
+}
+
+.qg-menu-link,
+.qg-menu-action {
+  color: var(--text-primary) !important;
+}
+
+body.light .qg-menu-link,
+body.light .qg-menu-action,
+html.light .qg-menu-link,
+html.light .qg-menu-action {
+  color: var(--text-primary) !important;
+}
+
+.qg-menu-link:hover,
+.qg-menu-action:hover,
+.qg-menu-link:focus-visible,
+.qg-menu-action:focus-visible {
+  background: var(--surface-1) !important;
+}
+
+.qg-menu-link .ico,
+.qg-menu-action .ico,
+.qg-menu-ico-chip {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 10px;
+  background: var(--surface-1) !important;
+  color: var(--text-secondary) !important;
+  font-size: 0 !important;
+  flex-shrink: 0;
+}
+
+.qg-menu-link .ico .qg-ico,
+.qg-menu-action .ico .qg-ico,
+.qg-menu-ico-chip .qg-ico,
+.qg-menu-link .ico svg,
+.qg-menu-action .ico svg {
+  width: 18px;
+  height: 18px;
+  color: inherit !important;
+  stroke: currentColor !important;
+}
+
+/* Switch-mode row: other mode's accent as wayfinding */
+.qg-menu-action.qg-menu-switch-tasker,
+.qg-menu-action.qg-menu-switch-tasker .ico {
+  color: var(--accent-tasker) !important;
+}
+
+.qg-menu-action.qg-menu-switch-poster,
+.qg-menu-action.qg-menu-switch-poster .ico {
+  color: var(--accent-poster) !important;
+}
+
+.qg-menu-action.qg-menu-switch-tasker .ico,
+.qg-menu-action.qg-menu-switch-poster .ico {
+  background: color-mix(in srgb, currentColor 14%, transparent) !important;
+}
+
+.qg-menu-link.danger,
+.qg-menu-action.danger {
+  color: var(--danger) !important;
+}
+
+.qg-menu-link.danger:hover,
+.qg-menu-action.danger:hover {
+  background: var(--danger-soft) !important;
+}
+
+.qg-menu-link.danger .ico,
+.qg-menu-action.danger .ico {
+  color: var(--danger) !important;
+  background: var(--danger-soft) !important;
+}

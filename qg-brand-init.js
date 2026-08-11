@@ -140,7 +140,7 @@
     var tokens = document.createElement('link');
     tokens.id = 'qg-tokens-css';
     tokens.rel = 'stylesheet';
-    tokens.href = 'qg-tokens.css?v=20260811tokens1';
+    tokens.href = 'qg-tokens.css?v=20260811shell1';
     document.head.appendChild(tokens);
   }
 
@@ -158,6 +158,24 @@
     refine.rel = 'stylesheet';
     refine.href = 'qg-refine.css?v=20260803posterLayout1';
     document.head.appendChild(refine);
+  }
+
+  /* Shell chrome last so token-based nav/menu/tabs win over page + role-theme hex */
+  if (!document.getElementById('qg-shell-css') && !document.querySelector('link[href*="qg-shell.css"]')) {
+    var shell = document.createElement('link');
+    shell.id = 'qg-shell-css';
+    shell.rel = 'stylesheet';
+    shell.href = 'qg-shell.css?v=20260811shell1';
+    document.head.appendChild(shell);
+  }
+
+  /* Dashboard content tokens (after shell; scoped to page-dashboard) */
+  if (!document.getElementById('qg-dashboard-css') && !document.querySelector('link[href*="qg-dashboard.css"]')) {
+    var dashCss = document.createElement('link');
+    dashCss.id = 'qg-dashboard-css';
+    dashCss.rel = 'stylesheet';
+    dashCss.href = 'qg-dashboard.css?v=20260811dash1';
+    document.head.appendChild(dashCss);
   }
 
   // Sync load so qgIcon is available before deferred page scripts run

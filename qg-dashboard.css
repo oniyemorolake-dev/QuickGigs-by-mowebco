@@ -1,0 +1,546 @@
+/**
+ * QuickGigs — dashboard content (Phase 3 / step 2).
+ * Scoped to body.page-dashboard. Shell (nav/tabs/menu) is untouched.
+ * Colors: design tokens only.
+ */
+body.page-dashboard .greeting {
+  background: transparent !important;
+  padding: 20px 20px 12px;
+}
+
+body.page-dashboard .greet-name {
+  color: var(--text-primary);
+}
+
+body.page-dashboard .greet-sub,
+body.page-dashboard .dash-loading-hint {
+  color: var(--text-muted);
+}
+
+body.page-dashboard .mode-tag,
+body.page-dashboard .mode-tag.tag-poster,
+body.page-dashboard .mode-tag.tag-worker {
+  color: var(--accent) !important;
+  background: var(--accent-soft) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+body.page-dashboard .dash-reputation,
+body.page-dashboard .dash-reputation a {
+  color: var(--accent) !important;
+}
+
+/* ── Shared card chrome ── */
+body.page-dashboard .stats,
+body.page-dashboard .actions,
+body.page-dashboard .section {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+body.page-dashboard .stat-card,
+body.page-dashboard .action-card.secondary,
+body.page-dashboard .dash-panel,
+body.page-dashboard .qg-mini-card,
+body.page-dashboard .task-row,
+body.page-dashboard .empty {
+  background: var(--surface-1) !important;
+  border: 1px solid var(--line) !important;
+  color: var(--text-primary);
+  border-radius: 16px;
+  box-shadow: none !important;
+}
+
+body.page-dashboard .stat-card:hover,
+body.page-dashboard .action-card.secondary:hover,
+body.page-dashboard .task-row:hover {
+  border-color: var(--line-strong) !important;
+}
+
+body.page-dashboard .stat-icon {
+  color: var(--accent);
+}
+
+body.page-dashboard .stat-val {
+  color: var(--text-primary);
+}
+
+body.page-dashboard .stat-val.green,
+body.page-dashboard .stat-val.is-money,
+body.page-dashboard .dash-earn-figure,
+body.page-dashboard .task-price.is-money {
+  color: var(--money) !important;
+}
+
+body.page-dashboard .stat-val.is-attention,
+body.page-dashboard .stat-val.purple.is-attention {
+  color: var(--attention) !important;
+}
+
+body.page-dashboard .stat-lbl,
+body.page-dashboard .stat-sub,
+body.page-dashboard .action-desc,
+body.page-dashboard .task-meta,
+body.page-dashboard .section-title,
+body.page-dashboard .see-all,
+body.page-dashboard .empty-txt {
+  color: var(--text-muted) !important;
+}
+
+body.page-dashboard .action-title,
+body.page-dashboard .task-name {
+  color: var(--text-primary) !important;
+}
+
+body.page-dashboard .see-all {
+  color: var(--accent) !important;
+}
+
+/* ── Hero ── */
+body.page-dashboard .dash-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  text-decoration: none;
+  color: var(--text-primary);
+  border: 1px solid var(--line);
+  background: var(--surface-1);
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+body.page-dashboard .dash-hero:hover {
+  transform: translateY(-1px);
+  border-color: var(--line-strong);
+  box-shadow: none;
+}
+
+body.page-dashboard .dash-hero-body strong {
+  color: var(--text-primary);
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+body.page-dashboard .dash-hero-body span {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+body.page-dashboard .dash-hero-cta {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+body.page-dashboard .dash-hero-emoji {
+  color: var(--accent);
+  font-size: 22px;
+}
+
+/* Tasker primary hero — accent soft */
+body.page-dashboard[data-qg-mode="worker"] .dash-hero-primary,
+html[data-qg-mode="worker"] body.page-dashboard .dash-hero-primary {
+  background: var(--accent-soft) !important;
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent) !important;
+}
+
+/* Poster post hero — large grad-poster CTA */
+body.page-dashboard .dash-hero-post,
+html[data-qg-mode="poster"] body.page-dashboard .dash-hero-primary,
+html[data-qg-mode="poster"] body.page-dashboard .dash-hero-mobile-post {
+  display: grid !important;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding: 22px 20px !important;
+  border: none !important;
+  background: var(--grad-poster) !important;
+  color: var(--on-accent) !important;
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--accent-poster) 28%, transparent) !important;
+}
+
+html[data-qg-mode="poster"] body.page-dashboard .dash-hero-post .dash-hero-body strong,
+html[data-qg-mode="poster"] body.page-dashboard .dash-hero-primary .dash-hero-body strong,
+html[data-qg-mode="poster"] body.page-dashboard .dash-hero-mobile-post .dash-hero-body strong,
+html[data-qg-mode="poster"] body.page-dashboard .dash-hero-post .dash-hero-emoji,
+html[data-qg-mode="poster"] body.page-dashboard .dash-hero-primary .dash-hero-emoji,
+html[data-qg-mode="poster"] body.page-dashboard .dash-hero-mobile-post .dash-hero-emoji,
+html[data-qg-mode="poster"] body.page-dashboard .dash-hero-post .dash-hero-cta,
+html[data-qg-mode="poster"] body.page-dashboard .dash-hero-primary .dash-hero-cta,
+html[data-qg-mode="poster"] body.page-dashboard .dash-hero-mobile-post .dash-hero-cta {
+  color: var(--on-accent) !important;
+}
+
+html[data-qg-mode="poster"] body.page-dashboard .dash-hero-post .dash-hero-body span,
+html[data-qg-mode="poster"] body.page-dashboard .dash-hero-primary .dash-hero-body span,
+html[data-qg-mode="poster"] body.page-dashboard .dash-hero-mobile-post .dash-hero-body span {
+  color: color-mix(in srgb, var(--on-accent) 82%, transparent) !important;
+}
+
+html[data-qg-mode="poster"] body.page-dashboard .dash-hero-post .dash-hero-cta,
+html[data-qg-mode="poster"] body.page-dashboard .dash-hero-primary .dash-hero-cta,
+html[data-qg-mode="poster"] body.page-dashboard .dash-hero-mobile-post .dash-hero-cta {
+  margin-left: 0;
+  justify-self: start;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--on-accent) 18%, transparent);
+}
+
+body.page-dashboard .dash-hero-switch {
+  margin-top: 10px;
+}
+
+body.page-dashboard .dash-hero-switch-btn {
+  color: var(--accent) !important;
+  background: transparent !important;
+  border: none !important;
+  font: 500 12px 'DM Sans', sans-serif;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* ── Applicants waiting (poster) ── */
+body.page-dashboard .dash-alert-attention {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 20px 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  text-decoration: none;
+  background: var(--attention-soft);
+  border: 1px solid color-mix(in srgb, var(--attention) 40%, transparent);
+  color: var(--attention);
+}
+
+body.page-dashboard .dash-alert-attention strong {
+  display: block;
+  color: var(--attention);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+body.page-dashboard .dash-alert-attention span {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+body.page-dashboard .dash-alert-attention .dash-alert-cta {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--attention);
+}
+
+/* ── Live earnings (tasker) ── */
+body.page-dashboard .dash-earn-card {
+  margin: 0 20px 14px;
+  padding: 16px 16px 14px;
+  border-radius: 18px;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+}
+
+body.page-dashboard .dash-earn-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+body.page-dashboard .dash-earn-top {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+body.page-dashboard .dash-earn-figure {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+body.page-dashboard .dash-earn-trend {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+body.page-dashboard .dash-earn-trend.is-up {
+  background: var(--money-soft);
+  color: var(--money);
+}
+
+body.page-dashboard .dash-earn-trend.is-flat {
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+
+body.page-dashboard .dash-earn-spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 36px;
+  margin-top: 14px;
+}
+
+body.page-dashboard .dash-earn-bar {
+  flex: 1;
+  min-width: 0;
+  border-radius: 4px 4px 2px 2px;
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+  min-height: 4px;
+}
+
+body.page-dashboard .dash-earn-bar.is-today {
+  background: var(--accent);
+}
+
+body.page-dashboard .dash-earn-nudge {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+body.page-dashboard .dash-earn-nudge a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+/* Hide earnings on poster */
+html[data-qg-mode="poster"] body.page-dashboard #dashEarnings {
+  display: none !important;
+}
+
+/* ── Streak ── */
+body.page-dashboard .qg-streak-card {
+  margin: 0 20px 14px !important;
+  background: var(--attention-soft) !important;
+  border: 1px solid color-mix(in srgb, var(--attention) 40%, transparent) !important;
+  color: var(--text-primary);
+}
+
+body.page-dashboard .qg-streak-title {
+  color: var(--attention) !important;
+}
+
+body.page-dashboard .qg-streak-sub {
+  color: var(--text-secondary) !important;
+  opacity: 1 !important;
+}
+
+/* ── Action cards ── */
+body.page-dashboard .action-card.primary {
+  background: var(--grad-accent) !important;
+  border: none !important;
+  color: var(--on-accent) !important;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 24%, transparent) !important;
+}
+
+body.page-dashboard .action-card.primary .action-title,
+body.page-dashboard .action-card.primary .action-desc,
+body.page-dashboard .action-card.primary .action-icon {
+  color: var(--on-accent) !important;
+}
+
+body.page-dashboard .action-card.primary .action-desc {
+  opacity: 0.85;
+}
+
+html[data-qg-mode="poster"] body.page-dashboard .actions .action-card.primary {
+  /* Poster primary lives in hero; keep grid cards secondary-looking if any remain */
+  background: var(--grad-poster) !important;
+}
+
+body.page-dashboard .action-card.secondary .action-icon {
+  color: var(--accent) !important;
+}
+
+/* ── Needs attention / task rows ── */
+body.page-dashboard .task-row.is-attention {
+  border-color: color-mix(in srgb, var(--attention) 45%, transparent) !important;
+  box-shadow: inset 3px 0 0 var(--attention);
+}
+
+body.page-dashboard .dash-app-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--attention-soft);
+  color: var(--attention);
+}
+
+body.page-dashboard .task-dot {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body.page-dashboard .task-row.is-attention .task-dot {
+  background: var(--attention-soft) !important;
+  color: var(--attention) !important;
+}
+
+body.page-dashboard .empty-btn,
+body.page-dashboard .empty a.empty-btn {
+  background: var(--grad-accent) !important;
+  color: var(--on-accent) !important;
+  border: none !important;
+}
+
+body.page-dashboard .empty-icon {
+  color: var(--accent) !important;
+}
+
+body.page-dashboard .dash-span-full {
+  grid-column: 1 / -1;
+}
+
+body.page-dashboard .dash-section-gap {
+  margin-top: 16px;
+}
+
+body.page-dashboard .qg-streak-flame {
+  color: var(--attention);
+}
+
+body.page-dashboard #statsGrid[data-dash-layout="poster"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+@media (min-width: 720px) {
+  body.page-dashboard #statsGrid[data-dash-layout="poster"],
+  html[data-qg-mode="poster"] body.page-dashboard #statsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 719px) {
+  body.page-dashboard #statsGrid[data-dash-layout="poster"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+body.page-dashboard .dash-prompt-card,
+body.page-dashboard #dashConnectBanner.dash-prompt-card {
+  margin: 0 20px 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+body.page-dashboard .dash-prompt-card strong {
+  color: var(--text-primary);
+}
+
+body.page-dashboard .dash-prompt-card a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+body.page-dashboard .guardian-banner {
+  background: var(--attention-soft) !important;
+  border-color: color-mix(in srgb, var(--attention) 40%, transparent) !important;
+  color: var(--text-primary) !important;
+}
+
+body.page-dashboard .guardian-banner a {
+  color: var(--attention) !important;
+}
+
+body.page-dashboard .guardian-banner button,
+body.page-dashboard .verification-gate-banner button {
+  background: var(--grad-accent) !important;
+  color: var(--on-accent) !important;
+}
+
+body.page-dashboard .verification-gate-banner,
+body.page-dashboard .teen-dashboard-banner {
+  background: var(--accent-soft) !important;
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent) !important;
+  color: var(--text-primary);
+}
+
+body.page-dashboard .graduation-banner {
+  background: var(--money-soft) !important;
+  border-color: color-mix(in srgb, var(--money) 35%, transparent) !important;
+}
+
+body.page-dashboard .graduation-banner a {
+  color: var(--money) !important;
+}
+
+body.page-dashboard .pay-history-row,
+body.page-dashboard .pay-history-empty {
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--text-primary);
+}
+
+body.page-dashboard .pay-history-amt {
+  color: var(--money) !important;
+}
+
+body.page-dashboard .pay-history-meta,
+body.page-dashboard .pay-history-empty {
+  color: var(--text-muted);
+}
+
+body.page-dashboard .task-badge {
+  color: var(--text-muted);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+body.page-dashboard .task-price {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+body.page-dashboard .meta-pin {
+  color: var(--text-muted);
+}
+
+@media (max-width: 719px) {
+  body.page-dashboard #statsGrid[data-dash-layout="poster"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Poster mobile hero overrides from role-theme — keep grad-poster tokens */
+@media (max-width: 719px) {
+  html[data-qg-mode="poster"] body.page-dashboard .dash-hero {
+    background: var(--grad-poster) !important;
+    border-color: transparent !important;
+  }
+}

@@ -33,7 +33,7 @@
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
 <link rel="stylesheet" href="qg-menu.css?v=2">
 <link rel="stylesheet" href="qg-role-theme.css?v=20260811tokens1">
-<link rel="stylesheet" href="qg-tokens.css?v=20260811tokens1" id="qg-tokens-css">
+<link rel="stylesheet" href="qg-tokens.css?v=20260811shell1" id="qg-tokens-css">
 <script src="qg-brand-init.js"></script>
 <script src="qg-icons.js?v=20260809profile2"></script>
 <style>
@@ -648,13 +648,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
 </div>
 
 <!-- TAB BAR -->
-<nav class="tab-bar">
-  <a class="tab-item" href="dashboard.html"><span class="tab-icon">🏠</span><span class="tab-lbl">Home</span></a>
-  <a class="tab-item" href="browsetask.html"><span class="tab-icon">🔍</span><span class="tab-lbl">Browse</span></a>
-  <a class="tab-item" href="posttask.html"><span class="tab-icon">➕</span><span class="tab-lbl">Post</span></a>
-  <a class="tab-item" href="mytasks.html"><span class="tab-icon">✅</span><span class="tab-lbl">My Tasks</span></a>
-  <a class="tab-item active" href="profile.html"><span class="tab-icon">👤</span><span class="tab-lbl">Profile</span></a>
-</nav>
+<nav class="tab-bar" id="qgTabBar" aria-label="Main"></nav>
 
 <script defer src="qg-utils.js?v=20260728welcome1"></script>
 <script type="module">
@@ -712,7 +706,12 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-stats.js?v=20260731rep1"></script>
 <script defer src="qg-confetti.js?v=1"></script>
 <script defer src="qg-nav.js"></script>
-<script defer src="qg-menu.js?v=20260727auth2"></script>
+<script defer src="qg-menu.js?v=20260811shell1"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('home');
+});
+</script>
 <script defer src="qg-role-switch.js?v=20260803role1"></script>
 <script>
 var HEADERS = window.HEADERS;

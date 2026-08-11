@@ -36,8 +36,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
 <link rel="stylesheet" href="qg-role-theme.css?v=20260811tokens1">
-<link rel="stylesheet" href="qg-tokens.css?v=20260811tokens1" id="qg-tokens-css">
+<link rel="stylesheet" href="qg-tokens.css?v=20260811shell1" id="qg-tokens-css">
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
+<link rel="stylesheet" href="qg-dashboard.css?v=20260811dash1" id="qg-dashboard-css">
 <script src="qg-theme.js"></script>
 <script src="qg-brand-init.js"></script>
 <script defer src="qg-pwa.js?v=cd3efe6-1786397433"></script>
@@ -283,6 +284,8 @@ body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#ee
   <div class="dash-reputation" id="dashReputation" aria-label="Your reputation"></div>
   <div id="dashHero"><div class="qg-skel qg-skel-hero" aria-hidden="true"></div></div>
 </div>
+<div id="dashApplicantsAlert" hidden></div>
+<div id="dashEarnings" hidden></div>
 <p class="dash-loading-hint" id="dashLoadHint">Fetching your tasks?</p>
 
 <!-- STATS -->
@@ -937,6 +940,131 @@ function renderDashboardHero(userId) {
   });
 }
 
+function dashPayAmount(p) {
+  return parseFloat(p.worker_payout != null ? p.worker_payout : p.WORKER_PAYOUT) || 0;
+}
+
+function dashPayDate(p) {
+  var raw = p.paid_at || p.PAID_AT || p.created_at || p.CREATED_AT || p.updated_at || p.UPDATED_AT || '';
+  var d = raw ? new Date(raw) : null;
+  return d && !isNaN(d.getTime()) ? d : null;
+}
+
+function dashDayStart(offsetDays) {
+  var d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + (offsetDays || 0));
+  return d;
+}
+
+function dashSumPaidInRange(payments, start, end) {
+  return (payments || []).reduce(function (s, p) {
+    if (String(p.status || '').toLowerCase() !== 'paid') return s;
+    var d = dashPayDate(p);
+    if (!d || d < start || d >= end) return s;
+    return s + dashPayAmount(p);
+  }, 0);
+}
+
+function renderDashApplicantsAlert(pendingCount) {
+  var el = document.getElementById('dashApplicantsAlert');
+  if (!el) return;
+  if (!isPoster || !pendingCount) {
+    el.hidden = true;
+    el.innerHTML = '';
+    return;
+  }
+  el.hidden = false;
+  el.innerHTML =
+    '<a class="dash-alert-attention" href="mytasks.html?tab=posted&applicants=1">' +
+      '<span class="dash-alert-body">' +
+        '<strong>' + pendingCount + ' applicant' + (pendingCount !== 1 ? 's' : '') + ' waiting</strong>' +
+        '<span>Review and accept a tasker for your open tasks</span>' +
+      '</span>' +
+      '<span class="dash-alert-cta">Review →</span>' +
+    '</a>';
+}
+
+function renderDashEarningsCard(workerPayments, totalEarned) {
+  var el = document.getElementById('dashEarnings');
+  if (!el) return;
+  if (isPoster) {
+    el.hidden = true;
+    el.innerHTML = '';
+    return;
+  }
+  var paid = (workerPayments || []).filter(function (p) {
+    return String(p.status || '').toLowerCase() === 'paid';
+  });
+  var weekStart = dashDayStart(-6);
+  var nextDay = dashDayStart(1);
+  var prevWeekStart = dashDayStart(-13);
+  var weekEarned = dashSumPaidInRange(paid, weekStart, nextDay);
+  var prevWeekEarned = dashSumPaidInRange(paid, prevWeekStart, weekStart);
+  var series = [];
+  var i;
+  for (i = 6; i >= 0; i--) {
+    var day0 = dashDayStart(-i);
+    var day1 = dashDayStart(-i + 1);
+    series.push(dashSumPaidInRange(paid, day0, day1));
+  }
+  var maxBar = Math.max.apply(null, series.concat([1]));
+  var trendCls = 'is-flat';
+  var trendTxt = 'Flat vs last week';
+  if (weekEarned > prevWeekEarned + 0.01) {
+    trendCls = 'is-up';
+    var upPct = prevWeekEarned > 0
+      ? Math.round(((weekEarned - prevWeekEarned) / prevWeekEarned) * 100)
+      : 100;
+    trendTxt = '+' + upPct + '% vs last week';
+  } else if (weekEarned < prevWeekEarned - 0.01) {
+    trendCls = 'is-flat';
+    trendTxt = 'Down vs last week';
+  } else if (weekEarned === 0 && prevWeekEarned === 0) {
+    trendTxt = 'No payouts yet';
+  }
+
+  var goal = 200;
+  try {
+    var storedGoal = parseFloat(localStorage.getItem('qg-earn-goal'));
+    if (!isNaN(storedGoal) && storedGoal > 0) goal = storedGoal;
+  } catch (eGoal) {}
+  var paidCount = paid.length;
+  var avgGig = paidCount > 0 ? (totalEarned / paidCount) : 40;
+  if (!avgGig || avgGig < 10) avgGig = 40;
+  var remaining = Math.max(0, goal - weekEarned);
+  var gigsNeeded = remaining <= 0 ? 0 : Math.ceil(remaining / avgGig);
+  var nudge;
+  if (remaining <= 0 && weekEarned > 0) {
+    nudge = 'You hit your $' + goal.toFixed(0) + ' weekly goal — nice work.';
+  } else if (weekEarned <= 0) {
+    nudge = gigsNeeded + ' gig' + (gigsNeeded !== 1 ? 's' : '') +
+      ' to your $' + goal.toFixed(0) + ' goal · <a href="browsetask.html">Browse tasks</a>';
+  } else {
+    nudge = gigsNeeded + ' gig' + (gigsNeeded !== 1 ? 's' : '') +
+      ' to your $' + goal.toFixed(0) + ' goal';
+  }
+
+  var bars = series.map(function (v, idx) {
+    var h = Math.max(4, Math.round((v / maxBar) * 36));
+    var isToday = idx === series.length - 1;
+    return '<div class="dash-earn-bar' + (isToday ? ' is-today' : '') +
+      '" style="height:' + h + 'px" title="$' + v.toFixed(0) + '"></div>';
+  }).join('');
+
+  el.hidden = false;
+  el.innerHTML =
+    '<div class="dash-earn-card">' +
+      '<div class="dash-earn-label">Earned this week</div>' +
+      '<div class="dash-earn-top">' +
+        '<div class="dash-earn-figure">$' + weekEarned.toFixed(0) + '</div>' +
+        '<span class="dash-earn-trend ' + trendCls + '">' + trendTxt + '</span>' +
+      '</div>' +
+      '<div class="dash-earn-spark" aria-hidden="true">' + bars + '</div>' +
+      '<div class="dash-earn-nudge">' + nudge + '</div>' +
+    '</div>';
+}
+
 
 async function loadDashReputation(userId) {
   var el = document.getElementById('dashReputation');
@@ -1076,21 +1204,21 @@ function renderAll(){
     if (String(p.status || '').toLowerCase() !== 'held') return s;
     return s + (parseFloat(p.worker_payout != null ? p.worker_payout : p.WORKER_PAYOUT) || 0);
   }, 0);
-  var earnedLabel = totalEarned > 0 ? '$' + totalEarned.toFixed(0) : (pendingEarned > 0 ? '$' + pendingEarned.toFixed(0) + ' pending' : '$0');
+  var earnedLabel = '$' + (totalEarned > 0 ? totalEarned.toFixed(0) : '0');
+  var earnedSub = pendingEarned > 0 ? '$' + pendingEarned.toFixed(0) + ' pending' : '';
 
   var ico = function(name){ return typeof qgIcon==='function' ? qgIcon(name,{size:20}) : ''; };
   var stats = isPoster
     ? [
-        {icon:'clipboard', val: String(myPosted.length), cls:'', lbl:'Tasks posted', href:'mytasks.html?tab=posted'},
-        {icon:'users', val: String(applicantCount), cls:'purple', lbl:'Applicants', href:'mytasks.html?tab=posted&applicants=1'},
-        {icon:'checkCircle', val: String(myCompleted.length), cls:'', lbl:'Completed', href:'mytasks.html?tab=completed'},
-        {icon:'dollar', val: totalPaidDisplay, cls:'green', lbl:'Paid via QuickGigs', sub: paidSubLabel, href:'profile.html#payments'}
+        {icon:'clipboard', val: String(myOpenPosted.length), cls:'', lbl:'Active tasks', href:'mytasks.html?tab=posted'},
+        {icon:'users', val: String(pendingApplicantsOnMine), cls:'is-attention', lbl:'Applicants', href:'mytasks.html?tab=posted&applicants=1'},
+        {icon:'dollar', val: totalPaidDisplay, cls:'is-money', lbl:'Paid out', sub: paidSubLabel, href:'profile.html#payments'}
       ]
     : [
         {icon:'inbox', val: String(isTeenDashboard ? guardianWaiting : myApps.length), cls:'', lbl:isTeenDashboard?'Guardian review':'Applications', href:'mytasks.html?tab=applied'},
-        {icon:'checkCircle', val: String(myAcceptedApps.length), cls:'purple', lbl:'Jobs accepted', href:'mytasks.html?tab=applied'},
+        {icon:'checkCircle', val: String(myAcceptedApps.length), cls:'', lbl:'Jobs accepted', href:'mytasks.html?tab=applied'},
         {icon:'clock', val: String(myInProgressWorker), cls:'', lbl:'In progress', href:'mytasks.html?tab=inprogress'},
-        {icon:'dollar', val: earnedLabel, cls:'green', lbl:'Total earned', href:'profile.html#payments'}
+        {icon:'dollar', val: earnedLabel, cls:'is-money', lbl:'Total earned', sub: earnedSub, href:'profile.html#payments'}
       ];
 
   document.getElementById('statsGrid').innerHTML = stats.map(function(s){
@@ -1108,12 +1236,13 @@ function renderAll(){
   updateModeTag();
   updateAvatarMenuSwitchLabel();
   renderDashboardHero(userId);
+  renderDashApplicantsAlert(pendingApplicantsOnMine);
+  renderDashEarningsCard(workerPayments, totalEarned);
 
   var actions = isPoster
     ? [
-        {icon:'plus',title:'Post a task',desc:'Need something done?',href:'posttask.html',cls:'primary'},
         {icon:'users',title:'Find taskers',desc:'Browse skilled taskers near you',href:'workers.html',cls:'secondary'},
-        {icon:'folder',title:'Review applicants',desc:'See who applied to your tasks',href:'mytasks.html?tab=posted',cls:'secondary'}
+        {icon:'folder',title:'Review applicants',desc:'See who applied to your tasks',href:'mytasks.html?tab=posted&applicants=1',cls:'secondary'}
       ]
     : [
         {icon:'search',title:isTeenDashboard?'Browse teen-friendly gigs':'Browse tasks',desc:isTeenDashboard?'Only gigs that welcome ages 16–17':'Find tasks near you',href:'browsetask.html',cls:'primary'},
@@ -1125,10 +1254,10 @@ function renderAll(){
     return '<a class="action-card '+a.cls+'" href="'+a.href+'"><div class="action-icon">'+ico(a.icon)+'</div>'+copy+'</a>';
   }).join('') +
     (window.QG_CONFIG && !window.QG_CONFIG.paymentsEnabled
-      ? '<div class="action-card secondary" style="grid-column:1/-1;cursor:default;opacity:0.92"><div class="action-icon">'+ico('creditCard')+'</div><div class="action-copy"><div class="action-title">Payments coming at launch</div><div class="action-desc">Escrow and Stripe checkout ship with public launch — beta uses accept-to-chat flow.</div></div></div>'
+      ? '<div class="action-card secondary dash-span-full" style="cursor:default;opacity:0.92"><div class="action-icon">'+ico('creditCard')+'</div><div class="action-copy"><div class="action-title">Payments coming at launch</div><div class="action-desc">Escrow and Stripe checkout ship with public launch — beta uses accept-to-chat flow.</div></div></div>'
       : '') +
-    '<button type="button" class="action-card secondary" style="grid-column:1/-1;margin-top:2px;border:none;width:100%;text-align:left;font:inherit;color:inherit" onclick="typeof promptQuickGigsInstall===\'function\'&&promptQuickGigsInstall()"><div class="action-icon">'+ico('smartphone')+'</div><div class="action-copy"><div class="action-title">Add to Home Screen</div><div class="action-desc">Install QuickGigs on iPhone (Safari Share menu) or Android</div></div></button>' +
-    '<a class="action-card secondary" href="feedback.html" style="grid-column:1/-1;margin-top:2px"><div class="action-icon">'+ico('bug')+'</div><div class="action-copy"><div class="action-title">Beta feedback</div><div class="action-desc">Report a bug or share an idea — we read every message</div></div></a>';
+    '<button type="button" class="action-card secondary dash-span-full" style="margin-top:2px;border:none;width:100%;text-align:left;font:inherit;color:inherit" onclick="typeof promptQuickGigsInstall===\'function\'&&promptQuickGigsInstall()"><div class="action-icon">'+ico('smartphone')+'</div><div class="action-copy"><div class="action-title">Add to Home Screen</div><div class="action-desc">Install QuickGigs on iPhone (Safari Share menu) or Android</div></div></button>' +
+    '<a class="action-card secondary dash-span-full" href="feedback.html" style="margin-top:2px"><div class="action-icon">'+ico('bug')+'</div><div class="action-copy"><div class="action-title">Beta feedback</div><div class="action-desc">Report a bug or share an idea — we read every message</div></div></a>';
 
   var statsEl = document.getElementById('statsGrid');
   var actionsEl = document.getElementById('actionsGrid');
@@ -1161,8 +1290,9 @@ function renderAll(){
           return;
         }
         connectBanner.style.display = 'block';
-        connectBanner.innerHTML = '🏦 <strong>Set up payouts</strong> — connect Stripe so you get paid when tasks complete. ' +
-          '<a href="profile.html#payouts">Set up now ?</a>';
+        connectBanner.className = 'dash-prompt-card';
+        connectBanner.innerHTML = '<strong>Set up payouts</strong> — connect Stripe so you get paid when tasks complete. ' +
+          '<a href="profile.html#payouts">Set up now →</a>';
       }).catch(function() { connectBanner.style.display = 'none'; });
     } else {
       connectBanner.style.display = 'none';
@@ -1177,23 +1307,40 @@ function renderAll(){
   var html = '';
 
   if (isPoster) {
-    sectionTitle.textContent = 'Your open tasks';
+    sectionTitle.textContent = 'Needs your attention';
     if (seeAll) { seeAll.href = 'mytasks.html?tab=posted&applicants=1'; seeAll.textContent = 'See all'; }
-    if (myOpenPosted.length) {
-      html = myOpenPosted.slice(0, 5).map(function(t){
-        var appsOnTask = dashData.apps.filter(function(a){
-          return String(appField(a, 'task_id')) === String(taskField(t, 'id'));
+    var attentionTasks = myOpenPosted.slice().sort(function (a, b) {
+      function pendingFor(t) {
+        return dashData.apps.filter(function (app) {
+          return String(appField(app, 'task_id')) === String(taskField(t, 'id')) &&
+            String(appField(app, 'status') || 'pending').toLowerCase() === 'pending';
+        }).length;
+      }
+      return pendingFor(b) - pendingFor(a);
+    });
+    if (attentionTasks.length) {
+      html = attentionTasks.slice(0, 5).map(function(t){
+        var pendingOnTask = dashData.apps.filter(function(a){
+          return String(appField(a, 'task_id')) === String(taskField(t, 'id')) &&
+            String(appField(a, 'status') || 'pending').toLowerCase() === 'pending';
         }).length;
         var taskId = taskField(t, 'id');
-        var taskHref = 'mytasks.html?tab=posted' + (appsOnTask ? '&expand=' + encodeURIComponent(String(taskId)) : '');
-        return '<a class="task-row" href="'+taskHref+'" style="text-decoration:none">' +
-          '<div class="task-dot" style="background:rgba(107,63,160,0.2)">'+ico('clipboard')+'</div>' +
-          '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title'))+'</div><div class="task-meta">Open · $'+dashEsc(taskField(t,'budget'))+(appsOnTask ? ' · '+appsOnTask+' applicant'+(appsOnTask!==1?'s':'') : '')+'</div></div>' +
-          '<div class="task-right"><div class="task-price">Review</div></div>' +
+        var needsAction = pendingOnTask > 0;
+        var taskHref = 'mytasks.html?tab=posted&applicants=1' +
+          (needsAction ? '&expand=' + encodeURIComponent(String(taskId)) : '');
+        var badge = needsAction
+          ? '<span class="dash-app-badge">' + pendingOnTask + ' waiting</span>'
+          : '';
+        var cta = needsAction ? 'Review applicants' : 'View';
+        return '<a class="task-row' + (needsAction ? ' is-attention' : '') + '" href="'+taskHref+'" style="text-decoration:none">' +
+          '<div class="task-dot">'+ico('clipboard')+'</div>' +
+          '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title')) + badge + '</div>' +
+          '<div class="task-meta">Open · $'+dashEsc(taskField(t,'budget'))+'</div></div>' +
+          '<div class="task-right"><div class="task-price">' + cta + '</div></div>' +
         '</a>';
       }).join('');
     } else {
-      html = '<div class="empty"><div class="empty-icon">'+ico('clipboard')+'</div><div class="empty-txt">No open tasks yet — post one in under a minute</div><a class="empty-btn" href="posttask.html">Post a task</a></div>';
+      html = '<div class="empty"><div class="empty-icon">'+ico('clipboard')+'</div><div class="empty-txt">Nothing needs you right now — post a task to get applicants</div><a class="empty-btn" href="posttask.html">Post a task</a></div>';
     }
   } else {
     sectionTitle.textContent = 'Tasks near you';
@@ -1215,19 +1362,19 @@ function renderAll(){
         var pin = typeof qgIcon==='function' ? '<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>' : '';
         var locTxt = typeof formatLocationDisplay==='function'?formatLocationDisplay(taskField(t,'location')||city):String(taskField(t,'location')||city);
         return '<a class="task-row" href="browsetask.html" style="text-decoration:none">' +
-          '<div class="task-dot" style="background:rgba(74,222,128,0.15)">'+ico('briefcase')+'</div>' +
+          '<div class="task-dot">'+ico('briefcase')+'</div>' +
           '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title'))+'</div><div class="task-meta">'+pin+dashEsc(locTxt)+'</div></div>' +
-          '<div class="task-right"><div class="task-price">$'+dashEsc(taskField(t,'budget'))+'</div><span class="task-badge '+badge+'">'+badgeLabel+'</span></div>' +
+          '<div class="task-right"><div class="task-price is-money">$'+dashEsc(taskField(t,'budget'))+'</div><span class="task-badge '+badge+'">'+badgeLabel+'</span></div>' +
         '</a>';
       }).join('');
     } else {
       html = '<div class="empty"><div class="empty-icon">'+ico('search')+'</div><div class="empty-txt">No tasks nearby yet — post one or widen your area</div><a class="empty-btn" href="browsetask.html">Browse all tasks</a></div>';
     }
     if (myPosted.length) {
-      html += '<div style="margin-top:16px"></div><div class="section-hdr"><span class="section-title">Tasks you posted</span><a class="see-all" href="mytasks.html?tab=posted">See all</a></div>';
+      html += '<div class="dash-section-gap"></div><div class="section-hdr"><span class="section-title">Tasks you posted</span><a class="see-all" href="mytasks.html?tab=posted">See all</a></div>';
       html += myOpenPosted.slice(0, 2).map(function(t){
         return '<a class="task-row" href="mytasks.html?tab=posted" style="text-decoration:none">' +
-          '<div class="task-dot" style="background:rgba(107,63,160,0.2)">'+ico('clipboard')+'</div>' +
+          '<div class="task-dot">'+ico('clipboard')+'</div>' +
           '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title'))+'</div><div class="task-meta">You posted · $'+dashEsc(taskField(t,'budget'))+'</div></div></a>';
       }).join('');
     }

@@ -291,45 +291,18 @@
     var html = '';
 
     if (isPoster) {
-      var pending = data.pendingApplicants || 0;
-      var inProg = data.inProgressPosted || 0;
+      /* Poster hero is always Post a task; applicants waiting is a separate alert card. */
       var mobilePoster = !!data.mobilePoster;
-      if (mobilePoster) {
-        /* Mobile poster: always show the prominent post card (toggle covers mode switch). */
-        html = '<a class="dash-hero dash-hero-primary dash-hero-mobile-post" href="posttask.html">' +
-          '<span class="dash-hero-emoji" aria-hidden="true">✨</span>' +
-          '<span class="dash-hero-body">' +
-            '<strong>Post a task in under a minute</strong>' +
-            '<span>Get help near ' + city + ' — errands, home, tutoring & more</span>' +
-          '</span>' +
-          '<span class="dash-hero-cta">Post a task →</span></a>';
-        return html;
-      }
-      if (pending > 0) {
-        html = '<a class="dash-hero dash-hero-pulse" href="mytasks.html?tab=posted&applicants=1">' +
-          '<span class="dash-hero-emoji">👥</span>' +
-          '<span class="dash-hero-body">' +
-            '<strong>' + pending + ' applicant' + (pending !== 1 ? 's' : '') + ' waiting</strong>' +
-            '<span>Review and accept a tasker for your open tasks</span>' +
-          '</span>' +
-          '<span class="dash-hero-cta">Review →</span></a>';
-      } else if (inProg > 0) {
-        html = '<a class="dash-hero" href="mytasks.html?tab=inprogress">' +
-          '<span class="dash-hero-emoji">⏳</span>' +
-          '<span class="dash-hero-body">' +
-            '<strong>' + inProg + ' task' + (inProg !== 1 ? 's' : '') + ' in progress</strong>' +
-            '<span>Message your tasker or mark complete when done</span>' +
-          '</span>' +
-          '<span class="dash-hero-cta">Open →</span></a>';
-      } else {
-        html = '<a class="dash-hero dash-hero-primary" href="posttask.html">' +
-          '<span class="dash-hero-emoji">✨</span>' +
-          '<span class="dash-hero-body">' +
-            '<strong>Post a task in under a minute</strong>' +
-            '<span>Get help near ' + city + ' — errands, home, tutoring & more</span>' +
-          '</span>' +
-          '<span class="dash-hero-cta">Post →</span></a>';
-      }
+      html = '<a class="dash-hero dash-hero-primary dash-hero-post' +
+        (mobilePoster ? ' dash-hero-mobile-post' : '') +
+        '" href="posttask.html">' +
+        '<span class="dash-hero-emoji" aria-hidden="true">✦</span>' +
+        '<span class="dash-hero-body">' +
+          '<strong>Post a task in under a minute</strong>' +
+          '<span>Get help near ' + city + ' — errands, home, tutoring & more</span>' +
+        '</span>' +
+        '<span class="dash-hero-cta">Post a task →</span></a>';
+      if (mobilePoster) return html;
     } else {
       var nearby = data.openNearby || 0;
       var workerInProg = data.workerInProgress || 0;
@@ -350,8 +323,8 @@
           '</span>' +
           '<span class="dash-hero-cta">Browse →</span></a>';
       } else {
-        html = '<a class="dash-hero" href="profile.html">' +
-          '<span class="dash-hero-emoji">✨</span>' +
+        html = '<a class="dash-hero dash-hero-primary" href="profile.html">' +
+          '<span class="dash-hero-emoji">✦</span>' +
           '<span class="dash-hero-body">' +
             '<strong>Stand out to posters</strong>' +
             '<span>Add a photo, bio, and skills on your profile to get hired</span>' +
