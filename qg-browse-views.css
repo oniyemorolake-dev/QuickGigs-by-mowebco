@@ -1,0 +1,310 @@
+/**
+ * QuickGigs — Browse List / Map / Spotlight views (token styles).
+ */
+.qg-browse-view-toggle {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin: 0 16px 12px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+.qg-browse-view-opt {
+  min-height: 44px;
+  border: none;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--text-muted);
+  font: 600 12px 'DM Sans', sans-serif;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.qg-browse-view-opt.active {
+  background: var(--grad-tasker);
+  color: var(--on-accent);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent-tasker) 28%, transparent);
+}
+
+.qg-browse-view-opt .qg-ico {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+}
+
+.qg-best-match-btn {
+  min-height: 36px;
+  margin-left: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font: 600 11px 'DM Sans', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.qg-best-match-btn:hover {
+  border-color: var(--accent);
+}
+
+.results-bar .qg-best-match-btn {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 560px) {
+  .results-bar {
+    align-items: stretch;
+  }
+
+  .qg-best-match-btn {
+    min-height: 44px;
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .qg-browse-view-toggle {
+    margin: 0 12px 10px;
+  }
+}
+
+.qg-browse-map-view {
+  display: none;
+  margin: 0 0 20px;
+  min-height: 420px;
+}
+
+body.page-browse[data-browse-view="map"] .qg-browse-map-view {
+  display: grid !important;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 12px;
+  padding: 0 16px 16px;
+}
+
+body.page-browse[data-browse-view="map"] .qg-browse-map-view[hidden] {
+  display: grid !important;
+}
+
+body.page-browse[data-browse-view="map"] #cardsArea,
+body.page-browse[data-browse-view="spotlight"] #cardsArea {
+  display: none !important;
+}
+
+body.page-browse[data-browse-view="spotlight"] .qg-browse-spotlight,
+body.page-browse[data-browse-view="spotlight"] .qg-browse-spotlight[hidden] {
+  display: block !important;
+}
+
+.qg-browse-map {
+  min-height: 360px;
+  height: min(62vh, 560px);
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  overflow: hidden;
+  background: var(--surface-1);
+  z-index: 1;
+}
+
+.qg-browse-map-list {
+  max-height: min(62vh, 560px);
+  overflow-y: auto;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--surface-1);
+  -webkit-overflow-scrolling: touch;
+}
+
+.qg-browse-map-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  padding: 12px 14px;
+  cursor: pointer;
+  font: inherit;
+  min-height: 44px;
+}
+
+.qg-browse-map-row:hover,
+.qg-browse-map-row.is-active {
+  background: var(--accent-soft);
+}
+
+.qg-browse-map-row.is-active {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.qg-browse-map-row .row-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+
+.qg-browse-map-row .row-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.qg-browse-map-row .row-price {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--money);
+  margin-top: 4px;
+}
+
+.qg-browse-map-empty,
+.qg-browse-spotlight-empty {
+  padding: 28px 18px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.qg-price-pin {
+  background: var(--surface-1);
+  border: 1px solid var(--line-strong);
+  color: var(--money);
+  font: 700 11px 'DM Sans', sans-serif;
+  padding: 5px 8px;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--bg) 40%, transparent);
+  white-space: nowrap;
+}
+
+.qg-price-pin.is-active {
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  border-color: transparent;
+}
+
+.qg-browse-spotlight {
+  display: none;
+  padding: 8px 16px 28px;
+}
+
+.qg-spotlight-card {
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 22px 20px;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.qg-spotlight-cat {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.qg-spotlight-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.25;
+  margin: 0;
+}
+
+.qg-spotlight-price {
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--money);
+  letter-spacing: -0.02em;
+}
+
+.qg-spotlight-desc {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.qg-spotlight-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.qg-spotlight-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.qg-spotlight-skip,
+.qg-spotlight-apply {
+  min-height: 48px;
+  border-radius: 14px;
+  font: 600 14px 'DM Sans', sans-serif;
+  cursor: pointer;
+}
+
+.qg-spotlight-skip {
+  background: var(--surface-1);
+  border: 1px solid var(--line-strong);
+  color: var(--text-secondary);
+}
+
+.qg-spotlight-apply {
+  border: none;
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.task-card.is-best-match,
+.qg-browse-map-row.is-best-match {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px var(--accent-soft), inset 0 0 0 1px var(--accent);
+}
+
+.leaflet-container {
+  font: inherit;
+  background: var(--surface-1);
+}
+
+.leaflet-control-attribution {
+  font-size: 10px;
+  background: color-mix(in srgb, var(--surface-1) 88%, transparent) !important;
+  color: var(--text-muted) !important;
+}
+
+@media (max-width: 860px) {
+  body.page-browse[data-browse-view="map"] .qg-browse-map-view {
+    grid-template-columns: 1fr;
+  }
+
+  .qg-browse-map {
+    height: 280px;
+    min-height: 240px;
+  }
+
+  .qg-browse-map-list {
+    max-height: 42vh;
+  }
+}

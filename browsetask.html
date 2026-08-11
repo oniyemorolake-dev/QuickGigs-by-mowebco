@@ -33,6 +33,8 @@
 <link rel="stylesheet" href="qg-role-theme.css?v=20260811tokens1">
 <link rel="stylesheet" href="qg-tokens.css?v=20260811shell1" id="qg-tokens-css">
 <link rel="stylesheet" href="qg-flows.css?v=20260811flows1" id="qg-flows-css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="qg-browse-views.css?v=20260811browse1" id="qg-browse-views-css">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
 <script src="qg-theme.js"></script>
@@ -452,8 +454,14 @@ body.light .app-legal-footer a{color:var(--purple);}
   <strong>Gigs open to teen taskers</strong>
   <p>Only age-eligible gigs are shown. When you apply, your guardian reviews the request before the poster sees it.</p>
 </div>
+<div class="qg-browse-view-toggle" role="group" aria-label="Browse view">
+  <button type="button" class="qg-browse-view-opt active" data-view="list" aria-pressed="true">List</button>
+  <button type="button" class="qg-browse-view-opt" data-view="map" aria-pressed="false">Map</button>
+  <button type="button" class="qg-browse-view-opt" data-view="spotlight" aria-pressed="false">Spotlight</button>
+</div>
 <div class="results-bar">
   <span class="results-txt" id="resultsCount">Loading tasks…</span>
+  <button type="button" class="qg-best-match-btn" id="findBestMatchBtn" aria-label="Find best match">Find best match</button>
   <div class="filter-sorts">
     <select class="date-filter" id="dateFilter" onchange="applyFilters()" aria-label="Filter by post date">
       <option value="any">Any time</option>
@@ -493,6 +501,13 @@ body.light .app-legal-footer a{color:var(--purple);}
       <div class="qg-list-skel-row" aria-hidden="true"><div class="qg-list-skel-avatar"></div><div class="qg-list-skel-lines"><div class="qg-list-skel-line w80"></div><div class="qg-list-skel-line w60"></div></div></div>
     </div>
   </div>
+</div>
+<div class="qg-browse-map-view" id="browseMapView" hidden>
+  <div id="browseMap" class="qg-browse-map" role="application" aria-label="Task map"></div>
+  <div id="browseMapList" class="qg-browse-map-list" aria-label="Tasks on map"></div>
+</div>
+<div class="qg-browse-spotlight" id="browseSpotlightView" hidden>
+  <div id="spotlightCard" aria-live="polite"></div>
 </div>
 <div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" onclick="event.stopPropagation()">
@@ -607,6 +622,8 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-age.js?v=1"></script>
 <script defer src="qg-verification.js?v=20260804pm1"></script>
 <script defer src="qg-location.js?v=2"></script>
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script defer src="qg-browse-views.js?v=20260811browse1"></script>
 <script defer src="qg-pwa.js?v=cd3efe6-1786397433"></script>
 <script defer src="qg-notifications.js"></script>
 <script defer src="qg-share.js"></script>
@@ -1163,16 +1180,9 @@ function syncBudgetUI(){
     c.classList.toggle('active', c.getAttribute('data-budget')===budgetPreset);
   });
 }
-function renderCards(){
-  if(window._qgAgeTier==='loading'){
-    var loadingArea=document.getElementById('cardsArea');
-    if(loadingArea)loadingArea.innerHTML = typeof QG_listSkeletonHtml === 'function'
-      ? QG_listSkeletonHtml({ rows: 3, label: 'Checking gig eligibility…' })
-      : '<div class="loading-state"><div class="loading-txt">Checking gig eligibility…</div></div>';
-    return;
-  }
-  var search=(document.getElementById('searchInput').value||'').toLowerCase().trim();
-  var locFilter=(document.getElementById('locationFilter').value||'').trim();
+function getFilteredBrowseTasks(){
+  var search=(document.getElementById('searchInput')&&document.getElementById('searchInput').value||'').toLowerCase().trim();
+  var locFilter=(document.getElementById('locationFilter')&&document.getElementById('locationFilter').value||'').trim();
   var dateFilter=(document.getElementById('dateFilter')&&document.getElementById('dateFilter').value)||'any';
   var sortVal = (document.getElementById('sortSel') && document.getElementById('sortSel').value) || 'nearest';
   var radiusKm = typeof getNearRadiusKm==='function' ? getNearRadiusKm() : Infinity;
@@ -1227,8 +1237,15 @@ function renderCards(){
   } else {
     filtered = filtered.slice().sort(function(a,b){ return parseTaskTimestamp(b.createdAt)-parseTaskTimestamp(a.createdAt); });
   }
-  persistBrowseState();
-  renderActiveFilters();
+  return filtered;
+}
+window.getFilteredBrowseTasks = getFilteredBrowseTasks;
+
+function updateBrowseResultsCount(filtered){
+  var search=(document.getElementById('searchInput')&&document.getElementById('searchInput').value||'').toLowerCase().trim();
+  var locFilter=(document.getElementById('locationFilter')&&document.getElementById('locationFilter').value||'').trim();
+  var dateFilter=(document.getElementById('dateFilter')&&document.getElementById('dateFilter').value)||'any';
+  var radiusKm = typeof getNearRadiusKm==='function' ? getNearRadiusKm() : Infinity;
   var scopeLabel = locFilter
     ? locFilter.split(',')[0].trim()
     : (window._nearMeOnly && window.getUserCityLabel ? window.getUserCityLabel() : '');
@@ -1237,9 +1254,36 @@ function renderCards(){
   if (filtered.length !== openTotal && (activeMode !== 'all' || activeCat !== 'all' || search || locFilter || isFinite(radiusKm) || window._nearMeOnly || dateFilter !== 'any' || budgetPreset)) {
     countTxt = filtered.length + ' of ' + openTotal + ' open task' + (openTotal !== 1 ? 's' : '');
   }
-  document.getElementById('resultsCount').textContent = scopeLabel
-    ? countTxt + ' near ' + scopeLabel
-    : countTxt;
+  var el = document.getElementById('resultsCount');
+  if (el) {
+    el.textContent = scopeLabel
+      ? countTxt + ' near ' + scopeLabel
+      : countTxt;
+  }
+}
+
+function renderCards(){
+  if(window._qgAgeTier==='loading'){
+    var loadingArea=document.getElementById('cardsArea');
+    if(loadingArea)loadingArea.innerHTML = typeof QG_listSkeletonHtml === 'function'
+      ? QG_listSkeletonHtml({ rows: 3, label: 'Checking gig eligibility…' })
+      : '<div class="loading-state"><div class="loading-txt">Checking gig eligibility…</div></div>';
+    if (window.QGBrowseViews && typeof QGBrowseViews.renderBrowseView === 'function') {
+      QGBrowseViews.renderBrowseView([]);
+    }
+    return;
+  }
+  var filtered = getFilteredBrowseTasks();
+  window._browseFiltered = filtered;
+  persistBrowseState();
+  renderActiveFilters();
+  updateBrowseResultsCount(filtered);
+  if (window.QGBrowseViews && typeof QGBrowseViews.renderBrowseView === 'function') {
+    if (QGBrowseViews.renderBrowseView(filtered)) return;
+  }
+  var locFilter=(document.getElementById('locationFilter')&&document.getElementById('locationFilter').value||'').trim();
+  var dateFilter=(document.getElementById('dateFilter')&&document.getElementById('dateFilter').value)||'any';
+  var radiusKm = typeof getNearRadiusKm==='function' ? getNearRadiusKm() : Infinity;
   var area=document.getElementById('cardsArea');
   if (!filtered.length && (locFilter || isFinite(radiusKm) || window._nearMeOnly || dateFilter !== 'any') && allTasks.length) {
     area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('mapPin',{size:24}):'')+'</div><p class="empty-txt">No tasks match your filters — try clearing location, date, or search</p><button type="button" class="empty-btn" onclick="if(typeof clearFilters===\'function\')clearFilters();else location.reload()">Clear filters</button></div>';
@@ -1292,11 +1336,15 @@ function renderCards(){
   if (typeof bindReportTriggers === 'function') bindReportTriggers(area);
   if (typeof bindQgPhotoLightbox === 'function') bindQgPhotoLightbox(document.body);
   if (typeof qgStaggerCards === 'function') qgStaggerCards(area);
+  if (window.QGBrowseViews && typeof QGBrowseViews.onAfterListRender === 'function') {
+    QGBrowseViews.onAfterListRender(filtered);
+  }
 }
 
 window.setMode=function(el,mode){document.querySelectorAll('.mpill').forEach(function(p){p.className='mpill';});activeMode=mode;el.className='mpill active-'+mode;if(typeof haptic==='function')haptic(10);renderCards();};
 window.setCat=function(el,cat){document.querySelectorAll('.cpill').forEach(function(p){p.classList.remove('cat-active');});el.classList.add('cat-active');activeCat=cat;if(typeof haptic==='function')haptic(10);renderCards();};
 window.applyFilters=renderCards;
+window.renderCards=renderCards;
 window.clearFilters=function(){
   activeMode='all'; activeCat='all'; budgetMinVal=20; budgetMaxVal=300; budgetPreset='';
   document.querySelectorAll('.mpill').forEach(function(p,i){ p.className=i===0?'mpill active-all':'mpill'; });

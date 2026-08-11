@@ -223,6 +223,15 @@
     document.head.appendChild(flowsCss);
   }
 
+  /* Browse Map / Spotlight views */
+  if (!document.getElementById('qg-browse-views-css') && !document.querySelector('link[href*="qg-browse-views.css"]')) {
+    var browseViewsCss = document.createElement('link');
+    browseViewsCss.id = 'qg-browse-views-css';
+    browseViewsCss.rel = 'stylesheet';
+    browseViewsCss.href = 'qg-browse-views.css?v=20260811browse1';
+    document.head.appendChild(browseViewsCss);
+  }
+
   // Sync load so qgIcon is available before deferred page scripts run
   if (!document.querySelector('script[src*="qg-icons.js"]') && typeof window.qgIcon !== 'function') {
     try {
@@ -246,6 +255,9 @@
       'review.html': 'page-review'
     };
     if (map[page]) document.body.classList.add(map[page]);
+    if (page === 'browsetask.html' && !document.body.getAttribute('data-browse-view')) {
+      document.body.setAttribute('data-browse-view', 'list');
+    }
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', markPageClass);
