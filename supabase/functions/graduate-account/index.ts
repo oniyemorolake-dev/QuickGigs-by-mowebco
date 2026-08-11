@@ -10,7 +10,7 @@ const corsHeaders = {
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
   });
 }
 
@@ -48,7 +48,7 @@ async function sendLifecycleEmail(
   if (!key) return false;
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json; charset=utf-8' },
     body: JSON.stringify({
       from: Deno.env.get('FROM_EMAIL') || 'QuickGigs <notify@quickgigs.ca>',
       to: [email],

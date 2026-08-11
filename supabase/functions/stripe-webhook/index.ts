@@ -191,7 +191,7 @@ Deno.serve(async (req) => {
       ready: ready.ready,
       charges_enabled: ready.charges_enabled,
       payouts_enabled: ready.payouts_enabled,
-    }), { headers: { 'Content-Type': 'application/json' } });
+    }), { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
   }
 
   if (
@@ -207,7 +207,7 @@ Deno.serve(async (req) => {
       !verification.metadata?.firebase_uid
     ) {
       return new Response(JSON.stringify({ ignored: true }), {
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
       });
     }
     const verified = event.type === 'identity.verification_session.verified';
@@ -227,7 +227,7 @@ Deno.serve(async (req) => {
       /* soft launch RPC may not be deployed yet */
     }
     return new Response(JSON.stringify({ received: true, verification: 'tasker_id_check' }), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
     });
   }
 
@@ -240,7 +240,7 @@ Deno.serve(async (req) => {
       poster_payment_method_id: null,
     }).eq('poster_payment_method_id', paymentMethod.id);
     return new Response(JSON.stringify({ received: true, verification: 'poster_revoked' }), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
     });
   }
 
@@ -252,7 +252,7 @@ Deno.serve(async (req) => {
     const meta = (obj as { metadata?: Record<string, string> }).metadata || {};
     if (meta.project !== 'quickgigs') {
       return new Response(JSON.stringify({ ignored: true }), {
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
       });
     }
     const stripeRef = String(obj.id || '');
@@ -272,7 +272,7 @@ Deno.serve(async (req) => {
         .eq('status', 'pending');
     }
     return new Response(JSON.stringify({ received: true, status: 'failed' }), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
     });
   }
 
@@ -282,7 +282,7 @@ Deno.serve(async (req) => {
     const meta = pi.metadata || {};
     if (meta.project !== 'quickgigs' || meta.purpose === 'poster_payment_method') {
       return new Response(JSON.stringify({ ignored: true }), {
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
       });
     }
     const taskId = String(meta.task_id || '');
@@ -303,19 +303,19 @@ Deno.serve(async (req) => {
       funded: true,
       payment_intent: pi.id,
       task_id: taskId,
-    }), { headers: { 'Content-Type': 'application/json' } });
+    }), { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
   }
 
   if (event.type !== 'checkout.session.completed') {
     return new Response(JSON.stringify({ received: true }), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
     });
   }
 
   const session = event.data.object as Stripe.Checkout.Session;
   if (session.metadata?.project !== 'quickgigs') {
     return new Response(JSON.stringify({ ignored: true }), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
     });
   }
 
@@ -339,7 +339,7 @@ Deno.serve(async (req) => {
       }).eq('firebase_uid', session.metadata.firebase_uid);
     }
     return new Response(JSON.stringify({ received: true, verification: 'poster' }), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
     });
   }
 
@@ -379,6 +379,6 @@ Deno.serve(async (req) => {
   await unlockChat(supabase, taskId, posterId, workerId);
 
   return new Response(JSON.stringify({ ok: true, task_id: taskId, funded: true }), {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
   });
 });

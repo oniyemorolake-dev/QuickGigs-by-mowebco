@@ -22,11 +22,12 @@
 
   function bookmarkButtonHtml(taskId) {
     var saved = isTaskSaved(taskId);
+    var star = typeof qgIcon === 'function' ? qgIcon('star', { size: 12 }) : '';
     return '<button type="button" class="qg-chip-btn qg-save-trigger' + (saved ? ' is-saved' : '') + '" ' +
       'data-task-id="' + String(taskId || '').replace(/"/g, '&quot;') + '" ' +
       'aria-label="' + (saved ? 'Remove from saved' : 'Save task') + '" ' +
       'aria-pressed="' + (saved ? 'true' : 'false') + '">' +
-      (saved ? '★ Saved' : '☆ Save') + '</button>';
+      star + (saved ? ' Saved' : ' Save') + '</button>';
   }
 
   async function toggleSavedTask(taskId) {
@@ -65,7 +66,8 @@
         btn.classList.toggle('is-saved', saved);
         btn.setAttribute('aria-pressed', saved ? 'true' : 'false');
         btn.setAttribute('aria-label', saved ? 'Remove from saved' : 'Save task');
-        btn.textContent = saved ? '★ Saved' : '☆ Save';
+        var star = typeof qgIcon === 'function' ? qgIcon('star', { size: 12 }) : '';
+        btn.innerHTML = star + (saved ? ' Saved' : ' Save');
         if (typeof onChange === 'function') onChange(tid, saved);
       };
     });

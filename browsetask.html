@@ -4,18 +4,18 @@
 <meta charset="UTF-8">
 <!-- qg-build:cd3efe6-1786397433 -->
 
-<title>Browse tasks ? QuickGigs</title>
+<title>Browse tasks · QuickGigs</title>
 <meta name="description" content="Browse open tasks near you on QuickGigs ? Canada's marketplace to earn money doing errands, home help, and more.">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://quickgigs.ca/browsetask.html">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://quickgigs.ca/browsetask.html">
-<meta property="og:title" content="Browse tasks ? QuickGigs">
+<meta property="og:title" content="Browse tasks · QuickGigs">
 <meta property="og:description" content="Browse open tasks near you on QuickGigs ? Canada's marketplace to earn money doing errands, home help, and more.">
 <meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <meta property="og:locale" content="en_CA">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Browse tasks ? QuickGigs">
+<meta name="twitter:title" content="Browse tasks · QuickGigs">
 <meta name="twitter:description" content="Browse open tasks near you on QuickGigs ? Canada's marketplace to earn money doing errands, home help, and more.">
 <meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -411,15 +411,15 @@ body.light .app-legal-footer a{color:var(--purple);}
     <div class="location-status" id="locationStatus" role="status" aria-live="polite"></div>
   </div>
   <div style="padding:10px 0 0;display:flex;justify-content:flex-end">
-    <a href="categories.html" style="font-size:12px;color:var(--lavender,#c8a8e9);text-decoration:none">Browse categories ?</a>
+    <a href="categories.html" style="font-size:12px;color:var(--lavender,#c8a8e9);text-decoration:none">Browse categories</a>
   </div>
 </div>
 <div class="mode-row" id="modeRow">
   <span class="mpill active-all" onclick="setMode(this,'all')">All tasks</span>
-  <span class="mpill" onclick="setMode(this,'quick')">? Quick</span>
-  <span class="mpill" onclick="setMode(this,'standard')">📋 Standard</span>
-  <span class="mpill" onclick="setMode(this,'recurring')">🔄 Recurring</span>
-  <span class="mpill" onclick="setMode(this,'saved')">? Saved</span>
+  <span class="mpill" onclick="setMode(this,'quick')" data-qg-ico="zap">Quick</span>
+  <span class="mpill" onclick="setMode(this,'standard')" data-qg-ico="clipboard">Standard</span>
+  <span class="mpill" onclick="setMode(this,'recurring')" data-qg-ico="repeat">Recurring</span>
+  <span class="mpill" onclick="setMode(this,'saved')" data-qg-ico="star">Saved</span>
 </div>
 <div class="cat-wrap-outer">
   <span class="cat-label-txt">Category</span>
@@ -442,7 +442,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 <div class="photo-required-banner" id="photoRequiredBanner" style="display:none">
   <div>
     <strong>Profile photo required</strong>
-    <p>Add a clear photo before you apply ? posters need to see who they're hiring.</p>
+    <p>Add a clear photo before you apply — posters need to see who they're hiring.</p>
   </div>
   <a href="profile.html?setup=photo&required=1&return=browsetask.html">Add photo</a>
 </div>
@@ -623,7 +623,7 @@ function normaliseTask(row){
     mode:mode,
     cat:(row.CATEGORY||row.category||'other').toLowerCase(),
     catLabel:catInfo.label,icon:catInfo.icon,iconBg:catInfo.bg,
-    title:row.TITLE||row.title||'Untitled task',
+    title: (typeof formatTaskDisplayTitle === 'function' ? formatTaskDisplayTitle(row) : (row.TITLE || row.title || 'Untitled task')),
     desc:row.DESCRIPTION||row.description||'',
     price:budget,
     budgetNegotiable:budgetNegotiable,
@@ -638,7 +638,7 @@ function normaliseTask(row){
     applicants:0,
     status:(row.STATUS||row.status||'open').toLowerCase(),
     posterId:posterUid,
-    posterName:posterName||'QuickGigs user',
+    posterName:posterName||'a QuickGigs member',
     photoUrls: typeof parsePhotoUrls === 'function' ? parsePhotoUrls(row.photo_urls || row.PHOTO_URLS) : [],
     requiresPhotos: !!(row.requires_photos || row.REQUIRES_PHOTOS),
     isRecurring: !!(row.is_recurring || row.IS_RECURRING || mode === 'recurring'),
@@ -891,7 +891,7 @@ async function hydratePosterNames() {
   var uids = {};
   allTasks.forEach(function(t) {
     if (!t.posterId) return;
-    if (!t.posterName || t.posterName === 'QuickGigs user') uids[String(t.posterId)] = true;
+    if (!t.posterName || (t.posterName === 'a QuickGigs member' || t.posterName === 'QuickGigs user')) uids[String(t.posterId)] = true;
   });
   var keys = Object.keys(uids);
   for (var i = 0; i < keys.length; i++) {
@@ -997,10 +997,10 @@ function esc(s){
 }
 function getBadge(m,t){
   var modeBadge='';
-  if(m==='quick')modeBadge='<span class="tc-badge badge-quick">? Quick</span>';
-  else if(m==='recurring')modeBadge='<span class="tc-badge badge-recurring">🔄 Recurring</span>';
-  else modeBadge='<span class="tc-badge badge-standard">📋 Standard</span>';
-  if(t&&t.budgetNegotiable)modeBadge+='<span class="tc-badge badge-negotiable">💬 Negotiable</span>';
+  if(m==='quick')modeBadge='<span class="tc-badge badge-quick">'+(typeof qgIcon==='function'?qgIcon('zap',{size:12}):'')+' Quick</span>';
+  else if(m==='recurring')modeBadge='<span class="tc-badge badge-recurring">'+(typeof qgIcon==='function'?qgIcon('repeat',{size:12}):'')+' Recurring</span>';
+  else modeBadge='<span class="tc-badge badge-standard">'+(typeof qgIcon==='function'?qgIcon('clipboard',{size:12}):'')+' Standard</span>';
+  if(t&&t.budgetNegotiable)modeBadge+='<span class="tc-badge badge-negotiable">Negotiable</span>';
   if(t){
     modeBadge += t.agePreference === 'adults_only'
       ? '<span class="tc-badge badge-age-adult">18+ only</span>'
@@ -1230,14 +1230,14 @@ function renderCards(){
     : countTxt;
   var area=document.getElementById('cardsArea');
   if (!filtered.length && (locFilter || isFinite(radiusKm) || window._nearMeOnly || dateFilter !== 'any') && allTasks.length) {
-    area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('mapPin',{size:24}):'')+'</div><p class="empty-txt">No tasks match your filters ? try clearing location, date, or search</p><button type="button" class="empty-btn" onclick="if(typeof clearFilters===\'function\')clearFilters();else location.reload()">Clear filters</button></div>';
+    area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('mapPin',{size:24}):'')+'</div><p class="empty-txt">No tasks match your filters — try clearing location, date, or search</p><button type="button" class="empty-btn" onclick="if(typeof clearFilters===\'function\')clearFilters();else location.reload()">Clear filters</button></div>';
     return;
   }
   if(!filtered.length && activeMode==='saved'){
-    area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('star',{size:24}):'')+'</div><p class="empty-txt">No saved tasks yet ? tap ? Save on any task to bookmark it here.</p><button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.href=\'browsetask.html\'">Browse open tasks ?</button></div>';
+    area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('star',{size:24}):'')+'</div><p class="empty-txt">No saved tasks yet — tap Save on any task to bookmark it here.</p><button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.href=\'browsetask.html\'">Browse open tasks</button></div>';
     return;
   }
-  if(!filtered.length){area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('search',{size:24}):'')+'</div><p class="empty-txt">'+(allTasks.length===0?'No open tasks yet ? post the first one':'No tasks match this filter')+'</p>'+(allTasks.length===0?'<a class="empty-btn" href="posttask.html" style="display:inline-block;margin-top:14px;padding:12px 20px;border-radius:12px;background:var(--purple);color:#fff;text-decoration:none">Post a task ?</a>':'<button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.reload()">Reset browse</button>')+'</div>';return;}
+  if(!filtered.length){area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('search',{size:24}):'')+'</div><p class="empty-txt">'+(allTasks.length===0?'No open tasks yet — post the first one':'No tasks match this filter')+'</p>'+(allTasks.length===0?'<a class="empty-btn" href="posttask.html" style="display:inline-block;margin-top:14px;padding:12px 20px;border-radius:12px;background:var(--purple);color:#fff;text-decoration:none">Post a task</a>':'<button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.reload()">Reset browse</button>')+'</div>';return;}
   area.innerHTML=filtered.map(function(t){
     var loc = formatLocationDisplay(t.location);
     var shareBtn = typeof shareButtonHtml === 'function' ? shareButtonHtml('task', t.id, t.title) : '';
@@ -1263,7 +1263,7 @@ function renderCards(){
         '<div class="tc-bottom">'+
           '<div style="min-width:0;flex:1">'+
             '<div class="tc-price">'+esc(t.priceLabel)+(typeof qgNewPillHtml==='function'?qgNewPillHtml(t.createdAt||t.created_at):'')+'</div>'+
-            '<div class="tc-info">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(metaBits.join(' ? '))+'</div>'+
+            '<div class="tc-info">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(metaBits.join(' · '))+'</div>'+
             '<div class="qg-action-row">'+saveBtn+shareBtn+'</div>'+
           '</div>'+
           '<button type="button" class="apply-btn '+getBtnClass(t.mode)+'" onclick="openModal(\''+esc(String(t.id))+'\',event)">'+getBtnLabel(t.mode)+'</button>'+
@@ -1644,7 +1644,7 @@ window.openModal=async function(id,e){
       negoHint.textContent = 'Negotiate your offer here ? use chat later for schedule and details, not price.';
     } else {
       negoHint.style.display = 'block';
-      negoHint.textContent = 'Fixed budget ? your offer matches the poster\'s price. Chat is for schedule and details.';
+      negoHint.textContent = 'Fixed budget — your offer matches the poster\'s price. Chat is for schedule and details.';
     }
   }
   document.getElementById('offerMsg').value='';
@@ -1870,7 +1870,7 @@ window.submitBrowseApplication=async function(){
     bindBrowseSubmitApplication();
     var dbSubmitApplication = getDbSubmitApplication();
     if (typeof dbSubmitApplication !== 'function') {
-      applyNotify('Still loading ? wait a second and try again.', '#f59e0b');
+      applyNotify('Still loading — wait a second and try again.', '#f59e0b');
       unlockApplyBtn();
       return;
     }
@@ -1879,7 +1879,7 @@ window.submitBrowseApplication=async function(){
       task_id: taskId,
       worker_id: userId,
       worker_name: workerName,
-      message: msg + (avail ? ' ? Available: ' + avail : ''),
+      message: msg + (avail ? ' · Available: ' + avail : ''),
       price: priceNum
     };
     console.log('[QuickGigs apply] inserting applications row', payload);
@@ -1949,15 +1949,15 @@ window.submitBrowseApplication=async function(){
             status: 'application'
           });
           if (convResult.success && convResult.data && convResult.data.conv_id && chatUnlocked && typeof sendChatMessage === 'function') {
-            var offerMsg = msg + (avail ? ' ? Available: ' + avail : '') + ' ? My offer: $' + priceNum;
+            var offerMsg = msg + (avail ? ' · Available: ' + avail : '') + ' · My offer: $' + priceNum;
             var msgResult = await sendChatMessage(convResult.data.conv_id, userId, offerMsg);
             if (msgResult && msgResult.blocked) {
-              chatNote = ' Application saved ? chat stays locked until payment.';
+              chatNote = ' Application saved — chat stays locked until payment.';
             } else {
               chatNote = ' Open Messages to chat with the poster.';
             }
           } else if (convResult.success) {
-            chatNote = ' Application saved ? chat opens after acceptance and payment.';
+            chatNote = ' Application saved — chat opens after acceptance and payment.';
           } else {
             console.warn('Chat setup failed:', convResult.error);
             chatNote = ' Open Messages to track your application.';

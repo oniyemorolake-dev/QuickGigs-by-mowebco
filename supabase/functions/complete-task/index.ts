@@ -12,7 +12,7 @@ const corsHeaders = {
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
   });
 }
 
@@ -450,7 +450,7 @@ Deno.serve(async (req) => {
       const releaseRes = await fetch(releaseUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json; charset=utf-8',
           Authorization: req.headers.get('authorization') || '',
         },
         body: JSON.stringify({

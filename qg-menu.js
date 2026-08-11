@@ -118,13 +118,13 @@
     var sections = [];
 
     var accountItems = [
-      { type: 'link', href: 'profile.html', icon: '👤', label: 'Profile' }
+      { type: 'link', href: 'profile.html', icon: 'users', label: 'Profile' }
     ];
     if (canOfferTarget) {
       accountItems.push({
         type: 'action',
         action: 'switchMode',
-        icon: hasTarget ? '🔄' : (worker ? '📋' : '💼'),
+        icon: hasTarget ? 'refresh' : (worker ? 'clipboard' : 'briefcase'),
         label: hasTarget
           ? (worker ? 'Switch to Poster' : 'Switch to Tasker')
           : (worker ? 'Become a Poster' : 'Start finding work')
@@ -136,15 +136,15 @@
     });
 
     var goItems = [
-      { type: 'link', href: 'dashboard.html', icon: '🏠', label: 'Home' },
+      { type: 'link', href: 'dashboard.html', icon: 'home', label: 'Home' },
       worker
-        ? { type: 'link', href: 'browsetask.html', icon: '🔍', label: 'Browse tasks' }
-        : { type: 'link', href: 'posttask.html', icon: '➕', label: 'Post a task' },
-      { type: 'link', href: 'mytasks.html', icon: '📋', label: worker ? 'My jobs' : 'My tasks' },
-      { type: 'link', href: 'messages.html', icon: '💬', label: 'Messages' }
+        ? { type: 'link', href: 'browsetask.html', icon: 'search', label: 'Browse tasks' }
+        : { type: 'link', href: 'posttask.html', icon: 'plus', label: 'Post a task' },
+      { type: 'link', href: 'mytasks.html', icon: 'clipboard', label: worker ? 'My jobs' : 'My tasks' },
+      { type: 'link', href: 'messages.html', icon: 'message', label: 'Messages' }
     ];
-    if (worker) goItems.push({ type: 'link', href: 'categories.html', icon: '🏷️', label: 'Categories' });
-    else goItems.push({ type: 'link', href: 'workers.html', icon: '👥', label: 'Find taskers' });
+    if (worker) goItems.push({ type: 'link', href: 'categories.html', icon: 'folder', label: 'Categories' });
+    else goItems.push({ type: 'link', href: 'workers.html', icon: 'users', label: 'Find taskers' });
     sections.push({
       label: 'Go to',
       items: goItems
@@ -153,25 +153,25 @@
     sections.push({
       label: 'Help',
       items: [
-        { type: 'link', href: 'how-it-works.html', icon: '✨', label: 'How it works' },
-        { type: 'link', href: 'faq.html', icon: '❓', label: 'FAQ' },
-        { type: 'link', href: 'safety.html', icon: '🛡️', label: 'Safety' },
-        { type: 'link', href: 'guidelines.html', icon: '📜', label: 'Guidelines' },
-        { type: 'link', href: 'feedback.html', icon: '🐛', label: 'Beta feedback' }
+        { type: 'link', href: 'how-it-works.html', icon: 'sparkles', label: 'How it works' },
+        { type: 'link', href: 'faq.html', icon: 'helpCircle', label: 'FAQ' },
+        { type: 'link', href: 'safety.html', icon: 'alert', label: 'Safety' },
+        { type: 'link', href: 'guidelines.html', icon: 'list', label: 'Guidelines' },
+        { type: 'link', href: 'feedback.html', icon: 'bug', label: 'Beta feedback' }
       ]
     });
 
     var settings = [
-      { type: 'action', action: 'theme', icon: '🎨', label: themeLabel() }
+      { type: 'action', action: 'theme', icon: 'eye', label: themeLabel() }
     ];
     if (typeof window.promptQuickGigsInstall === 'function') {
-      settings.push({ type: 'action', action: 'install', icon: '📲', label: 'Add to Home Screen' });
+      settings.push({ type: 'action', action: 'install', icon: 'smartphone', label: 'Add to Home Screen' });
     }
     sections.push({ label: 'Settings', items: settings });
 
     sections.push({
       label: '',
-      items: [{ type: 'action', action: 'logout', icon: '🚪', label: 'Log out', danger: true }]
+      items: [{ type: 'action', action: 'logout', icon: 'x', label: 'Log out', danger: true }]
     });
 
     return sections;
@@ -182,31 +182,31 @@
       {
         label: 'Get started',
         items: [
-          { type: 'link', href: 'signup.html?role=poster', icon: '📝', label: 'Sign up — post tasks' },
-          { type: 'link', href: 'signup.html?role=worker', icon: '💼', label: 'Sign up — earn as tasker' },
-          { type: 'link', href: 'login.html', icon: '🔑', label: 'Log in' }
+          { type: 'link', href: 'signup.html?role=poster', icon: 'clipboard', label: 'Sign up — post tasks' },
+          { type: 'link', href: 'signup.html?role=worker', icon: 'briefcase', label: 'Sign up — earn as tasker' },
+          { type: 'link', href: 'login.html', icon: 'lock', label: 'Log in' }
         ]
       },
       {
         label: 'Learn',
         items: [
-          { type: 'link', href: 'how-it-works.html', icon: '✨', label: 'How it works' },
-          { type: 'link', href: 'faq.html', icon: '❓', label: 'FAQ' },
-          { type: 'link', href: 'safety.html', icon: '🛡️', label: 'Safety' },
-          { type: 'link', href: 'guidelines.html', icon: '📜', label: 'Guidelines' },
-          { type: 'link', href: 'dispute-resolution.html', icon: '⚖️', label: 'Disputes' }
+          { type: 'link', href: 'how-it-works.html', icon: 'sparkles', label: 'How it works' },
+          { type: 'link', href: 'faq.html', icon: 'helpCircle', label: 'FAQ' },
+          { type: 'link', href: 'safety.html', icon: 'alert', label: 'Safety' },
+          { type: 'link', href: 'guidelines.html', icon: 'list', label: 'Guidelines' },
+          { type: 'link', href: 'dispute-resolution.html', icon: 'alert', label: 'Disputes' }
         ]
       },
       {
         label: 'Legal',
         items: [
-          { type: 'link', href: 'terms.html', icon: '📄', label: 'Terms of Service' },
-          { type: 'link', href: 'privacy.html', icon: '🔒', label: 'Privacy Policy' }
+          { type: 'link', href: 'terms.html', icon: 'clipboard', label: 'Terms of Service' },
+          { type: 'link', href: 'privacy.html', icon: 'lock', label: 'Privacy Policy' }
         ]
       },
       {
         label: 'Settings',
-        items: [{ type: 'action', action: 'theme', icon: '🎨', label: themeLabel() }]
+        items: [{ type: 'action', action: 'theme', icon: 'eye', label: themeLabel() }]
       }
     ];
 
@@ -214,12 +214,17 @@
       sections[0].items.unshift({
         type: 'link',
         href: 'dashboard.html',
-        icon: '🏠',
+        icon: 'home',
         label: 'Go to dashboard'
       });
     }
 
     return sections;
+  }
+
+  function renderMenuIcon(name) {
+    if (typeof qgIcon === 'function' && name) return qgIcon(name, { size: 18 });
+    return '';
   }
 
   function renderSections(sections) {
@@ -229,13 +234,14 @@
         : '';
       var links = section.items.map(function (item) {
         var cls = item.danger ? ' danger' : '';
+        var ico = '<span class="ico" aria-hidden="true">' + renderMenuIcon(item.icon) + '</span>';
         if (item.type === 'link') {
           return '<a class="qg-menu-link' + cls + '" href="' + item.href + '">' +
-            '<span class="ico" aria-hidden="true">' + item.icon + '</span>' +
+            ico +
             '<span>' + item.label + '</span></a>';
         }
         return '<button type="button" class="qg-menu-action' + cls + '" data-qg-action="' + item.action + '">' +
-          '<span class="ico" aria-hidden="true">' + item.icon + '</span>' +
+          ico +
           '<span>' + item.label + '</span></button>';
       }).join('');
       return '<div class="qg-menu-section">' + label + links + '</div>';

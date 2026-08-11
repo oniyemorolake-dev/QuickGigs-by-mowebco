@@ -479,9 +479,10 @@
       window.isTaskSaved = function (id) { return !!local[String(id)]; };
       window.bookmarkButtonHtml = function (taskId) {
         var saved = !!local[String(taskId)];
+        var star = typeof qgIcon === 'function' ? qgIcon('star', { size: 12 }) : '';
         return '<button type="button" class="qg-chip-btn qg-save-trigger' + (saved ? ' is-saved' : '') + '" data-task-id="' +
           String(taskId).replace(/"/g, '&quot;') + '" aria-pressed="' + (saved ? 'true' : 'false') +
-          '" aria-label="' + (saved ? 'Remove from saved' : 'Save task') + '">' + (saved ? '★ Saved' : '☆ Save') + '</button>';
+          '" aria-label="' + (saved ? 'Remove from saved' : 'Save task') + '">' + star + (saved ? ' Saved' : ' Save') + '</button>';
       };
       window.toggleSavedTask = async function (taskId) {
         var tid = String(taskId);
@@ -499,7 +500,8 @@
             btn.classList.toggle('is-saved', !!result.saved);
             btn.setAttribute('aria-pressed', result.saved ? 'true' : 'false');
             btn.setAttribute('aria-label', result.saved ? 'Remove from saved' : 'Save task');
-            btn.textContent = result.saved ? '★ Saved' : '☆ Save';
+            var star = typeof qgIcon === 'function' ? qgIcon('star', { size: 12 }) : '';
+            btn.innerHTML = star + (result.saved ? ' Saved' : ' Save');
             if (onChange) onChange(tid, result.saved);
           };
         });

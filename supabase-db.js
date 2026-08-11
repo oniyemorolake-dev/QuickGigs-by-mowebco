@@ -1711,7 +1711,14 @@ function getUserRowId(row) {
 function isGenericDisplayName(name) {
   if (!name) return true;
   var n = String(name).trim().toLowerCase();
-  return !n || n === 'quickgigs user' || n === 'worker' || n === 'poster' || n === 'user' || n === 'tasker';
+  return !n ||
+    n === 'quickgigs user' ||
+    n === 'a quickgigs member' ||
+    n === 'quickgigs member' ||
+    n === 'worker' ||
+    n === 'poster' ||
+    n === 'user' ||
+    n === 'tasker';
 }
 
 function normalizeAlertCategories(raw) {
@@ -2271,7 +2278,7 @@ async function ensureTaskerProfilePhoto() {
 }
 
 function resolveUserName(uid, taskRow, userNames) {
-  if (!uid) return 'User';
+  if (!uid) return 'a QuickGigs member';
   var uidStr = String(uid);
 
   if (taskRow) {
@@ -2285,6 +2292,9 @@ function resolveUserName(uid, taskRow, userNames) {
       var pn = taskRow.poster_name || taskRow.POSTER_NAME;
       if (pn && !isGenericDisplayName(pn)) return pn;
     }
+    // Poster name on the row even when uid match is fuzzy / missing posted_by
+    var rowPoster = taskRow.poster_name || taskRow.POSTER_NAME;
+    if (rowPoster && !isGenericDisplayName(rowPoster)) return rowPoster;
   }
 
   if (userNames && userNames[uidStr] && !isGenericDisplayName(userNames[uidStr])) {
@@ -2293,10 +2303,10 @@ function resolveUserName(uid, taskRow, userNames) {
 
   if (window._currentUser && window._currentUser.uid === uidStr) {
     var me = window._currentUser.displayName || (window._currentUser.email || '').split('@')[0];
-    if (me) return me;
+    if (me && !isGenericDisplayName(me)) return me;
   }
 
-  return 'QuickGigs user';
+  return 'a QuickGigs member';
 }
 
 async function enrichConversationNames(conv) {
@@ -2676,7 +2686,7 @@ function notifyChatRecipientAsync(convId, senderId, preview) {
       if (!recipientId || recipientId === senderId) return;
       var senderName = typeof getUserNameByFirebaseUid === 'function'
         ? await getUserNameByFirebaseUid(senderId)
-        : 'QuickGigs user';
+        : 'a QuickGigs member';
       var chatLink = 'https://quickgigs.ca/chat.html?conv=' + encodeURIComponent(convId);
       if (typeof notifyNewChatMessage === 'function') {
         // Do not fetch other users' email on the client — queue by user_id only.

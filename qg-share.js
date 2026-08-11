@@ -89,7 +89,9 @@
       'data-share-kind="' + attr(kind || 'task') + '" ' +
       'data-share-id="' + attr(id || '') + '" ' +
       'data-share-label="' + safeLabel + '" ' +
-      'aria-label="Share ' + (safeLabel || 'link') + '">↗ Share</button>';
+      'aria-label="Share ' + (safeLabel || 'link') + '">' +
+      (typeof qgIcon === 'function' ? qgIcon('send', { size: 12 }) : '') +
+      ' Share</button>';
   }
 
   function bindShareTriggers(root, getTaskById) {

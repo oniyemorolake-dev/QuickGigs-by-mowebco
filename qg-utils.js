@@ -12,9 +12,22 @@ function sanitizeInput(text, maxLen) {
   return s;
 }
 
+/**
+ * Soft-fix UTF-8 replacement chars (U+FFFD) from stored/returned text for display.
+ * Does not mutate the database — existing corrupted rows still need a data cleanup.
+ */
+function sanitizeDisplayText(text) {
+  if (text == null) return '';
+  return String(text)
+    .replace(/\uFFFD+/g, ' · ')
+    // Legacy apply-message separators written when source em-dashes were mangled to "?"
+    .replace(/\s+\?\s+Available:/g, ' · Available:')
+    .replace(/\s+\?\s+My offer:/g, ' · My offer:');
+}
+
 /** Escape for HTML text nodes / safe insertion into HTML templates. */
 function escapeHtml(text) {
-  return String(text == null ? '' : text)
+  return sanitizeDisplayText(text)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -102,6 +115,7 @@ function qgEsc(text) {
 }
 
 window.sanitizeInput = sanitizeInput;
+window.sanitizeDisplayText = sanitizeDisplayText;
 window.escapeHtml = escapeHtml;
 window.escAttr = escAttr;
 window.safeUrl = safeUrl;
@@ -150,6 +164,40 @@ function formatTitle(str) {
 }
 
 window.formatTitle = formatTitle;
+
+function looksLikeUuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value || '').trim());
+}
+
+/**
+ * Visible task label for users — never a raw UUID.
+ * Fallback: category + short date, else "Untitled task".
+ */
+function formatTaskDisplayTitle(task, taskIdHint) {
+  var row = task || {};
+  var title = String(row.title || row.TITLE || '').trim();
+  if (title && !looksLikeUuid(title)) return title;
+  var cat = String(row.category || row.CATEGORY || row.catLabel || row.cat || '').trim();
+  if (cat) {
+    cat = cat.charAt(0).toUpperCase() + cat.slice(1);
+  }
+  var created = row.created_at || row.CREATED_AT || row.createdAt || '';
+  var dateBit = '';
+  if (created) {
+    try {
+      dateBit = new Date(created).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
+    } catch (e) { dateBit = ''; }
+  }
+  var fallback = [cat, dateBit].filter(Boolean).join(' · ');
+  if (fallback) return fallback;
+  if (taskIdHint != null && String(taskIdHint) && !looksLikeUuid(taskIdHint)) {
+    return String(taskIdHint);
+  }
+  return 'Untitled task';
+}
+
+window.looksLikeUuid = looksLikeUuid;
+window.formatTaskDisplayTitle = formatTaskDisplayTitle;
 
 /**
  * Parse Supabase/Postgres timestamps as real instants.
@@ -722,7 +770,7 @@ function renderUserAvatarHtml(name, avatarUrl, opts) {
   opts = opts || {};
   var cls = opts.className || 'user-avatar';
   var initial = (name || 'U').charAt(0).toUpperCase();
-  var label = escapeHtml(name || 'User');
+  var label = escapeHtml(name || 'a QuickGigs member');
   var photo = safeMediaUrl(avatarUrl);
   var size = Number(opts.size) || 40;
   if (photo) {
@@ -767,7 +815,7 @@ function profileNameLink(name, uid, opts) {
   opts = opts || {};
   var label = opts.pronouns && opts.pronouns !== 'prefer not to say'
     ? formatNameWithPronouns(name, opts.pronouns)
-    : (name || 'User');
+    : (name || 'a QuickGigs member');
   if (!uid) return escapeHtml(label);
   var cls = opts.className || 'profile-link';
   var style = opts.style || 'color:inherit;text-decoration:underline;text-underline-offset:2px';
@@ -777,7 +825,7 @@ function profileNameLink(name, uid, opts) {
 function formatNameWithPronouns(name, pronouns) {
   var n = (name || '').trim();
   var p = (pronouns || '').trim();
-  if (!p || p.toLowerCase() === 'prefer not to say') return n || 'User';
+  if (!p || p.toLowerCase() === 'prefer not to say') return n || 'a QuickGigs member';
   return n ? n + ' · ' + p : p;
 }
 

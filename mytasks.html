@@ -4,18 +4,18 @@
 <meta charset="UTF-8">
 <!-- qg-build:cd3efe6-1786397433 -->
 
-<title>My tasks ? QuickGigs</title>
+<title>My tasks · QuickGigs</title>
 <meta name="description" content="Manage posted tasks and applications on QuickGigs.">
 <meta name="robots" content="noindex,nofollow">
 <link rel="canonical" href="https://quickgigs.ca/mytasks.html">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://quickgigs.ca/mytasks.html">
-<meta property="og:title" content="My tasks ? QuickGigs">
+<meta property="og:title" content="My tasks · QuickGigs">
 <meta property="og:description" content="Manage posted tasks and applications on QuickGigs.">
 <meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <meta property="og:locale" content="en_CA">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="My tasks ? QuickGigs">
+<meta name="twitter:title" content="My tasks · QuickGigs">
 <meta name="twitter:description" content="Manage posted tasks and applications on QuickGigs.">
 <meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -545,7 +545,7 @@ function displayName(uid, taskOrApp) {
   if (taskOrApp && (taskOrApp.worker_name || taskOrApp.WORKER_NAME)) return taskOrApp.worker_name || taskOrApp.WORKER_NAME;
   if (taskOrApp && (taskOrApp.poster_name || taskOrApp.POSTER_NAME)) return taskOrApp.poster_name || taskOrApp.POSTER_NAME;
   if (userNames[uid]) return userNames[uid];
-  return 'QuickGigs user';
+  return 'a QuickGigs member';
 }
 
 function taskDomId(taskId) {
@@ -597,13 +597,13 @@ function renderApplicantAction(a, taskId, task) {
     if (isPaymentGatedChat()) {
       if (typeof isTaskPaid === 'function' && isTaskPaid(taskId)) {
         return '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border)" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">Chat</button>' +
-          '<span class="accept-status">? Accepted � Paid</span>';
+          '<span class="accept-status">'+(typeof qgIcon==='function'?qgIcon('check',{size:12}):'')+' Accepted · Paid</span>';
       }
-      return '<button type="button" class="accept-btn" style="background:var(--purple);color:#fff" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks">💳 Pay to unlock chat</button>' +
-        '<span class="accept-status">? Accepted</span>';
+      return '<button type="button" class="accept-btn" style="background:var(--purple);color:#fff" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks">Pay to unlock chat</button>' +
+        '<span class="accept-status">'+(typeof qgIcon==='function'?qgIcon('check',{size:12}):'')+' Accepted</span>';
     }
     return '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border)" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">Chat</button>' +
-      '<span class="accept-status">? Accepted</span>';
+      '<span class="accept-status">'+(typeof qgIcon==='function'?qgIcon('check',{size:12}):'')+' Accepted</span>';
   }
   if (status === 'declined') return '<span class="accept-status declined">Not selected</span>';
   if (status === 'cancelled') return '<span class="accept-status declined">Withdrawn</span>';
@@ -622,7 +622,7 @@ function renderApplicantAction(a, taskId, task) {
         '<button type="button" class="accept-btn" data-poster-accept-counter="'+escAttr(appId)+'" data-task-id="'+escAttr(taskId)+'" data-worker-id="'+escAttr(workerId)+'">Accept $' + neg.counterPrice + '</button>' +
         '</div>';
     } else if (neg.counterBy === 'poster') {
-      negoHtml = '<div class="nego-actions"><span class="nego-status">Counter sent ? waiting for tasker</span></div>';
+      negoHtml = '<div class="nego-actions"><span class="nego-status">Counter sent — waiting for tasker</span></div>';
     } else if (neg.counterRound === 0) {
       negoHtml = '<div class="nego-actions">' +
         '<button type="button" class="accept-btn counter-btn" data-poster-counter="'+escAttr(appId)+'" data-task-id="'+escAttr(taskId)+'" data-worker-id="'+escAttr(workerId)+'">Counter $?</button>' +
@@ -687,7 +687,7 @@ window.toggleApplicants = function(taskId) {
     var count = btn.getAttribute('data-applicant-count') || '';
     var names = btn.getAttribute('data-applicant-names') || '';
     // textContent ? getAttribute decodes entities; never re-inject via innerHTML
-    btn.textContent = '👥 ' + count + (names ? ' � ' + names : '') + ' ? Tap to ' + (expandedApplicantTasks[taskId] ? 'hide' : 'view');
+    btn.textContent = '👥 ' + count + (names ? ' · ' + names : '') + ' ? Tap to ' + (expandedApplicantTasks[taskId] ? 'hide' : 'view');
   }
 };
 
@@ -947,7 +947,7 @@ async function loadData(){
     }
 
     if (typeof isSupabaseUsingStaleCache === 'function' && isSupabaseUsingStaleCache()) {
-      showToast('Showing saved tasks ? reconnect or run tasks-my-tasks-fix.sql if this persists', '#f59e0b');
+      showToast('Showing saved tasks — reconnect or run tasks-my-tasks-fix.sql if this persists', '#f59e0b');
     }
 
     try {
@@ -1094,8 +1094,8 @@ function formatAppPriceHtml(a) {
 
 function formatTaskBudgetMeta(task) {
   var budget = getField(task, 'BUDGET');
-  if (isTaskNegotiable(task)) return 'Around $' + budget + ' CAD � negotiable';
-  return '$' + budget + ' CAD � fixed';
+  if (isTaskNegotiable(task)) return 'Around $' + budget + ' CAD · negotiable';
+  return '$' + budget + ' CAD · fixed';
 }
 
 function esc(s){
@@ -1105,7 +1105,7 @@ function esc(s){
 }
 function personLink(name, uid) {
   if (uid && typeof profileNameLink === 'function') return profileNameLink(name, uid, { className: 'profile-link' });
-  return esc(name || 'User');
+  return esc(name || 'a QuickGigs member');
 }
 
 function personLinkWithBadge(name, uid) {
@@ -1232,7 +1232,7 @@ document.getElementById('tabContent').addEventListener('click', function(e) {
     if (typeof window.markComplete === 'function') {
       window.markComplete(markBtn.getAttribute('data-mark-complete'), markBtn);
     } else {
-      showToast('Mark complete not ready ? hard refresh', '#ef4444');
+      showToast('Mark complete not ready — hard refresh', '#ef4444');
     }
     return;
   }
@@ -1463,7 +1463,7 @@ function renderTabLoading() {
   var content = document.getElementById('tabContent');
   if (!content) return;
   content.setAttribute('aria-busy', 'true');
-  content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('clock',{size:24}):'')+'</div><div class="empty-title">Loading your tasks?</div><div class="empty-sub">One moment</div></div>';
+  content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('clock',{size:24}):'')+'</div><div class="empty-title">Loading your tasks…</div><div class="empty-sub">One moment</div></div>';
 }
 
 function renderTabLoadError(msg) {
@@ -1475,7 +1475,7 @@ function renderTabLoadError(msg) {
     '<div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('alert',{size:24}):'')+'</div>' +
     '<div class="empty-title">Could not load tasks</div>' +
     '<div class="empty-sub">' + (msg || 'Check your connection, then try again. If this keeps happening, hard refresh the page.') + '</div>' +
-    '<button type="button" class="empty-btn" onclick="typeof loadData===\'function\'&&loadData()">? Refresh list</button>' +
+    '<button type="button" class="empty-btn" onclick="typeof loadData===\'function\'&&loadData()">'+(typeof qgIcon==='function'?qgIcon('refresh',{size:14}):'')+' Refresh list</button>' +
     '<button type="button" class="empty-btn btn-secondary" style="margin-top:8px;background:var(--surface);color:var(--text-muted);border:1px solid var(--border)" onclick="location.reload()">Hard refresh</button>' +
     '</div>';
 }
@@ -1516,7 +1516,7 @@ function renderTab(){
           : '');
       content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('clipboard',{size:24}):'')+'</div><div class="empty-title">No open tasks posted</div><div class="empty-sub">Post a task in Poster mode. When you accept a tasker, the task moves to In Progress ? not here.</div>' + movedLink +
         '<a class="empty-btn" href="posttask.html">Post a task</a>' +
-        '<button type="button" class="empty-btn btn-secondary" style="margin-top:8px;background:var(--surface);color:var(--text-muted);border:1px solid var(--border)" onclick="typeof loadData===\'function\'&&loadData()">? Refresh list</button></div>';
+        '<button type="button" class="empty-btn btn-secondary" style="margin-top:8px;background:var(--surface);color:var(--text-muted);border:1px solid var(--border)" onclick="typeof loadData===\'function\'&&loadData()">'+(typeof qgIcon==='function'?qgIcon('refresh',{size:14}):'')+' Refresh list</button></div>';
       return;
     }
     content.innerHTML = myTasks.map(function(t){
@@ -1555,14 +1555,14 @@ function renderTab(){
         '</div>';
       }).join('') : '<div style="font-size:12px;color:var(--text-faint);padding:10px 0">No pending applicants yet.</div>';
       var toggleLabel = pendingApps.length
-        ? pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : '') + (namePreview ? ' � ' + namePreview + (pendingApps.length > 3 ? '?' : '') : '') + ' ? Tap to ' + (isOpen ? 'hide' : 'view')
-        : (hasAccepted ? 'Worker accepted ? Tap to view' : 'No applicants yet');
+        ? pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : '') + (namePreview ? ' · ' + namePreview + (pendingApps.length > 3 ? '?' : '') : '') + ' ? Tap to ' + (isOpen ? 'hide' : 'view')
+        : (hasAccepted ? 'Worker accepted — Tap to view' : 'No applicants yet');
       var postedLabel = typeof formatRelativeTime === 'function'
         ? formatRelativeTime(getField(t, 'CREATED_AT'))
         : '';
       var shareEmpty = (!pendingApps.length && !hasAccepted)
         ? (typeof shareButtonHtml === 'function'
-          ? shareButtonHtml('task', taskId, getField(t,'TITLE')).replace('? Share', 'Share your task')
+          ? shareButtonHtml('task', taskId, getField(t,'TITLE')).replace(/[↗?]\s*Share/, 'Share your task')
           : '<button type="button" class="act-btn qg-share-trigger" data-share-kind="task" data-share-id="'+escAttr(taskId)+'" data-share-label="'+escAttr(getField(t,'TITLE'))+'">Share your task</button>')
         : '';
       var timeline = typeof qgTaskTimelineHtml === 'function'
@@ -1572,12 +1572,12 @@ function renderTab(){
         ? shareButtonHtml('task', taskId, getField(t,'TITLE'))
         : '';
       return '<div class="task-card">'+
-        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-open">? Open</span></div>'+
+        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(typeof formatTaskDisplayTitle==='function'?formatTaskDisplayTitle(t):getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-open">Open</span></div>'+
         timeline +
-        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' � <span class="tc-meta-price">'+esc(formatTaskBudgetMeta(t))+'</span>'+(postedLabel ? ' � Posted '+esc(postedLabel) : '')+'</div>'+
+        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' · <span class="tc-meta-price">'+esc(formatTaskBudgetMeta(t))+'</span>'+(postedLabel ? ' · Posted '+esc(postedLabel) : '')+'</div>'+
         '<button type="button" class="tc-applicants-toggle'+(isOpen?' open':'')+'" data-applicants-toggle="'+escAttr(taskId)+'" data-applicant-count="'+escAttr(pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : ''))+'" data-applicant-names="'+escAttr(namePreview + (pendingApps.length > 3 ? '?' : ''))+'">'+esc(toggleLabel)+'</button>'+
         '<div class="applicants-panel'+(isOpen?' open':'')+'" id="'+taskDomId(taskId)+'">'+appHtml+'</div>'+
-        '<div class="action-row">'+shareEmpty+shareIcon+'<button type="button" class="act-btn btn-danger" data-cancel-posting="'+escAttr(taskId)+'">? Cancel posting</button></div>'+
+        '<div class="action-row">'+shareEmpty+shareIcon+'<button type="button" class="act-btn btn-danger" data-cancel-posting="'+escAttr(taskId)+'">Cancel posting</button></div>'+
       '</div>';
     }).join('');
   }
@@ -1618,7 +1618,7 @@ function renderTab(){
         statusLabel = '<span class="tc-badge badge-open">Guardian review</span>';
       } else if (guardianStatus === 'rejected') {
         statusLabel = '<span class="tc-badge badge-open" style="opacity:0.6">Guardian declined</span>';
-      } else if (appStatus === 'accepted') statusLabel = '<span class="tc-badge badge-done">? Accepted</span>';
+      } else if (appStatus === 'accepted') statusLabel = '<span class="tc-badge badge-done">'+(typeof qgIcon==='function'?qgIcon('check',{size:12}):'')+' Accepted</span>';
       else if (appStatus === 'cancelled') statusLabel = '<span class="tc-badge badge-open" style="opacity:0.6">Withdrawn</span>';
       else if (appStatus === 'declined') statusLabel = '<span class="tc-badge badge-open" style="opacity:0.6">Not selected</span>';
       else statusLabel = '<span class="tc-badge badge-open">Pending</span>';
@@ -1639,7 +1639,7 @@ function renderTab(){
             '<button type="button" class="act-btn" style="background:var(--purple);color:#fff" data-worker-accept-counter="'+escAttr(getField(a,'APP_ID'))+'" data-task-id="'+escAttr(getField(a,'TASK_ID'))+'">Accept $' + neg.counterPrice + '</button>' +
             '</div></div>';
         } else if (isTaskNegotiable(task) && neg.counterBy === 'worker') {
-          negoBlock = '<div class="nego-block"><div class="nego-block-title">Counter sent ? waiting for poster</div></div>';
+          negoBlock = '<div class="nego-block"><div class="nego-block-title">Counter sent — waiting for poster</div></div>';
         }
         actions = '<div class="action-row">';
         if (!isPaymentGatedChat()) {
@@ -1662,8 +1662,8 @@ function renderTab(){
         }
       }
         return '<div class="'+cardClass+'">'+
-        '<div class="tc-top"><div class="tc-left">'+profileTapIcon(posterId, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">Applied � Posted by '+personLink(posterName, posterId)+'</div><div class="tc-title">'+esc(getField(task,'TITLE')||'Task #'+getField(a,'TASK_ID'))+'</div></div></div>'+statusLabel+'</div>'+
-        '<div class="tc-meta">Your offer: '+formatAppPriceHtml(a)+' � '+esc(getField(a,'MESSAGE')).substring(0,60)+'...'+(getField(task,'CREATED_AT') && typeof formatRelativeTime === 'function' ? ' � Task posted '+esc(formatRelativeTime(getField(task,'CREATED_AT'))) : '')+'</div>'+
+        '<div class="tc-top"><div class="tc-left">'+profileTapIcon(posterId, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">Applied · Posted by '+personLink(posterName, posterId)+'</div><div class="tc-title">'+esc(typeof formatTaskDisplayTitle==='function'?formatTaskDisplayTitle(task, getField(a,'TASK_ID')):(getField(task,'TITLE')||'Untitled task'))+'</div></div></div>'+statusLabel+'</div>'+
+        '<div class="tc-meta">Your offer: '+formatAppPriceHtml(a)+' · '+esc(getField(a,'MESSAGE')).substring(0,60)+'...'+(getField(task,'CREATED_AT') && typeof formatRelativeTime === 'function' ? ' · Task posted '+esc(formatRelativeTime(getField(task,'CREATED_AT'))) : '')+'</div>'+
         negoBlock+
         actions+
       '</div>';
@@ -1685,7 +1685,7 @@ function renderTab(){
     if(!inProg.length){
       var emptySub = isPoster
         ? (isPaymentGatedChat()
-          ? 'After you accept a tasker, pay to unlock chat ? then coordinate here until the job is done.'
+          ? 'After you accept a tasker, pay to unlock chat — then coordinate here until the job is done.'
           : 'After you accept a tasker from Posted, the job appears here.')
         : 'When a poster accepts you, the job shows here. Switch to Tasker mode on Profile if you were browsing as a poster.';
       var openPosted = tasksForPoster(userId, 'open').length;
@@ -1729,12 +1729,12 @@ function renderTab(){
       var payAction = '';
       if (isPosterTask && isPaymentGatedChat()) {
         if (selfTask) {
-          payAction = '<span class="act-btn btn-danger" style="opacity:0.95;cursor:default;pointer-events:none;font-size:12px">? Same account as tasker ? cancel &amp; use 2 logins</span>';
+          payAction = '<span class="act-btn btn-danger" style="opacity:0.95;cursor:default;pointer-events:none;font-size:12px">Same account as tasker — cancel &amp; use 2 logins</span>';
         } else if (taskPaid) {
-          payAction = '<span class="act-btn btn-secondary" style="opacity:0.9;cursor:default;pointer-events:none">? Paid � chat unlocked</span>';
+          payAction = '<span class="act-btn btn-secondary" style="opacity:0.9;cursor:default;pointer-events:none">'+(typeof qgIcon==='function'?qgIcon('check',{size:12}):'')+' Paid · chat unlocked</span>';
         } else {
           payAction = '<button type="button" class="act-btn btn-primary" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks" data-pay-amount="'+escAttr(String(getField(t,'BUDGET')))+'" data-pay-title="'+escAttr(getField(t,'TITLE'))+'">💳 Pay to unlock</button>' +
-            '<button type="button" class="act-btn btn-secondary" data-sync-pay-task="'+escAttr(taskId)+'" title="Paid in Stripe but still locked? Tap to sync">? Sync payment</button>';
+            '<button type="button" class="act-btn btn-secondary" data-sync-pay-task="'+escAttr(taskId)+'" title="Paid in Stripe but still locked? Tap to sync">'+(typeof qgIcon==='function'?qgIcon('refresh',{size:12}):'')+' Sync payment</button>';
         }
       }
       var chatNeedsPay = isPosterTask && isPaymentGatedChat() && !taskPaid && !selfTask;
@@ -1746,13 +1746,13 @@ function renderTab(){
       var posterActions = isPosterTask
         ? payAction +
           messageBtn +
-          '<button type="button" class="act-btn btn-success" data-mark-complete="'+escAttr(taskId)+'">? Mark complete</button>' +
+          '<button type="button" class="act-btn btn-success" data-mark-complete="'+escAttr(taskId)+'">'+(typeof qgIcon==='function'?qgIcon('check',{size:12}):'')+' Mark complete</button>' +
           '<button type="button" class="act-btn btn-primary" data-change-tasker="'+escAttr(taskId)+'">🔁 Change tasker</button>' +
-          '<button type="button" class="act-btn btn-danger" data-cancel-inprogress="'+escAttr(taskId)+'">? Cancel task</button>'
+          '<button type="button" class="act-btn btn-danger" data-cancel-inprogress="'+escAttr(taskId)+'">Cancel task</button>'
         : '';
       var workerActions = !isPosterTask
         ? '<button type="button" class="act-btn btn-secondary" data-open-chat-task="'+escAttr(taskId)+'">Message poster</button>' +
-          '<button type="button" class="act-btn btn-success" data-mark-complete="'+escAttr(taskId)+'">? Mark complete</button>'
+          '<button type="button" class="act-btn btn-success" data-mark-complete="'+escAttr(taskId)+'">'+(typeof qgIcon==='function'?qgIcon('check',{size:12}):'')+' Mark complete</button>'
         : '';
       var payRow = paymentByTaskId[String(taskId)] || null;
       var frozen = !!(payRow && String(payRow.status || '').toLowerCase() === 'disputed') ||
@@ -1761,9 +1761,9 @@ function renderTab(){
         ? QG_evidencePanelHtml(taskId, { isWorker: !isPosterTask, frozen: frozen })
         : '';
       return '<div class="task-card">'+
-        '<div class="tc-top"><div class="tc-left">'+iconHtml+'<div><div class="tc-cat">'+roleLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-progress">'+(frozen?'Disputed ? frozen':'In progress')+'</span></div>'+
+        '<div class="tc-top"><div class="tc-left">'+iconHtml+'<div><div class="tc-cat">'+roleLabel+'</div><div class="tc-title">'+esc(typeof formatTaskDisplayTitle==='function'?formatTaskDisplayTitle(t):getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-progress">'+(frozen?'Disputed — frozen':'In progress')+'</span></div>'+
         (typeof qgTaskTimelineHtml === 'function' ? qgTaskTimelineHtml('in_progress') : '')+
-        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' � <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
+        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' · <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
         evidenceHtml +
         '<div class="qg-action-row">'+disputeBtn+reportBtns+'</div>'+
         '<div class="action-row">' + posterActions + workerActions + '</div>'+
@@ -1789,7 +1789,7 @@ function renderTab(){
       });
     }
     if(!done.length){
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('checkCircle',{size:24}):'')+'</div><div class="empty-title">No completed tasks yet</div><div class="empty-sub">'+(isPoster?'Completed, cancelled, and expired postings appear here. Expired tasks can be reposted with one tap.':'Completed or cancelled tasks will appear here.')+'</div>'+(isPoster?'<a class="empty-btn" href="posttask.html">Post a task ?</a>':'<a class="empty-btn" href="browsetask.html">Browse tasks ?</a>')+'</div>';
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('checkCircle',{size:24}):'')+'</div><div class="empty-title">No completed tasks yet</div><div class="empty-sub">'+(isPoster?'Completed, cancelled, and expired postings appear here. Expired tasks can be reposted with one tap.':'Completed or cancelled tasks will appear here.')+'</div>'+(isPoster?'<a class="empty-btn" href="posttask.html">Post a task</a>':'<a class="empty-btn" href="browsetask.html">Browse tasks</a>')+'</div>';
       return;
     }
     content.innerHTML = '<div class="hint-box" style="background:rgba(107,63,160,0.12);border:1px solid rgba(200,168,233,0.2);border-radius:14px;padding:14px;margin-bottom:14px;font-size:13px;line-height:1.55;color:var(--text-muted);"><strong>Please leave a review</strong> on completed jobs ? honest feedback helps QuickGigs stay safe for everyone.</div>' +
@@ -1816,21 +1816,21 @@ function renderTab(){
           (otherUid ? reportButtonHtml('user', otherUid, otherNm) : '')
         : '';
       var badge = isExpired
-        ? '<span class="tc-badge badge-open" style="opacity:0.75">? Expired</span>'
+        ? '<span class="tc-badge badge-open" style="opacity:0.75">Expired</span>'
         : isCancelled
-        ? '<span class="tc-badge badge-open" style="opacity:0.75">? Cancelled</span>'
-        : '<span class="tc-badge badge-done">? Done</span>';
+        ? '<span class="tc-badge badge-open" style="opacity:0.75">Cancelled</span>'
+        : '<span class="tc-badge badge-done">'+(typeof qgIcon==='function'?qgIcon('check',{size:12}):'')+' Done</span>';
       var actions = isExpired
-        ? '<div class="action-row"><button type="button" class="act-btn btn-primary" data-repost-task="'+escAttr(getField(t,'TASK_ID'))+'">? Repost task</button></div>'
+        ? '<div class="action-row"><button type="button" class="act-btn btn-primary" data-repost-task="'+escAttr(getField(t,'TASK_ID'))+'">Repost task</button></div>'
         : isCancelled
         ? ''
         : '<div class="action-row"><a class="act-btn btn-review" href="'+reviewHref+'">Leave a review</a>' +
-          (isPoster ? '<button type="button" class="act-btn btn-secondary" data-post-again="'+escAttr(getField(t,'TASK_ID'))+'">? Post again</button>' : '') +
+          (isPoster ? '<button type="button" class="act-btn btn-secondary" data-post-again="'+escAttr(getField(t,'TASK_ID'))+'">Post again</button>' : '') +
           '</div>';
       return '<div class="task-card'+(isCancelled || isExpired ?' is-faded':'')+'">'+
-        '<div class="tc-top"><div class="tc-left">'+profileTapIcon(otherUid, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">'+otherLabel+'</div><div class="tc-title">'+esc(getField(t,'TITLE'))+'</div></div></div>'+badge+'</div>'+
+        '<div class="tc-top"><div class="tc-left">'+profileTapIcon(otherUid, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">'+otherLabel+'</div><div class="tc-title">'+esc(typeof formatTaskDisplayTitle==='function'?formatTaskDisplayTitle(t):getField(t,'TITLE'))+'</div></div></div>'+badge+'</div>'+
         (typeof qgTaskTimelineHtml === 'function' && !isCancelled && !isExpired ? qgTaskTimelineHtml('completed') : '')+
-        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' � <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
+        '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' · <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
         '<div class="qg-action-row">'+disputeBtn+reportBtns+'</div>'+
         actions+
       '</div>';
@@ -1959,7 +1959,7 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
   applyLocalAcceptState(taskId, appId);
 
   if (acceptBtn) {
-    acceptBtn.textContent = '? Accepted';
+    acceptBtn.innerHTML = (typeof qgIcon==='function'?qgIcon('check',{size:12}):'')+' Accepted';
     acceptBtn.classList.add('is-done');
     acceptBtn.disabled = true;
     var row = acceptBtn.closest('.applicant-row');
@@ -2207,7 +2207,7 @@ window.markComplete = async function(taskId, btn){
   if (typeof haptic === 'function') haptic(12);
   var userId = window._currentUser ? window._currentUser.uid : '';
   if (!userId) {
-    if (btn) { btn.disabled = false; btn.textContent = '? Mark complete'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = (typeof qgIcon==='function'?qgIcon('check',{size:12}):'')+' Mark complete'; }
     showToast('Not signed in ? refresh and try again', '#ef4444');
     return;
   }
@@ -2259,7 +2259,7 @@ window.markComplete = async function(taskId, btn){
     if (typeof qgBurstConfetti === 'function') qgBurstConfetti();
     if (typeof qgTrackEvent === 'function') qgTrackEvent('complete_task', { task_id: String(finalTaskId || taskId || '') });
     showToast('Task complete. Leave a review when you can.');
-    if (btn) { btn.disabled = false; btn.textContent = '? Mark complete'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = (typeof qgIcon==='function'?qgIcon('check',{size:12}):'')+' Mark complete'; }
   }
 
   var completeOpts = {
@@ -2449,7 +2449,7 @@ window.confirmRepostTask = function(taskId) {
   var title = task ? getField(task, 'TITLE') : 'this task';
   showConfirm({
     title: 'Repost this task?',
-    message: '?' + title + '? will be posted again as a new open listing with the same details. The expired copy stays in your history.',
+    message: '\u201c' + title + '\u201d will be posted again as a new open listing with the same details. The expired copy stays in your history.',
     confirmLabel: 'Repost now',
     onConfirm: async function() {
       var userId = window._currentUser ? window._currentUser.uid : null;
@@ -2481,7 +2481,7 @@ window.confirmCancelPosting = function(taskId) {
   var title = task ? getField(task, 'TITLE') : 'this task';
   showConfirm({
     title: 'Cancel posting?',
-    message: '?' + title + '? will be removed from browse and pending applicants will be notified. You can Undo for 5 seconds after confirming.',
+    message: '\u201c' + title + '\u201d will be removed from browse and pending applicants will be notified. You can Undo for 5 seconds after confirming.',
     confirmLabel: 'Cancel posting',
     danger: true,
     onConfirm: async function() {
@@ -2543,7 +2543,7 @@ window.confirmChangeTasker = function(taskId) {
   }
   showConfirm({
     title: 'Change tasker?',
-    message: '?' + title + '? will go back to Open and ' + workerName + ' will be notified they were not selected. You can review and accept another applicant from Posted.',
+    message: '\u201c' + title + '\u201d will go back to Open and ' + workerName + ' will be notified they were not selected. You can review and accept another applicant from Posted.',
     confirmLabel: 'Change tasker',
     neutral: true,
     onConfirm: async function() {
@@ -2593,7 +2593,7 @@ window.confirmCancelInProgress = function(taskId) {
       : '';
     showConfirm({
       title: 'Cancel this task?',
-      message: '?' + title + '? will be marked cancelled. The assigned worker will be notified.' + refundNote,
+      message: '\u201c' + title + '\u201d will be marked cancelled. The assigned worker will be notified.' + refundNote,
       confirmLabel: 'Cancel task',
       onConfirm: async function() {
         if (typeof invalidateTasksCache === 'function') invalidateTasksCache();

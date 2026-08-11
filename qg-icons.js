@@ -30,7 +30,12 @@
     wrench: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-3 3-3-3 3-3Z"/>',
     lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
     eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
-    sparkles: '<path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><path d="m6.5 6.5 2 2M15.5 15.5l2 2M17.5 6.5l-2 2M8.5 15.5l-2 2"/><path d="M12 8.5 13.5 12 17 13.5 13.5 15 12 18.5 10.5 15 7 13.5 10.5 12Z"/>'
+    x: '<path d="M18 6 6 18M6 6l12 12"/>',
+    sparkles: '<path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><path d="m6.5 6.5 2 2M15.5 15.5l2 2M17.5 6.5l-2 2M8.5 15.5l-2 2"/><path d="M12 8.5 13.5 12 17 13.5 13.5 15 12 18.5 10.5 15 7 13.5 10.5 12Z"/>',
+    zap: '<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/>',
+    arrowRight: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    helpCircle: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.2 2.4c-.7.3-1.2.9-1.2 1.6V14"/><path d="M12 17h.01"/>',
+    repeat: '<path d="m17 1 4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="m7 23-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>'
   };
 
   function svg(name, opts) {
@@ -46,4 +51,28 @@
 
   window.qgIcon = svg;
   window.QG_ICONS = PATHS;
+
+  /** Prefix labels that use data-qg-ico="zap|star|..." with an inline SVG. */
+  function hydrateIcoAttrs(root) {
+    root = root || document;
+    if (!root.querySelectorAll) return;
+    var nodes = root.querySelectorAll('[data-qg-ico]');
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      var name = el.getAttribute('data-qg-ico');
+      if (!name || el.getAttribute('data-qg-ico-done') === '1') continue;
+      var mark = svg(name, { size: Number(el.getAttribute('data-qg-ico-size') || 14) || 14 });
+      if (!mark) continue;
+      el.insertAdjacentHTML('afterbegin', mark + ' ');
+      el.setAttribute('data-qg-ico-done', '1');
+    }
+  }
+  window.qgHydrateIcons = hydrateIcoAttrs;
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () { hydrateIcoAttrs(document); });
+    } else {
+      hydrateIcoAttrs(document);
+    }
+  }
 })();

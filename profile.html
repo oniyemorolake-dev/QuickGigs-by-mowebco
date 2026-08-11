@@ -1219,7 +1219,7 @@ async function loadProfile(user) {
   }
 
   profileData = Object.assign({
-    name: isOwnProfile ? (user.displayName || user.email.split('@')[0]) : 'QuickGigs user',
+    name: isOwnProfile ? (user.displayName || user.email.split('@')[0]) : 'a QuickGigs member',
     bio: '',
     skills: [],
     role: localStorage.getItem('qg-role') || 'poster',
@@ -1301,7 +1301,7 @@ async function loadProfile(user) {
 
 function renderProfile(user, isOwnProfile) {
   isOwnProfile = isOwnProfile !== false;
-  var name = profileData.name || (isOwnProfile ? (user.displayName || user.email.split('@')[0]) : 'QuickGigs user');
+  var name = profileData.name || (isOwnProfile ? (user.displayName || user.email.split('@')[0]) : 'a QuickGigs member');
   updateAvatarDisplay(name, profileData.avatar_url);
   if (profileData.avatar_url) {
     document.getElementById('photoRequiredBanner').style.display = 'none';
@@ -1527,9 +1527,9 @@ async function renderReviews(reviews) {
 
   reviews.forEach(function(r, i) {
     var reviewerId = r.reviewer_id || r.REVIEWER_ID || '';
-    var reviewerName = r.reviewer_name || r.REVIEWER_NAME || nameMap[String(reviewerId)] || 'QuickGigs user';
-    if (typeof isGenericDisplayName === 'function' && isGenericDisplayName(reviewerName)) reviewerName = 'QuickGigs user';
-    var taskTitle = r.task_title || r.TASK_TITLE || ('Task #' + (r.task_id || ''));
+    var reviewerName = r.reviewer_name || r.REVIEWER_NAME || nameMap[String(reviewerId)] || 'a QuickGigs member';
+    if (typeof isGenericDisplayName === 'function' && isGenericDisplayName(reviewerName)) reviewerName = 'a QuickGigs member';
+    var taskTitle = r.task_title || r.TASK_TITLE || (typeof formatTaskDisplayTitle === 'function' ? formatTaskDisplayTitle({ title: r.task_title, category: r.task_category || r.category, created_at: r.created_at }, r.task_id) : 'Untitled task');
     var comment = r.review_comment || r.comment || '';
     var rating = Math.max(1, Math.min(5, Number(r.rating) || 5));
     var whenRel = typeof formatRelativeTime === 'function' ? formatRelativeTime(r.created_at) : '';

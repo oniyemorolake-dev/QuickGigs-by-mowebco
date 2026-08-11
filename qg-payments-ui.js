@@ -38,7 +38,7 @@
     (tasks || []).forEach(function (t) {
       var id = t.task_id || t.TASK_ID || t.id;
       if (id != null && id !== '') {
-        map[String(id)] = t.title || t.TITLE || ('Task #' + id);
+        map[String(id)] = (typeof formatTaskDisplayTitle === 'function' ? formatTaskDisplayTitle(t, id) : (t.title || t.TITLE || 'Untitled task'));
       }
     });
     return map;
@@ -92,7 +92,7 @@
     }
     return list.map(function (p) {
       var tid = payField(p, 'task_id');
-      var title = taskMap[String(tid)] || ('Task #' + tid);
+      var title = taskMap[String(tid)] || (typeof formatTaskDisplayTitle === 'function' ? formatTaskDisplayTitle(null, tid) : 'Untitled task');
       var st = paymentStatusLabel(payField(p, 'status'));
       var amount = role === 'worker' ? payField(p, 'worker_payout') : payField(p, 'amount');
       var sub = role === 'worker'

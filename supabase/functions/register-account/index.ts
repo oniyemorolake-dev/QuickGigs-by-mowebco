@@ -10,7 +10,7 @@ const corsHeaders = {
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
   });
 }
 
@@ -42,7 +42,7 @@ async function sendGuardianEmail(email: string, teenName: string, consentUrl: st
     method: 'POST',
     headers: {
       Authorization: `Bearer ${resendKey}`,
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json; charset=utf-8',
     },
     body: JSON.stringify({
       from,

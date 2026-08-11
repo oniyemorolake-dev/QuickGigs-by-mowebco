@@ -11,7 +11,7 @@ const corsHeaders = {
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
   });
 }
 
@@ -34,7 +34,7 @@ async function emailGuardian(
   if (!resendKey) throw new Error('resend_not_configured');
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json; charset=utf-8' },
     body: JSON.stringify({
       from: Deno.env.get('FROM_EMAIL') || 'QuickGigs <notify@quickgigs.ca>',
       to: [guardianEmail],

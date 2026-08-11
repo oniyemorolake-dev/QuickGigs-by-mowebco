@@ -4,18 +4,18 @@
 <meta charset="UTF-8">
 <!-- qg-build:cd3efe6-1786397433 -->
 
-<title>Dashboard ? QuickGigs</title>
+<title>Dashboard · QuickGigs</title>
 <meta name="description" content="Your QuickGigs dashboard for posting tasks and finding work as a tasker.">
 <meta name="robots" content="noindex,nofollow">
 <link rel="canonical" href="https://quickgigs.ca/dashboard.html">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://quickgigs.ca/dashboard.html">
-<meta property="og:title" content="Dashboard ? QuickGigs">
+<meta property="og:title" content="Dashboard · QuickGigs">
 <meta property="og:description" content="Your QuickGigs dashboard for posting tasks and finding work as a tasker.">
 <meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <meta property="og:locale" content="en_CA">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Dashboard ? QuickGigs">
+<meta name="twitter:title" content="Dashboard · QuickGigs">
 <meta name="twitter:description" content="Your QuickGigs dashboard for posting tasks and finding work as a tasker.">
 <meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -324,7 +324,7 @@ body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#ee
 </div>
 
 <footer class="legal-footer site-footer" id="siteFooter">
-  <a href="terms.html">Terms of Service</a> � <a href="privacy.html">Privacy Policy</a> � <a href="feedback.html">Report issue</a>
+  <a href="terms.html">Terms of Service</a> · <a href="privacy.html">Privacy Policy</a> · <a href="feedback.html">Report issue</a>
 </footer>
 
 <!-- TAB BAR -->
@@ -399,7 +399,7 @@ onAuthStateChanged(auth, async (user) => {
   window._userName = firstName;
   document.getElementById('avatarEl').textContent = firstName.charAt(0).toUpperCase();
   var hint = document.getElementById('dashLoadHint');
-  if (hint) hint.textContent = 'Loading your tasks?';
+  if (hint) hint.textContent = 'Loading your tasks…';
   // First paint data ? do not await profile sync.
   loadDashboardData(live.uid);
 
@@ -428,7 +428,7 @@ onAuthStateChanged(auth, async (user) => {
         banner.className = 'guardian-banner qg-page-wide';
         banner.textContent = '';
         var strong = document.createElement('strong');
-        strong.textContent = '? Waiting for parent approval';
+        strong.textContent = 'Waiting for parent approval';
         banner.appendChild(strong);
         banner.appendChild(document.createTextNode(
           'You can browse, but posting and applying are paused until ' + String(email) + ' approves from the secure email link.'
@@ -443,7 +443,7 @@ onAuthStateChanged(auth, async (user) => {
           var result = typeof callVerifiedFunction === 'function'
             ? await callVerifiedFunction(url, {})
             : { success: false };
-          resend.textContent = result.success ? 'Email sent ?' : 'Could not send ? try again';
+          resend.textContent = result.success ? 'Email sent' : 'Could not send — try again';
           if (!result.success) setTimeout(function () {
             resend.disabled = false;
             resend.textContent = 'Resend approval email';
@@ -714,8 +714,8 @@ function getTimeGreeting(){
 var QG_POSTER_NOTE_MODE = 'random';
 var QG_POSTER_NOTES = [
   'Ready to get something done today?',
-  'Someone nearby can help ? post it.',
-  'Errands, repairs, tutoring ? all covered.',
+  'Someone nearby can help — post it.',
+  'Errands, repairs, tutoring — all covered.',
   'The right tasker is a post away.',
   'What can we take off your plate today?'
 ];
@@ -983,7 +983,7 @@ function renderDashReputation(rep) {
     ? formatUserRatingLabel(rep.avgRating, rep.reviewCount, rep.completedJobs)
     : 'New';
   var reviewBit = (rep.reviewCount > 0)
-    ? (' ? ' + rep.reviewCount + ' review' + (rep.reviewCount === 1 ? '' : 's'))
+    ? (' · ' + rep.reviewCount + ' review' + (rep.reviewCount === 1 ? '' : 's'))
     : '';
   el.innerHTML = '<a href="profile.html#reviewsSection">' + label + reviewBit + '</a>';
   el.style.display = 'block';
@@ -1075,7 +1075,7 @@ function renderAll(){
     if (String(p.status || '').toLowerCase() !== 'held') return s;
     return s + (parseFloat(p.worker_payout != null ? p.worker_payout : p.WORKER_PAYOUT) || 0);
   }, 0);
-  var earnedLabel = totalEarned > 0 ? '$' + totalEarned.toFixed(0) : (pendingEarned > 0 ? '$' + pendingEarned.toFixed(0) + ' pending' : '?');
+  var earnedLabel = totalEarned > 0 ? '$' + totalEarned.toFixed(0) : (pendingEarned > 0 ? '$' + pendingEarned.toFixed(0) + ' pending' : '$0');
 
   var ico = function(name){ return typeof qgIcon==='function' ? qgIcon(name,{size:20}) : ''; };
   var stats = isPoster
@@ -1124,10 +1124,10 @@ function renderAll(){
     return '<a class="action-card '+a.cls+'" href="'+a.href+'"><div class="action-icon">'+ico(a.icon)+'</div>'+copy+'</a>';
   }).join('') +
     (window.QG_CONFIG && !window.QG_CONFIG.paymentsEnabled
-      ? '<div class="action-card secondary" style="grid-column:1/-1;cursor:default;opacity:0.92"><div class="action-icon">'+ico('creditCard')+'</div><div class="action-copy"><div class="action-title">Payments coming at launch</div><div class="action-desc">Escrow and Stripe checkout ship with public launch ? beta uses accept-to-chat flow.</div></div></div>'
+      ? '<div class="action-card secondary" style="grid-column:1/-1;cursor:default;opacity:0.92"><div class="action-icon">'+ico('creditCard')+'</div><div class="action-copy"><div class="action-title">Payments coming at launch</div><div class="action-desc">Escrow and Stripe checkout ship with public launch — beta uses accept-to-chat flow.</div></div></div>'
       : '') +
     '<button type="button" class="action-card secondary" style="grid-column:1/-1;margin-top:2px;border:none;width:100%;text-align:left;font:inherit;color:inherit" onclick="typeof promptQuickGigsInstall===\'function\'&&promptQuickGigsInstall()"><div class="action-icon">'+ico('smartphone')+'</div><div class="action-copy"><div class="action-title">Add to Home Screen</div><div class="action-desc">Install QuickGigs on iPhone (Safari Share menu) or Android</div></div></button>' +
-    '<a class="action-card secondary" href="feedback.html" style="grid-column:1/-1;margin-top:2px"><div class="action-icon">'+ico('bug')+'</div><div class="action-copy"><div class="action-title">Beta feedback</div><div class="action-desc">Report a bug or share an idea ? we read every message</div></div></a>';
+    '<a class="action-card secondary" href="feedback.html" style="grid-column:1/-1;margin-top:2px"><div class="action-icon">'+ico('bug')+'</div><div class="action-copy"><div class="action-title">Beta feedback</div><div class="action-desc">Report a bug or share an idea — we read every message</div></div></a>';
 
   var statsEl = document.getElementById('statsGrid');
   var actionsEl = document.getElementById('actionsGrid');
@@ -1187,12 +1187,12 @@ function renderAll(){
         var taskHref = 'mytasks.html?tab=posted' + (appsOnTask ? '&expand=' + encodeURIComponent(String(taskId)) : '');
         return '<a class="task-row" href="'+taskHref+'" style="text-decoration:none">' +
           '<div class="task-dot" style="background:rgba(107,63,160,0.2)">'+ico('clipboard')+'</div>' +
-          '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title'))+'</div><div class="task-meta">Open � $'+dashEsc(taskField(t,'budget'))+(appsOnTask ? ' � '+appsOnTask+' applicant'+(appsOnTask!==1?'s':'') : '')+'</div></div>' +
+          '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title'))+'</div><div class="task-meta">Open · $'+dashEsc(taskField(t,'budget'))+(appsOnTask ? ' · '+appsOnTask+' applicant'+(appsOnTask!==1?'s':'') : '')+'</div></div>' +
           '<div class="task-right"><div class="task-price">Review</div></div>' +
         '</a>';
       }).join('');
     } else {
-      html = '<div class="empty"><div class="empty-icon">'+ico('clipboard')+'</div><div class="empty-txt">No open tasks yet ? post one in under a minute</div><a class="empty-btn" href="posttask.html">Post a task</a></div>';
+      html = '<div class="empty"><div class="empty-icon">'+ico('clipboard')+'</div><div class="empty-txt">No open tasks yet — post one in under a minute</div><a class="empty-btn" href="posttask.html">Post a task</a></div>';
     }
   } else {
     sectionTitle.textContent = 'Tasks near you';
@@ -1206,7 +1206,11 @@ function renderAll(){
       html = openNearby.map(function(t){
         var mode = taskField(t, 'mode') || 'standard';
         var badge = mode === 'quick' ? 'badge-quick' : mode === 'recurring' ? 'badge-recurring' : 'badge-standard';
-        var badgeLabel = mode === 'quick' ? '? Quick' : mode === 'recurring' ? '🔄 Recurring' : 'Standard';
+        var badgeLabel = mode === 'quick'
+          ? ((typeof qgIcon==='function'?qgIcon('zap',{size:12}):'')+' Quick')
+          : mode === 'recurring'
+            ? ((typeof qgIcon==='function'?qgIcon('repeat',{size:12}):'')+' Recurring')
+            : 'Standard';
         var pin = typeof qgIcon==='function' ? '<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>' : '';
         var locTxt = typeof formatLocationDisplay==='function'?formatLocationDisplay(taskField(t,'location')||city):String(taskField(t,'location')||city);
         return '<a class="task-row" href="browsetask.html" style="text-decoration:none">' +
@@ -1216,14 +1220,14 @@ function renderAll(){
         '</a>';
       }).join('');
     } else {
-      html = '<div class="empty"><div class="empty-icon">'+ico('search')+'</div><div class="empty-txt">No tasks nearby yet ? post one or widen your area</div><a class="empty-btn" href="browsetask.html">Browse all tasks</a></div>';
+      html = '<div class="empty"><div class="empty-icon">'+ico('search')+'</div><div class="empty-txt">No tasks nearby yet — post one or widen your area</div><a class="empty-btn" href="browsetask.html">Browse all tasks</a></div>';
     }
     if (myPosted.length) {
       html += '<div style="margin-top:16px"></div><div class="section-hdr"><span class="section-title">Tasks you posted</span><a class="see-all" href="mytasks.html?tab=posted">See all</a></div>';
       html += myOpenPosted.slice(0, 2).map(function(t){
         return '<a class="task-row" href="mytasks.html?tab=posted" style="text-decoration:none">' +
           '<div class="task-dot" style="background:rgba(107,63,160,0.2)">'+ico('clipboard')+'</div>' +
-          '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title'))+'</div><div class="task-meta">You posted � $'+dashEsc(taskField(t,'budget'))+'</div></div></a>';
+          '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title'))+'</div><div class="task-meta">You posted · $'+dashEsc(taskField(t,'budget'))+'</div></div></a>';
       }).join('');
     }
   }
