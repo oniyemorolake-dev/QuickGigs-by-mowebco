@@ -1,0 +1,344 @@
+/**
+ * QuickGigs — Tasker trust profile + activity ticker (tokens only).
+ */
+
+/* ── Trust profile (profile.html) ── */
+body.page-profile .qg-profile-title-line {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+body.page-profile .qg-verified-badge,
+.qg-verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--accent) !important;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+body.page-profile .qg-trust-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 16px 14px;
+  max-width: 520px;
+}
+
+body.page-profile .qg-trust-stat {
+  padding: 14px 10px;
+  border-radius: 16px;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  text-align: center;
+}
+
+body.page-profile .qg-trust-stat-val {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+body.page-profile .qg-trust-stat.is-hot .qg-trust-stat-val {
+  color: var(--attention);
+}
+
+body.page-profile .qg-trust-stat-lbl {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+body.page-profile .qg-earned-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 0 16px 12px;
+  max-width: 520px;
+}
+
+body.page-profile .qg-earned-badges.is-empty {
+  justify-content: center;
+}
+
+body.page-profile .qg-earned-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.qg-earned-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.qg-earned-pill.tone-accent {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 32%, transparent);
+  color: var(--accent);
+}
+
+.qg-earned-pill.tone-attention {
+  background: var(--attention-soft);
+  border-color: color-mix(in srgb, var(--attention) 35%, transparent);
+  color: var(--attention);
+}
+
+body.page-profile .qg-payout-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 16px 16px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 500;
+  max-width: 520px;
+}
+
+body.page-profile .qg-payout-status.is-connected {
+  background: var(--money-soft);
+  border: 1px solid color-mix(in srgb, var(--money) 35%, transparent);
+  color: var(--money);
+}
+
+body.page-profile .qg-payout-status.is-prompt,
+body.page-profile .qg-payout-status.is-pending {
+  background: var(--attention-soft);
+  border: 1px solid color-mix(in srgb, var(--attention) 35%, transparent);
+  color: var(--text-secondary);
+}
+
+body.page-profile .qg-payout-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--money);
+}
+
+body.page-profile .qg-payout-link {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+body.page-profile .qg-payout-hint {
+  color: var(--text-muted);
+}
+
+/* Hide legacy 3-col posted/done/earned when trust stats mount is active for taskers */
+body.page-profile.has-trust-stats .stats {
+  display: none;
+}
+
+/* ── Applicant compact trust (mytasks) ── */
+.qg-applicant-trust {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+.qg-applicant-trust-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.qg-applicant-trust-title .qg-verified-badge {
+  margin-top: 0;
+  font-size: 10px;
+  padding: 2px 8px;
+}
+
+.qg-applicant-trust-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.qg-applicant-rating {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.qg-applicant-jobs {
+  color: var(--text-muted);
+}
+
+.qg-applicant-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.qg-applicant-trust .qg-payout-status {
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  font-size: 11px;
+  justify-content: flex-start;
+}
+
+.qg-applicant-trust .qg-payout-status.is-connected {
+  background: var(--money-soft);
+  border: 1px solid color-mix(in srgb, var(--money) 30%, transparent);
+  color: var(--money);
+}
+
+.qg-applicant-trust .qg-payout-status.is-pending {
+  background: var(--attention-soft);
+  border: 1px solid color-mix(in srgb, var(--attention) 30%, transparent);
+  color: var(--attention);
+}
+
+/* ── Activity ticker ── */
+.qg-activity-ticker {
+  margin: 0 16px 16px;
+  padding: 14px 14px 10px;
+  border-radius: 18px;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+}
+
+.qg-activity-ticker-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.qg-activity-ticker-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.qg-activity-ticker-title span {
+  color: var(--accent);
+}
+
+.qg-activity-ticker-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.qg-activity-list {
+  display: grid;
+  gap: 0;
+}
+
+.qg-activity-row {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 2px;
+  border-top: 1px solid var(--line);
+  min-height: 44px;
+}
+
+.qg-activity-row:first-child {
+  border-top: none;
+}
+
+.qg-activity-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--grad-tasker);
+  color: var(--on-accent);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.qg-activity-copy {
+  min-width: 0;
+}
+
+.qg-activity-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.qg-activity-text strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.qg-activity-money {
+  color: var(--money);
+  font-weight: 700;
+}
+
+.qg-activity-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  align-self: start;
+  padding-top: 2px;
+}
+
+.qg-activity-empty,
+.qg-activity-loading {
+  padding: 12px 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+body.page-browse .qg-activity-ticker {
+  margin: 12px 16px 0;
+}
+
+body.page-browse .empty-state .qg-activity-ticker {
+  margin: 18px 0 0;
+  text-align: left;
+}
+
+body.page-dashboard .qg-activity-ticker {
+  margin: 12px 20px 8px;
+}
+
+@media (max-width: 560px) {
+  body.page-profile .qg-trust-stats {
+    margin: 0 12px 12px;
+    gap: 8px;
+  }
+
+  body.page-profile .qg-trust-stat-val {
+    font-size: 18px;
+  }
+}

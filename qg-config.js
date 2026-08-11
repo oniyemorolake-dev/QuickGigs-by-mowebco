@@ -17,6 +17,7 @@ window.QG_CONFIG = {
   guardianConsentUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/guardian-consent',
   resendGuardianConsentUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/resend-guardian-consent',
   guardianQueueUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/guardian-queue',
+  marketplaceActivityUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/marketplace-activity',
   myApplicationsUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/my-applications',
   graduateAccountUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/graduate-account',
   roleVerificationUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/role-verification',

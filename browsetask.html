@@ -35,6 +35,7 @@
 <link rel="stylesheet" href="qg-flows.css?v=20260811flows1" id="qg-flows-css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <link rel="stylesheet" href="qg-browse-views.css?v=20260811browse1" id="qg-browse-views-css">
+<link rel="stylesheet" href="qg-trust-profile.css?v=20260811trust1" id="qg-trust-profile-css">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
 <script src="qg-theme.js"></script>
@@ -624,6 +625,7 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-location.js?v=2"></script>
 <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script defer src="qg-browse-views.js?v=20260811browse1"></script>
+<script defer src="qg-activity-ticker.js?v=20260811trust1"></script>
 <script defer src="qg-pwa.js?v=cd3efe6-1786397433"></script>
 <script defer src="qg-notifications.js"></script>
 <script defer src="qg-share.js"></script>
@@ -1293,7 +1295,19 @@ function renderCards(){
     area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('star',{size:24}):'')+'</div><p class="empty-txt">No saved tasks yet — tap Save on any task to bookmark it here.</p><button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.href=\'browsetask.html\'">Browse open tasks</button></div>';
     return;
   }
-  if(!filtered.length){area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('search',{size:24}):'')+'</div><p class="empty-txt">'+(allTasks.length===0?'No open tasks yet — post the first one':'No tasks match this filter')+'</p>'+(allTasks.length===0?'<a class="empty-btn" href="posttask.html" style="display:inline-block;margin-top:14px;padding:12px 20px;border-radius:12px;background:var(--purple);color:#fff;text-decoration:none">Post a task</a>':'<button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.reload()">Reset browse</button>')+'</div>';return;}
+  if(!filtered.length){
+    var emptyLead = allTasks.length===0?'No open tasks yet — post the first one':'No tasks match this filter';
+    var emptyCta = allTasks.length===0
+      ?'<a class="empty-btn" href="posttask.html" style="display:inline-block;margin-top:14px;padding:12px 20px;border-radius:12px;background:var(--purple);color:#fff;text-decoration:none">Post a task</a>'
+      :'<button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.reload()">Reset browse</button>';
+    area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('search',{size:24}):'')+'</div><p class="empty-txt">'+emptyLead+'</p>'+emptyCta+
+      (allTasks.length===0?'<div id="browseActivityTicker" class="qg-activity-ticker-host"></div>':'')+
+      '</div>';
+    if (allTasks.length===0 && window.QGActivityTicker && typeof QGActivityTicker.mount === 'function') {
+      QGActivityTicker.mount('#browseActivityTicker');
+    }
+    return;
+  }
   area.innerHTML=filtered.map(function(t){
     var loc = formatLocationDisplay(t.location);
     var shareBtn = typeof shareButtonHtml === 'function' ? shareButtonHtml('task', t.id, t.title) : '';

@@ -39,6 +39,7 @@
 <link rel="stylesheet" href="qg-tokens.css?v=20260811shell1" id="qg-tokens-css">
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
 <link rel="stylesheet" href="qg-dashboard.css?v=20260811dash1" id="qg-dashboard-css">
+<link rel="stylesheet" href="qg-trust-profile.css?v=20260811trust1" id="qg-trust-profile-css">
 <script src="qg-theme.js"></script>
 <script src="qg-brand-init.js"></script>
 <script defer src="qg-pwa.js?v=cd3efe6-1786397433"></script>
@@ -302,6 +303,7 @@ body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#ee
 </div>
 
 <div id="dashActivity" class="qg-page-wide"></div>
+<div id="dashMarketTicker" class="qg-page-wide"></div>
 
 <div id="dashConnectBanner" style="display:none"></div>
 
@@ -511,6 +513,8 @@ onAuthStateChanged(auth, async (user) => {
 <script defer src="qg-location.js"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="qg-stats.js?v=20260731rep1"></script>
+<script defer src="qg-trust-profile.js?v=20260811trust1"></script>
+<script defer src="qg-activity-ticker.js?v=20260811trust1"></script>
 <script defer src="qg-notifications.js"></script>
 <script defer src="qg-push.js?v=1"></script>
 <script defer src="qg-cookies.js"></script>
@@ -1191,6 +1195,12 @@ function renderAll(){
       apps: dashData.apps || [],
       reviews: dashData.reviews || []
     });
+  }
+  var marketTicker = document.getElementById('dashMarketTicker');
+  if (marketTicker && !isPoster && window.QGActivityTicker && typeof QGActivityTicker.mount === 'function') {
+    QGActivityTicker.mount(marketTicker);
+  } else if (marketTicker && isPoster) {
+    marketTicker.innerHTML = '';
   }
 
   var workerPayments = (dashData.payments || []).filter(function(p) {

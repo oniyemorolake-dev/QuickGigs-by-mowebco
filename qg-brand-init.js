@@ -241,6 +241,15 @@
     document.head.appendChild(guardianCss);
   }
 
+  /* Tasker trust profile + activity ticker */
+  if (!document.getElementById('qg-trust-profile-css') && !document.querySelector('link[href*="qg-trust-profile.css"]')) {
+    var trustCss = document.createElement('link');
+    trustCss.id = 'qg-trust-profile-css';
+    trustCss.rel = 'stylesheet';
+    trustCss.href = 'qg-trust-profile.css?v=20260811trust1';
+    document.head.appendChild(trustCss);
+  }
+
   // Sync load so qgIcon is available before deferred page scripts run
   if (!document.querySelector('script[src*="qg-icons.js"]') && typeof window.qgIcon !== 'function') {
     try {
@@ -263,7 +272,8 @@
       'posttask.html': 'page-posttask',
       'review.html': 'page-review',
       'parent-consent.html': 'page-parent-consent',
-      'guardian-portal.html': 'page-guardian-portal'
+      'guardian-portal.html': 'page-guardian-portal',
+      'profile.html': 'page-profile'
     };
     if (map[page]) document.body.classList.add(map[page]);
     if (page === 'browsetask.html' && !document.body.getAttribute('data-browse-view')) {

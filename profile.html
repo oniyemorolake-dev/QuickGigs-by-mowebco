@@ -34,6 +34,7 @@
 <link rel="stylesheet" href="qg-menu.css?v=2">
 <link rel="stylesheet" href="qg-role-theme.css?v=20260811tokens1">
 <link rel="stylesheet" href="qg-tokens.css?v=20260811shell1" id="qg-tokens-css">
+<link rel="stylesheet" href="qg-trust-profile.css?v=20260811trust1" id="qg-trust-profile-css">
 <script src="qg-brand-init.js"></script>
 <script src="qg-icons.js?v=20260809profile2"></script>
 <style>
@@ -434,9 +435,15 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
   </div>
   <div class="avatar-edit-hint" id="avatarHint" style="display:none">Tap photo to change</div>
   <div class="profile-name" id="profileName">Loading...</div>
+  <div class="qg-profile-title-line" id="profileTitleLine" hidden></div>
   <div class="profile-pronouns" id="profilePronouns" style="display:none"></div>
   <div id="verifiedBadgeWrap"></div>
   <div class="role-tags" id="roleTags"></div>
+  <div id="trustProfileMount">
+    <div id="trustStatRow" class="qg-trust-stats-host" aria-live="polite"></div>
+    <div id="earnedBadges"></div>
+    <div id="payoutStatusLine" hidden></div>
+  </div>
   <div id="trustBadges"></div>
   <div class="rating-row" id="ratingRow" aria-label="Reputation">
     <span class="stars" id="starsEl" aria-hidden="true" style="display:none">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
@@ -704,6 +711,7 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-categories.js?v=20260730verify1"></script>
 <script defer src="qg-location.js?v=20260728loc1"></script>
 <script defer src="qg-stats.js?v=20260731rep1"></script>
+<script defer src="qg-trust-profile.js?v=20260811trust1"></script>
 <script defer src="qg-confetti.js?v=1"></script>
 <script defer src="qg-nav.js"></script>
 <script defer src="qg-menu.js?v=20260811shell1"></script>
@@ -1270,7 +1278,10 @@ async function loadProfile(user) {
 
   await loadReviewsForProfile(targetId);
 
-  if (typeof fetchUserTrustStats === 'function') {
+  if (typeof QGTrustProfile !== 'undefined' && typeof QGTrustProfile.mountProfileTrust === 'function') {
+    await QGTrustProfile.mountProfileTrust(targetId, profileData, dbUser, isOwnProfile);
+    document.body.classList.add('has-trust-stats');
+  } else if (typeof fetchUserTrustStats === 'function') {
     var trustStats = await fetchUserTrustStats(targetId);
     var trustEl = document.getElementById('trustBadges');
     if (trustEl && typeof renderTrustBadges === 'function') {
