@@ -1,0 +1,785 @@
+/**
+ * QuickGigs — legal + help content pages (design tokens only).
+ * Reading-width layout, TOC, FAQ accordion, help cards.
+ * Do not put legal copy here — styles only.
+ */
+body.page-content,
+body.trust-page {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  transition: background 0.25s, color 0.25s;
+}
+
+/* ── Nav ── */
+.page-content .nav,
+.trust-page .nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--line);
+  padding: 13px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.page-content .nav-logo,
+.trust-page .nav-logo {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  font-size: 1.25rem;
+  color: var(--brand);
+}
+
+.page-content .nav-right,
+.trust-page .nav-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-content .back-btn,
+.trust-page .back-btn {
+  font-size: 13px;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.page-content .mode-btn,
+.trust-page .mode-btn,
+.page-content .mode-toggle {
+  padding: 6px 13px;
+  min-height: 36px;
+  border-radius: 20px;
+  font-size: 11px;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  font-family: inherit;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* ── Reading column ── */
+.page-content .content,
+.trust-page .content {
+  max-width: 42rem; /* ~65–70ch at 16px */
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+}
+
+.page-content .page-label,
+.trust-page .page-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 10px;
+  display: block;
+  font-weight: 600;
+}
+
+.page-content .page-title,
+.trust-page .page-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1.75rem, 4vw, 2.15rem);
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.page-content .page-date,
+.page-content .page-sub,
+.trust-page .page-date {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-muted);
+  margin-bottom: 28px;
+}
+
+.page-content .section,
+.trust-page .section {
+  margin-bottom: 28px;
+  scroll-margin-top: 72px;
+}
+
+.page-content .section-title,
+.trust-page .section-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  line-height: 1.35;
+}
+
+.page-content p,
+.trust-page p {
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  max-width: 72ch;
+}
+
+.page-content ul,
+.page-content ol,
+.trust-page ul,
+.trust-page ol {
+  padding-left: 1.25rem;
+  margin-bottom: 12px;
+  max-width: 72ch;
+}
+
+.page-content li,
+.trust-page li {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.page-content strong,
+.trust-page strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.page-content a,
+.trust-page a {
+  color: var(--accent);
+}
+
+.page-content a:hover,
+.trust-page a:hover {
+  text-decoration: underline;
+}
+
+/* ── Callout boxes ── */
+.page-content .info-box,
+.trust-page .info-box {
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  background: var(--accent-soft);
+}
+
+.page-content .info-box p,
+.trust-page .info-box p {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.page-content .highlight-box,
+.trust-page .highlight-box {
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.page-content .highlight-box p,
+.trust-page .highlight-box p {
+  color: var(--danger);
+  margin: 0;
+}
+
+.page-content .contact-card,
+.trust-page .contact-card {
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  background: var(--surface-1);
+  margin-top: 16px;
+}
+
+.page-content .contact-card p {
+  margin-bottom: 4px;
+}
+
+.page-content .service-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.page-content .service-card {
+  border-radius: 12px;
+  padding: 13px 15px;
+  border: 1px solid var(--line);
+  background: var(--surface-1);
+}
+
+.page-content .service-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.page-content .service-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ── TOC (long legal) ── */
+.qg-content-toc {
+  margin: 0 0 28px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+}
+
+.qg-content-toc-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.qg-content-toc ol {
+  margin: 0;
+  padding-left: 1.15rem;
+  columns: 1;
+  gap: 24px;
+}
+
+@media (min-width: 640px) {
+  .qg-content-toc ol {
+    columns: 2;
+  }
+}
+
+.qg-content-toc li {
+  break-inside: avoid;
+  margin-bottom: 6px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.qg-content-toc a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.qg-content-toc a:hover {
+  text-decoration: underline;
+}
+
+/* ── Help cards / steps ── */
+.page-content .step-card,
+.trust-page .step-card,
+.qg-help-card {
+  border-radius: 16px;
+  padding: 18px 18px 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-1);
+}
+
+.page-content .step-num,
+.trust-page .step-num {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.qg-help-ico {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.qg-help-ico .qg-ico {
+  width: 20px;
+  height: 20px;
+}
+
+.page-content .step-card h3,
+.trust-page .step-card h3,
+.qg-help-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.page-content .step-card p,
+.trust-page .step-card p,
+.qg-help-card p {
+  margin-bottom: 0;
+  font-size: 14px;
+}
+
+.qg-help-grid {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.qg-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 28px;
+}
+
+.qg-content-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px 22px;
+  border-radius: 14px;
+  border: none;
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.qg-content-cta:hover {
+  filter: brightness(1.05);
+  text-decoration: none;
+}
+
+.qg-content-cta.is-secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--line-strong);
+}
+
+/* ── Guidelines tabs ── */
+.page-content .tab-row,
+.trust-page .tab-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.page-content .tab-btn,
+.trust-page .tab-btn {
+  padding: 8px 16px;
+  min-height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.page-content .tab-btn.active,
+.trust-page .tab-btn.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.page-content .tab-panel,
+.trust-page .tab-panel {
+  display: none;
+}
+
+.page-content .tab-panel.active,
+.trust-page .tab-panel.active {
+  display: block;
+}
+
+/* ── FAQ accordion ── */
+.page-content .faq-item,
+.trust-page .faq-item {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-1);
+  padding: 0;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.page-content .faq-q,
+.trust-page .faq-q {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  line-height: 1.4;
+  list-style: none;
+  user-select: none;
+}
+
+.page-content .faq-q span,
+.trust-page .faq-q span {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1;
+  transition: transform 0.2s;
+}
+
+.page-content .faq-item.open .faq-q span,
+.trust-page .faq-item.open .faq-q span {
+  transform: rotate(45deg);
+}
+
+.page-content .faq-a,
+.trust-page .faq-a {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  padding: 0 16px 16px;
+  display: none;
+  max-width: none;
+  margin: 0;
+}
+
+.page-content .faq-item.open .faq-a,
+.trust-page .faq-item.open .faq-a {
+  display: block;
+}
+
+/* ── 404 ── */
+.qg-err-wrap {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+  max-width: 28rem;
+  margin: 0 auto;
+}
+
+.qg-err-code {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 4.5rem;
+  color: var(--brand);
+  line-height: 1;
+  margin-bottom: 8px;
+  font-style: italic;
+}
+
+.qg-err-wrap .page-title {
+  margin-bottom: 12px;
+}
+
+.qg-err-wrap .page-date {
+  margin-bottom: 28px;
+}
+
+/* ── Feedback form ── */
+body.page-feedback .content {
+  max-width: 32rem;
+}
+
+.page-feedback .nav-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.page-feedback .beta-note {
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.55;
+  margin-bottom: 24px;
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  color: var(--text-secondary);
+}
+
+.page-feedback .field {
+  margin-bottom: 18px;
+}
+
+.page-feedback .field label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-muted);
+}
+
+.page-feedback .req {
+  color: var(--attention);
+}
+
+.page-feedback .field-input,
+.page-feedback .field-select,
+.page-feedback .field-textarea {
+  width: 100%;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  border: 1px solid var(--line);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  box-sizing: border-box;
+}
+
+.page-feedback .field-select {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  padding-right: 42px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239a91b8' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+}
+
+.page-feedback .field-textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.page-feedback .field-input:focus,
+.page-feedback .field-select:focus,
+.page-feedback .field-textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.page-feedback .field-input.is-invalid,
+.page-feedback .field-select.is-invalid,
+.page-feedback .field-textarea.is-invalid {
+  border-color: var(--danger);
+}
+
+.page-feedback .field-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  line-height: 1.45;
+}
+
+.page-feedback .msg-box {
+  display: none;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.page-feedback .msg-box.err {
+  display: block;
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+  color: var(--danger);
+}
+
+.page-feedback .msg-box.err[hidden] {
+  display: none !important;
+}
+
+.page-feedback .qg-help-ico {
+  margin-bottom: 16px;
+}
+
+.page-feedback .success-icon .qg-ico {
+  width: 28px;
+  height: 28px;
+}
+
+.qg-help-card .section-title {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 10px;
+}
+
+.qg-help-card ul:last-child {
+  margin-bottom: 0;
+}
+
+.page-feedback .submit-btn {
+  width: 100%;
+  min-height: 50px;
+  border: none;
+  border-radius: 14px;
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.page-feedback .submit-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.page-feedback .footer-note {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.page-feedback .success-screen {
+  display: none;
+  text-align: center;
+  padding: 40px 8px;
+}
+
+.page-feedback .success-screen.show {
+  display: block;
+}
+
+.page-feedback .success-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--money-soft);
+  color: var(--money);
+}
+
+.page-feedback .success-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.page-feedback .success-sub {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+.page-feedback .home-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 10px 20px;
+  border-radius: 12px;
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* ── Footer ── */
+.page-content .site-footer,
+.trust-page .site-footer {
+  text-align: center;
+  padding: 24px 20px 32px;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.8;
+  border-top: 1px solid var(--line);
+  max-width: 42rem;
+  margin: 0 auto;
+}
+
+.page-content .site-footer a,
+.trust-page .site-footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* Cookie banner (kept from qg-trust) */
+#qgCookieBanner {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 9998;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: none;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+#qgCookieBanner.show {
+  display: flex;
+}
+
+#qgCookieBanner p {
+  margin: 0;
+  line-height: 1.55;
+  flex: 1;
+  color: var(--text-secondary);
+}
+
+#qgCookieBanner a {
+  color: var(--accent);
+}
+
+#qgCookieBanner button {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: none;
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 12px;
+}

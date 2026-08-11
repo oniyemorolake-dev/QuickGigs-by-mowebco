@@ -7,27 +7,47 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QuickGigs — How It Works</title>
 <meta name="description" content="How QuickGigs works in 3 simple steps — post a task or earn as a tasker anywhere in Canada.">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="qg-trust.css">
-<link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400;1,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="qg-tokens.css?v=20260811content1" id="qg-tokens-css">
+<link rel="stylesheet" href="qg-content.css?v=20260811content1">
+<script src="qg-theme.js"></script>
+<script src="qg-brand-init.js"></script>
+<script defer src="qg-icons.js?v=20260811trust2"></script>
 </head>
-<body class="trust-page">
+<body class="page-content trust-page">
 <nav class="nav">
   <div class="nav-logo">QuickGigs</div>
-  <div class="nav-right"><a class="back-btn" href="index.html">← Home</a><button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button></div>
+  <div class="nav-right"><a class="back-btn" href="index.html">Home</a><button type="button" class="mode-btn" id="modeBtn" onclick="toggleTheme()">Light</button></div>
 </nav>
-<div class="content">
+<div class="content" data-toc="off">
   <span class="page-label">Getting started</span>
   <h1 class="page-title">How QuickGigs works</h1>
   <p class="page-date">Three steps — for posters and taskers across Canada</p>
-  <div class="step-card"><span class="step-num">1</span><h3>Post or browse</h3><p><strong>Posters</strong> describe what they need, set a budget, and pick a category. <strong>Taskers</strong> browse open tasks near them and apply with an offer and message.</p></div>
-  <div class="step-card"><span class="step-num">2</span><h3>Get matched</h3><p>Posters review applicants and accept the best fit. Taskers get notified when hired. Chat opens after accept so you can coordinate details safely on-platform.</p></div>
-  <div class="step-card"><span class="step-num">3</span><h3>Task gets done</h3><p>Work happens, both sides mark complete, and leave reviews. Disputes and reports are available if something goes wrong.</p></div>
+  <div class="qg-help-grid">
+    <div class="qg-help-card">
+      <div class="qg-help-ico" data-qg-ico="search" data-qg-ico-size="20"></div>
+      <h3>1. Post or browse</h3>
+      <p><strong>Posters</strong> describe what they need, set a budget, and pick a category. <strong>Taskers</strong> browse open tasks near them and apply with an offer and message.</p>
+    </div>
+    <div class="qg-help-card">
+      <div class="qg-help-ico" data-qg-ico="handshake" data-qg-ico-size="20"></div>
+      <h3>2. Get matched</h3>
+      <p>Posters review applicants and accept the best fit. Taskers get notified when hired. Chat opens after accept so you can coordinate details safely on-platform.</p>
+    </div>
+    <div class="qg-help-card">
+      <div class="qg-help-ico" data-qg-ico="checkCircle" data-qg-ico-size="20"></div>
+      <h3>3. Task gets done</h3>
+      <p>Work happens, both sides mark complete, and leave reviews. Disputes and reports are available if something goes wrong.</p>
+    </div>
+  </div>
   <div class="info-box"><p>Two modes: <strong>Quick</strong> for urgent help, <strong>Standard</strong> to plan ahead and compare applicants. Beta: payments coming soon — explore the full flow now.</p></div>
-  <p style="text-align:center;margin-top:24px"><a href="signup.html" style="display:inline-block;padding:12px 24px;border-radius:12px;background:#9b6fc4;color:#fff;text-decoration:none;font-weight:500">Create free account</a></p>
+  <div class="qg-cta-row">
+    <a class="qg-content-cta" href="signup.html">Create free account</a>
+  </div>
 </div>
 <footer class="site-footer" id="siteFooter"></footer>
 <script src="qg-cookies.js"></script>
 <script src="qg-site.js"></script>
+<script src="qg-content.js?v=20260811content1"></script>
 </body>
 </html>

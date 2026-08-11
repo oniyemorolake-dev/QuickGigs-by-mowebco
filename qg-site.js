@@ -64,13 +64,14 @@
       : (localStorage.getItem('qg-theme') !== 'light');
     document.body.classList.toggle('light', !isDark);
     var btn = document.getElementById('modeBtn');
-    if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+    if (btn) btn.textContent = isDark ? 'Light' : 'Dark';
     window.toggleTheme = function () {
       isDark = !isDark;
       if (typeof QG_setThemeDark === 'function') QG_setThemeDark(isDark);
       else localStorage.setItem('qg-theme', isDark ? 'dark' : 'light');
-      document.body.classList.toggle('light', !isDark);
-      if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+      if (typeof QG_paintTheme === 'function') QG_paintTheme(isDark);
+      else document.body.classList.toggle('light', !isDark);
+      if (btn) btn.textContent = isDark ? 'Light' : 'Dark';
     };
   };
 

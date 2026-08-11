@@ -6,22 +6,29 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Page not found — QuickGigs</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="qg-trust.css">
-<style>
-.err-wrap{min-height:70vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px;}
-.err-code{font-family:'Playfair Display',serif;font-size:4rem;color:var(--lavender);line-height:1;margin-bottom:8px;}
-</style>
-<link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400;1,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="qg-tokens.css?v=20260811content1" id="qg-tokens-css">
+<link rel="stylesheet" href="qg-content.css?v=20260811content1">
+<script src="qg-theme.js"></script>
+<script src="qg-brand-init.js"></script>
 </head>
-<body class="trust-page">
-<div class="err-wrap">
-  <div class="err-code">404</div>
-  <h1 class="page-title" style="margin-bottom:12px">Page not found</h1>
-  <p class="page-date" style="margin-bottom:24px">This link may be old or mistyped. QuickGigs is live at quickgigs.ca.</p>
-  <p><a href="dashboard.html" style="display:inline-block;padding:12px 24px;border-radius:12px;background:#9b6fc4;color:#fff;text-decoration:none;font-weight:500;margin:4px">Take me home</a>
-  <a href="index.html" style="display:inline-block;padding:12px 24px;border-radius:12px;border:1px solid rgba(200,168,233,0.3);color:var(--lavender);text-decoration:none;font-weight:500;margin:4px">Landing page</a>
-  <a href="browsetask.html" style="display:inline-block;padding:12px 24px;border-radius:12px;border:1px solid rgba(200,168,233,0.3);color:var(--lavender);text-decoration:none;font-weight:500;margin:4px">Browse tasks</a></p>
+<body class="page-content trust-page">
+<nav class="nav">
+  <div class="nav-logo">QuickGigs</div>
+  <div class="nav-right">
+    <a class="back-btn" href="index.html">Home</a>
+    <button type="button" class="mode-btn" id="modeBtn" onclick="toggleTheme()">Light</button>
+  </div>
+</nav>
+<div class="qg-err-wrap">
+  <div class="qg-err-code">404</div>
+  <h1 class="page-title">Page not found</h1>
+  <p class="page-date">This link may be old or mistyped. QuickGigs is live at quickgigs.ca.</p>
+  <div class="qg-cta-row">
+    <a class="qg-content-cta" href="index.html">Back to home</a>
+    <a class="qg-content-cta is-secondary" href="dashboard.html">Dashboard</a>
+    <a class="qg-content-cta is-secondary" href="browsetask.html">Browse tasks</a>
+  </div>
 </div>
 <footer class="site-footer" id="siteFooter"></footer>
 <script src="qg-site.js"></script>

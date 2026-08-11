@@ -10,34 +10,20 @@
 <link rel="canonical" href="https://quickgigs.ca/contractor-agreement.html">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#6b3fa0">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="qg-polish.css?v=20260726contrast">
-<style>
-*{margin:0;padding:0;box-sizing:border-box;}
-:root{--bg:#0b0118;--border:rgba(200,168,233,0.1);--text:#fff;--text-muted:rgba(255,255,255,0.68);--purple:#6b3fa0;--purple-light:#9b6fc4;--lavender:#c8a8e9;--nav-bg:#0b0118;}
-body.light{--bg:#fafafe;--border:#f0eeff;--text:#1a0a3d;--text-muted:#6b6580;--nav-bg:#fff;--lavender:#6b3fa0;}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
-.nav{position:sticky;top:0;z-index:50;background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;}
-.nav-logo{font-family:'Playfair Display',serif;font-style:italic;font-size:1.25rem;color:var(--lavender);}
-.back-btn{font-size:13px;color:var(--purple-light);text-decoration:none;}
-.content{max-width:680px;margin:0 auto;padding:32px 20px 60px;}
-.page-label{font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:var(--purple-light);margin-bottom:10px;display:block;}
-.page-title{font-family:'Playfair Display',serif;font-size:2rem;margin-bottom:8px;}
-.page-date{font-size:13px;color:var(--text-muted);margin-bottom:32px;}
-.section{margin-bottom:28px;}
-.section-title{font-size:16px;font-weight:500;margin-bottom:10px;padding-bottom:8px;border-bottom:0.5px solid var(--border);}
-p,li{font-size:14px;line-height:1.8;color:var(--text-muted);margin-bottom:12px;}
-ul{padding-left:20px;margin-bottom:12px;}
-strong{color:var(--text);font-weight:500;}
-a{color:var(--purple-light);}
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400;1,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="qg-tokens.css?v=20260811content1" id="qg-tokens-css">
+<link rel="stylesheet" href="qg-content.css?v=20260811content1">
+<script src="qg-theme.js"></script>
+<script src="qg-brand-init.js"></script>
 <script src="qg-config.js"></script>
-<link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
 </head>
-<body>
+<body class="page-content">
 <nav class="nav">
   <div class="nav-logo">QuickGigs</div>
-  <a class="back-btn" href="terms.html">← Terms</a>
+  <div class="nav-right">
+    <a class="back-btn" href="terms.html">Terms</a>
+    <button type="button" class="mode-btn" id="modeBtn" onclick="toggleTheme()">Light</button>
+  </div>
 </nav>
 <div class="content">
   <span class="page-label">Legal · Taskers</span>
@@ -79,9 +65,9 @@ a{color:var(--purple-light);}
     <p>Enabling Tasker mode and checking the consent box records your acceptance of this Agreement and the Terms at the versions shown on that screen.</p>
   </div>
 </div>
-<script>
-var isDark = localStorage.getItem('qg-theme') !== 'light' && localStorage.getItem('qg-mode') !== 'light';
-document.body.className = isDark ? '' : 'light';
-</script>
+<footer class="site-footer" id="siteFooter"></footer>
+<script src="qg-cookies.js"></script>
+<script src="qg-site.js"></script>
+<script src="qg-content.js?v=20260811content1"></script>
 </body>
 </html>
