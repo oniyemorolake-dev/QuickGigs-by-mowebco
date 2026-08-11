@@ -34,8 +34,10 @@
     new_message: {
       subject: function (p) { return 'New message from ' + (p.senderName || 'QuickGigs'); },
       body: function (p) {
-        return (p.senderName || 'Someone') + ' sent you a message about “' + (p.taskTitle || 'a task') + '”:\n\n' +
-          '“' + (p.preview || 'Open QuickGigs to read') + '”\n\n' +
+        // Privacy: do not put private chat content in email — open in-app to read.
+        return (p.senderName || 'Someone') + ' sent you a message' +
+          (p.taskTitle ? ' about “' + p.taskTitle + '”' : '') +
+          '.\n\nOpen QuickGigs to read and reply:\n' +
           (p.link || 'https://quickgigs.ca/messages.html');
       }
     },
