@@ -643,6 +643,13 @@ document.getElementById('submitBtn').onclick = async function() {
         guardianEmail: identity.guardian_email,
         emailSent: saveResult.email_sent === true
       }));
+      if (typeof notifyGuardianPending === 'function') {
+        try {
+          await notifyGuardianPending(userCredential.user.uid, {
+            guardianName: identity.guardian_name
+          });
+        } catch (pendingNotifErr) {}
+      }
     }
 
     localStorage.setItem('qg-role', account.role);

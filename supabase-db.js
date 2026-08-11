@@ -2121,7 +2121,17 @@ async function approveGuardianConsent(token) {
   }
   for (var i = 0; i < filters.length; i++) {
     var result = await sbUpdate('users', patch, filters[i]);
-    if (result.success) return { success: true, name: user.name };
+    if (result.success) {
+      var teenUid = user.firebase_uid || user.FIREBASE_UID;
+      if (teenUid && typeof notifyGuardianApproved === 'function') {
+        try {
+          await notifyGuardianApproved(teenUid, {});
+        } catch (nErr) {
+          console.warn('Guardian approved notification skipped:', nErr);
+        }
+      }
+      return { success: true, name: user.name };
+    }
   }
   return { success: false, error: 'update_failed' };
 }
@@ -4293,6 +4303,7 @@ async function unlockChatForTask(taskId, posterId, workerId) {
   if (!conv || !conv.conv_id) return { success: false, error: 'No conversation' };
   var taskRow = typeof getTaskById === 'function' ? await getTaskById(taskId) : null;
   var taskStatus = taskRow ? (taskRow.status || taskRow.STATUS || '') : 'in_progress';
+  var wasLocked = !(conv.is_unlocked === true || conv.is_unlocked === 1 || String(conv.is_unlocked) === 'true');
   var result = await forceUnlockConversationForTask(conv, taskStatus);
   // Escrow/unlock: clear sliding-window contact buffers (legitimate open chat)
   if (result && result.success && typeof clearConversationFraudBuffers === 'function') {
@@ -4300,6 +4311,35 @@ async function unlockChatForTask(taskId, posterId, workerId) {
   } else if (result && result.success && typeof clearBuffer === 'function') {
     clearBuffer(conv.conv_id, posterId || conv.poster_id);
     clearBuffer(conv.conv_id, workerId || conv.worker_id);
+  }
+  if (result && result.success && wasLocked && workerId && typeof notifyTaskFunded === 'function') {
+    try {
+      var title = taskRow ? (taskRow.title || taskRow.TITLE || '') : (conv.task_title || '');
+      var unlockRule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'payment';
+      var chatLink = 'https://quickgigs.ca/chat.html?conv=' + encodeURIComponent(String(conv.conv_id));
+      if (unlockRule === 'payment') {
+        await notifyTaskFunded(workerId, '', {
+          taskTitle: title,
+          taskId: taskId,
+          convId: conv.conv_id,
+          link: chatLink
+        });
+      } else if (typeof queueEmailNotification === 'function') {
+        await queueEmailNotification({
+          type: 'chat_unlocked',
+          userId: workerId,
+          email: '',
+          payload: {
+            taskTitle: title,
+            taskId: taskId,
+            convId: conv.conv_id,
+            link: chatLink
+          }
+        });
+      }
+    } catch (fundErr) {
+      console.warn('Task funded notification skipped:', fundErr);
+    }
   }
   return result;
 }
@@ -4312,7 +4352,17 @@ var INAPP_BODY = {
     return (p.posterName || 'The poster') + ' accepted you for “' + (p.taskTitle || 'a task') + '”.';
   },
   task_completed: function (p) {
+    var role = String(p.role || '');
+    if (role === 'worker') {
+      return '“' + (p.taskTitle || 'Your task') + '” is complete — payout is on the way.';
+    }
     return '“' + (p.taskTitle || 'Your task') + '” is done — leave a review when you can.';
+  },
+  task_funded: function (p) {
+    return 'Payment secured for “' + (p.taskTitle || 'your task') + '”. Chat is unlocked.';
+  },
+  chat_unlocked: function (p) {
+    return 'You can message about “' + (p.taskTitle || 'your task') + '” now.';
   },
   new_message: function (p) {
     return (p.senderName || 'Someone') + ': “' + (p.preview || 'New message') + '”';
@@ -4327,10 +4377,10 @@ var INAPP_BODY = {
     return (p.partyName || 'They') + ' accepted $' + (p.amount || '?') + ' for “' + (p.taskTitle || 'a task') + '”.';
   },
   task_removed_admin: function (p) {
-    return 'Your task “' + (p.taskTitle || '') + '” was removed. Reason: ' + (p.reason || 'See email for details');
+    return 'Your task “' + (p.taskTitle || '') + '” was removed' + (p.reason ? '. Reason: ' + p.reason : '') + '.';
   },
   task_removed_applicant: function (p) {
-    return '“' + (p.taskTitle || 'A task') + '” was removed — ' + (p.reason || 'see email for details');
+    return '“' + (p.taskTitle || 'A task') + '” was removed' + (p.reason ? ' — ' + p.reason : '') + '.';
   },
   new_gig_match: function (p) {
     var bits = [];
@@ -4338,20 +4388,34 @@ var INAPP_BODY = {
     if (p.budget) bits.push('$' + p.budget);
     if (p.distanceKm != null) bits.push('~' + p.distanceKm + ' km');
     return '“' + (p.taskTitle || 'New gig') + '”' + (bits.length ? ' · ' + bits.join(' · ') : '') + '. Tap to view.';
+  },
+  guardian_pending: function (p) {
+    return 'Ask ' + (p.guardianName || 'your parent/guardian') + ' to approve your account.';
+  },
+  guardian_approved: function () {
+    return 'Your account is approved — you can apply to gigs now.';
+  },
+  guardian_consent: function (p) {
+    return (p.teenName || 'Your teen') + ' needs your approval to use QuickGigs.';
   }
 };
 
 var INAPP_TITLE = {
-  application_received: function (p) { return '👤 New applicant'; },
-  application_accepted: function (p) { return '🎉 You were hired!'; },
-  task_completed: function (p) { return '✅ Task complete'; },
-  new_message: function (p) { return '💬 New message'; },
-  counter_offer_received: function (p) { return '💰 Counter offer'; },
-  counter_offer_reply: function (p) { return '↩️ Counter back'; },
-  counter_offer_accepted: function (p) { return '✓ Price agreed'; },
-  task_removed_admin: function (p) { return '🚫 Task removed'; },
-  task_removed_applicant: function (p) { return '🚫 Task removed'; },
-  new_gig_match: function (p) { return '📍 New gig near you'; }
+  application_received: function () { return 'New application'; },
+  application_accepted: function () { return 'Application accepted'; },
+  task_completed: function () { return 'Task complete'; },
+  task_funded: function () { return 'Chat unlocked'; },
+  chat_unlocked: function () { return 'Chat unlocked'; },
+  new_message: function () { return 'New message'; },
+  counter_offer_received: function () { return 'Counter-offer'; },
+  counter_offer_reply: function () { return 'Counter-offer reply'; },
+  counter_offer_accepted: function () { return 'Price agreed'; },
+  task_removed_admin: function () { return 'Task removed'; },
+  task_removed_applicant: function () { return 'Task removed'; },
+  new_gig_match: function () { return 'New gig near you'; },
+  guardian_pending: function () { return 'Guardian approval needed'; },
+  guardian_approved: function () { return 'Guardian approved'; },
+  guardian_consent: function () { return 'Guardian approval needed'; }
 };
 
 async function pushInAppNotification(opts) {

@@ -201,7 +201,7 @@
     var shell = document.createElement('link');
     shell.id = 'qg-shell-css';
     shell.rel = 'stylesheet';
-    shell.href = 'qg-shell.css?v=20260811fix1';
+    shell.href = 'qg-shell.css?v=20260811notif1';
     document.head.appendChild(shell);
   }
 

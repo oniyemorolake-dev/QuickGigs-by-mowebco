@@ -119,7 +119,7 @@ html.light .qg-menu-btn span {
 }
 
 .qg-bell-dot {
-  background: var(--danger) !important;
+  background: var(--accent) !important;
   border-color: var(--surface-1) !important;
   color: var(--on-accent) !important;
 }

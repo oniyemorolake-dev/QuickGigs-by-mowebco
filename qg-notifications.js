@@ -48,6 +48,36 @@
           'If you did not authorize this, ignore this email or contact support@quickgigs.ca.\n\n— QuickGigs';
       }
     },
+    chat_unlocked: {
+      subject: function (p) { return 'Chat unlocked for “' + (p.taskTitle || 'your task') + '”'; },
+      body: function (p) {
+        return 'You can message about “' + (p.taskTitle || 'your task') + '” now:\n' +
+          (p.link || 'https://quickgigs.ca/messages.html');
+      }
+    },
+    task_funded: {
+      subject: function (p) { return 'Chat unlocked for “' + (p.taskTitle || 'your task') + '”'; },
+      body: function (p) {
+        return 'Payment is secured for “' + (p.taskTitle || 'your task') +
+          '”. You can message the other party now:\n' +
+          (p.link || 'https://quickgigs.ca/messages.html');
+      }
+    },
+    guardian_pending: {
+      subject: function () { return 'Waiting for guardian approval' },
+      body: function (p) {
+        return 'Ask ' + (p.guardianName || 'your parent/guardian') +
+          ' to approve your QuickGigs account before you can apply or post.\n\n' +
+          (p.link || 'https://quickgigs.ca/dashboard.html');
+      }
+    },
+    guardian_approved: {
+      subject: function () { return 'Your QuickGigs account was approved' },
+      body: function (p) {
+        return 'Great news — your parent/guardian approved your account. You can apply to gigs now.\n\n' +
+          (p.link || 'https://quickgigs.ca/dashboard.html');
+      }
+    },
     waitlist_invite: {
       subject: function () { return 'You\'re invited to QuickGigs beta 🎉'; },
       body: function (p) {
@@ -126,14 +156,23 @@
       application_received: 1,
       application_accepted: 1,
       task_completed: 1,
+      task_funded: 1,
+      chat_unlocked: 1,
       new_message: 1,
       counter_offer_received: 1,
       counter_offer_reply: 1,
       counter_offer_accepted: 1,
       task_removed_admin: 1,
       task_removed_applicant: 1,
-      new_gig_match: 1
+      new_gig_match: 1,
+      guardian_pending: 1,
+      guardian_approved: 1,
+      guardian_consent: 1
     };
+    // Guardians without a QuickGigs user id only get email (userId "guardian").
+    if (opts.type === 'guardian_consent' && (!opts.userId || String(opts.userId) === 'guardian')) {
+      delete inAppTypes.guardian_consent;
+    }
     if (inAppTypes[opts.type] && typeof pushInAppNotification === 'function') {
       try {
         await pushInAppNotification({
@@ -152,6 +191,10 @@
 
     if (!opts.forceEmail && window.QG_CONFIG && window.QG_CONFIG.emailNotificationsEnabled === false) {
       return { success: true, skipped: true };
+    }
+
+    if (opts.inAppOnly) {
+      return { success: true, inAppOnly: true };
     }
 
     var tmpl = TEMPLATES[opts.type];
@@ -230,6 +273,56 @@
         taskTitle: titled(task && (task.title || task.TITLE)),
         posterName: posterName,
         link: 'https://quickgigs.ca/mytasks.html?tab=inprogress'
+      }
+    });
+  }
+
+  async function notifyTaskFunded(workerId, workerEmail, payload) {
+    if (!workerId) return;
+    payload = payload || {};
+    var convId = payload.convId || '';
+    var link = payload.link ||
+      (convId
+        ? 'https://quickgigs.ca/chat.html?conv=' + encodeURIComponent(convId)
+        : 'https://quickgigs.ca/messages.html');
+    return queueEmailNotification({
+      type: 'task_funded',
+      userId: workerId,
+      email: workerEmail || '',
+      payload: {
+        taskTitle: titled(payload.taskTitle),
+        taskId: payload.taskId,
+        convId: convId,
+        link: link
+      }
+    });
+  }
+
+  async function notifyGuardianPending(teenUserId, payload) {
+    if (!teenUserId) return;
+    payload = payload || {};
+    return queueEmailNotification({
+      type: 'guardian_pending',
+      userId: teenUserId,
+      email: '',
+      inAppOnly: true,
+      payload: {
+        guardianName: payload.guardianName,
+        link: payload.link || 'https://quickgigs.ca/dashboard.html'
+      }
+    });
+  }
+
+  async function notifyGuardianApproved(teenUserId, payload) {
+    if (!teenUserId) return;
+    payload = payload || {};
+    return queueEmailNotification({
+      type: 'guardian_approved',
+      userId: teenUserId,
+      email: '',
+      inAppOnly: true,
+      payload: {
+        link: payload.link || 'https://quickgigs.ca/dashboard.html'
       }
     });
   }
@@ -381,6 +474,9 @@
   window.queueGuardianConsentEmail = queueGuardianConsentEmail;
   window.notifyPosterNewApplication = notifyPosterNewApplication;
   window.notifyWorkerAccepted = notifyWorkerAccepted;
+  window.notifyTaskFunded = notifyTaskFunded;
+  window.notifyGuardianPending = notifyGuardianPending;
+  window.notifyGuardianApproved = notifyGuardianApproved;
   window.notifyTaskCompleted = notifyTaskCompleted;
   window.notifyNewChatMessage = notifyNewChatMessage;
 })();

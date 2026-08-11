@@ -489,7 +489,7 @@
   });
 
   var bellScript = document.createElement('script');
-  bellScript.src = 'qg-bell.js?v=20260729tap1';
+  bellScript.src = 'qg-bell.js?v=20260811notif1';
   bellScript.defer = true;
   document.head.appendChild(bellScript);
 
