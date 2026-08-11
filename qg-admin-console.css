@@ -1,0 +1,365 @@
+/**
+ * QuickGigs — Phase 3 / step 6: Admin Console dense operator chrome (tokens only).
+ * Desktop-first information density. Does not change moderation logic.
+ */
+
+body.page-admin {
+  --admin-bg: var(--bg);
+  --admin-surface: var(--surface-1);
+  --admin-surface-2: var(--surface-2);
+  --admin-line: var(--line);
+  --admin-text: var(--text-primary);
+  --admin-muted: var(--text-muted);
+  background: var(--bg);
+  color: var(--text-primary);
+}
+
+body.page-admin .sidebar {
+  background: var(--surface-1) !important;
+  border-right: 1px solid var(--line) !important;
+}
+
+body.page-admin .logo-text {
+  color: var(--brand) !important;
+}
+
+body.page-admin .admin-badge {
+  background: var(--danger-soft) !important;
+  color: var(--danger) !important;
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent) !important;
+}
+
+body.page-admin .nav-item.active {
+  background: color-mix(in srgb, var(--brand) 18%, transparent) !important;
+  color: var(--brand) !important;
+}
+
+body.page-admin .nav-badge {
+  background: var(--attention) !important;
+  color: #111 !important;
+}
+
+body.page-admin .main {
+  background: var(--bg);
+}
+
+body.page-admin .page-title {
+  color: var(--text-primary);
+}
+
+body.page-admin .page-sub,
+body.page-admin .stat-label,
+body.page-admin .stat-sub,
+body.page-admin .mc-sub,
+body.page-admin .u-meta,
+body.page-admin .col-h {
+  color: var(--text-muted) !important;
+}
+
+/* Dense top metrics */
+body.page-admin .stats-grid {
+  gap: 10px !important;
+  margin-bottom: 14px !important;
+}
+
+body.page-admin .stat-card {
+  padding: 12px 14px !important;
+  border-radius: 12px !important;
+  background: var(--surface-1) !important;
+  border: 1px solid var(--line) !important;
+}
+
+body.page-admin .stat-val {
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
+}
+
+body.page-admin .stat-val.is-brand,
+body.page-admin .stat-val.c-purple {
+  color: var(--brand) !important;
+}
+
+body.page-admin .stat-val.is-money,
+body.page-admin .stat-val.c-green {
+  color: var(--money) !important;
+}
+
+body.page-admin .stat-val.is-attention,
+body.page-admin .stat-val.c-amber,
+body.page-admin .stat-val.c-red {
+  color: var(--attention) !important;
+}
+
+body.page-admin .stat-val.is-danger {
+  color: var(--danger) !important;
+}
+
+body.page-admin .accent-purple { background: var(--brand) !important; }
+body.page-admin .accent-green { background: var(--money) !important; }
+body.page-admin .accent-amber { background: var(--attention) !important; }
+body.page-admin .accent-red { background: var(--danger) !important; }
+
+body.page-admin .trend-warn {
+  background: var(--attention-soft) !important;
+  color: var(--attention) !important;
+}
+
+body.page-admin .trend-up {
+  background: var(--money-soft) !important;
+  color: var(--money) !important;
+}
+
+body.page-admin .alert-banner {
+  background: var(--attention-soft) !important;
+  border-color: color-mix(in srgb, var(--attention) 40%, transparent) !important;
+  padding: 10px 14px !important;
+  margin-bottom: 14px !important;
+}
+
+body.page-admin .alert-text {
+  color: var(--attention) !important;
+}
+
+body.page-admin .alert-action {
+  background: var(--attention-soft) !important;
+  border-color: color-mix(in srgb, var(--attention) 45%, transparent) !important;
+  color: var(--attention) !important;
+}
+
+/* Tables — dense */
+body.page-admin .table-card,
+body.page-admin .mini-card {
+  background: var(--surface-1) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+}
+
+body.page-admin .data-row,
+body.page-admin .col-row {
+  border-bottom: 1px solid var(--line) !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  font-size: 12px !important;
+}
+
+body.page-admin .u-name {
+  color: var(--text-primary) !important;
+  font-size: 13px !important;
+}
+
+body.page-admin .act-btn {
+  min-height: 32px;
+  padding: 6px 10px !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+
+body.page-admin .btn-view {
+  background: var(--surface-2) !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--line) !important;
+}
+
+body.page-admin .btn-warn,
+body.page-admin .bulk-warn {
+  background: var(--attention-soft) !important;
+  color: var(--attention) !important;
+  border: 1px solid color-mix(in srgb, var(--attention) 40%, transparent) !important;
+}
+
+body.page-admin .btn-ban,
+body.page-admin .btn-remove,
+body.page-admin .bulk-ban {
+  background: var(--danger-soft) !important;
+  color: var(--danger) !important;
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent) !important;
+}
+
+body.page-admin .btn-resolve,
+body.page-admin .btn-release {
+  background: var(--money-soft) !important;
+  color: var(--money) !important;
+  border: 1px solid color-mix(in srgb, var(--money) 40%, transparent) !important;
+}
+
+body.page-admin .btn-refund {
+  background: var(--danger-soft) !important;
+  color: var(--danger) !important;
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent) !important;
+}
+
+body.page-admin .btn-split {
+  background: color-mix(in srgb, var(--brand) 16%, transparent) !important;
+  color: var(--brand) !important;
+  border: 1px solid color-mix(in srgb, var(--brand) 40%, transparent) !important;
+}
+
+body.page-admin .btn-unban {
+  background: var(--money-soft) !important;
+  color: var(--money) !important;
+}
+
+body.page-admin .s-warned {
+  background: var(--attention-soft) !important;
+  color: var(--attention) !important;
+}
+
+body.page-admin .s-banned {
+  background: var(--danger-soft) !important;
+  color: var(--danger) !important;
+}
+
+body.page-admin .s-active,
+body.page-admin .s-resolved,
+body.page-admin .s-done {
+  background: var(--money-soft) !important;
+  color: var(--money) !important;
+}
+
+body.page-admin .s-open,
+body.page-admin .s-progress,
+body.page-admin .s-review {
+  background: var(--attention-soft) !important;
+  color: var(--attention) !important;
+}
+
+body.page-admin .data-row.is-urgent {
+  background: color-mix(in srgb, var(--attention) 8%, transparent) !important;
+  box-shadow: inset 3px 0 0 var(--attention);
+}
+
+body.page-admin .data-row.is-banned {
+  opacity: 0.72;
+}
+
+body.page-admin .qg-escrow-amt {
+  color: var(--money);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+body.page-admin .qg-auto-countdown {
+  font-size: 11px;
+  color: var(--attention);
+  font-weight: 600;
+}
+
+body.page-admin .qg-auto-countdown.is-overdue {
+  color: var(--danger);
+}
+
+body.page-admin .qg-warn-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--attention);
+}
+
+body.page-admin .qg-warn-count.is-critical {
+  color: var(--danger);
+}
+
+body.page-admin .role-pill {
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text-secondary);
+}
+
+body.page-admin .role-pill.r-teen {
+  background: var(--attention-soft);
+  color: var(--attention);
+  border-color: color-mix(in srgb, var(--attention) 35%, transparent);
+}
+
+body.page-admin .role-pill.r-guardian {
+  background: color-mix(in srgb, var(--brand) 14%, transparent);
+  color: var(--brand);
+}
+
+body.page-admin .admin-drawer {
+  background: var(--surface-1) !important;
+  border-left: 1px solid var(--line) !important;
+}
+
+body.page-admin .admin-drawer-title {
+  color: var(--text-primary) !important;
+}
+
+body.page-admin .admin-drawer-btn.primary {
+  background: var(--brand) !important;
+  color: var(--on-accent) !important;
+}
+
+body.page-admin .admin-stripe-mode {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+body.page-admin .admin-stripe-mode .mode-pill {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+body.page-admin .admin-stripe-mode .mode-pill.is-test {
+  background: var(--attention-soft);
+  color: var(--attention);
+}
+
+body.page-admin .admin-stripe-mode .mode-pill.is-live {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+body.page-admin .admin-stripe-note {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+body.page-admin .g-disputes-dense {
+  grid-template-columns: 1.4fr 1.1fr 1fr 0.9fr 0.9fr 1.6fr;
+}
+
+body.page-admin .g-users-dense {
+  grid-template-columns: 28px 1.3fr 1fr 0.9fr 0.7fr 0.9fr 1.1fr;
+}
+
+body.page-admin .dispute-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+body.page-admin .health-score {
+  display: none; /* fake score — hide from operator cockpit */
+}
+
+@media (max-width: 900px) {
+  body.page-admin .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  body.page-admin .g-disputes-dense,
+  body.page-admin .g-users-dense,
+  body.page-admin .g-users,
+  body.page-admin .g-tasks,
+  body.page-admin .g-disputes {
+    grid-template-columns: 1fr !important;
+  }
+
+  body.page-admin .col-row {
+    display: none !important;
+  }
+}

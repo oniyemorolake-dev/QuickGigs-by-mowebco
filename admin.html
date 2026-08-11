@@ -17,8 +17,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>QuickGigs — Admin Console</title>
+<link rel="stylesheet" href="qg-tokens.css?v=20260811shell1" id="qg-tokens-css">
 <link rel="stylesheet" href="qg-admin.css?v=3">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="qg-admin-console.css?v=20260811admin1" id="qg-admin-console-css">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="qg-theme.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -202,7 +205,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </style>
 <link rel="stylesheet" href="qg-tokens.css?v=20260811shell1" id="qg-tokens-css">
 </head>
-<body>
+<body class="page-admin">
 <div class="layout">
 <aside class="sidebar">
   <div class="sidebar-logo">
@@ -283,10 +286,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
       <div class="dash-card" data-dash-id="stats" data-dash-span="full">
         <div class="stats-grid" style="margin-bottom:0">
-          <div class="stat-card"><div class="stat-accent accent-purple"></div><div class="stat-header"><span class="stat-icon">👥</span><span class="trend trend-up" id="userTrend">Loading</span></div><div class="stat-val c-purple" id="statUsers">—</div><div class="stat-label">Total users</div><div class="stat-sub" id="statUsersSub"></div><div class="mini-chart" id="chartUsers"></div></div>
-          <div class="stat-card"><div class="stat-accent accent-green"></div><div class="stat-header"><span class="stat-icon">📋</span><span class="trend trend-up" id="taskTrend">Loading</span></div><div class="stat-val" id="statTasks">—</div><div class="stat-label">Tasks posted</div><div class="stat-sub" id="statTasksSub"></div><div class="mini-chart" id="chartTasks"></div></div>
-          <div class="stat-card"><div class="stat-accent accent-amber"></div><div class="stat-header"><span class="stat-icon">💰</span><span class="trend trend-neutral" id="revenueTrend">Fees</span></div><div class="stat-val c-green" id="statRevenue">—</div><div class="stat-label">Platform revenue</div><div class="stat-sub" id="statRevenueSub">Fees collected on paid tasks</div><div class="mini-chart" id="chartRevenue"></div></div>
-          <div class="stat-card"><div class="stat-accent accent-red"></div><div class="stat-header"><span class="stat-icon">🚨</span><span class="trend trend-warn" id="disputeTrend">Needs attention</span></div><div class="stat-val c-red" id="statDisputes">—</div><div class="stat-label">Open disputes</div><div class="stat-sub" id="statDisputesSub"></div><div class="mini-chart" id="chartDisputes"></div></div>
+          <div class="stat-card"><div class="stat-accent accent-purple"></div><div class="stat-header"><span class="stat-icon">👥</span><span class="trend trend-up" id="userTrend">Loading</span></div><div class="stat-val is-brand" id="statUsers">—</div><div class="stat-label">Total users</div><div class="stat-sub" id="statUsersSub">+0 new this week</div></div>
+          <div class="stat-card"><div class="stat-accent accent-green"></div><div class="stat-header"><span class="stat-icon">📋</span><span class="trend trend-up" id="taskTrend">Loading</span></div><div class="stat-val" id="statTasks">—</div><div class="stat-label">Active tasks</div><div class="stat-sub" id="statTasksSub"></div></div>
+          <div class="stat-card"><div class="stat-accent accent-amber"></div><div class="stat-header"><span class="stat-icon">🚨</span><span class="trend trend-warn" id="disputeTrend">Needs attention</span></div><div class="stat-val is-attention" id="statDisputes">—</div><div class="stat-label">Open disputes</div><div class="stat-sub" id="statDisputesSub"></div></div>
+          <div class="stat-card"><div class="stat-accent accent-green"></div><div class="stat-header"><span class="stat-icon">🔒</span><span class="trend trend-neutral" id="revenueTrend">Held</span></div><div class="stat-val is-money" id="statRevenue">—</div><div class="stat-label">Escrow held</div><div class="stat-sub" id="statRevenueSub">Currently in escrow</div></div>
         </div>
       </div>
       <div class="dash-card mini-card" data-dash-id="health" data-dash-span="full">
@@ -322,7 +325,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="table-card">
       <div class="table-header"><div><span class="table-title">All users</span><span class="table-count" id="usersCount"></span></div><div class="table-actions"><input class="search-bar" placeholder="🔍 Search users..." oninput="filterUsers(this.value)"><button class="action-pill pill-filter">Filter ▾</button><button class="action-pill pill-export" onclick="exportCSV('users')">↓ Export CSV</button></div></div>
       <div class="bulk-actions" id="bulkActions"><span class="bulk-label" id="bulkLabel">0 selected</span><button class="bulk-btn bulk-warn" onclick="bulkAction('warn')">⚠ Warn all</button><button class="bulk-btn bulk-ban" onclick="bulkAction('ban')">✕ Ban all</button></div>
-      <div class="col-row g-users"><div class="col-h"><input type="checkbox" class="checkbox" onchange="selectAll(this)"></div><div class="col-h">User</div><div class="col-h">Email</div><div class="col-h">Role</div><div class="col-h">Tasks</div><div class="col-h">Status</div><div class="col-h" style="text-align:right">Actions</div></div>
+      <div class="col-row g-users g-users-dense"><div class="col-h"><input type="checkbox" class="checkbox" onchange="selectAll(this)"></div><div class="col-h">User</div><div class="col-h">Email</div><div class="col-h">Role</div><div class="col-h">Warnings</div><div class="col-h">Status</div><div class="col-h" style="text-align:right">Actions</div></div>
       <div id="usersBody"></div>
     </div>
   </div>
@@ -330,8 +333,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <!-- TASKS -->
   <div id="section-tasks" style="display:none">
     <div class="table-card">
-      <div class="table-header"><div><span class="table-title">All tasks</span><span class="table-count" id="tasksCount"></span></div><div class="table-actions"><input class="search-bar" placeholder="🔍 Search tasks..." oninput="filterTasks(this.value)"><button class="action-pill pill-export" onclick="exportCSV('tasks')">↓ Export CSV</button></div></div>
-      <div class="col-row g-tasks"><div class="col-h"></div><div class="col-h">Task</div><div class="col-h">Posted by</div><div class="col-h">Budget</div><div class="col-h">Mode</div><div class="col-h">Status</div><div class="col-h" style="text-align:right">Actions</div></div>
+      <div class="table-header"><div><span class="table-title">All tasks</span><span class="table-count" id="tasksCount"></span></div><div class="table-actions"><input class="search-bar" placeholder="Search tasks..." oninput="filterTasks(this.value)"><button class="action-pill pill-export" onclick="exportCSV('tasks')">↓ Export CSV</button></div></div>
+      <div class="col-row g-tasks"><div class="col-h">Task</div><div class="col-h">Poster</div><div class="col-h">Status</div><div class="col-h" style="text-align:right">Actions</div></div>
       <div id="tasksBody"></div>
     </div>
   </div>
@@ -339,8 +342,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <!-- DISPUTES -->
   <div id="section-disputes" style="display:none">
     <div class="table-card">
-      <div class="table-header"><div><span class="table-title">Disputes</span><span class="table-count" id="disputesCount"></span></div><div class="table-actions"><input class="search-bar" placeholder="🔍 Search disputes..." oninput="filterDisputes(this.value)"><button class="action-pill pill-export" onclick="exportCSV('disputes')">↓ Export CSV</button></div></div>
-      <div class="col-row g-disputes"><div class="col-h">Task</div><div class="col-h">Reason</div><div class="col-h">Opened by</div><div class="col-h">Status</div><div class="col-h">Opened</div><div class="col-h" style="text-align:right">Actions</div></div>
+      <div class="table-header"><div><span class="table-title">Dispute queue</span><span class="table-count" id="disputesCount"></span></div><div class="table-actions"><input class="search-bar" placeholder="Search disputes..." oninput="filterDisputes(this.value)"><button class="action-pill pill-export" onclick="exportCSV('disputes')">↓ Export CSV</button></div></div>
+      <div class="col-row g-disputes g-disputes-dense"><div class="col-h">Task</div><div class="col-h">Parties</div><div class="col-h">Reason</div><div class="col-h">Escrow</div><div class="col-h">Auto-rule</div><div class="col-h" style="text-align:right">Actions</div></div>
       <div id="disputesBody"></div>
     </div>
   </div>
@@ -410,8 +413,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
     <div id="waitlistCrossref" class="admin-wl-stats" style="margin-bottom:14px"></div>
     <div id="waitlistStats" class="admin-wl-stats"></div>
+    <div id="waitlistCityBreakdown"></div>
     <div class="table-card">
-      <div class="table-header"><div><span class="table-title">Waitlist</span><span class="table-count" id="waitlistCount"></span></div><button class="action-pill pill-export" onclick="exportWaitlistCSV()">↓ Export CSV</button></div>
+      <div class="table-header"><div><span class="table-title">Waitlist</span><span class="table-count" id="waitlistCount"></span></div><div class="table-actions"><button type="button" class="action-pill pill-export" onclick="adminInviteWaiting(25)">Invite 25</button><button class="action-pill pill-export" onclick="exportWaitlistCSV()">↓ Export CSV</button></div></div>
       <div class="col-row g-disputes"><div class="col-h">Email</div><div class="col-h">Name</div><div class="col-h">Status</div><div class="col-h">Invited</div><div class="col-h">Joined</div><div class="col-h" style="text-align:right">Actions</div></div>
       <div id="waitlistBody"></div>
     </div>
@@ -442,6 +446,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div id="section-settings" style="display:none">
     <div class="mini-card" style="margin-bottom:14px">
       <div class="mc-title">Platform announcement banner</div>
+      <div class="admin-stripe-mode" id="adminStripeMode" aria-live="polite"></div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.5">Site-wide banner users see (beta / soft-close messaging).</p>
       <p style="font-size:12px;color:var(--text-faint);margin-bottom:12px;line-height:1.5">Shows on homepage, dashboard, browse, and messages. Turn on <strong>Soft close</strong> to hide sign-up buttons and block new posts/browse while launch prep runs.</p>
       <div class="admin-field"><label>Message</label><textarea id="bannerMessage" class="admin-import-box" style="min-height:60px" placeholder="Beta is closed while we prepare for launch with secure payments. Thanks for testing — we will be back soon at quickgigs.ca."></textarea></div>
       <div class="admin-field"><label>Link (optional)</label><input id="bannerLink" type="url" placeholder="https://quickgigs.ca/how-it-works.html"></div>
@@ -647,6 +653,7 @@ window.doLogout = function () {
 <script src="qg-notifications.js"></script>
 <script src="qg-stats.js?v=20260730verify1"></script>
 <script src="qg-admin.js?v=20260804evidence1"></script>
+<script src="qg-admin-console.js?v=20260811admin1"></script>
 <script>
 var SB_HEADERS = window.SB_HEADERS;
 var users=[],tasks=[],disputes=[],reports=[],applications=[],adminNotes=[],adminActions=[],waitlist=[],payments=[],selectedUsers=[],pendingFn=null,currentSection='overview';
@@ -844,8 +851,10 @@ function renderOverview(){
 }
 
 function renderMiniChart(id,data,color){
+  var el=document.getElementById(id);
+  if(!el) return;
   var max=Math.max.apply(null,data)||1;
-  document.getElementById(id).innerHTML=data.map(function(v,i){
+  el.innerHTML=data.map(function(v,i){
     var h=Math.max(8,Math.round((v/max)*100));
     var op=i===data.length-1?1:0.4+i*0.08;
     return '<div class="bar" style="height:'+h+'%;background:'+color+';opacity:'+op+'"></div>';
@@ -998,7 +1007,11 @@ window.showSection=function(section,btn){
   if(section==='users') renderUsers(users);
   if(section==='tasks') renderTasks(tasks);
   if(section==='moderation'&&typeof renderModerationQueue==='function') renderModerationQueue();
-  if(section==='disputes') renderDisputes();
+  if(section==='disputes'){
+    if(typeof renderDisputesConsole==='function') renderDisputesConsole();
+    else if(typeof renderDisputesEnhanced==='function') renderDisputesEnhanced();
+    else renderDisputes();
+  }
   if(section==='reports') renderReports();
   if(section==='waitlist'){ renderWaitlist(); if(typeof renderLocalWaitlistCrossref==='function') renderLocalWaitlistCrossref(); }
   if(section==='security') renderSecurityLog();
