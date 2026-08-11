@@ -432,10 +432,10 @@ onAuthStateChanged(auth, async (user) => {
         banner.className = 'guardian-banner qg-page-wide';
         banner.textContent = '';
         var strong = document.createElement('strong');
-        strong.textContent = 'Waiting for parent approval';
+        strong.textContent = 'Pending guardian consent';
         banner.appendChild(strong);
         banner.appendChild(document.createTextNode(
-          'You can browse, but posting and applying are paused until ' + String(email) + ' approves from the secure email link.'
+          ' You can browse while waiting. Posting and applying stay paused until ' + String(email) + ' approves from the secure email link.'
         ));
         var resend = document.createElement('button');
         resend.type = 'button';

@@ -9,32 +9,38 @@
 <title>Guardian approvals — QuickGigs</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#090016;--surface:#16082b;--surface2:#21103d;--border:rgba(200,168,233,.2);--text:#f8f4ff;--muted:#b8aacb;--purple:#7a4cb8;--lav:#c8a8e9;--green:#4ade80;--red:#f87171;}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% -10%,rgba(107,63,160,.3),transparent 38%),var(--bg);color:var(--text);font-family:'Poppins',sans-serif;}
-.top{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:16px max(20px,calc((100vw - 900px)/2));background:rgba(9,0,22,.88);backdrop-filter:blur(18px);border-bottom:1px solid var(--border);}
-.brand{font-weight:700;letter-spacing:-.02em}.brand span{color:var(--lav)}.secure{font-size:11px;color:var(--muted)}
-main{width:min(900px,100%);margin:0 auto;padding:34px 18px 72px}.hero{margin-bottom:24px}.eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--lav)}h1{font-size:clamp(25px,5vw,38px);line-height:1.15;margin:8px 0}.hero p{margin:0;color:var(--muted);font-size:14px;line-height:1.65}
-.state{padding:26px;border:1px solid var(--border);border-radius:18px;background:var(--surface);text-align:center;color:var(--muted)}
-.queue{display:grid;gap:16px}.card{background:linear-gradient(145deg,var(--surface),var(--surface2));border:1px solid var(--border);border-radius:20px;padding:20px;box-shadow:0 18px 50px rgba(0,0,0,.22)}
-.card-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.category{color:var(--lav);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}.title{font-size:19px;font-weight:600;margin:5px 0}.budget{font-size:20px;font-weight:700;white-space:nowrap}.meta{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}.pill{padding:5px 9px;border-radius:999px;background:rgba(200,168,233,.1);font-size:11px;color:var(--muted)}
-.description{font-size:13px;line-height:1.65;color:var(--muted);white-space:pre-wrap}.section{margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}.section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--lav);margin-bottom:7px}.application{padding:13px;border-radius:13px;background:rgba(255,255,255,.045);font-size:13px;line-height:1.6;white-space:pre-wrap}
-.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.btn{border:0;border-radius:13px;padding:12px 16px;font:600 13px 'Poppins',sans-serif;cursor:pointer}.approve{background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff}.reject{background:rgba(248,113,113,.11);border:1px solid rgba(248,113,113,.35);color:var(--red)}.btn:disabled{opacity:.5;cursor:default}.result{padding:18px;border-radius:16px;text-align:center;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.25);color:var(--green)}
-@media(max-width:560px){.top{padding:14px 18px}.card{padding:16px}.card-head{display:block}.budget{margin-top:8px}.actions{grid-template-columns:1fr}}
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-tokens.css?v=20260811shell1" id="qg-tokens-css">
+<link rel="stylesheet" href="qg-shell.css?v=20260811shell1" id="qg-shell-css">
+<link rel="stylesheet" href="qg-guardian.css?v=20260811guardian1" id="qg-guardian-css">
+<script src="qg-theme.js"></script>
+<script src="qg-brand-init.js"></script>
+<script>document.documentElement.setAttribute('data-qg-mode','worker');</script>
 </head>
-<body>
-<header class="top"><div class="brand">Quick<span>Gigs</span></div><div class="secure">Secure guardian portal</div></header>
-<main>
-  <section class="hero">
-    <div class="eyebrow">Guardian review</div>
+<body class="page-guardian-portal">
+<header class="gp-top">
+  <div class="gp-brand">Quick<span>Gigs</span></div>
+  <div class="gp-secure">Secure guardian portal</div>
+</header>
+<main class="gp-main">
+  <section class="gp-hero">
+    <div class="gp-eyebrow">Guardian review</div>
     <h1>Approve gigs before they reach the poster</h1>
     <p>Review the task, poster reputation, distance, and application message. Precise addresses and private contact details are never shown here.</p>
   </section>
-  <div id="portalState" class="state">Loading approval requests…</div>
-  <div id="queue" class="queue" hidden></div>
+  <div class="gp-teen-bar" id="teenBar" hidden>
+    <div>
+      <div class="gp-teen-label">Managing</div>
+      <div class="gp-teen-name" id="teenName">—</div>
+    </div>
+    <span class="gp-pending-badge" id="pendingBadge">0 pending</span>
+  </div>
+  <div class="gp-payout-prompt" id="payoutPrompt" hidden>
+    <strong>Guardian payout setup needed</strong>
+    Completed-gig payouts for this teen route to your Stripe account. Finish Connect setup from your account-approval email so money can be released when jobs complete.
+  </div>
+  <div id="portalState" class="gp-state" aria-live="polite"></div>
+  <div id="queue" class="gp-queue" hidden></div>
 </main>
 <script src="qg-config.js?v=20260730guardian1"></script>
 <script>
@@ -44,9 +50,23 @@ main{width:min(900px,100%);margin:0 auto;padding:34px 18px 72px}.hero{margin-bot
     'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/guardian-queue';
   var state = document.getElementById('portalState');
   var queue = document.getElementById('queue');
+  var teenBar = document.getElementById('teenBar');
+  var teenName = document.getElementById('teenName');
+  var pendingBadge = document.getElementById('pendingBadge');
+  var payoutPrompt = document.getElementById('payoutPrompt');
 
   function text(tag, cls, value){
     var el=document.createElement(tag);if(cls)el.className=cls;el.textContent=value==null?'':String(value);return el;
+  }
+  function showLoading(){
+    state.hidden=false;
+    state.className='gp-state';
+    state.innerHTML = typeof QG_listSkeletonHtml === 'function'
+      ? QG_listSkeletonHtml({ rows: 3, label: 'Loading approval requests…' })
+      : '<div class="qg-list-skel" role="status" aria-busy="true"><div class="qg-list-skel-label">Loading approval requests…</div>' +
+        '<div class="qg-list-skel-row" aria-hidden="true"><div class="qg-list-skel-avatar"></div><div class="qg-list-skel-lines"><div class="qg-list-skel-line w80"></div><div class="qg-list-skel-line w60"></div></div></div>' +
+        '<div class="qg-list-skel-row" aria-hidden="true"><div class="qg-list-skel-avatar"></div><div class="qg-list-skel-lines"><div class="qg-list-skel-line w60"></div><div class="qg-list-skel-line w40"></div></div></div>' +
+        '</div>';
   }
   async function request(action, applicationId){
     var res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:token,action:action,application_id:applicationId||''})});
@@ -55,36 +75,133 @@ main{width:min(900px,100%);margin:0 auto;padding:34px 18px 72px}.hero{margin-bot
     return data;
   }
   function formatMoney(value){var n=Number(value)||0;return '$'+n.toFixed(n%1?2:0)+' CAD';}
+  function formatSchedule(task){
+    if(task.scheduled_label) return String(task.scheduled_label);
+    if(task.scheduled_at){
+      try{
+        var d=new Date(task.scheduled_at);
+        if(!isNaN(d.getTime())) return d.toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'});
+      }catch(e){}
+    }
+    return 'Schedule flexible / not set';
+  }
   function renderItem(item){
-    var task=item.task||{};var card=document.createElement('article');card.className='card';
-    var head=document.createElement('div');head.className='card-head';
-    var copy=document.createElement('div');copy.appendChild(text('div','category',task.category||'Gig'));copy.appendChild(text('div','title',task.title||'Untitled gig'));
-    head.appendChild(copy);head.appendChild(text('div','budget',formatMoney(task.budget)));card.appendChild(head);
-    var meta=document.createElement('div');meta.className='meta';
-    [task.location,item.distance_km!=null?Number(item.distance_km).toFixed(1)+' km away':null,task.poster_name||'QuickGigs poster'].filter(Boolean).forEach(function(v){meta.appendChild(text('span','pill',v));});
-    var rating=task.poster_rating||{};meta.appendChild(text('span','pill',rating.count?('★ '+rating.average+' · '+rating.count+' review'+(rating.count===1?'':'s')):'New poster'));
-    card.appendChild(meta);card.appendChild(text('div','description',task.description||'No additional description provided.'));
-    var appSection=document.createElement('div');appSection.className='section';appSection.appendChild(text('div','section-label',(item.teen_name||'Teen')+'’s application'));
-    appSection.appendChild(text('div','application',item.application_message||'No message provided.'));
-    appSection.appendChild(text('div','pill','Offer: '+formatMoney(item.offer_price)));card.appendChild(appSection);
-    var actions=document.createElement('div');actions.className='actions';
-    var reject=text('button','btn reject','Reject');reject.type='button';
-    var approve=text('button','btn approve','Approve and send to poster');approve.type='button';
+    var task=item.task||{};
+    var card=document.createElement('article');
+    card.className='gp-card';
+    var head=document.createElement('div');
+    head.className='gp-card-head';
+    var copy=document.createElement('div');
+    copy.appendChild(text('div','gp-category',task.category||'Gig'));
+    copy.appendChild(text('div','gp-title',task.title||'Untitled gig'));
+    head.appendChild(copy);
+    head.appendChild(text('div','gp-budget',formatMoney(task.budget)));
+    card.appendChild(head);
+
+    var meta=document.createElement('div');
+    meta.className='gp-meta';
+    var rating=task.poster_rating||{};
+    var posterLine=(task.poster_name||'QuickGigs poster');
+    meta.appendChild(text('span','gp-pill',posterLine));
+    meta.appendChild(text('span','gp-pill',
+      rating.count ? (String(rating.average)+' · '+rating.count+' review'+(rating.count===1?'':'s')) : 'New poster'
+    ));
+    if(task.poster_verified===true){
+      meta.appendChild(text('span','gp-pill is-verified','Verified poster'));
+    }else if(task.poster_verified===false){
+      meta.appendChild(text('span','gp-pill is-unverified','Verification pending'));
+    }
+    if(item.distance_km!=null && item.distance_km!==''){
+      meta.appendChild(text('span','gp-pill',Number(item.distance_km).toFixed(1)+' km from teen'));
+    }
+    meta.appendChild(text('span','gp-pill',formatSchedule(task)));
+    if(task.location) meta.appendChild(text('span','gp-pill',task.location));
+    card.appendChild(meta);
+
+    if(task.description) card.appendChild(text('div','gp-description',task.description));
+
+    var appSection=document.createElement('div');
+    appSection.className='gp-section';
+    appSection.appendChild(text('div','gp-section-label',(item.teen_name||'Teen')+'’s application'));
+    appSection.appendChild(text('div','gp-application',item.application_message||'No message provided.'));
+    appSection.appendChild(text('div','gp-offer','Offer: '+formatMoney(item.offer_price)));
+    card.appendChild(appSection);
+
+    var actions=document.createElement('div');
+    actions.className='gp-actions';
+    var reject=text('button','gp-btn gp-btn-decline','Decline');
+    reject.type='button';
+    var approve=text('button','gp-btn gp-btn-approve','Approve application');
+    approve.type='button';
     async function decide(action){
       reject.disabled=true;approve.disabled=true;
-      try{await request(action,item.application_id);card.className='result';card.textContent=action==='approve'?'Approved. The application is now visible to the poster.':'Rejected. The poster will not see this application.';}
-      catch(err){reject.disabled=false;approve.disabled=false;alert('Could not save this decision. The link may have expired.');}
+      try{
+        await request(action,item.application_id);
+        card.className=action==='approve'?'gp-result':'gp-result is-declined';
+        card.textContent=action==='approve'
+          ?'Approved. The application is now visible to the poster.'
+          :'Declined. The poster will not see this application.';
+        updatePendingCount(-1);
+      }catch(err){
+        reject.disabled=false;approve.disabled=false;
+        alert('Could not save this decision. The link may have expired.');
+      }
     }
-    reject.onclick=function(){if(confirm('Reject this gig request?'))decide('reject');};approve.onclick=function(){decide('approve');};
-    actions.appendChild(reject);actions.appendChild(approve);card.appendChild(actions);return card;
+    reject.onclick=function(){if(confirm('Decline this gig request?'))decide('reject');};
+    approve.onclick=function(){decide('approve');};
+    actions.appendChild(reject);
+    actions.appendChild(approve);
+    card.appendChild(actions);
+    return card;
+  }
+  function updatePendingCount(delta){
+    if(!pendingBadge) return;
+    var n=parseInt(pendingBadge.getAttribute('data-count')||'0',10)||0;
+    n=Math.max(0,n+delta);
+    pendingBadge.setAttribute('data-count',String(n));
+    pendingBadge.textContent=n+' pending';
+  }
+  function showEmpty(){
+    state.hidden=false;
+    state.className='gp-state';
+    state.innerHTML='<div class="gp-empty-title">You\'re all caught up</div><p>No approval requests are waiting right now.</p>';
+    queue.hidden=true;
+    queue.innerHTML='';
   }
   async function load(){
-    if(!token){state.textContent='This secure link is missing or invalid.';return;}
+    showLoading();
+    if(!token){
+      state.className='gp-state is-error';
+      state.textContent='This secure link is missing or invalid.';
+      return;
+    }
     try{
-      var data=await request('list');var items=data.items||[];
-      if(!items.length){state.textContent='No approval requests are waiting. You are all caught up.';return;}
-      state.hidden=true;queue.hidden=false;items.forEach(function(item){queue.appendChild(renderItem(item));});
-    }catch(err){state.textContent='This guardian link is invalid or expired. Ask the teen to request a new approval email.';}
+      var data=await request('list');
+      var items=data.items||[];
+      var teen=data.teen||{};
+      if(teenBar){
+        teenBar.hidden=false;
+        if(teenName) teenName.textContent=teen.name||items[0]&&items[0].teen_name||'Your teen';
+      }
+      if(pendingBadge){
+        pendingBadge.setAttribute('data-count',String(items.length));
+        pendingBadge.textContent=items.length+' pending';
+      }
+      if(payoutPrompt){
+        var payoutReady=teen.guardian_stripe_payouts_enabled===true||teen.guardian_stripe_payouts_enabled===1;
+        payoutPrompt.hidden=!!payoutReady;
+      }
+      if(!items.length){showEmpty();return;}
+      state.hidden=true;
+      queue.hidden=false;
+      queue.innerHTML='';
+      items.forEach(function(item){queue.appendChild(renderItem(item));});
+    }catch(err){
+      state.hidden=false;
+      state.className='gp-state is-error';
+      state.textContent='This guardian link is invalid or expired. Ask the teen to request a new approval email.';
+      queue.hidden=true;
+    }
   }
   load();
 })();

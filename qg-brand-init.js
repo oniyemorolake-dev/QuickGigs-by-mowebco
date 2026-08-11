@@ -232,6 +232,15 @@
     document.head.appendChild(browseViewsCss);
   }
 
+  /* Guardian portal + parent consent + teen waiting badges */
+  if (!document.getElementById('qg-guardian-css') && !document.querySelector('link[href*="qg-guardian.css"]')) {
+    var guardianCss = document.createElement('link');
+    guardianCss.id = 'qg-guardian-css';
+    guardianCss.rel = 'stylesheet';
+    guardianCss.href = 'qg-guardian.css?v=20260811guardian1';
+    document.head.appendChild(guardianCss);
+  }
+
   // Sync load so qgIcon is available before deferred page scripts run
   if (!document.querySelector('script[src*="qg-icons.js"]') && typeof window.qgIcon !== 'function') {
     try {
@@ -252,7 +261,9 @@
       'chat.html': 'page-chat',
       'browsetask.html': 'page-browse',
       'posttask.html': 'page-posttask',
-      'review.html': 'page-review'
+      'review.html': 'page-review',
+      'parent-consent.html': 'page-parent-consent',
+      'guardian-portal.html': 'page-guardian-portal'
     };
     if (map[page]) document.body.classList.add(map[page]);
     if (page === 'browsetask.html' && !document.body.getAttribute('data-browse-view')) {

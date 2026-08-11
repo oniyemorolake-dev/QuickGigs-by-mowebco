@@ -1632,9 +1632,9 @@ function renderTab(){
       if (taskStatus === 'cancelled' && appStatus !== 'cancelled') {
         statusLabel = '<span class="tc-badge badge-open" style="opacity:0.6">Post cancelled</span>';
       } else if (guardianStatus === 'pending_guardian') {
-        statusLabel = '<span class="tc-badge badge-open">Guardian review</span>';
+        statusLabel = '<span class="tc-badge badge-guardian-wait">Waiting for guardian approval</span>';
       } else if (guardianStatus === 'rejected') {
-        statusLabel = '<span class="tc-badge badge-open" style="opacity:0.6">Guardian declined</span>';
+        statusLabel = '<span class="tc-badge badge-guardian-declined">Guardian declined</span>';
       } else if (appStatus === 'accepted') statusLabel = '<span class="tc-badge badge-done">'+(typeof qgIcon==='function'?qgIcon('check',{size:12}):'')+' Accepted</span>';
       else if (appStatus === 'cancelled') statusLabel = '<span class="tc-badge badge-open" style="opacity:0.6">Withdrawn</span>';
       else if (appStatus === 'declined') statusLabel = '<span class="tc-badge badge-open" style="opacity:0.6">Not selected</span>';

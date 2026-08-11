@@ -6,24 +6,15 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Parent consent — QuickGigs</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-trust.css">
-<style>
-.consent-card{max-width:440px;margin:40px auto;padding:28px 24px;border-radius:18px;border:0.5px solid var(--border);background:rgba(255,255,255,0.03);text-align:center;}
-.consent-card h2{font-family:'Playfair Display',serif;font-size:1.5rem;margin-bottom:10px;color:var(--text);}
-.consent-teen{font-size:15px;color:var(--lavender);margin-bottom:16px;}
-.consent-btn{display:inline-block;margin-top:16px;padding:14px 28px;border-radius:12px;border:none;background:linear-gradient(135deg,#9b6fc4,#6b3fa0);color:#fff;font-weight:600;font-size:15px;cursor:pointer;font-family:inherit;}
-.consent-btn:disabled{opacity:0.5;cursor:not-allowed;}
-.consent-decline{display:inline-block;margin-top:12px;padding:11px 20px;border-radius:12px;border:0.5px solid rgba(239,68,68,.4);background:rgba(239,68,68,.08);color:#f87171;font:500 14px 'Poppins','DM Sans',sans-serif;cursor:pointer;}
-.consent-check{display:flex;align-items:flex-start;gap:10px;text-align:left;margin:18px 0 4px;padding:14px;border-radius:12px;background:rgba(107,63,160,.12);font-size:13px;line-height:1.5;}
-.consent-check input{margin-top:3px;accent-color:#9b6fc4;}
-.teen-details{margin:16px 0;padding:14px;border-radius:12px;background:rgba(255,255,255,.04);text-align:left;font-size:14px;line-height:1.7;}
-.consent-ok{color:#4ade80;font-size:15px;line-height:1.6;}
-.consent-err{color:#ff6b6b;font-size:14px;}
-</style>
 <link rel="stylesheet" href="qg-tokens.css?v=20260811shell1" id="qg-tokens-css">
+<link rel="stylesheet" href="qg-guardian.css?v=20260811guardian1" id="qg-guardian-css">
+<script src="qg-theme.js"></script>
+<script src="qg-brand-init.js"></script>
+<script>document.documentElement.setAttribute('data-qg-mode','worker');</script>
 </head>
-<body class="trust-page">
+<body class="trust-page page-parent-consent">
 <nav class="nav">
   <a class="nav-logo" href="index.html">QuickGigs</a>
   <div class="nav-right"><a class="back-btn" href="index.html">← Home</a></div>
@@ -34,7 +25,7 @@
   <p class="page-date">Required for members aged 16–17</p>
 
   <div class="consent-card" id="consentCard">
-    <p id="consentLoading">Loading…</p>
+    <p class="consent-loading" id="consentLoading">Loading consent details…</p>
   </div>
 
   <div class="info-box" style="margin-top:24px">
@@ -71,11 +62,11 @@
   }
 
   if (payoutState === 'done') {
-    card.innerHTML = '<p class="consent-ok">✓ Guardian payout details were submitted to Stripe.</p><p>Stripe may take a short time to finish verification.</p>';
+    card.innerHTML = '<p class="consent-ok">Guardian payout details were submitted to Stripe.</p><p class="consent-payout-note">Stripe may take a short time to finish verification.</p>';
     return;
   }
   if (payoutState === 'refresh') {
-    card.innerHTML = '<p class="consent-err">The payout setup link expired before setup was completed. Ask QuickGigs support for a new guardian payout link.</p>';
+    card.innerHTML = '<div class="consent-verify-step"><strong>Payout link expired</strong>The payout setup link expired before setup was completed. Ask QuickGigs support for a new guardian payout link.</div>';
     return;
   }
   if (!token) {
@@ -92,19 +83,23 @@
     var teen = user.name || 'Your teen';
     card.innerHTML =
       '<h2>Approve account</h2>' +
-      '<p class="consent-teen"><strong></strong> wants to use QuickGigs</p>' +
-      '<div class="teen-details"><strong>Teen details</strong><br>Name: <span id="teenDetailName"></span><br>Date of birth: <span id="teenDetailDob"></span></div>' +
-      '<p style="font-size:14px;color:var(--text-muted);line-height:1.6">They can browse and set up their profile while waiting. Approval enables posting and applying.</p>' +
+      '<p class="consent-teen"><strong></strong> wants to use QuickGigs as a Tasker</p>' +
+      '<div class="teen-details"><strong>Teen details</strong><br>Name: <span id="teenDetailName"></span><br>Age band: 16–17<span id="teenDetailDobWrap"></span></div>' +
+      '<ul class="consent-points">' +
+        '<li>QuickGigs is a local marketplace for paid help — errands, home help, and similar gigs.</li>' +
+        '<li>Your teen can browse and apply as a Tasker. You approve each job application before the poster sees it.</li>' +
+        '<li>Completed-gig payouts route to your guardian Stripe account — not directly to the teen.</li>' +
+      '</ul>' +
       '<label class="consent-check"><input type="checkbox" id="termsAccepted"> <span>I am this teen’s parent or legal guardian and accept the <a href="terms.html" target="_blank" rel="noopener">QuickGigs Terms of Service</a>.</span></label>' +
-      '<button type="button" class="consent-btn" id="approveBtn" disabled>I approve this account</button><br>' +
+      '<button type="button" class="consent-btn" id="approveBtn" disabled>Approve account</button><br>' +
       '<button type="button" class="consent-decline" id="declineBtn">Decline</button>' +
       '<p id="consentMsg" style="margin-top:12px"></p>';
     var strongEl = card.querySelector('.consent-teen strong');
     if (strongEl) strongEl.textContent = teen;
     var detailName = document.getElementById('teenDetailName');
-    var detailDob = document.getElementById('teenDetailDob');
+    var dobWrap = document.getElementById('teenDetailDobWrap');
     if (detailName) detailName.textContent = teen;
-    if (detailDob) detailDob.textContent = user.date_of_birth || 'Provided at signup';
+    if (dobWrap) dobWrap.textContent = user.date_of_birth ? (' · Date of birth: ' + String(user.date_of_birth)) : '';
     var terms = document.getElementById('termsAccepted');
     var approve = document.getElementById('approveBtn');
     if (terms && approve) terms.onchange = function () { approve.disabled = !terms.checked; };
@@ -116,9 +111,10 @@
       var msg = document.getElementById('consentMsg');
       try {
         var approved = await consentRequest('approve', { terms_accepted: true });
-        card.innerHTML = '<p class="consent-ok">✓ Approved! <strong></strong> can now post and apply.</p>' +
+        card.innerHTML = '<p class="consent-ok">Approved. <strong></strong> can now apply as a Tasker (you still approve each gig).</p>' +
+          '<div class="consent-verify-step"><strong>Next: guardian payouts</strong>Completed-gig payouts for this teen must go to your Stripe account.</div>' +
           '<button type="button" class="consent-btn" id="payoutBtn">Set up guardian payouts</button>' +
-          '<p style="margin-top:10px;font-size:13px;color:var(--text-muted)">Completed-gig payouts for this teen must go to the guardian’s Stripe account.</p>';
+          '<p class="consent-payout-note">You can finish Stripe verification now or return later from your email link.</p>';
         var strongDone = card.querySelector('strong');
         if (strongDone) strongDone.textContent = teen;
         var payoutBtn = document.getElementById('payoutBtn');
@@ -146,7 +142,7 @@
         msg.className = 'consent-err';
         msg.textContent = 'Could not approve — the link may be expired or already used.';
         btn.disabled = false;
-        btn.textContent = 'I approve this account';
+        btn.textContent = 'Approve account';
       }
     };
 

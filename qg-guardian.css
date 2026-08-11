@@ -1,0 +1,586 @@
+/**
+ * QuickGigs — Phase 3 / step 5: guardian portal + parent consent + teen waiting states.
+ * Tokens only. Consent / approval logic unchanged.
+ */
+
+/* ── Parent consent (account approval) ── */
+body.page-parent-consent {
+  background: var(--bg);
+  color: var(--text-primary);
+}
+
+body.page-parent-consent .nav {
+  background: var(--surface-1) !important;
+  border-bottom: 1px solid var(--line) !important;
+}
+
+body.page-parent-consent .nav-logo {
+  color: var(--accent-tasker) !important;
+}
+
+body.page-parent-consent .back-btn {
+  color: var(--accent-tasker) !important;
+}
+
+body.page-parent-consent .page-label {
+  color: var(--accent-tasker) !important;
+}
+
+body.page-parent-consent .page-title {
+  color: var(--text-primary) !important;
+}
+
+body.page-parent-consent .page-date,
+body.page-parent-consent .content > p {
+  color: var(--text-muted) !important;
+}
+
+body.page-parent-consent .info-box {
+  background: var(--accent-soft) !important;
+  border: 1px solid color-mix(in srgb, var(--accent-tasker) 32%, transparent) !important;
+}
+
+body.page-parent-consent .info-box p,
+body.page-parent-consent .info-box a {
+  color: var(--accent-tasker) !important;
+}
+
+body.page-parent-consent .consent-card {
+  max-width: 480px;
+  margin: 28px auto;
+  padding: 28px 22px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: var(--surface-1);
+  text-align: center;
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--bg) 35%, transparent);
+}
+
+body.page-parent-consent .consent-card h2 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.45rem;
+  margin: 0 0 10px;
+  color: var(--text-primary);
+}
+
+body.page-parent-consent .consent-teen {
+  font-size: 15px;
+  color: var(--accent-tasker);
+  margin: 0 0 16px;
+}
+
+body.page-parent-consent .teen-details {
+  margin: 14px 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+body.page-parent-consent .teen-details strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+body.page-parent-consent .consent-points {
+  text-align: left;
+  margin: 16px 0 4px;
+  padding: 0;
+  list-style: none;
+}
+
+body.page-parent-consent .consent-points li {
+  position: relative;
+  padding: 10px 12px 10px 36px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+body.page-parent-consent .consent-points li::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-tasker);
+}
+
+body.page-parent-consent .consent-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
+  margin: 18px 0 8px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent-tasker) 28%, transparent);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+body.page-parent-consent .consent-check input {
+  margin-top: 3px;
+  accent-color: var(--accent-tasker);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+body.page-parent-consent .consent-check a {
+  color: var(--accent-tasker);
+}
+
+body.page-parent-consent .consent-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  margin-top: 14px;
+  padding: 12px 28px;
+  border-radius: 14px;
+  border: none;
+  background: var(--grad-tasker);
+  color: var(--on-accent);
+  font: 600 15px 'DM Sans', sans-serif;
+  cursor: pointer;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--accent-tasker) 28%, transparent);
+}
+
+body.page-parent-consent .consent-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+body.page-parent-consent .consent-decline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  margin-top: 12px;
+  padding: 10px 20px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font: 600 14px 'DM Sans', sans-serif;
+  cursor: pointer;
+}
+
+body.page-parent-consent .consent-ok {
+  color: var(--money);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+body.page-parent-consent .consent-err {
+  color: var(--danger);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+body.page-parent-consent .consent-loading {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+body.page-parent-consent .consent-payout-note {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+body.page-parent-consent .consent-verify-step {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--attention-soft);
+  border: 1px solid color-mix(in srgb, var(--attention) 35%, transparent);
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+body.page-parent-consent .consent-verify-step strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--attention);
+}
+
+/* ── Guardian portal (per-application queue) ── */
+body.page-guardian-portal {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 50% -8%, color-mix(in srgb, var(--accent-tasker) 22%, transparent), transparent 42%),
+    var(--bg);
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+}
+
+body.page-guardian-portal .gp-top {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px max(18px, calc((100vw - 900px) / 2));
+  background: color-mix(in srgb, var(--surface-1) 92%, transparent);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--line);
+}
+
+body.page-guardian-portal .gp-brand {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--text-primary);
+}
+
+body.page-guardian-portal .gp-brand span {
+  color: var(--accent-tasker);
+}
+
+body.page-guardian-portal .gp-secure {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+body.page-guardian-portal .gp-main {
+  width: min(900px, 100%);
+  margin: 0 auto;
+  padding: 28px 18px 72px;
+}
+
+body.page-guardian-portal .gp-hero {
+  margin-bottom: 20px;
+}
+
+body.page-guardian-portal .gp-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-tasker);
+}
+
+body.page-guardian-portal .gp-hero h1 {
+  font-size: clamp(24px, 4.5vw, 34px);
+  line-height: 1.2;
+  margin: 8px 0;
+  color: var(--text-primary);
+}
+
+body.page-guardian-portal .gp-hero p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+body.page-guardian-portal .gp-teen-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin: 18px 0 20px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+}
+
+body.page-guardian-portal .gp-teen-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+body.page-guardian-portal .gp-teen-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+body.page-guardian-portal .gp-pending-badge {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--attention-soft);
+  border: 1px solid color-mix(in srgb, var(--attention) 40%, transparent);
+  color: var(--attention);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+body.page-guardian-portal .gp-payout-prompt {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--attention-soft);
+  border: 1px solid color-mix(in srgb, var(--attention) 38%, transparent);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+body.page-guardian-portal .gp-payout-prompt strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--attention);
+}
+
+body.page-guardian-portal .gp-state {
+  padding: 28px 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface-1);
+  text-align: center;
+  color: var(--text-muted);
+}
+
+body.page-guardian-portal .gp-state.is-error {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+  background: var(--danger-soft);
+}
+
+body.page-guardian-portal .gp-empty-title {
+  margin: 8px 0 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+body.page-guardian-portal .gp-queue {
+  display: grid;
+  gap: 16px;
+}
+
+body.page-guardian-portal .gp-card {
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 20px;
+}
+
+body.page-guardian-portal .gp-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+body.page-guardian-portal .gp-category {
+  color: var(--accent-tasker);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+body.page-guardian-portal .gp-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 5px 0 0;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+body.page-guardian-portal .gp-budget {
+  font-size: 20px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--money);
+}
+
+body.page-guardian-portal .gp-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 12px 0 10px;
+}
+
+body.page-guardian-portal .gp-pill {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+body.page-guardian-portal .gp-pill.is-verified {
+  background: var(--money-soft);
+  border-color: color-mix(in srgb, var(--money) 35%, transparent);
+  color: var(--money);
+}
+
+body.page-guardian-portal .gp-pill.is-unverified {
+  background: var(--attention-soft);
+  border-color: color-mix(in srgb, var(--attention) 30%, transparent);
+  color: var(--attention);
+}
+
+body.page-guardian-portal .gp-description {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+}
+
+body.page-guardian-portal .gp-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+body.page-guardian-portal .gp-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-tasker);
+  margin-bottom: 7px;
+}
+
+body.page-guardian-portal .gp-application {
+  padding: 13px;
+  border-radius: 13px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}
+
+body.page-guardian-portal .gp-offer {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--money);
+}
+
+body.page-guardian-portal .gp-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+body.page-guardian-portal .gp-btn {
+  min-height: 48px;
+  border-radius: 14px;
+  padding: 12px 16px;
+  font: 600 13px 'DM Sans', sans-serif;
+  cursor: pointer;
+}
+
+body.page-guardian-portal .gp-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+body.page-guardian-portal .gp-btn-approve {
+  border: none;
+  background: var(--grad-tasker);
+  color: var(--on-accent);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--accent-tasker) 24%, transparent);
+}
+
+body.page-guardian-portal .gp-btn-decline {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--danger) 50%, transparent);
+  color: var(--danger);
+}
+
+body.page-guardian-portal .gp-result {
+  padding: 18px;
+  border-radius: 16px;
+  text-align: center;
+  background: var(--money-soft);
+  border: 1px solid color-mix(in srgb, var(--money) 35%, transparent);
+  color: var(--money);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+body.page-guardian-portal .gp-result.is-declined {
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+  color: var(--danger);
+}
+
+body.page-guardian-portal .qg-list-skel {
+  padding: 8px 4px;
+}
+
+@media (max-width: 560px) {
+  body.page-guardian-portal .gp-top {
+    padding: 12px 16px;
+  }
+
+  body.page-guardian-portal .gp-card {
+    padding: 16px;
+  }
+
+  body.page-guardian-portal .gp-card-head {
+    display: block;
+  }
+
+  body.page-guardian-portal .gp-budget {
+    margin-top: 8px;
+  }
+
+  body.page-guardian-portal .gp-actions {
+    grid-template-columns: 1fr;
+  }
+
+  body.page-guardian-portal .gp-pending-badge {
+    margin-left: 0;
+  }
+}
+
+/* ── Teen-side waiting states (Tasker views) ── */
+.badge-guardian-wait,
+.tc-badge.badge-guardian-wait {
+  background: var(--attention-soft) !important;
+  color: var(--attention) !important;
+  border: 1px solid color-mix(in srgb, var(--attention) 35%, transparent);
+}
+
+.badge-guardian-declined,
+.tc-badge.badge-guardian-declined {
+  background: var(--danger-soft) !important;
+  color: var(--danger) !important;
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
+  opacity: 1 !important;
+}
+
+body.page-dashboard .guardian-banner strong {
+  color: var(--attention) !important;
+}

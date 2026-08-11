@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     );
     const { data: teen } = await supabase
       .from('users')
-      .select('firebase_uid,name,guardian_email,date_of_birth')
+      .select('firebase_uid,name,guardian_email,date_of_birth,guardian_stripe_payouts_enabled,guardian_stripe_connect_id')
       .eq('firebase_uid', claims.uid)
       .maybeSingle();
     if (
@@ -102,18 +102,23 @@ Deno.serve(async (req) => {
     const { data: tasks } = taskIds.length
       ? await supabase
         .from('tasks')
-        .select('task_id,title,description,category,budget,location,poster_name,posted_by,age_preference')
+        .select('task_id,title,description,category,budget,location,poster_name,posted_by,age_preference,scheduled_at,scheduled_label')
         .in('task_id', taskIds)
       : { data: [] as Array<Record<string, unknown>> };
     const posterIds = [...new Set((tasks || []).map((task) => String(task.posted_by || '')).filter(Boolean))];
     const { data: reviews } = posterIds.length
       ? await supabase.from('reviews').select('reviewee_id,rating').in('reviewee_id', posterIds)
       : { data: [] as Array<Record<string, unknown>> };
+    const { data: posters } = posterIds.length
+      ? await supabase.from('users').select('firebase_uid,poster_verified').in('firebase_uid', posterIds)
+      : { data: [] as Array<Record<string, unknown>> };
     const taskMap = new Map((tasks || []).map((task) => [String(task.task_id), task]));
+    const posterMap = new Map((posters || []).map((row) => [String(row.firebase_uid), row]));
 
     const items = (applications || []).map((app) => {
       const task = taskMap.get(String(app.task_id)) || {};
       const posterId = String(task.posted_by || '');
+      const poster = posterMap.get(posterId) || {};
       return {
         application_id: app.app_id,
         teen_name: teen.name,
@@ -129,11 +134,21 @@ Deno.serve(async (req) => {
           location: task.location,
           poster_name: task.poster_name,
           poster_rating: ratingSummary((reviews || []) as Array<Record<string, unknown>>, posterId),
+          poster_verified: poster.poster_verified === true,
           age_preference: task.age_preference,
+          scheduled_at: task.scheduled_at || null,
+          scheduled_label: task.scheduled_label || null,
         },
       };
     });
-    return json({ ok: true, teen: { name: teen.name }, items });
+    return json({
+      ok: true,
+      teen: {
+        name: teen.name,
+        guardian_stripe_payouts_enabled: teen.guardian_stripe_payouts_enabled === true,
+      },
+      items,
+    });
   } catch (err) {
     console.error('guardian-queue error:', err);
     const message = err instanceof Error ? err.message : String(err);
