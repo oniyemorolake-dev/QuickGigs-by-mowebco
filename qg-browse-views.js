@@ -165,13 +165,14 @@
     var list = document.getElementById('browseMapList');
     if (!list) return;
     if (!filtered.length) {
-      list.innerHTML =
-        '<div class="qg-browse-map-empty empty-state">' +
-        '<div class="empty-icon">' +
-        (typeof qgIcon === 'function' ? qgIcon('mapPin', { size: 24 }) : '') +
-        '</div>' +
-        '<p class="empty-txt">No tasks match your filters</p>' +
-        '</div>';
+      list.innerHTML = typeof QG_emptyStateHtml === 'function'
+        ? QG_emptyStateHtml({
+            icon: 'mapPin',
+            title: 'No tasks match',
+            sub: 'Clear filters to see map pins again.',
+            compact: true
+          })
+        : '<div class="qg-browse-map-empty empty-state"><p class="empty-txt">No tasks match your filters</p></div>';
       return;
     }
     list.innerHTML = filtered
@@ -308,13 +309,13 @@
     }
     resetSpotlightIfNeeded(filtered);
     if (!filtered.length) {
-      card.innerHTML =
-        '<div class="qg-browse-spotlight-empty empty-state">' +
-        '<div class="empty-icon">' +
-        (typeof qgIcon === 'function' ? qgIcon('search', { size: 24 }) : '') +
-        '</div>' +
-        '<p class="empty-txt">No tasks match your filters</p>' +
-        '</div>';
+      card.innerHTML = typeof QG_emptyStateHtml === 'function'
+        ? QG_emptyStateHtml({
+            icon: 'search',
+            title: 'No tasks match',
+            sub: 'Clear filters or switch to List / Map.'
+          })
+        : '<div class="qg-browse-spotlight-empty empty-state"><p class="empty-txt">No tasks match your filters</p></div>';
       return;
     }
     var remaining = filtered.filter(function (t) {

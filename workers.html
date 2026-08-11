@@ -56,7 +56,7 @@ body.light .mode-btn{background:#f0eeff;color:#6b3fa0;}
 <div class="filter-pills" id="skillFilters" role="tablist" aria-label="Filter by skill"></div>
 
 <div class="qg-worker-list" id="workerList" aria-live="polite">
-  <div class="qg-empty-discovery"><span>⏳</span>Loading taskers…</div>
+  <div class="qg-inline-load" role="status" aria-busy="true"><span class="qg-spinner" aria-hidden="true"></span><span>Loading taskers…</span></div>
 </div>
 
 <nav class="tab-bar" id="qgTabBar"></nav>
@@ -211,7 +211,13 @@ window.renderWorkers = function () {
 
   var el = document.getElementById('workerList');
   if (!list.length) {
-    el.innerHTML = '<div class="qg-empty-discovery"><span>👥</span>No taskers match — try another skill or check back soon.</div>';
+    el.innerHTML = typeof QG_emptyStateHtml === 'function'
+      ? QG_emptyStateHtml({
+          icon: 'users',
+          title: 'No taskers match',
+          sub: 'Try another skill or check back soon.'
+        })
+      : '<div class="qg-empty-discovery">No taskers match — try another skill or check back soon.</div>';
     return;
   }
 

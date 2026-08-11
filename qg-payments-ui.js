@@ -84,6 +84,16 @@
       return String(payField(b, 'created_at')).localeCompare(String(payField(a, 'created_at')));
     });
     if (!list.length) {
+      if (typeof window.QG_emptyStateHtml === 'function') {
+        return window.QG_emptyStateHtml({
+          icon: 'creditCard',
+          title: role === 'worker' ? 'No earnings yet' : 'No payments yet',
+          sub: role === 'worker'
+            ? 'Get hired and complete a paid task to see payouts here.'
+            : 'Pay through QuickGigs after you accept a tasker.',
+          compact: true
+        });
+      }
       return '<div class="pay-history-empty">' +
         (role === 'worker'
           ? 'No earnings yet — get hired and complete a paid task to see payouts here.'

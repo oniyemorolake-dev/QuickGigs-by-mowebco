@@ -414,6 +414,14 @@
     var action = allowed === false
       ? 'typeof QG_offerRoleOptIn===\'function\'&&QG_offerRoleOptIn(\'' + targetMode + '\')'
       : 'typeof switchToRoleMode===\'function\'&&switchToRoleMode(\'' + targetMode + '\')';
+    if (typeof window.QG_emptyStateHtml === 'function') {
+      return window.QG_emptyStateHtml({
+        icon: opts.iconName || 'refresh',
+        title: opts.title || ('Switch to ' + label + ' mode'),
+        sub: opts.sub || '',
+        action: { label: actionLabel, icon: 'refresh', onclick: action }
+      });
+    }
     var ico = typeof window.qgIcon === 'function'
       ? window.qgIcon(opts.iconName || 'refresh', { size: 24 })
       : '';

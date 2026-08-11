@@ -498,7 +498,7 @@ async function syncInProgressPaymentState(userId) {
     if (acc) workerHint = String(getField(acc, 'WORKER_ID') || '');
   }
 
-  // Recover paid Stripe sessions ? held rows (even if local map is empty)
+  // Recover paid Stripe sessions → held rows (even if local map is empty)
   var serverSync = null;
   if (typeof window.QG_syncPayment === 'function') {
     try {
@@ -1530,20 +1530,29 @@ function renderTabLoading() {
   content.setAttribute('aria-busy', 'true');
   content.innerHTML = typeof QG_listSkeletonHtml === 'function'
     ? QG_listSkeletonHtml({ rows: 4, label: 'Loading your tasks…' })
-    : '<div class="empty-state"><div class="empty-title">Loading your tasks…</div></div>';
+    : (typeof QG_spinnerHtml === 'function'
+      ? QG_spinnerHtml({ label: 'Loading your tasks…', inline: false })
+      : '<div class="qg-inline-load">Loading your tasks…</div>');
 }
 
 function renderTabLoadError(msg) {
   var content = document.getElementById('tabContent');
   if (!content) return;
   content.removeAttribute('aria-busy');
-  content.innerHTML =
-    '<div class="empty-state">' +
+  content.innerHTML = typeof QG_errorStateHtml === 'function'
+    ? QG_errorStateHtml({
+        title: 'Could not load tasks',
+        sub: msg || 'Check your connection, then try again.',
+        offline: /network|fetch|offline|failed to fetch/i.test(String(msg || '')),
+        retry: { label: 'Try again', icon: 'refresh', onclick: "typeof loadData==='function'&&loadData()" },
+        secondary: { label: 'Hard refresh', onclick: 'location.reload()' }
+      })
+    : '<div class="empty-state">' +
     '<div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('alert',{size:24}):'')+'</div>' +
     '<div class="empty-title">Could not load tasks</div>' +
     '<div class="empty-sub">' + (msg || 'Check your connection, then try again. If this keeps happening, hard refresh the page.') + '</div>' +
     '<div class="empty-actions">' +
-    '<button type="button" class="empty-btn" onclick="typeof loadData===\'function\'&&loadData()">'+(typeof qgIcon==='function'?qgIcon('refresh',{size:14}):'')+' Refresh list</button>' +
+    '<button type="button" class="empty-btn" onclick="typeof loadData===\'function\'&&loadData()">'+(typeof qgIcon==='function'?qgIcon('refresh',{size:14}):'')+' Try again</button>' +
     '<button type="button" class="empty-btn empty-btn-secondary" onclick="location.reload()">Hard refresh</button>' +
     '</div></div>';
 }
@@ -1625,7 +1634,9 @@ function renderTab(){
           '<div class="app-price">'+formatAppPriceHtml(a)+'</div>'+
           renderApplicantAction(a, taskId, t)+
         '</div>';
-      }).join('') : '<div style="font-size:12px;color:var(--text-faint);padding:10px 0">No pending applicants yet.</div>';
+      }).join('') : (typeof QG_emptyStateHtml === 'function'
+        ? QG_emptyStateHtml({ icon: 'users', title: 'No applicants yet', sub: 'Share your posting or wait for taskers to apply.', compact: true })
+        : '<div style="font-size:12px;color:var(--text-muted);padding:10px 0">No pending applicants yet.</div>');
       var toggleLabel = pendingApps.length
         ? pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : '') + (namePreview ? ' · ' + namePreview + (pendingApps.length > 3 ? '…' : '') : '') + ' — Tap to ' + (isOpen ? 'hide' : 'view')
         : (hasAccepted ? 'Worker accepted — Tap to view' : 'No applicants yet');
@@ -1672,7 +1683,14 @@ function renderTab(){
       return sa - sb;
     });
     if(!myApps.length){
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('inbox',{size:24}):'')+'</div><div class="empty-title">No applications yet</div><div class="empty-sub">Browse tasks near you and apply to start earning.</div><a class="empty-btn" href="browsetask.html">Browse tasks</a></div>';
+      content.innerHTML = typeof QG_emptyStateHtml === 'function'
+        ? QG_emptyStateHtml({
+            icon: 'inbox',
+            title: 'No applications yet',
+            sub: 'Browse tasks near you and apply to start earning.',
+            action: { label: 'Browse tasks', href: 'browsetask.html', icon: 'search' }
+          })
+        : '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('inbox',{size:24}):'')+'</div><div class="empty-title">No applications yet</div><div class="empty-sub">Browse tasks near you and apply to start earning.</div><a class="empty-btn" href="browsetask.html">Browse tasks</a></div>';
       return;
     }
     content.innerHTML = myApps.map(function(a){
@@ -2081,7 +2099,7 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
 
   if (convResult.data && convResult.data.conv_id && !isPaymentGatedChat()) {
     await unlockConversationIfAllowed(convResult.data.conv_id, convResult.data.status, 'in_progress');
-    showToast('Accepted ' + workerName + '! Opening chat?');
+    showToast('Accepted ' + workerName + '! Opening chat…');
     try {
       sessionStorage.setItem('qg-task-conv-' + String(taskId), String(convResult.data.conv_id));
     } catch (e) {}
@@ -2171,7 +2189,7 @@ window.openChatWithWorker = async function(taskId, workerId){
   }
 
   if (typeof window.qgShowGlobalLoading === 'function') {
-    window.qgShowGlobalLoading('Opening chat?');
+    window.qgShowGlobalLoading('Opening chat…');
   }
 
   try {
@@ -2474,7 +2492,7 @@ window.declineApplicant = async function(taskId, appId, declineBtn) {
     }
   };
   if (typeof qgUndoAction === 'function') {
-    qgUndoAction('Applicant declined ? Undo', doDecline, function () {
+    qgUndoAction('Applicant declined — Undo', doDecline, function () {
       allApplications.forEach(function(a) {
         if (String(getField(a, 'APP_ID')) === appId) setRowStatus(a, prevStatus);
       });
@@ -2506,14 +2524,14 @@ window.confirmWithdrawApplication = function(appId) {
           renderTab();
           var withdrawMsg = typeof formatSupabaseActionError === 'function'
             ? formatSupabaseActionError('withdraw application', result.error)
-            : 'Could not withdraw ? try again.';
+            : 'Could not withdraw — try again.';
           showToast(withdrawMsg, '#ef4444');
           return;
         }
         loadData();
       };
       if (typeof qgUndoAction === 'function') {
-        qgUndoAction('Application withdrawn ? Undo', doWithdraw, function () {
+        qgUndoAction('Application withdrawn — Undo', doWithdraw, function () {
           if (app) setRowStatus(app, prevStatus);
           renderTab();
         });
@@ -2546,7 +2564,7 @@ window.confirmRepostTask = function(taskId) {
           ? 'Only expired tasks can be reposted.'
           : (typeof formatSupabaseActionError === 'function'
             ? formatSupabaseActionError('repost task', result.error)
-            : 'Could not repost ? try again.');
+            : 'Could not repost — try again.');
         showToast(msg, '#ef4444');
         return;
       }
@@ -2591,7 +2609,7 @@ window.confirmCancelPosting = function(taskId) {
         await loadData();
       };
       if (typeof qgUndoAction === 'function') {
-        qgUndoAction('Posting cancelled ? Undo', doCancel, function () {
+        qgUndoAction('Posting cancelled — Undo', doCancel, function () {
           allTasks.forEach(function(t) {
             if (String(getField(t, 'TASK_ID')) === taskId) setRowStatus(t, prevStatus);
           });
@@ -2697,7 +2715,7 @@ window.confirmCancelInProgress = function(taskId) {
         activeTab = 'completed';
         syncTabButtons();
         renderTab();
-        showToast((paid || pst === 'held') ? 'Task cancelled ? refund processing' : 'Task cancelled');
+        showToast((paid || pst === 'held') ? 'Task cancelled — refund processing' : 'Task cancelled');
         await loadData();
       }
     });

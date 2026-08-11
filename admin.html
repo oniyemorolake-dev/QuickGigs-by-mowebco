@@ -18,9 +18,12 @@
 <meta name="robots" content="noindex,nofollow">
 <title>QuickGigs — Admin Console</title>
 <link rel="stylesheet" href="qg-tokens.css?v=20260811shell1" id="qg-tokens-css">
+<link rel="stylesheet" href="qg-states.css?v=20260811states1" id="qg-states-css">
 <link rel="stylesheet" href="qg-admin.css?v=3">
 <link rel="stylesheet" href="qg-admin-console.css?v=20260811admin1" id="qg-admin-console-css">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="qg-icons.js?v=20260809profile1"></script>
+<script src="qg-brand-init.js"></script>
 <script src="qg-theme.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -793,7 +796,14 @@ function renderRevenue(){
   var body = document.getElementById('revenueBody');
   if (!body) return;
   if (!payments.length) {
-    body.innerHTML = '<div style="padding:28px;text-align:center;color:rgba(255,255,255,0.62);font-size:13px">No payments yet — they appear here when posters pay through Stripe.</div>';
+    body.innerHTML = typeof QG_emptyStateHtml === 'function'
+      ? QG_emptyStateHtml({
+          icon: 'creditCard',
+          title: 'No payments yet',
+          sub: 'They appear here when posters pay through Stripe.',
+          compact: true
+        })
+      : '<div class="admin-empty">No payments yet — they appear here when posters pay through Stripe.</div>';
     return;
   }
   var taskMap = {};
@@ -887,7 +897,7 @@ function renderRecentSignups(){
 function renderUsers(data){
   document.getElementById('usersCount').textContent='· '+data.length+' total';
   var colors=['linear-gradient(135deg,#6b3fa0,#c8a8e9)','linear-gradient(135deg,#16a34a,#4ade80)','linear-gradient(135deg,#d97706,#fbbf24)','linear-gradient(135deg,#ef4444,#f87171)','linear-gradient(135deg,#9b6fc4,#c8a8e9)','linear-gradient(135deg,#0ea5e9,#7dd3fc)'];
-  if(!data.length){document.getElementById('usersBody').innerHTML='<div style="padding:40px;text-align:center;color:var(--text-faint);font-size:13px">No users in Supabase yet — run beta-setup-all.sql</div>';return;}
+  if(!data.length){document.getElementById('usersBody').innerHTML=typeof QG_emptyStateHtml==='function'?QG_emptyStateHtml({icon:'users',title:'No users yet',sub:'Run beta-setup-all.sql, then refresh.',compact:true}):'<div class="admin-empty">No users in Supabase yet — run beta-setup-all.sql</div>';return;}
   document.getElementById('usersBody').innerHTML=data.map(function(u,i){
     var uid=typeof userKey==='function'?userKey(u):(u.firebase_uid||u.user_id||u.id||i);
     var name=u.name||'User';
@@ -948,7 +958,7 @@ function renderDisputes(data){
   data=data||disputes;
   var open=data.filter(function(d){return (d.status||'open')==='open';}).length;
   document.getElementById('disputesCount').textContent='· '+open+' open, '+(data.length-open)+' resolved';
-  if(!data.length){document.getElementById('disputesBody').innerHTML='<div style="padding:40px;text-align:center;color:var(--text-faint);font-size:13px">No disputes yet</div>';return;}
+  if(!data.length){document.getElementById('disputesBody').innerHTML=typeof QG_emptyStateHtml==='function'?QG_emptyStateHtml({icon:'checkCircle',title:'No disputes yet',sub:'Open disputes will show here for review.',compact:true}):'<div class="admin-empty">No disputes yet</div>';return;}
   document.getElementById('disputesBody').innerHTML=data.map(function(d){
     var sc=(d.status||'open')==='open'?'s-open':'s-resolved';
     var sl=(d.status||'open')==='open'?'⚠ Open':'✓ Resolved';

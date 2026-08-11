@@ -1,0 +1,227 @@
+/**
+ * QuickGigs — shared empty / loading / error states (design tokens only).
+ * Prefer QG_emptyStateHtml / QG_errorStateHtml / QG_listSkeletonHtml from qg-brand-init.js.
+ */
+
+/* ── Empty / error shell ── */
+.qg-state {
+  text-align: center;
+  padding: 40px 20px 36px;
+  color: var(--text-muted);
+}
+
+.qg-state-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 14px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.qg-state-icon .qg-ico,
+.qg-state-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+}
+
+.qg-state.is-error .qg-state-icon {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.qg-state-title {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+  line-height: 1.35;
+}
+
+.qg-state-sub {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin: 0 auto;
+  max-width: 28rem;
+}
+
+.qg-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.qg-state-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: none;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  background: var(--grad-accent);
+  color: var(--on-accent);
+}
+
+.qg-state-btn:hover {
+  filter: brightness(1.05);
+}
+
+.qg-state-btn.is-secondary {
+  background: var(--surface-2);
+  color: var(--text-primary);
+  border: 1px solid var(--line);
+}
+
+.qg-state-btn .qg-ico,
+.qg-state-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+}
+
+/* Bridge legacy empty-state markup to tokens */
+.empty-state,
+.qg-empty-discovery,
+.im-list-empty,
+.admin-empty,
+.gp-state,
+.pay-history-empty,
+.reviews-empty,
+.qg-browse-map-empty,
+.qg-browse-spotlight-empty {
+  text-align: center;
+}
+
+.empty-state .empty-icon,
+.qg-state .empty-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 14px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0;
+}
+
+.empty-state .empty-icon .qg-ico,
+.empty-state .empty-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.empty-title,
+.im-list-empty strong,
+.gp-empty-title {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.empty-sub,
+.empty-txt,
+.im-list-empty,
+.pay-history-empty,
+.reviews-empty p,
+.gp-state p,
+.admin-empty {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted) !important;
+}
+
+.empty-btn:not(.empty-btn-secondary):not(.btn-secondary),
+.empty-actions .empty-btn:not(.empty-btn-secondary) {
+  background: var(--grad-accent) !important;
+  color: var(--on-accent) !important;
+  border: none !important;
+}
+
+.empty-btn-secondary,
+.empty-btn.btn-secondary {
+  background: var(--surface-2) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--line) !important;
+}
+
+/* ── Inline spinner (small loads) ── */
+.qg-spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  border-top-color: var(--accent);
+  animation: qgSpin 0.7s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.qg-spinner.is-lg {
+  width: 28px;
+  height: 28px;
+}
+
+.qg-inline-load {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 28px 16px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+@keyframes qgSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Skeleton tokens already live in qg-shell.css (.qg-list-skel*) —
+   reinforce copy color here for pages that only load qg-states. */
+.qg-list-skel-label {
+  color: var(--text-muted);
+}
+
+/* Compact empty for nested lists (applicants under a card) */
+.qg-state.is-compact {
+  padding: 16px 12px;
+}
+
+.qg-state.is-compact .qg-state-icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+}
+
+.qg-state.is-compact .qg-state-icon .qg-ico,
+.qg-state.is-compact .qg-state-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.qg-state.is-compact .qg-state-title {
+  font-size: 13px;
+}
+
+.qg-state.is-compact .qg-state-sub {
+  font-size: 12px;
+}

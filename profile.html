@@ -434,7 +434,7 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
     <div class="verified" id="avatarVerifiedMark" title="Verified user" style="display:none">✓</div>
   </div>
   <div class="avatar-edit-hint" id="avatarHint" style="display:none">Tap photo to change</div>
-  <div class="profile-name" id="profileName">Loading...</div>
+  <div class="profile-name" id="profileName"><span class="qg-spinner" aria-hidden="true"></span> Loading…</div>
   <div class="qg-profile-title-line" id="profileTitleLine" hidden></div>
   <div class="profile-pronouns" id="profilePronouns" style="display:none"></div>
   <div id="verifiedBadgeWrap"></div>
@@ -1478,7 +1478,11 @@ async function renderProfilePaymentHistory(userId, dbUser) {
     return;
   }
   sec.style.display = 'block';
-  list.innerHTML = '<div class="pay-history-empty">Loading payments…</div>';
+  list.innerHTML = typeof QG_listSkeletonHtml === 'function'
+    ? QG_listSkeletonHtml({ rows: 2, label: 'Loading payments…' })
+    : (typeof QG_spinnerHtml === 'function'
+      ? QG_spinnerHtml({ label: 'Loading payments…', inline: false })
+      : '<div class="pay-history-empty">Loading payments…</div>');
   try {
     var isTaskerView = userIsTasker(profileData.role) || (typeof isWorkerMode === 'function' && isWorkerMode());
     var role = isTaskerView ? 'worker' : 'poster';
@@ -1495,7 +1499,18 @@ async function renderProfilePaymentHistory(userId, dbUser) {
       else if (sums.held > 0) earnedEl.textContent = '$' + sums.held.toFixed(0);
     }
   } catch (e) {
-    list.innerHTML = '<div class="pay-history-empty">Could not load payments — refresh and try again.</div>';
+    list.innerHTML = typeof QG_errorStateHtml === 'function'
+      ? QG_errorStateHtml({
+          title: 'Could not load payments',
+          sub: 'Check your connection, then try again.',
+          retry: {
+            label: 'Try again',
+            icon: 'refresh',
+            onclick: "typeof renderProfilePaymentHistory==='function'&&renderProfilePaymentHistory(window._currentUser&&window._currentUser.uid)"
+          },
+          compact: true
+        })
+      : '<div class="pay-history-empty">Could not load payments — refresh and try again.</div>';
   }
 }
 

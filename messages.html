@@ -771,7 +771,14 @@ applyTheme();
     setNodeText('conversationCount', filtered.length ? filtered.length + (filtered.length === 1 ? ' chat' : ' chats') : '');
     if (!filtered.length) {
       var modeLabel = currentInboxMode() === 'poster' ? 'Poster' : 'Tasker';
-      list.innerHTML = '<div class="im-list-empty"><strong>No ' + modeLabel + ' messages yet</strong>Conversations for your other mode stay in that mode’s inbox.</div>';
+      list.innerHTML = typeof QG_emptyStateHtml === 'function'
+        ? QG_emptyStateHtml({
+            icon: 'message',
+            title: 'No ' + modeLabel + ' messages yet',
+            sub: 'Conversations for your other mode stay in that mode’s inbox.',
+            action: { label: 'Browse tasks', href: 'browsetask.html', icon: 'search' }
+          })
+        : '<div class="im-list-empty"><strong>No ' + modeLabel + ' messages yet</strong>Conversations for your other mode stay in that mode’s inbox.</div>';
       return;
     }
     list.innerHTML = filtered.map(function (c) {
@@ -815,7 +822,16 @@ applyTheme();
       return;
     }
     if (typeof getConversationsForUser !== 'function') {
-      if (list) list.innerHTML = '<div class="im-list-empty"><strong>Offline</strong>Database not ready.</div>';
+      if (list) {
+        list.innerHTML = typeof QG_errorStateHtml === 'function'
+          ? QG_errorStateHtml({
+              offline: true,
+              title: "Can't connect",
+              sub: 'Messaging is not ready yet. Check your connection and try again.',
+              retry: { label: 'Try again', icon: 'refresh', onclick: 'location.reload()' }
+            })
+          : '<div class="im-list-empty"><strong>Offline</strong>Database not ready.</div>';
+      }
       return;
     }
     try {
@@ -852,7 +868,16 @@ applyTheme();
       }
     } catch (err) {
       console.error('[QuickGigs messages] load failed', err);
-      if (list && !conversations.length) list.innerHTML = '<div class="im-list-empty"><strong>Could not load</strong>Check your connection and retry.</div>';
+      if (list && !conversations.length) {
+        list.innerHTML = typeof QG_errorStateHtml === 'function'
+          ? QG_errorStateHtml({
+              offline: true,
+              title: "Can't connect",
+              sub: 'Check your connection and try again.',
+              retry: { label: 'Try again', icon: 'refresh', onclick: "typeof loadConversations==='function'&&loadConversations()" }
+            })
+          : '<div class="im-list-empty"><strong>Could not load</strong>Check your connection and retry.</div>';
+      }
       setVisibleError('listError', 'Could not refresh conversations.', loadConversations);
     }
   }
@@ -954,7 +979,9 @@ applyTheme();
       var fraudInline = $('fraudInline');
       var chatLocked = $('chatLocked');
       var composer = $('composer');
-      if (chatScroll) chatScroll.innerHTML = '<div class="im-chat-empty">Loading…</div>';
+      if (chatScroll) chatScroll.innerHTML = typeof QG_spinnerHtml === 'function'
+        ? '<div class="im-chat-empty">' + QG_spinnerHtml({ label: 'Loading messages…', inline: false }) + '</div>'
+        : '<div class="im-chat-empty">Loading…</div>';
       if (fraudInline) fraudInline.classList.remove('show');
       if (chatLocked) chatLocked.classList.remove('show');
       if (composer) composer.style.display = '';
@@ -1133,7 +1160,14 @@ applyTheme();
     var scroll = $('chatScroll');
     if (!scroll) return;
     if (!messages.length) {
-      scroll.innerHTML = '<div class="im-chat-empty"><strong>No messages yet</strong>Say hi — keep plans on QuickGigs.</div>';
+      scroll.innerHTML = typeof QG_emptyStateHtml === 'function'
+        ? QG_emptyStateHtml({
+            icon: 'message',
+            title: 'No messages yet',
+            sub: 'Say hi — keep plans on QuickGigs.',
+            compact: true
+          })
+        : '<div class="im-chat-empty"><strong>No messages yet</strong>Say hi — keep plans on QuickGigs.</div>';
       return;
     }
     var lastDate = '', html = '', prevFrom = '', prevTs = 0;

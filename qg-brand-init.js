@@ -154,6 +154,96 @@
       '<div class="qg-list-skel-label">' + label + '</div>' + rows + '</div>';
   };
 
+  function escState(s) {
+    if (typeof window.escapeHtml === 'function') return window.escapeHtml(s);
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function stateIconHtml(name) {
+    if (typeof window.qgIcon === 'function') return window.qgIcon(name || 'inbox', { size: 24 });
+    return '';
+  }
+
+  function stateActionHtml(action) {
+    if (!action) return '';
+    var label = escState(action.label || 'Continue');
+    var cls = 'qg-state-btn' + (action.secondary ? ' is-secondary' : '');
+    var ico = action.icon && typeof window.qgIcon === 'function'
+      ? window.qgIcon(action.icon, { size: 14 }) + ' '
+      : '';
+    if (action.href) {
+      return '<a class="' + cls + '" href="' + escState(action.href) + '">' + ico + label + '</a>';
+    }
+    var onclick = action.onclick ? ' onclick="' + String(action.onclick).replace(/"/g, '&quot;') + '"' : '';
+    var id = action.id ? ' id="' + escState(action.id) + '"' : '';
+    return '<button type="button" class="' + cls + '"' + id + onclick + '>' + ico + label + '</button>';
+  }
+
+  /** Shared empty state: icon + headline + guidance + optional actions. */
+  window.QG_emptyStateHtml = function (opts) {
+    opts = opts || {};
+    var compact = opts.compact ? ' is-compact' : '';
+    var actions = '';
+    if (opts.action || opts.secondary) {
+      actions = '<div class="qg-state-actions">' +
+        stateActionHtml(opts.action) +
+        stateActionHtml(opts.secondary && Object.assign({ secondary: true }, opts.secondary)) +
+        '</div>';
+    }
+    return '<div class="qg-state empty-state' + compact + '" role="status">' +
+      '<div class="qg-state-icon empty-icon" aria-hidden="true">' + stateIconHtml(opts.icon || 'inbox') + '</div>' +
+      '<div class="qg-state-title empty-title">' + escState(opts.title || 'Nothing here yet') + '</div>' +
+      (opts.sub ? '<div class="qg-state-sub empty-sub empty-txt">' + escState(opts.sub) + '</div>' : '') +
+      actions +
+    '</div>';
+  };
+
+  /** Shared error / offline state with Try again. */
+  window.QG_errorStateHtml = function (opts) {
+    opts = opts || {};
+    var offline = !!opts.offline;
+    var title = opts.title || (offline ? "Can't connect" : 'Something went wrong');
+    var sub = opts.sub || (offline
+      ? 'Check your connection and try again.'
+      : 'Check your connection, then try again.');
+    var retry = opts.retry || { label: 'Try again', icon: 'refresh', onclick: 'location.reload()' };
+    if (typeof opts.onRetry === 'string' && opts.onRetry) {
+      retry = { label: 'Try again', icon: 'refresh', onclick: opts.onRetry };
+    }
+    var actions = '<div class="qg-state-actions">' + stateActionHtml(retry);
+    if (opts.secondary) {
+      actions += stateActionHtml(Object.assign({ secondary: true }, opts.secondary));
+    }
+    actions += '</div>';
+    var compact = opts.compact ? ' is-compact' : '';
+    return '<div class="qg-state is-error empty-state' + compact + '" role="alert">' +
+      '<div class="qg-state-icon empty-icon" aria-hidden="true">' + stateIconHtml(opts.icon || 'alert') + '</div>' +
+      '<div class="qg-state-title empty-title">' + escState(title) + '</div>' +
+      '<div class="qg-state-sub empty-sub empty-txt">' + escState(sub) + '</div>' +
+      actions +
+    '</div>';
+  };
+
+  window.QG_spinnerHtml = function (opts) {
+    opts = opts || {};
+    var label = escState(opts.label || 'Loading…');
+    var size = opts.large ? ' is-lg' : '';
+    if (opts.inline === false) {
+      return '<div class="qg-inline-load" role="status" aria-busy="true" aria-label="' + label + '">' +
+        '<span class="qg-spinner' + size + '" aria-hidden="true"></span>' +
+        '<span>' + label + '</span></div>';
+    }
+    return '<span class="qg-inline-load" role="status" aria-busy="true" aria-label="' + label + '">' +
+      '<span class="qg-spinner' + size + '" aria-hidden="true"></span>' +
+      (opts.hideLabel ? '' : '<span>' + label + '</span>') +
+    '</span>';
+  };
+
   var existingRoleTheme = document.querySelector('link[href*="qg-role-theme.css"]');
   if (existingRoleTheme) {
     var roleThemeBase = existingRoleTheme.getAttribute('href').split('?')[0];
@@ -194,6 +284,15 @@
     refine.rel = 'stylesheet';
     refine.href = 'qg-refine.css?v=20260803posterLayout1';
     document.head.appendChild(refine);
+  }
+
+  /* Shared empty / loading / error states */
+  if (!document.getElementById('qg-states-css') && !document.querySelector('link[href*="qg-states.css"]')) {
+    var statesCss = document.createElement('link');
+    statesCss.id = 'qg-states-css';
+    statesCss.rel = 'stylesheet';
+    statesCss.href = 'qg-states.css?v=20260811states1';
+    document.head.appendChild(statesCss);
   }
 
   /* Shell chrome last so token-based nav/menu/tabs win over page + role-theme hex */

@@ -558,8 +558,14 @@
       console.warn('Bell refresh failed:', err);
       loading = false;
       if (open && !notifications.length) {
-        panelBody.innerHTML =
-          '<div class="qg-bell-empty">' +
+        panelBody.innerHTML = typeof QG_errorStateHtml === 'function'
+          ? QG_errorStateHtml({
+              title: "Couldn't load notifications",
+              sub: 'Check your connection and try again.',
+              offline: true,
+              retry: { label: 'Try again', icon: 'refresh', onclick: "typeof QG_refreshNotifications==='function'&&QG_refreshNotifications()" }
+            })
+          : '<div class="qg-bell-empty">' +
             '<div class="qg-bell-empty-icon">' + ico('alert', 24) + '</div>' +
             '<div class="qg-bell-empty-title">Couldn\'t load notifications</div>' +
             '<div class="qg-bell-empty-sub">Check your connection and try again.</div>' +

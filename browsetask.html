@@ -5,18 +5,18 @@
 <!-- qg-build:cd3efe6-1786397433 -->
 
 <title>Browse tasks · QuickGigs</title>
-<meta name="description" content="Browse open tasks near you on QuickGigs ? Canada's marketplace to earn money doing errands, home help, and more.">
+<meta name="description" content="Browse open tasks near you on QuickGigs — Canada's marketplace to earn money doing errands, home help, and more.">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://quickgigs.ca/browsetask.html">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://quickgigs.ca/browsetask.html">
 <meta property="og:title" content="Browse tasks · QuickGigs">
-<meta property="og:description" content="Browse open tasks near you on QuickGigs ? Canada's marketplace to earn money doing errands, home help, and more.">
+<meta property="og:description" content="Browse open tasks near you on QuickGigs — Canada's marketplace to earn money doing errands, home help, and more.">
 <meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <meta property="og:locale" content="en_CA">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Browse tasks · QuickGigs">
-<meta name="twitter:description" content="Browse open tasks near you on QuickGigs ? Canada's marketplace to earn money doing errands, home help, and more.">
+<meta name="twitter:description" content="Browse open tasks near you on QuickGigs — Canada's marketplace to earn money doing errands, home help, and more.">
 <meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -982,7 +982,20 @@ async function loadTasks(){
     }
   }catch(err){
     console.warn('Supabase unreachable:', err);
-    if ((!cached || !cached.length) && !window._currentUser) allTasks = getDemoTasks();
+    if ((!cached || !cached.length) && !window._currentUser) {
+      allTasks = getDemoTasks();
+    } else if ((!cached || !cached.length) && window._currentUser) {
+      var areaErr = document.getElementById('cardsArea');
+      if (areaErr && typeof QG_errorStateHtml === 'function') {
+        areaErr.innerHTML = QG_errorStateHtml({
+          offline: true,
+          title: "Can't connect",
+          sub: 'Check your connection and try again.',
+          retry: { label: 'Try again', icon: 'refresh', onclick: "typeof loadTasks==='function'&&loadTasks()" }
+        });
+        return;
+      }
+    }
   }
   await hydratePosterNames();
   if (typeof loadSavedTaskIds === 'function' && getCurrentUserId()) {
@@ -1288,21 +1301,43 @@ function renderCards(){
   var radiusKm = typeof getNearRadiusKm==='function' ? getNearRadiusKm() : Infinity;
   var area=document.getElementById('cardsArea');
   if (!filtered.length && (locFilter || isFinite(radiusKm) || window._nearMeOnly || dateFilter !== 'any') && allTasks.length) {
-    area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('mapPin',{size:24}):'')+'</div><p class="empty-txt">No tasks match your filters — try clearing location, date, or search</p><button type="button" class="empty-btn" onclick="if(typeof clearFilters===\'function\')clearFilters();else location.reload()">Clear filters</button></div>';
+    area.innerHTML = typeof QG_emptyStateHtml === 'function'
+      ? QG_emptyStateHtml({
+          icon: 'mapPin',
+          title: 'No tasks match',
+          sub: 'Clear location, date, or search filters to see more gigs.',
+          action: { label: 'Clear filters', icon: 'refresh', onclick: "if(typeof clearFilters==='function')clearFilters();else location.reload()" }
+        })
+      : '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('mapPin',{size:24}):'')+'</div><p class="empty-txt">No tasks match your filters — try clearing location, date, or search</p><button type="button" class="empty-btn" onclick="if(typeof clearFilters===\'function\')clearFilters();else location.reload()">Clear filters</button></div>';
     return;
   }
   if(!filtered.length && activeMode==='saved'){
-    area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('star',{size:24}):'')+'</div><p class="empty-txt">No saved tasks yet — tap Save on any task to bookmark it here.</p><button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.href=\'browsetask.html\'">Browse open tasks</button></div>';
+    area.innerHTML = typeof QG_emptyStateHtml === 'function'
+      ? QG_emptyStateHtml({
+          icon: 'star',
+          title: 'No saved tasks yet',
+          sub: 'Tap Save on any task to bookmark it here.',
+          action: { label: 'Browse open tasks', href: 'browsetask.html', icon: 'search' }
+        })
+      : '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('star',{size:24}):'')+'</div><p class="empty-txt">No saved tasks yet — tap Save on any task to bookmark it here.</p><button type="button" class="empty-btn" onclick="location.href=\'browsetask.html\'">Browse open tasks</button></div>';
     return;
   }
   if(!filtered.length){
-    var emptyLead = allTasks.length===0?'No open tasks yet — post the first one':'No tasks match this filter';
-    var emptyCta = allTasks.length===0
-      ?'<a class="empty-btn" href="posttask.html" style="display:inline-block;margin-top:14px;padding:12px 20px;border-radius:12px;background:var(--purple);color:#fff;text-decoration:none">Post a task</a>'
-      :'<button type="button" class="empty-btn" style="margin-top:14px;padding:12px 20px;border-radius:12px;border:none;background:var(--purple);color:#fff;font:inherit;cursor:pointer" onclick="location.reload()">Reset browse</button>';
-    area.innerHTML='<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('search',{size:24}):'')+'</div><p class="empty-txt">'+emptyLead+'</p>'+emptyCta+
-      (allTasks.length===0?'<div id="browseActivityTicker" class="qg-activity-ticker-host"></div>':'')+
-      '</div>';
+    var emptyLead = allTasks.length===0 ? 'No open tasks yet' : 'No tasks match this filter';
+    var emptySub = allTasks.length===0
+      ? 'Be the first to post a gig in your area.'
+      : 'Try another category or reset browse.';
+    area.innerHTML = (typeof QG_emptyStateHtml === 'function'
+      ? QG_emptyStateHtml({
+          icon: 'search',
+          title: emptyLead,
+          sub: emptySub,
+          action: allTasks.length===0
+            ? { label: 'Post a task', href: 'posttask.html', icon: 'plus' }
+            : { label: 'Reset browse', icon: 'refresh', onclick: 'location.reload()' }
+        })
+      : '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('search',{size:24}):'')+'</div><p class="empty-txt">'+emptyLead+'</p></div>') +
+      (allTasks.length===0?'<div id="browseActivityTicker" class="qg-activity-ticker-host"></div>':'');
     if (allTasks.length===0 && window.QGActivityTicker && typeof QGActivityTicker.mount === 'function') {
       QGActivityTicker.mount('#browseActivityTicker');
     }
@@ -1504,7 +1539,7 @@ function refreshApplySubmitEnabled() {
     if (!msg) hint.textContent = 'At least 20 characters';
     else if (!msgOk) hint.textContent = (APPLY_MSG_MIN - msg.length) + ' more characters needed';
     else if (blocked) hint.textContent = 'Fix the message above to continue';
-    else hint.textContent = 'Looks good ? ready to send';
+    else hint.textContent = 'Looks good — ready to send';
   }
 
   // Only hard-disable while a submit is in flight. Invalid drafts stay clickable so
@@ -1880,7 +1915,7 @@ window.submitBrowseApplication=async function(){
     var msgEl = document.getElementById('offerMsg');
     var availEl = document.getElementById('offerAvail');
     if (!priceEl || !msgEl) {
-      applyNotify('Apply form failed to load ? refresh and try again.', '#ef4444');
+      applyNotify('Apply form failed to load — refresh and try again.', '#ef4444');
       unlockApplyBtn();
       return;
     }
@@ -1978,7 +2013,7 @@ window.submitBrowseApplication=async function(){
     var taskId = String(activeTask.id);
     // Live DB: applications.task_id is UUID (FK ? tasks.task_id)
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(taskId)) {
-      applyNotify('This task has an invalid id ? refresh Browse and try again.', '#ef4444');
+      applyNotify('This task has an invalid id — refresh Browse and try again.', '#ef4444');
       console.error('[QuickGigs apply] non-UUID task_id', taskId, activeTask);
       unlockApplyBtn();
       return;

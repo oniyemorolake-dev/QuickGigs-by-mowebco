@@ -235,8 +235,17 @@
     if (!body) return;
     if (!list.length) {
       body.innerHTML =
-        '<div class="admin-empty" style="padding:28px;text-align:center;color:var(--text-muted);font-size:13px">' +
-        (filter === 'open' ? 'No open disputes' : 'No disputes yet') +
+        '<div class="admin-empty">' +
+        (typeof QG_emptyStateHtml === 'function'
+          ? QG_emptyStateHtml({
+              icon: 'checkCircle',
+              title: filter === 'open' ? 'No open disputes' : 'No disputes yet',
+              sub: filter === 'open'
+                ? 'New disputes will appear here when a party raises one.'
+                : 'Disputes show up after a poster or tasker opens one.',
+              compact: true
+            })
+          : (filter === 'open' ? 'No open disputes' : 'No disputes yet')) +
         '</div>';
       return;
     }
@@ -384,7 +393,11 @@
     if (!body) return;
     if (!data.length) {
       body.innerHTML =
-        '<div style="padding:28px;text-align:center;color:var(--text-muted);font-size:13px">No users loaded</div>';
+        '<div class="admin-empty">' +
+        (typeof QG_emptyStateHtml === 'function'
+          ? QG_emptyStateHtml({ icon: 'users', title: 'No users loaded', sub: 'Try refreshing or check your admin session.', compact: true })
+          : 'No users loaded') +
+        '</div>';
       return;
     }
     var threshold = warnThreshold();
@@ -552,7 +565,11 @@
     if (!body) return;
     if (!data.length) {
       body.innerHTML =
-        '<div style="padding:28px;text-align:center;color:var(--text-muted);font-size:13px">No tasks found</div>';
+        '<div class="admin-empty">' +
+        (typeof QG_emptyStateHtml === 'function'
+          ? QG_emptyStateHtml({ icon: 'clipboard', title: 'No tasks found', sub: 'Adjust filters or check back after new posts.', compact: true })
+          : 'No tasks found') +
+        '</div>';
       return;
     }
     body.innerHTML = data

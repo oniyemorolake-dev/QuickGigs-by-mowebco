@@ -164,7 +164,13 @@
   function showEmpty(){
     state.hidden=false;
     state.className='gp-state';
-    state.innerHTML='<div class="gp-empty-title">You\'re all caught up</div><p>No approval requests are waiting right now.</p>';
+    state.innerHTML = typeof QG_emptyStateHtml === 'function'
+      ? QG_emptyStateHtml({
+          icon: 'checkCircle',
+          title: "You're all caught up",
+          sub: 'No approval requests are waiting right now.'
+        })
+      : '<div class="gp-empty-title">You\'re all caught up</div><p>No approval requests are waiting right now.</p>';
     queue.hidden=true;
     queue.innerHTML='';
   }
@@ -199,7 +205,13 @@
     }catch(err){
       state.hidden=false;
       state.className='gp-state is-error';
-      state.textContent='This guardian link is invalid or expired. Ask the teen to request a new approval email.';
+      state.innerHTML = typeof QG_errorStateHtml === 'function'
+        ? QG_errorStateHtml({
+            title: 'Link invalid or expired',
+            sub: 'Ask the teen to request a new approval email, then open the new link.',
+            retry: { label: 'Try again', icon: 'refresh', onclick: 'location.reload()' }
+          })
+        : 'This guardian link is invalid or expired. Ask the teen to request a new approval email.';
       queue.hidden=true;
     }
   }
