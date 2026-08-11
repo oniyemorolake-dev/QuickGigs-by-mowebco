@@ -354,7 +354,7 @@ body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#ee
 <script defer src="qg-menu.js?v=20260727auth2"></script>
 <script defer src="qg-auth-google.js?v=20260728fix1"></script>
 <script defer src="qg-age.js?v=1"></script>
-<script defer src="qg-verification.js?v=20260804pm1"></script>
+<script defer src="qg-verification.js?v=20260811pay1"></script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
@@ -575,11 +575,11 @@ function renderDashboardVerificationGate(state) {
   var isVerified = posterMode ? state.poster_verified === true : state.tasker_verified === true;
   if (isVerified) { banner.style.display = 'none'; return; }
   banner.style.display = 'block';
-  banner.innerHTML = '<strong>' + (posterMode ? '💳 Add a payment method to post' : '✉️ Verify your email to start working') + '</strong>' +
+  banner.innerHTML = '<strong>' + (posterMode ? 'Verify a card to post' : 'Verify your email to start working') + '</strong>' +
     (posterMode
-      ? 'Draft freely now; verification is required only when you publish.'
-      : 'Browse and build your profile freely; verification is required before applying or accepting gigs.') +
-    '<br><button type="button" id="dashboardVerifyBtn">' + (posterMode ? 'Add payment method' : 'Verify identity') + '</button>';
+      ? ' We verify your card so you can post — you’re only charged when you fund a task. Drafts stay free.'
+      : ' Browse and build your profile freely; verification is required before applying or accepting gigs.') +
+    '<br><button type="button" id="dashboardVerifyBtn">' + (posterMode ? 'Verify payment method' : 'Verify identity') + '</button>';
   document.getElementById('dashboardVerifyBtn').onclick = function () {
     if (typeof QG_openVerificationPrompt === 'function') QG_openVerificationPrompt(role);
   };

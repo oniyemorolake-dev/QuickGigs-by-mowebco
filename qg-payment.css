@@ -1,0 +1,398 @@
+/**
+ * QuickGigs — escrow payment page (tokens only).
+ * Highest-trust surface: clarity over chrome.
+ */
+.page-payment {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  padding: 20px 20px calc(40px + env(safe-area-inset-bottom, 0px));
+  transition: background 0.25s, color 0.25s;
+}
+
+.page-payment .pay-shell {
+  max-width: 440px;
+  margin: 24px auto 0;
+}
+
+.page-payment .pay-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.page-payment .pay-brand {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 22px;
+  font-weight: 700;
+  font-style: italic;
+  color: var(--brand);
+  letter-spacing: -0.02em;
+}
+
+.page-payment .pay-brand span {
+  color: var(--accent);
+}
+
+.page-payment .pay-card {
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 24px 20px 20px;
+  box-shadow: 0 12px 40px color-mix(in srgb, #000 28%, transparent);
+}
+
+html.light .page-payment .pay-card,
+body.light .page-payment .pay-card {
+  box-shadow: 0 10px 32px rgba(30, 21, 51, 0.08);
+}
+
+.page-payment .pay-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 999px;
+  padding: 5px 10px;
+  margin-bottom: 12px;
+}
+
+.page-payment .pay-title {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
+
+.page-payment .pay-sub {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-muted);
+  margin: 0 0 20px;
+}
+
+.page-payment .pay-summary {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-2);
+  padding: 14px 14px 10px;
+  margin-bottom: 14px;
+}
+
+.page-payment .pay-task-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+  margin: 0 0 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.page-payment .pay-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 6px 0;
+  color: var(--text-secondary);
+}
+
+.page-payment .pay-row-label {
+  color: var(--text-muted);
+}
+
+.page-payment .pay-row-val {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.page-payment .pay-row.is-money .pay-row-val,
+.page-payment .pay-row.is-total .pay-row-val {
+  color: var(--money);
+  font-weight: 600;
+}
+
+.page-payment .pay-row.is-fee .pay-row-val {
+  color: var(--text-secondary);
+}
+
+.page-payment .pay-row.is-total {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-strong);
+  font-size: 15px;
+}
+
+.page-payment .pay-fee-note {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  margin: 4px 0 2px;
+}
+
+.page-payment .pay-escrow {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px;
+  border-radius: 14px;
+  margin-bottom: 10px;
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, transparent);
+}
+
+.page-payment .pay-escrow-ico {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent);
+}
+
+.page-payment .pay-escrow-ico svg {
+  width: 18px;
+  height: 18px;
+}
+
+.page-payment .pay-escrow strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.page-payment .pay-escrow p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  text-align: left;
+}
+
+.page-payment .pay-refund {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin: 0 0 16px;
+  padding: 0 2px;
+}
+
+.page-payment .pay-msg {
+  margin-bottom: 12px;
+}
+
+.page-payment .pay-msg p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+.page-payment .pay-msg .warn {
+  background: var(--attention-soft, color-mix(in srgb, var(--attention) 14%, transparent));
+  border: 1px solid color-mix(in srgb, var(--attention) 40%, transparent);
+  color: var(--attention);
+}
+
+.page-payment .pay-msg .error {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+  color: var(--danger);
+}
+
+.page-payment .pay-msg .success {
+  background: var(--money-soft);
+  border: 1px solid color-mix(in srgb, var(--money) 40%, transparent);
+  color: var(--money);
+}
+
+.page-payment .pay-cta {
+  display: block;
+  width: 100%;
+  min-height: 50px;
+  padding: 14px 18px;
+  border: none;
+  border-radius: 14px;
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.page-payment .pay-cta:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-payment .pay-cta:not(:disabled):hover {
+  filter: brightness(1.05);
+}
+
+.page-payment .pay-secondary {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  margin-top: 8px;
+  padding: 12px 16px;
+  border-radius: 13px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  text-decoration: none;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.page-payment .pay-secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.page-payment .pay-trust {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.page-payment .pay-trust svg {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  color: var(--accent);
+}
+
+.page-payment .pay-note {
+  font-size: 11px;
+  text-align: center;
+  margin-top: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Processing / success panels */
+.page-payment .pay-state {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 12px 4px 8px;
+  gap: 8px;
+}
+
+.page-payment .pay-state.is-visible {
+  display: flex;
+}
+
+.page-payment .pay-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: qg-pay-spin 0.8s linear infinite;
+  margin-bottom: 6px;
+}
+
+@keyframes qg-pay-spin {
+  to { transform: rotate(360deg); }
+}
+
+.page-payment .pay-state-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.page-payment .pay-state-msg {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-muted);
+  max-width: 320px;
+}
+
+.page-payment .pay-state.is-success .pay-state-amt {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--money);
+  font-variant-numeric: tabular-nums;
+  margin: 4px 0;
+}
+
+.page-payment .pay-state-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.page-payment .pay-state.is-success .pay-state-icon {
+  background: var(--money-soft);
+  color: var(--money);
+}
+
+.page-payment .pay-state.is-error .pay-state-icon {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+}
+
+.page-payment .pay-actions {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.page-payment #payMain {
+  display: block;
+}
+
+.page-payment.is-processing #payMain,
+.page-payment.is-success #payMain,
+.page-payment.is-error-panel #payMain {
+  display: none;
+}
+
+.page-payment.is-processing #payProcessing,
+.page-payment.is-success #paySuccess,
+.page-payment.is-error-panel #payFail {
+  display: flex;
+}

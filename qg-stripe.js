@@ -52,10 +52,14 @@
       '<div class="qg-stripe-sheet">' +
         '<div class="qg-stripe-head">' +
           '<div class="qg-stripe-head-text">' +
-            '<div class="qg-stripe-title" id="qgStripeTitle">Pay to unlock chat</div>' +
-            '<div class="qg-stripe-sub" id="qgStripeSub">Secure payment · held in escrow until job is done</div>' +
+            '<div class="qg-stripe-title" id="qgStripeTitle">Pay &amp; fund escrow</div>' +
+            '<div class="qg-stripe-sub" id="qgStripeSub">Held securely until you mark the task complete</div>' +
             '<div class="qg-stripe-amount" id="qgStripeAmount"></div>' +
-            '<div class="qg-stripe-fee" id="qgStripeFee" style="display:none;font-size:11px;line-height:1.45;margin-top:6px;opacity:0.85"></div>' +
+            '<div class="qg-stripe-fee" id="qgStripeFee" style="display:none"></div>' +
+            '<div class="qg-stripe-trust-inline" aria-hidden="true">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>' +
+              '<span>Payments secured by Stripe</span>' +
+            '</div>' +
           '</div>' +
           '<button type="button" class="qg-stripe-close" id="qgStripeClose" aria-label="Close">×</button>' +
         '</div>' +
@@ -65,7 +69,12 @@
           '</div>' +
           '<div id="qg-stripe-checkout-mount" style="display:none"></div>' +
         '</div>' +
-        '<div class="qg-stripe-foot">Apple Pay &amp; Google Pay appear when available · Powered by Stripe</div>' +
+        '<div class="qg-stripe-foot">' +
+          '<span class="qg-stripe-foot-lock">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>' +
+            'Don’t close this page · Apple Pay &amp; Google Pay when available · Payments secured by Stripe' +
+          '</span>' +
+        '</div>' +
       '</div>';
     document.body.appendChild(overlay);
     overlay.addEventListener('click', function (e) {
@@ -84,8 +93,8 @@
       loading.className = 'qg-stripe-panel qg-stripe-loading-state';
       loading.innerHTML =
         '<div class="qg-stripe-spinner"></div>' +
-        '<div class="qg-stripe-status-title">' + escHtml(message || 'Loading…') + '</div>' +
-        '<div class="qg-stripe-status-msg">Secure checkout powered by Stripe</div>';
+        '<div class="qg-stripe-status-title">' + escHtml(message || 'Processing payment…') + '</div>' +
+        '<div class="qg-stripe-status-msg">Don’t close this page. Your payment is secured by Stripe and held in escrow until the task is complete.</div>';
     }
     if (mount) {
       mount.style.display = 'none';
@@ -274,14 +283,14 @@
     options = options || {};
     var titleEl = document.getElementById('qgStripeTitle');
     var subEl = document.getElementById('qgStripeSub');
-    if (titleEl) titleEl.textContent = 'Payment complete';
-    if (subEl) subEl.textContent = 'This task is already paid — chat is unlocked';
+    if (titleEl) titleEl.textContent = 'Escrow funded';
+    if (subEl) subEl.textContent = 'Payment confirmed — chat is unlocked';
     setModalPanel(
       'success',
-      'Already paid',
-      'Your payment went through. Tap below to open chat with your tasker.',
-      '<button type="button" class="qg-stripe-action-btn" id="qgStripeOpenChatBtn">Open chat</button>' +
-      '<button type="button" class="qg-stripe-action-btn qg-stripe-action-secondary" onclick="window.QG_closePayModal&&window.QG_closePayModal()">Stay here</button>'
+      'Escrow funded',
+      'Your payment is held securely. Chat is unlocked — message your tasker to coordinate.',
+      '<button type="button" class="qg-stripe-action-btn" id="qgStripeOpenChatBtn">Message your tasker</button>' +
+      '<button type="button" class="qg-stripe-action-btn qg-stripe-action-secondary" onclick="window.QG_closePayModal&&window.QG_closePayModal()">View task later</button>'
     );
       var openBtn = document.getElementById('qgStripeOpenChatBtn');
     if (openBtn) {
@@ -816,8 +825,8 @@
     var subEl = document.getElementById('qgStripeSub');
     var amountEl = document.getElementById('qgStripeAmount');
     var feeEl = document.getElementById('qgStripeFee');
-    if (titleEl) titleEl.textContent = options.title || 'Pay to unlock chat';
-    if (subEl) subEl.textContent = options.subtitle || 'Pay once to unlock chat · held in escrow until the job is done';
+    if (titleEl) titleEl.textContent = options.title || 'Pay & fund escrow';
+    if (subEl) subEl.textContent = options.subtitle || 'Held securely until you mark the task complete';
     if (amountEl) {
       if (options.amount != null && options.amount !== '') {
         amountEl.textContent = '$' + Number(options.amount).toFixed(2) + ' CAD';
@@ -829,8 +838,7 @@
           if (typeof feeOptsFromTask === 'function' && feeOpts.task && feeOpts.isRecurring == null) {
             feeOpts = Object.assign({}, feeOptsFromTask(feeOpts.task), feeOpts);
           }
-          // FUTURE: per-period Stripe billing for recurring jobs hooks in after accept —
-          // this modal is display-only while Stripe checkout may be disconnected.
+          // Display-only fee line — rates from feeBreakdown.js (not hardcoded).
           feeEl.textContent = formatFeeCommitmentLine(options.amount, feeOpts) + ' CAD';
         }
       } else {
@@ -841,7 +849,7 @@
     }
 
     destroyCheckout();
-    setModalLoading('Opening secure checkout…');
+    setModalLoading('Processing payment…');
     _overlayEl.classList.add('open');
     document.body.style.overflow = 'hidden';
 
@@ -1020,7 +1028,8 @@
       returnPage: returnPage,
       returnConv: returnConv,
       amount: amount,
-      title: title || undefined
+      title: title || 'Pay & fund escrow',
+      subtitle: 'Held securely until you mark the task complete'
     }).finally(function () {
       btn.disabled = false;
       btn.removeAttribute('aria-busy');

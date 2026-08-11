@@ -101,11 +101,11 @@ body.light .mode-btn{background:rgba(0,0,0,0.2);color:#fff;}
 .avatar-camera{position:absolute;bottom:2px;right:2px;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);border:3px solid var(--bg);display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,0.25);}
 .avatar-edit-hint{font-size:11px;color:var(--text-faint);margin-bottom:8px;}
 .verified{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid var(--bg);}
-.role-verification-grid{display:grid;grid-template-columns:1fr;gap:10px}.role-verification-card{padding:12px;border-radius:15px;background:var(--surface);border:1px solid var(--border);min-width:0;max-width:100%}.role-verification-card strong{display:block;font-size:13px;margin-bottom:4px;overflow-wrap:anywhere}.role-verification-card p{font-size:11px;line-height:1.5;color:var(--text-muted);margin:0 0 10px;overflow-wrap:anywhere}.role-verification-btn{width:100%;min-height:44px;padding:12px 14px;border:0;border-radius:10px;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;font:600 12px Poppins,sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-sizing:border-box}
-html[data-qg-mode="poster"] #posterVerificationBtn,.qg-mode-poster #posterVerificationBtn{background:linear-gradient(135deg,#0f766e,#2dd4bf)}
-html[data-qg-mode="worker"] #taskerVerificationBtn,.qg-mode-worker #taskerVerificationBtn{background:linear-gradient(135deg,#6b3fa0,#9b6fc4)}
-#posterVerificationBtn.is-verified,html[data-qg-mode="poster"] #posterVerificationBtn.is-verified,.qg-mode-poster #posterVerificationBtn.is-verified{background:linear-gradient(135deg,#0f766e,#2dd4bf);color:#064e3b;font-weight:700;cursor:default}
-#taskerVerificationBtn.is-verified,html[data-qg-mode="worker"] #taskerVerificationBtn.is-verified,.qg-mode-worker #taskerVerificationBtn.is-verified{background:#064e3b;color:#6ee7b7;border:1px solid #10b981;font-weight:700;cursor:default}
+.role-verification-grid{display:grid;grid-template-columns:1fr;gap:10px}.role-verification-card{padding:12px;border-radius:15px;background:var(--surface);border:1px solid var(--border);min-width:0;max-width:100%}.role-verification-card strong{display:block;font-size:13px;margin-bottom:4px;overflow-wrap:anywhere}.role-verification-card p{font-size:11px;line-height:1.5;color:var(--text-muted);margin:0 0 10px;overflow-wrap:anywhere}.role-verification-btn{width:100%;min-height:44px;padding:12px 14px;border:0;border-radius:10px;background:var(--grad-accent);color:var(--on-accent);font:600 12px DM Sans,sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-sizing:border-box}
+html[data-qg-mode="poster"] #posterVerificationBtn,.qg-mode-poster #posterVerificationBtn{background:var(--grad-poster);color:var(--on-accent)}
+html[data-qg-mode="worker"] #taskerVerificationBtn,.qg-mode-worker #taskerVerificationBtn{background:var(--grad-tasker);color:var(--on-accent)}
+#posterVerificationBtn.is-verified,html[data-qg-mode="poster"] #posterVerificationBtn.is-verified,.qg-mode-poster #posterVerificationBtn.is-verified{background:var(--money-soft);color:var(--money);border:1px solid color-mix(in srgb,var(--money) 40%,transparent);font-weight:700;cursor:default}
+#taskerVerificationBtn.is-verified,html[data-qg-mode="worker"] #taskerVerificationBtn.is-verified,.qg-mode-worker #taskerVerificationBtn.is-verified{background:var(--money-soft);color:var(--money);border:1px solid color-mix(in srgb,var(--money) 40%,transparent);font-weight:700;cursor:default}
 .role-verified-badges{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:7px}.role-verified-pill{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:44px;padding:10px 14px;border-radius:999px;background:rgba(74,222,128,.12);color:#16a34a;font-size:10px;font-weight:600;box-sizing:border-box}
 .profile-name{font-size:22px;font-weight:600;margin-bottom:4px;text-align:center;}
 .profile-pronouns{font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:6px;font-weight:400;}
@@ -468,8 +468,8 @@ body.light .profile-help-link{background:#ede9ff;color:var(--purple);}
     </div>
     <div class="role-verification-card" id="posterVerificationCard">
       <strong>💳 Poster payment method</strong>
-      <p id="posterVerificationCopy">Add a payment method to publish. Drafts are allowed anytime.</p>
-      <button type="button" class="role-verification-btn" id="posterVerificationBtn">Add payment method</button>
+      <p id="posterVerificationCopy">We verify your card so you can post — you’re only charged when you fund a task.</p>
+      <button type="button" class="role-verification-btn" id="posterVerificationBtn">Verify payment method</button>
     </div>
   </div>
 </div>
@@ -702,9 +702,9 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-config.js?v=20260803role1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="supabase-db.js?v=20260731alerts1"></script>
-<script defer src="qg-verification.js?v=20260804pm1"></script>
+<script defer src="qg-verification.js?v=20260811pay1"></script>
 <script defer src="qg-payments-ui.js?v=1"></script>
-<script defer src="qg-stripe.js?v=20260730teen1"></script>
+<script defer src="qg-stripe.js?v=20260811pay1"></script>
 <script defer src="qg-pwa.js?v=cd3efe6-1786397433"></script>
 <script defer src="qg-share.js"></script>
 <script defer src="qg-report.js?v=20260716d"></script>
@@ -874,7 +874,8 @@ function renderRoleVerificationState(dbUser, isOwnProfile) {
     posterButton.disabled = true;
     posterCopy.textContent = 'Payment method verified. You can publish tasks.';
   } else {
-    posterButton.textContent = 'Add payment method';
+    posterCopy.textContent = 'We verify your card so you can post — you’re only charged when you fund a task. Drafts are free.';
+    posterButton.textContent = 'Verify payment method';
     posterButton.onclick = function () {
       if (typeof QG_openVerificationPrompt === 'function') QG_openVerificationPrompt('poster');
     };

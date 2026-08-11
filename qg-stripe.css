@@ -1,9 +1,9 @@
-/* QuickGigs — Stripe Embedded Checkout modal */
+/* QuickGigs — Stripe Embedded Checkout modal (design tokens) */
 .qg-stripe-overlay {
   position: fixed;
   inset: 0;
   z-index: 12000;
-  background: rgba(5, 0, 15, 0.72);
+  background: color-mix(in srgb, var(--bg) 55%, rgba(0, 0, 0, 0.72));
   backdrop-filter: blur(6px);
   display: flex;
   align-items: flex-end;
@@ -30,7 +30,9 @@
   width: 100%;
   max-width: 480px;
   max-height: min(96dvh, 100%);
-  background: #fff;
+  background: var(--surface-1);
+  color: var(--text-primary);
+  border: 1px solid var(--line);
   border-radius: 20px 20px 0 0;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
   display: flex;
@@ -38,6 +40,11 @@
   overflow: hidden;
   transform: translateY(100%);
   transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+html.light .qg-stripe-sheet,
+body.light .qg-stripe-sheet {
+  box-shadow: 0 18px 48px rgba(30, 21, 51, 0.16);
 }
 
 .qg-stripe-overlay.open .qg-stripe-sheet {
@@ -60,8 +67,9 @@
   justify-content: space-between;
   gap: 12px;
   padding: 18px 18px 12px;
-  border-bottom: 1px solid #f0eeff;
+  border-bottom: 1px solid var(--line);
   flex-shrink: 0;
+  background: var(--surface-1);
 }
 
 .qg-stripe-head-text {
@@ -71,23 +79,47 @@
 .qg-stripe-title {
   font-family: 'DM Sans', sans-serif;
   font-size: 17px;
-  font-weight: 500;
-  color: #2d1b4e;
+  font-weight: 600;
+  color: var(--text-primary);
   line-height: 1.3;
 }
 
 .qg-stripe-sub {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-muted);
   margin-top: 4px;
   line-height: 1.45;
 }
 
 .qg-stripe-amount {
   font-size: 22px;
-  font-weight: 500;
-  color: #6b3fa0;
+  font-weight: 600;
+  color: var(--money);
+  margin-top: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.qg-stripe-fee {
+  font-size: 11px;
+  line-height: 1.45;
   margin-top: 6px;
+  color: var(--text-muted);
+}
+
+.qg-stripe-trust-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.qg-stripe-trust-inline svg {
+  width: 12px;
+  height: 12px;
+  color: var(--accent);
+  flex-shrink: 0;
 }
 
 .qg-stripe-close {
@@ -96,15 +128,15 @@
   height: 36px;
   border: none;
   border-radius: 50%;
-  background: #f5f2ff;
-  color: #6b3fa0;
+  background: var(--accent-soft);
+  color: var(--accent);
   font-size: 20px;
   line-height: 1;
   cursor: pointer;
 }
 
 .qg-stripe-close:hover {
-  background: #ebe4ff;
+  filter: brightness(1.08);
 }
 
 .qg-stripe-body {
@@ -113,10 +145,20 @@
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   padding: 8px 12px 16px;
+  background: var(--surface-1);
 }
 
+/* Stripe Embedded Checkout iframe sits on a light host surface for readability */
 #qg-stripe-checkout-mount {
   min-height: 280px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+html.light #qg-stripe-checkout-mount,
+body.light #qg-stripe-checkout-mount {
+  border: 1px solid var(--line);
 }
 
 .qg-stripe-panel,
@@ -134,7 +176,7 @@
 }
 
 .qg-stripe-loading-state {
-  color: #5a5a72;
+  color: var(--text-muted);
 }
 
 .qg-stripe-status-icon {
@@ -150,13 +192,13 @@
 }
 
 .qg-stripe-success .qg-stripe-status-icon {
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--money-soft);
+  color: var(--money);
 }
 
 .qg-stripe-error .qg-stripe-status-icon {
-  background: #fee2e2;
-  color: #b91c1c;
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
 }
 
 .qg-stripe-loading-state .qg-stripe-status-icon {
@@ -166,13 +208,13 @@
 .qg-stripe-status-title {
   font-size: 17px;
   font-weight: 600;
-  color: #2d1b4e;
+  color: var(--text-primary);
   line-height: 1.35;
 }
 
 .qg-stripe-status-msg {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--text-muted);
   line-height: 1.55;
   max-width: 320px;
 }
@@ -185,11 +227,11 @@
   padding: 12px 18px;
   border: none;
   border-radius: 12px;
-  background: #6b3fa0;
-  color: #fff;
+  background: var(--grad-accent);
+  color: var(--on-accent);
   font-family: 'DM Sans', sans-serif;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -199,19 +241,20 @@
 }
 
 .qg-stripe-action-secondary {
-  background: #f5f2ff;
-  color: #6b3fa0;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--line-strong);
 }
 
 .qg-stripe-error .qg-stripe-status-msg {
-  color: #991b1b;
+  color: var(--danger);
 }
 
 .qg-stripe-spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid #e8e2ff;
-  border-top-color: #6b3fa0;
+  border: 3px solid var(--line);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: qg-stripe-spin 0.8s linear infinite;
   margin-bottom: 14px;
@@ -223,12 +266,26 @@
 
 .qg-stripe-foot {
   padding: 10px 18px calc(14px + env(safe-area-inset-bottom, 0px));
-  border-top: 1px solid #f0eeff;
+  border-top: 1px solid var(--line);
   font-size: 11px;
-  color:#6b6580;
+  color: var(--text-muted);
   text-align: center;
   line-height: 1.45;
   flex-shrink: 0;
+  background: var(--surface-1);
+}
+
+.qg-stripe-foot-lock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.qg-stripe-foot-lock svg {
+  width: 12px;
+  height: 12px;
+  color: var(--accent);
 }
 
 @media (max-width: 480px) {

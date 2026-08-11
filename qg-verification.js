@@ -10,8 +10,8 @@
 
   function modeAccent(role) {
     return role === 'poster'
-      ? { from: '#0f766e', to: '#2dd4bf', soft: 'rgba(45,212,191,.18)', text: '#2dd4bf' }
-      : { from: '#6b3fa0', to: '#9b6fc4', soft: 'rgba(155,111,196,.2)', text: '#c8a8e9' };
+      ? { from: 'var(--accent-poster)', to: 'var(--accent-poster)', soft: 'var(--accent-soft)', text: 'var(--accent)' }
+      : { from: 'var(--accent-tasker)', to: 'var(--accent-tasker)', soft: 'var(--accent-soft)', text: 'var(--accent)' };
   }
 
   function posterPmEnabled() {
@@ -106,21 +106,20 @@
     var style = document.createElement('style');
     style.id = 'qgVerificationStyles';
     style.textContent =
-      '.qg-verify-overlay{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(4,0,14,.82);backdrop-filter:blur(10px)}' +
-      '.qg-verify-card{width:min(460px,100%);padding:24px;border-radius:22px;background:linear-gradient(145deg,#0b1220,#151b2e);border:1px solid rgba(200,168,233,.28);box-shadow:0 28px 80px rgba(0,0,0,.5);color:#fff;font-family:Poppins,sans-serif}' +
+      '.qg-verify-overlay{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px;background:color-mix(in srgb,var(--bg) 40%,rgba(0,0,0,.75));backdrop-filter:blur(10px)}' +
+      '.qg-verify-card{width:min(460px,100%);padding:24px;border-radius:22px;background:var(--surface-1);border:1px solid var(--line);box-shadow:0 28px 80px rgba(0,0,0,.45);color:var(--text-primary);font-family:DM Sans,sans-serif}' +
       '.qg-verify-icon{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;margin-bottom:14px}' +
-      '.qg-verify-card h2{font-size:20px;line-height:1.25;margin:0 0 8px;font-weight:600}.qg-verify-card p{font-size:13px;line-height:1.6;color:rgba(255,255,255,.68);margin:0}' +
-      '.qg-verify-note{margin-top:13px!important;padding:11px;border-radius:12px;background:rgba(255,255,255,.05);font-size:11px!important}' +
+      '.qg-verify-card h2{font-size:20px;line-height:1.25;margin:0 0 8px;font-weight:600;color:var(--text-primary)}.qg-verify-card p{font-size:13px;line-height:1.6;color:var(--text-muted);margin:0}' +
+      '.qg-verify-note{margin-top:13px!important;padding:11px;border-radius:12px;background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 32%,transparent);font-size:12px!important;color:var(--text-secondary)!important}' +
       '.qg-verify-steps{display:grid;gap:10px;margin-top:16px}' +
-      '.qg-verify-step{padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03)}' +
-      '.qg-verify-step strong{display:block;font-size:12px;margin-bottom:6px}' +
+      '.qg-verify-step{padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--surface-2)}' +
+      '.qg-verify-step strong{display:block;font-size:12px;margin-bottom:6px;color:var(--text-primary)}' +
       '.qg-verify-step-actions{display:flex;gap:8px;flex-wrap:wrap}' +
-      '.qg-verify-mini{flex:1;min-width:120px;padding:10px;border:0;border-radius:10px;color:#fff;font:600 12px Poppins,sans-serif;cursor:pointer}' +
-      '.qg-verify-actions{display:grid;gap:9px;margin-top:18px}.qg-verify-primary,.qg-verify-later{padding:12px;border-radius:12px;font:600 13px Poppins,sans-serif;cursor:pointer}' +
-      '.qg-verify-primary{border:0;color:#fff}.qg-verify-later{border:1px solid rgba(200,168,233,.25);background:transparent;color:rgba(255,255,255,.68)}' +
-      '.qg-verify-primary:disabled,.qg-verify-mini:disabled{opacity:.6}.qg-verify-status{font-size:11px;margin-top:6px;color:rgba(255,255,255,.55)}' +
-      '.qg-verify-card.is-poster{border-color:rgba(45,212,191,.35)}.qg-verify-card.is-tasker{border-color:rgba(155,111,196,.35)}' +
-      'body.light .qg-verify-card{background:#fff;color:#211033}body.light .qg-verify-card p,.qg-verify-status{color:#6b6580}body.light .qg-verify-later{color:#6b6580;border-color:#ddd3ef}';
+      '.qg-verify-mini{flex:1;min-width:120px;padding:10px;border:0;border-radius:10px;color:var(--on-accent);font:600 12px DM Sans,sans-serif;cursor:pointer;background:var(--grad-accent)}' +
+      '.qg-verify-actions{display:grid;gap:9px;margin-top:18px}.qg-verify-primary,.qg-verify-later{padding:12px;border-radius:12px;font:600 13px DM Sans,sans-serif;cursor:pointer}' +
+      '.qg-verify-primary{border:0;color:var(--on-accent);background:var(--grad-accent)}.qg-verify-later{border:1px solid var(--line-strong);background:transparent;color:var(--text-secondary)}' +
+      '.qg-verify-primary:disabled,.qg-verify-mini:disabled{opacity:.6}.qg-verify-status{font-size:11px;margin-top:6px;color:var(--text-muted)}' +
+      '.qg-verify-card.is-poster{border-color:color-mix(in srgb,var(--accent-poster) 45%,var(--line))}.qg-verify-card.is-tasker{border-color:color-mix(in srgb,var(--accent-tasker) 45%,var(--line))}';
     document.head.appendChild(style);
   }
 
@@ -137,16 +136,16 @@
     overlay.innerHTML =
       '<div class="qg-verify-card ' + (isPoster ? 'is-poster' : 'is-tasker') + '" role="dialog" aria-modal="true" aria-labelledby="qgVerifyTitle">' +
         '<div class="qg-verify-icon" style="background:' + accent.soft + ';color:' + accent.text + '" aria-hidden="true">' + (isPoster ? '💳' : '✉️') + '</div>' +
-        '<h2 id="qgVerifyTitle">' + (isPoster ? 'Add a payment method to post' : 'Verify your email to start working') + '</h2>' +
+        '<h2 id="qgVerifyTitle">' + (isPoster ? 'Verify a card to post' : 'Verify your email to start working') + '</h2>' +
         '<p>' + (isPoster
-          ? 'You can keep drafting your task. A verified payment method is required only when you publish.'
+          ? 'We verify your card so you can post — you’re only charged when you fund a task.'
           : 'You can browse gigs and edit your profile. Confirm your email before applying or accepting work.') + '</p>' +
         '<p class="qg-verify-note">' + (isPoster
-          ? 'Uses your existing Stripe Setup flow (test keys until launch). You will not be charged during verification.'
+          ? 'This is a Setup verification (not a charge). Drafts stay free until you publish. Payments secured by Stripe · test mode until launch.'
           : 'Phone verification and hard ID checks are reserved for later. Teen applications still need guardian approval.') + '</p>' +
         '<div class="qg-verify-actions">' +
-          '<button type="button" class="qg-verify-primary" id="qgVerifyStart" style="background:linear-gradient(135deg,' + accent.from + ',' + accent.to + ')">' +
-            (isPoster ? 'Add payment method' : 'Continue verification') +
+          '<button type="button" class="qg-verify-primary" id="qgVerifyStart">' +
+            (isPoster ? 'Verify payment method' : 'Continue verification') +
           '</button>' +
           '<button type="button" class="qg-verify-later" id="qgVerifyLater">' + (opts.laterLabel || 'Not now') + '</button>' +
         '</div>' +
@@ -162,7 +161,7 @@
       if (isPoster) {
         if (!result || (!result.url && !result.already_verified)) {
           button.disabled = false;
-          button.textContent = 'Add payment method';
+          button.textContent = 'Verify payment method';
           if (result && result.message) button.title = result.message;
         } else if (result.already_verified) {
           await load(true);
@@ -194,17 +193,17 @@
           '<div class="qg-verify-step">' +
             '<strong>Email confirmation ' + (emailOk ? '✓' : '') + '</strong>' +
             '<div class="qg-verify-step-actions">' +
-              '<button type="button" class="qg-verify-mini" id="qgVerifyEmailBtn" style="background:linear-gradient(135deg,' + accent.from + ',' + accent.to + ')">' +
+              '<button type="button" class="qg-verify-mini" id="qgVerifyEmailBtn">' +
                 (emailOk ? 'Email confirmed' : 'Send confirmation email') +
               '</button>' +
-              '<button type="button" class="qg-verify-mini" id="qgVerifyEmailRefresh" style="background:linear-gradient(135deg,' + accent.from + ',' + accent.to + ')">Refresh status</button>' +
+              '<button type="button" class="qg-verify-mini" id="qgVerifyEmailRefresh">Refresh status</button>' +
             '</div>' +
             '<div class="qg-verify-status" id="qgVerifyEmailStatus"></div>' +
           '</div>' +
         '</div>' +
         '<p class="qg-verify-note">Later: phone (Firebase Phone Auth) and hard ID check can be required without rebuilding this gate. Care categories are already flagged.</p>' +
         '<div class="qg-verify-actions">' +
-          '<button type="button" class="qg-verify-primary" id="qgVerifyDone" style="background:linear-gradient(135deg,' + accent.from + ',' + accent.to + ')">Done</button>' +
+          '<button type="button" class="qg-verify-primary" id="qgVerifyDone">Done</button>' +
           '<button type="button" class="qg-verify-later" id="qgVerifyLaterEmail">Close</button>' +
         '</div>' +
       '</div>';

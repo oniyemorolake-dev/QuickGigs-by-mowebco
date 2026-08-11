@@ -475,7 +475,7 @@ body{padding-bottom:76px;}
     <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">Post &amp; fund</button>
     <button type="button" class="submit-btn secondary" id="draftBtn" onclick="handleSubmit(false,'draft')">Save draft</button>
   </div>
-  <p class="qg-beta-free-note">Browse freely anytime. Publishing requires a verified payment method — drafts do not.</p>
+  <p class="qg-beta-free-note">Browse freely anytime. Publishing requires a verified card (Setup verification — not a charge). You’re only charged when you fund a task. Drafts do not require verification.</p>
   <p class="footer-note">After beta, payment is held in escrow when you accept — released only after you confirm the task is done. <span data-qg-tip="Escrow means funds are held safely until you mark the task complete. During beta, posting is free.">What is escrow?</span></p>
 
 </div>
@@ -498,7 +498,7 @@ body{padding-bottom:76px;}
 <script defer src="qg-config.js?v=20260803escrow1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="supabase-db.js?v=20260804pm1"></script>
-<script defer src="qg-verification.js?v=20260804pm1"></script>
+<script defer src="qg-verification.js?v=20260811pay1"></script>
 <script>
 var selectedPhotos = [];
 
@@ -1358,7 +1358,7 @@ window.handleSubmit = async function(skipPhotos, publishMode) {
       var successSub = document.querySelector('#successScreen .success-sub');
       if (asDraft) {
         if (successTitle) successTitle.textContent = 'Draft saved';
-        if (successSub) successSub.innerHTML = 'Your draft is saved under <strong>My Tasks → Posted</strong>. Add a payment method when you are ready to publish.';
+        if (successSub) successSub.innerHTML = 'Your draft is saved under <strong>My Tasks → Posted</strong>. Verify a payment method when you are ready to publish — you are only charged when you fund a task.';
       } else {
         if (successTitle) successTitle.textContent = 'Task posted';
         if (successSub) successSub.innerHTML = 'Your task is live under <strong>My Tasks → Posted</strong> (Poster mode). Browse only shows other people\'s tasks — not your own.';

@@ -37,7 +37,7 @@
 <link rel="stylesheet" href="qg-menu.css?v=3">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
-<link rel="stylesheet" href="qg-stripe.css">
+<link rel="stylesheet" href="qg-stripe.css?v=20260811pay1">
 <script src="qg-theme.js"></script>
 <script src="qg-brand-init.js"></script>
 <script>
@@ -275,6 +275,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 
 <nav class="tab-bar" id="qgTabBar"></nav>
 
+<script defer src="feeBreakdown.js?v=20260727fee1"></script>
 <script defer src="qg-utils.js?v=20260728welcome1"></script>
 <script defer src="qg-polish.js?v=20260728xss1"></script>
 <script src="qg-ux.js?v=20260728welcome1" defer></script>
@@ -283,8 +284,8 @@ body.light .app-legal-footer a{color:var(--purple);}
 <script defer src="qg-config.js?v=20260804evidence1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="supabase-db.js?v=20260804evidence1"></script>
-<script defer src="qg-verification.js?v=20260804pm1"></script>
-<script defer src="qg-stripe.js?v=20260730teen1"></script>
+<script defer src="qg-verification.js?v=20260811pay1"></script>
+<script defer src="qg-stripe.js?v=20260811pay1"></script>
 <script defer src="qg-site.js?v=20260726e"></script>
 <script defer src="qg-nav.js?v=20260726n"></script>
 <script defer src="qg-pwa.js?v=cd3efe6-1786397433"></script>
@@ -600,7 +601,7 @@ function renderApplicantAction(a, taskId, task) {
         return '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border)" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">Chat</button>' +
           '<span class="accept-status">'+(typeof qgIcon==='function'?qgIcon('check',{size:12}):'')+' Accepted · Paid</span>';
       }
-      return '<button type="button" class="accept-btn" style="background:var(--purple);color:#fff" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks">Pay to unlock chat</button>' +
+      return '<button type="button" class="accept-btn" style="background:var(--grad-accent);color:var(--on-accent)" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks">Pay &amp; fund escrow</button>' +
         '<span class="accept-status">'+(typeof qgIcon==='function'?qgIcon('check',{size:12}):'')+' Accepted</span>';
     }
     return '<button type="button" class="accept-btn" style="background:var(--surface);color:var(--lavender);border:1px solid var(--border)" onclick="openChatWithWorker('+JSON.stringify(String(taskId))+','+JSON.stringify(String(workerId))+')">Chat</button>' +
@@ -1826,7 +1827,7 @@ function renderTab(){
         } else if (taskPaid) {
           payAction = '<span class="act-btn btn-secondary" style="opacity:0.9;cursor:default;pointer-events:none">'+(typeof qgIcon==='function'?qgIcon('check',{size:12}):'')+' Paid · chat unlocked</span>';
         } else {
-          payAction = '<button type="button" class="act-btn btn-primary" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks" data-pay-amount="'+escAttr(String(getField(t,'BUDGET')))+'" data-pay-title="'+escAttr(getField(t,'TITLE'))+'">💳 Pay to unlock</button>' +
+          payAction = '<button type="button" class="act-btn btn-primary" data-pay-task="'+escAttr(taskId)+'" data-pay-return="mytasks" data-pay-amount="'+escAttr(String(getField(t,'BUDGET')))+'" data-pay-title="'+escAttr(getField(t,'TITLE'))+'">Pay &amp; fund escrow</button>' +
             '<button type="button" class="act-btn btn-secondary" data-sync-pay-task="'+escAttr(taskId)+'" title="Paid in Stripe but still locked? Tap to sync">'+(typeof qgIcon==='function'?qgIcon('refresh',{size:12}):'')+' Sync payment</button>';
         }
       }
@@ -2119,7 +2120,10 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
         returnPage: 'mytasks',
         returnConv: payConvId,
         amount: payAmount,
-        title: getField(task, 'TITLE') || 'Pay to unlock chat'
+        title: getField(task, 'TITLE') || 'Pay & fund escrow',
+        subtitle: 'Held securely until you mark the task complete',
+        task: task,
+        feeOpts: typeof feeOptsFromTask === 'function' ? feeOptsFromTask(task) : undefined
       }).catch(function (err) {
         console.error('Pay modal failed:', err);
         showToast('Could not open payment — tap Pay on this task', '#ef4444');
