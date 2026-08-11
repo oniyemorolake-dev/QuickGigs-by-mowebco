@@ -42,7 +42,7 @@
     var link = document.createElement('link');
     link.id = 'qg-menu-css';
     link.rel = 'stylesheet';
-    link.href = 'qg-menu.css?v=5';
+    link.href = 'qg-menu.css?v=20260811safety1';
     document.head.appendChild(link);
   }
 
@@ -164,7 +164,8 @@
     });
 
     var settings = [
-      { type: 'action', action: 'theme', icon: 'eye', label: themeLabel() }
+      { type: 'action', action: 'theme', icon: 'eye', label: themeLabel() },
+      { type: 'action', action: 'safetySettings', icon: 'shield', label: 'Emergency contact' }
     ];
     if (typeof window.promptQuickGigsInstall === 'function') {
       settings.push({ type: 'action', action: 'install', icon: 'smartphone', label: 'Add to Home Screen' });
@@ -208,7 +209,10 @@
       },
       {
         label: 'Settings',
-        items: [{ type: 'action', action: 'theme', icon: 'eye', label: themeLabel() }]
+        items: [
+          { type: 'action', action: 'theme', icon: 'eye', label: themeLabel() },
+          { type: 'action', action: 'safetySettings', icon: 'shield', label: 'Emergency contact' }
+        ]
       }
     ];
 
@@ -311,6 +315,15 @@
     if (action === 'theme') {
       if (typeof window.toggleTheme === 'function') window.toggleTheme();
       else if (typeof window.toggleMode === 'function') window.toggleMode();
+      return;
+    }
+    if (action === 'safetySettings') {
+      if (typeof window.openSafetySettings === 'function') window.openSafetySettings();
+      else if (window.QGSafety && typeof window.QGSafety.openSettings === 'function') {
+        window.QGSafety.openSettings();
+      } else {
+        window.location.href = 'safety.html';
+      }
       return;
     }
     if (action === 'switchMode' && typeof window.switchRoleMode === 'function') {

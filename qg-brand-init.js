@@ -345,7 +345,7 @@
     var guardianCss = document.createElement('link');
     guardianCss.id = 'qg-guardian-css';
     guardianCss.rel = 'stylesheet';
-    guardianCss.href = 'qg-guardian.css?v=20260811guardian1';
+    guardianCss.href = 'qg-guardian.css?v=20260811teensafety1';
     document.head.appendChild(guardianCss);
   }
 
@@ -358,13 +358,28 @@
     document.head.appendChild(trustCss);
   }
 
+  /* Safety / 911 block + emergency contact settings */
+  if (!document.getElementById('qg-safety-css') && !document.querySelector('link[href*="qg-safety.css"]')) {
+    var safetyCss = document.createElement('link');
+    safetyCss.id = 'qg-safety-css';
+    safetyCss.rel = 'stylesheet';
+    safetyCss.href = 'qg-safety.css?v=20260811teensafety1';
+    document.head.appendChild(safetyCss);
+  }
+  if (!document.querySelector('script[src*="qg-safety.js"]')) {
+    var safetyJs = document.createElement('script');
+    safetyJs.src = 'qg-safety.js?v=20260811teensafety1';
+    safetyJs.defer = true;
+    document.head.appendChild(safetyJs);
+  }
+
   // Sync load so qgIcon is available before deferred page scripts run
   if (!document.querySelector('script[src*="qg-icons.js"]') && typeof window.qgIcon !== 'function') {
     try {
-      document.write('<script src="qg-icons.js?v=20260811browse4"><\/script>');
+      document.write('<script src="qg-icons.js?v=20260811safety1"><\/script>');
     } catch (eWrite) {
       var icons = document.createElement('script');
-      icons.src = 'qg-icons.js?v=20260811browse4';
+      icons.src = 'qg-icons.js?v=20260811safety1';
       document.head.appendChild(icons);
     }
   }

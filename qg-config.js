@@ -81,6 +81,27 @@ window.QG_CONFIG = {
   adminUids: [
     // 'YOUR_FIREBASE_UID'
   ],
+  // Emergency services number (Canada: 911). Swap per market later.
+  emergencyNumber: '911',
+  emergencyNumberLabel: '911',
+  // Teen live job safety (under-18 taskers) — extends guardian portal; does not replace consent/approval.
+  teenSafetyUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/teen-safety',
+  teenSafety: {
+    checkInIntervalMinutes: 20,
+    checkInResponseMinutes: 5,
+    locationPingMinutes: 10,
+    guardianPollSeconds: 30
+  },
+  // Teen meetup policy knobs (client UX + apply gating hints). Empty block list = flag only.
+  teenMeetup: {
+    preferPublicMeetup: true,
+    flagHomeVisitCategories: ['care', 'home', 'tutoring', 'beauty'],
+    blockHomeVisitCategories: [],
+    homeVisitWarning:
+      'This gig may be at a private home. Prefer a public meetup when you can, and keep your guardian updated during the job.',
+    publicMeetupHint:
+      'Public meetup preferred for under-18 taskers. Your guardian can monitor check-ins while the job is active.'
+  },
   // Client abuse UX (qg-abuse.js) — NOT real enforcement; server must enforce later
   abuseLimits: {
     minBudget: 20,

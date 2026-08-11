@@ -590,6 +590,7 @@ body.light .app-legal-footer a{color:var(--purple);}
       <div id="taskDetailPanel" class="qg-task-detail" hidden></div>
       <p class="modal-sub" id="modalSub" hidden>Send your offer to the poster</p>
       <p class="modal-sub" id="modalNegoHint" style="display:none;margin-top:-6px;font-size:11px;color:var(--text-muted)"></p>
+      <div id="teenMeetupBanner" hidden></div>
 
       <div class="apply-already" id="applyAlreadyState" aria-live="polite">
         <div class="apply-already-icon">✅</div>
@@ -685,11 +686,13 @@ onAuthStateChanged(auth, (user) => {
 <script src="qg-ux.js?v=20260811browse4" defer></script>
 <script src="qg-bigtech.js?v=20260810session1" defer></script>
 <script src="qg-wave2.js?v=20260811trust2" defer></script>
-<script defer src="qg-config.js?v=20260811fee2"></script>
+<script defer src="qg-config.js?v=20260811teensafety1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="qg-categories.js"></script>
 <script defer src="supabase-db.js?v=20260730verify1"></script>
 <script defer src="qg-age.js?v=1"></script>
+<script defer src="qg-teen-safety.js?v=20260811teensafety1"></script>
+<link rel="stylesheet" href="qg-safety.css?v=20260811teensafety1" id="qg-safety-css">
 <script defer src="qg-verification.js?v=20260811pay1"></script>
 <script defer src="qg-location.js?v=2"></script>
 <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -2001,6 +2004,19 @@ window.openModal=async function(id,e){
       negoHint.textContent = 'Fixed budget — your offer matches the poster\'s price. Chat is for schedule and details.';
     }
   }
+  var teenBanner = document.getElementById('teenMeetupBanner');
+  if (teenBanner) {
+    var meetupHtml = (typeof QGTeenSafety !== 'undefined' && typeof QGTeenSafety.meetupBannerHtml === 'function')
+      ? QGTeenSafety.meetupBannerHtml(activeTask)
+      : '';
+    if (meetupHtml) {
+      teenBanner.hidden = false;
+      teenBanner.innerHTML = meetupHtml;
+    } else {
+      teenBanner.hidden = true;
+      teenBanner.innerHTML = '';
+    }
+  }
   document.getElementById('offerMsg').value='';
   document.getElementById('offerAvail').value='';
   document.getElementById('offerFraudError').style.display='none';
@@ -2115,6 +2131,22 @@ window.submitBrowseApplication=async function(){
       applyNotify('Please write a message of at least ' + APPLY_MSG_MIN + ' characters.', '#ef4444');
       unlockApplyBtn();
       return;
+    }
+
+    if (typeof QGTeenSafety !== 'undefined' && typeof QGTeenSafety.meetupPolicyForTask === 'function' &&
+        typeof QGTeenSafety.isTeen === 'function' && QGTeenSafety.isTeen()) {
+      var meetupPolicy = QGTeenSafety.meetupPolicyForTask(activeTask);
+      if (meetupPolicy && meetupPolicy.blocked) {
+        applyNotify(meetupPolicy.warning || 'This category is restricted for under-18 taskers.', '#ef4444');
+        unlockApplyBtn();
+        return;
+      }
+      if (meetupPolicy && meetupPolicy.flagged && meetupPolicy.warning) {
+        if (!confirm(meetupPolicy.warning + '\n\nContinue with this application? Your guardian still reviews each apply.')) {
+          unlockApplyBtn();
+          return;
+        }
+      }
     }
 
     var contactCheck = typeof analyzeOffPlatformContact === 'function'

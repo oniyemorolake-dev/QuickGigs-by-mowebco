@@ -262,6 +262,12 @@
             return;
           }
           if (typeof showToast === 'function') showToast(stampLabel(type) + ' recorded');
+          if (window.QGTeenSafety && typeof window.QGTeenSafety.syncStamp === 'function') {
+            try { window.QGTeenSafety.syncStamp(taskId, type); } catch (e) {}
+          }
+          if (type === 'completed' && window.QGTeenSafety && typeof window.QGTeenSafety.endSession === 'function') {
+            try { window.QGTeenSafety.endSession(taskId, 'ended_complete'); } catch (e2) {}
+          }
           await refreshEvidencePanel(panel, taskId);
           btn.disabled = false;
           btn.textContent = prev;

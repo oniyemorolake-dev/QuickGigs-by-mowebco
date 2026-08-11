@@ -33,8 +33,9 @@
 <link rel="stylesheet" href="qg-role-theme.css?v=20260811tokens1">
 <link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
 <link rel="stylesheet" href="qg-trust-profile.css?v=20260811trust3" id="qg-trust-profile-css">
+<link rel="stylesheet" href="qg-safety.css?v=20260811teensafety1" id="qg-safety-css">
 <link rel="stylesheet" href="qg-mobile.css">
-<link rel="stylesheet" href="qg-menu.css?v=3">
+<link rel="stylesheet" href="qg-menu.css?v=20260811safety1">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
 <link rel="stylesheet" href="qg-stripe.css?v=20260811pay1">
@@ -284,7 +285,8 @@ body.light .app-legal-footer a{color:var(--purple);}
 <script src="qg-ux.js?v=20260728welcome1" defer></script>
 <script src="qg-bigtech.js?v=20260810session1" defer></script>
 <script src="qg-wave2.js?v=20260811trust2" defer></script>
-<script defer src="qg-config.js?v=20260811fee2"></script>
+<script defer src="qg-config.js?v=20260811teensafety1"></script>
+<script defer src="qg-age.js?v=20260811teensafety1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="supabase-db.js?v=20260804evidence1"></script>
 <script defer src="qg-verification.js?v=20260811pay1"></script>
@@ -301,9 +303,11 @@ body.light .app-legal-footer a{color:var(--purple);}
 <script defer src="qg-report.js?v=20260716d"></script>
 <script defer src="qg-stats.js?v=20260811trust3"></script>
 <script defer src="qg-trust-profile.js?v=20260811trust3"></script>
+<script defer src="qg-safety.js?v=20260811teensafety1"></script>
+<script defer src="qg-teen-safety.js?v=20260811teensafety1"></script>
 <script defer src="qg-confetti.js?v=1"></script>
 <script defer src="qg-disputes.js?v=20260804evidence1"></script>
-<script defer src="qg-evidence.js?v=20260804evidence1"></script>
+<script defer src="qg-evidence.js?v=20260811teensafety1"></script>
 <script>
 function paintMyTasksTabBar() {
   var showApplicants = new URLSearchParams(window.location.search).get('applicants') === '1';
@@ -1879,11 +1883,26 @@ function renderTab(){
         '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' · <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
         taskerPayoutHtml +
         evidenceHtml +
+        (typeof QGSafety !== 'undefined' && typeof QGSafety.renderSafetyBlockHtml === 'function'
+          ? QGSafety.renderSafetyBlockHtml({ taskId: taskId, isPoster: isPosterTask })
+          : '') +
         '<div class="qg-action-row">'+disputeBtn+reportBtns+'</div>'+
         '<div class="action-row">' + posterActions + workerActions + '</div>'+
       '</div>';
     }).join('');
     if (typeof QG_bindEvidencePanel === 'function') QG_bindEvidencePanel(content);
+    if (typeof QGSafety !== 'undefined' && typeof QGSafety.bindSafetyRoot === 'function') {
+      QGSafety.bindSafetyRoot(content);
+    }
+    if (typeof QGTeenSafety !== 'undefined') {
+      if (typeof QGTeenSafety.bindRoot === 'function') QGTeenSafety.bindRoot(content);
+      var teenJobIds = inProg.filter(function(t){
+        return getField(t,'POSTED_BY') !== userId;
+      }).map(function(t){ return getField(t,'TASK_ID'); });
+      if (typeof QGTeenSafety.ensureSessionsForTasks === 'function') {
+        QGTeenSafety.ensureSessionsForTasks(teenJobIds);
+      }
+    }
   }
 
   else if(activeTab === 'completed'){
@@ -2426,6 +2445,9 @@ window.markComplete = async function(taskId, btn){
     return;
   }
   showCompletedUi(result.task_id || canonicalTaskId || taskId);
+  if (typeof QGTeenSafety !== 'undefined' && typeof QGTeenSafety.endSession === 'function') {
+    try { QGTeenSafety.endSession(result.task_id || canonicalTaskId || taskId, 'ended_complete'); } catch (e) {}
+  }
   if (btn && typeof qgMicroConfirm === 'function') qgMicroConfirm(btn);
   if (typeof qgCelebrate === 'function') qgCelebrate({ count: 40 });
   if (typeof haptic === 'function') haptic([15, 30, 15]);
@@ -2807,6 +2829,9 @@ onAuthStateChanged(auth, function (user) {
   }
   // Load tasks immediately ? profile sync must not block the list
   bootMyTasks();
+  if (typeof QG_loadAgeTier === 'function') {
+    QG_loadAgeTier(user.uid).catch(function () {});
+  }
   if (typeof syncCurrentUserProfile === 'function') {
     Promise.race([
       syncCurrentUserProfile(user),

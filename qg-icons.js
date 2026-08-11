@@ -20,6 +20,7 @@
     star: '<path d="m12 3 2.6 5.3 5.9.9-4.2 4.1 1 5.8L12 16.5 6.7 19.1l1-5.8L3.5 9.2l5.9-.9L12 3Z"/>',
     inbox: '<path d="M22 13v5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-5"/><path d="m2 8 3.5-4h13L22 8"/><path d="M2 13h6l2 3h4l2-3h6"/>',
     alert: '<path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17h.01"/>',
+    shield: '<path d="M12 3 5 6v6c0 5 3.5 8.5 7 9.5 3.5-1 7-4.5 7-9.5V6l-7-3Z"/><path d="m9 12 2 2 4-4"/>',
     refresh: '<path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/>',
     send: '<path d="m22 2-7 20-4-9-9-4 20-7Z"/><path d="M22 2 11 13"/>',
     camera: '<path d="M4 8h3l2-2h6l2 2h3v11H4V8Z"/><circle cx="12" cy="13" r="3.5"/>',

@@ -50,13 +50,26 @@
       <li>Tap <strong>Report</strong> on a task or profile immediately.</li>
       <li>Open a <strong>Dispute</strong> from My Tasks if a job went badly.</li>
       <li>Email <a href="mailto:support@quickgigs.ca">support@quickgigs.ca</a> for urgent issues.</li>
-      <li>Call <strong>911</strong> in an emergency — QuickGigs support is not emergency services.</li>
+      <li>Call <strong id="qgSafetyEmergencyLabel">911</strong> in an emergency — QuickGigs support is not emergency services.</li>
     </ul>
+    <p class="qg-safety-page-disclaimer" id="qgSafetyPageDisclaimer">911 connects you to public emergency services. QuickGigs is not an emergency responder.</p>
   </div>
 </div>
 <footer class="site-footer" id="siteFooter"></footer>
+<script src="qg-config.js?v=20260811safety1"></script>
 <script src="qg-cookies.js"></script>
 <script src="qg-site.js"></script>
 <script src="qg-content.js?v=20260811content1"></script>
+<script>
+(function () {
+  var label = (window.QG_CONFIG && (QG_CONFIG.emergencyNumberLabel || QG_CONFIG.emergencyNumber)) || '911';
+  var el = document.getElementById('qgSafetyEmergencyLabel');
+  if (el) el.textContent = label;
+  var d = document.getElementById('qgSafetyPageDisclaimer');
+  if (d) {
+    d.textContent = label + ' connects you to public emergency services. QuickGigs is not an emergency responder.';
+  }
+})();
+</script>
 </body>
 </html>

@@ -145,6 +145,51 @@
           '\n\nOpen the gig:\n' + (p.link || 'https://quickgigs.ca/browsetask.html') +
           '\n\nManage alerts in your Tasker profile settings.\n\n— QuickGigs';
       }
+    },
+    guardian_teen_job_start: {
+      subject: function (p) { return 'Job started — ' + (p.teenName || 'your teen'); },
+      body: function (p) {
+        return (p.teenName || 'Your teen') + ' started an in-person QuickGigs job.\n\n' +
+          'Task: ' + (p.taskTitle || 'Gig') + '\n' +
+          'Poster: ' + (p.posterName || 'Poster') + (p.posterVerified ? ' (verified)' : '') + '\n' +
+          (p.distanceKm != null ? 'Distance from home (approx): ' + p.distanceKm + ' km\n' : '') +
+          'Open your guardian portal to monitor check-ins and location during this job only.\n\n' +
+          (p.link || '') + '\n\nQuickGigs is not an emergency responder.';
+      }
+    },
+    guardian_teen_stamp: {
+      subject: function (p) { return 'Update — ' + (p.teenName || 'your teen') + ' · ' + (p.stamp || 'stamp'); },
+      body: function (p) {
+        return (p.teenName || 'Your teen') + ' marked “' + (p.stamp || 'a stamp') + '” on “' +
+          (p.taskTitle || 'a gig') + '”.\n\nOpen the guardian portal for live status.\n' + (p.link || '');
+      }
+    },
+    guardian_teen_missed_checkin: {
+      subject: function (p) { return 'Missed check-in — ' + (p.teenName || 'your teen'); },
+      body: function (p) {
+        return (p.teenName || 'Your teen') + ' missed a safety check-in on an active QuickGigs job.\n\n' +
+          (p.locationLink ? 'Last shared location:\n' + p.locationLink + '\n\n' : '') +
+          'Open the guardian portal to review or end the job.\n\n' +
+          'QuickGigs is not an emergency responder.';
+      }
+    },
+    guardian_teen_need_help: {
+      subject: function (p) { return 'Need help — ' + (p.teenName || 'your teen'); },
+      body: function (p) {
+        return (p.teenName || 'Your teen') + ' tapped “Need help” on an active QuickGigs job.\n\n' +
+          (p.locationLink ? 'Live location:\n' + p.locationLink + '\n\n' : '') +
+          'Contact them and consider ending the job from the guardian portal.\n\n' +
+          'QuickGigs is not an emergency responder.';
+      }
+    },
+    guardian_teen_safety_alert: {
+      subject: function (p) { return 'Safety alert — ' + (p.teenName || 'your teen'); },
+      body: function (p) {
+        return (p.teenName || 'Your teen') + ' triggered a Safety alert on an active QuickGigs job.\n\n' +
+          (p.locationLink ? 'Live location:\n' + p.locationLink + '\n\n' : '') +
+          'Contact them immediately. If needed, call local emergency services.\n\n' +
+          'QuickGigs is not an emergency responder and does not dispatch help.';
+      }
     }
   };
 

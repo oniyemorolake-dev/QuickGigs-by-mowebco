@@ -942,6 +942,7 @@ function qgAuthLsKeyShouldKeep(key) {
   if (QG_AUTH_LS_KEEP[key]) return true;
   if (key.indexOf('qg-welcome-tour:') === 0) return true;
   if (key.indexOf('qg-onboarding-done:') === 0) return true;
+  if (key.indexOf('qg-safety-settings:') === 0) return true;
   return false;
 }
 

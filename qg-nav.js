@@ -458,7 +458,7 @@
   document.head.appendChild(mobileScript);
 
   var menuScript = document.createElement('script');
-  menuScript.src = 'qg-menu.js?v=5';
+  menuScript.src = 'qg-menu.js?v=20260811safety1';
   menuScript.defer = true;
   document.head.appendChild(menuScript);
 

@@ -12,7 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
 <link rel="stylesheet" href="qg-shell.css?v=20260811shell1" id="qg-shell-css">
-<link rel="stylesheet" href="qg-guardian.css?v=20260811guardian1" id="qg-guardian-css">
+<link rel="stylesheet" href="qg-guardian.css?v=20260811teensafety1" id="qg-guardian-css">
 <script src="qg-theme.js"></script>
 <script src="qg-brand-init.js"></script>
 <script>document.documentElement.setAttribute('data-qg-mode','worker');</script>
@@ -26,7 +26,7 @@
   <section class="gp-hero">
     <div class="gp-eyebrow">Guardian review</div>
     <h1>Approve gigs before they reach the poster</h1>
-    <p>Review the task, poster reputation, distance, and application message. Precise addresses and private contact details are never shown here.</p>
+    <p>Review the task, poster reputation, distance, and application message. Precise addresses and private contact details are never shown here. Active jobs also appear below for live safety cover.</p>
   </section>
   <div class="gp-teen-bar" id="teenBar" hidden>
     <div>
@@ -39,21 +39,42 @@
     <strong>Guardian payout setup needed</strong>
     Completed-gig payouts for this teen route to your Stripe account. Finish Connect setup from your account-approval email so money can be released when jobs complete.
   </div>
+
+  <section class="gp-live" id="liveSection" hidden>
+    <div class="gp-live-head">
+      <div>
+        <div class="gp-section-kicker">Live safety</div>
+        <h2 class="gp-live-title">Active jobs</h2>
+        <p class="gp-live-sub">Location is shared with you only while a job is active. End a job if something feels off.</p>
+      </div>
+      <span class="gp-live-pulse" id="livePulse" hidden>Live</span>
+    </div>
+    <div id="liveQueue" class="gp-live-queue"></div>
+  </section>
+
   <div id="portalState" class="gp-state" aria-live="polite"></div>
   <div id="queue" class="gp-queue" hidden></div>
 </main>
-<script src="qg-config.js?v=20260730guardian1"></script>
+<script src="qg-config.js?v=20260811teensafety1"></script>
 <script>
 (function(){
   var token = new URLSearchParams(location.search).get('token') || '';
   var endpoint = (window.QG_CONFIG && window.QG_CONFIG.guardianQueueUrl) ||
     'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/guardian-queue';
+  var teenSafetyUrl = (window.QG_CONFIG && window.QG_CONFIG.teenSafetyUrl) ||
+    'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/teen-safety';
+  var pollSeconds = Number((window.QG_CONFIG && window.QG_CONFIG.teenSafety && window.QG_CONFIG.teenSafety.guardianPollSeconds) || 30);
   var state = document.getElementById('portalState');
   var queue = document.getElementById('queue');
   var teenBar = document.getElementById('teenBar');
   var teenName = document.getElementById('teenName');
   var pendingBadge = document.getElementById('pendingBadge');
   var payoutPrompt = document.getElementById('payoutPrompt');
+  var liveSection = document.getElementById('liveSection');
+  var liveQueue = document.getElementById('liveQueue');
+  var livePulse = document.getElementById('livePulse');
+  var teenContact = { email: '', phone: '', name: '' };
+  var pollTimer = null;
 
   function text(tag, cls, value){
     var el=document.createElement(tag);if(cls)el.className=cls;el.textContent=value==null?'':String(value);return el;
@@ -74,6 +95,16 @@
     if(!res.ok||data.ok===false)throw new Error(data.error||'request_failed');
     return data;
   }
+  async function teenSafety(action, extra){
+    var res=await fetch(teenSafetyUrl,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(Object.assign({token:token,action:action},extra||{}))
+    });
+    var data=await res.json().catch(function(){return{};});
+    if(!res.ok||data.ok===false)throw new Error(data.error||'request_failed');
+    return data;
+  }
   function formatMoney(value){var n=Number(value)||0;return '$'+n.toFixed(n%1?2:0)+' CAD';}
   function formatSchedule(task){
     if(task.scheduled_label) return String(task.scheduled_label);
@@ -84,6 +115,21 @@
       }catch(e){}
     }
     return 'Schedule flexible / not set';
+  }
+  function stampLabel(raw){
+    var s=String(raw||'').replace(/_/g,' ');
+    if(!s) return 'No stamp yet';
+    return s.charAt(0).toUpperCase()+s.slice(1);
+  }
+  function checkInLabel(state){
+    var map={
+      ok:'Checked in',
+      awaiting:'Waiting for check-in',
+      overdue:'Missed check-in',
+      need_help:'Need help',
+      safety_alert:'Safety alert'
+    };
+    return map[String(state||'')]||String(state||'Unknown');
   }
   function renderItem(item){
     var task=item.task||{};
@@ -154,6 +200,99 @@
     card.appendChild(actions);
     return card;
   }
+  function renderLiveItem(item){
+    var session=item.session||{};
+    var task=item.task||{};
+    var poster=item.poster||{};
+    var card=document.createElement('article');
+    card.className='gp-live-card';
+    var alertState=String(session.check_in_state||'');
+    if(alertState==='need_help'||alertState==='safety_alert'||alertState==='overdue'){
+      card.className+=' is-alert';
+    }
+
+    var head=document.createElement('div');
+    head.className='gp-live-card-head';
+    head.appendChild(text('div','gp-live-task',task.title||'Active gig'));
+    head.appendChild(text('span','gp-live-state',checkInLabel(alertState)));
+    card.appendChild(head);
+
+    var meta=document.createElement('div');
+    meta.className='gp-meta';
+    meta.appendChild(text('span','gp-pill',poster.name||task.poster_name||'Poster'));
+    if(poster.avgRating!=null){
+      meta.appendChild(text('span','gp-pill',String(poster.avgRating)+' · '+(poster.reviewCount||0)+' reviews'));
+    }else{
+      meta.appendChild(text('span','gp-pill','New poster'));
+    }
+    if(poster.verified) meta.appendChild(text('span','gp-pill is-verified','Verified poster'));
+    if(session.home_distance_km!=null && session.home_distance_km!==''){
+      meta.appendChild(text('span','gp-pill',Number(session.home_distance_km).toFixed(1)+' km from home'));
+    }
+    if(session.started_at){
+      try{
+        var started=new Date(session.started_at);
+        if(!isNaN(started.getTime())){
+          meta.appendChild(text('span','gp-pill','Started '+started.toLocaleString(undefined,{dateStyle:'short',timeStyle:'short'})));
+        }
+      }catch(e){}
+    }
+    meta.appendChild(text('span','gp-pill','Stamp: '+stampLabel(session.last_stamp)));
+    card.appendChild(meta);
+
+    if(item.locationLink){
+      var loc=document.createElement('a');
+      loc.className='gp-live-loc';
+      loc.href=item.locationLink;
+      loc.target='_blank';
+      loc.rel='noopener noreferrer';
+      loc.textContent='Open live location';
+      card.appendChild(loc);
+      if(session.last_location_at){
+        try{
+          var when=new Date(session.last_location_at);
+          if(!isNaN(when.getTime())){
+            card.appendChild(text('div','gp-live-loc-meta','Updated '+when.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})));
+          }
+        }catch(e2){}
+      }
+    }else{
+      card.appendChild(text('div','gp-live-loc-meta','Location not shared yet — shared only during this active job.'));
+    }
+
+    var actions=document.createElement('div');
+    actions.className='gp-live-actions';
+    var msg=text('a','gp-btn gp-btn-msg','Message teen');
+    var phone=String(teenContact.phone||'').replace(/[^\d+]/g,'');
+    var email=String(teenContact.email||'');
+    if(phone){
+      msg.href='sms:'+phone;
+    }else if(email){
+      msg.href='mailto:'+encodeURIComponent(email)+'?subject='+encodeURIComponent('QuickGigs check-in');
+    }else{
+      msg.href='#';
+      msg.onclick=function(e){e.preventDefault();alert('Teen contact details are not available on this link.');};
+    }
+    var end=text('button','gp-btn gp-btn-end','End job');
+    end.type='button';
+    end.onclick=async function(){
+      if(!confirm('End this job for safety? The teen will be notified to leave the meetup.')) return;
+      end.disabled=true;
+      try{
+        await teenSafety('end_job',{task_id:String(session.task_id||task.task_id||'')});
+        card.className='gp-result is-declined';
+        card.textContent='Job ended. The teen was notified.';
+        refreshLive();
+      }catch(err){
+        end.disabled=false;
+        alert('Could not end the job. Refresh and try again.');
+      }
+    };
+    actions.appendChild(msg);
+    actions.appendChild(end);
+    card.appendChild(actions);
+    return card;
+  }
   function updatePendingCount(delta){
     if(!pendingBadge) return;
     var n=parseInt(pendingBadge.getAttribute('data-count')||'0',10)||0;
@@ -173,6 +312,41 @@
       : '<div class="gp-empty-title">You\'re all caught up</div><p>No approval requests are waiting right now.</p>';
     queue.hidden=true;
     queue.innerHTML='';
+  }
+  async function refreshLive(){
+    if(!token||!liveSection||!liveQueue) return;
+    try{
+      await teenSafety('poll_overdue');
+      var data=await teenSafety('list_active');
+      if(data.teen){
+        teenContact={
+          name:data.teen.name||'',
+          email:data.teen.email||'',
+          phone:data.teen.phone||''
+        };
+      }
+      var items=data.items||[];
+      liveQueue.innerHTML='';
+      if(!items.length){
+        liveSection.hidden=true;
+        if(livePulse) livePulse.hidden=true;
+        return;
+      }
+      liveSection.hidden=false;
+      if(livePulse) livePulse.hidden=false;
+      items.forEach(function(item){liveQueue.appendChild(renderLiveItem(item));});
+    }catch(err){
+      // Soft-fail: approvals still work if teen-safety not deployed yet.
+      liveSection.hidden=true;
+    }
+  }
+  function startLivePoll(){
+    if(pollTimer) clearInterval(pollTimer);
+    var ms=(isFinite(pollSeconds)&&pollSeconds>5?pollSeconds:30)*1000;
+    pollTimer=setInterval(refreshLive,ms);
+    document.addEventListener('visibilitychange',function(){
+      if(document.visibilityState==='visible') refreshLive();
+    });
   }
   async function load(){
     showLoading();
@@ -197,11 +371,15 @@
         var payoutReady=teen.guardian_stripe_payouts_enabled===true||teen.guardian_stripe_payouts_enabled===1;
         payoutPrompt.hidden=!!payoutReady;
       }
-      if(!items.length){showEmpty();return;}
-      state.hidden=true;
-      queue.hidden=false;
-      queue.innerHTML='';
-      items.forEach(function(item){queue.appendChild(renderItem(item));});
+      if(!items.length){showEmpty();}
+      else{
+        state.hidden=true;
+        queue.hidden=false;
+        queue.innerHTML='';
+        items.forEach(function(item){queue.appendChild(renderItem(item));});
+      }
+      await refreshLive();
+      startLivePoll();
     }catch(err){
       state.hidden=false;
       state.className='gp-state is-error';

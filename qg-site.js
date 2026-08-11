@@ -101,7 +101,7 @@
     }
     var s = document.createElement('script');
     s.id = 'qg-menu-loader';
-    s.src = 'qg-menu.js?v=3';
+    s.src = 'qg-menu.js?v=20260811safety1';
     s.defer = true;
     document.head.appendChild(s);
   })();

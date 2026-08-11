@@ -1,0 +1,446 @@
+/**
+ * QuickGigs — Safety / emergency block + settings sheet (tokens only).
+ */
+
+.qg-safety-block {
+  margin: 12px 0 4px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+  background: var(--danger-soft);
+}
+
+.qg-safety-block-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.qg-safety-shield {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+  color: var(--danger);
+  flex-shrink: 0;
+}
+
+.qg-safety-shield .qg-ico,
+.qg-safety-shield-ico {
+  color: var(--danger) !important;
+  stroke: currentColor;
+}
+
+.qg-safety-block-titles {
+  min-width: 0;
+}
+
+.qg-safety-block-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--danger);
+}
+
+.qg-safety-block-sub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.qg-safety-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font: 600 14px 'DM Sans', sans-serif;
+  cursor: pointer;
+  text-decoration: none;
+  border: none;
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+.qg-safety-btn .qg-ico,
+.qg-safety-btn .qg-safety-ico {
+  flex-shrink: 0;
+  stroke: currentColor;
+}
+
+.qg-safety-btn-danger {
+  width: 100%;
+  background: var(--danger);
+  color: #fff;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--danger) 28%, transparent);
+}
+
+html.light .qg-safety-btn-danger,
+body.light .qg-safety-btn-danger {
+  color: #fff;
+}
+
+.qg-safety-btn-muted {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface-1);
+  border: 1px solid var(--line-strong);
+  color: var(--text-secondary);
+}
+
+.qg-safety-btn-accent {
+  background: var(--grad-accent);
+  color: var(--on-accent);
+}
+
+.qg-safety-btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.qg-safety-checkin {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.qg-safety-contact-line {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.qg-safety-edit-link {
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: 600 12px 'DM Sans', sans-serif;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.qg-safety-disclaimer {
+  margin: 10px 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+/* Confirm / settings sheet */
+.qg-safety-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 640;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: color-mix(in srgb, #05000f 55%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.qg-safety-overlay[hidden] {
+  display: none !important;
+}
+
+.qg-safety-sheet {
+  width: 100%;
+  max-width: 480px;
+  max-height: min(88dvh, 640px);
+  overflow-y: auto;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-bottom: none;
+  border-radius: 22px 22px 0 0;
+  padding: 0 18px calc(16px + env(safe-area-inset-bottom, 0px));
+  color: var(--text-primary);
+  box-shadow: 0 -16px 48px color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.qg-safety-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line-strong);
+  margin: 10px auto 0;
+}
+
+.qg-safety-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0 8px;
+}
+
+.qg-safety-sheet-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.qg-safety-sheet-close {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.qg-safety-confirm-copy,
+.qg-safety-settings-lead {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.qg-safety-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.qg-safety-field-lbl {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.qg-safety-input {
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font: 400 16px 'DM Sans', sans-serif;
+}
+
+.qg-safety-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 4px 0 14px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.qg-safety-check input {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+.qg-safety-sheet-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.qg-safety-sheet-actions .qg-safety-btn {
+  width: 100%;
+}
+
+@media (min-width: 720px) {
+  .qg-safety-overlay {
+    align-items: center;
+    padding: 24px;
+  }
+
+  .qg-safety-sheet {
+    border-radius: 18px;
+    border-bottom: 1px solid var(--line);
+    max-height: min(80vh, 560px);
+  }
+
+  .qg-safety-handle {
+    display: none;
+  }
+}
+
+/* Poster mode: danger stays danger; accent buttons follow mode */
+html[data-qg-mode="poster"] .qg-safety-btn-accent,
+body.qg-mode-poster .qg-safety-btn-accent {
+  background: var(--grad-accent);
+  color: var(--on-accent);
+}
+
+/* Teen guardian-watching + check-in (extends Safety; tokens only) */
+.qg-teen-watching {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent-tasker) 28%, transparent);
+  background: color-mix(in srgb, var(--accent-soft) 70%, var(--surface-1));
+}
+
+html.light .qg-teen-watching,
+body.light .qg-teen-watching {
+  background: color-mix(in srgb, var(--accent-soft) 55%, #fff);
+}
+
+.qg-teen-watching-dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--money);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--money) 55%, transparent);
+  animation: qgTeenPulse 1.8s ease-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes qgTeenPulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--money) 45%, transparent); }
+  70% { box-shadow: 0 0 0 10px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+.qg-teen-watching-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.qg-teen-watching-copy strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.qg-teen-watching-copy span {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.qg-teen-meetup-banner {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--attention);
+  background: var(--attention-soft);
+  border: 1px solid color-mix(in srgb, var(--attention) 32%, transparent);
+}
+
+.qg-teen-meetup-banner.is-block {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+}
+
+.qg-teen-meetup-banner .qg-ico,
+.qg-teen-meetup-banner .qg-teen-safety-ico {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.qg-teen-checkin-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.qg-teen-checkin-overlay[hidden] {
+  display: none !important;
+}
+
+.qg-teen-checkin-sheet {
+  width: min(420px, 100%);
+  padding: 22px 18px 18px;
+  border-radius: 20px 20px 16px 16px;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  box-shadow: 0 18px 50px color-mix(in srgb, var(--bg) 55%, transparent);
+}
+
+.qg-teen-checkin-title {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+}
+
+.qg-teen-checkin-sub,
+.qg-teen-checkin-note {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.qg-teen-checkin-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 16px 0 12px;
+}
+
+.qg-teen-checkin-btn {
+  min-height: 48px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.qg-teen-checkin-btn.is-ok {
+  border: none;
+  background: var(--grad-tasker);
+  color: var(--on-accent);
+}
+
+.qg-teen-checkin-btn.is-help {
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+@media (min-width: 640px) {
+  .qg-teen-checkin-overlay {
+    align-items: center;
+  }
+  .qg-teen-checkin-sheet {
+    border-radius: 20px;
+  }
+}
+
+.qg-safety-page-disclaimer {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}

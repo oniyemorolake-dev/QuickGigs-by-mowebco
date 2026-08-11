@@ -347,6 +347,46 @@ function buildSpec(type: string, payload: NotifPayload, fallbackSubject: string,
         ctaHref: linkOr(payload, `${SITE}/dashboard.html`),
       };
 
+    case 'guardian_teen_job_start':
+    case 'guardian_teen_stamp':
+    case 'guardian_teen_missed_checkin':
+    case 'guardian_teen_need_help':
+    case 'guardian_teen_safety_alert': {
+      const loc = str(payload.locationLink || payload.link, '');
+      const stamp = str(payload.stamp, '');
+      const titles: Record<string, string> = {
+        guardian_teen_job_start: 'Teen job started',
+        guardian_teen_stamp: 'Teen job update',
+        guardian_teen_missed_checkin: 'Missed check-in',
+        guardian_teen_need_help: 'Teen needs help',
+        guardian_teen_safety_alert: 'Safety alert',
+      };
+      const title = titles[type] || 'Guardian safety update';
+      const paragraphs = [
+        esc(fallbackText || `${teenName} sent a QuickGigs safety update.`),
+      ];
+      if (loc) paragraphs.push(`Location: <a href="${esc(loc)}" style="color:${BRAND}">${esc(loc)}</a>`);
+      if (stamp) paragraphs.push(esc(`Stamp: ${stamp.replace(/_/g, ' ')}`));
+      paragraphs.push('Open the guardian portal for live status. QuickGigs is not an emergency responder.');
+      return {
+        subject: fallbackSubject || title,
+        title,
+        preheader: title,
+        paragraphs,
+        textLines: [
+          fallbackText || `${teenName} sent a QuickGigs safety update.`,
+          loc ? `Location: ${loc}` : '',
+          stamp ? `Stamp: ${stamp.replace(/_/g, ' ')}` : '',
+          '',
+          'Open the guardian portal for live status.',
+          'QuickGigs is not an emergency responder.',
+        ].filter(Boolean),
+        ctaLabel: 'Open guardian portal',
+        ctaHref: linkOr(payload, `${SITE}/guardian-portal.html`),
+        showPrefs: false,
+      };
+    }
+
     case 'waitlist_invite':
       return {
         subject: fallbackSubject || "You're invited to QuickGigs beta",
