@@ -58,15 +58,21 @@ window.QG_CONFIG = {
   raiseDisputeUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/raise-dispute',
   resolveDisputeUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/resolve-dispute',
   disputeAutoRulesUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/dispute-auto-rules',
-  // Legacy single % (one-off default only — DO NOT use for fee math).
-  // All fee math must go through feeBreakdown.js:
-  // one-off 15% | recurring 10% | one-off sub 12% | recurring sub 8%.
+  // ── Platform fees (SINGLE KNOB — change here; UI + feeBreakdown.js read these) ──
+  // Poster pays the agreed task amount into escrow (no fee on top).
+  // Tasker pays the platform fee, deducted from their payout.
+  taskerFeePercent: 15, // beta — raise/lower without code edits
+  posterFeePercent: 0,  // future: optional poster-side fee (not charged yet)
+  // Legacy alias — same as taskerFeePercent
   platformFeePercent: 15,
   feeRates: {
+    tasker: 0.15,
+    poster: 0,
+    // Compat aliases (all map to tasker rate)
     oneoff: 0.15,
-    recurring: 0.10,
-    oneoff_sub: 0.12,
-    recurring_sub: 0.08
+    recurring: 0.15,
+    oneoff_sub: 0.15,
+    recurring_sub: 0.15
   },
   createEscrowIntentUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-escrow-intent',
   // UX-only admin allow-list (see qg-admin-gate.js). Prefer adminUids (Firebase UID).

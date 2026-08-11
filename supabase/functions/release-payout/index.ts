@@ -437,9 +437,9 @@ Deno.serve(async (req) => {
     const paymentAmount = Number(getField(payment, 'amount') || 0);
     let workerPayout = Number(getField(payment, 'worker_payout') || 0);
     let platformFee = Number(getField(payment, 'platform_fee') || 0);
-    // If fee fields missing, apply default 15% platform fee (amount − 15% → tasker).
+    // If fee fields missing, apply configured tasker fee (PLATFORM_FEE_PERCENT / fee.ts).
     if (!(workerPayout > 0) && paymentAmount > 0) {
-      const split = feeBreakdown(paymentAmount, { isRecurring: false, isSubscriber: false });
+      const split = feeBreakdown(paymentAmount);
       workerPayout = split.payout;
       platformFee = split.fee;
     }

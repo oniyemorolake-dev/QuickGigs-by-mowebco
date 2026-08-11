@@ -105,9 +105,11 @@
       var title = taskMap[String(tid)] || (typeof formatTaskDisplayTitle === 'function' ? formatTaskDisplayTitle(null, tid) : 'Untitled task');
       var st = paymentStatusLabel(payField(p, 'status'));
       var amount = role === 'worker' ? payField(p, 'worker_payout') : payField(p, 'amount');
+      var gross = payField(p, 'amount');
+      var feeAmt = payField(p, 'platform_fee');
       var sub = role === 'worker'
-        ? ('Platform fee ' + formatMoney(payField(p, 'platform_fee')))
-        : ('Tasker gets ' + formatMoney(payField(p, 'worker_payout')));
+        ? ('Agreed ' + formatMoney(gross) + ' − fee ' + formatMoney(feeAmt) + ' = net ' + formatMoney(amount))
+        : ('Funded into escrow · tasker net ' + formatMoney(payField(p, 'worker_payout')));
       var href = tid ? ('mytasks.html?tab=inprogress&expand=' + encodeURIComponent(String(tid))) : 'mytasks.html';
       return '<a class="pay-history-row" href="' + href + '">' +
         '<div class="pay-history-main">' +
@@ -115,7 +117,7 @@
           '<div class="pay-history-meta">' + esc(formatPayDate(payField(p, 'created_at'))) + ' · ' + esc(sub) + '</div>' +
         '</div>' +
         '<div class="pay-history-right">' +
-          '<div class="pay-history-amt">' + esc(formatMoney(amount)) + '</div>' +
+          '<div class="pay-history-amt is-money">' + esc(formatMoney(amount)) + '</div>' +
           '<span class="pay-history-st ' + st.cls + '">' + esc(st.text) + '</span>' +
         '</div></a>';
     }).join('');

@@ -163,22 +163,8 @@ Deno.serve(async (req) => {
       .eq('firebase_uid', workerId)
       .maybeSingle();
 
-    const taskMode = String(getField(task as Record<string, unknown>, 'task_mode') || '').toLowerCase();
-    const isRecurring = !!(getField(task as Record<string, unknown>, 'is_recurring')) || taskMode === 'recurring';
-    const isSubscriber = !!(workerUser && workerUser.is_subscriber);
-    let breakdown = feeBreakdown(amount, { isRecurring, isSubscriber });
-    if (Deno.env.get('FEE_FORCE_ENV') === '1') {
-      const envPct = Number(Deno.env.get('PLATFORM_FEE_PERCENT') || '15');
-      const fee = Math.round(amount * (envPct / 100) * 100) / 100;
-      breakdown = {
-        total: amount,
-        fee,
-        payout: Math.round((amount - fee) * 100) / 100,
-        rate: envPct / 100,
-        ratePct: envPct,
-        percent: envPct,
-      };
-    }
+    // Fees: tasker-pays model — poster funds agreed amount; fee from PLATFORM_FEE_PERCENT / fee.ts
+    const breakdown = feeBreakdown(amount);
 
     const amountCents = Math.round(breakdown.total * 100);
     const transferGroup = taskTransferGroup(paymentTaskId);

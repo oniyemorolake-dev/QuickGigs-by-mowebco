@@ -3,59 +3,76 @@
  * Route ALL fee display / commitment math through feeBreakdown() — never hardcode rates.
  * Server mirror: supabase/functions/_shared/fee.ts + create-checkout / create-escrow-intent.
  *
- * Rates:
- *   one-off                 15%  (escrow default — poster pays full; tasker gets 85%)
- *   recurring               10%
- *   one-off + subscriber    12%
- *   recurring + subscriber   8%
+ * Model (beta):
+ *   • Poster pays the agreed task amount into escrow — no platform fee added on top.
+ *   • Tasker pays the platform fee, deducted from their payout.
+ *   • Rate: QG_CONFIG.taskerFeePercent (default 15). Change that one value to raise/lower.
  *
- * amount = total for THIS charge (hourly → hourly_rate * est_hours).
- *
- * FUTURE: per-period Stripe billing (subscriptions / scheduled invoices) for recurring
- * jobs — fee applies to each period total. Escrow checkout is live in TEST mode.
+ * Future (not charged yet): QG_CONFIG.posterFeePercent — optional poster-side fee on top.
  * Do NOT process charges here. Never store card/bank numbers — Stripe hosts that.
  */
 (function (global) {
-  var FEE = {
-    oneoff: 0.15,
-    recurring: 0.10,
-    oneoff_sub: 0.12,
-    recurring_sub: 0.08
-  };
-
-  function feeRate(opts) {
-    opts = opts || {};
-    var isRecurring = !!opts.isRecurring;
-    var isSubscriber = !!opts.isSubscriber;
-    if (isRecurring) return isSubscriber ? FEE.recurring_sub : FEE.recurring;
-    return isSubscriber ? FEE.oneoff_sub : FEE.oneoff;
-  }
+  var DEFAULT_TASKER_FEE_PERCENT = 15;
+  var DEFAULT_POSTER_FEE_PERCENT = 0;
 
   function round2(n) {
     return Math.round((Number(n) || 0) * 100) / 100;
   }
 
+  /** Read beta tasker fee % from config — single knob for all UI + client math. */
+  function getTaskerFeePercent() {
+    var cfg = global.QG_CONFIG || {};
+    var pct = Number(cfg.taskerFeePercent);
+    if (!isFinite(pct) || pct < 0) pct = DEFAULT_TASKER_FEE_PERCENT;
+    return pct;
+  }
+
+  /** Future poster-side fee % (0 = off). Not applied to Stripe charge yet. */
+  function getPosterFeePercent() {
+    var cfg = global.QG_CONFIG || {};
+    var pct = Number(cfg.posterFeePercent);
+    if (!isFinite(pct) || pct < 0) pct = DEFAULT_POSTER_FEE_PERCENT;
+    return pct;
+  }
+
+  function feeRate(/* opts */) {
+    return getTaskerFeePercent() / 100;
+  }
+
   /**
-   * @param {number} amount
-   * @param {{ isRecurring?: boolean, isSubscriber?: boolean }} [opts]
-   * @returns {{ total, fee, payout, rate, ratePct, percent }}
-   *   `percent` is an alias of ratePct for older callers.
+   * @param {number} amount — agreed task amount (what poster funds into escrow)
+   * @param {{ isRecurring?: boolean, isSubscriber?: boolean }} [opts] — kept for API compat; rate is config-only
+   * @returns {{
+   *   total, fee, payout, rate, ratePct, percent,
+   *   posterFee, posterPays, taskerFeePercent, posterFeePercent
+   * }}
    */
   function feeBreakdown(amount, opts) {
     opts = opts || {};
     var total = round2(amount);
     if (!isFinite(total) || total < 0) total = 0;
-    var rate = feeRate(opts);
+
+    var taskerPct = getTaskerFeePercent();
+    var rate = taskerPct / 100;
     var fee = round2(total * rate);
     var payout = round2(total - fee);
-    var ratePct = Math.round(rate * 100);
+
+    // Future-proof: poster fee field present but not charged while posterFeePercent === 0
+    var posterPct = getPosterFeePercent();
+    var posterFee = round2(total * (posterPct / 100));
+    var posterPays = round2(total + posterFee);
+
     return {
       total: total,
       fee: fee,
       payout: payout,
       rate: rate,
-      ratePct: ratePct,
-      percent: ratePct
+      ratePct: Math.round(taskerPct),
+      percent: Math.round(taskerPct),
+      posterFee: posterFee,
+      posterPays: posterPays,
+      taskerFeePercent: taskerPct,
+      posterFeePercent: posterPct
     };
   }
 
@@ -64,7 +81,7 @@
     return round2((Number(hourlyRate) || 0) * (Number(hours) || 0));
   }
 
-  /** Build opts from a task + optional worker/user row. */
+  /** Build opts from a task + optional worker/user row (period labels / compat). */
   function feeOptsFromTask(task, userOrWorker) {
     task = task || {};
     userOrWorker = userOrWorker || {};
@@ -135,33 +152,63 @@
     return prefix + '$' + round2(amount) + suffix + (neg ? ', open to offers' : '');
   }
 
+  function periodSuffix(opts, task) {
+    opts = opts || {};
+    if (!(opts.isRecurring != null ? opts.isRecurring : taskIsRecurring(task))) return '';
+    var pl = opts.periodLabel || frequencyPeriodLabel(taskFrequency(task)) || 'per period';
+    return '/' + String(pl).replace(/^per\s+/i, '');
+  }
+
   /**
-   * Commitment / tasker line (exact product copy):
-   * "Poster pays $TOTAL/period · You receive $PAYOUT · QuickGigs fee $FEE (RATEPCT%)"
-   * Poster-facing uses "Tasker receives" instead of "You receive".
+   * Poster-facing: "You pay $TOTAL — the full amount goes into escrow."
+   * (No added fee line. Tasker fee is deducted from their payout, not charged to poster.)
    */
-  function formatCommitmentBreakdown(amountOrTask, opts) {
+  function formatPosterPayLine(amountOrTask, opts) {
     opts = opts || {};
     var task = opts.task || (amountOrTask && typeof amountOrTask === 'object' ? amountOrTask : null);
     var amount = typeof amountOrTask === 'number'
       ? amountOrTask
       : (opts.amount != null ? opts.amount : taskChargeAmount(task));
-    var feeOpts = {
-      isRecurring: opts.isRecurring != null ? !!opts.isRecurring : taskIsRecurring(task),
-      isSubscriber: opts.isSubscriber != null
-        ? !!opts.isSubscriber
-        : (typeof currentUserIsSubscriber === 'function' ? currentUserIsSubscriber() : false)
-    };
-    var b = feeBreakdown(amount, feeOpts);
-    var period = '';
-    if (feeOpts.isRecurring) {
-      var pl = opts.periodLabel || frequencyPeriodLabel(taskFrequency(task)) || 'per period';
-      period = '/' + String(pl).replace(/^per\s+/i, '');
-    }
-    var receiveLabel = opts.taskerFacing ? 'You receive' : 'Tasker receives';
+    var b = feeBreakdown(amount, opts);
+    var period = periodSuffix(opts, task);
+    return 'You pay $' + b.total.toFixed(2) + period +
+      ' — the full amount goes into escrow.';
+  }
+
+  /**
+   * Tasker-facing: "You'll receive $TOTAL minus the N% QuickGigs fee ($FEE) = $PAYOUT."
+   */
+  function formatTaskerPayoutLine(amountOrTask, opts) {
+    opts = opts || {};
+    var task = opts.task || (amountOrTask && typeof amountOrTask === 'object' ? amountOrTask : null);
+    var amount = typeof amountOrTask === 'number'
+      ? amountOrTask
+      : (opts.amount != null ? opts.amount : taskChargeAmount(task));
+    var b = feeBreakdown(amount, opts);
+    var period = periodSuffix(opts, task);
+    return "You'll receive $" + b.total.toFixed(2) + period +
+      ' minus the ' + b.ratePct + '% QuickGigs fee ($' + b.fee.toFixed(2) + ')' +
+      ' = $' + b.payout.toFixed(2) + period + '.';
+  }
+
+  /**
+   * Legacy commitment line — routes by audience.
+   * Prefer formatPosterPayLine / formatTaskerPayoutLine for new UI.
+   */
+  function formatCommitmentBreakdown(amountOrTask, opts) {
+    opts = opts || {};
+    if (opts.taskerFacing) return formatTaskerPayoutLine(amountOrTask, opts);
+    if (opts.posterFacing !== false) return formatPosterPayLine(amountOrTask, opts);
+    // Neutral / admin: show both sides explicitly
+    var task = opts.task || (amountOrTask && typeof amountOrTask === 'object' ? amountOrTask : null);
+    var amount = typeof amountOrTask === 'number'
+      ? amountOrTask
+      : (opts.amount != null ? opts.amount : taskChargeAmount(task));
+    var b = feeBreakdown(amount, opts);
+    var period = periodSuffix(opts, task);
     return 'Poster pays $' + b.total.toFixed(2) + period +
-      ' · ' + receiveLabel + ' $' + b.payout.toFixed(2) + period +
-      ' · QuickGigs fee $' + b.fee.toFixed(2) + ' (' + b.ratePct + '%)';
+      ' into escrow · Tasker net $' + b.payout.toFixed(2) + period +
+      ' after ' + b.ratePct + '% fee ($' + b.fee.toFixed(2) + ')';
   }
 
   function currentUserIsSubscriber() {
@@ -171,12 +218,22 @@
     return !!(u && (u.is_subscriber === true || u.is_subscriber === 1 || u.IS_SUBSCRIBER === true));
   }
 
-  /** Shown near recurring / subscriber fee UI. */
-  var RECURRING_FEE_NOTE = 'Recurring jobs have a lower 10% fee — 8% for subscribers.';
+  // Compat export — no longer used (single rate). Kept empty so old concatenations don't crash.
+  var RECURRING_FEE_NOTE = '';
+
+  var FEE = {
+    get tasker() { return feeRate(); },
+    get oneoff() { return feeRate(); },
+    get recurring() { return feeRate(); },
+    get oneoff_sub() { return feeRate(); },
+    get recurring_sub() { return feeRate(); }
+  };
 
   global.QG_FEE = FEE;
   global.RECURRING_FEE_NOTE = RECURRING_FEE_NOTE;
   global.feeRate = feeRate;
+  global.getTaskerFeePercent = getTaskerFeePercent;
+  global.getPosterFeePercent = getPosterFeePercent;
   global.feeBreakdown = feeBreakdown;
   global.periodTotal = periodTotal;
   global.feeOptsFromTask = feeOptsFromTask;
@@ -185,26 +242,38 @@
   global.taskFrequency = taskFrequency;
   global.frequencyPeriodLabel = frequencyPeriodLabel;
   global.formatTaskPriceLabel = formatTaskPriceLabel;
+  global.formatPosterPayLine = formatPosterPayLine;
+  global.formatTaskerPayoutLine = formatTaskerPayoutLine;
   global.formatCommitmentBreakdown = formatCommitmentBreakdown;
   global.currentUserIsSubscriber = currentUserIsSubscriber;
 
-  // Keep qg-config feeRates in sync when present (display/config only — math uses FEE above)
   if (global.QG_CONFIG) {
+    if (global.QG_CONFIG.taskerFeePercent == null) {
+      global.QG_CONFIG.taskerFeePercent = DEFAULT_TASKER_FEE_PERCENT;
+    }
+    if (global.QG_CONFIG.posterFeePercent == null) {
+      global.QG_CONFIG.posterFeePercent = DEFAULT_POSTER_FEE_PERCENT;
+    }
+    global.QG_CONFIG.platformFeePercent = getTaskerFeePercent();
+    var r = feeRate();
     global.QG_CONFIG.feeRates = {
-      oneoff: FEE.oneoff,
-      recurring: FEE.recurring,
-      oneoff_sub: FEE.oneoff_sub,
-      recurring_sub: FEE.recurring_sub
+      oneoff: r,
+      recurring: r,
+      oneoff_sub: r,
+      recurring_sub: r,
+      tasker: r,
+      poster: getPosterFeePercent() / 100
     };
   }
 
-  // CommonJS / bundler optional
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
       FEE: FEE, feeRate: feeRate, feeBreakdown: feeBreakdown, periodTotal: periodTotal,
+      getTaskerFeePercent: getTaskerFeePercent, getPosterFeePercent: getPosterFeePercent,
       feeOptsFromTask: feeOptsFromTask, taskChargeAmount: taskChargeAmount,
       taskIsRecurring: taskIsRecurring, taskFrequency: taskFrequency,
       frequencyPeriodLabel: frequencyPeriodLabel, formatTaskPriceLabel: formatTaskPriceLabel,
+      formatPosterPayLine: formatPosterPayLine, formatTaskerPayoutLine: formatTaskerPayoutLine,
       formatCommitmentBreakdown: formatCommitmentBreakdown,
       RECURRING_FEE_NOTE: RECURRING_FEE_NOTE
     };

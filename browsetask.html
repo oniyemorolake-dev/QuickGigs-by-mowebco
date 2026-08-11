@@ -35,7 +35,7 @@
 <link rel="stylesheet" href="qg-flows.css?v=20260811flows1" id="qg-flows-css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <link rel="stylesheet" href="qg-browse-views.css?v=20260811browse1" id="qg-browse-views-css">
-<link rel="stylesheet" href="qg-trust-profile.css?v=20260811trust1" id="qg-trust-profile-css">
+<link rel="stylesheet" href="qg-trust-profile.css?v=20260811trust2" id="qg-trust-profile-css">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
 <script src="qg-theme.js"></script>
@@ -280,9 +280,10 @@ body.light .tc-price{color:#16a34a;}
 .modal-close:hover{color:var(--text);border-color:var(--purple-light);}
 .modal-sub{font-size:12px;color:var(--text-muted);margin-bottom:18px;}
 .modal-label{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);display:block;margin-bottom:6px;}
-.offer-fee-line{font-size:12px;color:var(--purple-light);line-height:1.45;margin:8px 0 4px;min-height:1.3em;}
-body.light .offer-fee-line{color:var(--purple);}
-.offer-fee-line.is-muted{color:var(--text-faint);opacity:0.85;}
+.offer-fee-line{font-size:12px;color:var(--text-secondary);line-height:1.45;margin:8px 0 4px;min-height:1.3em;}
+.offer-fee-line.is-muted{color:var(--text-muted);opacity:0.85;}
+.offer-fee-line .offer-fee-net{color:var(--money);font-weight:700;}
+.offer-fee-line .offer-fee-gross,.offer-fee-line .offer-fee-cut{font-variant-numeric:tabular-nums;}
 .apply-already{display:none;text-align:center;padding:28px 12px 18px;}
 .apply-already.is-visible{display:block;}
 .apply-already-icon{font-size:28px;margin-bottom:10px;}
@@ -610,13 +611,13 @@ onAuthStateChanged(auth, (user) => {
 </script>
 
 <script defer src="qg-utils.js?v=20260728welcome1"></script>
-<script defer src="feeBreakdown.js?v=20260727fee1"></script>
+<script defer src="feeBreakdown.js?v=20260811fee2"></script>
 <script defer src="contentModeration.js?v=20260727cm1"></script>
 <script defer src="qg-polish.js?v=20260728xss1"></script>
 <script src="qg-ux.js?v=20260728welcome1" defer></script>
 <script src="qg-bigtech.js?v=20260810session1" defer></script>
-<script src="qg-wave2.js?v=20260728xss1" defer></script>
-<script defer src="qg-config.js?v=20260803escrow1"></script>
+<script src="qg-wave2.js?v=20260811trust2" defer></script>
+<script defer src="qg-config.js?v=20260811fee2"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="qg-categories.js"></script>
 <script defer src="supabase-db.js?v=20260730verify1"></script>
@@ -631,7 +632,7 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-share.js"></script>
 <script defer src="qg-saved.js?v=1"></script>
 <script defer src="qg-report.js?v=20260716d"></script>
-<script defer src="qg-stats.js?v=20260730verify1"></script>
+<script defer src="qg-stats.js?v=20260811trust2"></script>
 <script>
 function esc(s){
   return typeof escapeHtml === 'function' ? escapeHtml(s)
@@ -978,12 +979,13 @@ async function loadTasks(){
     if (items && items.length) {
       allTasks = filterBrowseTasks(items.map(normaliseTask));
     } else if ((!cached || !cached.length) && !window._currentUser) {
-      allTasks = getDemoTasks();
+      // Production: never inject seed/demo tasks into Browse (list/map/spotlight).
+      allTasks = [];
     }
   }catch(err){
     console.warn('Supabase unreachable:', err);
     if ((!cached || !cached.length) && !window._currentUser) {
-      allTasks = getDemoTasks();
+      allTasks = [];
     } else if ((!cached || !cached.length) && window._currentUser) {
       var areaErr = document.getElementById('cardsArea');
       if (areaErr && typeof QG_errorStateHtml === 'function') {
@@ -1483,16 +1485,15 @@ function updateOfferFeeLine() {
   var opts = applyFeeOptsForActiveTask();
   if (typeof feeBreakdown !== 'function') {
     el.classList.add('is-muted');
-    el.textContent = 'Fee breakdown loading?';
+    el.textContent = 'Fee breakdown loading…';
     return;
   }
   var b = feeBreakdown(priceNum, opts);
   el.classList.remove('is-muted');
-  el.textContent = "You'll receive $" + b.payout.toFixed(2) +
-    ' after the QuickGigs fee (' + b.ratePct + '%)';
-  if (opts.isRecurring && typeof RECURRING_FEE_NOTE === 'string') {
-    el.textContent += ' ? ' + RECURRING_FEE_NOTE;
-  }
+  // Explicit fee + net take-home (rate from QG_CONFIG.taskerFeePercent).
+  el.innerHTML = "You'll receive <span class=\"offer-fee-gross\">$" + b.total.toFixed(2) +
+    "</span> minus the " + b.ratePct + "% QuickGigs fee (<span class=\"offer-fee-cut\">$" +
+    b.fee.toFixed(2) + "</span>) = <strong class=\"offer-fee-net\">$" + b.payout.toFixed(2) + "</strong>.";
 }
 
 function refreshApplySubmitEnabled() {
@@ -1793,9 +1794,12 @@ window.openModal=async function(id,e){
         var avg = ratings.length ? (ratings.reduce(function(a,b){return a+b;},0) / ratings.length) : null;
         if (metaEl) {
           var parts = [];
-          if (avg != null) parts.push(avg.toFixed(1) + '★');
+          if (avg != null) {
+            var star = typeof qgIcon === 'function' ? qgIcon('star', { size: 12, className: 'qg-trust-ico' }) : '';
+            parts.push('<span class="qg-poster-rating">' + star + avg.toFixed(1) + '</span>');
+          }
           if (ratings.length) parts.push(ratings.length + ' review' + (ratings.length === 1 ? '' : 's'));
-          metaEl.textContent = parts.length ? parts.join(' · ') : 'Poster on QuickGigs';
+          metaEl.innerHTML = parts.length ? parts.join(' · ') : 'Poster on QuickGigs';
         }
       } catch (_e) {}
     })(activeTask.posterId);

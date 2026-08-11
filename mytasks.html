@@ -32,7 +32,7 @@
 <link rel="stylesheet" href="qg-layout.css">
 <link rel="stylesheet" href="qg-role-theme.css?v=20260811tokens1">
 <link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
-<link rel="stylesheet" href="qg-trust-profile.css?v=20260811trust1" id="qg-trust-profile-css">
+<link rel="stylesheet" href="qg-trust-profile.css?v=20260811trust2" id="qg-trust-profile-css">
 <link rel="stylesheet" href="qg-mobile.css">
 <link rel="stylesheet" href="qg-menu.css?v=3">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
@@ -102,6 +102,9 @@ body.light .badge-open{background:#ede9ff;color:var(--purple);}
 .tc-meta{font-size:11px;color:var(--text-faint);margin-bottom:10px;}
 .tc-meta-price{color:var(--money);font-weight:500;}
 body.light .tc-meta-price{color:var(--money);}
+.tc-payout-summary{font-size:12px;line-height:1.5;color:var(--text-secondary);margin:6px 0 2px;}
+.tc-payout-summary .tc-payout-net{color:var(--money);font-weight:700;}
+.tc-payout-summary .tc-payout-gross,.tc-payout-summary .tc-payout-fee{font-variant-numeric:tabular-nums;}
 .tc-bottom{display:flex;align-items:center;justify-content:space-between;}
 .tc-price{font-size:15px;font-weight:500;color:var(--text);}
 .tc-applicants{font-size:11px;color:var(--purple-light);margin-top:8px;}
@@ -275,13 +278,13 @@ body.light .app-legal-footer a{color:var(--purple);}
 
 <nav class="tab-bar" id="qgTabBar"></nav>
 
-<script defer src="feeBreakdown.js?v=20260727fee1"></script>
+<script defer src="feeBreakdown.js?v=20260811fee2"></script>
 <script defer src="qg-utils.js?v=20260728welcome1"></script>
 <script defer src="qg-polish.js?v=20260728xss1"></script>
 <script src="qg-ux.js?v=20260728welcome1" defer></script>
 <script src="qg-bigtech.js?v=20260810session1" defer></script>
-<script src="qg-wave2.js?v=20260728xss1" defer></script>
-<script defer src="qg-config.js?v=20260804evidence1"></script>
+<script src="qg-wave2.js?v=20260811trust2" defer></script>
+<script defer src="qg-config.js?v=20260811fee2"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="supabase-db.js?v=20260804evidence1"></script>
 <script defer src="qg-verification.js?v=20260811pay1"></script>
@@ -296,8 +299,8 @@ body.light .app-legal-footer a{color:var(--purple);}
 (function(){document.querySelectorAll('#qgReportOverlay,#qgDisputeOverlay,.qg-report-overlay').forEach(function(n){n.remove()});})();
 </script>
 <script defer src="qg-report.js?v=20260716d"></script>
-<script defer src="qg-stats.js?v=20260730verify1"></script>
-<script defer src="qg-trust-profile.js?v=20260811trust1"></script>
+<script defer src="qg-stats.js?v=20260811trust2"></script>
+<script defer src="qg-trust-profile.js?v=20260811trust2"></script>
 <script defer src="qg-confetti.js?v=1"></script>
 <script defer src="qg-disputes.js?v=20260804evidence1"></script>
 <script defer src="qg-evidence.js?v=20260804evidence1"></script>
@@ -1154,6 +1157,17 @@ function formatAppPriceHtml(a) {
   return '$' + price + ' CAD';
 }
 
+/** Tasker take-home line — fee rate from feeBreakdown / QG_CONFIG.taskerFeePercent. */
+function formatTaskerPayoutMetaHtml(amount) {
+  var n = Number(amount);
+  if (!isFinite(n) || n <= 0) return '';
+  if (typeof feeBreakdown !== 'function') return '';
+  var b = feeBreakdown(n);
+  return '<div class="tc-payout-summary">You\'ll receive <span class="tc-payout-gross">$' +
+    b.total.toFixed(2) + '</span> minus the ' + b.ratePct + '% QuickGigs fee (<span class="tc-payout-fee">$' +
+    b.fee.toFixed(2) + '</span>) = <strong class="tc-payout-net">$' + b.payout.toFixed(2) + '</strong></div>';
+}
+
 function formatTaskBudgetMeta(task) {
   var budget = getField(task, 'BUDGET');
   if (isTaskNegotiable(task)) return 'Around $' + budget + ' CAD · negotiable';
@@ -1757,6 +1771,7 @@ function renderTab(){
         return '<div class="'+cardClass+'">'+
         '<div class="tc-top"><div class="tc-left">'+profileTapIcon(posterId, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">Applied · Posted by '+personLink(posterName, posterId)+'</div><div class="tc-title">'+esc(typeof formatTaskDisplayTitle==='function'?formatTaskDisplayTitle(task, getField(a,'TASK_ID')):(getField(task,'TITLE')||'Untitled task'))+'</div></div></div>'+statusLabel+'</div>'+
         '<div class="tc-meta">Your offer: '+formatAppPriceHtml(a)+' · '+esc(getField(a,'MESSAGE')).substring(0,60)+'...'+(getField(task,'CREATED_AT') && typeof formatRelativeTime === 'function' ? ' · Task posted '+esc(formatRelativeTime(getField(task,'CREATED_AT'))) : '')+'</div>'+
+        formatTaskerPayoutMetaHtml(getField(a,'PRICE') || getField(a,'price'))+
         negoBlock+
         actions+
       '</div>';
@@ -1854,10 +1869,14 @@ function renderTab(){
       var evidenceHtml = typeof QG_evidencePanelHtml === 'function'
         ? QG_evidencePanelHtml(taskId, { isWorker: !isPosterTask, frozen: frozen })
         : '';
+      var payoutAmt = acceptedApp ? (getField(acceptedApp, 'PRICE') || getField(t, 'BUDGET')) : getField(t, 'BUDGET');
+      if (payRow && payRow.amount != null) payoutAmt = payRow.amount;
+      var taskerPayoutHtml = !isPosterTask ? formatTaskerPayoutMetaHtml(payoutAmt) : '';
       return '<div class="task-card">'+
         '<div class="tc-top"><div class="tc-left">'+iconHtml+'<div><div class="tc-cat">'+roleLabel+'</div><div class="tc-title">'+esc(typeof formatTaskDisplayTitle==='function'?formatTaskDisplayTitle(t):getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-progress">'+(frozen?'Disputed — frozen':'In progress')+'</span></div>'+
         (typeof qgTaskTimelineHtml === 'function' ? qgTaskTimelineHtml('in_progress') : '')+
         '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' · <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
+        taskerPayoutHtml +
         evidenceHtml +
         '<div class="qg-action-row">'+disputeBtn+reportBtns+'</div>'+
         '<div class="action-row">' + posterActions + workerActions + '</div>'+

@@ -1201,31 +1201,32 @@ window.compressImage = compressImage;
 
 /**
  * Platform fees — prefer feeBreakdown.js (load before this file).
- * Rates: one-off 25% | recurring 10% | one-off sub 20% | recurring sub 8%.
- * Never hardcode 0.25 elsewhere.
+ * Rate from QG_CONFIG.taskerFeePercent (tasker-pays model).
  */
 if (typeof window.feeBreakdown !== 'function') {
   (function () {
-    var FEE = { oneoff: 0.25, recurring: 0.10, oneoff_sub: 0.20, recurring_sub: 0.08 };
-    function feeRate(opts) {
-      opts = opts || {};
-      if (opts.isRecurring) return opts.isSubscriber ? FEE.recurring_sub : FEE.recurring;
-      return opts.isSubscriber ? FEE.oneoff_sub : FEE.oneoff;
+    function taskerPct() {
+      var pct = Number((window.QG_CONFIG || {}).taskerFeePercent);
+      return isFinite(pct) && pct >= 0 ? pct : 15;
     }
+    function feeRate() { return taskerPct() / 100; }
     function round2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
-    window.QG_FEE = FEE;
     window.feeRate = feeRate;
+    window.getTaskerFeePercent = taskerPct;
     window.periodTotal = function (hourlyRate, hours) {
       return round2((Number(hourlyRate) || 0) * (Number(hours) || 0));
     };
-    window.feeBreakdown = function (amount, opts) {
+    window.feeBreakdown = function (amount) {
       var total = round2(amount);
       if (!isFinite(total) || total < 0) total = 0;
-      var rate = feeRate(opts || {});
+      var rate = feeRate();
       var fee = round2(total * rate);
       var payout = round2(total - fee);
-      var ratePct = Math.round(rate * 100);
-      return { total: total, fee: fee, payout: payout, rate: rate, ratePct: ratePct, percent: ratePct };
+      var ratePct = Math.round(taskerPct());
+      return {
+        total: total, fee: fee, payout: payout, rate: rate, ratePct: ratePct, percent: ratePct,
+        posterFee: 0, posterPays: total, taskerFeePercent: taskerPct(), posterFeePercent: 0
+      };
     };
   })();
 }
@@ -1235,49 +1236,31 @@ function formatCadAmount(n) {
 }
 
 /**
- * Poster pays $TOTAL[/period] · Tasker receives $PAYOUT · QuickGigs fee $FEE (RATEPCT%)
- * Always routes through feeBreakdown / formatCommitmentBreakdown — never hardcode %.
+ * Poster: You pay $TOTAL — full amount into escrow.
+ * Tasker: You'll receive $TOTAL minus N% fee ($FEE) = $PAYOUT.
  */
 function formatFeeCommitmentLine(amount, opts) {
   opts = opts || {};
   if (opts.taskerFacing) return formatTaskerPayoutLine(amount, opts);
+  if (typeof formatPosterPayLine === 'function') {
+    return formatPosterPayLine(amount, opts);
+  }
   if (typeof formatCommitmentBreakdown === 'function') {
-    return formatCommitmentBreakdown(amount, Object.assign({}, opts, { taskerFacing: false }));
+    return formatCommitmentBreakdown(amount, Object.assign({}, opts, { taskerFacing: false, posterFacing: true }));
   }
   var b = feeBreakdown(amount, opts);
-  var pct = b.ratePct != null ? b.ratePct : b.percent;
-  var period = '';
-  if (opts.isRecurring) {
-    var pl = opts.periodLabel || 'per period';
-    period = '/' + String(pl).replace(/^per\s+/i, '');
-  }
-  return 'Poster pays $' + b.total.toFixed(2) + period +
-    ' · Tasker receives $' + b.payout.toFixed(2) + period +
-    ' · QuickGigs fee $' + b.fee.toFixed(2) + ' (' + pct + '%)';
+  return 'You pay $' + b.total.toFixed(2) + ' — the full amount goes into escrow.';
 }
 
-/** Tasker-facing: Poster pays $TOTAL · You receive $PAYOUT · QuickGigs fee $FEE (RATEPCT%). */
 function formatTaskerPayoutLine(amount, opts) {
   opts = opts || {};
-  var feeOpts = Object.assign({}, opts, {
-    taskerFacing: true,
-    isSubscriber: opts.isSubscriber != null
-      ? !!opts.isSubscriber
-      : (typeof currentUserIsSubscriber === 'function' ? currentUserIsSubscriber() : !!window._qgIsSubscriber)
-  });
   if (typeof formatCommitmentBreakdown === 'function') {
-    return formatCommitmentBreakdown(amount, feeOpts);
+    return formatCommitmentBreakdown(amount, Object.assign({}, opts, { taskerFacing: true }));
   }
-  var b = feeBreakdown(amount, feeOpts);
-  var pct = b.ratePct != null ? b.ratePct : b.percent;
-  var period = '';
-  if (feeOpts.isRecurring) {
-    var pl = feeOpts.periodLabel || 'per period';
-    period = '/' + String(pl).replace(/^per\s+/i, '');
-  }
-  return 'Poster pays $' + b.total.toFixed(2) + period +
-    ' · You receive $' + b.payout.toFixed(2) + period +
-    ' · QuickGigs fee $' + b.fee.toFixed(2) + ' (' + pct + '%)';
+  var b = feeBreakdown(amount, opts);
+  return "You'll receive $" + b.total.toFixed(2) +
+    ' minus the ' + b.ratePct + '% QuickGigs fee ($' + b.fee.toFixed(2) + ')' +
+    ' = $' + b.payout.toFixed(2) + '.';
 }
 
 function formatFeeBreakdownHtml(amount, opts) {
@@ -1290,7 +1273,7 @@ function formatFeeBreakdownHtml(amount, opts) {
     task: opts.task,
     periodLabel: opts.periodLabel
   };
-  var line = opts.taskerOnly
+  var line = opts.taskerOnly || opts.taskerFacing
     ? formatTaskerPayoutLine(amount, feeOpts)
     : formatFeeCommitmentLine(amount, feeOpts);
   var cls = 'qg-fee-breakdown' + (opts.className ? ' ' + opts.className : '');

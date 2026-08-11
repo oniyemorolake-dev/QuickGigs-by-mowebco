@@ -838,8 +838,10 @@
           if (typeof feeOptsFromTask === 'function' && feeOpts.task && feeOpts.isRecurring == null) {
             feeOpts = Object.assign({}, feeOptsFromTask(feeOpts.task), feeOpts);
           }
-          // Display-only fee line — rates from feeBreakdown.js (not hardcoded).
-          feeEl.textContent = formatFeeCommitmentLine(options.amount, feeOpts) + ' CAD';
+          // Poster checkout: full task amount into escrow (no fee added on top).
+          feeEl.textContent = (typeof formatPosterPayLine === 'function'
+            ? formatPosterPayLine(options.amount, feeOpts)
+            : formatFeeCommitmentLine(options.amount, feeOpts)) + ' CAD';
         }
       } else {
         amountEl.textContent = '';
@@ -913,7 +915,9 @@
           if (typeof feeOptsFromTask === 'function' && feeOpts2.task && feeOpts2.isRecurring == null) {
             feeOpts2 = Object.assign({}, feeOptsFromTask(feeOpts2.task), feeOpts2);
           }
-          feeEl.textContent = formatFeeCommitmentLine(result.amount, feeOpts2) + ' CAD';
+          feeEl.textContent = (typeof formatPosterPayLine === 'function'
+            ? formatPosterPayLine(result.amount, feeOpts2)
+            : formatFeeCommitmentLine(result.amount, feeOpts2)) + ' CAD';
         }
       }
       var checkoutOpts = {

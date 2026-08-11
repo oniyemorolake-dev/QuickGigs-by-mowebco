@@ -18,8 +18,8 @@
 <body class="page-payment">
 <script src="qg-theme.js"></script>
 <script src="qg-brand-init.js"></script>
-<script src="qg-config.js?v=20260803escrow1"></script>
-<script src="feeBreakdown.js?v=20260727fee1"></script>
+<script src="qg-config.js?v=20260811fee2"></script>
+<script src="feeBreakdown.js?v=20260811fee2"></script>
 <script src="qg-utils.js"></script>
 <script src="qg-mobile.js"></script>
 <script src="supabase-db.js"></script>
@@ -42,23 +42,11 @@
 
       <div class="pay-summary" id="amountBox" hidden>
         <div class="pay-task-title" id="taskTitle">Task</div>
-        <div class="pay-row">
-          <span class="pay-row-label">Agreed amount</span>
-          <span class="pay-row-val" id="rowAgreed">$0.00</span>
-        </div>
-        <div class="pay-row is-fee">
-          <span class="pay-row-label" id="rowFeeLabel">QuickGigs fee</span>
-          <span class="pay-row-val" id="rowFee">$0.00</span>
-        </div>
-        <div class="pay-row is-money">
-          <span class="pay-row-label">Tasker receives</span>
-          <span class="pay-row-val" id="rowPayout">$0.00</span>
-        </div>
         <div class="pay-row is-total is-money">
-          <span class="pay-row-label">Total to fund</span>
+          <span class="pay-row-label">You pay</span>
           <span class="pay-row-val" id="rowTotal">$0.00</span>
         </div>
-        <p class="pay-fee-note" id="feeNote"></p>
+        <p class="pay-fee-note" id="feeNote">The full amount goes into escrow. The tasker’s QuickGigs fee is deducted from their payout — not added to what you pay.</p>
       </div>
 
       <div class="pay-escrow" id="escrowBox">
@@ -172,32 +160,18 @@ function setPageMode(mode) {
 function renderFeeBreakdown(amount, task) {
   var feeOpts = typeof feeOptsFromTask === 'function'
     ? feeOptsFromTask(task, window._qgCurrentDbUser || window._currentDbUser || {})
-    : { isRecurring: false, isSubscriber: typeof currentUserIsSubscriber === 'function' && currentUserIsSubscriber() };
-  if (typeof currentUserIsSubscriber === 'function' && feeOpts.isSubscriber == null) {
-    feeOpts.isSubscriber = currentUserIsSubscriber();
-  }
+    : { isRecurring: false, isSubscriber: false };
   var b = typeof feeBreakdown === 'function'
     ? feeBreakdown(amount, feeOpts)
     : { total: amount, fee: 0, payout: amount, ratePct: 0 };
 
   document.getElementById('amountBox').hidden = false;
-  document.getElementById('rowAgreed').textContent = money(b.total);
-  document.getElementById('rowFee').textContent = money(b.fee);
-  document.getElementById('rowPayout').textContent = money(b.payout);
   document.getElementById('rowTotal').textContent = money(b.total) + ' CAD';
-  document.getElementById('rowFeeLabel').textContent = 'QuickGigs fee (' + b.ratePct + '%)';
-
-  var note = '';
-  if (feeOpts.isRecurring && feeOpts.isSubscriber) {
-    note = 'Recurring subscriber rate — fee applies each period.';
-  } else if (feeOpts.isRecurring) {
-    note = 'Recurring rate — fee applies each period.';
-  } else if (feeOpts.isSubscriber) {
-    note = 'Subscriber rate applied.';
-  } else {
-    note = 'Fee is taken from the task total before the tasker payout.';
+  var noteEl = document.getElementById('feeNote');
+  if (noteEl) {
+    noteEl.textContent = 'You pay ' + money(b.total) +
+      ' — the full amount goes into escrow. No platform fee is added on top.';
   }
-  document.getElementById('feeNote').textContent = note;
   return feeOpts;
 }
 

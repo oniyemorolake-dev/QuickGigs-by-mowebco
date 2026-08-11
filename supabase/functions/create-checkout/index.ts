@@ -445,21 +445,8 @@ Deno.serve(async (req) => {
     const taskMode = String(getField(task, 'task_mode') || '').toLowerCase();
     const isRecurring = !!(getField(task, 'is_recurring')) || taskMode === 'recurring';
     const isSubscriber = !!(workerUser && workerUser.is_subscriber);
-    // Fees computed server-side only — client must never recompute for storage.
-    // Default one-off 15% platform fee (escrow); recurring / subscriber rates lower.
-    let breakdown = feeBreakdown(amount, { isRecurring, isSubscriber });
-    if (Deno.env.get('FEE_FORCE_ENV') === '1') {
-      const envPct = Number(Deno.env.get('PLATFORM_FEE_PERCENT') || '15');
-      const fee = Math.round(amount * (envPct / 100) * 100) / 100;
-      breakdown = {
-        total: amount,
-        fee,
-        payout: Math.round((amount - fee) * 100) / 100,
-        rate: envPct / 100,
-        ratePct: envPct,
-        percent: envPct,
-      };
-    }
+    // Fees: tasker-pays model — poster funds agreed amount; fee from PLATFORM_FEE_PERCENT / fee.ts
+    const breakdown = feeBreakdown(amount);
     const amountCents = Math.round(breakdown.total * 100);
     const platformFeeCents = Math.round(breakdown.fee * 100);
     const workerPayoutCents = Math.round(breakdown.payout * 100);

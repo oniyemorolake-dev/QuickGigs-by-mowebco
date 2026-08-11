@@ -67,8 +67,15 @@ body.page-posttask .error-banner {
 }
 
 body.page-posttask .price-pre,
-body.page-browse .price-pre,
+body.page-browse .price-pre {
+  color: var(--money) !important;
+}
+
 body.page-browse .offer-fee-line:not(.is-muted) {
+  color: var(--text-secondary) !important;
+}
+
+body.page-browse .offer-fee-line .offer-fee-net {
   color: var(--money) !important;
 }
 
