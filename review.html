@@ -162,8 +162,9 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <script src="qg-config.js"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <link rel="stylesheet" href="qg-tokens.css?v=20260811shell1" id="qg-tokens-css">
+<link rel="stylesheet" href="qg-flows.css?v=20260811flows1" id="qg-flows-css">
 </head>
-<body>
+<body class="page-review">
 
 <!-- NAV -->
 <nav class="nav">
@@ -348,8 +349,8 @@ document.getElementById('backBtn').href = params.get('from') === 'chat' && param
   : 'mytasks.html?tab=completed';
 
 // Tags differ slightly depending on who is reviewing whom
-var posterTags = ['On time','Great work','Friendly','Professional','Good value','Communicative','Detail-oriented','Would hire again'];
-var workerTags = ['Clear instructions','Fair pay','Responsive','Easy to work with','Safe environment','Would work again','Prompt payment'];
+var posterTags = ['On time','Friendly','Thorough','Great work','Professional','Good value','Communicative','Would hire again'];
+var workerTags = ['Clear instructions','Fair pay','Responsive','Easy to work with','Thorough','Safe environment','Would work again'];
 var allTags = reviewerRole === 'worker' ? workerTags : posterTags;
 
 // Render tags

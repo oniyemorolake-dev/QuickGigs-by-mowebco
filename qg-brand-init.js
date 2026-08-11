@@ -214,6 +214,15 @@
     document.head.appendChild(dashCss);
   }
 
+  /* Core flow screens (post / apply / evidence / review) */
+  if (!document.getElementById('qg-flows-css') && !document.querySelector('link[href*="qg-flows.css"]')) {
+    var flowsCss = document.createElement('link');
+    flowsCss.id = 'qg-flows-css';
+    flowsCss.rel = 'stylesheet';
+    flowsCss.href = 'qg-flows.css?v=20260811flows1';
+    document.head.appendChild(flowsCss);
+  }
+
   // Sync load so qgIcon is available before deferred page scripts run
   if (!document.querySelector('script[src*="qg-icons.js"]') && typeof window.qgIcon !== 'function') {
     try {
@@ -232,7 +241,9 @@
       'mytasks.html': 'page-mytasks',
       'messages.html': 'page-messages',
       'chat.html': 'page-chat',
-      'browsetask.html': 'page-browse'
+      'browsetask.html': 'page-browse',
+      'posttask.html': 'page-posttask',
+      'review.html': 'page-review'
     };
     if (map[page]) document.body.classList.add(map[page]);
   }

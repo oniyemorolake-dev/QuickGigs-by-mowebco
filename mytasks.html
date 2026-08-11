@@ -617,16 +617,23 @@ function renderApplicantAction(a, taskId, task) {
   var negoHtml = '';
   if (negotiable) {
     if (neg.counterBy === 'worker') {
-      negoHtml = '<div class="nego-actions">' +
-        '<span class="nego-status">Counter: $' + neg.counterPrice + '</span>' +
-        '<button type="button" class="decline-btn" data-poster-decline-counter="'+escAttr(appId)+'" data-task-id="'+escAttr(taskId)+'" data-worker-id="'+escAttr(workerId)+'">Decline counter</button>' +
+      negoHtml = '<div class="nego-block">' +
+        '<div class="qg-nego-thread">' +
+          '<div class="qg-nego-bubble is-theirs"><span>Tasker counter</span><span class="qg-nego-amt">$' + neg.counterPrice + '</span></div>' +
+        '</div>' +
+        '<div class="nego-actions">' +
+        '<button type="button" class="decline-btn" data-poster-decline-counter="'+escAttr(appId)+'" data-task-id="'+escAttr(taskId)+'" data-worker-id="'+escAttr(workerId)+'">Decline</button>' +
         '<button type="button" class="accept-btn" data-poster-accept-counter="'+escAttr(appId)+'" data-task-id="'+escAttr(taskId)+'" data-worker-id="'+escAttr(workerId)+'">Accept $' + neg.counterPrice + '</button>' +
-        '</div>';
+        '</div></div>';
     } else if (neg.counterBy === 'poster') {
-      negoHtml = '<div class="nego-actions"><span class="nego-status">Counter sent — waiting for tasker</span></div>';
+      negoHtml = '<div class="nego-block">' +
+        '<div class="qg-nego-thread">' +
+          '<div class="qg-nego-bubble is-mine"><span>Your counter</span><span class="qg-nego-amt">$' + (neg.counterPrice || '') + '</span></div>' +
+        '</div>' +
+        '<div class="nego-actions"><span class="nego-status">Waiting for tasker</span></div></div>';
     } else if (neg.counterRound === 0) {
       negoHtml = '<div class="nego-actions">' +
-        '<button type="button" class="accept-btn counter-btn" data-poster-counter="'+escAttr(appId)+'" data-task-id="'+escAttr(taskId)+'" data-worker-id="'+escAttr(workerId)+'">Counter…</button>' +
+        '<button type="button" class="accept-btn counter-btn btn-secondary" data-poster-counter="'+escAttr(appId)+'" data-task-id="'+escAttr(taskId)+'" data-worker-id="'+escAttr(workerId)+'">Counter…</button>' +
         '</div>';
     }
   }
@@ -1642,14 +1649,20 @@ function renderTab(){
         if (isTaskNegotiable(task) && neg.counterBy === 'poster') {
           var canCounterBack = neg.counterRound === 1;
           negoBlock = '<div class="nego-block">' +
-            '<div class="nego-block-title">Poster countered at $' + neg.counterPrice + '</div>' +
+            '<div class="qg-nego-thread">' +
+              '<div class="qg-nego-bubble is-theirs"><span>Poster counter</span><span class="qg-nego-amt">$' + neg.counterPrice + '</span></div>' +
+            '</div>' +
             '<div class="action-row">' +
             '<button type="button" class="act-btn btn-secondary" data-worker-decline-counter="'+escAttr(getField(a,'APP_ID'))+'" data-task-id="'+escAttr(getField(a,'TASK_ID'))+'">Decline</button>' +
-            (canCounterBack ? '<button type="button" class="act-btn btn-secondary counter-btn" data-worker-counter-back="'+escAttr(getField(a,'APP_ID'))+'" data-task-id="'+escAttr(getField(a,'TASK_ID'))+'">Counter…</button>' : '') +
-            '<button type="button" class="act-btn" style="background:var(--purple);color:#fff" data-worker-accept-counter="'+escAttr(getField(a,'APP_ID'))+'" data-task-id="'+escAttr(getField(a,'TASK_ID'))+'">Accept $' + neg.counterPrice + '</button>' +
+            (canCounterBack ? '<button type="button" class="act-btn btn-secondary counter-btn" data-worker-counter-back="'+escAttr(getField(a,'APP_ID'))+'" data-task-id="'+escAttr(getField(a,'TASK_ID'))+'">Counter again</button>' : '') +
+            '<button type="button" class="act-btn" data-worker-accept-counter="'+escAttr(getField(a,'APP_ID'))+'" data-task-id="'+escAttr(getField(a,'TASK_ID'))+'">Accept $' + neg.counterPrice + '</button>' +
             '</div></div>';
         } else if (isTaskNegotiable(task) && neg.counterBy === 'worker') {
-          negoBlock = '<div class="nego-block"><div class="nego-block-title">Counter sent — waiting for poster</div></div>';
+          negoBlock = '<div class="nego-block">' +
+            '<div class="qg-nego-thread">' +
+              '<div class="qg-nego-bubble is-mine"><span>Your counter</span><span class="qg-nego-amt">$' + (neg.counterPrice || '') + '</span></div>' +
+            '</div>' +
+            '<div class="nego-block-title">Waiting for poster</div></div>';
         }
         actions = '<div class="action-row">';
         if (!isPaymentGatedChat()) {

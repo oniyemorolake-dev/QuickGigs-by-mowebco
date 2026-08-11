@@ -32,6 +32,7 @@
 <link rel="stylesheet" href="qg-layout.css">
 <link rel="stylesheet" href="qg-role-theme.css?v=20260811tokens1">
 <link rel="stylesheet" href="qg-tokens.css?v=20260811shell1" id="qg-tokens-css">
+<link rel="stylesheet" href="qg-flows.css?v=20260811flows1" id="qg-flows-css">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716c">
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
 <script src="qg-theme.js"></script>
@@ -498,16 +499,17 @@ body.light .app-legal-footer a{color:var(--purple);}
     <div class="modal-handle"></div>
     <div class="modal-scroll">
       <div class="modal-head">
-        <p class="modal-title" id="modalTitle">Apply for task</p>
+        <p class="modal-title" id="modalTitle">Task details</p>
         <button type="button" class="modal-close" id="modalCloseBtn" onclick="closeModal()" aria-label="Close">×</button>
       </div>
-      <p class="modal-sub" id="modalSub">Send your offer to the poster</p>
+      <div id="taskDetailPanel" class="qg-task-detail" hidden></div>
+      <p class="modal-sub" id="modalSub" hidden>Send your offer to the poster</p>
       <p class="modal-sub" id="modalNegoHint" style="display:none;margin-top:-6px;font-size:11px;color:var(--text-muted)"></p>
 
       <div class="apply-already" id="applyAlreadyState" aria-live="polite">
         <div class="apply-already-icon">✅</div>
         <div class="apply-already-title">You've already applied to this task</div>
-        <div class="apply-already-sub">Check <a href="mytasks.html?tab=applied" style="color:var(--purple-light)">My Tasks ? Applied</a> for status updates.</div>
+        <div class="apply-already-sub">Check <a href="mytasks.html?tab=applied">My Tasks → Applied</a> for status updates.</div>
       </div>
 
       <div id="applyFormFields">
@@ -519,7 +521,7 @@ body.light .app-legal-footer a{color:var(--purple);}
         <span class="modal-label">Message to poster</span>
         <textarea class="modal-input" id="offerMsg" placeholder="Tell them why you're the right person..." rows="4" maxlength="1000"></textarea>
         <p class="msg-hint" id="offerMsgHint">At least 20 characters</p>
-        <div class="field-error" id="offerFraudError" style="display:none;color:#ef4444;font-size:12px;margin-top:8px;"></div>
+        <div class="field-error" id="offerFraudError" style="display:none;font-size:12px;margin-top:8px;"></div>
         <div id="modalPhotoWrap" style="display:none;margin-top:12px;"></div>
       </div>
     </div>
@@ -527,7 +529,7 @@ body.light .app-legal-footer a{color:var(--purple);}
       <div class="apply-inline-alert" id="applyInlineAlert" role="alert" aria-live="assertive"></div>
       <div class="modal-btns">
         <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>
-        <button type="button" class="submit-btn is-apply-blocked" id="applySubmitBtn" aria-disabled="true">Send application</button>
+        <button type="button" class="submit-btn is-apply-blocked" id="applySubmitBtn" aria-disabled="true">Apply with an offer</button>
       </div>
     </div>
   </div>
@@ -1020,7 +1022,7 @@ function getBtnClass(m){return 'btn-'+m;}
 function getBtnLabel(m){
   if(window.QG_verificationState&&window.QG_verificationState.tasker_verified!==true)return 'Verify to apply';
   if(window._qgAgeTier==='teen')return 'Ask guardian';
-  return m==='quick'?'Apply ?':'Apply';
+  return m==='quick'?'Apply now':'Apply';
 }
 
 function formatLocationDisplay(loc) {
@@ -1534,7 +1536,7 @@ function wireApplyModalInputs() {
         window.submitBrowseApplication();
       } else {
         applyNotify('Apply handler missing — hard-refresh the page and try again.', '#ef4444');
-        if (sendBtn) sendBtn.textContent = 'Send application';
+        if (sendBtn) sendBtn.textContent = 'Apply with an offer';
       }
     }
     sendBtn.addEventListener('click', onSendTap);
@@ -1626,14 +1628,81 @@ window.openModal=async function(id,e){
 
   wireApplyModalInputs();
   _applySubmitInFlight = false;
-  document.getElementById('modalTitle').textContent=activeTask.catLabel+' ? '+activeTask.title.substring(0,40)+(activeTask.title.length>40?'?':'');
-  var sub = (activeTask.budgetNegotiable ? 'Budget: Around ' : 'Budget: ') + activeTask.priceLabel + ' ? ' + activeTask.location;
-  if (activeTask.when) sub += ' · 🗓 ' + activeTask.when;
-  if (activeTask.requiresPhotos) sub += ' ? 📷 Photo updates requested';
-  if (activeTask.desc) sub += '\n\n' + activeTask.desc;
-  if (activeTask.posterName) sub += '\nPosted by ' + activeTask.posterName;
-  document.getElementById('modalSub').textContent=sub;
-  document.getElementById('modalSub').style.whiteSpace='pre-wrap';
+  document.getElementById('modalTitle').textContent = activeTask.title;
+  var detail = document.getElementById('taskDetailPanel');
+  var distLbl = (activeTask._distanceKm != null && typeof formatDistanceKm === 'function')
+    ? formatDistanceKm(activeTask._distanceKm)
+    : '';
+  var metaBits = [activeTask.catLabel, activeTask.location];
+  if (distLbl) metaBits.push(distLbl);
+  if (activeTask.when) metaBits.push(activeTask.when);
+  var negoTag = activeTask.budgetNegotiable
+    ? '<span class="tc-badge badge-negotiable">Negotiable</span>'
+    : '';
+  var safePhotos = (activeTask.photoUrls || []).map(function(url){
+    return typeof safeMediaUrl === 'function' ? safeMediaUrl(url)
+      : (typeof safeUrl === 'function' ? safeUrl(url) : '');
+  }).filter(Boolean).slice(0, 3);
+  var photosHtml = safePhotos.length
+    ? '<div class="qg-td-photos">' + safePhotos.map(function(url, i){
+        return '<img class="qg-modal-photo-tap" src="'+esc(url)+'" alt="Task photo" data-photos="'+esc(JSON.stringify(safePhotos))+'" data-photo-index="'+i+'" data-photo-caption="'+esc(activeTask.title)+'">';
+      }).join('') + '</div>'
+    : '';
+  var noteHtml = activeTask.requiresPhotos
+    ? '<div class="qg-td-note">Before &amp; after photo updates requested for this task</div>'
+    : '';
+  var posterInitial = String(activeTask.posterName || 'P').trim().charAt(0).toUpperCase() || 'P';
+  if (detail) {
+    detail.hidden = false;
+    detail.innerHTML =
+      '<div class="qg-td-meta">' + esc(metaBits.join(' · ')) + '</div>' +
+      '<div class="qg-td-price">$' + esc(String(activeTask.price)) + (activeTask.mode === 'recurring' ? '/hr' : '') + ' CAD ' + negoTag + '</div>' +
+      photosHtml +
+      (activeTask.desc ? '<div class="qg-td-desc">' + esc(activeTask.desc) + '</div>' : '') +
+      noteHtml +
+      '<div class="qg-poster-card" id="qgPosterCard">' +
+        '<div class="qg-poster-avatar" id="qgPosterAvatar">' + esc(posterInitial) + '</div>' +
+        '<div class="qg-poster-info">' +
+          '<div class="qg-poster-name">' + esc(activeTask.posterName || 'QuickGigs member') +
+            '<span class="qg-poster-verified" id="qgPosterVerified" hidden>' + (typeof qgIcon==='function'?qgIcon('checkCircle',{size:14}):'✓') + '</span>' +
+          '</div>' +
+          '<div class="qg-poster-meta" id="qgPosterMeta">Poster</div>' +
+          '<div class="qg-poster-pay" id="qgPosterPay" hidden>Payment verified</div>' +
+        '</div>' +
+      '</div>';
+  }
+  var modalSub = document.getElementById('modalSub');
+  if (modalSub) { modalSub.hidden = true; modalSub.textContent = ''; }
+
+  if (activeTask.posterId) {
+    (async function loadPosterCard(posterId) {
+      try {
+        var user = typeof getUserByFirebaseUid === 'function' ? await getUserByFirebaseUid(posterId) : null;
+        var verifiedEl = document.getElementById('qgPosterVerified');
+        var payEl = document.getElementById('qgPosterPay');
+        var metaEl = document.getElementById('qgPosterMeta');
+        var avEl = document.getElementById('qgPosterAvatar');
+        if (user && (user.poster_verified === true || user.POSTER_VERIFIED === true)) {
+          if (verifiedEl) verifiedEl.hidden = false;
+          if (payEl) payEl.hidden = false;
+        }
+        var avatarUrl = user && (user.avatar_url || user.AVATAR_URL);
+        if (avEl && avatarUrl && typeof safeMediaUrl === 'function') {
+          var safeAv = safeMediaUrl(avatarUrl);
+          if (safeAv) avEl.innerHTML = '<img src="'+esc(safeAv)+'" alt="">';
+        }
+        var rep = typeof getReviewsForUser === 'function' ? await getReviewsForUser(posterId) : null;
+        var ratings = Array.isArray(rep) ? rep.map(function(r){ return Number(r.rating)||0; }).filter(Boolean) : [];
+        var avg = ratings.length ? (ratings.reduce(function(a,b){return a+b;},0) / ratings.length) : null;
+        if (metaEl) {
+          var parts = [];
+          if (avg != null) parts.push(avg.toFixed(1) + '★');
+          if (ratings.length) parts.push(ratings.length + ' review' + (ratings.length === 1 ? '' : 's'));
+          metaEl.textContent = parts.length ? parts.join(' · ') : 'Poster on QuickGigs';
+        }
+      } catch (_e) {}
+    })(activeTask.posterId);
+  }
 
   setApplyModalAlreadyApplied(alreadyApplied);
   if (alreadyApplied) {
@@ -1651,7 +1720,7 @@ window.openModal=async function(id,e){
   if (negoHint) {
     if (activeTask.budgetNegotiable) {
       negoHint.style.display = 'block';
-      negoHint.textContent = 'Negotiate your offer here ? use chat later for schedule and details, not price.';
+      negoHint.textContent = 'Negotiate your offer here — use chat later for schedule and details, not price.';
     } else {
       negoHint.style.display = 'block';
       negoHint.textContent = 'Fixed budget — your offer matches the poster\'s price. Chat is for schedule and details.';
@@ -1661,24 +1730,16 @@ window.openModal=async function(id,e){
   document.getElementById('offerAvail').value='';
   document.getElementById('offerFraudError').style.display='none';
   var photoWrap = document.getElementById('modalPhotoWrap');
-  if (activeTask.photoUrls && activeTask.photoUrls.length) {
-    photoWrap.style.display='block';
-    var safePhotos = activeTask.photoUrls.map(function(url){
-      return typeof safeMediaUrl === 'function' ? safeMediaUrl(url)
-        : (typeof safeUrl === 'function' ? safeUrl(url) : '');
-    }).filter(Boolean);
-    photoWrap.innerHTML = safePhotos.length
-      ? ('<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Reference photos — tap to enlarge</div><div style="display:flex;gap:8px;overflow-x:auto;align-items:center;">' +
-      safePhotos.map(function(url, i){ return '<img class="qg-modal-photo-tap" src="'+esc(url)+'" alt="Task photo" data-photos="'+esc(JSON.stringify(safePhotos))+'" data-photo-index="'+i+'" data-photo-caption="'+esc(activeTask.title)+'" style="width:auto;max-width:100%;height:auto;max-height:160px;object-fit:contain;border-radius:10px;border:0.5px solid var(--border);flex-shrink:0;cursor:zoom-in;">'; }).join('') +
-      '</div>')
-      : '';
-  } else {
-    photoWrap.style.display='none';
-    photoWrap.innerHTML='';
-  }
+  if (photoWrap) { photoWrap.style.display = 'none'; photoWrap.innerHTML = ''; }
   updateOfferFeeLine();
   refreshApplySubmitEnabled();
   clearApplyInlineAlert();
+  var applyBtn = document.getElementById('applySubmitBtn');
+  if (applyBtn && !applyBtn.classList.contains('is-apply-blocked')) {
+    applyBtn.textContent = 'Apply with an offer';
+  } else if (applyBtn) {
+    applyBtn.textContent = applyBtn.textContent.indexOf('Verify') >= 0 ? applyBtn.textContent : 'Apply with an offer';
+  }
   document.getElementById('modalOverlay').classList.add('open');
   document.body.style.overflow='hidden';
   document.body.classList.add('qg-apply-open');
@@ -1706,14 +1767,14 @@ window.handleOverlayClick=function(e){if(e.target===document.getElementById('mod
 window.submitBrowseApplication=async function(){
   console.log('[QuickGigs apply] submitBrowseApplication entered');
   if (_applySubmitInFlight) {
-    applyNotify('Still sending your application?', '#f59e0b');
+    applyNotify('Still sending your application…', '#f59e0b');
     return;
   }
   var btn = document.getElementById('applySubmitBtn');
   var unlockApplyBtn = function () {
     _applySubmitInFlight = false;
     if (btn) {
-      btn.textContent = 'Send application';
+      btn.textContent = 'Apply with an offer';
       btn.disabled = false;
       btn.removeAttribute('disabled');
     }
@@ -1988,7 +2049,7 @@ window.submitBrowseApplication=async function(){
     document.body.style.overflow = '';
     document.body.classList.remove('qg-apply-open');
     _applySubmitInFlight = false;
-    if (btn) { btn.textContent = 'Send application'; btn.disabled = true; }
+    if (btn) { btn.textContent = 'Apply with an offer'; btn.disabled = true; }
     var okMsg = guardianPending
       ? 'Sent to your guardian for approval. The poster cannot see it yet.'
       : ('Application sent.' + (chatNote || ''));

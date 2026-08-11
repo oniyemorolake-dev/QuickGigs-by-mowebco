@@ -98,11 +98,20 @@
     opts = opts || {};
     var isWorker = !!opts.isWorker;
     var frozen = !!opts.frozen;
+    var icoCam = typeof qgIcon === 'function' ? qgIcon('camera', { size: 14 }) : '';
+    var timeline = '<ol class="qg-evidence-timeline">' + STAMPS.map(function (s, idx) {
+      return '<li class="qg-evidence-step is-future" data-evidence-step="' + s.type + '">' +
+        '<div class="qg-evidence-rail"><span class="qg-evidence-dot"></span>' +
+        (idx < STAMPS.length - 1 ? '<span class="qg-evidence-line"></span>' : '') +
+        '</div>' +
+        '<div class="qg-evidence-step-body"><strong>' + s.label + '</strong>' +
+        '<span class="qg-evidence-step-meta" data-step-meta></span></div></li>';
+    }).join('') + '</ol>';
     if (!isWorker) {
       return '<div class="qg-evidence-panel" data-evidence-task="' + String(taskId) + '">' +
         '<div class="qg-evidence-head">Task progress</div>' +
         '<p class="qg-evidence-note">Tasker check-ins and photo proof appear here as they work.</p>' +
-        '<div class="qg-evidence-stamps" data-evidence-stamps></div>' +
+        timeline +
         '<div class="qg-evidence-photos" data-evidence-photos></div>' +
         '</div>';
     }
@@ -110,18 +119,18 @@
       '<div class="qg-evidence-head">Check in · evidence</div>' +
       (frozen
         ? '<p class="qg-evidence-note qg-evidence-frozen">Dispute open — escrow frozen. New stamps are paused.</p>'
-        : '<p class="qg-evidence-note">Stamp your progress. “Arrived” captures location (optional if denied).</p>') +
+        : '<p class="qg-evidence-note">Stamp your progress. “Arrived” captures location (optional if denied). Add a photo for proof anytime.</p>') +
+      timeline +
       '<div class="qg-evidence-stamp-btns">' +
-        STAMPS.map(function (s) {
-          return '<button type="button" class="qg-evidence-stamp-btn" data-stamp="' + s.type + '" ' +
-            (frozen ? 'disabled' : '') + '>' + s.label + '</button>';
+        STAMPS.map(function (s, idx) {
+          return '<button type="button" class="qg-evidence-stamp-btn' + (idx ? ' is-ghost' : '') + '" data-stamp="' + s.type + '" ' +
+            (frozen ? 'disabled' : '') + '>' + icoCam + ' ' + s.label + '</button>';
         }).join('') +
       '</div>' +
-      '<div class="qg-evidence-stamps" data-evidence-stamps></div>' +
       '<div class="qg-evidence-photo-row">' +
         '<label class="qg-evidence-photo-btn">' +
           '<input type="file" accept="image/*" data-evidence-file hidden ' + (frozen ? 'disabled' : '') + '>' +
-          'Add before/after photo' +
+          icoCam + ' Add before/after photo' +
         '</label>' +
         '<select data-evidence-kind class="qg-evidence-kind">' +
           '<option value="before">Before</option>' +
@@ -133,8 +142,54 @@
       '</div>';
   }
 
+  function syncTimeline(panel, stamps) {
+    if (!panel) return;
+    var done = {};
+    (stamps || []).forEach(function (s) {
+      done[s.stamp_type] = s;
+    });
+    var nextIdx = -1;
+    STAMPS.forEach(function (s, idx) {
+      if (done[s.type] && nextIdx < idx) nextIdx = idx;
+    });
+    var currentIdx = nextIdx + 1;
+    panel.querySelectorAll('[data-evidence-step]').forEach(function (li) {
+      var type = li.getAttribute('data-evidence-step');
+      var meta = li.querySelector('[data-step-meta]');
+      li.classList.remove('is-done', 'is-current', 'is-future');
+      if (done[type]) {
+        li.classList.add('is-done');
+        var when = done[type].stamped_at ? new Date(done[type].stamped_at).toLocaleString() : 'Completed';
+        var loc = '';
+        if (type === 'arrived') {
+          if (done[type].location_status === 'ok') loc = formatDistance(done[type].distance_m) || 'Location recorded';
+          else if (done[type].location_status === 'denied') loc = 'Location denied';
+          else if (done[type].location_status === 'unavailable') loc = 'Location unavailable';
+        }
+        if (meta) meta.textContent = when + (loc ? ' · ' + loc : '');
+      } else {
+        var idx = STAMPS.findIndex(function (x) { return x.type === type; });
+        if (idx === currentIdx) li.classList.add('is-current');
+        else li.classList.add('is-future');
+        if (meta) meta.textContent = idx === currentIdx ? 'Next up' : '';
+      }
+    });
+    panel.querySelectorAll('[data-stamp]').forEach(function (btn) {
+      var type = btn.getAttribute('data-stamp');
+      var idx = STAMPS.findIndex(function (x) { return x.type === type; });
+      btn.classList.toggle('is-ghost', !(idx === currentIdx || (!done[type] && idx === 0 && currentIdx <= 0)));
+      if (done[type]) btn.disabled = true;
+    });
+  }
+
   function renderStampList(el, stamps) {
     if (!el) return;
+    var panel = el.closest('.qg-evidence-panel');
+    if (panel) {
+      syncTimeline(panel, stamps);
+      el.innerHTML = '';
+      return;
+    }
     var list = stamps || [];
     if (!list.length) {
       el.innerHTML = '<div class="qg-evidence-empty">No check-ins yet</div>';
@@ -174,7 +229,9 @@
     if (!panel) return;
     var data = await getEvidence(taskId);
     if (!data || !data.ok) return;
-    renderStampList(panel.querySelector('[data-evidence-stamps]'), data.stamps);
+    var stampsEl = panel.querySelector('[data-evidence-stamps]');
+    if (stampsEl) renderStampList(stampsEl, data.stamps);
+    else syncTimeline(panel, data.stamps);
     renderPhotoList(panel.querySelector('[data-evidence-photos]'), data.evidence_photos);
     if (data.task && data.task.evidence_frozen) {
       panel.querySelectorAll('button,input').forEach(function (n) { n.disabled = true; });
@@ -241,24 +298,10 @@
   if (!document.getElementById('qg-evidence-css')) {
     var style = document.createElement('style');
     style.id = 'qg-evidence-css';
+    /* Visual tokens live in qg-flows.css; keep a tiny fallback if flows is missing. */
     style.textContent =
-      '.qg-evidence-panel{margin:12px 0;padding:14px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,0.03)}' +
-      '.qg-evidence-head{font:600 13px Poppins,sans-serif;margin-bottom:6px}' +
-      '.qg-evidence-note{font-size:12px;color:var(--text-muted);margin:0 0 10px;line-height:1.45}' +
-      '.qg-evidence-frozen{color:#fbbf24}' +
-      '.qg-evidence-stamp-btns{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}' +
-      '.qg-evidence-stamp-btn{border:1px solid var(--border);background:var(--input-bg);color:var(--text);border-radius:999px;padding:8px 12px;font:600 11px Poppins,sans-serif;cursor:pointer}' +
-      '.qg-evidence-stamp-btn:disabled{opacity:.45;cursor:not-allowed}' +
-      '.qg-evidence-stamp-row{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:6px 0;border-top:1px solid var(--border)}' +
-      '.qg-evidence-stamp-row span{color:var(--text-muted);text-align:right}' +
-      '.qg-evidence-empty{font-size:12px;color:var(--text-faint)}' +
-      '.qg-evidence-photo-row{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}' +
-      '.qg-evidence-photo-btn{display:inline-flex;align-items:center;padding:8px 12px;border-radius:10px;background:linear-gradient(135deg,#6b3fa0,#a78bfa);color:#fff;font:600 11px Poppins,sans-serif;cursor:pointer}' +
-      '.qg-evidence-kind{border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);padding:7px 10px;font-size:12px}' +
-      '.qg-evidence-photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}' +
-      '.qg-evidence-thumb{display:block;border-radius:10px;overflow:hidden;border:1px solid var(--border);text-decoration:none;color:var(--text-muted);font-size:10px;text-align:center}' +
-      '.qg-evidence-thumb img{width:100%;height:72px;object-fit:cover;display:block}' +
-      '.qg-evidence-thumb span{display:block;padding:4px}';
+      '.qg-evidence-panel{margin:12px 0;padding:16px;border-radius:16px;border:1px solid var(--line,var(--border));background:var(--surface-1,rgba(255,255,255,0.03))}' +
+      '.qg-evidence-empty{font-size:12px;color:var(--text-muted)}';
     (document.head || document.documentElement).appendChild(style);
   }
 

@@ -32,6 +32,7 @@
 <link rel="stylesheet" href="qg-layout.css">
 <link rel="stylesheet" href="qg-role-theme.css?v=20260811tokens1">
 <link rel="stylesheet" href="qg-tokens.css?v=20260811shell1" id="qg-tokens-css">
+<link rel="stylesheet" href="qg-flows.css?v=20260811flows1" id="qg-flows-css">
 <script src="qg-brand-init.js"></script>
 <script>document.documentElement.setAttribute('data-qg-mode','poster');</script>
 <style>
@@ -363,17 +364,18 @@ body{padding-bottom:76px;}
   <!-- DESCRIPTION -->
   <div class="field section">
     <span class="section-label">Description</span>
-    <textarea class="field-input" id="taskDesc" placeholder="Add details ? location, timing, anything helpful..."></textarea>
+    <textarea class="field-input" id="taskDesc" placeholder="Add details — location, timing, anything helpful..."></textarea>
     <div class="field-error" id="descError">Add a clearer description</div>
   </div>
 
   <!-- PHOTOS -->
   <div class="section">
     <span class="section-label">Photos <span style="font-weight:400;text-transform:none;letter-spacing:0;opacity:0.85">(optional but recommended)</span></span>
-    <p class="field-hint">Add photos here so taskers see the task before they apply ? room, item, or area. <strong>No IDs, mail, or personal documents.</strong> You can also send more in chat after payment.</p>
+    <p class="field-hint">Add photos here so taskers see the task before they apply — room, item, or area. <strong>No IDs, mail, or personal documents.</strong> You can also send more in chat after payment.</p>
     <input type="file" id="taskPhotos" accept="image/*" multiple style="display:none" onchange="handlePhotoPick(this)">
-    <button type="button" class="photo-upload-btn" onclick="document.getElementById('taskPhotos').click()">📷 Add photos (up to 3)</button>
-    <div id="photoPreview" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;"></div>
+    <div class="qg-photo-slots" id="photoSlots" aria-label="Photo uploads, up to 3"></div>
+    <div class="qg-photo-count" id="photoCount">0 / 3 photos</div>
+    <div id="photoPreview" hidden></div>
     <label class="field-check">
       <input type="checkbox" id="requiresPhotos">
       <span>Ask the tasker to share before &amp; after photo updates when working</span>
@@ -459,7 +461,7 @@ body{padding-bottom:76px;}
         <span>Open to offers</span>
       </div>
     </div>
-    <p class="hint-text" id="budgetTypeHint" style="margin-top:10px">Taskers see your exact budget. Use chat for schedule and details ? not price haggling.</p>
+    <p class="hint-text" id="budgetTypeHint" style="margin-top:10px">Taskers see your exact budget. Use chat for schedule and details — not price haggling.</p>
   </div>
 
   <!-- HINT -->
@@ -470,11 +472,11 @@ body{padding-bottom:76px;}
 
   <!-- SUBMIT -->
   <div class="post-submit-row" style="display:grid;gap:10px">
-    <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">Post task →</button>
-    <button type="button" class="submit-btn" id="draftBtn" onclick="handleSubmit(false,'draft')" style="background:transparent;border:1px solid rgba(45,212,191,.45);color:var(--text,#fff);box-shadow:none">Save draft</button>
+    <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">Post &amp; fund</button>
+    <button type="button" class="submit-btn secondary" id="draftBtn" onclick="handleSubmit(false,'draft')">Save draft</button>
   </div>
   <p class="qg-beta-free-note">Browse freely anytime. Publishing requires a verified payment method — drafts do not.</p>
-  <p class="footer-note">After beta, payment is held in escrow when you accept ? released only after you confirm the task is done. <span data-qg-tip="Escrow means funds are held safely until you mark the task complete. During beta, posting is free.">What is escrow?</span></p>
+  <p class="footer-note">After beta, payment is held in escrow when you accept — released only after you confirm the task is done. <span data-qg-tip="Escrow means funds are held safely until you mark the task complete. During beta, posting is free.">What is escrow?</span></p>
 
 </div>
 
@@ -513,21 +515,50 @@ window.handlePhotoPick = function(input) {
 };
 
 function renderPhotoPreview() {
+  var max = (window.QG_CONFIG && window.QG_CONFIG.maxTaskPhotos) || 3;
+  var slots = document.getElementById('photoSlots');
+  var countEl = document.getElementById('photoCount');
   var wrap = document.getElementById('photoPreview');
-  if (!selectedPhotos.length) {
-    wrap.innerHTML = '';
+  if (countEl) countEl.textContent = selectedPhotos.length + ' / ' + max + ' photos';
+  if (!slots) {
+    if (!wrap) return;
+    wrap.hidden = false;
+    wrap.innerHTML = selectedPhotos.map(function(file, i) {
+      var url = URL.createObjectURL(file);
+      return '<div class="qg-photo-slot is-filled"><img src="'+url+'" alt="Preview"><button type="button" class="qg-photo-remove" onclick="removePhoto('+i+')" aria-label="Remove photo">'+(typeof qgIcon==='function'?qgIcon('x',{size:12}):'×')+'</button></div>';
+    }).join('');
     return;
   }
-  wrap.innerHTML = selectedPhotos.map(function(file, i) {
-    var url = URL.createObjectURL(file);
-    return '<div style="position:relative"><img src="'+url+'" alt="Preview" style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:0.5px solid var(--border);"><button type="button" onclick="removePhoto('+i+')" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:#ef4444;color:#fff;font-size:11px;cursor:pointer;">?</button></div>';
-  }).join('');
+  var html = '';
+  var i;
+  for (i = 0; i < max; i++) {
+    if (selectedPhotos[i]) {
+      var url = URL.createObjectURL(selectedPhotos[i]);
+      html += '<button type="button" class="qg-photo-slot is-filled" aria-label="Photo '+(i+1)+'">' +
+        '<img src="'+url+'" alt="Task photo '+(i+1)+'">' +
+        '<span class="qg-photo-remove" onclick="event.stopPropagation();removePhoto('+i+')" role="button" aria-label="Remove photo">'+(typeof qgIcon==='function'?qgIcon('x',{size:12}):'×')+'</span>' +
+        '</button>';
+    } else {
+      var disabled = selectedPhotos.length >= max ? ' is-disabled' : '';
+      html += '<button type="button" class="qg-photo-slot'+disabled+'" '+(disabled?'disabled ':'')+'onclick="document.getElementById(\'taskPhotos\').click()">' +
+        (typeof qgIcon==='function'?qgIcon('image',{size:22}):'') +
+        '<span class="qg-photo-slot-label">Add photo</span></button>';
+    }
+  }
+  slots.innerHTML = html;
+  if (wrap) { wrap.hidden = true; wrap.innerHTML = ''; }
 }
 
 window.removePhoto = function(index) {
   selectedPhotos.splice(index, 1);
   renderPhotoPreview();
 };
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function () { renderPhotoPreview(); });
+} else {
+  renderPhotoPreview();
+}
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
@@ -564,7 +595,9 @@ function applyTheme() {
   if (typeof window.QG_applyTheme === 'function') {
     window.QG_applyTheme(isDark, 'modeBtn', true);
   } else {
-    document.body.className = (isDark ? 'dark' : 'light') + ' theme-posttask';
+    document.body.classList.toggle('dark', !!isDark);
+    document.body.classList.toggle('light', !isDark);
+    document.body.classList.add('theme-posttask', 'page-posttask');
     var btn = document.getElementById('modeBtn');
     if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
   }
@@ -576,6 +609,7 @@ window.toggleMode = function() {
   applyTheme();
 };
 applyTheme();
+document.body.classList.add('page-posttask');
 
 document.addEventListener('DOMContentLoaded', function bootPosterVerification(){
   if (!window._currentUser || typeof QG_loadVerification !== 'function') {
@@ -587,7 +621,7 @@ document.addEventListener('DOMContentLoaded', function bootPosterVerification(){
     var button = document.getElementById('submitBtn');
     if (!button) return;
     var verified = !!(state && state.poster_verified === true);
-    button.textContent = verified ? 'Post task →' : 'Add payment method to post';
+    button.textContent = verified ? 'Post & fund' : 'Verify payment to post';
     button.disabled = false;
     if (verified && typeof QG_hideVerificationPrompt === 'function') {
       QG_hideVerificationPrompt();
@@ -1096,8 +1130,8 @@ window.handleSubmit = async function(skipPhotos, publishMode) {
   var draftBtn = document.getElementById('draftBtn');
   var btnDefaultLabel = window.QG_verificationState &&
     window.QG_verificationState.poster_verified !== true
-    ? 'Add payment method to post'
-    : 'Post task →';
+    ? 'Verify payment to post'
+    : 'Post & fund';
   function unlockSubmit() {
     window._postTaskInFlight = false;
     if (btn) {
