@@ -1,0 +1,6 @@
+2026/07/28-23:25:21.868 8190 Creating DB C:\QuickGigs by mowebco\tmp-chrome-cdp5\Default\IndexedDB\http_127.0.0.1_8765.indexeddb.leveldb since it was missing.
+2026/07/28-23:25:21.877 8190 Reusing MANIFEST C:\QuickGigs by mowebco\tmp-chrome-cdp5\Default\IndexedDB\http_127.0.0.1_8765.indexeddb.leveldb/MANIFEST-000001
+2026/07/28-23:25:21.938 8190 Level-0 table #5: started
+2026/07/28-23:25:21.942 8190 Level-0 table #5: 1264 bytes OK
+2026/07/28-23:25:21.945 8190 Delete type=0 #3
+2026/07/28-23:25:21.945 8190 Manual compaction at level-0 from '\x00\x01\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x02\x00\x00\x00' @ 0 : 0; will stop at (end)

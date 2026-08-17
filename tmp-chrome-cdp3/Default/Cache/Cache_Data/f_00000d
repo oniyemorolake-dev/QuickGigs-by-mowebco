@@ -1,0 +1,437 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+
+<title>Log in — QuickGigs</title>
+<meta name="description" content="Log in to QuickGigs to post tasks, apply as a tasker, and manage your work across Canada.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://quickgigs.ca/login.html">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://quickgigs.ca/login.html">
+<meta property="og:title" content="Log in — QuickGigs">
+<meta property="og:description" content="Log in to QuickGigs to post tasks, apply as a tasker, and manage your work across Canada.">
+<meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
+<meta property="og:locale" content="en_CA">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Log in — QuickGigs">
+<meta name="twitter:description" content="Log in to QuickGigs to post tasks, apply as a tasker, and manage your work across Canada.">
+<meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<meta name="theme-color" content="#6b3fa0">
+<link rel="stylesheet" href="qg-polish.css?v=20260726contrast">
+<link rel="stylesheet" href="qg-ux.css?v=20260728welcome1">
+<link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
+<link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://quickgigs-7b12d.firebaseapp.com">
+<link rel="dns-prefetch" href="https://www.gstatic.com">
+<link rel="stylesheet" href="qg-signup.css?v=4">
+<link rel="stylesheet" href="qg-cookies.css">
+<style>
+body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
+.stars{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.star{position:absolute;border-radius:50%;background:white;animation:twinkle var(--d,3s) ease-in-out infinite;opacity:0;}
+@keyframes twinkle{0%,100%{opacity:0;}50%{opacity:var(--op,0.8);}}
+.login-progress{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:12px 14px;border-radius:12px;background:rgba(107,63,160,0.18);border:1px solid rgba(200,168,233,0.25);font-size:13px;color:rgba(255,255,255,0.9);}
+.login-progress[hidden]{display:none!important;}
+.login-progress-spinner{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,0.25);border-top-color:#c8a8e9;animation:loginSpin 0.7s linear infinite;flex-shrink:0;}
+@keyframes loginSpin{to{transform:rotate(360deg);}}
+body.light .login-progress{background:#f0eeff;border-color:#e0daf5;color:#2d1b4e;}
+body.light .login-progress-spinner{border-color:rgba(107,63,160,0.2);border-top-color:#6b3fa0;}
+</style>
+</head>
+<body>
+<div class="signup-bg-mesh"></div>
+<div class="signup-orb signup-orb-1"></div>
+<div class="signup-orb signup-orb-2"></div>
+<div class="stars" id="stars"></div>
+
+<div class="signup-page">
+  <div class="signup-card-wrap">
+    <div class="signup-card">
+      <div class="signup-top-row">
+        <div class="signup-logo">QuickGigs</div>
+        <button type="button" class="signup-theme-btn" id="authThemeBtn" onclick="toggleAuthTheme()">☀️ Light</button>
+      </div>
+
+      <div class="signup-step-icon" aria-hidden="true">👋</div>
+      <h1 class="signup-title">Welcome back</h1>
+      <p class="signup-subtitle">Log in to post tasks, apply to gigs, and manage your account</p>
+
+      <div class="signup-perks">
+        <div class="signup-perk"><span>🇨🇦</span> Canada-wide marketplace</div>
+        <div class="signup-perk"><span>🔒</span> Secure Firebase login</div>
+        <div class="signup-perk"><span>⚡</span> Pick up where you left off</div>
+      </div>
+
+      <div class="signup-msg error" id="errorMsg"></div>
+      <div class="signup-msg ok" id="okMsg"></div>
+      <div class="login-progress" id="loginProgress" hidden>
+        <div class="login-progress-spinner" aria-hidden="true"></div>
+        <div class="login-progress-text">Opening dashboard…</div>
+      </div>
+
+      <form id="loginForm">
+        <div class="signup-field">
+          <label for="email">Email address <span class="req">*</span></label>
+          <input type="email" id="email" placeholder="you@example.com" autocomplete="email" enterkeyhint="next" required>
+        </div>
+        <div class="signup-field">
+          <label for="password">Password <span class="req">*</span></label>
+          <input type="password" id="password" placeholder="Your password" autocomplete="current-password" enterkeyhint="done" required>
+        </div>
+        <button type="button" class="signup-forgot" id="forgotLink">Forgot password?</button>
+        <button type="submit" class="signup-btn" id="submitBtn">Log in →</button>
+      </form>
+      <p class="qg-pipeda-line">🔒 Your data is protected under Canadian privacy law (PIPEDA)</p>
+
+      <div class="signup-trust">
+        <span>🔒 Encrypted</span>
+        <span>🇨🇦 PIPEDA compliant</span>
+        <span>✓ Beta access</span>
+      </div>
+
+      <div class="signup-divider"><span>or</span></div>
+      <button type="button" class="signup-google-btn" id="googleLoginBtn">
+        <span class="signup-google-icon" aria-hidden="true">G</span> Continue with Google
+      </button>
+      <div class="signup-login">Don't have an account? <a href="signup.html">Sign up free</a></div>
+
+      <div class="signup-auth-links">
+        <a href="how-it-works.html">How it works</a> ·
+        <a href="faq.html">FAQ</a> ·
+        <a href="terms.html">Terms</a> ·
+        <a href="privacy.html">Privacy</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script defer src="qg-utils.js?v=20260728welcome1"></script>
+<script defer src="qg-config.js?v=20260728msg1"></script>
+<script defer src="qg-analytics.js"></script>
+<script defer src="qg-auth-google.js?v=20260728fix1"></script>
+<script defer src="supabaseClient.js?v=20260728perf3"></script>
+<script defer src="supabase-db.js?v=20260728fix1"></script>
+<script defer src="qg-cookies.js"></script>
+<script defer src="qg-theme.js"></script>
+<script>
+attachPasswordToggle('password');
+
+var authDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
+function applyAuthTheme() {
+  document.body.classList.toggle('light', !authDark);
+  var btn = document.getElementById('authThemeBtn');
+  if (btn) btn.textContent = authDark ? '☀️ Light' : '🌙 Dark';
+}
+window.toggleAuthTheme = function() {
+  authDark = !authDark;
+  if (typeof QG_setThemeDark === 'function') QG_setThemeDark(authDark);
+  else localStorage.setItem('qg-theme', authDark ? 'dark' : 'light');
+  applyAuthTheme();
+};
+applyAuthTheme();
+
+var stars = document.getElementById('stars');
+var starCount = window.matchMedia('(max-width:768px)').matches ? 0 : 40;
+for (var i = 0; i < starCount; i++) {
+  var s = document.createElement('div');
+  s.className = 'star';
+  var size = Math.random() * 2 + 0.5;
+  s.style.cssText = 'width:' + size + 'px;height:' + size + 'px;left:' + Math.random() * 100 + '%;top:' + Math.random() * 100 + '%;--d:' + (Math.random() * 4 + 2) + 's;--op:' + (Math.random() * 0.6 + 0.1) + ';animation-delay:' + Math.random() * 5 + 's';
+  stars.appendChild(s);
+}
+</script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { initializeAuth, browserLocalPersistence, browserPopupRedirectResolver, signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
+  authDomain: "quickgigs-7b12d.firebaseapp.com",
+  projectId: "quickgigs-7b12d",
+  storageBucket: "quickgigs-7b12d.firebasestorage.app",
+  messagingSenderId: "698985399366",
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647",
+  measurementId: "G-82SPKK654N"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = initializeAuth(app, {
+  persistence: browserLocalPersistence,
+  popupRedirectResolver: browserPopupRedirectResolver
+});
+window._auth = auth;
+
+/** Drop previous Auth session + user caches before new credentials (capped wait for mobile). */
+async function beginFreshCredentialLogin() {
+  if (typeof qgPrepareLogin === 'function') qgPrepareLogin();
+  else if (typeof clearQgUserScopedStorage === 'function') clearQgUserScopedStorage();
+  else {
+    try { sessionStorage.clear(); } catch (e) {}
+  }
+  window._currentUser = null;
+  // Skip signOut wait when already signed out — saves ~250–700ms on cold login.
+  if (!auth.currentUser) return;
+  try {
+    var signOutP = auth.signOut();
+    await Promise.race([
+      signOutP,
+      new Promise(function (resolve) { setTimeout(resolve, 250); })
+    ]);
+  } catch (e2) {}
+}
+
+function markPendingProfileSync() {
+  try { sessionStorage.setItem('qg-pending-profile-sync', '1'); } catch (e) {}
+}
+
+function prefetchDashboard() {
+  try {
+    if (document.querySelector('link[data-qg-prefetch-dash]')) return;
+    var link = document.createElement('link');
+    link.rel = 'prefetch';
+    link.href = 'dashboard.html';
+    link.setAttribute('data-qg-prefetch-dash', '1');
+    document.head.appendChild(link);
+  } catch (e) {}
+}
+
+async function finishGoogleLogin(user) {
+  var errorMsg = document.getElementById('errorMsg');
+  if (typeof setCurrentUser === 'function') setCurrentUser(user);
+  else window._currentUser = user;
+  showLoginProgress('Signing you in…');
+  prefetchDashboard();
+  markPendingProfileSync();
+
+  // Returning users: 0 Supabase queries — route from local account cache.
+  if (typeof qgIsOnboardingDoneCached === 'function' && qgIsOnboardingDoneCached(user.uid)) {
+    if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'google' });
+    showLoginProgress('Opening dashboard…');
+    window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
+    return;
+  }
+
+  // Wait for DB helpers (cold start / cellular). Prefer accurate firebase_uid lookup
+  // over racing to signup — a timeout must not invent a "new" user.
+  var gateWait = 0;
+  while (typeof getUserLoginGate !== 'function' && typeof getUserByFirebaseUid !== 'function' && gateWait < 50) {
+    await new Promise(function (r) { setTimeout(r, 40); });
+    gateWait++;
+  }
+
+  // CRITICAL: lookup by firebase_uid only (Auth uid), never users.user_id UUID.
+  var existing = null;
+  if (typeof getUserLoginGate === 'function') {
+    existing = await getUserLoginGate(user.uid);
+  } else if (typeof getUserByFirebaseUid === 'function') {
+    existing = await getUserByFirebaseUid(user.uid, { self: true });
+  }
+
+  if (existing && existing.status === 'banned') {
+    if (typeof clearQgUserScopedStorage === 'function') clearQgUserScopedStorage();
+    await auth.signOut();
+    if (typeof setCurrentUser === 'function') setCurrentUser(null);
+    errorMsg.textContent = 'This account has been suspended. Contact support@quickgigs.ca if you think this is a mistake.';
+    errorMsg.style.display = 'block';
+    if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+    var overlay = document.getElementById('loginProgress');
+    if (overlay) overlay.hidden = true;
+    return;
+  }
+
+  // Row found by firebase_uid → existing account → dashboard (DOB optional).
+  if (existing) {
+    if (typeof qgMarkOnboardingDone === 'function') qgMarkOnboardingDone(user.uid);
+    if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'google' });
+    showLoginProgress('Opening dashboard…');
+    window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
+    return;
+  }
+
+  // No users row for this firebase_uid → genuine new Google account → finish signup.
+  // If helpers never loaded, still prefer dashboard over a false "new user" signup loop.
+  if (typeof getUserLoginGate !== 'function' && typeof getUserByFirebaseUid !== 'function') {
+    showLoginProgress('Opening dashboard…');
+    window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
+    return;
+  }
+  showLoginProgress('Almost there…');
+  window.location.replace('signup.html?oauth=continue');
+}
+
+function showLoginProgress(label) {
+  var btn = document.getElementById('submitBtn');
+  var gBtn = document.getElementById('googleLoginBtn');
+  var overlay = document.getElementById('loginProgress');
+  if (btn) {
+    btn.textContent = label || 'Opening dashboard…';
+    btn.disabled = true;
+  }
+  if (gBtn) {
+    gBtn.disabled = true;
+    gBtn.textContent = label || 'Opening…';
+  }
+  if (overlay) {
+    overlay.hidden = false;
+    var t = overlay.querySelector('.login-progress-text');
+    if (t) t.textContent = label || 'Opening dashboard…';
+  }
+}
+
+getRedirectResult(auth).then(function(result) {
+  if (result && result.user) finishGoogleLogin(result.user);
+}).catch(function(error) {
+  var errorMsg = document.getElementById('errorMsg');
+  var message = typeof qgGoogleAuthErrorMessage === 'function' ? qgGoogleAuthErrorMessage(error) : '';
+  if (message && errorMsg) {
+    errorMsg.textContent = message;
+    errorMsg.style.display = 'block';
+  }
+  if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+});
+
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var errorMsg = document.getElementById('errorMsg');
+  var okMsg = document.getElementById('okMsg');
+  var submitBtn = document.getElementById('submitBtn');
+  errorMsg.style.display = 'none';
+  okMsg.style.display = 'none';
+
+  var email = document.getElementById('email').value.trim();
+  var password = document.getElementById('password').value;
+
+  submitBtn.textContent = 'Logging in…';
+  submitBtn.disabled = true;
+
+  try {
+    await beginFreshCredentialLogin();
+    var cred = await signInWithEmailAndPassword(auth, email, password);
+    var signedIn = (cred && cred.user) || auth.currentUser;
+    if (!signedIn || !signedIn.uid) throw { code: 'auth/invalid-credential' };
+    if (auth.currentUser && String(auth.currentUser.uid) !== String(signedIn.uid)) {
+      signedIn = auth.currentUser;
+    }
+    if (typeof setCurrentUser === 'function') setCurrentUser(signedIn);
+    else window._currentUser = signedIn;
+    if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'email' });
+    try { sessionStorage.setItem('qg-pending-profile-sync', '1'); } catch (ePend) {}
+    prefetchDashboard();
+    showLoginProgress('Opening dashboard…');
+    var dest = typeof getDashboardUrl === 'function' ? getDashboardUrl() : 'dashboard.html';
+    window.location.replace(dest);
+  } catch (error) {
+    var message = 'Invalid email or password. Try again.';
+    if (error.code === 'auth/invalid-email') message = 'Enter a valid email address.';
+    if (error.code === 'auth/user-not-found') message = 'No account found with this email. Sign up first';
+    if (error.code === 'auth/wrong-password') message = 'Incorrect password. Try again.';
+    if (error.code === 'auth/invalid-credential') message = 'Invalid email or password. Try again.';
+    errorMsg.textContent = message;
+    errorMsg.style.display = 'block';
+    submitBtn.textContent = 'Log in →';
+    submitBtn.disabled = false;
+  }
+});
+
+document.getElementById('forgotLink').addEventListener('click', async function() {
+  var email = document.getElementById('email').value.trim();
+  var errorMsg = document.getElementById('errorMsg');
+  var okMsg = document.getElementById('okMsg');
+  errorMsg.style.display = 'none';
+  okMsg.style.display = 'none';
+
+  if (!email) {
+    errorMsg.textContent = 'Enter your email above first, then click Forgot password.';
+    errorMsg.style.display = 'block';
+    return;
+  }
+  try {
+    var resetUrl = window.location.origin + '/reset-password.html';
+    await sendPasswordResetEmail(auth, email, {
+      url: resetUrl,
+      handleCodeInApp: true
+    });
+    okMsg.textContent = 'Password reset email sent Check your inbox (and spam).';
+    okMsg.style.display = 'block';
+  } catch (error) {
+    errorMsg.textContent = 'Could not send reset email. Check the address and try again.';
+    errorMsg.style.display = 'block';
+  }
+});
+
+document.getElementById('googleLoginBtn').addEventListener('click', async function() {
+  var errorMsg = document.getElementById('errorMsg');
+  var okMsg = document.getElementById('okMsg');
+  var btn = document.getElementById('googleLoginBtn');
+  errorMsg.style.display = 'none';
+  okMsg.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Connecting…';
+
+  var provider = new GoogleAuthProvider();
+  provider.addScope('profile');
+  provider.addScope('email');
+  provider.setCustomParameters({ prompt: 'select_account' });
+
+  var useRedirect = typeof qgGooglePreferRedirect === 'function' && qgGooglePreferRedirect();
+  if (useRedirect) {
+    try {
+      await beginFreshCredentialLogin();
+      await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
+    } catch (redirectErr) {
+      var rMsg = typeof qgGoogleAuthErrorMessage === 'function' ? qgGoogleAuthErrorMessage(redirectErr) : '';
+      if (rMsg) { errorMsg.textContent = rMsg; errorMsg.style.display = 'block'; }
+      if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+    }
+    return;
+  }
+
+  try {
+    await beginFreshCredentialLogin();
+    var result = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
+    await finishGoogleLogin(result.user);
+  } catch (error) {
+    if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+      if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+      return;
+    }
+    var popupMsg = typeof qgGoogleAuthErrorMessage === 'function' ? qgGoogleAuthErrorMessage(error) : '';
+    if (popupMsg && error.code !== 'auth/popup-blocked') {
+      errorMsg.textContent = popupMsg;
+      errorMsg.style.display = 'block';
+      if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+      return;
+    }
+    if (error.code === 'auth/popup-blocked') {
+      try {
+        await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
+      } catch (redirectErr) {
+        errorMsg.textContent = typeof qgGoogleAuthErrorMessage === 'function'
+          ? qgGoogleAuthErrorMessage(redirectErr) : 'Popup blocked — allow popups or try again.';
+        errorMsg.style.display = 'block';
+        if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+      }
+      return;
+    }
+    try {
+      await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
+    } catch (redirectErr) {
+      var message = typeof qgGoogleAuthErrorMessage === 'function'
+        ? qgGoogleAuthErrorMessage(redirectErr)
+        : (typeof qgGoogleFirebaseSetupHint === 'string' ? qgGoogleFirebaseSetupHint : 'Google sign-in failed.');
+      errorMsg.textContent = message;
+      errorMsg.style.display = 'block';
+      if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+    }
+  }
+});
+</script>
+</body>
+</html>
