@@ -57,6 +57,42 @@ $$;
 REVOKE ALL ON FUNCTION public.is_qg_admin() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.is_qg_admin() TO authenticated, anon, service_role;
 
+-- Cross-table party checks without RLS recursion (tasks ↔ applications).
+CREATE OR REPLACE FUNCTION public.qg_uid_is_applicant_on_task(p_task_id text)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.applications a
+    WHERE a.task_id::text = p_task_id
+      AND a.worker_id = public.qg_uid()
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.qg_uid_owns_task(p_task_id text)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.tasks t
+    WHERE t.task_id::text = p_task_id
+      AND t.posted_by = public.qg_uid()
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.qg_uid_is_applicant_on_task(text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.qg_uid_owns_task(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.qg_uid_is_applicant_on_task(text) TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.qg_uid_owns_task(text) TO anon, authenticated, service_role;
+
 -- Accept-application trigger
 CREATE OR REPLACE FUNCTION public.protect_application_status()
 RETURNS trigger
@@ -122,11 +158,7 @@ CREATE POLICY "tasks_select_auth" ON public.tasks
       AND (
         public.is_qg_admin()
         OR posted_by = public.qg_uid()
-        OR EXISTS (
-          SELECT 1 FROM public.applications a
-          WHERE a.task_id::text = tasks.task_id::text
-            AND a.worker_id = public.qg_uid()
-        )
+        OR public.qg_uid_is_applicant_on_task(tasks.task_id::text)
       )
     )
   );
@@ -161,11 +193,7 @@ CREATE POLICY "applications_select_auth" ON public.applications
     AND (
       public.is_qg_admin()
       OR worker_id = public.qg_uid()
-      OR EXISTS (
-        SELECT 1 FROM public.tasks t
-        WHERE t.task_id::text = applications.task_id::text
-          AND t.posted_by = public.qg_uid()
-      )
+      OR public.qg_uid_owns_task(applications.task_id::text)
     )
   );
 
@@ -182,22 +210,14 @@ CREATE POLICY "applications_update_auth" ON public.applications
     public.qg_is_signed_in()
     AND (
       public.is_qg_admin()
-      OR EXISTS (
-        SELECT 1 FROM public.tasks t
-        WHERE t.task_id::text = applications.task_id::text
-          AND t.posted_by = public.qg_uid()
-      )
+      OR public.qg_uid_owns_task(applications.task_id::text)
     )
   )
   WITH CHECK (
     public.qg_is_signed_in()
     AND (
       public.is_qg_admin()
-      OR EXISTS (
-        SELECT 1 FROM public.tasks t
-        WHERE t.task_id::text = applications.task_id::text
-          AND t.posted_by = public.qg_uid()
-      )
+      OR public.qg_uid_owns_task(applications.task_id::text)
     )
   );
 

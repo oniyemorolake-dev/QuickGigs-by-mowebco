@@ -179,6 +179,12 @@ body.light .im-avatar{color:#2d1b4e;}
 .im-row-body{flex:1;min-width:0;}
 .im-row-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:3px;}
 .im-row-name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.im-row-role{
+  flex-shrink:0;font-size:10px;font-weight:600;letter-spacing:0.02em;text-transform:uppercase;
+  color:var(--purple-light);background:rgba(107,63,160,0.14);border:0.5px solid rgba(107,63,160,0.28);
+  border-radius:999px;padding:2px 7px;line-height:1.3;
+}
+body.light .im-row-role{color:var(--purple);background:rgba(107,63,160,0.08);border-color:rgba(107,63,160,0.2);}
 .im-row-time{font-size:12px;color:var(--text-faint);flex-shrink:0;}
 .im-row-bottom{display:flex;align-items:center;gap:8px;}
 .im-row-preview{
@@ -738,23 +744,24 @@ applyTheme();
       name: otherName,
       avatarUrl: otherUid ? (userAvatars[String(otherUid)] || '') : '',
       avatarBg: avatarGradient(otherName),
-      taskName: conv.task_title || 'Task',
+      taskName: (typeof formatTaskDisplayTitle === 'function'
+        ? formatTaskDisplayTitle({
+            title: conv.task_title,
+            category: conv.task_category,
+            created_at: conv.created_at
+          }, taskId)
+        : (conv.task_title || 'Task')),
       lastMessage: conv.last_message || 'No messages yet',
       time: formatRelativeTime(conv.last_message_at || conv.created_at),
       unread: countUnread(conv, userId)
     };
   }
 
-  function currentInboxMode() {
-    var mode = typeof window.getMode === 'function' ? window.getMode() : localStorage.getItem('qg-mode');
-    return mode === 'poster' ? 'poster' : 'tasker';
+  function conversationsForCurrentMode() {
+    // Intentional: inbox is NOT filtered by poster/tasker workspace mode.
+    return allConversations.slice();
   }
 
-  function applyModeFilter() {
-    var mode = currentInboxMode();
-    conversations = allConversations.filter(function (c) { return c.side === mode; });
-    filterList();
-  }
   function avatarHtml(name, url, bg, size, className) {
     if (typeof renderUserAvatarHtml === 'function') {
       return renderUserAvatarHtml(name, url, { className: className || 'im-avatar', gradient: bg, size: size || 52 });
@@ -781,28 +788,30 @@ applyTheme();
     if (!list) return;
     setNodeText('conversationCount', filtered.length ? filtered.length + (filtered.length === 1 ? ' chat' : ' chats') : '');
     if (!filtered.length) {
-      var modeLabel = currentInboxMode() === 'poster' ? 'Poster' : 'Tasker';
       list.innerHTML = typeof QG_emptyStateHtml === 'function'
         ? QG_emptyStateHtml({
             icon: 'message',
-            title: 'No ' + modeLabel + ' messages yet',
-            sub: 'Conversations for your other mode stay in that mode’s inbox.',
+            title: 'No messages yet',
+            sub: 'When you apply or accept a task, your conversations show up here.',
             action: { label: 'Browse tasks', href: 'browsetask.html', icon: 'search' }
           })
-        : '<div class="im-list-empty"><strong>No ' + modeLabel + ' messages yet</strong>Conversations for your other mode stay in that mode’s inbox.</div>';
+        : '<div class="im-list-empty"><strong>No messages yet</strong>When you apply or accept a task, your conversations show up here.</div>';
       return;
     }
     list.innerHTML = filtered.map(function (c) {
       var active = selectedId && String(c.id) === String(selectedId);
       var preview = imagePreview(c.lastMessage || c.taskName || '');
       var badge = c.unread > 0 ? '<span class="im-badge">' + (c.unread > 9 ? '9+' : c.unread) + '</span>' : '';
+      var roleLabel = c.side === 'poster' ? 'Poster' : (c.side === 'tasker' ? 'Tasker' : '');
+      var roleChip = roleLabel ? '<span class="im-row-role">' + esc(roleLabel) + '</span>' : '';
       var href = rowHref(c);
       return '<a class="im-row' + (active ? ' is-active' : '') + '" role="listitem" href="' + esc(href) + '"' +
         ' data-conv="' + esc(c.id) + '" data-task="' + esc(String(c.taskId == null ? '' : c.taskId)) + '"' +
-        ' data-peer="' + esc(c.otherUid || '') + '">' +
+        ' data-peer="' + esc(c.otherUid || '') + '" data-side="' + esc(c.side || '') + '">' +
         avatarHtml(c.name, c.avatarUrl, c.avatarBg, 52, 'im-avatar') +
         '<div class="im-row-body">' +
           '<div class="im-row-top"><div class="im-row-name">' + esc(c.name) + '</div>' +
+          roleChip +
           '<div class="im-row-time">' + esc(c.time) + '</div></div>' +
           '<div class="im-row-bottom"><div class="im-row-preview' + (c.unread ? ' is-unread' : '') + '">' +
           esc(preview) + '</div>' + badge + '</div>' +
@@ -867,7 +876,8 @@ applyTheme();
         : (rows || []);
       allConversations = enriched.map(function (c) { return mapConversation(c, currentUserId); })
         .filter(function (c) { return !!c.side; });
-      applyModeFilter();
+      conversations = conversationsForCurrentMode();
+      filterList();
       if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('messages');
 
       var params = new URLSearchParams(window.location.search);
@@ -1389,7 +1399,6 @@ applyTheme();
     var search = $('searchInput');
     if (search && search.addEventListener) search.addEventListener('input', filterList);
     document.addEventListener('qg-mode-changed', function () {
-      applyModeFilter();
       if (typeof window.refreshMessagesUnreadBadge === 'function') window.refreshMessagesUnreadBadge();
     });
 

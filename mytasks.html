@@ -1710,9 +1710,31 @@ function renderTab(){
       return;
     }
     content.innerHTML = myApps.map(function(a){
-      var task = allTasks.find(function(t){ return getField(t,'TASK_ID') == getField(a,'TASK_ID'); }) || {};
+      var task = allTasks.find(function(t){ return getField(t,'TASK_ID') == getField(a,'TASK_ID'); }) || null;
+      if (!task && typeof taskRowFromApplication === 'function') task = taskRowFromApplication(a);
+      if (!task) task = {};
+      if (!getField(task, 'TITLE') && (getField(a, 'TASK_TITLE') || a.task_title)) {
+        task.title = a.task_title || a.TASK_TITLE;
+        task.TITLE = task.title;
+      }
+      if (!getField(task, 'POSTED_BY') && (a.posted_by || a.POSTED_BY)) {
+        task.posted_by = a.posted_by || a.POSTED_BY;
+        task.POSTED_BY = task.posted_by;
+      }
+      if (!getField(task, 'POSTER_NAME') && (a.poster_name || a.POSTER_NAME)) {
+        task.poster_name = a.poster_name || a.POSTER_NAME;
+        task.POSTER_NAME = task.poster_name;
+      }
+      if (!getField(task, 'CATEGORY') && a.task_category) {
+        task.category = a.task_category;
+        task.CATEGORY = a.task_category;
+      }
+      if (!getField(task, 'STATUS') && a.task_status) {
+        task.status = a.task_status;
+        task.STATUS = a.task_status;
+      }
       var cat = getCat(task);
-      var posterId = getField(task, 'POSTED_BY');
+      var posterId = getField(task, 'POSTED_BY') || a.posted_by || a.POSTED_BY || '';
       var posterName = displayName(posterId, task);
       var appStatus = (getField(a,'STATUS') || 'pending').toLowerCase();
       var guardianStatus = (getField(a,'GUARDIAN_STATUS') || 'approved').toLowerCase();
@@ -1757,7 +1779,7 @@ function renderTab(){
         if (!isPaymentGatedChat()) {
           actions += '<button class="act-btn btn-secondary" onclick="openChatForTask('+taskIdStr+')">Message poster</button>';
         } else {
-          actions += '<span class="tc-meta" style="margin:0">Chat opens after the poster accepts you and pays</span>';
+          actions += '<span class="tc-meta" style="margin:0">Chat opens after the poster accepts you</span>';
         }
         actions += '<button class="act-btn btn-danger" onclick="confirmWithdrawApplication('+appIdStr+')">Withdraw application</button></div>';
         if (typeof reportButtonHtml === 'function') {
@@ -1767,11 +1789,7 @@ function renderTab(){
             '</div>';
         }
       } else if (appStatus === 'accepted') {
-        if (!isPaymentGatedChat()) {
-          actions = '<div class="action-row"><button class="act-btn btn-secondary" onclick="openChatForTask('+taskIdStr+')">Message poster</button></div>';
-        } else {
-          actions = '<div class="action-row"><span class="tc-meta" style="margin:0">Waiting for poster payment to unlock chat</span></div>';
-        }
+        actions = '<div class="action-row"><button class="act-btn btn-secondary" onclick="openChatForTask('+taskIdStr+')">Message poster</button></div>';
       }
         return '<div class="'+cardClass+'">'+
         '<div class="tc-top"><div class="tc-left">'+profileTapIcon(posterId, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">Applied · Posted by '+personLink(posterName, posterId)+'</div><div class="tc-title">'+esc(typeof formatTaskDisplayTitle==='function'?formatTaskDisplayTitle(task, getField(a,'TASK_ID')):(getField(task,'TITLE')||'Untitled task'))+'</div></div></div>'+statusLabel+'</div>'+
@@ -1798,7 +1816,7 @@ function renderTab(){
     if(!inProg.length){
       var emptySub = isPoster
         ? (isPaymentGatedChat()
-          ? 'After you accept a tasker, pay to unlock chat — then coordinate here until the job is done.'
+          ? 'After you accept a tasker, coordinate here until the job is done.'
           : 'After you accept a tasker from Posted, the job appears here.')
         : 'When a poster accepts you, the job shows here. Switch to Tasker mode on Profile if you were browsing as a poster.';
       var openPosted = tasksForPoster(userId, 'open').length;
@@ -1854,7 +1872,7 @@ function renderTab(){
       var chatNeedsPay = isPosterTask && isPaymentGatedChat() && !taskPaid && !selfTask;
       var messageBtn = isPosterTask
         ? (chatNeedsPay
-          ? '<button type="button" class="act-btn btn-secondary" data-open-chat-task="'+escAttr(taskId)+'" title="Pay first to unlock chat">Message</button>'
+          ? '<button type="button" class="act-btn btn-secondary" data-open-chat-task="'+escAttr(taskId)+'" title="Message your tasker">Message</button>'
           : '<button type="button" class="act-btn btn-primary" data-open-chat-task="'+escAttr(taskId)+'">Message</button>')
         : '';
       var posterActions = isPosterTask

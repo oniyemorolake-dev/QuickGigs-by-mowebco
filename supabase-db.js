@@ -829,11 +829,13 @@ async function fetchApplicationsForActor(userId) {
   }
 
   var asWorker = [];
+  var postedFromFn = [];
   var isCurrentWorker = window._currentUser && String(window._currentUser.uid) === userId;
   var myAppsUrl = window.QG_CONFIG && window.QG_CONFIG.myApplicationsUrl;
   if (isCurrentWorker && myAppsUrl && typeof callVerifiedFunction === 'function') {
-    var ownResult = await callVerifiedFunction(myAppsUrl, {});
+    var ownResult = await callVerifiedFunction(myAppsUrl, { include_posted_tasks: true });
     asWorker = ownResult && ownResult.success ? (ownResult.data || []) : [];
+    if (ownResult && Array.isArray(ownResult.tasks)) postedFromFn = ownResult.tasks;
   } else {
     asWorker = await sbGet(
       'applications',
@@ -849,6 +851,9 @@ async function fetchApplicationsForActor(userId) {
     myTasks = await getTasksByUser(userId);
   } catch (e) {
     myTasks = [];
+  }
+  if ((!myTasks || !myTasks.length) && postedFromFn.length) {
+    myTasks = postedFromFn.map(normalizeTaskRow);
   }
   var taskIds = [];
   (myTasks || []).forEach(function (t) {
@@ -1282,7 +1287,11 @@ async function fetchMyTasksBundle(userId) {
       return String(getTaskRowId(t)) === String(tid);
     });
     if (match) addTask(match);
-    else missingIds.push(String(tid));
+    else {
+      var fromApp = typeof taskRowFromApplication === 'function' ? taskRowFromApplication(a) : null;
+      if (fromApp) addTask(fromApp);
+      else missingIds.push(String(tid));
+    }
   });
   if (missingIds.length && typeof getTaskById === 'function') {
     var unique = {};
@@ -1292,6 +1301,29 @@ async function fetchMyTasksBundle(userId) {
         if (row) addTask(row);
       });
     }));
+  }
+
+  // Service-role posted tasks when REST tasks list is empty (RLS recursion / timeout).
+  var myAppsUrl = window.QG_CONFIG && window.QG_CONFIG.myApplicationsUrl;
+  if (!Object.keys(taskMap).length && myAppsUrl && typeof callVerifiedFunction === 'function') {
+    try {
+      var fnBundle = await callVerifiedFunction(myAppsUrl, { include_posted_tasks: true });
+      if (fnBundle && fnBundle.success) {
+        (fnBundle.tasks || []).forEach(addTask);
+        (fnBundle.data || []).forEach(function (a) {
+          addApp(a);
+          var syn = taskRowFromApplication(a);
+          if (syn) addTask(syn);
+        });
+      }
+    } catch (fnErr) {
+      console.warn('fetchMyTasksBundle service hydrate failed:', fnErr);
+    }
+  } else {
+    (allApps || []).forEach(function (a) {
+      var syn = taskRowFromApplication(a);
+      if (syn && !taskMap[String(getTaskRowId(syn))]) addTask(syn);
+    });
   }
 
   return {
@@ -2368,11 +2400,29 @@ async function enrichConversationNames(conv) {
   if (!conv) return conv;
   var posterName = conv.poster_name || '';
   var workerName = conv.worker_name || '';
+  var taskTitle = conv.task_title || '';
   if ((!posterName || isGenericDisplayName(posterName)) && typeof getUserNameByFirebaseUid === 'function') {
     posterName = await getUserNameByFirebaseUid(conv.poster_id) || posterName;
   }
   if ((!workerName || isGenericDisplayName(workerName)) && typeof getUserNameByFirebaseUid === 'function') {
     workerName = await getUserNameByFirebaseUid(conv.worker_id) || workerName;
+  }
+  if ((!taskTitle || isGenericDisplayName(taskTitle) || (typeof looksLikeUuid === 'function' && looksLikeUuid(taskTitle))) && conv.task_id != null) {
+    try {
+      var taskRow = typeof getTaskById === 'function'
+        ? await withTimeout(getTaskById(conv.task_id), 4000, null)
+        : null;
+      if (taskRow) {
+        var resolved = taskRow.title || taskRow.TITLE || '';
+        if (resolved && !(typeof looksLikeUuid === 'function' && looksLikeUuid(resolved))) taskTitle = resolved;
+        if ((!posterName || isGenericDisplayName(posterName)) && (taskRow.poster_name || taskRow.POSTER_NAME)) {
+          posterName = taskRow.poster_name || taskRow.POSTER_NAME;
+        }
+        if (!conv.task_category && (taskRow.category || taskRow.CATEGORY)) {
+          conv.task_category = taskRow.category || taskRow.CATEGORY;
+        }
+      }
+    } catch (e) { /* title stays denormalized */ }
   }
   var patch = {};
   if (posterName && !isGenericDisplayName(posterName) && posterName !== conv.poster_name) {
@@ -2383,7 +2433,11 @@ async function enrichConversationNames(conv) {
     conv.worker_name = workerName;
     patch.worker_name = workerName;
   }
-  if (conv.conv_id && (patch.poster_name || patch.worker_name)) {
+  if (taskTitle && taskTitle !== conv.task_title && !(typeof looksLikeUuid === 'function' && looksLikeUuid(taskTitle))) {
+    conv.task_title = taskTitle;
+    patch.task_title = taskTitle;
+  }
+  if (conv.conv_id && (patch.poster_name || patch.worker_name || patch.task_title)) {
     updateConversation(conv.conv_id, patch).catch(function () {});
   }
   return conv;
@@ -2860,7 +2914,46 @@ function normalizeApplicationRow(row) {
   if (row.counter_price == null && row.COUNTER_PRICE != null) row.counter_price = row.COUNTER_PRICE;
   if (row.counter_by == null && row.COUNTER_BY != null) row.counter_by = row.COUNTER_BY;
   if (row.counter_round == null && row.COUNTER_ROUND != null) row.counter_round = row.COUNTER_ROUND;
+  // Embedded task snapshot from my-applications (service role) — used when REST tasks RLS fails.
+  var nested = row.task && typeof row.task === 'object' ? row.task : null;
+  if (nested) {
+    if (row.task_title == null && nested.title != null) row.task_title = nested.title;
+    if (row.task_category == null && nested.category != null) row.task_category = nested.category;
+    if (row.task_status == null && nested.status != null) row.task_status = nested.status;
+    if (row.task_created_at == null && nested.created_at != null) row.task_created_at = nested.created_at;
+    if (row.posted_by == null && nested.posted_by != null) row.posted_by = nested.posted_by;
+    if (row.poster_name == null && nested.poster_name != null) row.poster_name = nested.poster_name;
+  }
+  if (row.posted_by != null) row.POSTED_BY = row.posted_by;
+  if (row.poster_name != null) row.POSTER_NAME = row.poster_name;
+  if (row.task_title != null) row.TASK_TITLE = row.task_title;
   return row;
+}
+
+/** Build a task-shaped row from application-embedded fields when tasks REST is empty. */
+function taskRowFromApplication(app) {
+  if (!app) return null;
+  var tid = app.task_id || app.TASK_ID;
+  if (tid == null || tid === '') return null;
+  var nested = app.task && typeof app.task === 'object' ? app.task : null;
+  var title = app.task_title || app.TASK_TITLE || (nested && nested.title) || '';
+  var category = app.task_category || (nested && nested.category) || '';
+  var status = app.task_status || (nested && nested.status) || '';
+  var created = app.task_created_at || (nested && nested.created_at) || app.created_at || '';
+  var postedBy = app.posted_by || app.POSTED_BY || (nested && nested.posted_by) || '';
+  var posterName = app.poster_name || app.POSTER_NAME || (nested && nested.poster_name) || '';
+  if (!title && !postedBy && !nested) return null;
+  return normalizeTaskRow({
+    task_id: tid,
+    title: title,
+    category: category,
+    status: status,
+    created_at: created,
+    posted_by: postedBy,
+    poster_name: posterName,
+    budget: app.task_budget != null ? app.task_budget : (nested && nested.budget),
+    location: app.task_location || (nested && nested.location) || ''
+  });
 }
 
 function applicationPatchToCache(patch) {
@@ -4364,7 +4457,7 @@ async function unlockChatForTask(taskId, posterId, workerId) {
   if (result && result.success && wasLocked && workerId && typeof notifyTaskFunded === 'function') {
     try {
       var title = taskRow ? (taskRow.title || taskRow.TITLE || '') : (conv.task_title || '');
-      var unlockRule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'payment';
+      var unlockRule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept';
       var chatLink = 'https://quickgigs.ca/chat.html?conv=' + encodeURIComponent(String(conv.conv_id));
       if (unlockRule === 'payment') {
         await notifyTaskFunded(workerId, '', {
@@ -4596,6 +4689,7 @@ window.fetchDashboardBootstrap = fetchDashboardBootstrap;
 window.fetchPosterAppsForTasks = fetchPosterAppsForTasks;
 window.fetchWorkerPostedTasks = fetchWorkerPostedTasks;
 window.fetchMyTasksBundle = fetchMyTasksBundle;
+window.taskRowFromApplication = taskRowFromApplication;
 window.taskPostedByUser = taskPostedByUser;
 window.withTimeout = withTimeout;
 window.mergeTaskLists = mergeTaskLists;

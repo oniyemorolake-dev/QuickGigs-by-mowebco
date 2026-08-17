@@ -96,10 +96,46 @@ Deno.serve(async (req) => {
       }
       const { data, error } = await query;
       if (error) throw error;
-      const checked = await Promise.all((data || []).map(async (conv) => (
-        await relationshipValid(conv) ? conv : null
-      )));
-      return json({ success: true, data: checked.filter(Boolean) });
+      const checked = (await Promise.all((data || []).map(async (conv) => (
+        await relationshipValid(conv) ? conv as Record<string, unknown> : null
+      )))).filter(Boolean) as Array<Record<string, unknown>>;
+
+      // Hydrate empty denormalized title/names (service role — avoids client RLS miss).
+      const taskIds = [...new Set(checked.map((c) => String(c.task_id || '')).filter(Boolean))];
+      const uids = [...new Set(checked.flatMap((c) => [String(c.poster_id || ''), String(c.worker_id || '')]).filter(Boolean))];
+      const [{ data: taskRows }, { data: userRows }] = await Promise.all([
+        taskIds.length
+          ? supabase.from('tasks').select('task_id,title,category,poster_name').in('task_id', taskIds)
+          : Promise.resolve({ data: [] as Array<Record<string, unknown>> }),
+        uids.length
+          ? supabase.from('users').select('firebase_uid,name').in('firebase_uid', uids)
+          : Promise.resolve({ data: [] as Array<Record<string, unknown>> }),
+      ]);
+      const taskMap = new Map((taskRows || []).map((t) => [String(t.task_id), t]));
+      const nameMap = new Map((userRows || []).map((u) => [String(u.firebase_uid), String(u.name || '').trim()]));
+      const generic = (n: string) => {
+        const s = n.trim().toLowerCase();
+        return !s || ['quickgigs user', 'a quickgigs member', 'quickgigs member', 'worker', 'poster', 'user', 'tasker'].includes(s);
+      };
+      const hydrated = checked.map((c) => {
+        const out = { ...c };
+        const task = taskMap.get(String(c.task_id || ''));
+        const title = String(out.task_title || '').trim();
+        if ((!title || generic(title)) && task && task.title) out.task_title = task.title;
+        if (!out.task_category && task && task.category) out.task_category = task.category;
+        const pn = String(out.poster_name || '').trim();
+        const wn = String(out.worker_name || '').trim();
+        const posterLookup = nameMap.get(String(c.poster_id || '')) || '';
+        const workerLookup = nameMap.get(String(c.worker_id || '')) || '';
+        if ((!pn || generic(pn)) && posterLookup && !generic(posterLookup)) out.poster_name = posterLookup;
+        else if ((!pn || generic(pn)) && task && task.poster_name && !generic(String(task.poster_name))) {
+          out.poster_name = task.poster_name;
+        }
+        if ((!wn || generic(wn)) && workerLookup && !generic(workerLookup)) out.worker_name = workerLookup;
+        return out;
+      });
+
+      return json({ success: true, data: hydrated });
     }
 
     if (action === 'get') {
