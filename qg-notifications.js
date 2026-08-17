@@ -249,7 +249,16 @@
 
     var subject = tmpl.subject(payload);
     var bodyText = tmpl.body(payload);
+    // Cross-user emails: leave empty — send-notification resolves from users by user_id
+    // (service role). Only waitlist / guardian consent may pass an explicit address.
     var email = opts.email || '';
+    var uid = String(opts.userId || '');
+    var allowClientEmail = opts.type.indexOf('waitlist_') === 0 ||
+      opts.type === 'guardian_consent' ||
+      uid.indexOf('waitlist:') === 0 ||
+      uid === 'guardian' ||
+      uid.indexOf('guardian:') === 0;
+    if (!allowClientEmail) email = '';
 
     var row = {
       user_id: opts.userId || ('waitlist:' + (email || 'unknown')),
@@ -293,13 +302,14 @@
     return result;
   }
 
-  async function notifyPosterNewApplication(posterId, posterEmail, task, application) {
+  async function notifyPosterNewApplication(posterId, _posterEmail, task, application) {
     if (!posterId) return;
     var taskId = task && (task.task_id || task.TASK_ID);
     return queueEmailNotification({
       type: 'application_received',
       userId: posterId,
-      email: posterEmail,
+      // email resolved server-side from posterId
+      email: '',
       payload: {
         taskTitle: titled(task && (task.title || task.TITLE)),
         taskId: taskId,
@@ -310,12 +320,12 @@
     });
   }
 
-  async function notifyWorkerAccepted(workerId, workerEmail, task, posterName) {
+  async function notifyWorkerAccepted(workerId, _workerEmail, task, posterName) {
     if (!workerId) return;
     return queueEmailNotification({
       type: 'application_accepted',
       userId: workerId,
-      email: workerEmail,
+      email: '',
       payload: {
         taskTitle: titled(task && (task.title || task.TITLE)),
         posterName: posterName,
@@ -324,7 +334,7 @@
     });
   }
 
-  async function notifyTaskFunded(workerId, workerEmail, payload) {
+  async function notifyTaskFunded(workerId, _workerEmail, payload) {
     if (!workerId) return;
     payload = payload || {};
     var convId = payload.convId || '';
@@ -335,7 +345,7 @@
     return queueEmailNotification({
       type: 'task_funded',
       userId: workerId,
-      email: workerEmail || '',
+      email: '',
       payload: {
         taskTitle: titled(payload.taskTitle),
         taskId: payload.taskId,
@@ -374,12 +384,12 @@
     });
   }
 
-  async function notifyTaskCompleted(userId, email, task, role) {
+  async function notifyTaskCompleted(userId, _email, task, role) {
     if (!userId) return;
     return queueEmailNotification({
       type: 'task_completed',
       userId: userId,
-      email: email,
+      email: '',
       payload: {
         taskTitle: titled(task && (task.title || task.TITLE)),
         role: role,
@@ -388,13 +398,13 @@
     });
   }
 
-  async function notifyNewChatMessage(recipientId, recipientEmail, payload) {
+  async function notifyNewChatMessage(recipientId, _recipientEmail, payload) {
     if (!recipientId) return { success: false };
     payload = payload || {};
     return queueEmailNotification({
       type: 'new_message',
       userId: recipientId,
-      email: recipientEmail,
+      email: '',
       payload: {
         senderName: payload.senderName,
         taskTitle: titled(payload.taskTitle),
@@ -431,7 +441,7 @@
     });
   }
 
-  async function notifyWorkerCounterOffer(workerId, workerEmail, task, payload) {
+  async function notifyWorkerCounterOffer(workerId, _workerEmail, task, payload) {
     if (!workerId) return;
     payload = payload || {};
     var taskId = payload.taskId || (task && (task.task_id || task.TASK_ID));
@@ -439,7 +449,7 @@
     return queueEmailNotification({
       type: type,
       userId: workerId,
-      email: workerEmail,
+      email: '',
       payload: {
         taskTitle: titled(task && (task.title || task.TITLE)),
         taskId: taskId,
@@ -451,7 +461,7 @@
     });
   }
 
-  async function notifyPosterCounterReply(posterId, posterEmail, task, payload) {
+  async function notifyPosterCounterReply(posterId, _posterEmail, task, payload) {
     if (!posterId) return;
     payload = payload || {};
     var taskId = payload.taskId || (task && (task.task_id || task.TASK_ID));
@@ -459,7 +469,7 @@
     return queueEmailNotification({
       type: type,
       userId: posterId,
-      email: posterEmail,
+      email: '',
       payload: {
         taskTitle: titled(task && (task.title || task.TITLE)),
         taskId: taskId,

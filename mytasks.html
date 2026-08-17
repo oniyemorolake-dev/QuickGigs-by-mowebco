@@ -2079,7 +2079,7 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
 
   if (typeof notifyWorkerAccepted === 'function') {
     try {
-      await notifyWorkerAccepted(workerId, workerUser && workerUser.email, {
+      await notifyWorkerAccepted(workerId, '', {
         title: getField(task, 'TITLE'),
         TASK_ID: taskId
       }, posterName);
@@ -2482,12 +2482,10 @@ window.markComplete = async function(taskId, btn){
       });
       var notifyWorkerId = workerApp ? getField(workerApp, 'WORKER_ID') : workerId;
       if (notifyPosterId) {
-        var posterUser = await getUserByFirebaseUid(notifyPosterId);
-        await notifyTaskCompleted(notifyPosterId, posterUser && posterUser.email, { title: getField(doneTask, 'TITLE') }, 'poster');
+        await notifyTaskCompleted(notifyPosterId, '', { title: getField(doneTask, 'TITLE') }, 'poster');
       }
       if (notifyWorkerId) {
-        var wUser = await getUserByFirebaseUid(notifyWorkerId);
-        await notifyTaskCompleted(notifyWorkerId, wUser && wUser.email, { title: getField(doneTask, 'TITLE') }, 'worker');
+        await notifyTaskCompleted(notifyWorkerId, '', { title: getField(doneTask, 'TITLE') }, 'worker');
       }
     } catch (notifyErr) {
       console.warn('Complete notification skipped:', notifyErr);

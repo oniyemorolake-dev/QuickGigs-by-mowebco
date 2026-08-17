@@ -98,19 +98,25 @@ var SELECT_CONVERSATIONS = SELECT_CONVERSATIONS_CORE + ',poster_last_read_at,wor
 var SELECT_PAYMENTS = 'payment_id,task_id,poster_id,worker_id,amount,platform_fee,worker_payout,status,stripe_id,transfer_id,created_at,completed_at';
 var SELECT_REVIEWS = 'review_id,task_id,reviewer_id,reviewee_id,rating,review_comment,reviewer_name,task_title,tags,created_at';
 /**
- * Public user card/list — NEVER email/phone.
- * Do NOT select is_verified here — optional column; missing it 400s the whole users GET.
- * Rating is not a users column (computed from reviews).
+ * Other-user / card / list reads — PostgREST view public_user_profiles only.
+ * NEVER email, phone, DOB, guardian contact, consent tokens, or Stripe account IDs.
  */
+var PUBLIC_USER_PROFILES = 'public_user_profiles';
 var SELECT_USERS_PUBLIC_CARD = 'user_id,firebase_uid,name,avatar_url,is_tasker,is_poster,tasker_verified,poster_verified';
 /**
- * Public profile / worker discovery — rendered fields only, still NEVER email/phone.
+ * Safe columns matching public_user_profiles (marketplace cards + accept gates).
+ * Payout fields are booleans/enum only — not Connect account IDs.
  */
-var SELECT_USERS_PUBLIC = SELECT_USERS_PUBLIC_CARD + ',role,status,bio,skills,availability,service_area,languages,pronouns,account_status,created_at,stripe_payouts_enabled,guardian_stripe_payouts_enabled,payout_owner';
+var SELECT_USERS_PUBLIC = SELECT_USERS_PUBLIC_CARD +
+  ',role,status,bio,skills,availability,service_area,languages,pronouns,account_status,created_at,' +
+  'rating,verified,stripe_payouts_enabled,guardian_stripe_payouts_enabled,payout_owner';
+/** @deprecated alias — same safe column set as SELECT_USERS_PUBLIC */
+var SELECT_PUBLIC_USER_PROFILES = SELECT_USERS_PUBLIC;
 /**
  * Own profile — completion meter columns + common settings.
  * Keep this list conservative: a missing optional column must not blank the profile (0%).
  * Completion reads: name, email, avatar_url, bio, skills, pronouns, email_verified.
+ * ONLY use against public.users with self / admin RLS.
  */
 var SELECT_USERS_SELF_CORE =
   'user_id,firebase_uid,name,email,avatar_url,bio,skills,pronouns,email_verified,email_verified_at,role,status,phone,phone_e164,phone_verified,phone_verified_at,created_at,account_status,' +
@@ -309,11 +315,18 @@ async function sbGetOrThrow(table, filters, order, limit, opts) {
     if (opts.select && !hasSelectParam(filterStr)) {
       filterStr = withSelect(filterStr, opts.select);
     }
-    // Guard: users must never use select=* from the client
+    // Guard: never select=* on users or public profiles from the client
     if (String(table) === 'users') {
+      // Prefer self projection if caller already set select=; else force public-safe
+      // (own-profile callers pass SELECT_USERS_SELF* explicitly).
       filterStr = String(filterStr || '').replace(/(^|&)select=\*(?=&|$)/, '$1select=' + SELECT_USERS_PUBLIC);
       if (!hasSelectParam(filterStr)) {
         filterStr = withSelect(filterStr, SELECT_USERS_PUBLIC);
+      }
+    } else if (String(table) === PUBLIC_USER_PROFILES) {
+      filterStr = String(filterStr || '').replace(/(^|&)select=\*(?=&|$)/, '$1select=' + SELECT_PUBLIC_USER_PROFILES);
+      if (!hasSelectParam(filterStr)) {
+        filterStr = withSelect(filterStr, SELECT_PUBLIC_USER_PROFILES);
       }
     } else if (!hasSelectParam(filterStr) && !opts.select) {
       // Default explicit selects for common tables (never bare *)
@@ -1479,16 +1492,23 @@ async function repostTask(sourceTaskId, posterId) {
 }
 
 async function uploadTaskPhoto(file, userId) {
-  return await uploadStoragePhoto(file, userId, 'task-photos', String(userId));
+  return await uploadStoragePhoto(file, userId, 'task-photos', String(userId), { maxDim: 800 });
 }
 
 async function uploadProfilePhoto(file, userId) {
-  return await uploadStoragePhoto(file, userId, 'profile-photos', String(userId));
+  return await uploadStoragePhoto(file, userId, 'profile-photos', String(userId), { maxDim: 800 });
 }
 
 async function uploadChatPhoto(file, userId, convId) {
   if (!convId) return { success: false, error: 'Missing conversation' };
-  return await uploadStoragePhoto(file, userId, 'chat-photos', String(convId) + '/' + String(userId));
+  // Chat attachments: allow up to ~1600px before upload (JPEG/PNG/WebP only)
+  return await uploadStoragePhoto(
+    file,
+    userId,
+    'chat-photos',
+    String(convId) + '/' + String(userId),
+    { maxDim: 1600 }
+  );
 }
 
 function formatUploadError(err) {
@@ -1518,7 +1538,8 @@ function formatUploadError(err) {
   return msg || 'Photo upload failed.';
 }
 
-async function uploadStoragePhoto(file, userId, bucket, folder) {
+async function uploadStoragePhoto(file, userId, bucket, folder, opts) {
+  opts = opts || {};
   if (!file || !userId) return { success: false, error: 'Missing file or user' };
   var maxMb = (window.QG_CONFIG && window.QG_CONFIG.maxPhotoSizeMb) || 5;
   if (file.size > maxMb * 1024 * 1024) {
@@ -1527,10 +1548,12 @@ async function uploadStoragePhoto(file, userId, bucket, folder) {
   if (!file.type || file.type.indexOf('image/') !== 0) {
     return { success: false, error: 'Please choose an image file' };
   }
-  // Compress before upload (posttask / profile / chat)
-  if (typeof compressImage === 'function') {
+  var maxDim = opts.maxDim != null ? Number(opts.maxDim) : 800;
+  if (!isFinite(maxDim) || maxDim < 320) maxDim = 800;
+  // Compress / resize before upload (posttask / profile / chat)
+  if (typeof compressImage === 'function' && opts.skipCompress !== true) {
     try {
-      file = await compressImage(file, 800);
+      file = await compressImage(file, maxDim);
     } catch (compressErr) {
       console.warn('compressImage skipped:', compressErr);
     }
@@ -1695,8 +1718,27 @@ async function updateTaskStatus(taskId, status, options) {
   return result;
 }
 
+/**
+ * Read other-user / directory rows from public_user_profiles.
+ * Falls back to users + public select only while the view is not deployed yet.
+ */
+async function sbGetPublicProfiles(filters, order, limit) {
+  var filterStr = withSelect(filters || null, SELECT_PUBLIC_USER_PROFILES);
+  try {
+    return await sbGetOrThrow(PUBLIC_USER_PROFILES, filterStr, order, limit);
+  } catch (err) {
+    var msg = String((err && err.message) || err || '');
+    if (/public_user_profiles|42P01|PGRST205|does not exist|schema cache|404/i.test(msg)) {
+      console.warn('public_user_profiles missing — falling back to users public select until RLS migration is applied');
+      return await sbGet('users', withSelect(filters || null, SELECT_USERS_PUBLIC), order, limit);
+    }
+    console.error('Supabase public profile GET error:', err);
+    return [];
+  }
+}
+
 async function getUsers() {
-  return await sbGet('users', withSelect(null, SELECT_USERS_PUBLIC), null, 500);
+  return await sbGetPublicProfiles(null, null, 500);
 }
 
 async function saveUser(userData) {
@@ -1949,7 +1991,8 @@ async function getUserByFirebaseUid(firebaseUid, opts) {
   var fetchOne = async function () {
     var filter = 'firebase_uid=eq.' + encodeURIComponent(firebaseUid);
     if (self) {
-      // Prefer full self select; fall back to completion-core if optional cols 400
+      // Own full row — public.users (owner RLS). Prefer full self select;
+      // fall back to completion-core if optional cols 400.
       try {
         var full = await sbGetOrThrow('users', withSelect(filter, SELECT_USERS_SELF), null, 1);
         if (full && full[0]) return full[0];
@@ -1959,7 +2002,8 @@ async function getUserByFirebaseUid(firebaseUid, opts) {
       var core = await sbGet('users', withSelect(filter, SELECT_USERS_SELF_CORE), null, 1);
       return (core && core[0]) || null;
     }
-    var publicRows = await sbGet('users', withSelect(filter, SELECT_USERS_PUBLIC), null, 1);
+    // Other users — safe view only (never full users row)
+    var publicRows = await sbGetPublicProfiles(filter, null, 1);
     return (publicRows && publicRows[0]) || null;
   };
   var user = (opts.fresh || typeof getCached !== 'function')
@@ -1974,6 +2018,7 @@ async function getUserByFirebaseUid(firebaseUid, opts) {
 
 async function getUserNameByFirebaseUid(firebaseUid) {
   if (!firebaseUid) return '';
+  // Own name may still use users via self detection; others use public view.
   var user = await getUserByFirebaseUid(firebaseUid);
   if (user && user.name && !isGenericDisplayName(user.name)) return user.name;
   if (window._currentUser && window._currentUser.uid === firebaseUid) {
@@ -1984,7 +2029,7 @@ async function getUserNameByFirebaseUid(firebaseUid) {
 
 async function getUsersNameMap() {
   var fetchMap = async function () {
-    var users = await sbGet('users', withSelect(null, SELECT_USERS_NAME), null, 500);
+    var users = await sbGetPublicProfiles(withSelect(null, SELECT_USERS_NAME), null, 500);
     var map = {};
     if (!Array.isArray(users)) return map;
     users.forEach(function (u) {
@@ -2248,7 +2293,7 @@ async function getUserAvatarUrl(firebaseUid) {
 
 async function getUsersAvatarMap() {
   var fetchMap = async function () {
-    var users = await sbGet('users', withSelect(null, SELECT_USERS_AVATAR), null, 500);
+    var users = await sbGetPublicProfiles(withSelect(null, SELECT_USERS_AVATAR), null, 500);
     var map = {};
     if (!Array.isArray(users)) return map;
     users.forEach(function (u) {
@@ -4525,10 +4570,13 @@ window.SELECT_TASKS_BROWSE = SELECT_TASKS_BROWSE;
 window.SELECT_TASKS_DASH = SELECT_TASKS_DASH;
 window.SELECT_TASKS_DETAIL = SELECT_TASKS_DETAIL;
 window.SELECT_APPLICATIONS = SELECT_APPLICATIONS;
+window.PUBLIC_USER_PROFILES = PUBLIC_USER_PROFILES;
 window.SELECT_USERS_PUBLIC = SELECT_USERS_PUBLIC;
 window.SELECT_USERS_PUBLIC_CARD = SELECT_USERS_PUBLIC_CARD;
+window.SELECT_PUBLIC_USER_PROFILES = SELECT_PUBLIC_USER_PROFILES;
 window.SELECT_USERS_SELF = SELECT_USERS_SELF;
 window.SELECT_USERS_SELF_CORE = SELECT_USERS_SELF_CORE;
+window.sbGetPublicProfiles = sbGetPublicProfiles;
 window.SELECT_REVIEWS = SELECT_REVIEWS;
 window.withSelect = withSelect;
 window.SUPABASE_HEADERS = SUPABASE_HEADERS;
