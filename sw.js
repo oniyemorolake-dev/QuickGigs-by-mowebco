@@ -1,8 +1,9 @@
 /* QuickGigs service worker
- * BUILD_ID is auto-stamped by scripts/stamp-cache-version.js (+ .githooks/pre-commit).
- * HTML + JS/CSS: network-first (no-store). Old Cache Storage entries are purged on activate.
+ * BUILD_ID is auto-stamped by scripts/stamp-cache-version.js (pre-commit + CI).
+ * HTML: network-first (fresh when online). CSS/JS/icons: cache-first.
+ * Activate purges every Cache Storage entry that is not CACHE_NAME.
  */
-var BUILD_ID = 'cd3efe6-1786397433';
+var BUILD_ID = '32e06f4-1787866369';
 var CACHE_NAME = 'quickgigs-' + BUILD_ID;
 var OFFLINE_FALLBACK = '/dashboard.html';
 
@@ -21,8 +22,27 @@ function isCodeRequest(url) {
   return path.endsWith('.js') || path.endsWith('.css');
 }
 
+function isIconRequest(url) {
+  var path = url.pathname || '';
+  return /\.(png|jpg|jpeg|gif|webp|svg|ico)$/i.test(path);
+}
+
 function isOurCache(name) {
   return name === CACHE_NAME;
+}
+
+function cacheFirst(event) {
+  return caches.open(CACHE_NAME).then(function (cache) {
+    return cache.match(event.request).then(function (cached) {
+      if (cached) return cached;
+      return fetch(event.request).then(function (response) {
+        if (response && response.ok && response.type === 'basic') {
+          cache.put(event.request, response.clone());
+        }
+        return response;
+      });
+    });
+  });
 }
 
 self.addEventListener('install', function (event) {
@@ -38,7 +58,6 @@ self.addEventListener('install', function (event) {
 self.addEventListener('activate', function (event) {
   event.waitUntil(
     caches.keys().then(function (keys) {
-      // Delete EVERY cache that is not the current BUILD_ID version
       return Promise.all(keys.map(function (k) {
         if (isOurCache(k)) return Promise.resolve();
         return caches.delete(k);
@@ -73,19 +92,7 @@ self.addEventListener('fetch', function (event) {
   // Never intercept the service worker script itself
   if (url.pathname.endsWith('/sw.js') || url.pathname === '/sw.js') return;
 
-  // JS / CSS — network-first with no-store; cache only as offline fallback
-  if (isCodeRequest(url)) {
-    event.respondWith(
-      fetch(event.request, { cache: 'no-store' }).then(function (response) {
-        return response;
-      }).catch(function () {
-        return caches.match(event.request);
-      })
-    );
-    return;
-  }
-
-  // HTML — network-first; update offline cache but never prefer it while online
+  // HTML — network-first; cache only as offline fallback
   if (isHtmlRequest(url)) {
     event.respondWith(
       fetch(event.request, { cache: 'no-store' }).then(function (response) {
@@ -109,18 +116,12 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  // Other static (images etc.) — stale-while-revalidate
-  event.respondWith(
-    caches.open(CACHE_NAME).then(function (cache) {
-      return cache.match(event.request).then(function (cached) {
-        var network = fetch(event.request).then(function (response) {
-          if (response && response.status === 200 && response.type === 'basic') {
-            cache.put(event.request, response.clone());
-          }
-          return response;
-        }).catch(function () { return cached; });
-        return cached || network;
-      });
-    })
-  );
+  // CSS / JS / icons — cache-first (query-string versions bust on deploy)
+  if (isCodeRequest(url) || isIconRequest(url)) {
+    event.respondWith(cacheFirst(event));
+    return;
+  }
+
+  // Other same-origin GETs — cache-first
+  event.respondWith(cacheFirst(event));
 });

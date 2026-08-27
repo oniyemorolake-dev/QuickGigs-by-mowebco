@@ -1,0 +1,37 @@
+name: Stamp cache version
+
+# Ensures every push to main bumps BUILD_ID even when local git hooks are not installed.
+# Skips bot re-stamps to avoid an infinite loop.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  stamp:
+    if: ${{ !contains(github.event.head_commit.message, '[cache-stamp]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Stamp BUILD_ID
+        run: node scripts/stamp-cache-version.js
+
+      - name: Commit and push if changed
+        run: |
+          set -euo pipefail
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No stamp changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sw.js qg-pwa.js qg-build-id.json
+          git add -- *.html 2>/dev/null || true
+          git commit -m "chore: stamp PWA cache version [cache-stamp]"
+          git push
