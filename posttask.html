@@ -1384,7 +1384,7 @@ window.handleSubmit = async function(skipPhotos, publishMode) {
       }
       var failMsg = typeof formatSupabaseActionError === 'function'
         ? formatSupabaseActionError('post task', result.error)
-        : 'Could not save your task. Run supabase/beta-setup-all.sql in Supabase, then refresh and try again.';
+        : 'Could not save your task. Sign in again, refresh, and try again.';
       showFormBanner(failMsg);
       console.error('postTask failed:', result.error);
       unlockSubmit();

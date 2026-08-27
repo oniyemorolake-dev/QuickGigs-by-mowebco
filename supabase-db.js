@@ -1561,12 +1561,12 @@ function formatUploadError(err) {
   var lower = msg.toLowerCase();
   if (lower.indexOf('row-level') >= 0 || lower.indexOf('403') >= 0 ||
       lower.indexOf('unauthorized') >= 0 || lower.indexOf('42501') >= 0) {
-    return 'Photo upload is blocked in Supabase. Open SQL Editor → run supabase/storage-beta-fix.sql (or beta-setup-all.sql).';
+    return 'Photo upload is blocked. Sign in again, then retry. If it persists, check chat-photos / task-photos storage policies.';
   }
   if (lower.indexOf('bucket') >= 0 || lower.indexOf('not found') >= 0) {
-    return 'Photo storage is not set up yet. Run supabase/storage-beta-fix.sql in Supabase SQL Editor.';
+    return 'Photo storage bucket is missing. Apply supabase/migrations/20260827213732_lock_chat_task_photos.sql.';
   }
-  if (msg.length > 120) return 'Photo upload failed. Remove the photo or run supabase/storage-beta-fix.sql in Supabase.';
+  if (msg.length > 120) return 'Photo upload failed. Remove the photo and try again.';
   return msg || 'Photo upload failed.';
 }
 
@@ -3406,12 +3406,12 @@ function formatSupabaseActionError(action, err) {
     return 'Could not ' + action + ' — run supabase/reviews.sql in Supabase SQL Editor, then refresh.';
   }
   if (lower.indexOf('401') >= 0 || lower.indexOf('403') >= 0 || lower.indexOf('42501') >= 0 || lower.indexOf('row-level') >= 0) {
-    return 'Could not ' + action + ' — run supabase/beta-setup-all.sql in Supabase SQL Editor, then refresh.';
+    return 'Could not ' + action + ' — sign in again and retry. If it persists, check RLS policies (do not re-run retired beta SQL).';
   }
   if (lower.indexOf('photo_urls') >= 0 || lower.indexOf('requires_photos') >= 0 ||
       lower.indexOf('scheduled_at') >= 0 || lower.indexOf('scheduled_label') >= 0 ||
       lower.indexOf('poster_name') >= 0 || lower.indexOf('column') >= 0) {
-    return 'Could not ' + action + ' — run supabase/beta-setup-all.sql in Supabase SQL Editor, then refresh.';
+    return 'Could not ' + action + ' — a required column may be missing. Apply schema migrations, then refresh.';
   }
   if (lower.indexOf('no matching row') >= 0) {
     return 'Could not ' + action + ' — refresh the page and try again.';

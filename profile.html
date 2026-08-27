@@ -1783,7 +1783,7 @@ window.uploadAvatar = async function(input) {
   input.value = '';
   if (!user || !file) return;
   if (typeof uploadProfilePhoto !== 'function') {
-    showToast('Photo upload not ready — run supabase/storage-beta-fix.sql', '#f59e0b');
+    showToast('Photo upload not ready — check storage policies / sign in again', '#f59e0b');
     return;
   }
   var wrap = document.getElementById('avatarWrap');

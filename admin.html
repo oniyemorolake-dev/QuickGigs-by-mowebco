@@ -909,7 +909,7 @@ function renderRecentSignups(){
 function renderUsers(data){
   document.getElementById('usersCount').textContent='· '+data.length+' total';
   var colors=['linear-gradient(135deg,#6b3fa0,#c8a8e9)','linear-gradient(135deg,#16a34a,#4ade80)','linear-gradient(135deg,#d97706,#fbbf24)','linear-gradient(135deg,#ef4444,#f87171)','linear-gradient(135deg,#9b6fc4,#c8a8e9)','linear-gradient(135deg,#0ea5e9,#7dd3fc)'];
-  if(!data.length){document.getElementById('usersBody').innerHTML=typeof QG_emptyStateHtml==='function'?QG_emptyStateHtml({icon:'users',title:'No users yet',sub:'Run beta-setup-all.sql, then refresh.',compact:true}):'<div class="admin-empty">No users in Supabase yet — run beta-setup-all.sql</div>';return;}
+  if(!data.length){document.getElementById('usersBody').innerHTML=typeof QG_emptyStateHtml==='function'?QG_emptyStateHtml({icon:'users',title:'No users yet',sub:'No user rows returned — refresh or check RLS.',compact:true}):'<div class="admin-empty">No users in Supabase yet</div>';return;}
   document.getElementById('usersBody').innerHTML=data.map(function(u,i){
     var uid=typeof userKey==='function'?userKey(u):(u.firebase_uid||u.user_id||u.id||i);
     var name=u.name||'User';
