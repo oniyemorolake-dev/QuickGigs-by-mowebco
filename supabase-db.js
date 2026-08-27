@@ -1577,6 +1577,16 @@ function formatUploadError(err) {
     }
   }
   var lower = msg.toLowerCase();
+  if (lower.indexOf('payload too large') >= 0 || lower.indexOf('entity too large') >= 0 ||
+      lower.indexOf('file_size_limit') >= 0 || lower.indexOf('maximum allowed size') >= 0 ||
+      lower.indexOf('too large') >= 0) {
+    var maxMbPolicy = (window.QG_CONFIG && window.QG_CONFIG.maxPhotoSizeMb) || 5;
+    return 'Photo must be under ' + maxMbPolicy + ' MB.';
+  }
+  if (lower.indexOf('mime') >= 0 || lower.indexOf('file type') >= 0 ||
+      (lower.indexOf('not allowed') >= 0 && lower.indexOf('type') >= 0)) {
+    return 'That file type is not allowed. Use JPEG, PNG, or WebP.';
+  }
   if (lower.indexOf('row-level') >= 0 || lower.indexOf('403') >= 0 ||
       lower.indexOf('unauthorized') >= 0 || lower.indexOf('42501') >= 0) {
     return 'Photo upload is blocked. Sign in again, then retry. If it persists, check chat-photos / task-photos storage policies.';
@@ -1611,15 +1621,17 @@ async function uploadStoragePhoto(file, userId, bucket, folder, opts) {
   var ext = (file.type === 'image/webp')
     ? 'webp'
     : ((String(file.name || '').split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg');
+  var fileName = Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
   var folderPath = String(folder).split('/').map(function(part) {
     return encodeURIComponent(part);
   }).join('/');
-  var path = folderPath + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+  var objectPath = String(folder).replace(/\\/g, '/').split('/').filter(Boolean).join('/') + '/' + fileName;
+  var uploadKey = folderPath + '/' + fileName;
   try {
     var headers = await getSupabaseHeaders(null, { noContentType: true });
     headers['Content-Type'] = file.type || 'image/jpeg';
     headers['x-upsert'] = 'false';
-    var res = await fetch(SUPABASE_URL + '/storage/v1/object/' + bucket + '/' + path, {
+    var res = await fetch(SUPABASE_URL + '/storage/v1/object/' + bucket + '/' + uploadKey, {
       method: 'POST',
       headers: headers,
       body: file
@@ -1628,9 +1640,12 @@ async function uploadStoragePhoto(file, userId, bucket, folder, opts) {
       var errText = await res.text();
       throw new Error(errText || ('Upload failed: ' + res.status));
     }
+    if (bucket === 'chat-photos') {
+      return { success: true, path: objectPath };
+    }
     return {
       success: true,
-      url: SUPABASE_URL + '/storage/v1/object/public/' + bucket + '/' + path
+      url: SUPABASE_URL + '/storage/v1/object/public/' + bucket + '/' + uploadKey
     };
   } catch (err) {
     console.error('Photo upload error:', err);
@@ -1639,30 +1654,163 @@ async function uploadStoragePhoto(file, userId, bucket, folder, opts) {
 }
 
 var CHAT_IMAGE_PREFIX = '[img]';
+var CHAT_PHOTOS_BUCKET = 'chat-photos';
+var CHAT_SIGNED_URL_TTL_SEC = 3600;
+var CHAT_SIGNED_URL_REFRESH_MS = 120000;
+var _chatSignedUrlCache = Object.create(null);
 
 function isChatImageBody(body) {
   return String(body || '').indexOf(CHAT_IMAGE_PREFIX) === 0;
 }
 
-function parseChatImageUrl(body) {
-  if (!isChatImageBody(body)) return null;
-  var url = String(body).slice(CHAT_IMAGE_PREFIX.length).trim();
-  // Never return javascript:/data: — only allowlisted storage HTTPS URLs
-  if (!isAllowedChatImageUrl(url)) return null;
-  return url;
+function isAllowedChatImageStoragePath(path) {
+  if (!path) return false;
+  var p = String(path).trim().replace(/^\/+/, '');
+  if (!p || p.indexOf('..') >= 0 || p.indexOf(':') >= 0 || p.indexOf('\\') >= 0) return false;
+  return /^[^/]+\/[^/]+\/[^/]+\.(jpg|jpeg|png|webp|gif)$/i.test(p);
 }
 
-function isAllowedChatImageUrl(url) {
-  if (!url) return false;
-  var u = String(url).trim();
-  if (typeof safeUrl === 'function') {
-    u = safeUrl(u);
-    if (!u) return false;
-  } else if (!/^https:\/\//i.test(u)) {
-    return false;
+/** Extract chat-photos object path from message body (path-only or legacy public URL). */
+function parseChatImageStoragePath(body) {
+  if (!isChatImageBody(body)) return null;
+  var ref = String(body).slice(CHAT_IMAGE_PREFIX.length).trim();
+  if (!ref) return null;
+  if (/^https?:\/\//i.test(ref)) {
+    var markers = [
+      '/storage/v1/object/public/chat-photos/',
+      '/storage/v1/object/chat-photos/',
+      '/storage/v1/object/sign/chat-photos/'
+    ];
+    for (var i = 0; i < markers.length; i++) {
+      var idx = ref.indexOf(markers[i]);
+      if (idx >= 0) {
+        ref = ref.slice(idx + markers[i].length);
+        break;
+      }
+    }
   }
-  var prefix = String(SUPABASE_URL || '').replace(/\/$/, '') + '/storage/v1/object/public/chat-photos/';
-  return u.indexOf(prefix) === 0;
+  var q = ref.indexOf('?');
+  if (q >= 0) ref = ref.slice(0, q);
+  try {
+    ref = decodeURIComponent(ref.replace(/^\/+/, ''));
+  } catch (decodeErr) {
+    ref = ref.replace(/^\/+/, '');
+  }
+  return isAllowedChatImageStoragePath(ref) ? ref : null;
+}
+
+function parseChatImageUrl(body) {
+  return parseChatImageStoragePath(body);
+}
+
+function isAllowedChatImageUrl(ref) {
+  if (!ref) return false;
+  if (/^https?:\/\//i.test(String(ref))) {
+    return parseChatImageStoragePath(CHAT_IMAGE_PREFIX + ref) !== null;
+  }
+  return isAllowedChatImageStoragePath(ref);
+}
+
+function _chatSignedUrlCacheKey(path) {
+  return CHAT_PHOTOS_BUCKET + '::' + path;
+}
+
+function absolutizeChatSignedUrl(signedURL) {
+  if (!signedURL) return '';
+  var u = String(signedURL);
+  if (/^https:\/\//i.test(u)) return encodeURI(u);
+  var base = String(SUPABASE_URL || '').replace(/\/$/, '') + '/storage/v1';
+  return encodeURI(base + (u.charAt(0) === '/' ? u : '/' + u));
+}
+
+/** Batch sign chat-photos paths (Firebase JWT). Cached in-memory for the session. */
+async function createChatSignedUrls(paths) {
+  var out = Object.create(null);
+  if (!Array.isArray(paths) || !paths.length) return out;
+  var unique = [];
+  var seen = Object.create(null);
+  paths.forEach(function (p) {
+    if (!p || !isAllowedChatImageStoragePath(p) || seen[p]) return;
+    seen[p] = true;
+    unique.push(p);
+  });
+  if (!unique.length) return out;
+
+  var now = Date.now();
+  var need = [];
+  unique.forEach(function (p) {
+    var cached = _chatSignedUrlCache[_chatSignedUrlCacheKey(p)];
+    if (cached && cached.url && cached.expiresAtMs - now > CHAT_SIGNED_URL_REFRESH_MS) {
+      out[p] = cached.url;
+    } else {
+      need.push(p);
+    }
+  });
+  if (!need.length) return out;
+
+  try {
+    var headers = await getSupabaseHeaders({ 'Content-Type': 'application/json' });
+    var res = await fetch(
+      SUPABASE_URL + '/storage/v1/object/sign/' + CHAT_PHOTOS_BUCKET,
+      {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ paths: need, expiresIn: CHAT_SIGNED_URL_TTL_SEC })
+      }
+    );
+    if (!res.ok) {
+      var errText = await res.text();
+      if (typeof qgDebugLog === 'function') {
+        qgDebugLog('[chat-photos] sign failed', res.status, String(errText).slice(0, 200));
+      }
+      return out;
+    }
+    var rows = await res.json();
+    if (!Array.isArray(rows)) {
+      if (typeof qgDebugLog === 'function') qgDebugLog('[chat-photos] sign unexpected response');
+      return out;
+    }
+    var expiresAtMs = now + CHAT_SIGNED_URL_TTL_SEC * 1000;
+    rows.forEach(function (row) {
+      if (!row || row.error) {
+        if (typeof qgDebugLog === 'function') {
+          qgDebugLog('[chat-photos] sign path error', row && row.path, row && row.error);
+        }
+        return;
+      }
+      var path = row.path;
+      var signed = row.signedUrl || row.signedURL;
+      var url = absolutizeChatSignedUrl(signed);
+      if (path && url) {
+        _chatSignedUrlCache[_chatSignedUrlCacheKey(path)] = { url: url, expiresAtMs: expiresAtMs };
+        out[path] = url;
+      }
+    });
+  } catch (err) {
+    if (typeof qgDebugLog === 'function') {
+      qgDebugLog('[chat-photos] sign exception', err && err.message ? err.message : String(err));
+    }
+  }
+  return out;
+}
+
+/** Attach chatImagePath + chatImageSignedUrl on message objects before render. */
+async function hydrateChatImageSignedUrls(messages) {
+  if (!Array.isArray(messages) || !messages.length) return;
+  var paths = [];
+  messages.forEach(function (m) {
+    if (!m || !m.isImage) return;
+    var p = parseChatImageStoragePath(m.text);
+    m.chatImagePath = p || '';
+    if (p) paths.push(p);
+    else m.chatImageSignedUrl = '';
+  });
+  var signed = await createChatSignedUrls(paths);
+  messages.forEach(function (m) {
+    if (m && m.isImage && m.chatImagePath) {
+      m.chatImageSignedUrl = signed[m.chatImagePath] || '';
+    }
+  });
 }
 
 function parsePhotoUrls(raw) {
@@ -2666,8 +2814,8 @@ async function sendChatMessage(convId, senderId, body, recentTexts, fraudOpts) {
   var opts = fraudOpts || { convId: convId, senderId: senderId };
   var isSystem = typeof isSystemChatBody === 'function' && isSystemChatBody(body);
   if (isChatImageBody(body)) {
-    var imgUrl = parseChatImageUrl(body);
-    if (!isAllowedChatImageUrl(imgUrl)) {
+    var imgPath = parseChatImageStoragePath(body);
+    if (!isAllowedChatImageStoragePath(imgPath)) {
       return { success: false, error: 'invalid_image', blocked: true };
     }
   } else if (!isSystem && typeof analyzeOffPlatformContact === 'function') {
@@ -4671,6 +4819,10 @@ window.uploadProfilePhoto = uploadProfilePhoto;
 window.uploadChatPhoto = uploadChatPhoto;
 window.isChatImageBody = isChatImageBody;
 window.parseChatImageUrl = parseChatImageUrl;
+window.parseChatImageStoragePath = parseChatImageStoragePath;
+window.isAllowedChatImageStoragePath = isAllowedChatImageStoragePath;
+window.createChatSignedUrls = createChatSignedUrls;
+window.hydrateChatImageSignedUrls = hydrateChatImageSignedUrls;
 window.CHAT_IMAGE_PREFIX = CHAT_IMAGE_PREFIX;
 window.parsePhotoUrls = parsePhotoUrls;
 window.updateTaskStatus = updateTaskStatus;

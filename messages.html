@@ -329,6 +329,9 @@ html[data-qg-mode="poster"] .im-bubble-row.mine .im-bubble{
 .im-bubble.is-image{padding:4px;overflow:hidden;background:var(--bubble-theirs);}
 .mine .im-bubble.is-image{background:var(--bubble-mine);}
 .im-chat-photo{display:block;width:min(320px,64vw);max-height:340px;object-fit:cover;border-radius:14px;cursor:zoom-in;}
+.im-chat-photo-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:min(320px,64vw);min-height:120px;padding:16px 12px;border-radius:14px;background:rgba(15,23,42,.06);border:1px dashed rgba(15,23,42,.14);text-align:center;box-sizing:border-box;}
+.im-chat-photo-placeholder-icon{font-size:22px;line-height:1;opacity:.55;}
+.im-chat-photo-placeholder-text{font-size:11px;line-height:1.3;opacity:.72;}
 .im-image-caption{padding:7px 9px 6px;font-size:11px;line-height:1.2;color:inherit;opacity:.82;}
 .im-chat-empty{margin:auto;text-align:center;padding:28px 16px;color:var(--text-muted);font-size:13px;}
 .im-chat-empty strong{display:block;color:var(--text);font-size:15px;margin-bottom:6px;}
@@ -576,7 +579,7 @@ function bootMessagesApp(tries) {
 <script defer src="qg-config.js?v=20260816msg1"></script>
 <script defer src="supabaseClient.js?v=20260816msg1"></script>
 <script defer src="contentModeration.js?v=20260816msg1"></script>
-<script defer src="supabase-db.js?v=20260816msg1"></script>
+<script defer src="supabase-db.js?v=20260827chat1"></script>
 <script defer src="qg-lightbox.js?v=20260816msg1"></script>
 <script defer src="qg-report.js?v=20260816msg1"></script>
 <script defer src="qg-pwa.js?v=2b0c585-1787868263"></script>
@@ -1126,6 +1129,9 @@ applyTheme();
     try {
       var rows = await getMessagesForConversation(selectedId, { actorId: currentUserId, trusted: true });
       messages = (rows || []).map(mapMessageRow);
+      if (typeof hydrateChatImageSignedUrls === 'function') {
+        await hydrateChatImageSignedUrls(messages);
+      }
       var near = isNearBottom();
       renderMessages();
       if (opts.forceScroll || near) scrollToBottom();
@@ -1157,18 +1163,30 @@ applyTheme();
     }
   }
 
+  function renderChatImagePlaceholder(caption, detail) {
+    var label = caption + (detail ? ' — ' + detail : '');
+    return '<div class="im-chat-photo-placeholder" role="img" aria-label="' + esc(label) + '">' +
+      '<span class="im-chat-photo-placeholder-icon" aria-hidden="true">📷</span>' +
+      '<span class="im-chat-photo-placeholder-text">' + esc(caption) + (detail ? ' · ' + esc(detail) : '') + '</span>' +
+      '</div>';
+  }
+
   function renderMessageBody(m) {
     if (!m) return '';
-    if (m.isImage && typeof parseChatImageUrl === 'function') {
-      var parsed = parseChatImageUrl(m.text);
-      var safe = parsed && typeof safeMediaUrl === 'function' ? safeMediaUrl(parsed) : parsed;
+    if (m.isImage) {
+      var caption = m.senderIsPoster ? 'Reference photo' : 'Progress photo';
+      var signed = m.chatImageSignedUrl || '';
+      var safe = signed && typeof safeMediaUrl === 'function' ? safeMediaUrl(signed) : signed;
       if (safe) {
-        var caption = m.senderIsPoster ? 'Reference photo' : 'Progress photo';
         return '<img class="im-chat-photo qg-modal-photo-tap" src="' + esc(safe) + '" alt="' + esc(caption) + '"' +
           ' data-photo="' + esc(safe) + '" data-photo-caption="' + esc(caption) + '">' +
           '<div class="im-image-caption">' + esc(caption) + '</div>';
       }
-      return esc('📷 Photo');
+      var hasPath = typeof parseChatImageStoragePath === 'function' && parseChatImageStoragePath(m.text);
+      if (hasPath && typeof qgDebugLog === 'function') {
+        qgDebugLog('[messages] chat image sign unavailable', m.id || '');
+      }
+      return renderChatImagePlaceholder(caption, hasPath ? 'Photo unavailable' : '');
     }
     var bodyText = String(m.text == null ? '' : m.text);
     // Never leave an empty bubble — previous builds blanked text when field names mismatched
@@ -1342,14 +1360,19 @@ applyTheme();
     setUploadStatus('Compressing and uploading photo…');
     try {
       var upload = await uploadChatPhoto(file, currentUserId, selectedId);
-      if (!upload || !upload.success || !upload.url) throw new Error((upload && upload.error) || 'Upload failed');
+      if (!upload || !upload.success || !upload.path) {
+        throw new Error((upload && upload.error) || 'Upload failed');
+      }
       setUploadStatus('Sending photo…');
-      var body = (window.CHAT_IMAGE_PREFIX || '[img]') + upload.url;
+      var body = (window.CHAT_IMAGE_PREFIX || '[img]') + upload.path;
       messages.push({
         id: 'pending-image-' + Date.now(), senderId: currentUserId, from: 'me', text: body,
         isImage: true, senderIsPoster: !!(currentConv && String(currentConv.poster_id) === String(currentUserId)),
         isSystem: false, ts: Date.now(), date: 'Today', clock: formatClock(new Date().toISOString())
       });
+      if (typeof hydrateChatImageSignedUrls === 'function') {
+        await hydrateChatImageSignedUrls(messages);
+      }
       renderMessages();
       scrollToBottom();
       var result = await sendChatMessage(selectedId, currentUserId, body, [], { convId: selectedId, senderId: currentUserId });
@@ -1369,7 +1392,9 @@ applyTheme();
   function openMessageReport(message) {
     if (!message || !currentPeer.uid || typeof openReportModal !== 'function') return;
     var preview = message.isImage
-      ? (typeof parseChatImageUrl === 'function' ? parseChatImageUrl(message.text) : 'Image attachment')
+      ? (typeof parseChatImageStoragePath === 'function'
+        ? (parseChatImageStoragePath(message.text) || 'Image attachment')
+        : (typeof parseChatImageUrl === 'function' ? parseChatImageUrl(message.text) : 'Image attachment'))
       : String(message.text || '').slice(0, 300);
     var context = [
       '[QuickGigs message report]',
