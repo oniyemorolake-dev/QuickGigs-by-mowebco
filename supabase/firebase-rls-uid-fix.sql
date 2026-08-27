@@ -228,7 +228,10 @@ DROP POLICY IF EXISTS "users_update_auth" ON public.users;
 
 CREATE POLICY "users_select_auth" ON public.users
   FOR SELECT TO anon, authenticated
-  USING (public.qg_is_signed_in());
+  USING (
+    public.qg_is_signed_in()
+    AND (firebase_uid = public.qg_uid() OR public.is_qg_admin())
+  );
 
 CREATE POLICY "users_insert_auth" ON public.users
   FOR INSERT TO anon, authenticated

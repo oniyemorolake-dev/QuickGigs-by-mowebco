@@ -1759,11 +1759,7 @@ async function sbGetPublicProfiles(filters, order, limit) {
   try {
     return await sbGetOrThrow(PUBLIC_USER_PROFILES, filterStr, order, limit);
   } catch (err) {
-    var msg = String((err && err.message) || err || '');
-    if (/public_user_profiles|42P01|PGRST205|does not exist|schema cache|404/i.test(msg)) {
-      console.warn('public_user_profiles missing — falling back to users public select until RLS migration is applied');
-      return await sbGet('users', withSelect(filters || null, SELECT_USERS_PUBLIC), order, limit);
-    }
+    // Fail closed — never fall back to public.users (owner/admin RLS only; would leak or return empty wrongly).
     console.error('Supabase public profile GET error:', err);
     return [];
   }
