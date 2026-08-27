@@ -20,18 +20,37 @@ async function getSupabaseHeaders(extra, opts) {
   opts = opts || {};
   var headers = { 'apikey': SUPABASE_ANON_KEY };
   if (!opts.noContentType) headers['Content-Type'] = 'application/json';
-  var bearer = SUPABASE_ANON_KEY;
   var useFirebaseJwt = window.QG_CONFIG && window.QG_CONFIG.supabaseFirebaseAuth === true;
+  var rejected = window.__qgSupabaseFirebaseRejected === true;
+  var user = window._currentUser || (window._auth && window._auth.currentUser) || null;
+  var bearer = null;
+
+  if (useFirebaseJwt && rejected) {
+    var rejErr = new Error('Supabase rejected your Firebase token. Requests are blocked until auth is fixed.');
+    rejErr.code = 'supabase_firebase_auth_required';
+    rejErr.reason = 'firebase_jwt_rejected_by_supabase';
+    throw rejErr;
+  }
+
   if (useFirebaseJwt) {
     try {
-      var user = window._currentUser;
       if (user && typeof user.getIdToken === 'function') {
-        bearer = await user.getIdToken(false);
+        bearer = await user.getIdToken(!!(opts && opts.forceRefresh));
       }
     } catch (err) {
-      console.warn('Supabase auth: Firebase JWT failed, using anon key', err);
+      console.warn('Supabase auth: Firebase JWT failed', err);
     }
+    if (!bearer && user) {
+      var tokErr = new Error('Could not get a Firebase ID token for Supabase. Sign in again.');
+      tokErr.code = 'supabase_firebase_auth_required';
+      tokErr.reason = 'no_firebase_token';
+      throw tokErr;
+    }
+    if (!bearer) bearer = SUPABASE_ANON_KEY; // logged-out public
+  } else {
+    bearer = SUPABASE_ANON_KEY;
   }
+
   headers['Authorization'] = 'Bearer ' + bearer;
   if (extra) Object.assign(headers, extra);
   window.SUPABASE_HEADERS = headers;

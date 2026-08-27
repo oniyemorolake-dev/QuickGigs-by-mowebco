@@ -119,31 +119,88 @@
     }
   }
 
+  function surfaceAuthFailure(reason, message) {
+    logAuth('headers:FAIL_CLOSED', { reason: reason || 'unknown' });
+    try {
+      if (typeof global.qgShowSessionModal === 'function') {
+        global.qgShowSessionModal({
+          title: 'Session auth error',
+          body: message ||
+            'Your Firebase session could not be used with Supabase. Reloading or signing in again may help. If this persists, check Supabase → Authentication → Third-party Firebase.',
+          button: 'Reload page',
+          onClick: function () { global.location.reload(); }
+        });
+      }
+    } catch (eModal) {}
+    var err = new Error(message || 'supabase_firebase_auth_required');
+    err.code = 'supabase_firebase_auth_required';
+    err.reason = reason || 'unknown';
+    return err;
+  }
+
   async function getHeaders(extra, opts) {
     opts = opts || {};
     var headers = { apikey: SUPABASE_ANON_KEY };
     if (!opts.noContentType) headers['Content-Type'] = 'application/json';
-    var bearer = SUPABASE_ANON_KEY;
     var useFirebaseJwt = global.QG_CONFIG && global.QG_CONFIG.supabaseFirebaseAuth === true;
     var rejected = global.__qgSupabaseFirebaseRejected === true;
+    var user = authUser();
+    var bearer = null;
 
-    if (useFirebaseJwt && !rejected) {
+    if (useFirebaseJwt && rejected) {
+      // Fail closed: never silently drop a signed-in user to anon RLS.
+      throw surfaceAuthFailure(
+        'firebase_jwt_rejected_by_supabase',
+        'Supabase rejected your Firebase token. Requests are blocked until third-party Firebase auth is fixed (project ID quickgigs-7b12d).'
+      );
+    }
+
+    if (useFirebaseJwt) {
       try {
         var token = await getFirebaseBearer(!!opts.forceRefresh);
-        if (token) bearer = token;
-        else logAuth('headers:anon', { reason: 'no_firebase_token_yet' });
+        if (token) {
+          bearer = token;
+        } else if (user) {
+          // Signed in but no token — do not fall back to anon.
+          throw surfaceAuthFailure(
+            'no_firebase_token',
+            'Could not get a Firebase ID token for Supabase. Sign in again, then retry.'
+          );
+        } else {
+          // Logged-out public browse may use anon.
+          bearer = SUPABASE_ANON_KEY;
+          logAuth('headers:anon', { reason: 'logged_out_public' });
+        }
       } catch (err) {
+        if (err && err.code === 'supabase_firebase_auth_required') throw err;
         logAuth('headers:token_error', err && err.message ? err.message : String(err));
         try {
           var retry = await getFirebaseBearer(true);
-          if (retry) bearer = retry;
+          if (retry) {
+            bearer = retry;
+          } else if (user) {
+            throw surfaceAuthFailure(
+              'firebase_token_refresh_failed',
+              'Could not refresh your Firebase token for Supabase. Sign in again, then retry.'
+            );
+          } else {
+            bearer = SUPABASE_ANON_KEY;
+            logAuth('headers:anon', { reason: 'logged_out_after_token_error' });
+          }
         } catch (err2) {
-          logAuth('headers:refresh_failed', err2 && err2.message ? err2.message : String(err2));
+          if (err2 && err2.code === 'supabase_firebase_auth_required') throw err2;
+          if (user) {
+            throw surfaceAuthFailure(
+              'firebase_token_refresh_failed',
+              'Could not refresh your Firebase token for Supabase. Sign in again, then retry.'
+            );
+          }
+          bearer = SUPABASE_ANON_KEY;
+          logAuth('headers:anon', { reason: 'logged_out_after_refresh_failed' });
         }
       }
-    } else if (rejected) {
-      logAuth('headers:anon', { reason: 'firebase_jwt_rejected_by_supabase' });
     } else {
+      bearer = SUPABASE_ANON_KEY;
       logAuth('headers:anon', { reason: 'supabaseFirebaseAuth_off' });
     }
 
