@@ -86,7 +86,7 @@ onAuthStateChanged(auth, function (user) {
 <script src="qg-config.js"></script>
 <script src="qg-utils.js?v=20260728welcome1"></script>
 <script src="qg-categories.js"></script>
-<script src="qg-location.js"></script>
+<script src="qg-location.js?v=20260827geo1"></script>
 <script src="qg-pwa.js?v=f003648-1787869776"></script>
 <script src="qg-stats.js?v=20260811trust3"></script>
 <script src="qg-share.js"></script>
@@ -149,7 +149,7 @@ window.setSkillFilter = function (skill, el) {
 };
 
 async function loadWorkers() {
-  var city = typeof getUserCityLabel === 'function' ? getUserCityLabel() : 'Calgary';
+  var city = typeof getUserCityLabel === 'function' ? getUserCityLabel() : '';
   document.getElementById('heroSub').textContent = 'Taskers with photos and skills — near ' + city + '.';
 
   var users = typeof getUsers === 'function' ? await getUsers() : [];

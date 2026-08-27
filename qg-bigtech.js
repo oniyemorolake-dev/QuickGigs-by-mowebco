@@ -516,11 +516,8 @@
       slug = label.split(/\s+/)[0];
     }
     var range = CAT_BUDGET[slug] || CAT_BUDGET.other;
-    var city = (window.getUserCityLabel && window.getUserCityLabel()) || 'Calgary';
-    // User asked CalgaryEdmonton style label
-    guide.innerHTML = 'Typical <strong>Calgary / Edmonton</strong> budgets for this category: <strong>$' +
+    guide.innerHTML = 'Typical Canada-wide budgets for this category: <strong>$' +
       range[0] + '–$' + range[1] + '</strong> <span style="opacity:0.7">(suggestion only)</span>';
-    void city;
   }
 
   /* ── Derived notifications + localStorage read state ── */

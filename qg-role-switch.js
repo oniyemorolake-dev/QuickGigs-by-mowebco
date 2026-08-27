@@ -284,7 +284,7 @@
   function buildDashboardHero(data) {
     data = data || {};
     var isPoster = data.isPoster !== false;
-    var cityRaw = data.city || 'Calgary';
+    var cityRaw = data.city || 'your area';
     var city = typeof escapeHtml === 'function'
       ? escapeHtml(cityRaw)
       : String(cityRaw).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

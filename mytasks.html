@@ -1086,19 +1086,6 @@ window.QG_refreshPaymentState = async function(taskId) {
   if (taskId && typeof invalidateTasksCache === 'function') invalidateTasksCache();
 };
 
-function getDemoTasks(){
-  return [
-    {TASK_ID:1,TITLE:'Deep clean 2 bedroom apartment',CATEGORY:'home',TASK_MODE:'standard',BUDGET:120,LOCATION:'Calgary, AB',STATUS:'open',POSTED_BY:window._currentUser?window._currentUser.uid:'me'},
-    {TASK_ID:2,TITLE:'Grocery run — Superstore NW',CATEGORY:'errands',TASK_MODE:'quick',BUDGET:30,LOCATION:'Calgary, AB',STATUS:'in_progress',POSTED_BY:window._currentUser?window._currentUser.uid:'me'},
-    {TASK_ID:3,TITLE:'Math tutor Grade 10',CATEGORY:'tutoring',TASK_MODE:'recurring',BUDGET:35,LOCATION:'Calgary, AB',STATUS:'completed',POSTED_BY:'someone_else'},
-  ];
-}
-function getDemoApps(){
-  return [
-    {APP_ID:1,TASK_ID:3,WORKER_ID:window._currentUser?window._currentUser.uid:'me',MESSAGE:'I can help with math tutoring!',PRICE:35,STATUS:'pending'},
-  ];
-}
-
 var CAT_ICONS = {home:'🏠',errands:'🚗',tutoring:'🎓',beauty:'💇',moving:'🚚',cooking:'🍳',tech:'💻',care:'👶',gardening:'🌿',events:'🎉',trades:'🔧',other:'📦'};
 var CAT_BG    = {home:'rgba(107,63,160,0.2)',errands:'rgba(251,191,36,0.15)',tutoring:'rgba(74,222,128,0.1)',beauty:'rgba(200,168,233,0.15)',moving:'rgba(107,63,160,0.2)',cooking:'rgba(251,191,36,0.12)',tech:'rgba(107,63,160,0.2)',care:'rgba(74,222,128,0.1)',gardening:'rgba(74,222,128,0.08)',events:'rgba(200,168,233,0.15)',trades:'rgba(107,63,160,0.2)',other:'rgba(255,255,255,0.06)'};
 

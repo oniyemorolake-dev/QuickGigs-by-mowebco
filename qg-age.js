@@ -6,7 +6,7 @@
     if (!match) return null;
     now = now || new Date();
     var dateParts = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'America/Edmonton',
+    timeZone: (typeof Intl !== 'undefined' && Intl.DateTimeFormat().resolvedOptions().timeZone) || 'UTC',
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'

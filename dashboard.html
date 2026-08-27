@@ -510,7 +510,7 @@ onAuthStateChanged(auth, async (user) => {
 </script>
 
 <script defer src="qg-payments-ui.js?v=1"></script>
-<script defer src="qg-location.js"></script>
+<script defer src="qg-location.js?v=20260827geo1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="qg-stats.js?v=20260811trust3"></script>
 <script defer src="qg-trust-profile.js?v=20260811trust3"></script>
@@ -910,7 +910,7 @@ initDashboardRoleShell();
 function renderDashboardHero(userId) {
   var heroEl = document.getElementById('dashHero');
   if (!heroEl || typeof buildDashboardHero !== 'function') return;
-  var city = window.getUserCityLabel ? window.getUserCityLabel() : 'Calgary';
+  var city = window.getUserCityLabel ? window.getUserCityLabel() : '';
   var myPosted = userId ? dashData.posted.filter(function(t){ return taskField(t, 'posted_by') === userId; }) : [];
   var myOpenPosted = myPosted.filter(function(t){ return taskField(t, 'status') === 'open'; });
   var myApps = userId ? dashData.apps.filter(function(a){ return appField(a, 'worker_id') === userId; }) : [];
@@ -1313,7 +1313,7 @@ function renderAll(){
 
   var sectionTitle = document.getElementById('sectionTitle');
   var seeAll = document.querySelector('.section-hdr .see-all');
-  var city = window.getUserCityLabel ? window.getUserCityLabel() : 'Calgary';
+  var city = window.getUserCityLabel ? window.getUserCityLabel() : '';
   var html = '';
 
   if (isPoster) {

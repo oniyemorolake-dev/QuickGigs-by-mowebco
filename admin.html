@@ -1014,7 +1014,7 @@ function renderAnalytics(){
   document.getElementById('signupChart').innerHTML=sd.map(function(v,i){var h=Math.max(8,Math.round((v/m1)*100));return '<div style="flex:1;background:linear-gradient(180deg,#9b6fc4,#6b3fa0);border-radius:4px 4px 0 0;height:'+h+'%;opacity:'+(0.4+i*0.08)+'" title="'+v+' signups"></div>';}).join('');
   document.getElementById('taskChart').innerHTML=td.map(function(v,i){var h=Math.max(8,Math.round((v/m2)*100));return '<div style="flex:1;background:linear-gradient(180deg,#4ade80,#16a34a);border-radius:4px 4px 0 0;height:'+h+'%;opacity:'+(0.4+i*0.08)+'" title="'+v+' tasks"></div>';}).join('');
   document.getElementById('peakHours').innerHTML=['6am','9am','12pm','3pm','6pm','9pm'].map(function(h,i){var p=[10,25,40,30,80,60][i];return '<div class="bar-item"><div class="bar-label">'+h+'</div><div class="bar-track"><div class="bar-fill" style="width:'+p+'%"></div></div><div class="bar-val">'+p+'%</div></div>';}).join('');
-  document.getElementById('neighbourhoods').innerHTML=['NW Calgary','SE Calgary','Beltline','NE Calgary','SW Calgary'].map(function(n,i){var p=[90,70,60,45,30][i];return '<div class="bar-item"><div class="bar-label" style="width:110px">'+n+'</div><div class="bar-track"><div class="bar-fill" style="width:'+p+'%"></div></div></div>';}).join('');
+  document.getElementById('neighbourhoods').innerHTML=['Toronto','Vancouver','Montreal','Calgary','Halifax'].map(function(n,i){var p=[90,70,60,45,30][i];return '<div class="bar-item"><div class="bar-label" style="width:110px">'+n+'</div><div class="bar-track"><div class="bar-fill" style="width:'+p+'%"></div></div></div>';}).join('');
 }
 
 window.showSection=function(section,btn){

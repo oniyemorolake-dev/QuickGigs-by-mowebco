@@ -483,9 +483,10 @@ body.light .app-legal-footer a{color:var(--purple);}
           <div class="location-radius-row">
             <label class="sr-only" for="radiusFilter">Distance radius</label>
             <select class="radius-select" id="radiusFilter" onchange="setBrowseRadius(this.value)">
-              <option value="20">Within 20 km</option>
+              <option value="25">Within 25 km</option>
               <option value="50">Within 50 km</option>
               <option value="100">Within 100 km</option>
+              <option value="250">Within 250 km</option>
               <option value="any">Anywhere in Canada</option>
             </select>
           </div>
@@ -694,7 +695,7 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-teen-safety.js?v=20260811teensafety1"></script>
 <link rel="stylesheet" href="qg-safety.css?v=20260811teensafety1" id="qg-safety-css">
 <script defer src="qg-verification.js?v=20260811pay1"></script>
-<script defer src="qg-location.js?v=2"></script>
+<script defer src="qg-location.js?v=20260827geo1"></script>
 <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script defer src="qg-browse-views.js?v=20260811browse4"></script>
 <script defer src="qg-activity-ticker.js?v=20260811trust1"></script>
@@ -729,7 +730,8 @@ function normaliseTask(row){
     price:budget,
     budgetNegotiable:budgetNegotiable,
     priceLabel:(budgetNegotiable?'Around ':'')+'$'+budget+(mode==='recurring'?'/hr':'')+' CAD'+(budgetNegotiable?', open to offers':''),
-    location:row.LOCATION||row.location||'Calgary, AB',
+    location:row.LOCATION||row.location||'',
+    location_type: String(row.location_type || row.LOCATION_TYPE || 'in_person').toLowerCase(),
     lat: row.lat != null ? Number(row.lat) : (row.LAT != null ? Number(row.LAT) : null),
     lng: row.lng != null ? Number(row.lng) : (row.LNG != null ? Number(row.LNG) : null),
     when: row.scheduled_label || row.SCHEDULED_LABEL || '',
@@ -1327,7 +1329,6 @@ function getFilteredBrowseTasks(){
       if (typeof isTaskSaved !== 'function' || !isTaskSaved(t.id)) return false;
     } else if (activeMode!=='all'&&t.mode!==activeMode) return false;
     if (activeCat!=='all'&&t.cat!==activeCat) return false;
-    if (!locationPos && !taskMatchesLocation(t, locFilter, window._nearMeOnly)) return false;
     if (!taskMatchesDateRange(t, dateFilter)) return false;
     var price=Number(t.price)||0;
     if(price < budgetMinVal) return false;
@@ -1339,18 +1340,11 @@ function getFilteredBrowseTasks(){
     var hay = (t.title+' '+t.catLabel+' '+t.desc+' '+(t.posterName||'')+' '+(t.location||'')).toLowerCase();
     return hay.indexOf(search) >= 0;
   });
-  if(locationPos){
-    filtered.forEach(function(t){
-      t._distanceKm=typeof taskDistanceKm==='function' ? taskDistanceKm(t,locationPos) : null;
+  if(locationPos && isFinite(radiusKm) && typeof filterTasksByDistance==='function'){
+    filtered=filterTasksByDistance(filtered,{
+      pos:locationPos,
+      radiusKm:radiusKm
     });
-    if(isFinite(radiusKm)&&typeof filterTasksByDistance==='function'){
-      filtered=filterTasksByDistance(filtered,{
-        pos:locationPos,
-        radiusKm:radiusKm,
-        cityRef:locFilter,
-        includeUnknown:false
-      });
-    }
   }
   if (sortVal === 'nearest' && typeof sortTasksByProximity === 'function') {
     filtered = sortTasksByProximity(filtered, locFilter || (typeof getUserLocation==='function'?getUserLocation():''));
@@ -1380,6 +1374,7 @@ function updateBrowseResultsCount(filtered){
   var locFilter=(document.getElementById('locationFilter')&&document.getElementById('locationFilter').value||'').trim();
   var dateFilter=(document.getElementById('dateFilter')&&document.getElementById('dateFilter').value)||'any';
   var radiusKm = typeof getNearRadiusKm==='function' ? getNearRadiusKm() : Infinity;
+  var locationPos = typeof getGeoFilterPos==='function' ? getGeoFilterPos() : null;
   var scopeLabel = locFilter
     ? locFilter.split(',')[0].trim()
     : (window._nearMeOnly && window.getUserCityLabel ? window.getUserCityLabel() : '');
@@ -1390,9 +1385,16 @@ function updateBrowseResultsCount(filtered){
   }
   var el = document.getElementById('resultsCount');
   if (el) {
-    el.textContent = scopeLabel
-      ? countTxt + ' near ' + scopeLabel
-      : countTxt;
+    if (locationPos && isFinite(radiusKm)) {
+      var radiusLbl = typeof formatBrowseRadiusLabel === 'function'
+        ? formatBrowseRadiusLabel(radiusKm)
+        : ('within ' + radiusKm + ' km');
+      el.textContent = countTxt + (scopeLabel ? ' near ' + scopeLabel : '') + ' · ' + radiusLbl;
+    } else if (scopeLabel) {
+      el.textContent = countTxt + ' near ' + scopeLabel;
+    } else {
+      el.textContent = countTxt + ' · Canada-wide';
+    }
   }
 }
 
@@ -1418,16 +1420,22 @@ function renderCards(){
   var locFilter=(document.getElementById('locationFilter')&&document.getElementById('locationFilter').value||'').trim();
   var dateFilter=(document.getElementById('dateFilter')&&document.getElementById('dateFilter').value)||'any';
   var radiusKm = typeof getNearRadiusKm==='function' ? getNearRadiusKm() : Infinity;
+  var locationPos = typeof getGeoFilterPos==='function' ? getGeoFilterPos() : null;
   var area=document.getElementById('cardsArea');
-  if (!filtered.length && (locFilter || isFinite(radiusKm) || window._nearMeOnly || dateFilter !== 'any') && allTasks.length) {
+  if (!filtered.length && (locationPos || isFinite(radiusKm) || window._nearMeOnly || locFilter) && allTasks.length) {
+    var radiusLbl = isFinite(radiusKm)
+      ? (typeof formatBrowseRadiusLabel === 'function' ? formatBrowseRadiusLabel(radiusKm) : ('within ' + radiusKm + ' km'))
+      : 'anywhere in Canada';
+    var nearLbl = locFilter ? locFilter.split(',')[0].trim() : (window.getUserCityLabel ? window.getUserCityLabel() : 'you');
     area.innerHTML = typeof QG_emptyStateHtml === 'function'
       ? QG_emptyStateHtml({
           icon: 'mapPin',
-          title: 'No tasks match',
-          sub: 'Clear location, date, or search filters to see more gigs.',
+          title: 'No tasks ' + radiusLbl,
+          sub: 'Searched ' + allTasks.length + ' open task' + (allTasks.length !== 1 ? 's' : '') +
+            ' near ' + nearLbl + '. Remote / online tasks are always included when location is set. Try a wider radius or clear filters.',
           action: { label: 'Clear filters', icon: 'refresh', onclick: "if(typeof clearFilters==='function')clearFilters();else location.reload()" }
         })
-      : '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('mapPin',{size:24}):'')+'</div><p class="empty-txt">No tasks match your filters — try clearing location, date, or search</p><button type="button" class="empty-btn" onclick="if(typeof clearFilters===\'function\')clearFilters();else location.reload()">Clear filters</button></div>';
+      : '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('mapPin',{size:24}):'')+'</div><p class="empty-txt">No tasks '+radiusLbl+' near '+nearLbl+' — searched '+allTasks.length+' open tasks.</p><button type="button" class="empty-btn" onclick="if(typeof clearFilters===\'function\')clearFilters();else location.reload()">Clear filters</button></div>';
     return;
   }
   if(!filtered.length && activeMode==='saved'){
@@ -1439,6 +1447,17 @@ function renderCards(){
           action: { label: 'Browse open tasks', href: 'browsetask.html', icon: 'search' }
         })
       : '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('star',{size:24}):'')+'</div><p class="empty-txt">No saved tasks yet — tap Save on any task to bookmark it here.</p><button type="button" class="empty-btn" onclick="location.href=\'browsetask.html\'">Browse open tasks</button></div>';
+    return;
+  }
+  if (!filtered.length && (locFilter || dateFilter !== 'any') && allTasks.length) {
+    area.innerHTML = typeof QG_emptyStateHtml === 'function'
+      ? QG_emptyStateHtml({
+          icon: 'mapPin',
+          title: 'No tasks match',
+          sub: 'Clear location, date, or search filters to see more gigs.',
+          action: { label: 'Clear filters', icon: 'refresh', onclick: "if(typeof clearFilters==='function')clearFilters();else location.reload()" }
+        })
+      : '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('mapPin',{size:24}):'')+'</div><p class="empty-txt">No tasks match your filters — try clearing location, date, or search</p><button type="button" class="empty-btn" onclick="if(typeof clearFilters===\'function\')clearFilters();else location.reload()">Clear filters</button></div>';
     return;
   }
   if(!filtered.length){
@@ -1463,7 +1482,9 @@ function renderCards(){
     return;
   }
   area.innerHTML=filtered.map(function(t){
-    var loc = formatLocationDisplay(t.location);
+    var loc = typeof formatPublicTaskLocation === 'function'
+      ? formatPublicTaskLocation(t)
+      : formatLocationDisplay(t.location);
     var shareBtn = typeof shareButtonHtml === 'function' ? shareButtonHtml('task', t.id, t.title) : '';
     var saveBtn = typeof bookmarkButtonHtml === 'function' ? bookmarkButtonHtml(t.id) : '';
     var hasPhoto = !!(t.photoUrls && t.photoUrls[0]);

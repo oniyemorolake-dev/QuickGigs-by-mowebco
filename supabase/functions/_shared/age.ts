@@ -1,6 +1,6 @@
 export function qgCalendarParts(date = new Date()): { year: number; month: number; day: number } {
   const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Edmonton',
+    timeZone: 'UTC',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

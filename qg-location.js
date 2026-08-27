@@ -11,22 +11,35 @@
  *   // client checks alone are not enough once the anon key can SELECT the column.
  */
 (function () {
-  var DEFAULT = 'Calgary, AB';
   var GEO_SESSION_KEY = 'qg-geo-filter-pos';
   var USER_POS_KEY = 'qg-user-location-pos';
   var RADIUS_KEY = 'qg-near-radius-km';
   var NOMINATIM = 'https://nominatim.openstreetmap.org';
+  var RADIUS_OPTIONS = [25, 50, 100, 250];
+  var MAJOR_METRO = [
+    { lat: 43.653, lng: -79.383 }, { lat: 45.501, lng: -73.567 },
+    { lat: 49.283, lng: -123.121 }, { lat: 51.044, lng: -114.072 },
+    { lat: 53.546, lng: -113.494 }, { lat: 45.421, lng: -75.697 },
+    { lat: 49.895, lng: -97.138 }, { lat: 44.648, lng: -63.575 }
+  ];
 
   function saveLocation(city) {
     if (city) localStorage.setItem('qg-user-location', city);
   }
 
   window.getUserLocation = function () {
-    return localStorage.getItem('qg-user-location') || DEFAULT;
+    return localStorage.getItem('qg-user-location') || '';
   };
 
   window.getUserCityLabel = function () {
-    return getUserLocation().split(',')[0].trim();
+    var loc = getUserLocation();
+    if (!loc) return '';
+    return loc.split(',')[0].trim();
+  };
+
+  window.isRemoteTask = function (task) {
+    if (!task) return false;
+    return String(task.location_type || task.LOCATION_TYPE || '').toLowerCase() === 'remote';
   };
 
   function writeUserLocationPos(lat, lng) {
@@ -49,13 +62,33 @@
     }
   }
 
+  function geocodeQuery(query) {
+    if (typeof geocodeCanadaLocation === 'function') {
+      return geocodeCanadaLocation(query).then(function (res) {
+        if (!res || !res.success) return null;
+        return {
+          lat: res.lat,
+          lng: res.lng,
+          location: res.location || query,
+          city: res.city,
+          province: res.province
+        };
+      });
+    }
+    if (typeof geocodeDisplayLocation === 'function') {
+      return geocodeDisplayLocation(query);
+    }
+    return Promise.resolve(null);
+  }
+
   window.setUserLocation = function (city) {
     clearGeoFilterPos();
-    if (!city || typeof window.geocodeDisplayLocation !== 'function') return Promise.resolve(null);
-    return window.geocodeDisplayLocation(city).then(function (result) {
+    if (!city) return Promise.resolve(null);
+    return geocodeQuery(city).then(function (result) {
       if (!result) return null;
       writeUserLocationPos(result.lat, result.lng);
       saveLocation(result.location || city);
+      if (typeof suggestNearRadiusKm === 'function') suggestNearRadiusKm(result.lat, result.lng);
       return result;
     });
   };
@@ -63,7 +96,10 @@
   window.setUserLocationResult = function (city, lat, lng) {
     saveLocation(city);
     clearGeoFilterPos();
-    if (isFinite(Number(lat)) && isFinite(Number(lng))) writeUserLocationPos(lat, lng);
+    if (isFinite(Number(lat)) && isFinite(Number(lng))) {
+      writeUserLocationPos(lat, lng);
+      if (typeof suggestNearRadiusKm === 'function') suggestNearRadiusKm(lat, lng);
+    }
   };
 
   window.setUserLocationLabel = saveLocation;
@@ -99,7 +135,7 @@
   window.haversineKm = haversineKm;
 
   function taskCoords(task) {
-    if (!task) return null;
+    if (!task || window.isRemoteTask(task)) return null;
     var lat = Number(task.lat != null ? task.lat : task.LAT);
     var lng = Number(task.lng != null ? task.lng : task.LNG);
     if (!isFinite(lat) || !isFinite(lng)) return null;
@@ -108,6 +144,29 @@
   }
 
   window.taskCoords = taskCoords;
+
+  function isNearMajorMetro(lat, lng) {
+    for (var i = 0; i < MAJOR_METRO.length; i++) {
+      if (haversineKm(lat, lng, MAJOR_METRO[i].lat, MAJOR_METRO[i].lng) <= 35) return true;
+    }
+    return false;
+  }
+
+  /** Dense metros → 50 km default; rural/sparse → 150 km. User can override anytime. */
+  window.suggestNearRadiusKm = function (lat, lng) {
+    if (!isFinite(Number(lat)) || !isFinite(Number(lng))) return 100;
+    var suggested = isNearMajorMetro(lat, lng) ? 50 : 150;
+    try {
+      if (!localStorage.getItem(RADIUS_KEY)) {
+        localStorage.setItem(RADIUS_KEY, String(suggested));
+      }
+    } catch (e) {}
+    return suggested;
+  };
+
+  window.getNearRadiusOptions = function () {
+    return RADIUS_OPTIONS.slice();
+  };
 
   /** Session-only viewer position for Near me — not written to user profile / not shared. */
   function readGeoFilterPos() {
@@ -141,10 +200,6 @@
   };
   window.clearGeoFilterPos = clearGeoFilterPos;
 
-  /**
-   * Browser Geolocation for task filtering only.
-   * @returns {Promise<{lat:number,lng:number}|null>}
-   */
   window.requestGeoForFilter = function (opts) {
     opts = opts || {};
     return new Promise(function (resolve) {
@@ -162,6 +217,7 @@
             return;
           }
           writeGeoFilterPos(lat, lng);
+          if (typeof suggestNearRadiusKm === 'function') suggestNearRadiusKm(lat, lng);
           resolve({ lat: lat, lng: lng });
         },
         function () {
@@ -174,10 +230,13 @@
   };
 
   window.getNearRadiusKm = function () {
-    var raw = String(localStorage.getItem(RADIUS_KEY) || '50').toLowerCase();
+    var raw = String(localStorage.getItem(RADIUS_KEY) || '').toLowerCase();
     if (raw === 'any' || raw === 'anywhere') return Infinity;
     var n = parseInt(raw, 10);
-    if ([20, 50, 100].indexOf(n) < 0) n = 50;
+    if (RADIUS_OPTIONS.indexOf(n) < 0) {
+      var pos = window.getGeoFilterPos();
+      n = pos ? window.suggestNearRadiusKm(pos.lat, pos.lng) : 100;
+    }
     return n;
   };
 
@@ -187,7 +246,7 @@
       return Infinity;
     }
     var n = parseInt(km, 10);
-    if ([20, 50, 100].indexOf(n) < 0) n = 50;
+    if (RADIUS_OPTIONS.indexOf(n) < 0) n = 100;
     try { localStorage.setItem(RADIUS_KEY, String(n)); } catch (e) {}
     return n;
   };
@@ -199,13 +258,15 @@
     return Math.round(km) + ' km away';
   };
 
-  /**
-   * Public area label — city / neighbourhood only.
-   * Strips leading street-number addresses down to trailing city, province parts.
-   */
+  window.formatBrowseRadiusLabel = function (radiusKm) {
+    if (!isFinite(radiusKm)) return 'anywhere in Canada';
+    return 'within ' + radiusKm + ' km';
+  };
+
   window.toApproximateArea = function (loc) {
     var s = String(loc || '').trim();
     if (!s) return '';
+    if (/^remote\s*\/?\s*online$/i.test(s)) return 'Remote / Online';
     if (/^\d/.test(s) || /\b(st|street|ave|avenue|rd|road|blvd|drive|dr|cres|way|lane|ln)\b/i.test(s)) {
       var parts = s.split(',').map(function (p) { return p.trim(); }).filter(Boolean);
       if (parts.length >= 2) s = parts.slice(-2).join(', ');
@@ -215,21 +276,16 @@
   };
 
   window.formatPublicTaskLocation = function (task) {
+    if (window.isRemoteTask(task)) return 'Remote / Online';
     var loc = (task && (task.location || task.LOCATION)) || '';
     return window.toApproximateArea(loc);
   };
 
-  /**
-   * Precise address for poster / accepted tasker after accept.
-   * // SERVER-TODO: enforce precise_address visibility with Supabase RLS / edge function —
-   * // client checks alone are not enough once the anon key can SELECT the column.
-   */
   window.canViewPreciseAddress = function (task, viewerUid, opts) {
     opts = opts || {};
-    if (!task || !viewerUid) return false;
+    if (!task || !viewerUid || window.isRemoteTask(task)) return false;
     var poster = String(task.posted_by || task.POSTED_BY || '');
     var me = String(viewerUid);
-    // Poster always sees their own precise address on their listings.
     if (me && poster && me === poster) return true;
     var st = String(task.status || task.STATUS || '').toLowerCase();
     if (st !== 'in_progress' && st !== 'completed' && st !== 'accepted') return false;
@@ -253,48 +309,26 @@
     return precise;
   };
 
-  function parseLocationParts(loc) {
-    var raw = String(loc || '').trim();
-    if (!raw) return { city: '', region: '' };
-    var parts = raw.split(',').map(function (p) { return p.trim(); }).filter(Boolean);
-    return {
-      city: (parts[0] || '').toLowerCase(),
-      region: (parts[1] || parts[0] || '').toLowerCase()
-    };
-  }
-
-  /** Lower score = closer match (same city → 0, same region → 1, else → 2). */
-  window.getLocationProximityScore = function (taskLocation, userLocation) {
-    var task = parseLocationParts(taskLocation);
-    var user = parseLocationParts(userLocation || getUserLocation());
-    if (task.city && user.city && task.city === user.city) return 0;
-    if (task.region && user.region && task.region === user.region) return 1;
-    if (task.city && user.city && task.city.indexOf(user.city) >= 0) return 0;
-    if (user.city && task.city && user.city.indexOf(task.city) >= 0) return 0;
-    return 2;
-  };
-
   window.sortTasksByProximity = function (tasks, userLocation) {
-    var loc = userLocation || getUserLocation();
     var pos = window.getGeoFilterPos();
     return (tasks || []).slice().sort(function (a, b) {
+      var aRemote = window.isRemoteTask(a);
+      var bRemote = window.isRemoteTask(b);
       if (pos) {
         var ca = taskCoords(a);
         var cb = taskCoords(b);
-        var da = ca ? haversineKm(pos.lat, pos.lng, ca.lat, ca.lng) : Infinity;
-        var db = cb ? haversineKm(pos.lat, pos.lng, cb.lat, cb.lng) : Infinity;
-        a._distanceKm = isFinite(da) ? da : null;
-        b._distanceKm = isFinite(db) ? db : null;
+        var da = aRemote ? Infinity : (ca ? haversineKm(pos.lat, pos.lng, ca.lat, ca.lng) : Infinity);
+        var db = bRemote ? Infinity : (cb ? haversineKm(pos.lat, pos.lng, cb.lat, cb.lng) : Infinity);
+        a._distanceKm = aRemote ? null : (isFinite(da) ? da : null);
+        b._distanceKm = bRemote ? null : (isFinite(db) ? db : null);
         if (da !== db) return da - db;
       }
-      var sa = getLocationProximityScore(a.location || a.LOCATION, loc);
-      var sb = getLocationProximityScore(b.location || b.LOCATION, loc);
-      if (sa !== sb) return sa - sb;
       return 0;
     });
   };
 
   window.taskDistanceKm = function (task, fromPos) {
+    if (window.isRemoteTask(task)) return null;
     var pos = fromPos || window.getGeoFilterPos();
     var c = taskCoords(task);
     if (!pos || !c) return null;
@@ -302,16 +336,19 @@
   };
 
   /**
-   * Distance filter. Tasks without coords keep city-match fallback when nearMe;
-   * if no geo permission / no pos → return list unchanged (caller shows all).
+   * Haversine radius filter. Remote tasks always pass. In-person tasks without coords are excluded
+   * when a viewer position is set (they need backfill / re-post with geocode).
    */
   window.filterTasksByDistance = function (tasks, opts) {
     opts = opts || {};
     var pos = opts.pos || window.getGeoFilterPos();
     var radiusKm = opts.radiusKm != null ? Number(opts.radiusKm) : getNearRadiusKm();
     if (!pos || !isFinite(radiusKm)) return tasks || [];
-    var cityRef = opts.cityRef || getUserLocation();
     return (tasks || []).filter(function (t) {
+      if (window.isRemoteTask(t)) {
+        t._distanceKm = null;
+        return true;
+      }
       var c = taskCoords(t);
       if (c) {
         var d = haversineKm(pos.lat, pos.lng, c.lat, c.lng);
@@ -319,9 +356,6 @@
         return d <= radiusKm;
       }
       t._distanceKm = null;
-      if (opts.includeUnknown !== false) {
-        return getLocationProximityScore(t.location || t.LOCATION, cityRef) === 0;
-      }
       return false;
     });
   };
@@ -331,6 +365,21 @@
       'Accept-Language': 'en',
       'Accept': 'application/json'
     };
+  }
+
+  function canadianLocationLabel(row, fallback) {
+    var a = (row && row.address) || {};
+    var city = a.city || a.town || a.municipality || a.village || a.hamlet || a.suburb || '';
+    var province = a['ISO3166-2-lvl4'] || a.state_code || a.state || '';
+    province = String(province).replace(/^CA-/i, '');
+    var provinceMap = {
+      Alberta: 'AB', 'British Columbia': 'BC', Manitoba: 'MB', 'New Brunswick': 'NB',
+      'Newfoundland and Labrador': 'NL', 'Nova Scotia': 'NS', Ontario: 'ON',
+      'Prince Edward Island': 'PE', Quebec: 'QC', Saskatchewan: 'SK',
+      'Northwest Territories': 'NT', Nunavut: 'NU', Yukon: 'YT'
+    };
+    province = provinceMap[province] || province;
+    return city ? city + (province ? ', ' + province : '') : String(fallback || '').trim();
   }
 
   window.reverseGeocodeCity = function (lat, lng) {
@@ -344,13 +393,18 @@
         var a = data.address || {};
         var city = a.city || a.town || a.municipality || a.suburb || a.county || '';
         var neighbourhood = a.neighbourhood || a.suburb || '';
-        var province = (a.state || a.province || 'Alberta').replace('Alberta', 'AB');
-        var shortProv = province.length > 2 ? province.split(' ')[0] : province;
-        if (String(province).toLowerCase().indexOf('alberta') >= 0) shortProv = 'AB';
+        var province = (a.state || a.province || '').replace(/^CA-/i, '');
+        var provinceMap = {
+          Alberta: 'AB', 'British Columbia': 'BC', Manitoba: 'MB', 'New Brunswick': 'NB',
+          'Newfoundland and Labrador': 'NL', 'Nova Scotia': 'NS', Ontario: 'ON',
+          'Prince Edward Island': 'PE', Quebec: 'QC', Saskatchewan: 'SK',
+          'Northwest Territories': 'NT', Nunavut: 'NU', Yukon: 'YT'
+        };
+        var shortProv = provinceMap[province] || province;
         var area = neighbourhood && city && neighbourhood.toLowerCase() !== city.toLowerCase()
           ? neighbourhood + ', ' + city
           : (city || neighbourhood || '');
-        var loc = area ? area + ', ' + shortProv : DEFAULT;
+        var loc = area ? area + ', ' + shortProv : '';
         return {
           location: loc,
           lat: roundCoord(lat, 2),
@@ -360,71 +414,42 @@
       });
   };
 
-  function canadianLocationLabel(row, fallback) {
-    var a = (row && row.address) || {};
-    var city = a.city || a.town || a.municipality || a.village || a.hamlet || a.suburb || '';
-    var province = a['ISO3166-2-lvl4'] || a.state_code || a.state || '';
-    province = String(province).replace(/^CA-/, '');
-    var provinceMap = {
-      Alberta: 'AB', 'British Columbia': 'BC', Manitoba: 'MB', 'New Brunswick': 'NB',
-      'Newfoundland and Labrador': 'NL', 'Nova Scotia': 'NS', Ontario: 'ON',
-      'Prince Edward Island': 'PE', Quebec: 'QC', Saskatchewan: 'SK',
-      'Northwest Territories': 'NT', Nunavut: 'NU', Yukon: 'YT'
-    };
-    province = provinceMap[province] || province;
-    return city ? city + (province ? ', ' + province : '') : String(fallback || '').trim();
-  }
-
   window.geocodeDisplayLocation = function (query) {
-    var q = String(query || '').trim();
-    if (!q) return Promise.resolve(null);
-    var url = NOMINATIM + '/search?q=' + encodeURIComponent(q) +
-      '&format=json&addressdetails=1&limit=1&countrycodes=ca';
-    return fetch(url, { headers: nominatimHeaders() })
-      .then(function (r) { return r.json(); })
-      .then(function (rows) {
-        if (!rows || !rows[0]) return null;
-        var lat = roundCoord(rows[0].lat, 2);
-        var lng = roundCoord(rows[0].lon, 2);
-        if (lat == null || lng == null) return null;
-        return {
-          lat: lat,
-          lng: lng,
-          location: canadianLocationLabel(rows[0], q),
-          display: rows[0].display_name || q
-        };
-      })
-      .catch(function () { return null; });
+    return geocodeQuery(query);
   };
 
   window.initUserLocation = function () {
-    if (localStorage.getItem('qg-user-location')) return Promise.resolve(getUserLocation());
-
+    if (localStorage.getItem('qg-user-location')) {
+      return Promise.resolve(getUserLocation());
+    }
     return new Promise(function (resolve) {
       if (!navigator.geolocation) {
-        resolve(DEFAULT);
+        resolve('');
         return;
       }
       navigator.geolocation.getCurrentPosition(
         function (pos) {
           reverseGeocodeCity(pos.coords.latitude, pos.coords.longitude)
             .then(function (res) {
-              saveLocation(res.location);
-              writeUserLocationPos(res.lat, res.lng);
-              resolve(res.location);
+              if (res && res.location) {
+                saveLocation(res.location);
+                writeUserLocationPos(res.lat, res.lng);
+                if (typeof suggestNearRadiusKm === 'function') {
+                  suggestNearRadiusKm(res.lat, res.lng);
+                }
+                resolve(res.location);
+              } else {
+                resolve('');
+              }
             })
-            .catch(function () { resolve(DEFAULT); });
+            .catch(function () { resolve(''); });
         },
-        function () { resolve(DEFAULT); },
+        function () { resolve(''); },
         { timeout: 4000, maximumAge: 600000 }
       );
     });
   };
 
-  /**
-   * Capture approximate coords for a new task (post form).
-   * Uses optional browser GPS once for the listing — not stored as the user's live location.
-   */
   window.captureTaskLocationFromDevice = function () {
     return new Promise(function (resolve) {
       if (!navigator.geolocation) {
@@ -437,7 +462,7 @@
             .then(function (res) {
               resolve({
                 ok: true,
-                location: res.location,
+                location: res.location || '',
                 lat: res.lat,
                 lng: res.lng
               });
@@ -445,7 +470,7 @@
             .catch(function () {
               resolve({
                 ok: true,
-                location: DEFAULT,
+                location: '',
                 lat: roundCoord(pos.coords.latitude, 2),
                 lng: roundCoord(pos.coords.longitude, 2)
               });

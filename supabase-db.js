@@ -102,7 +102,7 @@ async function callVerifiedFunction(url, body, firebaseUser) {
 }
 
 /** Explicit column lists — only fields the UI actually renders / needs. Never select=*. */
-var SELECT_TASKS_BROWSE = 'task_id,title,budget,location,lat,lng,task_mode,status,created_at,category,description,posted_by,poster_name,age_preference,budget_negotiable,photo_urls,scheduled_label,requires_photos,rate_type,is_recurring,hourly_rate,frequency,est_hours';
+var SELECT_TASKS_BROWSE = 'task_id,title,budget,location,location_type,lat,lng,task_mode,status,created_at,category,description,posted_by,poster_name,age_preference,budget_negotiable,photo_urls,scheduled_label,requires_photos,rate_type,is_recurring,hourly_rate,frequency,est_hours';
 /** Detail includes precise_address for post-accept reveal — public cards use BROWSE (no precise_address). */
 var SELECT_TASKS_DETAIL = SELECT_TASKS_BROWSE + ',scheduled_at,precise_address,worker_completed_at,poster_confirmed_at,evidence_frozen';
 /** Dashboard first paint — no description/photos/geo (smaller cellular payload). */
@@ -922,7 +922,35 @@ function normalizeTaskRow(row) {
   if (row.status == null && row.STATUS != null) row.status = row.STATUS;
   if (row.posted_by == null && row.POSTED_BY != null) row.posted_by = row.POSTED_BY;
   if (row.title == null && row.TITLE != null) row.title = row.TITLE;
+  if (row.location_type == null && row.LOCATION_TYPE != null) row.location_type = row.LOCATION_TYPE;
   return row;
+}
+
+/** Geocode a Canadian postal code or city via Edge Function (cached server-side). */
+async function geocodeCanadaLocation(query) {
+  var q = String(query || '').trim();
+  if (!q) return { success: false, error: 'missing_query' };
+  var url = window.QG_CONFIG && window.QG_CONFIG.geocodeCanadaUrl;
+  if (!url) return { success: false, error: 'geocode_unavailable' };
+  var result = await callVerifiedFunction(url, { query: q });
+  if (!result || !result.success) {
+    return {
+      success: false,
+      error: (result && result.error) || 'geocode_failed',
+      message: (result && result.message) || 'Could not find that location in Canada.'
+    };
+  }
+  var d = result.data || {};
+  return {
+    success: true,
+    city: d.city,
+    province: d.province,
+    location: d.location,
+    lat: d.lat,
+    lng: d.lng,
+    postal_code: d.postal_code,
+    cached: !!d.cached
+  };
 }
 
 async function getTaskById(taskId, options) {
@@ -1403,7 +1431,8 @@ async function postTask(taskData) {
     category:    String(taskData.category || 'other').toLowerCase(),
     task_mode:   taskData.task_mode,
     budget:      Math.round(budgetNum),
-    location:    taskData.location || 'Calgary, AB',
+    location:    String(taskData.location || '').trim(),
+    location_type: String(taskData.location_type || 'in_person').toLowerCase() === 'remote' ? 'remote' : 'in_person',
     status:      String(taskData.status || 'open').toLowerCase() === 'draft' ? 'draft' : 'open',
     posted_by:   taskData.posted_by
   };
@@ -1425,9 +1454,16 @@ async function postTask(taskData) {
   if (rateType === 'hourly' && hourlyRate > 0) extras.hourly_rate = hourlyRate;
   if (rateType === 'hourly' && estHours > 0) extras.est_hours = estHours;
   // Approximate coords for distance filter (rounded). Never store the poster's live GPS stream.
+  var locationType = String(taskData.location_type || 'in_person').toLowerCase();
+  if (locationType === 'remote') {
+    extras.location_type = 'remote';
+    row.location = String(taskData.location || 'Remote / Online').trim() || 'Remote / Online';
+  } else {
+    extras.location_type = 'in_person';
+  }
   var latNum = taskData.lat != null ? Number(taskData.lat) : NaN;
   var lngNum = taskData.lng != null ? Number(taskData.lng) : NaN;
-  if (isFinite(latNum) && isFinite(lngNum)) {
+  if (locationType !== 'remote' && isFinite(latNum) && isFinite(lngNum)) {
     extras.lat = typeof roundCoord === 'function' ? roundCoord(latNum, 2) : Math.round(latNum * 100) / 100;
     extras.lng = typeof roundCoord === 'function' ? roundCoord(lngNum, 2) : Math.round(lngNum * 100) / 100;
   }
@@ -1522,7 +1558,8 @@ async function repostTask(sourceTaskId, posterId) {
     category: task.category || task.CATEGORY || 'other',
     task_mode: task.task_mode || task.TASK_MODE || 'standard',
     budget: task.budget || task.BUDGET || 0,
-    location: task.location || task.LOCATION || 'Calgary, AB',
+    location: task.location || task.LOCATION || '',
+    location_type: String(task.location_type || task.LOCATION_TYPE || 'in_person').toLowerCase(),
     posted_by: posterId,
     poster_name: task.poster_name || task.POSTER_NAME,
     photo_urls: task.photo_urls || task.PHOTO_URLS,
@@ -1537,6 +1574,7 @@ async function repostTask(sourceTaskId, posterId) {
     est_hours: task.est_hours != null ? task.est_hours : task.EST_HOURS,
     lat: task.lat != null ? task.lat : task.LAT,
     lng: task.lng != null ? task.lng : task.LNG,
+    location_type: String(task.location_type || task.LOCATION_TYPE || 'in_person').toLowerCase(),
     precise_address: task.precise_address || task.PRECISE_ADDRESS || null
   });
 }
@@ -4762,6 +4800,7 @@ window.SUPABASE_URL = SUPABASE_URL;
 window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
 window.getSupabaseHeaders = getSupabaseHeaders;
 window.refreshSupabaseAuth = refreshSupabaseAuth;
+window.geocodeCanadaLocation = geocodeCanadaLocation;
 window.callVerifiedFunction = callVerifiedFunction;
 window.SELECT_TASKS_BROWSE = SELECT_TASKS_BROWSE;
 window.SELECT_TASKS_DASH = SELECT_TASKS_DASH;

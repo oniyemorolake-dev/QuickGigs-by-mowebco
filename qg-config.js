@@ -27,6 +27,7 @@ window.QG_CONFIG = {
   roleAccessUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/role-access',
   secureMessagingUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/secure-messaging',
   postTaskUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/post-task',
+  geocodeCanadaUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/geocode-canada',
   submitApplicationUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/submit-application',
   shareBaseUrl: 'https://quickgigs.ca',
   // Google Analytics 4 — set to G-XXXXXXXXXX to disable, or your live Measurement ID

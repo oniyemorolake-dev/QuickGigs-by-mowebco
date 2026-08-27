@@ -2,6 +2,7 @@ import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-
 import { isTeenDateOfBirth } from '../_shared/age.ts';
 import { authErrorStatus, requireFirebaseUser } from '../_shared/firebase-auth.ts';
 import { haversineKm, isCanadianCoordinate, roundCoord } from '../_shared/geo.ts';
+import { geocodeCanada } from '../_shared/geocode-canada.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,35 +18,8 @@ function json(body: Record<string, unknown>, status = 200) {
   });
 }
 
-async function geocodeCanadianLocation(location: string) {
-  const query = String(location || '').trim();
-  if (!query) return null;
-  const url = new URL('https://nominatim.openstreetmap.org/search');
-  url.searchParams.set('q', query);
-  url.searchParams.set('format', 'json');
-  url.searchParams.set('limit', '1');
-  url.searchParams.set('countrycodes', 'ca');
-  try {
-    const response = await fetch(url, {
-      headers: {
-        Accept: 'application/json',
-        'Accept-Language': 'en-CA,en',
-        'User-Agent': 'QuickGigs/1.0 (https://quickgigs.ca)',
-      },
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!response.ok) return null;
-    const rows = await response.json() as Array<{ lat?: string; lon?: string }>;
-    const lat = Number(rows?.[0]?.lat);
-    const lng = Number(rows?.[0]?.lon);
-    if (!isCanadianCoordinate(lat, lng)) return null;
-    return {
-      lat: roundCoord(lat, 2),
-      lng: roundCoord(lng, 2),
-    };
-  } catch {
-    return null;
-  }
+async function geocodeCanadianLocation(supabase: SupabaseClient, location: string) {
+  return geocodeCanada(supabase, location);
 }
 
 type AlertUser = {
@@ -73,6 +47,7 @@ type TaskRow = {
   budget?: number;
   lat?: number | null;
   lng?: number | null;
+  location_type?: string | null;
   age_preference?: string | null;
   posted_by?: string;
   status?: string;
@@ -86,6 +61,8 @@ function categoryMatches(prefs: string[] | null | undefined, category: string): 
 
 async function notifyMatchingTaskers(supabase: SupabaseClient, task: TaskRow) {
   if (String(task.status || '').toLowerCase() !== 'open') return { notified: 0 };
+  const locationType = String(task.location_type || 'in_person').toLowerCase();
+  if (locationType === 'remote') return { notified: 0, skipped: 'remote_task' };
   const taskLat = Number(task.lat);
   const taskLng = Number(task.lng);
   if (!isCanadianCoordinate(taskLat, taskLng)) return { notified: 0, skipped: 'no_coords' };
@@ -262,14 +239,28 @@ Deno.serve(async (req) => {
       }, 403);
     }
 
+    const locationType = String(task.location_type || 'in_person').toLowerCase() === 'remote'
+      ? 'remote'
+      : 'in_person';
     const publicLocation = String(task.location || '').trim().slice(0, 100);
-    const geocoded = await geocodeCanadianLocation(publicLocation);
-    if (!geocoded) {
-      return json({
-        success: false,
-        error: 'location_geocode_failed',
-        message: 'Choose a valid Canadian city or area.',
-      }, 422);
+
+    let geocoded: Awaited<ReturnType<typeof geocodeCanada>> | null = null;
+    if (locationType === 'in_person') {
+      if (!publicLocation) {
+        return json({
+          success: false,
+          error: 'location_required',
+          message: 'Enter a Canadian city, area, or postal code for in-person tasks.',
+        }, 422);
+      }
+      geocoded = await geocodeCanadianLocation(supabase, publicLocation);
+      if (!geocoded) {
+        return json({
+          success: false,
+          error: 'location_geocode_failed',
+          message: 'Choose a valid Canadian city, area, or postal code.',
+        }, 422);
+      }
     }
 
     const category = String(task.category || 'other').toLowerCase().slice(0, 50);
@@ -287,9 +278,10 @@ Deno.serve(async (req) => {
       category,
       task_mode: String(task.task_mode || 'standard').toLowerCase().slice(0, 30),
       budget: Math.round(Number(task.budget) || 0),
-      location: publicLocation,
-      lat: geocoded.lat,
-      lng: geocoded.lng,
+      location: locationType === 'remote' ? (publicLocation || 'Remote / Online') : (geocoded!.location || publicLocation),
+      location_type: locationType,
+      lat: locationType === 'remote' ? null : geocoded!.lat,
+      lng: locationType === 'remote' ? null : geocoded!.lng,
       status: publishStatus,
       requires_enhanced_verification: enhanced,
       posted_by: identity.uid,
