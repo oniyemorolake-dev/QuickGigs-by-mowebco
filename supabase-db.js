@@ -148,8 +148,7 @@ var SELECT_USERS_SELF =
   'guardian_name,guardian_email,guardian_phone,guardian_consent_status,guardian_consent_at,guardian_consent_token,' +
   'stripe_connect_id,stripe_payouts_enabled,guardian_stripe_connect_id,guardian_stripe_payouts_enabled,graduated_at,payout_owner,is_subscriber,' +
   'notify_new_gigs,notify_new_gigs_email,alert_radius_km,alert_categories,alert_lat,alert_lng,alert_location';
-/** Parent-consent page — no email/phone of the teen exposed beyond name + consent state. */
-var SELECT_USERS_GUARDIAN = 'user_id,firebase_uid,name,guardian_consent_status,guardian_consent_at,account_status';
+/** Parent-consent page uses guardian-consent Edge Function (not client users SELECT). */
 var SELECT_USERS_NAME = 'firebase_uid,name';
 var SELECT_USERS_AVATAR = 'firebase_uid,avatar_url';
 /** Login gate only — ban + onboarding check before redirect (minimal columns). */
@@ -2184,48 +2183,6 @@ function applyDbUserToProfileData(dbUser, target, opts) {
     }
   }
   return target;
-}
-
-async function getUserByGuardianToken(token) {
-  if (!token) return null;
-  var results = await sbGet(
-    'users',
-    withSelect('guardian_consent_token=eq.' + encodeURIComponent(token), SELECT_USERS_GUARDIAN)
-  );
-  return results && results[0] ? results[0] : null;
-}
-
-async function approveGuardianConsent(token) {
-  if (!token) return { success: false, error: 'missing_token' };
-  var user = await getUserByGuardianToken(token);
-  if (!user) return { success: false, error: 'not_found' };
-  if (user.guardian_consent_status === 'approved') return { success: true, already: true };
-  var id = getUserRowId(user);
-  var patch = {
-    guardian_consent_status: 'approved',
-    guardian_consent_at: new Date().toISOString(),
-    account_status: 'active'
-  };
-  var filters = [];
-  if (id != null) {
-    filters.push('user_id=eq.' + encodeURIComponent(String(id)));
-    filters.push('id=eq.' + encodeURIComponent(String(id)));
-  }
-  for (var i = 0; i < filters.length; i++) {
-    var result = await sbUpdate('users', patch, filters[i]);
-    if (result.success) {
-      var teenUid = user.firebase_uid || user.FIREBASE_UID;
-      if (teenUid && typeof notifyGuardianApproved === 'function') {
-        try {
-          await notifyGuardianApproved(teenUid, {});
-        } catch (nErr) {
-          console.warn('Guardian approved notification skipped:', nErr);
-        }
-      }
-      return { success: true, name: user.name };
-    }
-  }
-  return { success: false, error: 'update_failed' };
 }
 
 function isAccountPendingGuardian(user) {
@@ -4734,8 +4691,6 @@ window.readLocalProfileAvatar = readLocalProfileAvatar;
 window.readLocalProfileExtras = readLocalProfileExtras;
 window.parseUserSkills = parseUserSkills;
 window.applyDbUserToProfileData = applyDbUserToProfileData;
-window.getUserByGuardianToken = getUserByGuardianToken;
-window.approveGuardianConsent = approveGuardianConsent;
 window.isAccountPendingGuardian = isAccountPendingGuardian;
 window.getAccountActionPermission = getAccountActionPermission;
 window.syncProfilePhotoToDb = syncProfilePhotoToDb;
