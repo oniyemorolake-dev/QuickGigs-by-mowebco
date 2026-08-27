@@ -307,7 +307,12 @@ Deno.serve(async (req) => {
       if (task[key] != null && task[key] !== '') row[key] = task[key];
     }
     if (!row.title || Number(row.budget) < 20) {
-      return json({ success: false, error: 'invalid_task' }, 400);
+      return json({
+        success: false,
+        error: 'amount_below_minimum',
+        message: 'Tasks must be at least $20 CAD.',
+        min_amount: 20,
+      }, 400);
     }
 
     const { data, error } = await supabase.from('tasks').insert(row).select('*').single();

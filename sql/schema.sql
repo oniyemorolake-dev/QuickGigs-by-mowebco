@@ -185,7 +185,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   description        TEXT,
   category           TEXT,
   task_mode          TEXT DEFAULT 'standard',
-  budget             NUMERIC,
+  budget             NUMERIC NOT NULL CHECK (budget >= 20),
   location           TEXT,
   status             TEXT DEFAULT 'open',
   posted_by          TEXT,
@@ -231,6 +231,12 @@ ALTER TABLE tasks ADD COLUMN IF NOT EXISTS lng DOUBLE PRECISION;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS precise_address TEXT;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS age_preference TEXT;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+
+-- Platform minimum $20 CAD (qg-config abuseLimits.minBudget)
+UPDATE tasks SET budget = 20 WHERE budget IS NULL OR budget < 20;
+ALTER TABLE tasks ALTER COLUMN budget SET NOT NULL;
+ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_budget_min_20;
+ALTER TABLE tasks ADD CONSTRAINT tasks_budget_min_20 CHECK (budget >= 20);
 
 UPDATE tasks SET age_preference = 'adults_only' WHERE age_preference IS NULL;
 ALTER TABLE tasks ALTER COLUMN age_preference SET DEFAULT 'adults_only';
