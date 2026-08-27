@@ -2357,7 +2357,7 @@ window.openChatForTask = async function(taskId){
 };
 
 window.markComplete = async function(taskId, btn){
-  console.log('BUTTON CLICKED ? markComplete fired', taskId);
+  if (typeof qgDebugLog === 'function') qgDebugLog('markComplete fired');
   taskId = String(taskId);
   if (typeof window.qgHideGlobalLoading === 'function') window.qgHideGlobalLoading();
   if (btn) { btn.disabled = true; btn.textContent = 'Completing?'; }
@@ -2447,9 +2447,9 @@ window.markComplete = async function(taskId, btn){
     if ((!result || !result.success) && typeof completeTask === 'function') {
       result = await completeTask(taskId, userId, completeOpts);
     }
-    console.log('completeTask result:', JSON.stringify(result));
+    if (typeof qgDebugLog === 'function') qgDebugLog('completeTask result ok=', !!(result && result.success));
   } catch (completeErr) {
-    console.error('markComplete threw:', completeErr);
+    console.error('markComplete threw:', completeErr && completeErr.message ? completeErr.message : 'error');
     // Still show Completed UI ? user is blocked otherwise
     showCompletedUi(canonicalTaskId || taskId);
     showToast('Marked complete locally — if it reappears, tap again', '#f59e0b');
@@ -2457,7 +2457,8 @@ window.markComplete = async function(taskId, btn){
   }
   if (!result || !result.success) {
     // Last resort: keep UX unblocked
-    console.error('FULL markComplete failure:', JSON.stringify(result));
+    if (typeof qgDebugLog === 'function') qgDebugLog('markComplete failure', result && result.error);
+    else console.error('markComplete failed');
     showCompletedUi(canonicalTaskId || taskId);
     showToast('Marked complete — sync may retry in background', '#f59e0b');
     return;

@@ -7,6 +7,8 @@ window.QG_CONFIG = {
   // Set true ONLY after Supabase Auth → Firebase is enabled AND security-lockdown.sql
   // AND firebase-rls-uid-fix.sql are applied. Firebase JWTs need qg_uid() (not auth.uid()).
   supabaseFirebaseAuth: true,
+  // Dev-only: also enable with localStorage.setItem('qg-debug','1')
+  debugLogs: false,
   blockOffPlatformContact: true,
   posterOnlyChatImages: false,
   maxTaskPhotos: 3,
@@ -201,4 +203,22 @@ window.getMessagesBannerCopy = function () {
     title: 'Chat opens after acceptance',
     sub: 'Once a worker is accepted, you can message each other here.'
   };
+};
+
+/** Gate verbose logs that may include UIDs / task / app IDs. */
+window.qgDebugEnabled = function () {
+  try {
+    if (window.QG_CONFIG && window.QG_CONFIG.debugLogs) return true;
+    return localStorage.getItem('qg-debug') === '1';
+  } catch (e) {
+    return !!(window.QG_CONFIG && window.QG_CONFIG.debugLogs);
+  }
+};
+window.qgDebugLog = function () {
+  if (!window.qgDebugEnabled()) return;
+  console.log.apply(console, arguments);
+};
+window.qgDebugInfo = function () {
+  if (!window.qgDebugEnabled()) return;
+  console.info.apply(console, arguments);
 };

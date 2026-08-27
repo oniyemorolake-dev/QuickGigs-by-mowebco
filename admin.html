@@ -606,7 +606,7 @@ function paintAdminIdentity(user, dbUser) {
   if (roleEl) roleEl.textContent = email || 'admin';
   if (uidEl) uidEl.textContent = uid ? ('uid ' + uid) : '';
   window._qgAdminIdentity = { email: email, uid: uid, name: name };
-  console.info('Admin console identity:', email, uid);
+  if (typeof qgDebugInfo === 'function') qgDebugInfo('Admin console identity set');
 }
 
 onAuthStateChanged(auth, async function (user) {

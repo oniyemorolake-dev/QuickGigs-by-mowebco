@@ -3227,15 +3227,17 @@ async function submitApplication(appData) {
   } catch (geoErr) {}
   var result = await callVerifiedFunction(secureApplyUrl, { application: secureApplication });
   if (result.success && result.data) {
-    console.log('[QuickGigs apply] applications row created', {
-      app_id: result.data.app_id,
-      task_id: result.data.task_id,
-      worker_id: result.data.worker_id,
-      status: result.data.status,
-      price: result.data.price
-    });
+    if (typeof qgDebugLog === 'function') {
+      qgDebugLog('[QuickGigs apply] applications row created', {
+        app_id: result.data.app_id,
+        task_id: result.data.task_id,
+        worker_id: result.data.worker_id,
+        status: result.data.status,
+        price: result.data.price
+      });
+    }
   } else if (!result.success) {
-    console.error('[QuickGigs apply] applications insert failed', result.error);
+    console.error('[QuickGigs apply] applications insert failed');
   }
 
   if (result.success && result.guardian_status !== 'pending_guardian' &&
@@ -3484,7 +3486,7 @@ async function completeTask(taskId, actorId, options) {
   if (!taskId) return { success: false, error: 'Missing task id' };
 
   try {
-    console.log('[completeTask] start', { taskId: taskId, actorId: actorId, options: options });
+    if (typeof qgDebugLog === 'function') qgDebugLog('[completeTask] start');
     var ctx = typeof resolveTaskContext === 'function'
       ? await resolveTaskContext(taskId, actorId, options)
       : { taskId: taskId, canonicalTaskId: taskId, ids: [taskId], accepted: null, posterId: '', workerId: '' };
@@ -3492,14 +3494,13 @@ async function completeTask(taskId, actorId, options) {
     if (options.posterId && !ctx.posterId) ctx.posterId = String(options.posterId);
     if (options.workerId && !ctx.workerId) ctx.workerId = String(options.workerId);
     if (options.taskRow && !ctx.task) ctx.task = options.taskRow;
-    console.log('[completeTask] context', {
-      canonicalTaskId: ctx.canonicalTaskId,
-      posterId: ctx.posterId,
-      workerId: ctx.workerId,
-      ids: ctx.ids,
-      hasTask: !!ctx.task,
-      hasAccepted: !!ctx.accepted
-    });
+    if (typeof qgDebugLog === 'function') {
+      qgDebugLog('[completeTask] context', {
+        hasTask: !!ctx.task,
+        hasAccepted: !!ctx.accepted,
+        idCount: (ctx.ids && ctx.ids.length) || 0
+      });
+    }
 
     var serverResult = await completeTaskViaServer(taskId, actorId, {
       posterId: ctx.posterId || options.posterId || '',
@@ -3509,7 +3510,7 @@ async function completeTask(taskId, actorId, options) {
         ? ctx.canonicalTaskId
         : ''
     });
-    console.log('[completeTask] serverResult', serverResult);
+    if (typeof qgDebugLog === 'function') qgDebugLog('[completeTask] serverResult ok=', !!(serverResult && serverResult.success));
 
     if (!serverResult.success) {
       var idsToTry = (ctx.ids && ctx.ids.length) ? ctx.ids.slice() : [taskId];

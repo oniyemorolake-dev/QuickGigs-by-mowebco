@@ -36,7 +36,14 @@
 
   function logAuth(step, detail) {
     try {
-      console.info('[QG auth]', step, detail || '');
+      if (!(global.qgDebugEnabled && global.qgDebugEnabled())) return;
+      var safe = detail;
+      if (detail && typeof detail === 'object') {
+        safe = Object.assign({}, detail);
+        if (safe.uid) safe.uid = '[redacted]';
+        if (safe.sub) safe.sub = '[redacted]';
+      }
+      console.info('[QG auth]', step, safe || '');
     } catch (e) {}
   }
 

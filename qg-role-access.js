@@ -79,22 +79,26 @@
       return { success: false, error: 'role_access_unavailable' };
     }
     var payload = Object.assign({ action: action }, extra || {});
-    console.info('[QuickGigs role-access] request', {
-      url: endpoint(),
-      method: 'POST',
-      uid: user.uid,
-      authorization: 'Firebase ID token attached',
-      body: payload
-    });
+    if (typeof qgDebugInfo === 'function') {
+      qgDebugInfo('[QuickGigs role-access] request', {
+        url: endpoint(),
+        method: 'POST',
+        uid: user.uid,
+        action: action
+      });
+    }
     var result = await callVerifiedFunction(
       endpoint(),
       payload,
       user
     );
-    console.info('[QuickGigs role-access] response', {
-      status: result.http_status == null ? 'unknown' : result.http_status,
-      body: result
-    });
+    if (typeof qgDebugInfo === 'function') {
+      qgDebugInfo('[QuickGigs role-access] response', {
+        status: result.http_status == null ? 'unknown' : result.http_status,
+        success: !!result.success,
+        error: result.error || null
+      });
+    }
     return result;
   }
 
@@ -105,16 +109,18 @@
     loading = call('status').then(function (result) {
       loading = null;
       if (!result.success) {
-        console.error('[QuickGigs role-access] status failed', result.error || result);
+        console.error('[QuickGigs role-access] status failed');
         return cached;
       }
       var state = normalize(result);
-      console.info('[QuickGigs role-access] current account state', {
-        is_tasker: !!(state && state.is_tasker),
-        is_poster: !!(state && state.is_poster),
-        is_teen: !!(state && state.is_teen),
-        last_active_mode: state && state.last_active_mode
-      });
+      if (typeof qgDebugInfo === 'function') {
+        qgDebugInfo('[QuickGigs role-access] current account state', {
+          is_tasker: !!(state && state.is_tasker),
+          is_poster: !!(state && state.is_poster),
+          is_teen: !!(state && state.is_teen),
+          last_active_mode: state && state.last_active_mode
+        });
+      }
       var previous = typeof getMode === 'function' ? getMode() : '';
       if (state && typeof setMode === 'function') setMode(state.last_active_mode);
       state = writeCache(state);

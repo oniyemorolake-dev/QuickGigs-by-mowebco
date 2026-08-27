@@ -1793,7 +1793,7 @@ function wireApplyModalInputs() {
         if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) ae.blur();
       } catch (blurErr) {}
 
-      console.log('[QuickGigs apply] Send tap fired', {
+      if (typeof qgDebugLog === 'function') qgDebugLog('[QuickGigs apply] Send tap fired', {
         type: e && e.type,
         ready: !!sendBtn._qgApplyReady,
         inFlight: !!_applySubmitInFlight,
@@ -2056,7 +2056,7 @@ window.closeModal=function(){
 window.handleOverlayClick=function(e){if(e.target===document.getElementById('modalOverlay'))closeModal();};
 
 window.submitBrowseApplication=async function(){
-  console.log('[QuickGigs apply] submitBrowseApplication entered');
+  if (typeof qgDebugLog === 'function') qgDebugLog('[QuickGigs apply] submitBrowseApplication entered');
   if (_applySubmitInFlight) {
     applyNotify('Still sending your application…', '#f59e0b');
     return;
@@ -2260,7 +2260,11 @@ window.submitBrowseApplication=async function(){
       message: msg + (avail ? ' · Available: ' + avail : ''),
       price: priceNum
     };
-    console.log('[QuickGigs apply] inserting applications row', payload);
+    if (typeof qgDebugLog === 'function') qgDebugLog('[QuickGigs apply] inserting applications row', {
+      task_id: payload.task_id,
+      worker_id: payload.worker_id,
+      price: payload.price
+    });
 
     var chatNote = '';
     var chatUnlocked = typeof resolveChatUnlockedOnCreate === 'function' && resolveChatUnlockedOnCreate('application');
@@ -2268,7 +2272,7 @@ window.submitBrowseApplication=async function(){
     var guardianPending = false;
     try {
       var result = await dbSubmitApplication(payload);
-      console.log('[QuickGigs apply] insert result', result);
+      if (typeof qgDebugLog === 'function') qgDebugLog('[QuickGigs apply] insert result', result && result.success);
       if (!result || !result.success) {
         if (result && result.error === 'cannot_apply_own_task') throw new Error('own_task');
         if (result && result.error === 'profile_photo_required') throw new Error('photo_required');
@@ -2361,8 +2365,10 @@ window.submitBrowseApplication=async function(){
       ? 'Sent to your guardian for approval. The poster cannot see it yet.'
       : ('Application sent.' + (chatNote || ''));
     if (createdRow && createdRow.app_id) {
-      console.log('[QuickGigs apply] created app_id=', createdRow.app_id,
-        'task_id=', createdRow.task_id, 'worker_id=', createdRow.worker_id);
+      if (typeof qgDebugLog === 'function') {
+        qgDebugLog('[QuickGigs apply] created app_id=', createdRow.app_id,
+          'task_id=', createdRow.task_id, 'worker_id=', createdRow.worker_id);
+      }
     }
     applyNotify(okMsg, '#4ade80');
     var toast = document.getElementById('toast');
