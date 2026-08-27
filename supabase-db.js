@@ -4423,23 +4423,6 @@ async function releaseTaskPayout(taskId, actorId, options) {
   }
 }
 
-async function savePayment(paymentData) {
-  var result = await sbPost('payments', {
-    task_id:       paymentData.task_id,
-    poster_id:     paymentData.poster_id,
-    worker_id:     paymentData.worker_id,
-    amount:        paymentData.amount,
-    platform_fee:  paymentData.platform_fee,
-    worker_payout: paymentData.worker_payout,
-    stripe_id:     paymentData.stripe_id || '',
-    status:        paymentData.status || 'completed'
-  });
-  if (result.success && paymentData.task_id && paymentData.poster_id && paymentData.worker_id) {
-    await unlockChatForTask(paymentData.task_id, paymentData.poster_id, paymentData.worker_id);
-  }
-  return result;
-}
-
 async function unlockChatForTask(taskId, posterId, workerId) {
   var conv = await getConversationForTask(taskId, posterId, workerId);
   if (!conv || !conv.conv_id) return { success: false, error: 'No conversation' };
@@ -4805,7 +4788,6 @@ window.isPaymentStatusComplete = isPaymentStatusComplete;
 window.ensureChatReadyForTask = ensureChatReadyForTask;
 window.releaseTaskPayout = releaseTaskPayout;
 window.refundTaskPayment = refundTaskPayment;
-window.savePayment = savePayment;
 window.unlockChatForTask = unlockChatForTask;
 window.pushInAppNotification = pushInAppNotification;
 window.fetchUserNotifications = fetchUserNotifications;
