@@ -1,0 +1,605 @@
+/* QuickGigs — login + signup visual shell (matches landing palette) */
+body.qg-auth-page {
+  --qg-bg: #0D0716;
+  --qg-surface: #140F24;
+  --qg-border: #2A2140;
+  --qg-hairline: #221A38;
+  --qg-purple: #6B21A8;
+  --qg-heading: #F2EFF8;
+  --qg-body: #9C93B5;
+  --qg-muted: #7B7194;
+  --qg-link: #B69BE0;
+  --qg-input-text: #EDE9F5;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background: var(--qg-bg) !important;
+  color: var(--qg-body);
+}
+
+body.qg-auth-page .signup-bg-mesh,
+body.qg-auth-page .signup-orb,
+body.qg-auth-page .stars {
+  display: none !important;
+}
+
+body.qg-auth-page .signup-page {
+  min-height: 100vh;
+  padding: max(1.25rem, env(safe-area-inset-top)) 16px max(1.5rem, env(safe-area-inset-bottom));
+}
+
+body.qg-auth-page .signup-card-wrap {
+  max-width: 400px;
+}
+
+body.qg-auth-page .signup-card-wrap::before {
+  display: none;
+}
+
+body.qg-auth-page .signup-card {
+  background: var(--qg-surface);
+  border: 1px solid var(--qg-border);
+  border-radius: 12px;
+  padding: 1.5rem 1.25rem 1.25rem;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+body.qg-auth-page .signup-top-row {
+  margin-bottom: 1.25rem;
+}
+
+body.qg-auth-page .qg-auth-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--qg-heading);
+  min-width: 0;
+}
+
+body.qg-auth-page .qg-auth-mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--qg-purple);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+body.qg-auth-page .qg-auth-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+body.qg-auth-page .qg-auth-name {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--qg-heading);
+}
+
+body.qg-auth-page .signup-logo {
+  display: none;
+}
+
+body.qg-auth-page .signup-theme-btn {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--qg-border);
+  background: transparent;
+  color: var(--qg-body);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+body.qg-auth-page .signup-theme-btn:hover {
+  background: var(--qg-bg);
+  color: var(--qg-heading);
+}
+
+body.qg-auth-page .signup-theme-btn:focus-visible {
+  outline: 2px solid var(--qg-link);
+  outline-offset: 2px;
+}
+
+body.qg-auth-page .signup-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--qg-heading);
+  text-align: left;
+  margin: 0 0 6px;
+}
+
+body.qg-auth-page .signup-subtitle {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--qg-body);
+  text-align: left;
+  margin: 0 0 1.25rem;
+  line-height: 1.5;
+}
+
+body.qg-auth-page .signup-step-meta {
+  color: var(--qg-muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+body.qg-auth-page .signup-step-counter {
+  color: var(--qg-link);
+}
+
+body.qg-auth-page .signup-step-icon {
+  display: none;
+}
+
+body.qg-auth-page .signup-field {
+  margin-bottom: 14px;
+}
+
+body.qg-auth-page .signup-field label {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--qg-body);
+  margin-bottom: 6px;
+}
+
+body.qg-auth-page .signup-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+body.qg-auth-page .signup-label-row label {
+  margin-bottom: 0;
+}
+
+body.qg-auth-page .signup-field label .req,
+body.qg-auth-page .req-inline {
+  color: var(--qg-muted);
+  font-weight: 400;
+}
+
+body.qg-auth-page .signup-field input,
+body.qg-auth-page .signup-field .qg-custom-input {
+  padding: 11px 12px;
+  background: var(--qg-surface);
+  border: 1px solid var(--qg-border);
+  border-radius: 8px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  color: var(--qg-input-text);
+  box-shadow: none;
+}
+
+body.qg-auth-page .signup-field input::placeholder,
+body.qg-auth-page .signup-field .qg-custom-input::placeholder {
+  color: var(--qg-muted);
+}
+
+body.qg-auth-page .signup-field input:focus,
+body.qg-auth-page .signup-field input:focus-visible,
+body.qg-auth-page .signup-field .qg-custom-input:focus,
+body.qg-auth-page .signup-field .qg-custom-input:focus-visible {
+  border-color: var(--qg-link);
+  outline: 2px solid var(--qg-link);
+  outline-offset: 0;
+  background: var(--qg-surface);
+  box-shadow: none;
+}
+
+body.qg-auth-page .signup-forgot {
+  width: auto;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  color: var(--qg-link);
+  text-align: right;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+body.qg-auth-page .signup-forgot:hover {
+  color: var(--qg-heading);
+  text-decoration: underline;
+}
+
+body.qg-auth-page .signup-forgot:focus-visible {
+  outline: 2px solid var(--qg-link);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+body.qg-auth-page .signup-btn {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--qg-purple);
+  border-radius: 8px;
+  background: var(--qg-purple);
+  color: var(--qg-heading);
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: none;
+  transform: none;
+}
+
+body.qg-auth-page .signup-btn:hover {
+  background: #7B2CBF;
+  border-color: #7B2CBF;
+  transform: none;
+  box-shadow: none;
+}
+
+body.qg-auth-page .signup-btn:focus-visible {
+  outline: 2px solid var(--qg-link);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+body.qg-auth-page .signup-btn-secondary {
+  background: transparent;
+  border: 1px solid var(--qg-border);
+  color: var(--qg-body);
+}
+
+body.qg-auth-page .signup-btn-secondary:hover {
+  background: var(--qg-bg);
+  color: var(--qg-heading);
+}
+
+body.qg-auth-page .signup-google-btn {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--qg-border);
+  background: transparent;
+  color: var(--qg-heading);
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+body.qg-auth-page .signup-google-btn:hover {
+  background: var(--qg-bg);
+  border-color: var(--qg-border);
+}
+
+body.qg-auth-page .signup-google-btn:focus-visible {
+  outline: 2px solid var(--qg-link);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+body.qg-auth-page .signup-divider::before,
+body.qg-auth-page .signup-divider::after {
+  background: var(--qg-hairline);
+}
+
+body.qg-auth-page .signup-divider span {
+  color: var(--qg-muted);
+  font-size: 12px;
+}
+
+body.qg-auth-page .signup-login,
+body.qg-auth-page .signup-auth-links {
+  color: var(--qg-body);
+  font-size: 13px;
+}
+
+body.qg-auth-page .signup-login a,
+body.qg-auth-page .signup-auth-links a,
+body.qg-auth-page .signup-terms-check a {
+  color: var(--qg-link);
+}
+
+body.qg-auth-page .signup-trust {
+  display: none;
+}
+
+body.qg-auth-page .signup-perks {
+  display: none !important;
+}
+
+body.qg-auth-page .signup-role-emoji {
+  display: none;
+}
+
+body.qg-auth-page .signup-role {
+  text-align: left;
+  padding: 14px 12px;
+}
+
+body.qg-auth-page .signup-msg.error {
+  background: var(--qg-bg);
+  border: 1px solid var(--qg-border);
+  color: #f87171;
+}
+
+body.qg-auth-page .signup-msg.ok {
+  background: var(--qg-bg);
+  border: 1px solid var(--qg-border);
+  color: #4ade80;
+}
+
+body.qg-auth-page .signup-error {
+  color: #f87171;
+  font-size: 12px;
+}
+
+body.qg-auth-page .qg-wizard-progress .qg-wizard-dot {
+  background: var(--qg-border);
+}
+
+body.qg-auth-page .qg-wizard-progress .qg-wizard-dot.active {
+  background: var(--qg-purple);
+}
+
+body.qg-auth-page .qg-custom-wrap {
+  margin-bottom: 14px;
+}
+
+body.qg-auth-page .qg-guardian-note {
+  background: var(--qg-bg);
+  border: 1px solid var(--qg-border);
+  border-radius: 8px;
+  color: var(--qg-body);
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+body.qg-auth-page .qg-dob-summary {
+  background: var(--qg-bg);
+  border: 1px solid var(--qg-border);
+  border-radius: 8px;
+  box-shadow: none;
+  margin-bottom: 14px;
+  padding: 14px;
+}
+
+body.qg-auth-page .qg-dob-summary.ok,
+body.qg-auth-page .qg-dob-summary.minor,
+body.qg-auth-page .qg-dob-summary.blocked {
+  background: var(--qg-bg);
+  border-color: var(--qg-border);
+}
+
+body.qg-auth-page .qg-dob-date {
+  color: var(--qg-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+body.qg-auth-page .qg-dob-date-val {
+  color: var(--qg-heading);
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+body.qg-auth-page .qg-age-number {
+  color: var(--qg-heading);
+  font-family: 'Poppins', sans-serif;
+}
+
+body.qg-auth-page .qg-age-status {
+  color: var(--qg-body);
+  font-size: 12px;
+}
+
+body.qg-auth-page .qg-dob-picker {
+  background: var(--qg-bg);
+  border: 1px solid var(--qg-border);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+body.qg-auth-page .qg-dob-picker::before {
+  background: var(--qg-surface);
+  border: 1px solid var(--qg-border);
+  box-shadow: none;
+}
+
+body.qg-auth-page .qg-dob-picker::after {
+  background: linear-gradient(180deg, var(--qg-bg), transparent);
+}
+
+body.qg-auth-page .qg-dob-labels span {
+  color: var(--qg-muted);
+  font-size: 11px;
+}
+
+body.qg-auth-page .qg-dob-item {
+  color: var(--qg-muted);
+}
+
+body.qg-auth-page .qg-dob-item.selected {
+  color: var(--qg-heading);
+  transform: none;
+}
+
+body.qg-auth-page .qg-chip {
+  border-radius: 8px;
+  font-size: 13px;
+  padding: 10px 14px;
+  transform: none;
+}
+
+body.qg-auth-page .qg-chip:hover,
+body.qg-auth-page .qg-chip.selected {
+  transform: none;
+}
+
+body.qg-auth-page .qg-wizard-nav {
+  display: flex;
+  gap: 10px;
+  margin-top: 1rem;
+}
+
+body.qg-auth-page .qg-wizard-nav .signup-btn,
+body.qg-auth-page .qg-wizard-nav .signup-btn-secondary {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+body.qg-auth-page .signup-footer.hidden {
+  opacity: 0;
+  height: 0;
+  margin: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+body.qg-auth-page .qg-pipeda-line {
+  margin: 1rem 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--qg-muted);
+  text-align: center;
+}
+
+body.qg-auth-page .signup-perk {
+  color: var(--qg-muted);
+  font-size: 12px;
+}
+
+body.qg-auth-page.light {
+  background: var(--qg-bg) !important;
+}
+
+body.qg-auth-page .signup-role-grid {
+  gap: 10px;
+  margin-bottom: 1rem;
+}
+
+body.qg-auth-page .signup-role {
+  padding: 14px 12px;
+  border-radius: 10px;
+  background: var(--qg-bg);
+  border: 1px solid var(--qg-border);
+  box-shadow: none;
+  transform: none;
+}
+
+body.qg-auth-page .signup-role:hover {
+  border-color: var(--qg-link);
+  transform: none;
+  box-shadow: none;
+}
+
+body.qg-auth-page .signup-role.active {
+  background: var(--qg-bg);
+  border-color: var(--qg-purple);
+  box-shadow: none;
+}
+
+body.qg-auth-page .signup-role[data-start-role="poster"].active {
+  background: var(--qg-bg);
+  border-color: var(--qg-purple);
+  box-shadow: none;
+}
+
+body.qg-auth-page .signup-role-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--qg-heading);
+}
+
+body.qg-auth-page .signup-role-desc {
+  font-size: 11px;
+  color: var(--qg-muted);
+}
+
+body.qg-auth-page .signup-role-note {
+  color: var(--qg-muted);
+  font-size: 11px;
+}
+
+body.qg-auth-page .signup-terms-check {
+  background: var(--qg-bg);
+  border: 1px solid var(--qg-border);
+  border-radius: 8px;
+}
+
+body.qg-auth-page .signup-terms-check label {
+  color: var(--qg-body);
+  font-size: 12px;
+}
+
+body.qg-auth-page .signup-terms-check input {
+  accent-color: var(--qg-purple);
+}
+
+body.qg-auth-page .qg-step-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--qg-heading);
+}
+
+body.qg-auth-page .qg-step-sub {
+  color: var(--qg-body);
+  font-size: 13px;
+}
+
+body.qg-auth-page .qg-step-sub strong {
+  color: var(--qg-heading);
+  font-weight: 500;
+}
+
+body.qg-auth-page .qg-chip {
+  border: 1px solid var(--qg-border);
+  background: var(--qg-bg);
+  color: var(--qg-body);
+  box-shadow: none;
+}
+
+body.qg-auth-page .qg-chip.selected,
+body.qg-auth-page .qg-chip:hover {
+  border-color: var(--qg-purple);
+  background: var(--qg-bg);
+  color: var(--qg-heading);
+  box-shadow: none;
+}
+
+body.qg-auth-page .login-progress {
+  background: var(--qg-bg);
+  border: 1px solid var(--qg-border);
+  color: var(--qg-body);
+}
+
+body.qg-auth-page .login-progress-spinner {
+  border-color: var(--qg-border);
+  border-top-color: var(--qg-link);
+}
+
+body.qg-auth-page a:focus-visible,
+body.qg-auth-page button:focus-visible {
+  outline: 2px solid var(--qg-link);
+  outline-offset: 2px;
+}
+
+@media (max-width: 320px) {
+  body.qg-auth-page .signup-card {
+    padding: 1.25rem 1rem;
+  }
+}

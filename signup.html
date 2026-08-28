@@ -21,26 +21,22 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
-<meta name="theme-color" content="#6b3fa0">
+<meta name="theme-color" content="#0D0716">
 <link rel="stylesheet" href="qg-polish.css?v=20260726contrast">
 <link rel="stylesheet" href="qg-ux.css?v=20260728welcome1">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="qg-signup.css?v=4">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="qg-signup.css?v=a6868b1-1787873879">
+<link rel="stylesheet" href="qg-auth.css?v=a6868b1-1787873879">
 <link rel="stylesheet" href="qg-onboarding.css?v=2">
 <link rel="stylesheet" href="qg-cookies.css">
-<style>
-body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
-.stars{position:fixed;inset:0;z-index:0;pointer-events:none;}
-.star{position:absolute;border-radius:50%;background:white;animation:twinkle var(--d,3s) ease-in-out infinite;opacity:0;}
-@keyframes twinkle{0%,100%{opacity:0;}50%{opacity:var(--op,0.8);}}
-</style>
-<link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
+<style>body{margin:0;}</style>
+<link rel="stylesheet" href="qg-tokens.css?v=a6868b1-1787873879" id="qg-tokens-css">
 </head>
-<body>
+<body class="qg-auth-page">
 <div class="signup-bg-mesh"></div>
 <div class="signup-orb signup-orb-1"></div>
 <div class="signup-orb signup-orb-2"></div>
@@ -50,8 +46,13 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
   <div class="signup-card-wrap">
     <div class="signup-card">
       <div class="signup-top-row">
-        <div class="signup-logo">QuickGigs</div>
-        <button type="button" class="signup-theme-btn" id="signupThemeBtn" onclick="toggleSignupTheme()">☀️ Light</button>
+        <a class="qg-auth-brand" href="index.html" aria-label="QuickGigs home">
+          <span class="qg-auth-mark" aria-hidden="true">
+            <img src="QuickGigsLogo.png" alt="" width="24" height="24" decoding="async">
+          </span>
+          <span class="qg-auth-name">QuickGigs</span>
+        </a>
+        <button type="button" class="signup-theme-btn" id="signupThemeBtn" onclick="toggleSignupTheme()">Light</button>
       </div>
       <h1 class="signup-title" id="cardTitle">Join QuickGigs</h1>
       <p class="signup-subtitle" id="cardSubtitle">Canada's marketplace for everyday tasks — post a gig or earn helping others</p>
@@ -74,19 +75,14 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 
         <!-- Step 0: Role + basics -->
         <div class="qg-wizard-step active" data-step="account">
-          <div class="signup-perks" id="signupPerks">
-            <div class="signup-perk"><span>🇨🇦</span> Available across Canada</div>
-            <div class="signup-perk"><span>⚡</span> Post a task in under a minute</div>
-            <div class="signup-perk"><span>🤝</span> Connect with trusted local taskers</div>
-          </div>
           <div class="signup-role-grid">
             <button type="button" class="signup-role active" data-start-role="worker" onclick="setRole('worker',this)">
-              <span class="signup-role-emoji">💰</span>
+              <span class="signup-role-emoji" aria-hidden="true">💰</span>
               <span class="signup-role-label">Find work</span>
               <span class="signup-role-desc">Tasker mode · browse gigs and earn</span>
             </button>
             <button type="button" class="signup-role" data-start-role="poster" onclick="setRole('poster',this)">
-              <span class="signup-role-emoji">📋</span>
+              <span class="signup-role-emoji" aria-hidden="true">📋</span>
               <span class="signup-role-label">Post tasks</span>
               <span class="signup-role-desc">Poster mode · hire local taskers</span>
             </button>
@@ -201,12 +197,7 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 
       <input type="hidden" id="roleInput" value="worker">
 
-      <p class="qg-pipeda-line">🔒 Your data is protected under Canadian privacy law (PIPEDA)</p>
-      <div class="signup-trust">
-        <span>🔒 Secure signup</span>
-        <span>🇨🇦 PIPEDA compliant</span>
-        <span>✓ 16+ verified</span>
-      </div>
+      <p class="qg-pipeda-line">Protected under Canadian privacy law (PIPEDA)</p>
 
       <div class="signup-footer" id="signupFooter">
         <div class="signup-divider"><span>or</span></div>
@@ -459,7 +450,7 @@ var signupDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (loca
 function applySignupTheme() {
   document.body.classList.toggle('light', !signupDark);
   var btn = document.getElementById('signupThemeBtn');
-  if (btn) btn.textContent = signupDark ? '☀️ Light' : '🌙 Dark';
+  if (btn) btn.textContent = signupDark ? 'Light' : 'Dark';
 }
 window.toggleSignupTheme = function() {
   signupDark = !signupDark;
@@ -468,15 +459,6 @@ window.toggleSignupTheme = function() {
   applySignupTheme();
 };
 applySignupTheme();
-
-var stars = document.getElementById('stars');
-for (var i = 0; i < 100; i++) {
-  var s = document.createElement('div');
-  s.className = 'star';
-  var size = Math.random() * 2 + 0.5;
-  s.style.cssText = 'width:' + size + 'px;height:' + size + 'px;left:' + Math.random() * 100 + '%;top:' + Math.random() * 100 + '%;--d:' + (Math.random() * 4 + 2) + 's;--op:' + (Math.random() * 0.6 + 0.1) + ';animation-delay:' + Math.random() * 5 + 's';
-  stars.appendChild(s);
-}
 
 window.setRole = function(role, btn) {
   if (role === 'poster' && btn && btn.classList.contains('is-teen-hidden')) return;

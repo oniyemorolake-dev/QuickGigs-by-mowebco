@@ -176,55 +176,66 @@ main{
   padding:28px 20px 64px;
 }
 
-/* Hero */
+/* Hero — two-column split */
 .qg-hero{
   width:100%;
-  max-width:720px;
+  max-width:1120px;
   margin:0 auto 56px;
   text-align:left;
 }
-.qg-pill{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  background:var(--qg-surface);
-  color:var(--qg-body);
-  border-radius:20px;
-  padding:6px 12px;
+.qg-hero-grid{
+  display:flex;
+  flex-direction:column;
+  gap:28px;
+  margin-bottom:28px;
+}
+.qg-hero-left{
+  min-width:0;
+}
+.qg-eyebrow{
   font-size:12px;
   font-weight:500;
-  font-family:'Poppins',sans-serif;
-  margin-bottom:20px;
-  border:1px solid var(--qg-border);
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  color:var(--qg-muted);
+  margin:0 0 16px;
 }
-.qg-pill svg{width:14px;height:14px;flex-shrink:0;color:var(--qg-muted);}
-.qg-headline{
-  font-family:'Poppins',sans-serif;
+.qg-sentence-wrap{
+  margin-bottom:20px;
+}
+.qg-sentence{
+  font-family:Georgia,'Times New Roman',serif;
   font-size:24px;
   line-height:1.35;
-  font-weight:500;
-  letter-spacing:-0.015em;
+  font-weight:400;
   color:var(--qg-heading);
-  margin:0 0 12px;
+  margin:0 0 8px;
 }
-.qg-subline{
+#qg-blank{
+  color:var(--qg-link);
+  border-bottom:2px solid var(--qg-purple);
+  padding-bottom:1px;
+  transition:opacity 260ms ease;
+}
+.qg-where{
   font-family:'Poppins',sans-serif;
-  font-size:15px;
-  line-height:1.55;
+  font-size:14px;
+  line-height:1.45;
   color:var(--qg-body);
-  margin:0 0 24px;
-  max-width:36em;
+  margin:0;
+  min-height:1.4em;
+  transition:opacity 260ms ease;
 }
 .qg-hero-form{
   display:flex;
-  flex-wrap:wrap;
+  flex-direction:column;
   gap:10px;
   width:100%;
-  max-width:560px;
+  max-width:480px;
   margin-bottom:12px;
 }
 .qg-hero-form input{
-  height:36px;
+  height:40px;
   background:var(--qg-surface);
   border:1px solid var(--qg-border);
   border-radius:8px;
@@ -236,87 +247,130 @@ main{
   width:100%;
 }
 .qg-hero-form input::placeholder{color:var(--qg-muted);}
-.qg-hero-form input:focus{
+.qg-hero-form input:focus,
+.qg-hero-form input:focus-visible{
   border-color:var(--qg-link);
+  outline:2px solid var(--qg-link);
+  outline-offset:0;
 }
-.qg-hero-form .qg-need{flex:1 1 100%;}
-.qg-hero-form .qg-postal{flex:1 1 100%;max-width:none;}
-.qg-hero-form .qg-post{
+.qg-hero-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.qg-btn-primary,
+.qg-btn-outline{
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  height:36px;
-  padding:0 18px;
-  background:var(--qg-purple);
-  color:var(--qg-heading);
-  border:1px solid var(--qg-purple);
+  height:40px;
+  padding:0 16px;
   border-radius:8px;
   font-family:'Poppins',sans-serif;
   font-size:14px;
   font-weight:600;
   text-decoration:none;
   white-space:nowrap;
-  flex:1 1 100%;
   cursor:pointer;
+  flex:1 1 140px;
+  min-width:0;
 }
-.qg-hero-form .qg-post:hover{background:#7B2CBF;border-color:#7B2CBF;}
+.qg-btn-primary{
+  background:var(--qg-purple);
+  color:var(--qg-heading);
+  border:1px solid var(--qg-purple);
+}
+.qg-btn-primary:hover{background:#7B2CBF;border-color:#7B2CBF;}
+.qg-btn-primary:focus-visible,
+.qg-btn-outline:focus-visible{
+  outline:2px solid var(--qg-link);
+  outline-offset:2px;
+}
+.qg-btn-outline{
+  background:transparent;
+  color:var(--qg-heading);
+  border:1px solid var(--qg-border);
+}
+.qg-btn-outline:hover{
+  border-color:var(--qg-link);
+  color:var(--qg-link);
+}
 .qg-fine{
   font-size:12px;
   color:var(--qg-muted);
-  margin:0 0 16px;
+  margin:0;
   line-height:1.5;
 }
-.qg-earn{
-  font-size:14px;
-  color:var(--qg-body);
-  margin:0 0 28px;
-}
-.qg-earn a{
-  color:var(--qg-link);
-  text-decoration:none;
-  font-weight:500;
-}
-.qg-earn a:hover{text-decoration:underline;}
 
-.qg-taskers{
-  display:grid;
-  grid-template-columns:1fr;
-  gap:12px;
-  margin-bottom:24px;
-  width:100%;
+/* Live feed card */
+.qg-live-feed{
+  background:var(--qg-surface);
+  border:1px solid var(--qg-border);
+  border-radius:12px;
+  padding:16px;
+  min-width:0;
 }
-.qg-tasker{
+.qg-live-feed[hidden]{display:none!important;}
+.qg-live-head{
   display:flex;
   align-items:center;
-  gap:10px;
-  padding:8px 0;
-  border-bottom:1px solid var(--qg-hairline);
+  gap:8px;
+  margin-bottom:14px;
 }
-.qg-tasker:last-child{border-bottom:0;}
-.qg-avatar{
-  width:28px;
-  height:28px;
+.qg-live-dot{
+  width:8px;
+  height:8px;
   border-radius:50%;
-  background:var(--qg-surface);
-  color:var(--qg-body);
-  border:1px solid var(--qg-border);
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  font-size:10px;
-  font-weight:600;
-  font-family:'Poppins',sans-serif;
+  background:#22c55e;
   flex-shrink:0;
 }
-.qg-tasker-meta{min-width:0;}
-.qg-tasker-name{
+.qg-live-title{
   font-size:12px;
   font-weight:500;
-  color:var(--qg-heading);
-  line-height:1.3;
+  color:var(--qg-body);
+  margin:0;
 }
-.qg-tasker-detail{
-  font-size:11px;
+.qg-live-list{
+  list-style:none;
+  margin:0;
+  padding:0;
+}
+.qg-live-row{
+  display:block;
+  padding:12px 0;
+  border-bottom:1px solid var(--qg-hairline);
+  text-decoration:none;
+  color:inherit;
+}
+.qg-live-row:last-child{border-bottom:none;padding-bottom:0;}
+.qg-live-row:first-child{padding-top:0;}
+.qg-live-row:focus-visible{
+  outline:2px solid var(--qg-link);
+  outline-offset:2px;
+  border-radius:4px;
+}
+.qg-live-row-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:4px;
+}
+.qg-live-task-title{
+  font-size:14px;
+  font-weight:500;
+  color:var(--qg-heading);
+  line-height:1.35;
+  min-width:0;
+}
+.qg-live-price{
+  font-size:14px;
+  font-weight:600;
+  color:var(--qg-heading);
+  flex-shrink:0;
+}
+.qg-live-meta{
+  font-size:12px;
   color:var(--qg-muted);
   line-height:1.4;
 }
@@ -506,17 +560,20 @@ main{
   border-color:var(--qg-border);
 }
 
+@media(min-width:860px){
+  .qg-hero-grid{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(280px,380px);
+    gap:32px;
+    align-items:start;
+  }
+  .qg-sentence{font-size:32px;}
+}
 @media(min-width:720px){
-  .qg-headline{font-size:30px;}
   .qg-topnav{padding:12px 24px;}
   .qg-topnav-links{display:flex;}
   .qg-topnav-menu{display:none;}
   .qg-topnav-divider{display:none;}
-  .qg-hero-form .qg-need{flex:1 1 220px;}
-  .qg-hero-form .qg-postal{flex:0 0 118px;width:118px;max-width:118px;}
-  .qg-hero-form .qg-post{flex:0 0 auto;width:auto;}
-  .qg-taskers{grid-template-columns:1fr 1fr;}
-  .qg-tasker{border-bottom:0;padding:6px 0;}
   .steps{grid-template-columns:repeat(3,1fr);}
   .modes{grid-template-columns:1fr 1fr;}
   .quotes{grid-template-columns:repeat(3,1fr);}
@@ -528,6 +585,7 @@ main{
 }
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto;}
+  #qg-blank,.qg-where{transition:none;}
 }
 </style>
 <link rel="stylesheet" href="qg-polish.css?v=32e06f4-1787866369">
@@ -553,54 +611,34 @@ main{
 
 <main>
   <section class="qg-hero" aria-label="QuickGigs hero">
-    <div class="qg-pill">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-      Canada-wide · paid in CAD
-    </div>
+    <div class="qg-hero-grid">
+      <div class="qg-hero-left">
+        <p class="qg-eyebrow">Canada-wide · paid in CAD</p>
 
-    <h1 class="qg-headline">Find someone nearby to get it done.</h1>
-    <p class="qg-subline">Post what you need, compare offers from people in your area, and pay only once the work is finished.</p>
+        <div class="qg-sentence-wrap" aria-live="polite">
+          <p class="qg-sentence">I need someone to <span id="qg-blank">braid my hair</span>.</p>
+          <p class="qg-where" id="qg-where">Someone nearby can. Today.</p>
+        </div>
 
-    <form class="qg-hero-form" action="posttask.html" method="get" id="qgHeroForm">
-      <label class="visually-hidden" for="qgNeed" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">What do you need done?</label>
-      <input class="qg-need" id="qgNeed" name="q" type="text" placeholder="What do you need done?" autocomplete="off">
-      <label class="visually-hidden" for="qgPostal" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Postal code</label>
-      <input class="qg-postal" id="qgPostal" name="postal" type="text" placeholder="Postal code" maxlength="7" autocomplete="postal-code">
-      <a class="qg-post" id="qgPostTask" href="posttask.html">Post a task</a>
-    </form>
+        <form class="qg-hero-form" action="posttask.html" method="get" id="qgHeroForm">
+          <label class="visually-hidden" for="qgPostal" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Postal code</label>
+          <input class="qg-postal" id="qgPostal" name="postal" type="text" placeholder="Postal code" maxlength="7" autocomplete="postal-code">
+          <div class="qg-hero-actions">
+            <a class="qg-btn-primary" id="qgPostTask" href="posttask.html">Post a task</a>
+            <a class="qg-btn-outline" id="qgEarnTasker" href="signup.html?role=worker">Earn as a tasker</a>
+          </div>
+        </form>
 
-    <p class="qg-fine">Free to post · You pick who · Money held until it's done</p>
-    <p class="qg-earn">Here to earn instead? <a href="signup.html">Sign up as a tasker →</a></p>
+        <p class="qg-fine">No fee to post · $20 minimum · Money held in escrow</p>
+      </div>
 
-    <div class="qg-taskers" aria-label="Taskers across Canada">
-      <div class="qg-tasker">
-        <span class="qg-avatar" aria-hidden="true">AM</span>
-        <div class="qg-tasker-meta">
-          <div class="qg-tasker-name">Aisha M.</div>
-          <div class="qg-tasker-detail">Hair &amp; beauty · 4.9 · Calgary</div>
+      <aside class="qg-live-feed" id="qgLiveFeed" hidden aria-label="Open tasks near you">
+        <div class="qg-live-head">
+          <span class="qg-live-dot" aria-hidden="true"></span>
+          <h2 class="qg-live-title">Live near you</h2>
         </div>
-      </div>
-      <div class="qg-tasker">
-        <span class="qg-avatar" aria-hidden="true">JL</span>
-        <div class="qg-tasker-meta">
-          <div class="qg-tasker-name">Jordan L.</div>
-          <div class="qg-tasker-detail">Moving help · 4.8 · Toronto</div>
-        </div>
-      </div>
-      <div class="qg-tasker">
-        <span class="qg-avatar" aria-hidden="true">SK</span>
-        <div class="qg-tasker-meta">
-          <div class="qg-tasker-name">Sam K.</div>
-          <div class="qg-tasker-detail">Tutoring · 5.0 · Winnipeg</div>
-        </div>
-      </div>
-      <div class="qg-tasker">
-        <span class="qg-avatar" aria-hidden="true">NR</span>
-        <div class="qg-tasker-meta">
-          <div class="qg-tasker-name">Nora R.</div>
-          <div class="qg-tasker-detail">Home fixes · 4.7 · Halifax</div>
-        </div>
-      </div>
+        <div class="qg-live-list" id="qgLiveList" role="list"></div>
+      </aside>
     </div>
 
     <div class="qg-trust" aria-label="Trust and payments">
@@ -706,38 +744,167 @@ main{
 <script src="qg-announcement.js?v=32e06f4-1787866369"></script>
 <script src="qg-analytics.js?v=32e06f4-1787866369"></script>
 <script>
+(function heroCycle() {
+  var pairs = [
+    { blank: 'braid my hair', where: 'Someone nearby can. Today.' },
+    { blank: 'help me move a couch', where: 'Someone nearby can. Tomorrow.' },
+    { blank: 'tutor my son in math', where: 'Someone nearby can. This week.' },
+    { blank: 'fix a leaking tap', where: 'Someone nearby can. Today.' },
+    { blank: 'deep clean my kitchen', where: 'Someone nearby can. Friday.' }
+  ];
+  var blankEl = document.getElementById('qg-blank');
+  var whereEl = document.getElementById('qg-where');
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!blankEl || !whereEl || reduceMotion) return;
+
+  var i = 0;
+  setInterval(function () {
+    i = (i + 1) % pairs.length;
+    blankEl.style.opacity = '0';
+    whereEl.style.opacity = '0';
+    setTimeout(function () {
+      blankEl.textContent = pairs[i].blank;
+      whereEl.textContent = pairs[i].where;
+      blankEl.style.opacity = '1';
+      whereEl.style.opacity = '1';
+    }, 260);
+  }, 2600);
+})();
+
 (function wireHeroForm() {
   var form = document.getElementById('qgHeroForm');
   var post = document.getElementById('qgPostTask');
-  var need = document.getElementById('qgNeed');
   var postal = document.getElementById('qgPostal');
   if (!form || !post) return;
 
-  function buildHref() {
+  function buildPostHref() {
     var params = new URLSearchParams();
-    var q = (need && need.value || '').trim();
     var p = (postal && postal.value || '').trim();
-    if (q) params.set('q', q);
     if (p) params.set('postal', p);
     var qs = params.toString();
     return 'posttask.html' + (qs ? '?' + qs : '');
   }
 
-  post.addEventListener('click', function (e) {
-    post.setAttribute('href', buildHref());
+  post.addEventListener('click', function () {
+    post.setAttribute('href', buildPostHref());
   });
   form.addEventListener('submit', function (e) {
     e.preventDefault();
-    window.location.href = buildHref();
+    window.location.href = buildPostHref();
   });
 })();
 
-(function applyWorkerLanding() {
-  var role = new URLSearchParams(window.location.search).get('role') || localStorage.getItem('qg-role');
-  if (role !== 'worker') return;
-  var earn = document.querySelector('.qg-earn');
-  if (earn) {
-    earn.innerHTML = 'Ready to earn? <a href="signup.html?role=worker">Sign up as a tasker →</a> · <a href="browsetask.html">Browse tasks</a>';
+(function loadHeroLiveFeed() {
+  var card = document.getElementById('qgLiveFeed');
+  var list = document.getElementById('qgLiveList');
+  if (!card || !list) return;
+
+  function esc(s) {
+    if (typeof window.escapeHtml === 'function') return window.escapeHtml(s);
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function cityLabel(loc) {
+    var s = String(loc || '').trim();
+    if (!s) return 'Canada';
+    var parts = s.split(',');
+    return parts[0].trim() || s;
+  }
+
+  function cityKey(loc) {
+    return cityLabel(loc).toLowerCase();
+  }
+
+  function pickSpread(rows, n) {
+    var picked = [];
+    var seen = {};
+    var ri;
+    for (ri = 0; ri < rows.length && picked.length < n; ri++) {
+      var key = cityKey(rows[ri].location);
+      if (seen[key]) continue;
+      seen[key] = true;
+      picked.push(rows[ri]);
+    }
+    for (ri = 0; ri < rows.length && picked.length < n; ri++) {
+      if (picked.indexOf(rows[ri]) >= 0) continue;
+      picked.push(rows[ri]);
+    }
+    return picked;
+  }
+
+  function formatPrice(budget) {
+    var n = parseFloat(budget);
+    if (!isFinite(n)) return '—';
+    return '$' + (n % 1 === 0 ? n.toFixed(0) : n.toFixed(2));
+  }
+
+  function offerLabel(count) {
+    var n = Number(count) || 0;
+    return n === 1 ? '1 offer' : n + ' offers';
+  }
+
+  async function appCountForTask(taskId) {
+    if (!taskId || typeof sbCount !== 'function') return 0;
+    try {
+      return await sbCount('applications', 'task_id=eq.' + encodeURIComponent(String(taskId)));
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  async function run() {
+    if (typeof sbGetTasksList !== 'function') {
+      card.hidden = true;
+      return;
+    }
+    var select = typeof SELECT_TASKS_BROWSE !== 'undefined'
+      ? SELECT_TASKS_BROWSE
+      : 'task_id,title,budget,location,status,created_at';
+    var rows;
+    try {
+      rows = await sbGetTasksList('status=eq.open', 80, { select: select });
+    } catch (e) {
+      card.hidden = true;
+      return;
+    }
+    if (!rows || !rows.length) {
+      card.hidden = true;
+      return;
+    }
+
+    var picked = pickSpread(rows, 4);
+    if (!picked.length) {
+      card.hidden = true;
+      return;
+    }
+
+    var counts = await Promise.all(picked.map(function (t) {
+      return appCountForTask(t.task_id || t.TASK_ID || t.id);
+    }));
+
+    list.innerHTML = picked.map(function (t, idx) {
+      var tid = String(t.task_id || t.TASK_ID || t.id || '');
+      var title = esc(t.title || 'Open task');
+      var price = esc(formatPrice(t.budget));
+      var city = esc(cityLabel(t.location));
+      var meta = city + ' · ' + esc(offerLabel(counts[idx]));
+      var href = tid ? 'browsetask.html?task=' + encodeURIComponent(tid) : 'browsetask.html';
+      return '<a class="qg-live-row" role="listitem" href="' + href + '">' +
+        '<div class="qg-live-row-top">' +
+          '<span class="qg-live-task-title">' + title + '</span>' +
+          '<span class="qg-live-price">' + price + '</span>' +
+        '</div>' +
+        '<div class="qg-live-meta">' + meta + '</div>' +
+      '</a>';
+    }).join('');
+
+    card.hidden = false;
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run);
+  } else {
+    run();
   }
 })();
 </script>

@@ -20,34 +20,27 @@
 <meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<meta name="theme-color" content="#6b3fa0">
+<meta name="theme-color" content="#0D0716">
 <link rel="stylesheet" href="qg-polish.css?v=20260726contrast">
 <link rel="stylesheet" href="qg-ux.css?v=20260728welcome1">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://quickgigs-7b12d.firebaseapp.com">
-<link rel="dns-prefetch" href="https://www.gstatic.com">
-<link rel="stylesheet" href="qg-signup.css?v=4">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="qg-signup.css?v=a6868b1-1787873879">
+<link rel="stylesheet" href="qg-auth.css?v=a6868b1-1787873879">
 <link rel="stylesheet" href="qg-cookies.css">
 <style>
-body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
-.stars{position:fixed;inset:0;z-index:0;pointer-events:none;}
-.star{position:absolute;border-radius:50%;background:white;animation:twinkle var(--d,3s) ease-in-out infinite;opacity:0;}
-@keyframes twinkle{0%,100%{opacity:0;}50%{opacity:var(--op,0.8);}}
-.login-progress{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:12px 14px;border-radius:12px;background:rgba(107,63,160,0.18);border:1px solid rgba(200,168,233,0.25);font-size:13px;color:rgba(255,255,255,0.9);}
+body{margin:0;}
+.login-progress{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:12px 14px;border-radius:8px;font-size:13px;}
 .login-progress[hidden]{display:none!important;}
-.login-progress-spinner{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,0.25);border-top-color:#c8a8e9;animation:loginSpin 0.7s linear infinite;flex-shrink:0;}
+.login-progress-spinner{width:18px;height:18px;border-radius:50%;border:2px solid transparent;border-top-color:currentColor;animation:loginSpin 0.7s linear infinite;flex-shrink:0;}
 @keyframes loginSpin{to{transform:rotate(360deg);}}
-body.light .login-progress{background:#f0eeff;border-color:#e0daf5;color:#2d1b4e;}
-body.light .login-progress-spinner{border-color:rgba(107,63,160,0.2);border-top-color:#6b3fa0;}
 </style>
-<link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
+<link rel="stylesheet" href="qg-tokens.css?v=a6868b1-1787873879" id="qg-tokens-css">
 </head>
-<body>
+<body class="qg-auth-page">
 <div class="signup-bg-mesh"></div>
 <div class="signup-orb signup-orb-1"></div>
 <div class="signup-orb signup-orb-2"></div>
@@ -57,19 +50,17 @@ body.light .login-progress-spinner{border-color:rgba(107,63,160,0.2);border-top-
   <div class="signup-card-wrap">
     <div class="signup-card">
       <div class="signup-top-row">
-        <div class="signup-logo">QuickGigs</div>
-        <button type="button" class="signup-theme-btn" id="authThemeBtn" onclick="toggleAuthTheme()">☀️ Light</button>
+        <a class="qg-auth-brand" href="index.html" aria-label="QuickGigs home">
+          <span class="qg-auth-mark" aria-hidden="true">
+            <img src="QuickGigsLogo.png" alt="" width="24" height="24" decoding="async">
+          </span>
+          <span class="qg-auth-name">QuickGigs</span>
+        </a>
+        <button type="button" class="signup-theme-btn" id="authThemeBtn" onclick="toggleAuthTheme()">Light</button>
       </div>
 
-      <div class="signup-step-icon" aria-hidden="true">👋</div>
       <h1 class="signup-title">Welcome back</h1>
       <p class="signup-subtitle">Log in to post tasks, apply to gigs, and manage your account</p>
-
-      <div class="signup-perks">
-        <div class="signup-perk"><span>🇨🇦</span> Canada-wide marketplace</div>
-        <div class="signup-perk"><span>🔒</span> Secure Firebase login</div>
-        <div class="signup-perk"><span>⚡</span> Pick up where you left off</div>
-      </div>
 
       <div class="signup-msg error" id="errorMsg"></div>
       <div class="signup-msg ok" id="okMsg"></div>
@@ -84,19 +75,15 @@ body.light .login-progress-spinner{border-color:rgba(107,63,160,0.2);border-top-
           <input type="email" id="email" placeholder="you@example.com" autocomplete="email" enterkeyhint="next" required>
         </div>
         <div class="signup-field">
-          <label for="password">Password <span class="req">*</span></label>
+          <div class="signup-label-row">
+            <label for="password">Password <span class="req">*</span></label>
+            <button type="button" class="signup-forgot" id="forgotLink">Forgot password?</button>
+          </div>
           <input type="password" id="password" placeholder="Your password" autocomplete="current-password" enterkeyhint="done" required>
         </div>
-        <button type="button" class="signup-forgot" id="forgotLink">Forgot password?</button>
         <button type="submit" class="signup-btn" id="submitBtn">Log in →</button>
       </form>
-      <p class="qg-pipeda-line">🔒 Your data is protected under Canadian privacy law (PIPEDA)</p>
-
-      <div class="signup-trust">
-        <span>🔒 Encrypted</span>
-        <span>🇨🇦 PIPEDA compliant</span>
-        <span>✓ Beta access</span>
-      </div>
+      <p class="qg-pipeda-line">Protected under Canadian privacy law (PIPEDA)</p>
 
       <div class="signup-divider"><span>or</span></div>
       <button type="button" class="signup-google-btn" id="googleLoginBtn">
@@ -130,7 +117,7 @@ var authDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localS
 function applyAuthTheme() {
   document.body.classList.toggle('light', !authDark);
   var btn = document.getElementById('authThemeBtn');
-  if (btn) btn.textContent = authDark ? '☀️ Light' : '🌙 Dark';
+  if (btn) btn.textContent = authDark ? 'Light' : 'Dark';
 }
 window.toggleAuthTheme = function() {
   authDark = !authDark;
@@ -139,16 +126,6 @@ window.toggleAuthTheme = function() {
   applyAuthTheme();
 };
 applyAuthTheme();
-
-var stars = document.getElementById('stars');
-var starCount = window.matchMedia('(max-width:768px)').matches ? 0 : 40;
-for (var i = 0; i < starCount; i++) {
-  var s = document.createElement('div');
-  s.className = 'star';
-  var size = Math.random() * 2 + 0.5;
-  s.style.cssText = 'width:' + size + 'px;height:' + size + 'px;left:' + Math.random() * 100 + '%;top:' + Math.random() * 100 + '%;--d:' + (Math.random() * 4 + 2) + 's;--op:' + (Math.random() * 0.6 + 0.1) + ';animation-delay:' + Math.random() * 5 + 's';
-  stars.appendChild(s);
-}
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
