@@ -428,13 +428,31 @@ body.qg-auth-page .qg-dob-picker {
 }
 
 body.qg-auth-page .qg-dob-picker::before {
-  background: var(--qg-surface);
+  background: rgba(107, 33, 168, 0.14);
   border: 1px solid var(--qg-border);
   box-shadow: none;
 }
 
 body.qg-auth-page .qg-dob-picker::after {
-  background: linear-gradient(180deg, var(--qg-bg), transparent);
+  background: linear-gradient(180deg, var(--qg-bg) 15%, transparent);
+}
+
+body.qg-auth-page .qg-dob-wrap::after {
+  border-radius: 0 0 8px 8px;
+  background: linear-gradient(0deg, var(--qg-bg) 15%, transparent);
+}
+
+body.qg-auth-page.light .qg-dob-picker::before {
+  background: rgba(107, 33, 168, 0.1);
+}
+
+body.qg-auth-page.light .qg-dob-picker::after,
+body.qg-auth-page.light .qg-dob-wrap::after {
+  background: linear-gradient(180deg, var(--qg-bg) 20%, transparent);
+}
+
+body.qg-auth-page.light .qg-dob-wrap::after {
+  background: linear-gradient(0deg, var(--qg-bg) 20%, transparent);
 }
 
 body.qg-auth-page .qg-dob-labels span {

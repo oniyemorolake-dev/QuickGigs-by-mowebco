@@ -120,6 +120,47 @@ body.light .qg-platform-banner.is-warn {
   color: #c8a8e9;
 }
 
+body.light .qg-soft-close-box {
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+
+body.light .qg-soft-close-title {
+  color: #92400e;
+}
+
+body.light .qg-soft-close-sub {
+  color: #78350f;
+}
+
+body.light .qg-soft-close-block {
+  background: #fffbeb;
+  border-color: #fcd34d;
+  color: #78350f;
+}
+
+body.light .qg-soft-close-block strong {
+  color: #92400e;
+}
+
+body.light .qg-soft-close-block a {
+  color: #6b21a8;
+}
+
+body.qg-auth-page.light .qg-soft-close-block {
+  background: #fffbeb;
+  border-color: #fcd34d;
+  color: #78350f;
+}
+
+body.qg-auth-page.light .qg-soft-close-block strong {
+  color: #92400e;
+}
+
+body.qg-auth-page.light .qg-soft-close-block a {
+  color: #6b21a8;
+}
+
 .admin-import-box {
   width: 100%;
   min-height: 120px;

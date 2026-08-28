@@ -91,6 +91,7 @@
         col.appendChild(el);
       });
       col.addEventListener('scroll', function () {
+        highlightCols();
         clearTimeout(col._snapT);
         col._snapT = setTimeout(function () { finishSnap(type); }, 120);
       }, { passive: true });

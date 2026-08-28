@@ -29,7 +29,7 @@
     var link = document.createElement('link');
     link.id = 'qg-announce-css';
     link.rel = 'stylesheet';
-    link.href = 'qg-announcement.css?v=3';
+    link.href = 'qg-announcement.css?v=e653274-1787876226';
     document.head.appendChild(link);
   }
 
