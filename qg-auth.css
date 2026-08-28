@@ -610,6 +610,10 @@ body.qg-auth-page .signup-role-note {
 }
 
 body.qg-auth-page .signup-terms-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
   background: var(--qg-bg);
   border: 1px solid var(--qg-border);
   border-radius: 8px;
@@ -618,10 +622,25 @@ body.qg-auth-page .signup-terms-check {
 body.qg-auth-page .signup-terms-check label {
   color: var(--qg-body);
   font-size: 12px;
+  line-height: 1.55;
+  cursor: pointer;
 }
 
-body.qg-auth-page .signup-terms-check input {
+body.qg-auth-page .signup-terms-check input[type="checkbox"] {
+  -webkit-appearance: checkbox;
+  appearance: auto;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  margin-top: 2px;
   accent-color: var(--qg-purple);
+  cursor: pointer;
+}
+
+body.qg-auth-page .signup-terms-check input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--qg-link);
+  outline-offset: 2px;
 }
 
 body.qg-auth-page .qg-step-title {

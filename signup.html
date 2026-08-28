@@ -642,8 +642,13 @@ document.getElementById('submitBtn').onclick = async function() {
     return;
   }
   if (!document.getElementById('termsAgree').checked) {
-    errorMsg.textContent = 'Agree to the Terms of Service and Privacy Policy.';
+    errorMsg.textContent = 'Check the box to agree to the Terms of Service and Privacy Policy.';
     errorMsg.style.display = 'block';
+    var termsBox = document.getElementById('termsAgree');
+    if (termsBox) {
+      termsBox.focus();
+      try { termsBox.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+    }
     return;
   }
 
@@ -700,6 +705,20 @@ document.getElementById('submitBtn').onclick = async function() {
     identity.account_status = saveResult.account_status || identity.account_status;
     identity.guardian_consent_status = saveResult.guardian_consent_status || identity.guardian_consent_status;
 
+    if (identity.account_status === 'pending_guardian' && saveResult.email_sent !== true) {
+      var resendUrl = window.QG_CONFIG && window.QG_CONFIG.resendGuardianConsentUrl;
+      if (resendUrl && typeof callVerifiedFunction === 'function') {
+        try {
+          var resendResult = await callVerifiedFunction(resendUrl, {}, userCredential.user);
+          if (resendResult && (resendResult.email_sent === true || resendResult.success === true)) {
+            saveResult.email_sent = true;
+          }
+        } catch (resendErr) {
+          console.warn('Guardian consent resend failed:', resendErr);
+        }
+      }
+    }
+
     if (typeof qgTrackEvent === 'function') {
       qgTrackEvent('sign_up', {
         method: oauthSignupMode ? 'google' : 'email',
@@ -743,8 +762,8 @@ document.getElementById('submitBtn').onclick = async function() {
 
     okMsg.textContent = identity.account_status === 'pending_guardian'
       ? (saveResult.email_sent
-        ? 'Account created. Ask your parent to check their email to approve. Redirecting…'
-        : 'Account created, but the approval email could not be sent. Contact support@quickgigs.ca.')
+        ? 'Account created! We emailed ' + (identity.guardian_email || 'your parent/guardian') + ' a one-click approval link. Redirecting…'
+        : 'Account created, but the guardian approval email could not be sent. Ask your parent to check spam, or contact support@quickgigs.ca.')
       : 'Welcome to QuickGigs 🎉 Redirecting…';
     okMsg.style.display = 'block';
 

@@ -297,6 +297,9 @@
           }
         }
         if (type === 'guardian') {
+          if (gName) state.guardianName = gName.value.trim();
+          if (gEmail) state.guardianEmail = gEmail.value.trim();
+          if (gPhone) state.guardianPhone = gPhone.value.trim();
           if (!state.guardianName || state.guardianName.length < 2) {
             qgNotify('Please enter your parent or guardian\'s full name.', '#f59e0b');
             return false;
@@ -370,6 +373,9 @@
         showStep: showStep,
         getIdentityPayload: function () {
           if (dobApi && dobApi.sync) dobApi.sync();
+          if (gName) state.guardianName = gName.value.trim();
+          if (gEmail) state.guardianEmail = gEmail.value.trim();
+          if (gPhone) state.guardianPhone = gPhone.value.trim();
           var age = getAgeFromState(state);
           var isMinor = age >= 16 && age < 18;
           var now = new Date().toISOString();

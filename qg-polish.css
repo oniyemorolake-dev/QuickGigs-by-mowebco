@@ -26,7 +26,9 @@ button:active, .task-card:active, .tab-item:active, .act-btn:active, .empty-btn:
   opacity: 0.85;
 }
 
-input, textarea, select {
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+textarea,
+select {
   font-size: 16px;
   -webkit-appearance: none;
   appearance: none;
