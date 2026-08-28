@@ -3,7 +3,7 @@
  * HTML: network-first (fresh when online). CSS/JS/icons: cache-first.
  * Activate purges every Cache Storage entry that is not CACHE_NAME.
  */
-var BUILD_ID = '16653a7-1787883368';
+var BUILD_ID = 'dbe458f-1787883812';
 var CACHE_NAME = 'quickgigs-' + BUILD_ID;
 var OFFLINE_FALLBACK = '/dashboard.html';
 
