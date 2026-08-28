@@ -5,9 +5,8 @@
 <!-- qg-build:a6868b1-1787873879 -->
 
 <!--
-  Obscurity only — real security is the Firebase Auth + role==='admin' gate, and
-  server-side RLS/service-role enforcement (to be added with backend).
-  Do NOT treat a hidden URL as protection.
+  Obscurity only — real security is the admin-console Edge Function (admins table +
+  Firebase JWT). Do NOT treat a hidden URL as protection.
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -556,7 +555,8 @@ html.light .main{background:var(--bg);}
 <script defer src="qg-utils.js?v=20260728welcome1"></script>
 <script defer src="supabaseClient.js?v=20260727perf"></script>
 <script defer src="supabase-db.js?v=20260827chat1"></script>
-<script defer src="qg-admin-gate.js?v=20260727admin1"></script>
+<script defer src="qg-admin-api.js?v=20260828admin1"></script>
+<script defer src="qg-admin-gate.js?v=20260828admin1"></script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
@@ -564,9 +564,7 @@ import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/fi
 
 /**
  * Admin console gate.
- * SECURITY: Client UX only. True enforcement is server-side (RLS + service-role
- * admin API / custom claim) once the backend exists. Never trust this redirect
- * alone — always re-check users.role === 'admin' + verified on load.
+ * SECURITY: Client UX only. Enforcement is admin-console Edge Function (admins table).
  * No hardcoded password or secret.
  */
 const firebaseConfig = {
@@ -667,7 +665,7 @@ window.doLogout = function () {
 <script src="qg-polish.js?v=20260728xss1"></script>
 <script src="qg-notifications.js"></script>
 <script src="qg-stats.js?v=20260811trust3"></script>
-<script src="qg-admin.js?v=20260804evidence1"></script>
+<script src="qg-admin.js?v=20260828admin1"></script>
 <script src="qg-admin-console.js?v=20260811admin1"></script>
 <script>
 var SB_HEADERS = window.SB_HEADERS;
@@ -700,53 +698,44 @@ async function initAdmin(){
 
 async function loadAdminMeta(){
   try{
-    var headers = typeof getSupabaseHeaders === 'function' ? await getSupabaseHeaders() : SB_HEADERS;
-    var base = window.SUPABASE_URL + '/rest/v1/';
-    var[ar,nr]=await Promise.all([
-      fetch(base+'admin_actions?order=created_at.desc&limit=100',{headers:headers}).catch(function(){return {json:function(){return Promise.resolve([]);}};}),
-      fetch(base+'admin_notes?order=created_at.desc&limit=50',{headers:headers}).catch(function(){return {json:function(){return Promise.resolve([]);}};})
-    ]);
-    var ad=await ar.json(),nd=await nr.json();
-    if(Array.isArray(ad)) adminActions=ad;
-    if(Array.isArray(nd)) adminNotes=nd;
+    if(typeof callAdminConsole!=='function') return;
+    var data=await callAdminConsole('fetch_meta',{});
+    if(data&&data.success){
+      if(Array.isArray(data.admin_actions)) adminActions=data.admin_actions;
+      if(Array.isArray(data.admin_notes)) adminNotes=data.admin_notes;
+    }
   }catch(e){}
 }
 window.loadAdminMeta=loadAdminMeta;
 
 async function loadWaitlist(){
-  try{
-    var headers = typeof getSupabaseHeaders === 'function' ? await getSupabaseHeaders() : SB_HEADERS;
-    var res = await fetch(window.SUPABASE_URL + '/rest/v1/waitlist?order=created_at.desc',{headers:headers});
-    var data = await res.json();
-    if(Array.isArray(data)) waitlist=data;
-  }catch(e){}
+  if(typeof loadData==='function') await loadData();
 }
 window.loadWaitlist=loadWaitlist;
 
 async function loadData(){
   try{
-    var headers = typeof getSupabaseHeaders === 'function'
-      ? await getSupabaseHeaders()
-      : SB_HEADERS;
-    var base = window.SUPABASE_URL + '/rest/v1/';
-    var[ur,tr,dr,rr,ap,wr,pr]=await Promise.all([
-      fetch(base+'users?order=created_at.desc',{headers:headers}),
-      fetch(base+'tasks?order=created_at.desc',{headers:headers}),
-      fetch(base+'disputes?order=created_at.desc',{headers:headers}).catch(function(){return {json:function(){return Promise.resolve([]);}};}),
-      fetch(base+'reports?order=created_at.desc',{headers:headers}).catch(function(){return {json:function(){return Promise.resolve([]);}};}),
-      fetch(base+'applications?order=created_at.desc',{headers:headers}).catch(function(){return {json:function(){return Promise.resolve([]);}};}),
-      fetch(base+'waitlist?order=created_at.desc',{headers:headers}).catch(function(){return {json:function(){return Promise.resolve([]);}};}),
-      fetch(base+'payments?order=created_at.desc&limit=500',{headers:headers}).catch(function(){return {json:function(){return Promise.resolve([]);}};})
-    ]);
-    var ud=await ur.json(),td=await tr.json(),dd=await dr.json(),rd=await rr.json(),ad=await ap.json(),wd=await wr.json(),pd=await pr.json();
-    if(Array.isArray(ud)) users=ud;
-    if(Array.isArray(td)) tasks=td;
-    if(Array.isArray(dd)) disputes=dd;
-    if(Array.isArray(rd)) reports=rd;
-    if(Array.isArray(ad)) applications=ad;
-    if(Array.isArray(wd)) waitlist=wd;
-    if(Array.isArray(pd)) payments=pd;
-    await loadAdminMeta();
+    if(typeof callAdminConsole!=='function'){
+      console.warn('Admin API missing');
+      return;
+    }
+    var data=await callAdminConsole('fetch_dashboard',{});
+    if(!data||!data.success){
+      console.warn('Admin load failed');
+      return;
+    }
+    if(Array.isArray(data.users)) users=data.users;
+    if(Array.isArray(data.tasks)) tasks=data.tasks;
+    if(Array.isArray(data.disputes)) disputes=data.disputes;
+    if(Array.isArray(data.reports)) reports=data.reports;
+    if(Array.isArray(data.applications)) applications=data.applications;
+    if(Array.isArray(data.waitlist)) waitlist=data.waitlist;
+    if(Array.isArray(data.payments)) payments=data.payments;
+    if(Array.isArray(data.admin_actions)) adminActions=data.admin_actions;
+    if(Array.isArray(data.admin_notes)) adminNotes=data.admin_notes;
+    if(Array.isArray(data.reviews)) window.reviews=data.reviews;
+    window.userWarnings=data.user_warnings||[];
+    window.platformBanner=data.platform_banner||null;
     window.users = users;
     window.tasks = tasks;
     window.payments = payments;
@@ -755,12 +744,6 @@ async function loadData(){
     window.disputes = disputes;
     window.reports = reports;
     window.adminActions = adminActions;
-    if(typeof sbGet==='function'){
-      try{
-        var rev=await sbGet('reviews',null,'created_at.desc',300);
-        window.reviews=Array.isArray(rev)?rev:[];
-      }catch(re){ window.reviews=window.reviews||[]; }
-    }
   }catch(e){
     console.warn('Admin load failed',e);
   }
@@ -1049,17 +1032,15 @@ window.selectAll=function(cb){document.querySelectorAll('#usersBody .checkbox').
 window.updateBulk=function(){selectedUsers=Array.from(document.querySelectorAll('#usersBody .checkbox:checked')).map(function(c){return c.value;});var bulk=document.getElementById('bulkActions');if(selectedUsers.length>0){bulk.classList.add('show');document.getElementById('bulkLabel').textContent=selectedUsers.length+' selected';}else{bulk.classList.remove('show');}};
 window.bulkAction=function(action){
   openModal(action==='warn'?'Warn '+selectedUsers.length+' users':'Ban '+selectedUsers.length+' users','This will '+action+' all selected users in Supabase.','',action==='warn'?'Issue warnings':'Ban all',action==='warn'?'warn':'danger',async function(){
+    if(typeof callAdminConsole!=='function') return false;
+    var ids=selectedUsers.slice();
+    var result=await callAdminConsole('users_bulk',{bulk_action:action,user_ids:ids,reason:'Bulk admin warning'});
+    if(!result||!result.success){ showToast('Bulk action failed','red'); return false; }
     for(var i=0;i<selectedUsers.length;i++){
       var u=typeof findUser==='function'?findUser(selectedUsers[i]):users.find(function(x){return String(x.user_id||x.firebase_uid)===String(selectedUsers[i]);});
       if(!u) continue;
-      if(action==='warn'&&typeof addUserWarning==='function'){
-        await addUserWarning(typeof userKey==='function'?userKey(u):selectedUsers[i],'Bulk admin warning','admin');
-        if(typeof sbUpdate==='function') await sbUpdate('users',{status:'warned'},'firebase_uid=eq.'+encodeURIComponent(u.firebase_uid||selectedUsers[i]));
-        u.status='warned';
-      } else if(action==='ban'&&typeof sbUpdate==='function'){
-        await sbUpdate('users',{status:'banned'},'firebase_uid=eq.'+encodeURIComponent(u.firebase_uid||selectedUsers[i]));
-        u.status='banned';
-      }
+      if(action==='warn') u.status='warned';
+      else if(action==='ban') u.status='banned';
     }
     renderUsers(users);
     document.getElementById('bulkActions').classList.remove('show');
@@ -1071,11 +1052,11 @@ window.viewUser=function(id){openUserDrawer(id);};
 window.viewTask=function(id){openTaskDrawer(id);};
 window.removeTask=function(id){openTaskDrawer(id);};
 window.viewDispute=function(id){var d=disputes.find(function(x){return String(x.dispute_id||x.id)===String(id);});if(!d) return;openModal('Dispute — '+(d.task_title||d.task||d.task_id||'Task'),'Review this dispute and add resolution notes.','<div style="display:grid;gap:12px"><div><div class="modal-label">Opened by</div><div class="modal-value">'+adminEsc(d.opened_by_email||d.opened_by_id||d.poster||'—')+'</div></div><div><div class="modal-label">Reason</div><div class="modal-value">'+adminEsc(d.reason||d.details||'—')+'</div></div></div>','Close','purple',function(){},true);};
-window.resolveDispute=function(id){var d=disputes.find(function(x){return String(x.dispute_id||x.id)===String(id);});if(!d) return;openModal('Resolve dispute','Mark dispute as resolved?','','Mark resolved','success',async function(){if(typeof sbUpdate==='function') await sbUpdate('disputes',{status:'resolved',resolved_at:new Date().toISOString()},'dispute_id=eq.'+encodeURIComponent(String(d.dispute_id||d.id)));d.status='resolved';renderDisputes();var open=disputes.filter(function(x){return (x.status||'open')==='open';}).length;document.getElementById('statDisputes').textContent=open;document.getElementById('disputeBadge').textContent=open;if(open===0){document.getElementById('alertBanner').style.display='none';}showToast('Dispute resolved','green');},true);};
+window.resolveDispute=function(id){var d=disputes.find(function(x){return String(x.dispute_id||x.id)===String(id);});if(!d) return;openModal('Resolve dispute','Mark dispute as resolved?','','Mark resolved','success',async function(){if(typeof callAdminConsole!=='function') return false;var did=String(d.dispute_id||d.id);var result=await callAdminConsole('dispute_status',{dispute_id:did,status:'resolved'});if(!result||!result.success){showToast('Could not resolve dispute','red');return false;}d.status='resolved';d.resolved_at=new Date().toISOString();renderDisputes();var open=disputes.filter(function(x){return (x.status||'open')==='open';}).length;document.getElementById('statDisputes').textContent=open;document.getElementById('disputeBadge').textContent=open;if(open===0){document.getElementById('alertBanner').style.display='none';}showToast('Dispute resolved','green');},true);};
 
 function renderNotifications(){
   var notifs=[{title:'🚨 Open dispute',text:'Box braids task — Priya N. vs Sarah K.',time:'2hr ago',unread:true},{title:'🚨 Open dispute',text:'Moving task — Marcus L. vs David T.',time:'5hr ago',unread:true},{title:'🚫 Fraud attempt',text:'Phone sharing blocked — James O.',time:'2hr ago',unread:true},{title:'👤 New signup',text:'Priya N. joined as Both',time:'1 day ago',unread:false},{title:'⚠️ Warning issued',text:'Aisha M. received a warning',time:'2 days ago',unread:false}];
-  document.getElementById('notifList').innerHTML=notifs.map(function(n){return '<div class="notif-item'+(n.unread?' unread':'')+'"><div class="notif-item-title">'+n.title+'</div><div class="notif-item-text">'+n.text+'</div><div class="notif-item-time">'+n.time+'</div></div>';}).join('');
+  document.getElementById('notifList').innerHTML=notifs.map(function(n){return '<div class="notif-item'+(n.unread?' unread':'')+'"><div class="notif-item-title">'+adminEsc(n.title)+'</div><div class="notif-item-text">'+adminEsc(n.text)+'</div><div class="notif-item-time">'+adminEsc(n.time)+'</div></div>';}).join('');
 }
 
 function openModal(title,sub,fields,confirmLabel,confirmClass,onConfirm,showNote){

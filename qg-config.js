@@ -61,6 +61,7 @@ window.QG_CONFIG = {
   taskEvidenceUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/task-evidence',
   raiseDisputeUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/raise-dispute',
   resolveDisputeUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/resolve-dispute',
+  adminConsoleUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/admin-console',
   disputeAutoRulesUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/dispute-auto-rules',
   // ── Platform fees (SINGLE KNOB — change here; UI + feeBreakdown.js read these) ──
   // Poster pays the agreed task amount into escrow (no fee on top).
@@ -79,9 +80,7 @@ window.QG_CONFIG = {
     recurring_sub: 0.15
   },
   createEscrowIntentUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-escrow-intent',
-  // UX-only admin allow-list (see qg-admin-gate.js). Prefer adminUids (Firebase UID).
-  // Real enforcement: admins table + service-role function / custom claim admin:true.
-  adminEmail: 'mowebsiteco@gmail.com',
+  // UX-only admin hint (see qg-admin-gate.js). Real enforcement: admins table + admin-console Edge Function.
   adminUids: [
     // 'YOUR_FIREBASE_UID'
   ],

@@ -501,18 +501,9 @@
           // adminBanUser has its own confirm; patch status directly to avoid double-confirm
         }
         var result =
-          typeof sbUpdate === 'function'
-            ? await sbUpdate(
-                'users',
-                { status: 'banned' },
-                'firebase_uid=eq.' + encodeURIComponent(String(uid))
-              )
+          typeof callAdminConsole === 'function'
+            ? await callAdminConsole('user_ban', { user_id: String(uid) })
             : { success: false };
-        if (result && result.success === false && typeof sbPatch === 'function') {
-          result = await sbPatch('users', 'firebase_uid=eq.' + encodeURIComponent(String(uid)), {
-            status: 'banned'
-          });
-        }
         if (u) u.status = 'banned';
         if (typeof logAdminAction === 'function') {
           try {
@@ -534,15 +525,8 @@
       'Issue warning',
       'warn',
       async function () {
-        if (typeof addUserWarning === 'function') {
-          await addUserWarning(uid, 'Admin warning from console', 'admin');
-        }
-        if (typeof sbUpdate === 'function') {
-          await sbUpdate(
-            'users',
-            { status: 'warned' },
-            'firebase_uid=eq.' + encodeURIComponent(String(uid))
-          );
+        if (typeof callAdminConsole === 'function') {
+          await callAdminConsole('user_warn', { user_id: uid, reason: 'Admin warning from console' });
         }
         var u = (global.users || []).find(function (x) {
           return String(x.firebase_uid || x.user_id || x.id) === String(uid);

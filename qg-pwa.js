@@ -246,7 +246,9 @@
       '</div>';
 
     var modeBanner = document.getElementById('qgModeBanner') || document.querySelector('.qg-mode-banner');
-    var anchor = document.querySelector('.greeting') ||
+    var anchor = document.querySelector('.qg-topnav') ||
+      document.querySelector('header[role="banner"]') ||
+      document.querySelector('.greeting') ||
       document.querySelector('.qg-page-hero') ||
       document.querySelector('.dash-hero') ||
       modeBanner ||

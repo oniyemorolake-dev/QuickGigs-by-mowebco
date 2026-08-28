@@ -42,7 +42,7 @@
     var link = document.createElement('link');
     link.id = 'qg-menu-css';
     link.rel = 'stylesheet';
-    link.href = 'qg-menu.css?v=20260811safety1';
+    link.href = 'qg-menu.css?v=d12e08d-1787871217';
     document.head.appendChild(link);
   }
 
@@ -86,12 +86,15 @@
       return;
     }
 
-    if (pageKey() === 'index' && !document.getElementById('qgMenuBtn')) {
-      var wrap = document.createElement('div');
-      wrap.className = 'qg-menu-fab-wrap';
-      menuBtn = createMenuButton();
-      wrap.appendChild(menuBtn);
-      document.body.appendChild(wrap);
+    if (pageKey() === 'index') {
+      var slot = document.getElementById('qgTopnavMenu');
+      if (slot && !slot.querySelector('#qgMenuBtn')) {
+        menuBtn = createMenuButton();
+        slot.appendChild(menuBtn);
+      } else if (slot) {
+        menuBtn = slot.querySelector('#qgMenuBtn');
+      }
+      return;
     }
   }
 
@@ -105,7 +108,7 @@
 
   function themeLabel() {
     var isDark = !document.body.classList.contains('light');
-    return isDark ? '☀️ Light mode' : '🌙 Dark mode';
+    return isDark ? 'Light mode' : 'Dark mode';
   }
 
   function appMenuSections() {
@@ -181,14 +184,23 @@
   }
 
   function publicMenuSections() {
+    var getStarted = [
+      { type: 'link', href: 'posttask.html', icon: 'plus', label: 'Post a task' },
+      { type: 'link', href: 'signup.html?role=worker', icon: 'briefcase', label: 'Earn as a tasker' },
+      { type: 'link', href: 'login.html', icon: 'lock', label: 'Log in' }
+    ];
+    if (localStorage.getItem('qg-mode') || localStorage.getItem('qg-role') || localStorage.getItem('qg-session-mode')) {
+      getStarted.unshift({
+        type: 'link',
+        href: 'dashboard.html',
+        icon: 'home',
+        label: 'Dashboard'
+      });
+    }
     var sections = [
       {
         label: 'Get started',
-        items: [
-          { type: 'link', href: 'signup.html?role=poster', icon: 'clipboard', label: 'Sign up — post tasks' },
-          { type: 'link', href: 'signup.html?role=worker', icon: 'briefcase', label: 'Sign up — earn as tasker' },
-          { type: 'link', href: 'login.html', icon: 'lock', label: 'Log in' }
-        ]
+        items: getStarted
       },
       {
         label: 'Learn',
@@ -215,15 +227,6 @@
         ]
       }
     ];
-
-    if (localStorage.getItem('qg-mode') || localStorage.getItem('qg-role') || localStorage.getItem('qg-session-mode')) {
-      sections[0].items.unshift({
-        type: 'link',
-        href: 'dashboard.html',
-        icon: 'home',
-        label: 'Go to dashboard'
-      });
-    }
 
     return sections;
   }

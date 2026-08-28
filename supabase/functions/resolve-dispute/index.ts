@@ -4,6 +4,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { authErrorStatus, requireFirebaseUser } from '../_shared/firebase-auth.ts';
+import { isQgAdmin } from '../_shared/admin-auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -43,11 +44,7 @@ async function requireAdmin(
   supabase: ReturnType<typeof createClient>,
   identity: { uid: string; email: string },
 ) {
-  const { data: row } = await supabase.from('admins').select('user_id').eq('user_id', identity.uid).maybeSingle();
-  if (row) return true;
-  const allowEmail = (Deno.env.get('ADMIN_NOTIFY_EMAIL') || 'mowebsiteco@gmail.com').toLowerCase();
-  if (identity.email && identity.email.toLowerCase() === allowEmail) return true;
-  return false;
+  return isQgAdmin(supabase, identity.uid);
 }
 
 async function resolvePaymentIntentId(stripe: Stripe, stripeRef: string): Promise<string> {

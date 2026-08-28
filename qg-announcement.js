@@ -8,11 +8,8 @@
   }
 
   function isAdminUser() {
-    // Prefer shared gate (custom claim / uid / email). UX only.
     if (typeof window.isAdmin === 'function') return window.isAdmin(window._currentUser);
-    var allow = (window.QG_CONFIG && window.QG_CONFIG.adminEmail) || '';
-    var u = window._currentUser;
-    return !!(u && u.email && allow && String(u.email).toLowerCase() === String(allow).toLowerCase());
+    return false;
   }
 
   function shouldBypassSoftClose() {

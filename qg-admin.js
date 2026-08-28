@@ -125,41 +125,36 @@
     return window.SB_HEADERS || window.SUPABASE_HEADERS;
   }
 
+  async function adminMutate(action, payload) {
+    if (typeof callAdminConsole !== 'function') {
+      return { success: false, error: 'admin_api_missing' };
+    }
+    return await callAdminConsole(action, payload || {});
+  }
+
   async function patchUser(user, patch) {
     if (!user) return { success: false };
-    var filters = [];
-    if (user.user_id != null) filters.push('user_id=eq.' + encodeURIComponent(String(user.user_id)));
-    if (user.id != null && String(user.id) !== String(user.user_id)) {
-      filters.push('id=eq.' + encodeURIComponent(String(user.id)));
+    var result = await adminMutate('user_patch', {
+      user_id: user.user_id,
+      firebase_uid: user.firebase_uid,
+      email: user.email,
+      patch: patch
+    });
+    if (result.success) {
+      if (result.user) Object.assign(user, result.user);
+      else Object.assign(user, patch);
     }
-    if (user.firebase_uid) filters.push('firebase_uid=eq.' + encodeURIComponent(user.firebase_uid));
-    if (user.email) filters.push('email=eq.' + encodeURIComponent(user.email));
-    for (var i = 0; i < filters.length; i++) {
-      var result = await sbUpdate('users', patch, filters[i]);
-      if (result.success) {
-        Object.assign(user, patch);
-        return result;
-      }
-    }
-    return { success: false, error: 'Could not update user' };
+    return result;
   }
 
   async function logAdminAction(actionType, targetType, targetId, detail) {
-    if (typeof sbPost !== 'function') return;
-    await sbPost('admin_actions', {
-      admin_email: adminEmail(),
-      action_type: actionType,
-      target_type: targetType || '',
-      target_id: String(targetId || ''),
-      detail: detail || {}
-    });
-    if (typeof window.loadAdminMeta === 'function') await window.loadAdminMeta();
+    if (typeof loadAdminMeta === 'function') await loadAdminMeta();
   }
 
   async function loadAdminNotesForUser(uid) {
-    if (!uid || typeof sbGet !== 'function') return [];
-    var rows = await sbGet('admin_notes', 'user_id=eq.' + encodeURIComponent(uid) + '&select=note_id,user_id,admin_email,body,created_at', 'created_at.desc', 30);
-    return Array.isArray(rows) ? rows : [];
+    if (!uid) return [];
+    var rows = window.adminNotes || [];
+    return rows.filter(function (n) { return String(n.user_id || '') === String(uid); }).slice(0, 30);
   }
 
   function countUserTasks(uid) {
@@ -366,10 +361,10 @@
     var body = (document.getElementById('admNewNote') && document.getElementById('admNewNote').value || '').trim();
     if (!body) return;
     var uid = userKey(u);
-    if (typeof sbPostReturn === 'function') {
-      await sbPostReturn('admin_notes', { user_id: uid, body: body, admin_email: adminEmail() });
-    } else if (typeof sbPost === 'function') {
-      await sbPost('admin_notes', { user_id: uid, body: body, admin_email: adminEmail() });
+    var result = await adminMutate('user_note', { user_id: uid, body: body });
+    if (!result.success) {
+      showToast('Could not save note', 'red');
+      return;
     }
     await logAdminAction('user_note', 'user', uid, { body: body });
     showToast('Note saved', 'green');
@@ -396,9 +391,8 @@
     var u = findUser(drawerState.id);
     if (!u) return;
     var uid = userKey(u);
-    if (typeof addUserWarning === 'function') {
-      await addUserWarning(uid, 'Admin warning from console', 'admin');
-      await patchUser(u, { status: 'warned' });
+    var warnResult = await adminMutate('user_warn', { user_id: uid, reason: 'Admin warning from console' });
+    if (warnResult.success) {
       await logAdminAction('user_warn', 'user', uid, {});
       showToast('Warning issued', 'amber');
       renderUsers(window.users);
@@ -410,9 +404,9 @@
     if (!requireAdmin()) return;
     var u = findUser(drawerState.id);
     if (!u || !confirm('Ban ' + (u.name || 'this user') + '? They will not be able to log in.')) return;
-    var result = await patchUser(u, { status: 'banned' });
+    var result = await adminMutate('user_ban', { user_id: userKey(u) });
     if (result.success) {
-      await logAdminAction('user_ban', 'user', userKey(u), {});
+      u.status = 'banned';
       showToast('User banned', 'red');
       renderUsers(window.users);
       closeAdminDrawer();
@@ -423,8 +417,9 @@
     if (!requireAdmin()) return;
     var u = findUser(drawerState.id);
     if (!u) return;
-    var result = await patchUser(u, { status: 'active' });
+    var result = await adminMutate('user_unban', { user_id: userKey(u) });
     if (result.success) {
+      u.status = 'active';
       await logAdminAction('user_unban', 'user', userKey(u), {});
       showToast('User unbanned', 'green');
       renderUsers(window.users);
@@ -443,12 +438,10 @@
       description: document.getElementById('admTaskDesc').value.trim(),
       status: document.getElementById('admTaskStatus').value
     };
-    var result = await sbUpdate('tasks', patch, 'task_id=eq.' + encodeURIComponent(tid));
-    if (!result.success && t.id) {
-      result = await sbUpdate('tasks', patch, 'id=eq.' + encodeURIComponent(String(t.id)));
-    }
+    var result = await adminMutate('task_patch', { task_id: tid, patch: patch });
     if (result.success) {
-      Object.assign(t, patch);
+      if (result.task) Object.assign(t, result.task);
+      else Object.assign(t, patch);
       if (typeof mergeTaskInCache === 'function') mergeTaskInCache(tid, patch);
       await logAdminAction('task_edit', 'task', tid, patch);
       showToast('Task updated', 'green');
@@ -464,10 +457,10 @@
     var t = findTask(drawerState.id);
     if (!t) return;
     var tid = String(t.task_id || t.id);
-    if (typeof updateTaskStatus === 'function') {
-      await updateTaskStatus(tid, 'expired');
-    } else {
-      await sbUpdate('tasks', { status: 'expired' }, 'task_id=eq.' + encodeURIComponent(tid));
+    var result = await adminMutate('task_status', { task_id: tid, status: 'expired' });
+    if (!result.success) {
+      showToast('Could not expire task', 'red');
+      return;
     }
     t.status = 'expired';
     await logAdminAction('task_expire', 'task', tid, {});
@@ -526,21 +519,8 @@
   async function hardDeleteTaskCascade(taskId) {
     if (!isAdmin()) return { success: false, error: 'not_admin' };
     taskId = String(taskId || '');
-    if (!taskId || typeof sbDelete !== 'function') return { success: false, error: 'missing' };
-
-    await deleteRowsByTaskId('applications', taskId);
-    await deleteMessagesForTask(taskId);
-    await deleteRowsByTaskId('reviews', taskId);
-    await deleteRowsByTaskId('disputes', taskId);
-
-    var result = await sbDelete('tasks', 'task_id=eq.' + encodeURIComponent(taskId));
-    if (!result.success) {
-      var t = findTask(taskId);
-      if (t && t.id != null) {
-        result = await sbDelete('tasks', 'id=eq.' + encodeURIComponent(String(t.id)));
-      }
-    }
-    return result;
+    if (!taskId) return { success: false, error: 'missing' };
+    return await adminMutate('task_delete', { task_id: taskId });
   }
 
   async function adminHideTask(taskId) {
@@ -550,12 +530,7 @@
     if (!t) return { success: false, error: 'not_found' };
     var cur = String(t.status || 'open').toLowerCase();
     var next = cur === 'removed' ? 'open' : 'removed';
-    var result;
-    if (typeof updateTaskStatus === 'function' && next !== 'removed') {
-      result = await updateTaskStatus(tid, next);
-    } else {
-      result = await sbUpdate('tasks', { status: next }, 'task_id=eq.' + encodeURIComponent(tid));
-    }
+    var result = await adminMutate('task_status', { task_id: tid, status: next });
     if (!result || !result.success) {
       showToast('Could not update task', 'red');
       return result || { success: false };
@@ -645,32 +620,15 @@
       if (!ok) return { success: false, cancelled: true };
     }
 
-    var posted = (window.tasks || []).filter(function (t) {
-      return String(t.posted_by || t.POSTED_BY || t.poster_id || '') === uid;
+    var result = await adminMutate('user_delete', {
+      user_id: u.user_id,
+      firebase_uid: u.firebase_uid,
+      email: u.email
     });
-    for (var i = 0; i < posted.length; i++) {
-      var tid = String(posted[i].task_id || posted[i].id || '');
-      if (tid) await hardDeleteTaskCascade(tid);
-    }
 
-    if (typeof sbDelete === 'function') {
-      await sbDelete('applications', 'worker_id=eq.' + encodeURIComponent(uid));
-      await sbDelete('applications', 'WORKER_ID=eq.' + encodeURIComponent(uid));
-    }
-
-    var deletedUser = false;
-    var filters = [];
-    if (u.user_id != null) filters.push('user_id=eq.' + encodeURIComponent(String(u.user_id)));
-    if (u.firebase_uid) filters.push('firebase_uid=eq.' + encodeURIComponent(u.firebase_uid));
-    if (u.email) filters.push('email=eq.' + encodeURIComponent(u.email));
-    for (var fi = 0; fi < filters.length; fi++) {
-      var ur = await sbDelete('users', filters[fi]);
-      if (ur.success) { deletedUser = true; break; }
-    }
-
-    if (!deletedUser) {
+    if (!result || !result.success) {
       if (!opts.silent) showToast('Could not delete user row', 'red');
-      return { success: false };
+      return { success: false, error: result && result.error };
     }
 
     await logAdminAction('user_hard_delete', 'user', uid, { email: u.email || '' });
@@ -814,17 +772,13 @@
     });
     if (!ok) return;
     var n = 0;
-    for (var i = 0; i < ids.length; i++) {
-      var t = findTask(ids[i]);
-      if (!t) continue;
-      var cur = String(t.status || 'open').toLowerCase();
-      if (cur === 'removed') continue;
-      var result = await sbUpdate('tasks', { status: 'removed' }, 'task_id=eq.' + encodeURIComponent(ids[i]));
-      if (result && result.success) {
-        t.status = 'removed';
-        n++;
-        await logAdminAction('task_hide', 'task', ids[i], { bulk: true });
-      }
+    var bulkResult = await adminMutate('tasks_bulk', { bulk_action: 'hide', task_ids: ids });
+    if (bulkResult.success) {
+      n = bulkResult.count || 0;
+      ids.forEach(function (id) {
+        var t = findTask(id);
+        if (t) t.status = 'removed';
+      });
     }
     taskUI.selected = {};
     applyAdminTasksView();
@@ -938,11 +892,10 @@
    */
   async function adminResolveReport(reportId, newStatus) {
     if (!requireAdmin()) return;
-    if (typeof sbUpdate !== 'function') return;
     var rid = String(reportId || '');
     var st = String(newStatus || '').toLowerCase();
     if (!rid || ['reviewed', 'dismissed', 'actioned'].indexOf(st) < 0) return;
-    var result = await sbUpdate('reports', { status: st }, 'report_id=eq.' + encodeURIComponent(rid));
+    var result = await adminMutate('report_status', { report_id: rid, status: st });
     if (!result || !result.success) {
       showToast('Could not update report', 'red');
       return;
@@ -1420,7 +1373,6 @@
    */
   async function adminUpdateDisputeStatus(disputeId, newStatus) {
     if (!requireAdmin()) return;
-    if (typeof sbUpdate !== 'function') return;
     var did = String(disputeId || '');
     var st = String(newStatus || '').toLowerCase();
     if (!did || ['reviewing', 'resolved', 'rejected'].indexOf(st) < 0) return;
@@ -1435,7 +1387,7 @@
       patch.resolved_at = new Date().toISOString();
     }
 
-    var result = await sbUpdate('disputes', patch, 'dispute_id=eq.' + encodeURIComponent(did));
+    var result = await adminMutate('dispute_status', { dispute_id: did, status: st });
     if (!result || !result.success) {
       showToast('Could not update dispute', 'red');
       return;
@@ -1464,11 +1416,11 @@
       if (emails[em] && !w.signed_up) {
         w.signed_up = true;
         w.signed_up_at = emails[em];
-        if (typeof sbUpdate === 'function') {
-          sbUpdate('waitlist', { signed_up: true, signed_up_at: w.signed_up_at }, 'waitlist_id=eq.' + encodeURIComponent(String(w.waitlist_id)));
-        }
       }
     });
+    if (typeof callAdminConsole === 'function') {
+      callAdminConsole('waitlist_sync_signups', {}).catch(function () {});
+    }
   }
 
   function renderWaitlist() {
@@ -1545,13 +1497,8 @@
       return;
     }
     var added = 0;
-    for (var i = 0; i < emails.length; i++) {
-      var result = typeof sbPostReturn === 'function'
-        ? await sbPostReturn('waitlist', { email: emails[i] })
-        : await sbPost('waitlist', { email: emails[i] });
-      if (result.success) added++;
-      else if (/duplicate|unique/i.test(String(result.error || ''))) { /* skip */ }
-    }
+    var importResult = await adminMutate('waitlist_import', { emails: emails });
+    if (importResult.success) added = importResult.added || 0;
     box.value = '';
     if (typeof window.loadWaitlist === 'function') await window.loadWaitlist();
     renderWaitlist();
@@ -1571,7 +1518,7 @@
       }
     }
     var now = new Date().toISOString();
-    await sbUpdate('waitlist', { invited_at: now }, 'waitlist_id=eq.' + encodeURIComponent(String(id)));
+    await adminMutate('waitlist_patch', { waitlist_id: String(id), patch: { invited_at: now } });
     w.invited_at = now;
     await logAdminAction('waitlist_invite', 'waitlist', w.email, {});
     showToast('Invite email sent to ' + w.email, 'green');
@@ -1590,7 +1537,7 @@
       }
     }
     var now = new Date().toISOString();
-    await sbUpdate('waitlist', { reminder_sent_at: now }, 'waitlist_id=eq.' + encodeURIComponent(String(id)));
+    await adminMutate('waitlist_patch', { waitlist_id: String(id), patch: { reminder_sent_at: now } });
     w.reminder_sent_at = now;
     await logAdminAction('waitlist_reminder', 'waitlist', w.email, {});
     showToast('Reminder email sent to ' + w.email, 'amber');
@@ -1600,8 +1547,8 @@
   async function adminDeleteWaitlist(id) {
     if (!requireAdmin()) return;
     if (!confirm('Remove this waitlist entry?')) return;
-    if (typeof sbDelete === 'function') {
-      await sbDelete('waitlist', 'waitlist_id=eq.' + encodeURIComponent(String(id)));
+    if (typeof callAdminConsole === 'function') {
+      await callAdminConsole('waitlist_delete', { waitlist_id: String(id) });
     }
     window.waitlist = (window.waitlist || []).filter(function (w) { return String(w.waitlist_id) !== String(id); });
     renderWaitlist();
@@ -1624,22 +1571,26 @@
   }
 
   async function loadPlatformBannerForm() {
-    if (typeof sbGet !== 'function') return;
-    var rows = await sbGet('platform_banner', 'id=eq.1&select=id,message,link,style,active,soft_close,updated_at', 'id.asc', 1);
+    var b = window.platformBanner || null;
+    if (!b && typeof callAdminConsole === 'function') {
+      var dash = await callAdminConsole('fetch_dashboard', {});
+      if (dash.success) b = dash.platform_banner || null;
+    }
     var statusEl = document.getElementById('bannerDbStatus');
-    if (!rows || !rows.length) {
+    if (!b) {
       if (statusEl) {
         statusEl.textContent = 'Database not ready — run supabase/soft-close.sql in Supabase SQL Editor, then refresh.';
         statusEl.style.color = 'var(--red, #f87171)';
       }
       return;
     }
-    var b = rows[0];
-    if (statusEl) {
-      statusEl.textContent = b.soft_close
+    window.platformBanner = b;
+    var statusEl2 = document.getElementById('bannerDbStatus');
+    if (statusEl2) {
+      statusEl2.textContent = b.soft_close
         ? 'Live: soft close ON (homepage sign-up hidden)'
         : (b.active ? 'Live: announcement banner only' : 'Saved: banner off');
-      statusEl.style.color = b.soft_close ? 'var(--amber, #fbbf24)' : 'var(--text-faint)';
+      statusEl2.style.color = b.soft_close ? 'var(--amber, #fbbf24)' : 'var(--text-faint)';
     }
     var msg = document.getElementById('bannerMessage');
     var link = document.getElementById('bannerLink');
@@ -1669,17 +1620,12 @@
     }
     if (patch.soft_close) patch.active = true;
 
-    var result = await sbUpdate('platform_banner', patch, 'id=eq.1');
-    if (!result.success || result.notFound) {
-      if (typeof sbPostReturn === 'function') {
-        result = await sbPostReturn('platform_banner', Object.assign({ id: 1 }, patch));
-      } else if (typeof sbPost === 'function') {
-        result = await sbPost('platform_banner', Object.assign({ id: 1 }, patch));
-      }
+    var result = await adminMutate('banner_save', { patch: patch });
+    if (!result.success) {
+      showToast('Save failed — run supabase/soft-close.sql in Supabase SQL Editor, then try again', 'red');
+      return;
     }
-
-    var savedRows = await sbGet('platform_banner', 'id=eq.1&select=id,message,link,style,active,soft_close,updated_at', 'id.asc', 1);
-    var saved = savedRows && savedRows[0] ? savedRows[0] : null;
+    var saved = result.banner || null;
     if (!saved) {
       showToast('Save failed — run supabase/soft-close.sql in Supabase SQL Editor, then try again', 'red');
       return;

@@ -439,9 +439,8 @@
   };
 
   window.adminApproveTask = async function (tid) {
-    // Visibility approve = ensure status open
-    if (typeof sbUpdate === 'function') {
-      await sbUpdate('tasks', { status: 'open' }, 'task_id=eq.' + encodeURIComponent(tid));
+    if (typeof callAdminConsole === 'function') {
+      await callAdminConsole('task_status', { task_id: tid, status: 'open' });
     }
     var t = (window.tasks || []).find(function (x) { return String(x.task_id || x.id) === tid; });
     if (t) t.status = 'open';
