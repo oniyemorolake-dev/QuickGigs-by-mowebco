@@ -416,16 +416,21 @@ body.qg-mode-poster .qg-best-match-btn {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 44px;
-  min-width: 44px;
-  padding: 0 14px;
-  border-radius: 14px;
+  min-height: 36px;
+  min-width: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
   border: 1px solid var(--line);
   background: var(--surface-1);
   color: var(--text-secondary);
   font: 600 13px 'DM Sans', sans-serif;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+}
+
+.qg-browse-filters-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .qg-browse-filters-btn[aria-expanded="true"],
@@ -474,7 +479,9 @@ body.qg-mode-poster .qg-best-match-btn {
   }
   .qg-browse-filters-btn {
     padding: 0;
-    width: 44px;
+    width: 36px;
+    min-width: 36px;
+    min-height: 36px;
   }
 }
 

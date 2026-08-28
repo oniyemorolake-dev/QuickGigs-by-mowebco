@@ -77,6 +77,37 @@ body.light .nav {
 .modal-overlay { animation: fadeIn 0.2s ease; }
 .modal, .bottom-sheet { animation: slideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
+/* Opaque confirm dialogs — never inherit translucent --surface */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(5, 0, 15, 0.78);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.confirm-overlay.open { display: flex; }
+.confirm-box {
+  position: relative;
+  z-index: 401;
+  background: #140F24;
+  border: 0.5px solid rgba(200, 168, 233, 0.2);
+  border-radius: 18px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+}
+body.light .confirm-box {
+  background: #fff;
+  border-color: #e0d8ff;
+  box-shadow: 0 12px 40px rgba(26, 10, 61, 0.12);
+}
+body.light .confirm-overlay {
+  background: rgba(26, 10, 61, 0.45);
+}
+
 .tc-badge, .status-pill, .role-pill, .skill, .tag, .wbadge, .badge, .cat-chip, .mpill {
   padding: 5px 12px;
   border-radius: 20px;

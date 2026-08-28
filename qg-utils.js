@@ -307,11 +307,17 @@ function attachPasswordToggle(inputId) {
     style.textContent =
       '.qg-password-wrap{position:relative;width:100%;max-width:100%;box-sizing:border-box;}' +
       '.qg-password-wrap input{width:100%;max-width:100%;box-sizing:border-box;padding-right:2.75rem!important;}' +
-      '.qg-password-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.06);border:1px solid rgba(200,168,233,0.25);border-radius:8px;cursor:pointer;color:#c8a8e9;padding:6px 8px;line-height:1;display:inline-flex;align-items:center;justify-content:center;}' +
-      '.qg-password-toggle:hover,.qg-password-toggle:focus-visible{color:#fff;border-color:rgba(200,168,233,0.55);outline:none;box-shadow:0 0 0 3px rgba(107,63,160,0.28);}' +
-      '.qg-password-toggle svg{width:18px;height:18px;display:block;pointer-events:none;}' +
-      'body.light .qg-password-toggle{background:#f5f2ff;border-color:#e0d8ff;color:#6b3fa0;}' +
-      'body.light .qg-password-toggle:hover,body.light .qg-password-toggle:focus-visible{color:#4a1d8a;}';
+      '.qg-password-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:1px solid transparent;border-radius:8px;cursor:pointer;color:#9C93B5;padding:6px;line-height:0;display:inline-flex;align-items:center;justify-content:center;}' +
+      '.qg-password-toggle:hover{color:#F2EFF8;}' +
+      '.qg-password-toggle:focus-visible{outline:2px solid #B69BE0;outline-offset:2px;border-color:#2A2140;}' +
+      '.qg-password-toggle svg{width:20px;height:20px;display:block;pointer-events:none;stroke:currentColor;fill:none;}' +
+      'body.qg-auth-page .qg-password-toggle{color:var(--qg-muted, #9C93B5);}' +
+      'body.qg-auth-page .qg-password-toggle:hover{color:var(--qg-heading, #F2EFF8);}' +
+      'body.qg-auth-page .qg-password-toggle:focus-visible{outline:2px solid var(--qg-link, #B69BE0);outline-offset:2px;}' +
+      'body.qg-auth-page.light .qg-password-toggle{color:#6b6580;}' +
+      'body.qg-auth-page.light .qg-password-toggle:hover{color:#1a0a3d;}' +
+      'body.light .qg-password-toggle{color:#6b6580;border-color:#e0d8ff;background:#f5f2ff;}' +
+      'body.light .qg-password-toggle:hover{color:#4a1d8a;}';
     document.head.appendChild(style);
   }
 
@@ -320,8 +326,17 @@ function attachPasswordToggle(inputId) {
   input.parentNode.insertBefore(wrap, input);
   wrap.appendChild(input);
 
-  var EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
-  var EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.8 21.8 0 0 1 5.06-5.94"/><path d="M9.9 4.24A10.94 10.94 0 0 1 12 5c7 0 11 7 11 7a21.9 21.9 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+  var EYE =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />' +
+    '<path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" />' +
+    '</svg>';
+  var EYE_OFF =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M10.585 10.587a2 2 0 0 0 2.829 2.828" />' +
+    '<path d="M16.681 16.673a8.717 8.717 0 0 1 -4.681 1.327c-3.6 0 -6.6 -2 -9 -6c1.272 -2.12 2.712 -3.678 4.32 -4.674m2.86 -1.146a9.055 9.055 0 0 1 1.82 -.18c3.6 0 6.6 2 9 6c-.666 1.11 -1.379 2.048 -2.138 2.816" />' +
+    '<path d="M3 3l18 18" />' +
+    '</svg>';
 
   var btn = document.createElement('button');
   btn.type = 'button';

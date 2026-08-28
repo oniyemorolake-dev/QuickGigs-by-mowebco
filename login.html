@@ -29,7 +29,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-signup.css?v=a6868b1-1787873879">
-<link rel="stylesheet" href="qg-auth.css?v=a6868b1-1787873879">
+<link rel="stylesheet" href="qg-auth.css?v=e653274-1787876226">
 <link rel="stylesheet" href="qg-cookies.css">
 <style>
 body{margin:0;}
@@ -101,7 +101,7 @@ body{margin:0;}
   </div>
 </div>
 
-<script defer src="qg-utils.js?v=20260810auth1"></script>
+<script defer src="qg-utils.js?v=e653274-1787876226"></script>
 <script defer src="qg-config.js?v=20260810auth1"></script>
 <script defer src="qg-analytics.js"></script>
 <script defer src="qg-auth-google.js?v=20260811google1"></script>
@@ -111,21 +111,29 @@ body{margin:0;}
 <script defer src="qg-theme.js"></script>
 <script defer src="qg-pwa.js?v=80820fa-1787880564"></script>
 <script>
-attachPasswordToggle('password');
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof attachPasswordToggle === 'function') attachPasswordToggle('password');
 
-var authDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
-function applyAuthTheme() {
-  document.body.classList.toggle('light', !authDark);
-  var btn = document.getElementById('authThemeBtn');
-  if (btn) btn.textContent = authDark ? 'Light' : 'Dark';
-}
-window.toggleAuthTheme = function() {
-  authDark = !authDark;
-  if (typeof QG_setThemeDark === 'function') QG_setThemeDark(authDark);
-  else localStorage.setItem('qg-theme', authDark ? 'dark' : 'light');
+  var authDark = typeof QG_isDarkTheme === 'function'
+    ? QG_isDarkTheme()
+    : (localStorage.getItem('qg-theme') !== 'light');
+
+  function applyAuthTheme() {
+    if (typeof QG_paintTheme === 'function') QG_paintTheme(authDark);
+    else document.body.classList.toggle('light', !authDark);
+    var btn = document.getElementById('authThemeBtn');
+    if (btn) btn.textContent = authDark ? 'Light' : 'Dark';
+  }
+
+  window.toggleAuthTheme = function () {
+    authDark = !authDark;
+    if (typeof QG_setThemeDark === 'function') QG_setThemeDark(authDark);
+    else localStorage.setItem('qg-theme', authDark ? 'dark' : 'light');
+    applyAuthTheme();
+  };
+
   applyAuthTheme();
-};
-applyAuthTheme();
+});
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";

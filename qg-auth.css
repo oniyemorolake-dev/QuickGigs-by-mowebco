@@ -339,8 +339,22 @@ body.qg-auth-page .signup-msg.ok {
 }
 
 body.qg-auth-page .signup-error {
+  display: none;
   color: #f87171;
   font-size: 12px;
+  line-height: 1.45;
+  margin-top: 6px;
+}
+
+body.qg-auth-page .signup-field input.is-invalid,
+body.qg-auth-page .signup-field .qg-custom-input.is-invalid {
+  border-color: #f87171;
+}
+
+body.qg-auth-page .signup-field input.is-invalid:focus,
+body.qg-auth-page .signup-field input.is-invalid:focus-visible {
+  outline-color: #f87171;
+  border-color: #f87171;
 }
 
 body.qg-auth-page .qg-wizard-progress .qg-wizard-dot {
@@ -483,7 +497,50 @@ body.qg-auth-page .signup-perk {
 }
 
 body.qg-auth-page.light {
+  --qg-bg: #F5F2FA;
+  --qg-surface: #FFFFFF;
+  --qg-border: #E2DBF0;
+  --qg-hairline: #EDE8F5;
+  --qg-purple: #6B21A8;
+  --qg-heading: #1A0A3D;
+  --qg-body: #4A3F66;
+  --qg-muted: #7B7194;
+  --qg-link: #6B21A8;
+  --qg-input-text: #1A0A3D;
   background: var(--qg-bg) !important;
+  color: var(--qg-body);
+}
+
+body.qg-auth-page.light .signup-card {
+  box-shadow: 0 4px 24px rgba(26, 10, 61, 0.08);
+}
+
+body.qg-auth-page.light .signup-theme-btn:hover {
+  background: #EDE8F5;
+}
+
+body.qg-auth-page.light .signup-btn-secondary:hover {
+  background: #EDE8F5;
+}
+
+body.qg-auth-page.light .signup-google-btn:hover {
+  background: #EDE8F5;
+}
+
+body.qg-auth-page.light .signup-msg.error {
+  color: #dc2626;
+}
+
+body.qg-auth-page.light .signup-msg.ok {
+  color: #16a34a;
+}
+
+body.qg-auth-page.light .signup-error {
+  color: #dc2626;
+}
+
+body.qg-auth-page .qg-password-wrap input {
+  width: 100%;
 }
 
 body.qg-auth-page .signup-role-grid {

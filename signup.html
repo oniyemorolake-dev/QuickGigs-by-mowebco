@@ -30,7 +30,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-signup.css?v=a6868b1-1787873879">
-<link rel="stylesheet" href="qg-auth.css?v=a6868b1-1787873879">
+<link rel="stylesheet" href="qg-auth.css?v=e653274-1787876226">
 <link rel="stylesheet" href="qg-onboarding.css?v=2">
 <link rel="stylesheet" href="qg-cookies.css">
 <style>body{margin:0;}</style>
@@ -88,8 +88,8 @@
             </button>
           </div>
           <p class="signup-role-note" id="signupRoleNote">Choose how you want to start. You can enable the second mode later.</p>
-          <div class="signup-field"><label for="name">Full name <span class="req">*</span></label><input type="text" id="name" placeholder="Your full name" autocomplete="name" enterkeyhint="next" required><div class="signup-error" id="nameError">Enter your full name</div></div>
-          <div class="signup-field"><label for="email">Email address <span class="req">*</span></label><input type="email" id="email" placeholder="you@example.com" autocomplete="email" enterkeyhint="next" required><div class="signup-error" id="emailError">Enter a valid email</div></div>
+          <div class="signup-field"><label for="name">Full name <span class="req">*</span></label><input type="text" id="name" name="name" placeholder="Your full name" autocomplete="section-acct name" enterkeyhint="next" required><div class="signup-error" id="nameError">Enter your full name</div></div>
+          <div class="signup-field"><label for="email">Email address <span class="req">*</span></label><input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="section-acct email" enterkeyhint="next" required><div class="signup-error" id="emailError">Enter a valid email</div></div>
           <div class="qg-wizard-nav"><button type="button" class="signup-btn" data-qg-next>Continue →</button></div>
         </div>
 
@@ -97,7 +97,7 @@
         <div class="qg-wizard-step" data-step="security">
           <div class="qg-step-title">Secure your account</div>
           <p class="qg-step-sub">Phone and password are required for all QuickGigs members.</p>
-          <div class="signup-field"><label for="phone">Phone number <span class="req">*</span></label><input type="tel" id="phone" placeholder="+1 (403) 000-0000" autocomplete="tel" enterkeyhint="next" required><div class="signup-error" id="phoneError">Please enter a valid phone number</div></div>
+          <div class="signup-field"><label for="phone">Phone number <span class="req">*</span></label><input type="tel" id="phone" name="phone" placeholder="+1 (403) 000-0000" autocomplete="section-sec tel" inputmode="tel" enterkeyhint="next" required aria-describedby="phoneError"><div class="signup-error" id="phoneError" role="alert">Please enter a valid phone number</div></div>
           <div class="signup-field"><label for="password">Password <span class="req">*</span></label><input type="password" id="password" placeholder="At least 8 characters" autocomplete="new-password" enterkeyhint="next" required><div class="signup-error" id="passwordError">Password must be at least 8 characters</div></div>
           <div class="signup-field"><label for="confirmPassword">Confirm password <span class="req">*</span></label><input type="password" id="confirmPassword" placeholder="Repeat your password" autocomplete="new-password" enterkeyhint="done" required><div class="signup-error" id="confirmError">Passwords do not match</div></div>
           <div class="qg-wizard-nav">
@@ -210,7 +210,7 @@
   </div>
 </div>
 
-<script defer src="qg-utils.js?v=20260728welcome1"></script>
+<script defer src="qg-utils.js?v=e653274-1787876226"></script>
 <script defer src="qg-polish.js?v=20260728xss1"></script>
 <script src="qg-ux.js?v=20260728welcome1" defer></script>
 <script src="qg-bigtech.js?v=20260810session1" defer></script>
@@ -226,9 +226,13 @@
 <script defer src="qg-notifications.js"></script>
 <script src="qg-theme.js"></script>
 <script>
-attachPasswordToggle('password');
-attachPasswordToggle('confirmPassword');
-attachNameFormatter('name');
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof attachPasswordToggle === 'function') {
+    attachPasswordToggle('password');
+    attachPasswordToggle('confirmPassword');
+  }
+  if (typeof attachNameFormatter === 'function') attachNameFormatter('name');
+});
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
@@ -446,19 +450,25 @@ var STEP_META = [
 ];
 var STEP_TOTAL = STEP_META.length;
 
-var signupDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
+var signupDark = true;
 function applySignupTheme() {
-  document.body.classList.toggle('light', !signupDark);
+  if (typeof QG_paintTheme === 'function') QG_paintTheme(signupDark);
+  else document.body.classList.toggle('light', !signupDark);
   var btn = document.getElementById('signupThemeBtn');
   if (btn) btn.textContent = signupDark ? 'Light' : 'Dark';
 }
-window.toggleSignupTheme = function() {
+window.toggleSignupTheme = function () {
   signupDark = !signupDark;
   if (typeof QG_setThemeDark === 'function') QG_setThemeDark(signupDark);
   else localStorage.setItem('qg-theme', signupDark ? 'dark' : 'light');
   applySignupTheme();
 };
-applySignupTheme();
+document.addEventListener('DOMContentLoaded', function () {
+  signupDark = typeof QG_isDarkTheme === 'function'
+    ? QG_isDarkTheme()
+    : (localStorage.getItem('qg-theme') !== 'light');
+  applySignupTheme();
+});
 
 window.setRole = function(role, btn) {
   if (role === 'poster' && btn && btn.classList.contains('is-teen-hidden')) return;
@@ -505,8 +515,12 @@ function updateSignupStepUI(idx) {
   icon.style.animation = 'none';
   void icon.offsetWidth;
   icon.style.animation = '';
-  var perks = document.getElementById('signupPerks');
-  if (perks) perks.style.display = idx === 0 ? 'grid' : 'none';
+  if (idx === 1) {
+    var phoneInput = document.getElementById('phone');
+    if (phoneInput && String(phoneInput.value || '').trim().indexOf('@') >= 0) {
+      phoneInput.value = '';
+    }
+  }
   var footer = document.getElementById('signupFooter');
   if (footer) footer.classList.toggle('hidden', idx > 0);
 }
@@ -519,42 +533,70 @@ window._qgSignupWizard = wizard;
 updateSignupStepUI(0);
 
 function clearSignupErrors() {
-  document.querySelectorAll('.signup-error').forEach(function(el){ el.style.display = 'none'; });
+  document.querySelectorAll('.signup-error').forEach(function (el) { el.style.display = 'none'; });
+  document.querySelectorAll('.signup-field input.is-invalid').forEach(function (el) {
+    el.classList.remove('is-invalid');
+    el.removeAttribute('aria-invalid');
+  });
+}
+
+function showSignupFieldError(inputId, errorId, message) {
+  var input = document.getElementById(inputId);
+  var error = document.getElementById(errorId);
+  if (error) {
+    if (message) error.textContent = message;
+    error.style.display = 'block';
+  }
+  if (input) {
+    input.classList.add('is-invalid');
+    input.setAttribute('aria-invalid', 'true');
+    input.focus({ preventScroll: false });
+    try { input.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+  }
+  return false;
 }
 
 function validatePhone(phone) {
-  var digits = String(phone || '').replace(/\D/g, '');
+  var raw = String(phone || '').trim();
+  if (raw.indexOf('@') >= 0) return false;
+  var digits = raw.replace(/\D/g, '');
   return digits.length >= 10;
 }
 
 function validateAccountBasic() {
   clearSignupErrors();
+  var nameEl = document.getElementById('name');
+  var emailEl = document.getElementById('email');
   var name = typeof formatPersonName === 'function'
-    ? formatPersonName(window.sanitizeInput(document.getElementById('name').value, 80))
-    : window.sanitizeInput(document.getElementById('name').value, 80);
-  var email = document.getElementById('email').value.trim();
-  var valid = true;
-  if (name.length < 2) { document.getElementById('nameError').style.display = 'block'; valid = false; }
-  if (!email || email.indexOf('@') < 1) { document.getElementById('emailError').style.display = 'block'; valid = false; }
-  if (!valid) return null;
-  document.getElementById('name').value = name;
+    ? formatPersonName(window.sanitizeInput(nameEl.value, 80))
+    : window.sanitizeInput(nameEl.value, 80);
+  var email = emailEl.value.trim();
+  if (name.length < 2) return showSignupFieldError('name', 'nameError');
+  if (!email || email.indexOf('@') < 1) return showSignupFieldError('email', 'emailError');
+  nameEl.value = name;
   return { name: name, email: email };
 }
 
 function validateAccountSecurity() {
   clearSignupErrors();
-  var phone = window.sanitizeInput(document.getElementById('phone').value, 20);
-  if (oauthSignupMode) {
-    if (!validatePhone(phone)) { document.getElementById('phoneError').style.display = 'block'; return false; }
-    return true;
+  var phoneEl = document.getElementById('phone');
+  var phone = window.sanitizeInput(phoneEl.value, 20);
+  var phoneLooksLikeEmail = String(phoneEl.value || '').trim().indexOf('@') >= 0;
+  if (!validatePhone(phone)) {
+    return showSignupFieldError(
+      'phone',
+      'phoneError',
+      phoneLooksLikeEmail
+        ? 'That looks like an email address. Enter your phone number (at least 10 digits).'
+        : 'Please enter a valid phone number (at least 10 digits).'
+    );
   }
+  if (oauthSignupMode) return true;
   var password = document.getElementById('password').value;
   var confirm = document.getElementById('confirmPassword').value;
-  var valid = true;
-  if (!validatePhone(phone)) { document.getElementById('phoneError').style.display = 'block'; valid = false; }
-  if (password.length < 8) { document.getElementById('passwordError').style.display = 'block'; valid = false; }
-  if (password !== confirm) { document.getElementById('confirmError').style.display = 'block'; valid = false; }
-  return valid;
+  if (password.length < 8) return showSignupFieldError('password', 'passwordError');
+  if (password !== confirm) return showSignupFieldError('confirmPassword', 'confirmError');
+  return true;
 }
 
 function validateAccountStep() {
