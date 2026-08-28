@@ -2437,17 +2437,33 @@ window.markComplete = async function(taskId, btn){
     if (typeof qgDebugLog === 'function') qgDebugLog('completeTask result ok=', !!(result && result.success));
   } catch (completeErr) {
     console.error('markComplete threw:', completeErr && completeErr.message ? completeErr.message : 'error');
-    // Still show Completed UI ? user is blocked otherwise
-    showCompletedUi(canonicalTaskId || taskId);
-    showToast('Marked complete locally — if it reappears, tap again', '#f59e0b');
+    var thrownMsg = completeErr && (completeErr.message || completeErr.error)
+      ? String(completeErr.message || completeErr.error)
+      : 'Could not mark complete. Try again.';
+    if (typeof formatSupabaseActionError === 'function') {
+      thrownMsg = formatSupabaseActionError('mark complete', thrownMsg);
+    }
+    showToast(thrownMsg, '#ef4444');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = (typeof qgIcon === 'function' ? qgIcon('check', { size: 12 }) : '') + ' Mark complete';
+    }
     return;
   }
   if (!result || !result.success) {
-    // Last resort: keep UX unblocked
     if (typeof qgDebugLog === 'function') qgDebugLog('markComplete failure', result && result.error);
     else console.error('markComplete failed');
-    showCompletedUi(canonicalTaskId || taskId);
-    showToast('Marked complete — sync may retry in background', '#f59e0b');
+    var failMsg = (result && (result.message || result.error))
+      ? String(result.message || result.error)
+      : 'Could not mark complete. Try again.';
+    if (typeof formatSupabaseActionError === 'function') {
+      failMsg = formatSupabaseActionError('mark complete', failMsg);
+    }
+    showToast(failMsg, '#ef4444');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = (typeof qgIcon === 'function' ? qgIcon('check', { size: 12 }) : '') + ' Mark complete';
+    }
     return;
   }
   showCompletedUi(result.task_id || canonicalTaskId || taskId);

@@ -472,8 +472,7 @@ onAuthStateChanged(auth, async (user) => {
       if (typeof getUserLoginGate !== 'function') return;
       getUserLoginGate(live.uid).then(function (gateUser) {
         if (!gateUser) {
-          if (typeof QG_setAgeTierFromUser === 'function') QG_setAgeTierFromUser(null);
-          if (dashData && dashData.userId) renderAll();
+          window.location.replace('signup.html?oauth=continue');
           return;
         }
         if (typeof qgMarkOnboardingDone === 'function') qgMarkOnboardingDone(live.uid);

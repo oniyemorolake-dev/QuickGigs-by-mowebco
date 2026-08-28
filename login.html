@@ -207,38 +207,42 @@ async function runGraduationCheck(user) {
   }
 }
 
-async function finishGoogleLogin(user) {
-  var errorMsg = document.getElementById('errorMsg');
-  if (typeof setCurrentUser === 'function') setCurrentUser(user);
-  else window._currentUser = user;
-  showLoginProgress('Signing you in…');
-  prefetchDashboard();
-  markPendingProfileSync();
-
-  // Returning users: 0 Supabase queries — route from local account cache.
-  if (typeof qgIsOnboardingDoneCached === 'function' && qgIsOnboardingDoneCached(user.uid)) {
-    if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'google' });
-    showLoginProgress('Opening dashboard…');
-    await runGraduationCheck(user);
-    window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
-    return;
-  }
-
-  // Wait for DB helpers (cold start / cellular). Prefer accurate firebase_uid lookup
-  // over racing to signup — a timeout must not invent a "new" user.
+async function waitForLoginGateHelpers() {
   var gateWait = 0;
   while (typeof getUserLoginGate !== 'function' && typeof getUserByFirebaseUid !== 'function' && gateWait < 50) {
     await new Promise(function (r) { setTimeout(r, 40); });
     gateWait++;
   }
+  return typeof getUserLoginGate === 'function' || typeof getUserByFirebaseUid === 'function';
+}
 
-  // CRITICAL: lookup by firebase_uid only (Auth uid), never users.user_id UUID.
-  var existing = null;
+async function fetchLoginGateUser(uid) {
   if (typeof getUserLoginGate === 'function') {
-    existing = await getUserLoginGate(user.uid);
-  } else if (typeof getUserByFirebaseUid === 'function') {
-    existing = await getUserByFirebaseUid(user.uid, { self: true });
+    return await getUserLoginGate(uid);
   }
+  if (typeof getUserByFirebaseUid === 'function') {
+    return await getUserByFirebaseUid(uid, { self: true });
+  }
+  return null;
+}
+
+function resetLoginProgressUi(method) {
+  var overlay = document.getElementById('loginProgress');
+  if (overlay) overlay.hidden = true;
+  var submitBtn = document.getElementById('submitBtn');
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Log in →';
+  }
+  if (method === 'google' && typeof qgResetGoogleBtn === 'function') {
+    qgResetGoogleBtn('googleLoginBtn');
+  }
+}
+
+async function routeAfterAuthGate(user, method) {
+  var errorMsg = document.getElementById('errorMsg');
+  var helpersReady = await waitForLoginGateHelpers();
+  var existing = helpersReady ? await fetchLoginGateUser(user.uid) : null;
 
   if (existing && (existing.status === 'banned' || existing.account_status === 'blocked')) {
     if (typeof clearQgUserScopedStorage === 'function') clearQgUserScopedStorage();
@@ -248,36 +252,41 @@ async function finishGoogleLogin(user) {
       ? 'This account was not approved by its parent or guardian.'
       : 'This account has been suspended. Contact support@quickgigs.ca if you think this is a mistake.';
     errorMsg.style.display = 'block';
-    if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
-    var overlay = document.getElementById('loginProgress');
-    if (overlay) overlay.hidden = true;
+    resetLoginProgressUi(method);
     return;
   }
 
-  // Row found by firebase_uid → existing account → dashboard (DOB optional).
   if (existing) {
     if (typeof qgMarkOnboardingDone === 'function') qgMarkOnboardingDone(user.uid);
-    if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'google' });
+    if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: method });
     showLoginProgress('Opening dashboard…');
     await runGraduationCheck(user);
-    window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
+    var dest = typeof qgGetDashboardRedirect === 'function'
+      ? qgGetDashboardRedirect()
+      : (typeof getDashboardUrl === 'function' ? getDashboardUrl() : 'dashboard.html');
+    window.location.replace(dest);
     return;
   }
 
-    // No users row for this firebase_uid → genuine new Google account → finish signup.
-  // If helpers never loaded, do NOT invent a returning user (that skips DOB/teen gating).
-  if (typeof getUserLoginGate !== 'function' && typeof getUserByFirebaseUid !== 'function') {
-    var overlayFail = document.getElementById('loginProgress');
-    if (overlayFail) overlayFail.hidden = true;
+  if (!helpersReady) {
     errorMsg.textContent = 'Could not verify your account. Check your connection and try again.';
     errorMsg.style.display = 'block';
-    if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
-    var submitBtn = document.getElementById('submitBtn');
-    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Log in →'; }
+    resetLoginProgressUi(method);
     return;
   }
+
   showLoginProgress('Almost there…');
   window.location.replace('signup.html?oauth=continue');
+}
+
+async function finishGoogleLogin(user) {
+  var errorMsg = document.getElementById('errorMsg');
+  if (typeof setCurrentUser === 'function') setCurrentUser(user);
+  else window._currentUser = user;
+  showLoginProgress('Signing you in…');
+  prefetchDashboard();
+  markPendingProfileSync();
+  await routeAfterAuthGate(user, 'google');
 }
 
 function showLoginProgress(label) {
@@ -335,13 +344,11 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     }
     if (typeof setCurrentUser === 'function') setCurrentUser(signedIn);
     else window._currentUser = signedIn;
-    if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: 'email' });
     try { sessionStorage.setItem('qg-pending-profile-sync', '1'); } catch (ePend) {}
     prefetchDashboard();
-    showLoginProgress('Opening dashboard…');
-    await runGraduationCheck(signedIn);
-    var dest = typeof getDashboardUrl === 'function' ? getDashboardUrl() : 'dashboard.html';
-    window.location.replace(dest);
+    showLoginProgress('Signing you in…');
+    markPendingProfileSync();
+    await routeAfterAuthGate(signedIn, 'email');
   } catch (error) {
     var message = 'Invalid email or password. Try again.';
     if (error.code === 'auth/invalid-email') message = 'Enter a valid email address.';
