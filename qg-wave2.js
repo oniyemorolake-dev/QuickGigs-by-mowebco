@@ -5,7 +5,7 @@
   // ── 16. Announcement bar (JS constant) ──
   var QG_ANNOUNCE = {
     id: 'beta-live-2026',
-    message: '🎉 QuickGigs beta is live — payments coming soon.',
+    message: '🎉 QuickGigs beta is live — payments live via Stripe.',
     link: 'feedback.html',
     linkLabel: 'Feedback'
   };
