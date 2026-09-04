@@ -349,7 +349,7 @@ body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#ee
 <script defer src="qg-utils.js?v=20260810auth1"></script>
 <script defer src="qg-config.js?v=20260810auth1"></script>
 <script defer src="supabaseClient.js?v=20260810auth1"></script>
-<script defer src="supabase-db.js?v=20260827chat1"></script>
+<script defer src="supabase-db.js?v=20260903gate1"></script>
 <script defer src="qg-nav.js"></script>
 <script defer src="qg-menu.js?v=20260727auth2"></script>
 <script defer src="qg-auth-google.js?v=20260811google1"></script>
@@ -472,12 +472,20 @@ onAuthStateChanged(auth, async (user) => {
       if (typeof getUserLoginGate !== 'function') return;
       getUserLoginGate(live.uid).then(function (gateUser) {
         if (!gateUser) {
-          window.location.replace('signup.html?oauth=continue');
-          return;
+          return getUserLoginGate(live.uid).then(function (retryUser) {
+            if (!retryUser) {
+              window.location.replace('signup.html?oauth=continue');
+              return;
+            }
+            if (typeof qgMarkOnboardingDone === 'function') qgMarkOnboardingDone(live.uid);
+            applyDbUserAfterLogin(retryUser);
+          });
         }
         if (typeof qgMarkOnboardingDone === 'function') qgMarkOnboardingDone(live.uid);
         applyDbUserAfterLogin(gateUser);
-      }).catch(function () {});
+      }).catch(function (gateErr) {
+        console.warn('dashboard login gate failed:', gateErr && gateErr.message ? gateErr.message : gateErr);
+      });
     };
     if (typeof getUserLoginGate === 'function') run();
     else setTimeout(run, 120);

@@ -106,7 +106,7 @@ body{margin:0;}
 <script defer src="qg-analytics.js"></script>
 <script defer src="qg-auth-google.js?v=20260811google1"></script>
 <script defer src="supabaseClient.js?v=20260810auth1"></script>
-<script defer src="supabase-db.js?v=20260827chat1"></script>
+<script defer src="supabase-db.js?v=20260903gate1"></script>
 <script defer src="qg-cookies.js"></script>
 <script defer src="qg-theme.js"></script>
 <script defer src="qg-pwa.js?v=dbe458f-1787883812"></script>
@@ -242,7 +242,32 @@ function resetLoginProgressUi(method) {
 async function routeAfterAuthGate(user, method) {
   var errorMsg = document.getElementById('errorMsg');
   var helpersReady = await waitForLoginGateHelpers();
-  var existing = helpersReady ? await fetchLoginGateUser(user.uid) : null;
+  if (!helpersReady) {
+    errorMsg.textContent = 'Could not verify your account. Check your connection and try again.';
+    errorMsg.style.display = 'block';
+    resetLoginProgressUi(method);
+    return;
+  }
+
+  var existing = null;
+  var lookupFailed = false;
+  try {
+    existing = await fetchLoginGateUser(user.uid);
+    if (!existing) {
+      await new Promise(function (r) { setTimeout(r, 400); });
+      existing = await fetchLoginGateUser(user.uid);
+    }
+  } catch (gateErr) {
+    lookupFailed = true;
+    console.warn('login gate lookup failed:', gateErr && gateErr.message ? gateErr.message : gateErr);
+  }
+
+  if (lookupFailed) {
+    errorMsg.textContent = 'Could not verify your account. Check your connection and try again.';
+    errorMsg.style.display = 'block';
+    resetLoginProgressUi(method);
+    return;
+  }
 
   if (existing && (existing.status === 'banned' || existing.account_status === 'blocked')) {
     if (typeof clearQgUserScopedStorage === 'function') clearQgUserScopedStorage();
@@ -265,13 +290,6 @@ async function routeAfterAuthGate(user, method) {
       ? qgGetDashboardRedirect()
       : (typeof getDashboardUrl === 'function' ? getDashboardUrl() : 'dashboard.html');
     window.location.replace(dest);
-    return;
-  }
-
-  if (!helpersReady) {
-    errorMsg.textContent = 'Could not verify your account. Check your connection and try again.';
-    errorMsg.style.display = 'block';
-    resetLoginProgressUi(method);
     return;
   }
 

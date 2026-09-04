@@ -2196,7 +2196,8 @@ async function getUserLoginGate(firebaseUid) {
       return (minimal && minimal[0]) || null;
     } catch (err2) {
       console.warn('getUserLoginGate failed:', err2);
-      return null;
+      // Lookup failed (JWT/network) — not the same as "no users row".
+      throw err2;
     }
   }
 }

@@ -221,7 +221,7 @@
 <script defer src="qg-onboarding.js?v=e653274-1787876226"></script>
 <script defer src="qg-cookies.js"></script>
 <script defer src="supabaseClient.js?v=20260810auth1"></script>
-<script defer src="supabase-db.js?v=20260827chat1"></script>
+<script defer src="supabase-db.js?v=20260903gate1"></script>
 <script defer src="qg-announcement.js?v=20260728xss1"></script>
 <script defer src="qg-notifications.js"></script>
 <script src="qg-theme.js"></script>
@@ -269,6 +269,33 @@ async function beginFreshCredentialSignup() {
       new Promise(function (resolve) { setTimeout(resolve, 250); })
     ]);
   } catch (e) {}
+}
+
+async function waitForSignupGateHelpers() {
+  var gateWait = 0;
+  while (typeof getUserByFirebaseUid !== 'function' && typeof getUserLoginGate !== 'function' && gateWait < 50) {
+    await new Promise(function (r) { setTimeout(r, 40); });
+    gateWait++;
+  }
+  return typeof getUserByFirebaseUid === 'function' || typeof getUserLoginGate === 'function';
+}
+
+async function lookupExistingSignupUser(uid) {
+  if (typeof getUserByFirebaseUid === 'function') {
+    return await getUserByFirebaseUid(uid, { self: true, fresh: true });
+  }
+  if (typeof getUserLoginGate === 'function') {
+    return await getUserLoginGate(uid);
+  }
+  return null;
+}
+
+function resumeExistingAccount(user) {
+  if (user && user.uid && typeof qgMarkOnboardingDone === 'function') qgMarkOnboardingDone(user.uid);
+  var dest = typeof qgGetDashboardRedirect === 'function'
+    ? qgGetDashboardRedirect()
+    : 'dashboard.html';
+  window.location.replace(dest);
 }
 
 async function beginOAuthSignup(user) {
@@ -428,12 +455,24 @@ onAuthStateChanged(auth, async function(user) {
   if (!user) return;
   var params = new URLSearchParams(window.location.search);
   if (params.get('oauth') !== 'continue') return;
-  var existing = typeof getUserByFirebaseUid === 'function'
-    ? await getUserByFirebaseUid(user.uid, { self: true })
-    : (typeof getUserLoginGate === 'function' ? await getUserLoginGate(user.uid) : null);
+  var helpersReady = await waitForSignupGateHelpers();
+  var existing = null;
+  try {
+    if (helpersReady) existing = await lookupExistingSignupUser(user.uid);
+    if (!existing && helpersReady) {
+      await new Promise(function (r) { setTimeout(r, 400); });
+      existing = await lookupExistingSignupUser(user.uid);
+    }
+  } catch (gateErr) {
+    var errorMsgGate = document.getElementById('errorMsg');
+    if (errorMsgGate) {
+      errorMsgGate.textContent = 'Could not load your account. Go back to log in and try again.';
+      errorMsgGate.style.display = 'block';
+    }
+    return;
+  }
   if (existing) {
-    if (typeof qgMarkOnboardingDone === 'function') qgMarkOnboardingDone(user.uid);
-    window.location.replace(typeof qgGetDashboardRedirect === 'function' ? qgGetDashboardRedirect() : 'dashboard.html');
+    resumeExistingAccount(user);
     return;
   }
   await beginOAuthSignup(user);
@@ -673,8 +712,22 @@ document.getElementById('submitBtn').onclick = async function() {
   submitBtn.disabled = true;
 
   try {
+    if (!oauthSignupMode && auth.currentUser) {
+      oauthSignupUser = auth.currentUser;
+      oauthSignupMode = true;
+    }
+
     var userCredential;
     if (oauthSignupMode && oauthSignupUser) {
+      try {
+        var already = await lookupExistingSignupUser(oauthSignupUser.uid);
+        if (already) {
+          okMsg.textContent = 'This email is already registered. Opening your account…';
+          okMsg.style.display = 'block';
+          resumeExistingAccount(oauthSignupUser);
+          return;
+        }
+      } catch (existingLookupErr) {}
       userCredential = { user: oauthSignupUser };
       if (account.name && account.name !== oauthSignupUser.displayName) {
         await updateProfile(oauthSignupUser, { displayName: account.name });
@@ -695,11 +748,18 @@ document.getElementById('submitBtn').onclick = async function() {
       ? await callVerifiedFunction(registerUrl, userPayload, userCredential.user)
       : { success: false, error: 'secure_registration_unavailable' };
     if (!saveResult.success) {
+      var failCode = saveResult.error || 'registration_failed';
+      if (failCode === 'account_already_registered') {
+        okMsg.textContent = 'This email is already registered. Opening your account…';
+        okMsg.style.display = 'block';
+        resumeExistingAccount(userCredential.user);
+        return;
+      }
       if (!oauthSignupMode) {
         try { await deleteUser(userCredential.user); } catch (deleteErr) {}
       }
       var registerError = new Error(saveResult.message || saveResult.error || 'Could not create account');
-      registerError.code = saveResult.error || 'registration_failed';
+      registerError.code = failCode;
       throw registerError;
     }
     identity.account_status = saveResult.account_status || identity.account_status;
@@ -778,6 +838,12 @@ document.getElementById('submitBtn').onclick = async function() {
   } catch (error) {
     var message = 'Something went wrong. Try again.';
     if (error.code === 'auth/email-already-in-use') message = 'This email is already registered. Try logging in.';
+    if (error.code === 'account_already_registered') message = 'This email is already registered. Try logging in.';
+    if (error.code === 'account_blocked') message = 'This account was not approved by its parent or guardian.';
+    if (error.code === 'firebase_auth_required') message = 'Your session expired. Log in again, then finish signup.';
+    if (error.code && String(error.code).indexOf('duplicate key') !== -1) {
+      message = 'This email is already registered. Try logging in.';
+    }
     if (error.code === 'auth/invalid-email') message = 'Enter a valid email address.';
     if (error.code === 'auth/weak-password') message = 'Password is too weak. Use at least 8 characters.';
     if (error.code === 'underage') message = 'You must be at least 16 to join QuickGigs';
