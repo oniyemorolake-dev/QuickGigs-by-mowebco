@@ -1,115 +1,105 @@
 /**
- * QuickGigs design tokens — single source of truth for color + gradients.
+ * SwiftGigs design tokens — single source of truth for color.
  * Light/dark: hooks existing body.light / html.light / html[data-qg-theme].
  * Tasker/Poster: hooks html[data-qg-mode="worker"|"poster"] (worker = tasker)
  *                and html[data-mode="tasker"|"poster"] / body.qg-mode-*.
  *
- * Do not restyle screens here beyond the one proof element at the bottom.
+ * The 11 core tokens are authoritative. Everything below them is an alias kept
+ * so existing page CSS keeps resolving — do not delete aliases without grepping.
+ * Component primitives live in qg-swift.css, not here.
  */
 :root {
-  /* ── Brand & semantic accents (dark = default) ── */
-  --brand: #8b5cf6;
-  --accent-tasker: #8b5cf6;
-  --accent-poster: #2dd4bf;
-  --accent: var(--accent-tasker);
-  --money: #4ade80;
+  /* ── Core palette (dark is the default theme) ── */
+  --bg: #0B0A14;
+  --surface: #16131F;
+  --surface-alt: #201C2C;
+  --border: #2C2740;
+  --text: #F4F0FA;
+  --text-muted: #9C93AC;
+  --primary: #8B5CF6;
+  --primary-text: #FFFFFF;
+  --teal: #2DD4BF;
+  --teal-tint: #123832;
+  --green: #4ADE80;
+
+  /* ── Semantic accents (not part of the redesign spec, values unchanged) ── */
   --attention: #fbbf24;
   --danger: #f87171;
 
-  /* ── Surfaces & structure ── */
-  --bg: #0d0b1a;
-  --surface-1: #181428;
-  --surface-2: #120f22;
-  --line: #2a2442;
-  --line-strong: #3d3560;
+  /* ── Flow accents ──
+   * Posting flow = purple, earning flow = teal.
+   * NOTE: this inverts the previous mapping, where tasker was purple and
+   * poster was teal. Flip these two lines to revert. */
+  --accent-poster: var(--primary);
+  --accent-tasker: var(--teal);
+  --accent: var(--accent-tasker);
 
-  /* ── Text ── */
-  --text-primary: #f5f3ff;
-  --text-secondary: #cfc6e8;
-  --text-muted: #9a91b8;
-  /* Text on accent/gradient/danger fills (buttons, active toggle, badge counts) */
-  --on-accent: #f5f3ff;
+  /* ── Derived structure ── */
+  --line-strong: color-mix(in srgb, var(--border) 60%, var(--text-muted));
+  --text-secondary: color-mix(in srgb, var(--text) 72%, var(--text-muted));
 
-  /* ── Gradients (buttons / CTAs) ── */
-  --grad-tasker: linear-gradient(135deg, #6b3fa0 0%, #8b5cf6 52%, #a78bfa 100%);
-  --grad-poster: linear-gradient(135deg, #0f766e 0%, #14b8a6 52%, #2dd4bf 100%);
-  --grad-accent: var(--grad-tasker);
+  /* ── Fills ──
+   * CTAs are flat in this design. The gradient vars are kept as single-stop
+   * gradients so existing `background: var(--grad-accent)` rules render flat
+   * instead of needing 37 stylesheets edited. */
+  --grad-tasker: linear-gradient(var(--accent-tasker), var(--accent-tasker));
+  --grad-poster: linear-gradient(var(--accent-poster), var(--accent-poster));
+  --grad-accent: linear-gradient(var(--accent), var(--accent));
 
-  /* Soft fills (optional helpers for next migration phase) */
+  /* Wordmark only — never use for surfaces or buttons. */
+  --grad-wordmark: linear-gradient(100deg, var(--primary) 0%, var(--teal) 100%);
+
+  /* Soft fills (derive automatically from the core tokens) */
   --accent-soft: color-mix(in srgb, var(--accent) 16%, transparent);
-  --money-soft: color-mix(in srgb, var(--money) 14%, transparent);
+  --money-soft: color-mix(in srgb, var(--green) 14%, transparent);
   --attention-soft: color-mix(in srgb, var(--attention) 14%, transparent);
   --danger-soft: color-mix(in srgb, var(--danger) 14%, transparent);
 
-  /* Legacy aliases used by older page CSS */
-  --text: var(--text-primary);
+  /* ── Aliases for existing page CSS ── */
+  --brand: var(--primary);
+  --money: var(--green);
+  --on-accent: var(--primary-text);
+  --surface-1: var(--surface);
+  --surface-2: var(--surface-alt);
+  --card-bg: var(--surface);
+  --line: var(--border);
+  --text-primary: var(--text);
   --text-faint: var(--text-muted);
-  --purple: var(--accent-tasker);
-  --purple-light: #a78bfa;
-  --lavender: #c8a8e9;
-  --border: var(--line);
-  --nav-bg: var(--bg);
-  --tab-bg: var(--bg);
-  --card-bg: var(--surface-1);
-  --surface: var(--surface-1);
+  --purple: var(--primary);
+  --purple-light: var(--primary);
+  --lavender: var(--primary);
+  --nav-bg: var(--surface);
+  --tab-bg: var(--surface);
 }
 
 /* ── Light theme (same mechanism as qg-theme.js paint) ── */
 html.light,
 html[data-qg-theme="light"],
 body.light {
-  /* Darker accents for WCAG AA on white / surface-1 */
-  --brand: #5b21b6;
-  --accent-tasker: #5b21b6;
-  --accent-poster: #0f766e;
-  --money: #166534;
+  --bg: #F7F2FC;
+  --surface: #FFFFFF;
+  --surface-alt: #F1E9FA;
+  --border: #E8DFF2;
+  --text: #1A1523;
+  --text-muted: #6B6478;
+  --primary: #6B21A8;
+  --primary-text: #FFFFFF;
+  --teal: #0D9488;
+  --teal-tint: #E3F5F1;
+  --green: #15803D;
+
+  /* Darker for AA on white */
   --attention: #92400e;
   --danger: #b91c1c;
 
-  --bg: #f7f5ff;
-  --surface-1: #ffffff;
-  --surface-2: #f0eeff;
-  --line: #ddd6f3;
-  --line-strong: #b8a9e0;
-
-  --text-primary: #1e1533;
-  --text-secondary: #3f3858;
-  --text-muted: #5c5670;
-  --on-accent: #ffffff;
-
-  /* Keep CTA gradient ends dark enough for white label text (AA) */
-  --grad-tasker: linear-gradient(135deg, #4c1d95 0%, #5b21b6 55%, #6d28d9 100%);
-  --grad-poster: linear-gradient(135deg, #115e59 0%, #0f766e 55%, #0d9488 100%);
-
-  /* Stronger soft fills so chips/unread tints read on white */
+  /* Soft fills tint toward white so chips read on light surfaces */
   --accent-soft: color-mix(in srgb, var(--accent) 14%, #ffffff);
-  --money-soft: color-mix(in srgb, var(--money) 12%, #ffffff);
+  --money-soft: color-mix(in srgb, var(--green) 12%, #ffffff);
   --attention-soft: color-mix(in srgb, var(--attention) 12%, #ffffff);
   --danger-soft: color-mix(in srgb, var(--danger) 12%, #ffffff);
-
-  --text: var(--text-primary);
-  --text-faint: var(--text-muted);
-  --purple: var(--accent);
-  --purple-light: var(--accent);
-  --lavender: var(--accent);
-  --border: var(--line);
-  --nav-bg: var(--surface-1);
-  --tab-bg: var(--surface-1);
-  --card-bg: var(--surface-1);
-  --surface: var(--surface-1);
 }
 
-/* Poster light: teal legacy aliases */
-html.light[data-qg-mode="poster"],
-html[data-qg-theme="light"][data-qg-mode="poster"],
-html.light[data-mode="poster"],
-body.light.qg-mode-poster {
-  --purple: var(--accent-poster);
-  --purple-light: #0d9488;
-  --lavender: #0f766e;
-}
-
-/* ── Mode-aware accent (Tasker purple vs Poster teal) ── */
+/* ── Mode-aware accent (posting purple vs earning teal) ── */
 html[data-qg-mode="worker"],
 html[data-mode="tasker"],
 body.qg-mode-worker {
@@ -124,6 +114,19 @@ body.qg-mode-poster {
   --grad-accent: var(--grad-poster);
 }
 
+/* Legacy poster aliases — previously forced teal, now follow the flow accent. */
+html[data-qg-mode="poster"],
+html[data-mode="poster"],
+body.qg-mode-poster,
+html.light[data-qg-mode="poster"],
+html[data-qg-theme="light"][data-qg-mode="poster"],
+html.light[data-mode="poster"],
+body.light.qg-mode-poster {
+  --purple: var(--accent-poster);
+  --purple-light: var(--accent-poster);
+  --lavender: var(--accent-poster);
+}
+
 /*
  * Bridge to existing role-theme variable names so shared chrome can
  * gradually adopt tokens without a full restyle pass.
@@ -134,5 +137,3 @@ html {
   --role-accent: var(--accent);
   --role-accent-soft: var(--accent-soft);
 }
-
-/* Active header toggle proof styles moved to qg-shell.css */
