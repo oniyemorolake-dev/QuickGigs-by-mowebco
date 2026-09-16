@@ -4,19 +4,19 @@
 <meta charset="UTF-8">
 <!-- qg-build:947d37a-1789577525 -->
 
-<title>My tasks · QuickGigs</title>
-<meta name="description" content="Manage posted tasks and applications on QuickGigs.">
+<title>My tasks · SwiftGigs</title>
+<meta name="description" content="Manage posted tasks and applications on SwiftGigs.">
 <meta name="robots" content="noindex,nofollow">
 <link rel="canonical" href="https://quickgigs.ca/mytasks.html">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://quickgigs.ca/mytasks.html">
-<meta property="og:title" content="My tasks · QuickGigs">
-<meta property="og:description" content="Manage posted tasks and applications on QuickGigs.">
+<meta property="og:title" content="My tasks · SwiftGigs">
+<meta property="og:description" content="Manage posted tasks and applications on SwiftGigs.">
 <meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <meta property="og:locale" content="en_CA">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="My tasks · QuickGigs">
-<meta name="twitter:description" content="Manage posted tasks and applications on QuickGigs.">
+<meta name="twitter:title" content="My tasks · SwiftGigs">
+<meta name="twitter:description" content="Manage posted tasks and applications on SwiftGigs.">
 <meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -229,7 +229,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 
 <nav class="nav">
   <div class="nav-brand">
-    <span class="nav-logo">QuickGigs</span>
+    <span class="nav-logo sg-wordmark">SwiftGigs</span>
     <span class="nav-role">POSTER</span>
   </div>
   <div class="nav-title">My posted tasks</div>
@@ -556,7 +556,7 @@ function displayName(uid, taskOrApp) {
   if (taskOrApp && (taskOrApp.worker_name || taskOrApp.WORKER_NAME)) return taskOrApp.worker_name || taskOrApp.WORKER_NAME;
   if (taskOrApp && (taskOrApp.poster_name || taskOrApp.POSTER_NAME)) return taskOrApp.poster_name || taskOrApp.POSTER_NAME;
   if (userNames[uid]) return userNames[uid];
-  return 'a QuickGigs member';
+  return 'a SwiftGigs member';
 }
 
 function taskDomId(taskId) {
@@ -1110,7 +1110,7 @@ window.QG_refreshPaymentState = async function(taskId) {
 var CAT_ICONS = {home:'🏠',errands:'🚗',tutoring:'🎓',beauty:'💇',moving:'🚚',cooking:'🍳',tech:'💻',care:'👶',gardening:'🌿',events:'🎉',trades:'🔧',other:'📦'};
 var CAT_BG    = {home:'rgba(107,63,160,0.2)',errands:'rgba(251,191,36,0.15)',tutoring:'rgba(74,222,128,0.1)',beauty:'rgba(200,168,233,0.15)',moving:'rgba(107,63,160,0.2)',cooking:'rgba(251,191,36,0.12)',tech:'rgba(107,63,160,0.2)',care:'rgba(74,222,128,0.1)',gardening:'rgba(74,222,128,0.08)',events:'rgba(200,168,233,0.15)',trades:'rgba(107,63,160,0.2)',other:'rgba(255,255,255,0.06)'};
 
-function getCat(t){ var k=(t.CATEGORY||t.category||'other').toLowerCase(); return {icon:CAT_ICONS[k]||'📦',bg:CAT_BG[k]||'rgba(255,255,255,0.06)'}; }
+function getCat(t){ var k=(t.CATEGORY||t.category||'other').toLowerCase(); return {id:k,icon:CAT_ICONS[k]||'📦',bg:CAT_BG[k]||'rgba(255,255,255,0.06)'}; }
 function getField(row,f){
   var fieldMap = {
     APP_ID:['APP_ID','app_id','id'],
@@ -1177,7 +1177,7 @@ function formatTaskerPayoutMetaHtml(amount) {
   if (typeof feeBreakdown !== 'function') return '';
   var b = feeBreakdown(n);
   return '<div class="tc-payout-summary">You\'ll receive <span class="tc-payout-gross">$' +
-    b.total.toFixed(2) + '</span> minus the ' + b.ratePct + '% QuickGigs fee (<span class="tc-payout-fee">$' +
+    b.total.toFixed(2) + '</span> minus the ' + b.ratePct + '% SwiftGigs fee (<span class="tc-payout-fee">$' +
     b.fee.toFixed(2) + '</span>) = <strong class="tc-payout-net">$' + b.payout.toFixed(2) + '</strong></div>';
 }
 
@@ -1194,7 +1194,7 @@ function esc(s){
 }
 function personLink(name, uid) {
   if (uid && typeof profileNameLink === 'function') return profileNameLink(name, uid, { className: 'profile-link' });
-  return esc(name || 'a QuickGigs member');
+  return esc(name || 'a SwiftGigs member');
 }
 
 function personLinkWithBadge(name, uid) {
@@ -1598,7 +1598,7 @@ function renderTab(){
     if (isWorker) {
       content.innerHTML = typeof roleGateHtml === 'function' ? roleGateHtml({
         targetMode: 'poster',
-        icon: '📋',
+        iconName: 'clipboard',
         title: 'Posting is in Poster mode',
         sub: 'Switch to Poster mode to manage your listings and review applicants. Use Tasker mode to browse and apply to jobs.'
       }) : '';
@@ -1693,7 +1693,7 @@ function renderTab(){
     if (isPoster) {
       content.innerHTML = typeof roleGateHtml === 'function' ? roleGateHtml({
         targetMode: 'worker',
-        icon: '📋',
+        iconName: 'clipboard',
         title: 'Applications are in Tasker mode',
         sub: 'Switch to Tasker mode to browse tasks, apply, and track your jobs. Poster mode is for posting and hiring only.'
       }) : '';
@@ -1887,7 +1887,7 @@ function renderTab(){
         ? payAction +
           messageBtn +
           '<button type="button" class="act-btn btn-success" data-mark-complete="'+escAttr(taskId)+'">'+(typeof qgIcon==='function'?qgIcon('check',{size:12}):'')+' Mark complete</button>' +
-          '<button type="button" class="act-btn btn-primary" data-change-tasker="'+escAttr(taskId)+'">🔁 Change tasker</button>' +
+          '<button type="button" class="act-btn btn-primary" data-change-tasker="'+escAttr(taskId)+'">'+(typeof qgIcon==='function'?qgIcon('repeat',{size:14}):'')+' Change tasker</button>' +
           '<button type="button" class="act-btn btn-danger" data-cancel-inprogress="'+escAttr(taskId)+'">Cancel task</button>'
         : '';
       var workerActions = !isPosterTask
@@ -1951,7 +1951,7 @@ function renderTab(){
       content.innerHTML = '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('checkCircle',{size:24}):'')+'</div><div class="empty-title">No completed tasks yet</div><div class="empty-sub">'+(isPoster?'Completed, cancelled, and expired postings appear here. Expired tasks can be reposted with one tap.':'Completed or cancelled tasks will appear here.')+'</div>'+(isPoster?'<a class="empty-btn" href="posttask.html">Post a task</a>':'<a class="empty-btn" href="browsetask.html">Browse tasks</a>')+'</div>';
       return;
     }
-    content.innerHTML = '<div class="hint-box" style="background:rgba(107,63,160,0.12);border:1px solid rgba(200,168,233,0.2);border-radius:14px;padding:14px;margin-bottom:14px;font-size:13px;line-height:1.55;color:var(--text-muted);"><strong>Please leave a review</strong> on completed jobs ? honest feedback helps QuickGigs stay safe for everyone.</div>' +
+    content.innerHTML = '<div class="hint-box" style="background:rgba(107,63,160,0.12);border:1px solid rgba(200,168,233,0.2);border-radius:14px;padding:14px;margin-bottom:14px;font-size:13px;line-height:1.55;color:var(--text-muted);"><strong>Please leave a review</strong> on completed jobs — honest feedback helps SwiftGigs stay safe for everyone.</div>' +
     done.map(function(t){
       var cat = getCat(t);
       var st = taskStatus(t);
@@ -2200,7 +2200,7 @@ window.acceptApplicant = async function(taskId, appId, acceptBtn){
     if (acceptBtn && typeof qgMicroConfirm === 'function') qgMicroConfirm(acceptBtn);
     if (typeof qgCelebrate === 'function') qgCelebrate({ count: 36 });
     if (typeof haptic === 'function') haptic([15, 30, 15]);
-    showToast('Accepted ' + workerName + '! Moved to In Progress 💬');
+    showToast('Accepted ' + workerName + '! Moved to In Progress');
   }
   setTimeout(function () { loadData(); }, 100);
 };

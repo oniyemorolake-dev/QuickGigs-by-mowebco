@@ -275,10 +275,6 @@ body{padding-bottom:76px;}
 <div class="content" id="postRoleGate" style="display:none"></div>
 <div class="content" id="formContent">
 
-  <div id="postModeBanner" class="hint-box" style="display:none;margin-bottom:16px">
-    <span data-qg-ico="lightbulb" data-qg-ico-size="16"></span>
-    <p class="hint-text">Posting a task switches you to poster mode. <button type="button" class="error-skip-btn" style="margin-left:8px" onclick="switchToPosterForPost()">Switch to poster now</button></p>
-  </div>
   <span class="step-pill">Post a task</span>
   <p class="page-title">What do you need done?</p>
   <p class="page-sub">Takes less than 60 seconds to post</p>
@@ -1487,13 +1483,11 @@ window.handleSubmit = async function(skipPhotos, publishMode) {
 })();
 (function () {
   function refreshPostModeBanner() {
-    var banner = document.getElementById('postModeBanner');
     var gate = document.getElementById('postRoleGate');
     var form = document.getElementById('formContent');
-    if (!banner || !gate || !form) return;
+    if (!gate || !form) return;
     var mode = typeof getMode === 'function' ? getMode() : 'poster';
     var blocked = mode === 'tasker';
-    banner.style.display = 'none';
     form.style.display = blocked ? 'none' : '';
     gate.style.display = blocked ? 'block' : 'none';
     if (blocked) {
@@ -1512,17 +1506,6 @@ window.handleSubmit = async function(skipPhotos, publishMode) {
         : '<div class="empty-state"><div class="empty-title">Poster mode is available at 18</div><div class="empty-sub">Teen accounts can find age-appropriate work in Tasker mode.</div></div>';
     }
   }
-  window.switchToPosterForPost = function () {
-    var allowed = typeof QG_canUseRole === 'function' ? QG_canUseRole('poster') : null;
-    if (allowed === false && typeof QG_offerRoleOptIn === 'function') {
-      QG_offerRoleOptIn('poster');
-      return;
-    }
-    if (typeof switchToRoleMode === 'function') {
-      switchToRoleMode('poster');
-      return;
-    }
-  };
   refreshPostModeBanner();
   document.addEventListener('qg-mode-changed', refreshPostModeBanner);
   document.addEventListener('qg-role-access-changed', refreshPostModeBanner);

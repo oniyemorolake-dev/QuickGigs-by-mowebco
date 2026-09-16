@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <!-- qg-build:947d37a-1789577525 -->
 
-<title>Messages — QuickGigs</title>
-<meta name="description" content="Your QuickGigs message inbox.">
+<title>Messages — SwiftGigs</title>
+<meta name="description" content="Your SwiftGigs message inbox.">
 <meta name="robots" content="noindex,nofollow">
 <link rel="canonical" href="https://quickgigs.ca/messages.html">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -19,6 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500;600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-role-theme.css?v=20260816msg1">
 <link rel="stylesheet" href="qg-tokens.css?v=20260816msg1" id="qg-tokens-css">
+<script src="qg-icons.js"></script>
 <script src="qg-theme.js?v=20260816msg1"></script>
 <script src="qg-brand-init.js?v=20260816msg1"></script>
 <style>
@@ -154,7 +155,7 @@ body.light .mode-btn{background:#f0eeff;color:var(--purple);}
 }
 .im-list-empty strong{display:block;color:var(--text);font-size:16px;margin-bottom:6px;}
 
-/* Apple-quality rows, QuickGigs colors */
+/* Apple-quality rows, SwiftGigs colors */
 .im-row{
   display:flex;align-items:center;gap:12px;width:100%;
   padding:12px 16px;border:0;background:transparent;cursor:pointer;
@@ -430,7 +431,7 @@ body.light .app-legal-footer a{color:var(--purple);}
   <div class="nav-title">Messages</div>
   <div class="nav-right" style="display:flex;gap:8px;align-items:center">
     <button type="button" class="mode-btn" onclick="typeof switchRoleMode==='function'&&switchRoleMode()">Switch mode</button>
-    <button type="button" class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
+    <button type="button" class="mode-btn" id="modeBtn" onclick="toggleTheme()">Light</button>
   </div>
 </nav>
 
@@ -460,9 +461,9 @@ body.light .app-legal-footer a{color:var(--purple);}
 
   <section class="im-thread" id="threadPane" aria-label="Conversation">
     <div class="im-thread-empty" id="threadEmpty">
-      <div class="glyph" aria-hidden="true">💬</div>
+      <div class="glyph" aria-hidden="true" style="color:var(--primary)"><svg class="qg-ico" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8 8H7l-4 3V12a8 8 0 1 1 18 0Z"/></svg></div>
       <h2>Your chats</h2>
-      <p>Select a conversation. Keep plans and payments on QuickGigs.</p>
+      <p>Select a conversation. Keep plans and payments on SwiftGigs.</p>
     </div>
 
     <header class="im-thread-hdr" id="threadHdr">
@@ -472,7 +473,7 @@ body.light .app-legal-footer a{color:var(--purple);}
       </a>
       <a class="im-hdr-meta" id="threadProfileLink" aria-label="View profile">
         <div class="im-hdr-name" id="threadName">—</div>
-        <div class="im-hdr-status"><span id="threadStatus">QuickGigs chat</span><span class="im-profile-affordance">View profile ›</span></div>
+        <div class="im-hdr-status"><span id="threadStatus">SwiftGigs chat</span><span class="im-profile-affordance">View profile ›</span></div>
       </a>
       <div class="im-hdr-actions">
         <button type="button" class="chat-hdr-btn" id="chatReportBtn" disabled>Report</button>
@@ -483,7 +484,7 @@ body.light .app-legal-footer a{color:var(--purple);}
     <div class="im-thread-main" id="threadMain">
       <div class="im-error" id="threadError" role="alert"></div>
       <div class="im-safety" id="chatSafetyBanner">
-        <strong id="chatSafetyTitle">Keep your chat on QuickGigs</strong>
+        <strong id="chatSafetyTitle">Keep your chat on SwiftGigs</strong>
         <span id="chatSafetyText">Protect your account by keeping contact and payment details here.</span>
         <button type="button" class="im-safety-close" id="chatSafetyDismiss" aria-label="Dismiss safety reminder">×</button>
       </div>
@@ -510,7 +511,7 @@ body.light .app-legal-footer a{color:var(--purple);}
         <div class="im-field">
           <textarea id="msgInput" rows="1" placeholder="Type a message…" enterkeyhint="send" autocomplete="off"></textarea>
         </div>
-        <button type="button" class="im-send" id="sendBtn" disabled aria-label="Send">➤</button>
+        <button type="button" class="im-send" id="sendBtn" disabled aria-label="Send"><svg class="qg-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4 20-7Z"/><path d="M22 2 11 13"/></svg></button>
       </div>
     </div>
   </section>
@@ -607,7 +608,7 @@ function applyTheme(){
     if (document.body) document.body.classList.toggle('light', !isDark);
     document.documentElement.classList.toggle('light', !isDark);
     var b = document.getElementById('modeBtn');
-    if (b) b.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+    if (b) b.textContent = isDark ? 'Light' : 'Dark';
   }
 }
 window.toggleTheme = function(){
@@ -683,7 +684,7 @@ applyTheme();
     if (wrap) wrap.classList.toggle('show', !!message);
   }
   function imagePreview(body) {
-    return typeof isChatImageBody === 'function' && isChatImageBody(body) ? '📷 Photo' : String(body || '');
+    return typeof isChatImageBody === 'function' && isChatImageBody(body) ? 'Photo' : String(body || '');
   }
   function avatarGradient(name) {
     var n = 0;
@@ -958,7 +959,7 @@ applyTheme();
     try { seen = localStorage.getItem(key) === '1'; } catch (e) {}
     if (seen) { banner.classList.remove('show'); return; }
     var copy = typeof getMessagesBannerCopy === 'function' ? getMessagesBannerCopy() : null;
-    setNodeText('chatSafetyTitle', copy && copy.title ? copy.title : 'Keep your chat on QuickGigs');
+    setNodeText('chatSafetyTitle', copy && copy.title ? copy.title : 'Keep your chat on SwiftGigs');
     setNodeText('chatSafetyText', copy && copy.sub ? copy.sub : 'Keep contact and payment details here for protection.');
     banner.classList.add('show');
   }
@@ -1074,7 +1075,7 @@ applyTheme();
   function paintThreadHeader(meta) {
     if (!meta) return;
     setNodeText('threadName', meta.name || 'Chat');
-    setNodeText('threadStatus', meta.taskName ? String(meta.taskName) : 'QuickGigs chat');
+    setNodeText('threadStatus', meta.taskName ? String(meta.taskName) : 'SwiftGigs chat');
     var peerUid = meta.otherUid || currentPeer.uid || '';
     var profileHref = peerProfileHref(peerUid);
     var avatarLink = $('threadAvatarLink');
@@ -1166,7 +1167,7 @@ applyTheme();
   function renderChatImagePlaceholder(caption, detail) {
     var label = caption + (detail ? ' — ' + detail : '');
     return '<div class="im-chat-photo-placeholder" role="img" aria-label="' + esc(label) + '">' +
-      '<span class="im-chat-photo-placeholder-icon" aria-hidden="true">📷</span>' +
+      '<span class="im-chat-photo-placeholder-icon" aria-hidden="true">' + (typeof qgIcon === 'function' ? qgIcon('camera', {size: 16}) : '') + '</span>' +
       '<span class="im-chat-photo-placeholder-text">' + esc(caption) + (detail ? ' · ' + esc(detail) : '') + '</span>' +
       '</div>';
   }
@@ -1210,10 +1211,10 @@ applyTheme();
         ? QG_emptyStateHtml({
             icon: 'message',
             title: 'No messages yet',
-            sub: 'Say hi — keep plans on QuickGigs.',
+            sub: 'Say hi — keep plans on SwiftGigs.',
             compact: true
           })
-        : '<div class="im-chat-empty"><strong>No messages yet</strong>Say hi — keep plans on QuickGigs.</div>';
+        : '<div class="im-chat-empty"><strong>No messages yet</strong>Say hi — keep plans on SwiftGigs.</div>';
       return;
     }
     var lastDate = '', html = '', prevFrom = '', prevTs = 0;
@@ -1298,7 +1299,7 @@ applyTheme();
       fraudDetected = true;
       var fi = $('fraudInline');
       if (fi) {
-        fi.textContent = check.message || 'This message cannot be sent. Keep conversations safe and on QuickGigs.';
+        fi.textContent = check.message || 'This message cannot be sent. Keep conversations safe and on SwiftGigs.';
         fi.classList.add('show');
       }
       sendBtn.disabled = true;
@@ -1397,7 +1398,7 @@ applyTheme();
         : (typeof parseChatImageUrl === 'function' ? parseChatImageUrl(message.text) : 'Image attachment'))
       : String(message.text || '').slice(0, 300);
     var context = [
-      '[QuickGigs message report]',
+      '[SwiftGigs message report]',
       'Conversation: ' + selectedId,
       'Message: ' + (message.id || 'unknown'),
       'Sender: ' + (message.senderId || 'unknown'),
@@ -1477,7 +1478,7 @@ applyTheme();
         if (check.blocked) {
           fraudDetected = true;
           if (fi) {
-            fi.textContent = check.message || 'Keep contact info off QuickGigs.';
+            fi.textContent = check.message || 'Keep contact info off SwiftGigs.';
             fi.classList.add('show');
           }
           sendBtn.disabled = true;
@@ -1527,7 +1528,7 @@ applyTheme();
             targetType: 'user',
             targetId: currentPeer.uid,
             targetLabel: currentPeer.name || 'User',
-            initialDetail: '[QuickGigs conversation report]\nConversation: ' + selectedId
+            initialDetail: '[SwiftGigs conversation report]\nConversation: ' + selectedId
           });
         } else if (typeof showToast === 'function') {
           showToast('Report is unavailable right now.', '#f59e0b');

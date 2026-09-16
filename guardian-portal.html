@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<title>Guardian approvals — QuickGigs</title>
+<title>Guardian approvals — SwiftGigs</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -147,7 +147,7 @@
     var meta=document.createElement('div');
     meta.className='gp-meta';
     var rating=task.poster_rating||{};
-    var posterLine=(task.poster_name||'QuickGigs poster');
+    var posterLine=(task.poster_name||'SwiftGigs poster');
     meta.appendChild(text('span','gp-pill',posterLine));
     meta.appendChild(text('span','gp-pill',
       rating.count ? (String(rating.average)+' · '+rating.count+' review'+(rating.count===1?'':'s')) : 'New poster'
@@ -268,7 +268,7 @@
     if(phone){
       msg.href='sms:'+phone;
     }else if(email){
-      msg.href='mailto:'+encodeURIComponent(email)+'?subject='+encodeURIComponent('QuickGigs check-in');
+      msg.href='mailto:'+encodeURIComponent(email)+'?subject='+encodeURIComponent('SwiftGigs check-in');
     }else{
       msg.href='#';
       msg.onclick=function(e){e.preventDefault();alert('Teen contact details are not available on this link.');};

@@ -53,7 +53,14 @@
     heart: '<path d="M12 20.5c-4.5-2.8-9-6.7-9-11A5 5 0 0 1 8 4.7c1.6-.9 3.3-.4 4 .8.7-1.2 2.4-1.7 4-.8A5 5 0 0 1 21 9.5c0 4.3-4.5 8.2-9 11Z"/>',
     leaf: '<path d="M5 21c0-9 5-16 14-16 0 9-5 16-14 16Z"/><path d="M5 21c3-3 6-6 9-12"/>',
     package: '<path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
-    calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/>'
+    calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+    chart: '<path d="M5 20V13M12 20V6M19 20v-9"/>',
+    trendingUp: '<path d="M3 17l6.5-6.5 5 5L21 8"/><path d="M15 8h6v6"/>',
+    ban: '<circle cx="12" cy="12" r="9"/><path d="m5.5 5.5 13 13"/>',
+    flag: '<path d="M6 3v18"/><path d="M6 4h11l-3 4 3 4H6Z"/>',
+    settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
+    menu: '<path d="M4 6h16M4 12h16M4 18h16"/>'
   };
 
   function svg(name, opts) {

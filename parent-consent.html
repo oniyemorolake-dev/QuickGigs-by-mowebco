@@ -5,7 +5,7 @@
 <!-- qg-build:947d37a-1789577525 -->
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Parent consent — QuickGigs</title>
+<title>Parent consent — SwiftGigs</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-trust.css">
 <link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
@@ -16,7 +16,7 @@
 </head>
 <body class="trust-page page-parent-consent">
 <nav class="nav">
-  <a class="nav-logo" href="index.html">QuickGigs</a>
+  <a class="nav-logo" href="index.html">SwiftGigs</a>
   <div class="nav-right"><a class="back-btn" href="index.html">← Home</a></div>
 </nav>
 <main class="content">
@@ -66,14 +66,14 @@
     return;
   }
   if (payoutState === 'refresh') {
-    card.innerHTML = '<div class="consent-verify-step"><strong>Payout link expired</strong>The payout setup link expired before setup was completed. Ask QuickGigs support for a new guardian payout link.</div>';
+    card.innerHTML = '<div class="consent-verify-step"><strong>Payout link expired</strong>The payout setup link expired before setup was completed. Ask SwiftGigs support for a new guardian payout link.</div>';
     return;
   }
   if (!token) {
     card.textContent = '';
     var miss = document.createElement('p');
     miss.className = 'consent-err';
-    miss.textContent = 'Missing consent link. Ask your teen to resend from their QuickGigs dashboard.';
+    miss.textContent = 'Missing consent link. Ask your teen to resend from their SwiftGigs dashboard.';
     card.appendChild(miss);
     return;
   }
@@ -83,14 +83,14 @@
     var teen = user.name || 'Your teen';
     card.innerHTML =
       '<h2>Approve account</h2>' +
-      '<p class="consent-teen"><strong></strong> wants to use QuickGigs as a Tasker</p>' +
+      '<p class="consent-teen"><strong></strong> wants to use SwiftGigs as a Tasker</p>' +
       '<div class="teen-details"><strong>Teen details</strong><br>Name: <span id="teenDetailName"></span><br>Age band: 16–17<span id="teenDetailDobWrap"></span></div>' +
       '<ul class="consent-points">' +
-        '<li>QuickGigs is a local marketplace for paid help — errands, home help, and similar gigs.</li>' +
+        '<li>SwiftGigs is a local marketplace for paid help — errands, home help, and similar gigs.</li>' +
         '<li>Your teen can browse and apply as a Tasker. You approve each job application before the poster sees it.</li>' +
         '<li>Completed-gig payouts route to your guardian Stripe account — not directly to the teen.</li>' +
       '</ul>' +
-      '<label class="consent-check"><input type="checkbox" id="termsAccepted"> <span>I am this teen’s parent or legal guardian and accept the <a href="terms.html" target="_blank" rel="noopener">QuickGigs Terms of Service</a>.</span></label>' +
+      '<label class="consent-check"><input type="checkbox" id="termsAccepted"> <span>I am this teen’s parent or legal guardian and accept the <a href="terms.html" target="_blank" rel="noopener">SwiftGigs Terms of Service</a>.</span></label>' +
       '<button type="button" class="consent-btn" id="approveBtn" disabled>Approve account</button><br>' +
       '<button type="button" class="consent-decline" id="declineBtn">Decline</button>' +
       '<p id="consentMsg" style="margin-top:12px"></p>';
@@ -148,7 +148,7 @@
 
     var decline = document.getElementById('declineBtn');
     if (decline) decline.onclick = async function () {
-      if (!window.confirm('Decline this QuickGigs account? The teen will not be able to post or apply.')) return;
+      if (!window.confirm('Decline this SwiftGigs account? The teen will not be able to post or apply.')) return;
       decline.disabled = true;
       try {
         await consentRequest('decline');

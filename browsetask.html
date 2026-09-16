@@ -2197,6 +2197,37 @@ window.submitBrowseApplication=async function(){
       return;
     }
 
+    // Payout setup is required before applying, so an accepted application can
+    // always be paid out — see AGENTS.md blocker #5.
+    if (getCurrentUserId() && typeof getUserByFirebaseUid === 'function') {
+      try {
+        var payoutUser = await getUserByFirebaseUid(getCurrentUserId());
+        var payoutsReady = !!(payoutUser && (
+          payoutUser.stripe_payouts_enabled === true ||
+          payoutUser.stripe_payouts_enabled === 'true' ||
+          payoutUser.stripe_payouts_enabled === 1
+        ));
+        if (!payoutsReady) {
+          var payoutInline = document.getElementById('applyInlineAlert');
+          var payoutOverlay = document.getElementById('modalOverlay');
+          if (payoutInline && payoutOverlay && payoutOverlay.classList.contains('open')) {
+            payoutInline.innerHTML = 'Set up your payout details before applying, so you can get paid when a task completes. ' +
+              '<a href="profile.html#payouts" style="color:inherit;text-decoration:underline;font-weight:600">Set up payouts</a>';
+            payoutInline.className = 'apply-inline-alert is-visible is-warn';
+            try { payoutInline.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (eScroll) {}
+          } else {
+            applyNotify('Set up your payout details in Profile before applying.', '#f59e0b');
+          }
+          unlockApplyBtn();
+          return;
+        }
+      } catch (ePayout) {
+        // Lookup failure shouldn't hard-block an applicant on a network hiccup —
+        // the poster-side payout gate at task completion is the backstop.
+        if (typeof qgDebugLog === 'function') qgDebugLog('[QuickGigs apply] payout status check failed', ePayout);
+      }
+    }
+
     refreshApplySubmitEnabled();
     var priceEl = document.getElementById('offerPrice');
     var msgEl = document.getElementById('offerMsg');

@@ -4,19 +4,19 @@
 <meta charset="UTF-8">
 <!-- qg-build:947d37a-1789577525 -->
 
-<title>Sign up — QuickGigs</title>
-<meta name="description" content="Create a free QuickGigs account to hire local help or earn money doing tasks in Calgary, Edmonton, and beyond.">
+<title>Sign up — SwiftGigs</title>
+<meta name="description" content="Create a free SwiftGigs account to hire local help or earn money doing tasks in Calgary, Edmonton, and beyond.">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://quickgigs.ca/signup.html">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://quickgigs.ca/signup.html">
-<meta property="og:title" content="Sign up — QuickGigs">
-<meta property="og:description" content="Create a free QuickGigs account to hire local help or earn money doing tasks in Calgary, Edmonton, and beyond.">
+<meta property="og:title" content="Sign up — SwiftGigs">
+<meta property="og:description" content="Create a free SwiftGigs account to hire local help or earn money doing tasks in Calgary, Edmonton, and beyond.">
 <meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <meta property="og:locale" content="en_CA">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Sign up — QuickGigs">
-<meta name="twitter:description" content="Create a free QuickGigs account to hire local help or earn money doing tasks in Calgary, Edmonton, and beyond.">
+<meta name="twitter:title" content="Sign up — SwiftGigs">
+<meta name="twitter:description" content="Create a free SwiftGigs account to hire local help or earn money doing tasks in Calgary, Edmonton, and beyond.">
 <meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,15 +46,15 @@
   <div class="signup-card-wrap">
     <div class="signup-card">
       <div class="signup-top-row">
-        <a class="qg-auth-brand" href="index.html" aria-label="QuickGigs home">
+        <a class="qg-auth-brand" href="index.html" aria-label="SwiftGigs home">
           <span class="qg-auth-mark" aria-hidden="true">
             <img src="QuickGigsLogo.png" alt="" width="24" height="24" decoding="async">
           </span>
-          <span class="qg-auth-name">QuickGigs</span>
+          <span class="qg-auth-name">SwiftGigs</span>
         </a>
         <button type="button" class="signup-theme-btn" id="signupThemeBtn" onclick="toggleSignupTheme()">Light</button>
       </div>
-      <h1 class="signup-title" id="cardTitle">Join QuickGigs</h1>
+      <h1 class="signup-title" id="cardTitle">Join SwiftGigs</h1>
       <p class="signup-subtitle" id="cardSubtitle">Canada's marketplace for everyday tasks — post a gig or earn helping others</p>
 
       <div class="signup-msg error" id="errorMsg"></div>
@@ -65,7 +65,7 @@
           <span class="signup-step-counter" id="stepCounter">Step 1 of 7</span>
           <span id="stepLabel">Account</span>
         </div>
-        <div class="signup-step-icon" id="stepIcon" aria-hidden="true">✨</div>
+        <div class="signup-step-icon" id="stepIcon" aria-hidden="true" style="color:#fff"><svg class="qg-ico" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><path d="m6.5 6.5 2 2M15.5 15.5l2 2M17.5 6.5l-2 2M8.5 15.5l-2 2"/><path d="M12 8.5 13.5 12 17 13.5 13.5 15 12 18.5 10.5 15 7 13.5 10.5 12Z"/></svg></div>
 
         <div class="qg-wizard-progress" aria-hidden="true">
           <span class="qg-wizard-dot active"></span><span class="qg-wizard-dot"></span><span class="qg-wizard-dot"></span>
@@ -77,12 +77,12 @@
         <div class="qg-wizard-step active" data-step="account">
           <div class="signup-role-grid">
             <button type="button" class="signup-role active" data-start-role="worker" onclick="setRole('worker',this)">
-              <span class="signup-role-emoji" aria-hidden="true">💰</span>
+              <span class="signup-role-emoji" aria-hidden="true" data-qg-ico="dollar" data-qg-ico-size="28"></span>
               <span class="signup-role-label">Find work</span>
               <span class="signup-role-desc">Tasker mode · browse gigs and earn</span>
             </button>
             <button type="button" class="signup-role" data-start-role="poster" onclick="setRole('poster',this)">
-              <span class="signup-role-emoji" aria-hidden="true">📋</span>
+              <span class="signup-role-emoji" aria-hidden="true" data-qg-ico="clipboard" data-qg-ico-size="28"></span>
               <span class="signup-role-label">Post tasks</span>
               <span class="signup-role-desc">Poster mode · hire local taskers</span>
             </button>
@@ -96,7 +96,7 @@
         <!-- Step 1: Phone + password -->
         <div class="qg-wizard-step" data-step="security">
           <div class="qg-step-title">Secure your account</div>
-          <p class="qg-step-sub">Phone and password are required for all QuickGigs members.</p>
+          <p class="qg-step-sub">Phone and password are required for all SwiftGigs members.</p>
           <div class="signup-field"><label for="phone">Phone number <span class="req">*</span></label><input type="tel" id="phone" name="phone" placeholder="+1 (403) 000-0000" autocomplete="section-sec tel" inputmode="tel" enterkeyhint="next" required aria-describedby="phoneError"><div class="signup-error" id="phoneError" role="alert">Please enter a valid phone number</div></div>
           <div class="signup-field"><label for="password">Password <span class="req">*</span></label><input type="password" id="password" placeholder="At least 8 characters" autocomplete="new-password" enterkeyhint="next" required><div class="signup-error" id="passwordError">Password must be at least 8 characters</div></div>
           <div class="signup-field"><label for="confirmPassword">Confirm password <span class="req">*</span></label><input type="password" id="confirmPassword" placeholder="Repeat your password" autocomplete="new-password" enterkeyhint="done" required><div class="signup-error" id="confirmError">Passwords do not match</div></div>
@@ -145,7 +145,7 @@
         <!-- Step 3: Birthday + specific age -->
         <div class="qg-wizard-step" data-step="dob">
           <div class="qg-step-title">Date of birth</div>
-          <p class="qg-step-sub">We need your exact birthday to verify you're old enough to use QuickGigs.</p>
+          <p class="qg-step-sub">We need your exact birthday to verify you're old enough to use SwiftGigs.</p>
 
           <div class="qg-dob-summary ok" id="qgDobSummary">
             <div class="qg-dob-date">Your birthday</div>
@@ -170,7 +170,7 @@
         <div class="qg-wizard-step" data-step="guardian" data-skip="1">
           <div class="qg-step-title">Parent or guardian</div>
           <p class="qg-step-sub">You're 16 or 17 — Canadian law requires a parent/guardian to approve your account.</p>
-          <div class="qg-guardian-note">📧 We'll email them a one-click consent link. Until approved, you can browse but not post or apply.</div>
+          <div class="qg-guardian-note"><span data-qg-ico="mail" data-qg-ico-size="14"></span> We'll email them a one-click consent link. Until approved, you can browse but not post or apply.</div>
           <div class="signup-field"><label>Guardian full name <span class="req">*</span></label><input type="text" id="guardianName" placeholder="Parent or guardian name" required></div>
           <div class="signup-field"><label>Guardian email <span class="req">*</span></label><input type="email" id="guardianEmail" placeholder="parent@example.com" required></div>
           <div class="signup-field"><label>Guardian phone (optional)</label><input type="tel" id="guardianPhone" placeholder="+1 (403) 000-0000"></div>
@@ -190,7 +190,7 @@
           </div>
           <div class="qg-wizard-nav" style="margin-top:1rem">
             <button type="button" class="signup-btn signup-btn-secondary" data-qg-back>← Back</button>
-            <button type="button" class="signup-btn" id="submitBtn">Create account ✨</button>
+            <button type="button" class="signup-btn" id="submitBtn">Create account</button>
           </div>
         </div>
       </div>
@@ -224,6 +224,7 @@
 <script defer src="supabase-db.js?v=20260903gate1"></script>
 <script defer src="qg-announcement.js?v=20260728xss1"></script>
 <script defer src="qg-notifications.js"></script>
+<script src="qg-icons.js"></script>
 <script src="qg-theme.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -479,13 +480,13 @@ onAuthStateChanged(auth, async function(user) {
 });
 
 var STEP_META = [
-  { title: 'Join QuickGigs', sub: 'Canada\'s marketplace for everyday tasks — post a gig or earn helping others', icon: '✨', label: 'Account' },
-  { title: 'Secure your account', sub: 'Phone and password keep your account safe', icon: '🔐', label: 'Security' },
-  { title: 'Your pronouns', sub: 'So people can address you respectfully', icon: '💬', label: 'Pronouns' },
-  { title: 'About you', sub: 'Pick the option that fits you best', icon: '🌈', label: 'Identity' },
-  { title: 'Date of birth', sub: 'We verify your age to keep QuickGigs safe', icon: '🎂', label: 'Birthday' },
-  { title: 'Parent consent', sub: 'Required for members aged 16–17', icon: '👨‍👩‍👧', label: 'Guardian' },
-  { title: 'Almost there', sub: 'Create your QuickGigs account', icon: '🚀', label: 'Finish' }
+  { title: 'Join SwiftGigs', sub: 'Canada\'s marketplace for everyday tasks — post a gig or earn helping others', icon: 'sparkles', label: 'Account' },
+  { title: 'Secure your account', sub: 'Phone and password keep your account safe', icon: 'lock', label: 'Security' },
+  { title: 'Your pronouns', sub: 'So people can address you respectfully', icon: 'message', label: 'Pronouns' },
+  { title: 'About you', sub: 'Pick the option that fits you best', icon: 'user', label: 'Identity' },
+  { title: 'Date of birth', sub: 'We verify your age to keep SwiftGigs safe', icon: 'calendar', label: 'Birthday' },
+  { title: 'Parent consent', sub: 'Required for members aged 16–17', icon: 'users', label: 'Guardian' },
+  { title: 'Almost there', sub: 'Create your SwiftGigs account', icon: 'checkCircle', label: 'Finish' }
 ];
 var STEP_TOTAL = STEP_META.length;
 
@@ -550,7 +551,7 @@ function updateSignupStepUI(idx) {
   document.getElementById('stepCounter').textContent = 'Step ' + (idx + 1) + ' of ' + STEP_TOTAL;
   document.getElementById('stepLabel').textContent = meta.label;
   var icon = document.getElementById('stepIcon');
-  icon.textContent = meta.icon;
+  icon.innerHTML = typeof qgIcon === 'function' ? qgIcon(meta.icon, { size: 26 }) : '';
   icon.style.animation = 'none';
   void icon.offsetWidth;
   icon.style.animation = '';
@@ -696,7 +697,7 @@ document.getElementById('submitBtn').onclick = async function() {
     errorMsg.textContent = 'Enter your date of birth — we need it for age verification.';
     errorMsg.style.display = 'block';
     if (wizard.showStep) { wizard.showStep(4); updateSignupStepUI(4); }
-    submitBtn.textContent = 'Create account ✨';
+    submitBtn.textContent = 'Create account';
     submitBtn.disabled = false;
     return;
   }
@@ -704,7 +705,7 @@ document.getElementById('submitBtn').onclick = async function() {
     errorMsg.textContent = 'Parent/guardian details are required for ages 16–17.';
     errorMsg.style.display = 'block';
     if (wizard.showStep) { wizard.showStep(5); updateSignupStepUI(5); }
-    submitBtn.textContent = 'Create account ✨';
+    submitBtn.textContent = 'Create account';
     submitBtn.disabled = false;
     return;
   }
@@ -824,7 +825,7 @@ document.getElementById('submitBtn').onclick = async function() {
       ? (saveResult.email_sent
         ? 'Account created! We emailed ' + (identity.guardian_email || 'your parent/guardian') + ' a one-click approval link. Redirecting…'
         : 'Account created, but the guardian approval email could not be sent. Ask your parent to check spam, or contact support@quickgigs.ca.')
-      : 'Welcome to QuickGigs 🎉 Redirecting…';
+      : 'Welcome to SwiftGigs! Redirecting…';
     okMsg.style.display = 'block';
 
     var dest = account.role === 'worker'
@@ -846,7 +847,7 @@ document.getElementById('submitBtn').onclick = async function() {
     }
     if (error.code === 'auth/invalid-email') message = 'Enter a valid email address.';
     if (error.code === 'auth/weak-password') message = 'Password is too weak. Use at least 8 characters.';
-    if (error.code === 'underage') message = 'You must be at least 16 to join QuickGigs';
+    if (error.code === 'underage') message = 'You must be at least 16 to join SwiftGigs';
     if (error.code === 'invalid_date_of_birth') message = 'Enter a valid date of birth.';
     if (error.code === 'guardian_name_required' || error.code === 'guardian_email_required') {
       message = 'Parent/guardian name and email are required for ages 16–17.';
@@ -856,7 +857,7 @@ document.getElementById('submitBtn').onclick = async function() {
     if (error.code === 'auth/network-request-failed') message = 'Network error — check your connection and try again.';
     errorMsg.textContent = message;
     errorMsg.style.display = 'block';
-    submitBtn.textContent = 'Create account ✨';
+    submitBtn.textContent = 'Create account';
     submitBtn.disabled = false;
   }
 };

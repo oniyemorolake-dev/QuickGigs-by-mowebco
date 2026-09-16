@@ -4,19 +4,19 @@
 <meta charset="UTF-8">
 <!-- qg-build:947d37a-1789577525 -->
 
-<title>Choose how you will use QuickGigs</title>
-<meta name="description" content="Start as a poster or tasker on QuickGigs — Canada's marketplace for everyday tasks.">
+<title>Choose how you will use SwiftGigs</title>
+<meta name="description" content="Start as a poster or tasker on SwiftGigs — Canada's marketplace for everyday tasks.">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://quickgigs.ca/modeselector.html">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://quickgigs.ca/modeselector.html">
-<meta property="og:title" content="Choose how you will use QuickGigs">
-<meta property="og:description" content="Start as a poster or tasker on QuickGigs — Canada's marketplace for everyday tasks.">
+<meta property="og:title" content="Choose how you will use SwiftGigs">
+<meta property="og:description" content="Start as a poster or tasker on SwiftGigs — Canada's marketplace for everyday tasks.">
 <meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <meta property="og:locale" content="en_CA">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Choose how you will use QuickGigs">
-<meta name="twitter:description" content="Start as a poster or tasker on QuickGigs — Canada's marketplace for everyday tasks.">
+<meta name="twitter:title" content="Choose how you will use SwiftGigs">
+<meta name="twitter:description" content="Start as a poster or tasker on SwiftGigs — Canada's marketplace for everyday tasks.">
 <meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -126,18 +126,18 @@ body.light .earn .choice-icon{background:#ede9ff;}
 </head>
 <body>
 
-<button class="mode-btn" id="modeBtn" onclick="toggleMode()">☀️ Light</button>
+<button class="mode-btn" id="modeBtn" onclick="toggleMode()">Light</button>
 
 <div class="card">
-  <div class="logo">QuickGigs</div>
+  <div class="logo">SwiftGigs</div>
 
   <div class="greeting">
-    <div class="greeting-hi" id="greetingHi">Hey there 👋</div>
+    <div class="greeting-hi" id="greetingHi">Hey there</div>
     <div class="greeting-sub">What are you here to do today?<br>You can always switch later.</div>
   </div>
 
   <a class="choice-card hire" href="dashboard.html" onclick="chooseRoleMode('poster')">
-    <div class="choice-icon">📋</div>
+    <div class="choice-icon" data-qg-ico="clipboard" data-qg-ico-size="28"></div>
     <div class="choice-text">
       <div class="choice-title">I need help</div>
       <div class="choice-desc">Post a task and find someone local to get it done</div>
@@ -146,7 +146,7 @@ body.light .earn .choice-icon{background:#ede9ff;}
   </a>
 
   <a class="choice-card earn" href="dashboard.html" onclick="chooseRoleMode('tasker')">
-    <div class="choice-icon">💼</div>
+    <div class="choice-icon" data-qg-ico="briefcase" data-qg-ico-size="28"></div>
     <div class="choice-text">
       <div class="choice-title">I want to earn</div>
       <div class="choice-desc">Browse tasks near you, apply and get paid</div>
@@ -183,7 +183,7 @@ onAuthStateChanged(auth, (user) => {
   if (!user) { window.location.href = 'login.html'; return; }
   const name = user.displayName || user.email.split('@')[0];
   const firstName = name.split(' ')[0];
-  document.getElementById('greetingHi').textContent = 'Hey ' + firstName + ' 👋';
+  document.getElementById('greetingHi').textContent = 'Hey ' + firstName;
 
   // Skip only when signup already locked a preferred role (do not invent a default skip)
   const signupRole = localStorage.getItem('qg-role');
@@ -193,6 +193,7 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 </script>
+<script src="qg-icons.js"></script>
 <script src="qg-theme.js"></script>
 <script src="qg-brand-init.js"></script>
 <script>
@@ -209,7 +210,7 @@ window.chooseRoleMode = function(mode) {
 var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : true;
 function applyTheme() {
   document.body.className = isDark ? '' : 'light';
-  document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark';
+  document.getElementById('modeBtn').textContent = isDark ? 'Light' : 'Dark';
 }
 window.toggleMode = function() {
   isDark = !isDark;
