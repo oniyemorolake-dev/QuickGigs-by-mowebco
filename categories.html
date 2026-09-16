@@ -66,7 +66,7 @@ else {
 var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
 function applyTheme() {
   if (typeof window.QG_applyTheme === 'function') window.QG_applyTheme(isDark, 'modeBtn', false);
-  else document.body.className = isDark ? '' : 'light';
+  else document.body.classList.toggle('light', !isDark);
 }
 window.toggleTheme = function () {
   isDark = !isDark;
