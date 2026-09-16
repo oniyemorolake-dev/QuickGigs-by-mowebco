@@ -13,6 +13,11 @@ tmp-chrome-*/
 .env.*
 !.env.example
 
+# wip-safety-commit.ps1 runtime state
+scripts/wip-safety.pid
+scripts/wip-safety.log
+scripts/wip-safety.err
+
 # OS / editor
 .DS_Store
 Thumbs.db
