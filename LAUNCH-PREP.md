@@ -7,16 +7,17 @@ Pin **[YOUR-SIDE.md](YOUR-SIDE.md)** for one-time setup tasks.
 
 ---
 
-## Launch switch (when Stripe is live)
+## Launch switch — DONE
 
-In `qg-config.js`:
+`qg-config.js` is already flipped:
 
 ```js
-chatUnlockAfter: 'payment',  // was 'accept' for beta
+chatUnlockAfter: 'payment',
 paymentsEnabled: true,
 ```
 
-Until then, leave beta settings. Chat stays open on accept.
+Chat is escrow-gated. Still on a `pk_test_` key, so this is test-mode payments,
+not live money. The remaining flip is Test → Live (Phase 6), not this config.
 
 ---
 
@@ -60,7 +61,10 @@ Run once before wiring Stripe:
 | 1 | `supabase/payments.sql` | `payments` table for escrow records |
 | 2 | `supabase/rls-secure.sql` | **Only when** Firebase auth is enabled in Supabase |
 
-Do **not** run `rls-secure.sql` until Supabase Auth → Firebase is on, or the app will break for current users.
+**Both are done.** Firebase auth is linked and RLS is live on all 24 public tables
+(verified 2026-09-16). The original warning below is kept for history only:
+
+> Do **not** run `rls-secure.sql` until Supabase Auth → Firebase is on, or the app will break for current users.
 
 ---
 
@@ -77,15 +81,34 @@ Recommended model: **Stripe Connect Express + Payment Intent + application fee**
 | 5 | On complete task → transfer/release to worker (Connect) | Edge Function |
 | 6 | Flip `qg-config.js` to `payment` mode | Launch day |
 
-**Already in repo:** `payment.html` (placeholder), `savePayment()` / `getPaymentByTask()` in `supabase-db.js`, chat lock copy for payment mode.
+**Status: Phase 4 is built** (verified 2026-09-16). All six steps ship as Edge Functions:
 
-**Not in repo yet:** Stripe keys in Supabase secrets, Checkout session, Connect onboarding, webhooks.
+- Checkout / escrow — `create-checkout`, `confirm-checkout`, `create-escrow-intent`, `sync-payment`
+- Connect Express onboarding — `create-connect-link` (real `accountLinks.create`,
+  `type: 'account_onboarding'`), `sync-connect-status`, readiness gated on
+  `charges_enabled && payouts_enabled` via `_shared/connect-ready.ts`
+- Webhooks — `stripe-webhook`
+- Release / refund — `release-payout`, `refund-payment`
+- Config flip — done (see Launch switch above)
+
+Under-18 guard: minors cannot open their own Express account; `create-connect-link`
+routes to a guardian-owned account instead.
 
 ---
 
-## Phase 5 — Server-side enforcement (RUN LATER)
+## Phase 5 — Server-side enforcement (3 of 5 done)
 
-**Do not start until:** Firebase JWT → Supabase is linked, RLS is on, and admin reads go through a service-role Edge Function (never put the service-role key in frontend code).
+**Preconditions are all met** (verified against the live DB 2026-09-16):
+
+- Firebase JWT → Supabase **is linked**. `public.qg_is_signed_in()` validates the
+  issuer `https://securetoken.google.com/%` and `public.qg_uid()` returns the Firebase
+  `sub`. RLS policies key on those.
+- RLS **is on for all 24 public tables**. `admins`, `admin_actions`, `admin_notes`,
+  `notification_queue`, `phone_verification_challenges` intentionally carry RLS with
+  **zero policies** — deny-all to anon, service-role only.
+- Admin reads **do** go through a service-role Edge Function (`admin-console`).
+
+Remaining gaps are **#1 (contact filter)** and **#4 (rate limits)** — see checklist.
 
 Client checks stay as UX only. Real enforcement moves to Edge Functions + RLS.
 
@@ -97,15 +120,23 @@ Client checks stay as UX only. Real enforcement moves to Edge Functions + RLS.
 | 4 | Rate limits | Client throttle only (if any) | Per-user action limits enforced in Edge Functions / DB (post, apply, message, report) |
 | 5 | Fee math (tiered) | `feeBreakdown.js` + `qg-utils.js`; `create-checkout` uses `_shared/fee.ts` | Keep fee/payout math **only** server-side at payment/release time; never trust client `amount` / `platform_fee`. Rates: one-off 25%, recurring 10%, sub 20%/8% |
 
-### Checklist (when ready)
+### Checklist
 
-- [ ] Edge Function: `filter-message` (or message insert hook) — port `analyzeOffPlatformContact` logic; return 400 and do not insert
-- [ ] Edge Function / RLS: block message insert unless escrow payment exists for `task_id` + poster/worker pair
-- [ ] Edge Function: `admin-api` — service role; authz via `admins` or JWT claim; proxy report/dispute reads + moderation writes
-- [ ] Point `admin.html` moderation/reports/disputes at `admin-api` (remove direct anon table reads for those)
-- [ ] Rate-limit middleware on post / apply / message / report functions
+- [ ] **GAP** — Edge Function `filter-message` (or message insert hook): port
+      `analyzeOffPlatformContact`; return 400 and do not insert. Still **client-only**
+      in `qg-utils.js`; no server port exists. A crafted request can post contact info.
+- [x] Escrow-gated chat enforced server-side — `secure-messaging` owns `is_unlocked`:
+      `cleanPatch()` strips client attempts to set it, `create` always starts locked,
+      `send` returns 403 `conversation_locked`. Unlock only via webhook / `confirm-checkout`.
+- [x] Service-role admin Edge Function — shipped as `admin-console` (not `admin-api`);
+      authz via `isAdminUser()` against the `admins` table, keyed on Firebase UID.
+- [x] `admin.html` has no direct anon table reads left; it goes through `admin-console`.
+- [ ] **GAP** — Rate-limit middleware on post / apply / message / report. The only
+      throttle anywhere is a single `resend_too_soon` 429 on guardian-consent resend.
 - [ ] Audit `create-checkout`, `confirm-checkout`, `release-payout`, `refund-payment` — amounts from DB task/app only; fee via `_shared/fee.ts` (not a hardcoded 25%)
-- [ ] Confirm no service-role key in any HTML/JS shipped to the browser
+- [x] No service-role or Stripe secret key in any shipped frontend file — scanned
+      2026-09-16. The two JWTs in `supabase-db.js` and `supabaseClient.js` both decode
+      to `role=anon`. Matches for `sk_`/`service_role` are comments and error strings only.
 - [ ] Apply `supabase/tasks-rate-recurring.sql` before enabling hourly/recurring UI
 - [ ] Redeploy `create-checkout` after fee helper changes
 
@@ -125,10 +156,13 @@ Client checks stay as UX only. Real enforcement moves to Edge Functions + RLS.
 
 ## Phase 6 — Launch day checklist
 
-- [ ] Stripe in **Live** mode (not Test)
-- [ ] `chatUnlockAfter: 'payment'` + `paymentsEnabled: true`
-- [ ] `rls-secure.sql` applied
-- [ ] Phase 5 server enforcements live (or accepted residual risk documented)
+- [ ] Stripe in **Live** mode (not Test) — still `pk_test_`; this is the main blocker
+- [x] `chatUnlockAfter: 'payment'` + `paymentsEnabled: true`
+- [x] `rls-secure.sql` applied — RLS on all 24 public tables
+- [ ] Phase 5 server enforcements live — 3 of 5 done; **contact filter** and
+      **rate limits** are the accepted-risk-or-fix decisions before launch
+- [ ] Pin `search_path` on `public.qg_uid` / `public.qg_is_signed_in` (advisor WARN,
+      still open — these two gate every RLS policy)
 - [ ] Terms/privacy match live payment flow
 - [ ] Test: post → apply → accept → **pay** → chat → complete → payout
 - [ ] Admin console bookmarked for moderation
