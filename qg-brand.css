@@ -12,7 +12,7 @@
   font-style: normal;
   font-size: 1.45rem;
   font-weight: 700;
-  color: #c8a8e9 !important;
+  color: var(--primary, #8B5CF6) !important;
   line-height: 1;
   letter-spacing: -0.01em;
 }
@@ -24,34 +24,39 @@
   font-weight: 500;
   letter-spacing: normal;
   text-transform: none;
-  color: #c8a8e9 !important;
+  /* Lightened toward --text rather than flat var(--primary): this is 11px/500 on
+     a --primary-tinted pill, and flat --primary measures 3.5:1 there in dark mode
+     (AA needs 4.5:1 at this size). The mix is 7.0:1 dark / 9.3:1 light, and in
+     dark mode resolves to ~#C0A6F8 — the lavender this rule used to hardcode. */
+  color: color-mix(in srgb, var(--primary, #8B5CF6) 50%, var(--text, #F4F0FA)) !important;
   line-height: 1.2;
   display: inline-flex;
   align-items: center;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(107, 63, 160, 0.2);
-  border: 0.5px solid rgba(200, 168, 233, 0.22);
+  background: color-mix(in srgb, var(--primary, #8B5CF6) 20%, transparent);
+  border: 0.5px solid color-mix(in srgb, var(--primary, #8B5CF6) 22%, transparent);
   white-space: nowrap;
 }
 
-/* Same dark header on every app page */
+/* Same header treatment on every app page. --surface/--primary are theme-aware,
+   so these flip to the white/dark-purple light variant on their own. */
 .nav {
-  background: #120828 !important;
+  background: var(--surface, #16131F) !important;
   border-bottom: none !important;
-  box-shadow: 0 3px 0 #6b3fa0, 0 1px 0 rgba(200, 168, 233, 0.22);
+  box-shadow: 0 3px 0 var(--primary, #8B5CF6),
+              0 1px 0 color-mix(in srgb, var(--primary, #8B5CF6) 22%, transparent);
 }
 
-/* Light mode: white nav + dark purple text (see qg-light-nav.css for full rules) */
+/* Light mode keeps a hairline border and a soft drop shadow instead of the 3px
+   purple underline, so it still needs its own rule — the colors above already
+   resolve correctly and are not repeated here.
+   NOTE: qg-light-nav.css duplicates these selectors with a --accent/--surface-1
+   vocabulary, but it is referenced by zero HTML files, so it cannot override
+   this. Do not "defer to" that file without first adding a <link> for it. */
 body.light .nav {
-  background: #ffffff !important;
-  border-bottom: 1px solid #e8e2ff !important;
-  box-shadow: 0 2px 12px rgba(107, 63, 160, 0.08) !important;
-}
-
-body.light .nav-brand .nav-logo,
-body.light .nav-brand .nav-role {
-  color: #6b3fa0 !important;
+  border-bottom: 1px solid var(--border, #E8DFF2) !important;
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--primary, #6B21A8) 8%, transparent) !important;
 }
 
 /* Never show logo without role · beta lockup */
