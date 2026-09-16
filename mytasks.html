@@ -603,6 +603,13 @@ function renderApplicantAction(a, taskId, task) {
   var appId = getField(a, 'APP_ID');
   var workerId = getField(a, 'WORKER_ID');
   var status = (getField(a, 'STATUS') || 'pending').toLowerCase();
+  var guardianStatus = (getField(a, 'GUARDIAN_STATUS') || 'approved').toLowerCase();
+  if (status === 'pending' && guardianStatus === 'pending_guardian') {
+    return '<span class="accept-status">'+(typeof qgIcon==='function'?qgIcon('clock',{size:12}):'')+' Waiting for guardian approval</span>';
+  }
+  if (status === 'pending' && guardianStatus === 'rejected') {
+    return '<span class="accept-status declined">Guardian declined</span>';
+  }
   if (status === 'accepted') {
     if (isPaymentGatedChat()) {
       if (typeof isTaskPaid === 'function' && isTaskPaid(taskId)) {
