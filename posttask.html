@@ -4,19 +4,19 @@
 <meta charset="UTF-8">
 <!-- qg-build:947d37a-1789577525 -->
 
-<title>Post a task · QuickGigs</title>
-<meta name="description" content="Post a task in minutes on QuickGigs. Hire local taskers for errands, cleaning, tutoring, and more across Canada.">
+<title>Post a task · SwiftGigs</title>
+<meta name="description" content="Post a task in minutes on SwiftGigs. Hire local taskers for errands, cleaning, tutoring, and more across Canada.">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://quickgigs.ca/posttask.html">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://quickgigs.ca/posttask.html">
-<meta property="og:title" content="Post a task · QuickGigs">
-<meta property="og:description" content="Post a task in minutes on QuickGigs. Hire local taskers for errands, cleaning, tutoring, and more across Canada.">
+<meta property="og:title" content="Post a task · SwiftGigs">
+<meta property="og:description" content="Post a task in minutes on SwiftGigs. Hire local taskers for errands, cleaning, tutoring, and more across Canada.">
 <meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <meta property="og:locale" content="en_CA">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Post a task · QuickGigs">
-<meta name="twitter:description" content="Post a task in minutes on QuickGigs. Hire local taskers for errands, cleaning, tutoring, and more across Canada.">
+<meta name="twitter:title" content="Post a task · SwiftGigs">
+<meta name="twitter:description" content="Post a task in minutes on SwiftGigs. Hire local taskers for errands, cleaning, tutoring, and more across Canada.">
 <meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -256,6 +256,7 @@ body{padding-bottom:76px;}
 <link rel="stylesheet" href="qg-swift.css">
 </head>
 <body class="theme-posttask">
+<script src="qg-icons.js"></script>
 <script src="qg-theme.js"></script>
 <script defer src="qg-location.js?v=20260827geo1"></script>
 <script defer src="qg-nav.js"></script>
@@ -264,10 +265,10 @@ body{padding-bottom:76px;}
 <nav class="nav">
   <a class="back-btn" href="dashboard.html"><span data-qg-ico="arrowRight" data-qg-ico-size="14" style="display:inline-flex;transform:scaleX(-1)"></span> Dashboard</a>
   <div class="nav-brand">
-    <span class="nav-logo">QuickGigs</span>
+    <span class="nav-logo sg-wordmark">SwiftGigs</span>
     <span class="nav-role">POSTER</span>
   </div>
-  <button class="mode-toggle" onclick="toggleMode()" id="modeBtn">☀️ Light</button>
+  <button class="mode-toggle" onclick="toggleMode()" id="modeBtn">Light</button>
 </nav>
 
 <!-- MAIN FORM -->
@@ -275,10 +276,10 @@ body{padding-bottom:76px;}
 <div class="content" id="formContent">
 
   <div id="postModeBanner" class="hint-box" style="display:none;margin-bottom:16px">
-    <span style="font-size:16px">💡</span>
+    <span data-qg-ico="lightbulb" data-qg-ico-size="16"></span>
     <p class="hint-text">Posting a task switches you to poster mode. <button type="button" class="error-skip-btn" style="margin-left:8px" onclick="switchToPosterForPost()">Switch to poster now</button></p>
   </div>
-  <span class="step-pill">✏️ Post a task</span>
+  <span class="step-pill">Post a task</span>
   <p class="page-title">What do you need done?</p>
   <p class="page-sub">Takes less than 60 seconds to post</p>
 
@@ -295,17 +296,17 @@ body{padding-bottom:76px;}
     <span class="section-label">How urgent is this?</span>
     <div class="mode-grid">
       <div class="mode-card selected" data-mode="quick" onclick="selectMode(this)">
-        <span class="mode-emoji">⚡</span>
+        <span class="mode-emoji" data-qg-ico="zap" data-qg-ico-size="20"></span>
         <span class="mode-name">Quick</span>
         <span class="mode-desc">Within hours</span>
       </div>
       <div class="mode-card" data-mode="standard" onclick="selectMode(this)">
-        <span class="mode-emoji">📋</span>
+        <span class="mode-emoji" data-qg-ico="clipboard" data-qg-ico-size="20"></span>
         <span class="mode-name">Standard</span>
         <span class="mode-desc">This week</span>
       </div>
       <div class="mode-card" data-mode="recurring" onclick="selectMode(this)">
-        <span class="mode-emoji">🔄</span>
+        <span class="mode-emoji" data-qg-ico="repeat" data-qg-ico-size="20"></span>
         <span class="mode-name">Recurring</span>
         <span class="mode-desc">Ongoing</span>
       </div>
@@ -329,18 +330,18 @@ body{padding-bottom:76px;}
   <div class="section">
     <span class="section-label">Category</span>
     <div class="cat-wrap" id="catWrap">
-      <span class="cat-chip" onclick="selectCat(this)">🚗 Errands</span>
-      <span class="cat-chip" onclick="selectCat(this)">🏠 Home</span>
-      <span class="cat-chip" onclick="selectCat(this)">📚 Tutoring</span>
-      <span class="cat-chip" onclick="selectCat(this)">💅 Beauty</span>
-      <span class="cat-chip" onclick="selectCat(this)">📦 Moving</span>
-      <span class="cat-chip" onclick="selectCat(this)">🍳 Cooking</span>
-      <span class="cat-chip" onclick="selectCat(this)">💻 Tech</span>
-      <span class="cat-chip" onclick="selectCat(this)">👶 Care</span>
-      <span class="cat-chip" onclick="selectCat(this)">🌱 Gardening</span>
-      <span class="cat-chip" onclick="selectCat(this)">🎉 Events</span>
-      <span class="cat-chip" onclick="selectCat(this)">🔧 Trades</span>
-      <span class="cat-chip" onclick="selectCat(this)">📋 Other</span>
+      <span class="cat-chip" data-qg-ico="car" data-qg-ico-size="14" onclick="selectCat(this)">Errands</span>
+      <span class="cat-chip" data-qg-ico="home" data-qg-ico-size="14" onclick="selectCat(this)">Home</span>
+      <span class="cat-chip" data-qg-ico="graduationCap" data-qg-ico-size="14" onclick="selectCat(this)">Tutoring</span>
+      <span class="cat-chip" data-qg-ico="scissors" data-qg-ico-size="14" onclick="selectCat(this)">Beauty</span>
+      <span class="cat-chip" data-qg-ico="package" data-qg-ico-size="14" onclick="selectCat(this)">Moving</span>
+      <span class="cat-chip" data-qg-ico="pot" data-qg-ico-size="14" onclick="selectCat(this)">Cooking</span>
+      <span class="cat-chip" data-qg-ico="laptop" data-qg-ico-size="14" onclick="selectCat(this)">Tech</span>
+      <span class="cat-chip" data-qg-ico="heart" data-qg-ico-size="14" onclick="selectCat(this)">Care</span>
+      <span class="cat-chip" data-qg-ico="leaf" data-qg-ico-size="14" onclick="selectCat(this)">Gardening</span>
+      <span class="cat-chip" data-qg-ico="party" data-qg-ico-size="14" onclick="selectCat(this)">Events</span>
+      <span class="cat-chip" data-qg-ico="wrench" data-qg-ico-size="14" onclick="selectCat(this)">Trades</span>
+      <span class="cat-chip" data-qg-ico="clipboard" data-qg-ico-size="14" onclick="selectCat(this)">Other</span>
     </div>
     <div class="field-error" id="catError">Select a category</div>
   </div>
@@ -357,7 +358,7 @@ body{padding-bottom:76px;}
         <strong>16+ welcome</strong><span>Teen taskers may request guardian approval.</span>
       </button>
       <button type="button" class="age-pref-card" data-age-preference="any_with_guardian" onclick="selectAgePreference(this)">
-        <strong>Any age</strong><span>Currently 16+ under QuickGigs policy; guardian approval applies.</span>
+        <strong>Any age</strong><span>Currently 16+ under SwiftGigs policy; guardian approval applies.</span>
       </button>
     </div>
   </div>
@@ -396,7 +397,7 @@ body{padding-bottom:76px;}
     <p class="field-hint" id="scheduleHint">Pick a date and time so taskers know when to show up.</p>
 
     <div class="schedule-preview" id="schedulePreview" aria-live="polite">
-      <span class="schedule-preview-icon" aria-hidden="true">📅</span>
+      <span class="schedule-preview-icon" aria-hidden="true" data-qg-ico="calendar" data-qg-ico-size="18"></span>
       <div class="schedule-preview-text" id="schedulePreviewText">
         <span class="schedule-preview-main" id="schedulePreviewMain">Select a date</span>
         <span class="schedule-preview-sub" id="schedulePreviewSub">Tap a day below</span>
@@ -486,7 +487,7 @@ body{padding-bottom:76px;}
 
   <!-- HINT -->
   <div class="hint-box" id="hintBox">
-    <span style="font-size:16px;">💡</span>
+    <span data-qg-ico="lightbulb" data-qg-ico-size="16"></span>
     <p class="hint-text" id="hintText">Typical budgets for this category: <strong>$20 – $40</strong>. Minimum budget is $20.</p>
   </div>
 
@@ -502,7 +503,7 @@ body{padding-bottom:76px;}
 
 <!-- SUCCESS SCREEN -->
 <div class="success-screen content" id="successScreen">
-  <div class="success-icon">🎉</div>
+  <div class="success-icon" data-qg-ico="party" data-qg-ico-size="48"></div>
   <p class="success-title">Task posted</p>
   <p class="success-sub">Your task is live under <strong>My Tasks → Posted</strong> (Poster mode). Browse only shows other people's tasks — not your own.</p>
   <button class="success-btn" onclick="window.location.href='mytasks.html?tab=posted'">View in My Tasks</button>
@@ -619,7 +620,7 @@ function applyTheme() {
     document.body.classList.toggle('light', !isDark);
     document.body.classList.add('theme-posttask', 'page-posttask');
     var btn = document.getElementById('modeBtn');
-    if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+    if (btn) btn.textContent = isDark ? 'Light' : 'Dark';
   }
 }
 window.toggleMode = function() {
@@ -918,7 +919,7 @@ function renderDateStrip() {
       '<span class="date-chip-label">' + monthLabel + '</span></div>';
   }
 
-  html += '<div class="date-chip date-more-chip" onclick="openMoreDates()">📅<br><span style="font-size:10px;margin-top:4px;display:block">More</span></div>';
+  html += '<div class="date-chip date-more-chip" onclick="openMoreDates()">' + (typeof qgIcon === 'function' ? qgIcon('calendar', { size: 16 }) : '') + '<br><span style="font-size:10px;margin-top:4px;display:block">More</span></div>';
   strip.innerHTML = html;
 
   var active = strip.querySelector('.date-chip.selected');
@@ -1265,7 +1266,7 @@ window.handleSubmit = async function(skipPhotos, publishMode) {
 
   // FIRST-PASS content moderation (once per submit). Server + API later.
   var modMsg = (typeof QG_CONTENT_MOD_MESSAGE === 'string' && QG_CONTENT_MOD_MESSAGE) ||
-    "This contains language that isn't allowed on QuickGigs ? please edit and try again";
+    "This contains language that isn't allowed on SwiftGigs ? please edit and try again";
   var titleMod = typeof moderateText === 'function' ? moderateText(title) : { blocked: false };
   var descMod = typeof moderateText === 'function' ? moderateText(desc || '') : { blocked: false };
   if (titleMod.blocked || descMod.blocked) {

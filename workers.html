@@ -5,8 +5,8 @@
 <!-- qg-build:947d37a-1789577525 -->
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>QuickGigs — Find Taskers</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<title>SwiftGigs — Find Taskers</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
 <link rel="stylesheet" href="qg-role-theme.css?v=20260811tokens1">
 <link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="qg-mobile.css">
 <link rel="stylesheet" href="qg-sheet.css?v=20260716d">
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
+<link rel="stylesheet" href="qg-swift.css">
 <script src="qg-brand-init.js"></script>
 <script>document.documentElement.setAttribute('data-qg-mode','poster');</script>
 <style>
@@ -33,9 +34,9 @@ body.light .mode-btn{background:#f0eeff;color:#6b3fa0;}
 <script src="qg-theme.js"></script>
 <nav class="nav">
   <a class="back-link" href="dashboard.html" aria-label="Back to dashboard">← Home</a>
-  <div class="nav-brand"><span class="nav-logo">QuickGigs</span></div>
+  <div class="nav-brand"><span class="nav-logo sg-wordmark">SwiftGigs</span></div>
   <div class="nav-right">
-    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
+    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">Light</button>
   </div>
 </nav>
 
@@ -48,7 +49,7 @@ body.light .mode-btn{background:#f0eeff;color:#6b3fa0;}
 <div class="qg-search-hero">
   <label class="sr-only" for="workerSearch">Search taskers</label>
   <div class="qg-search-box">
-    <span aria-hidden="true">🔍</span>
+    <span aria-hidden="true" data-qg-ico="search" data-qg-ico-size="16"></span>
     <input type="search" id="workerSearch" placeholder="Search by name or skill…" autocomplete="off" oninput="renderWorkers()">
   </div>
 </div>
@@ -86,6 +87,7 @@ onAuthStateChanged(auth, function (user) {
 <script src="qg-config.js"></script>
 <script src="qg-utils.js?v=20260728welcome1"></script>
 <script src="qg-categories.js"></script>
+<script src="qg-icons.js"></script>
 <script src="qg-location.js?v=20260827geo1"></script>
 <script src="qg-pwa.js?v=947d37a-1789577525"></script>
 <script src="qg-stats.js?v=20260811trust3"></script>
@@ -103,7 +105,7 @@ else {
 var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
 function applyTheme() {
   if (typeof window.QG_applyTheme === 'function') window.QG_applyTheme(isDark, 'modeBtn', false);
-  else document.body.className = isDark ? '' : 'light';
+  else document.body.classList.toggle('light', !isDark);
 }
 window.toggleTheme = function () {
   isDark = !isDark;
@@ -173,7 +175,7 @@ async function loadWorkers() {
     var stats = typeof fetchUserTrustStats === 'function' ? await fetchUserTrustStats(uid) : {};
     allWorkers.push({
       id: uid,
-      name: u.name || 'QuickGigs tasker',
+      name: u.name || 'SwiftGigs tasker',
       bio: (u.bio || '').trim(),
       skills: skills,
       avatar: avatar,
@@ -230,8 +232,8 @@ window.renderWorkers = function () {
     var skillHtml = (w.skills || []).slice(0, 4).map(function (s) {
       return '<span class="qg-worker-skill">' + esc(s) + '</span>';
     }).join('');
-    var meta = w.bio ? esc(w.bio.substring(0, 90)) + (w.bio.length > 90 ? '…' : '') : 'Available for gigs on QuickGigs';
-    if (w.service_area) meta = '📍 ' + esc(w.service_area) + ' · ' + meta;
+    var meta = w.bio ? esc(w.bio.substring(0, 90)) + (w.bio.length > 90 ? '…' : '') : 'Available for gigs on SwiftGigs';
+    if (w.service_area) meta = (typeof qgIcon==='function'?qgIcon('mapPin',{size:12}):'') + ' ' + esc(w.service_area) + ' · ' + meta;
     var availBadge = w.availability === 'busy' ? '<span class="qg-worker-skill" style="opacity:0.7">Busy</span>' : '';
     return '<a class="qg-worker-card" href="' + (typeof getProfileUrl === 'function' ? getProfileUrl(w.id) : ('profile.html?user=' + encodeURIComponent(w.id))) + '">' +
       '<div class="' + avatarCls + '"' + avatarStyle + ' aria-hidden="true">' + (w.avatar ? '' : initial) + '</div>' +

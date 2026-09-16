@@ -52,7 +52,8 @@
     laptop: '<rect x="4" y="4" width="16" height="10" rx="1"/><path d="M2 18h20"/>',
     heart: '<path d="M12 20.5c-4.5-2.8-9-6.7-9-11A5 5 0 0 1 8 4.7c1.6-.9 3.3-.4 4 .8.7-1.2 2.4-1.7 4-.8A5 5 0 0 1 21 9.5c0 4.3-4.5 8.2-9 11Z"/>',
     leaf: '<path d="M5 21c0-9 5-16 14-16 0 9-5 16-14 16Z"/><path d="M5 21c3-3 6-6 9-12"/>',
-    package: '<path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="M3 8l9 5 9-5M12 13v8"/>'
+    package: '<path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+    calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/>'
   };
 
   function svg(name, opts) {

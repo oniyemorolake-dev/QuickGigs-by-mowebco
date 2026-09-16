@@ -40,6 +40,7 @@
 <link rel="stylesheet" href="qg-features.css?v=20260726contrast">
 <link rel="stylesheet" href="qg-dashboard.css?v=20260811dash1" id="qg-dashboard-css">
 <link rel="stylesheet" href="qg-trust-profile.css?v=20260811trust3" id="qg-trust-profile-css">
+<script src="qg-icons.js"></script>
 <script src="qg-theme.js"></script>
 <script src="qg-brand-init.js"></script>
 <script defer src="qg-pwa.js?v=947d37a-1789577525"></script>
@@ -251,7 +252,7 @@ body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#ee
     <span class="nav-role">POSTER</span>
   </div>
   <div class="nav-right">
-    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
+    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">Light</button>
     <div class="avatar" id="avatarEl" onclick="toggleAvatarMenu()" style="cursor:pointer">M</div>
     <div id="avatarMenu" style="display:none;position:absolute;top:56px;right:20px;background:#150830;border:0.5px solid rgba(200,168,233,0.2);border-radius:14px;padding:6px;min-width:180px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
       <a href="profile.html" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;text-decoration:none;color:rgba(255,255,255,0.8);font-size:13px;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='rgba(107,63,160,0.2)'" onmouseout="this.style.background='transparent'"><svg class="qg-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="5"/></svg> View profile</a>
@@ -301,8 +302,8 @@ body.light .qg-skel{background:linear-gradient(90deg,#eeeaf8 25%,#f5f2ff 50%,#ee
 </div>
 <div id="verificationGateBanner" class="verification-gate-banner qg-page-wide"></div>
 <div class="greeting qg-page-wide">
-  <div class="mode-tag tag-poster" id="modeTag" data-qg-mode-tag>📌 Poster mode</div>
-  <div class="greet-name" id="greetName">Good evening 👋</div>
+  <div class="mode-tag tag-poster" id="modeTag" data-qg-mode-tag><span data-qg-ico="briefcase" data-qg-ico-size="12"></span> Poster mode</div>
+  <div class="greet-name" id="greetName">Good evening</div>
   <div class="greet-note" id="greetNote" hidden>
     <span class="greet-note-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="currentColor" focusable="false"><path d="M12 2.2l1.4 5.1 5.1 1.4-5.1 1.4L12 15.2l-1.4-5.1L5.5 8.7l5.1-1.4L12 2.2zm6.8 10.3l.9 3.2 3.2.9-3.2.9-.9 3.2-.9-3.2-3.2-.9 3.2-.9.9-3.2zM5.2 14.4l.7 2.4 2.4.7-2.4.7-.7 2.4-.7-2.4-2.4-.7 2.4-.7.7-2.4z"/></svg>
@@ -562,9 +563,9 @@ var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localSto
 function applyTheme(){
   if (typeof window.QG_applyTheme === 'function') window.QG_applyTheme(isDark, 'modeBtn', false);
   else {
-    document.body.className = isDark ? '' : 'light';
+    document.body.classList.toggle('light', !isDark);
     var btn = document.getElementById('modeBtn');
-    if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+    if (btn) btn.textContent = isDark ? 'Light' : 'Dark';
   }
 }
 window.toggleTheme = function(){
@@ -701,8 +702,8 @@ function updateAvatarMenuSwitchLabel() {
   var target = isPoster ? 'tasker' : 'poster';
   var hasTarget = !access || (target === 'tasker' ? access.is_tasker : access.is_poster);
   el.textContent = hasTarget
-    ? (isPoster ? '🔄 Switch to Tasker' : '🔄 Switch to Poster')
-    : (isPoster ? '💼 Start finding work' : '📋 Become a Poster');
+    ? (isPoster ? 'Switch to Tasker' : 'Switch to Poster')
+    : (isPoster ? 'Start finding work' : 'Become a Poster');
 }
 document.addEventListener('qg-role-access-changed', updateAvatarMenuSwitchLabel);
 
@@ -801,7 +802,7 @@ function renderPosterNote() {
 function renderGreeting(contextOpts){
   var name = window._userName || '';
   var first = String(name || '').trim().split(/\s+/)[0] || '';
-  document.getElementById('greetName').textContent = getTimeGreeting() + (first ? ', ' + first : '') + ' 👋';
+  document.getElementById('greetName').textContent = getTimeGreeting() + (first ? ', ' + first : '');
   var sub = 'Ready to get something done today?';
   if (contextOpts && typeof qgContextualGreetingLine === 'function') {
     sub = qgContextualGreetingLine(contextOpts);
@@ -1301,7 +1302,7 @@ function renderAll(){
     (window.QG_CONFIG && !window.QG_CONFIG.paymentsEnabled
       ? '<div class="action-card secondary dash-span-full" style="cursor:default;opacity:0.92"><div class="action-icon">'+ico('creditCard')+'</div><div class="action-copy"><div class="action-title">Payments live via Stripe</div><div class="action-desc">Payments run through Stripe — funds are held in escrow and released on task completion.</div></div></div>'
       : '') +
-    '<button type="button" class="action-card secondary dash-span-full" style="margin-top:2px;border:none;width:100%;text-align:left;font:inherit;color:inherit" onclick="typeof promptQuickGigsInstall===\'function\'&&promptQuickGigsInstall()"><div class="action-icon">'+ico('smartphone')+'</div><div class="action-copy"><div class="action-title">Add to Home Screen</div><div class="action-desc">Install QuickGigs on iPhone (Safari Share menu) or Android</div></div></button>' +
+    '<button type="button" class="action-card secondary dash-span-full" style="margin-top:2px;border:none;width:100%;text-align:left;font:inherit;color:inherit" onclick="typeof promptQuickGigsInstall===\'function\'&&promptQuickGigsInstall()"><div class="action-icon">'+ico('smartphone')+'</div><div class="action-copy"><div class="action-title">Add to Home Screen</div><div class="action-desc">Install SwiftGigs on iPhone (Safari Share menu) or Android</div></div></button>' +
     '<a class="action-card secondary dash-span-full" href="feedback.html" style="margin-top:2px"><div class="action-icon">'+ico('bug')+'</div><div class="action-copy"><div class="action-title">Beta feedback</div><div class="action-desc">Report a bug or share an idea — we read every message</div></div></a>';
 
   var statsEl = document.getElementById('statsGrid');
