@@ -4,19 +4,19 @@
 <meta charset="UTF-8">
 <!-- qg-build:512ba67-1789575282 -->
 
-<title>Browse tasks · QuickGigs</title>
-<meta name="description" content="Browse open tasks near you on QuickGigs — Canada's marketplace to earn money doing errands, home help, and more.">
+<title>Browse tasks · SwiftGigs</title>
+<meta name="description" content="Browse open tasks near you on SwiftGigs — Canada's marketplace to earn money doing errands, home help, and more.">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://quickgigs.ca/browsetask.html">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://quickgigs.ca/browsetask.html">
-<meta property="og:title" content="Browse tasks · QuickGigs">
-<meta property="og:description" content="Browse open tasks near you on QuickGigs — Canada's marketplace to earn money doing errands, home help, and more.">
+<meta property="og:title" content="Browse tasks · SwiftGigs">
+<meta property="og:description" content="Browse open tasks near you on SwiftGigs — Canada's marketplace to earn money doing errands, home help, and more.">
 <meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <meta property="og:locale" content="en_CA">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Browse tasks · QuickGigs">
-<meta name="twitter:description" content="Browse open tasks near you on QuickGigs — Canada's marketplace to earn money doing errands, home help, and more.">
+<meta name="twitter:title" content="Browse tasks · SwiftGigs">
+<meta name="twitter:description" content="Browse open tasks near you on SwiftGigs — Canada's marketplace to earn money doing errands, home help, and more.">
 <meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,7 +28,7 @@
 <link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
 <link rel="stylesheet" href="qg-role-theme.css?v=20260811tokens1">
 <link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
@@ -247,8 +247,7 @@ body.light .badge-age-teen{color:#15803d;}
 .tc-desc{font-size:12px;line-height:1.6;color:var(--desc-color);margin-bottom:11px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .tc-desc.is-empty{display:none;}
 .tc-bottom{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-top:auto;}
-.tc-price{font-size:16px;font-weight:500;color:#4ade80;}
-body.light .tc-price{color:#16a34a;}
+.tc-price{font-size:16px;font-weight:700;color:var(--green);font-variant-numeric:tabular-nums;}
 .tc-info{font-size:11px;color:var(--info-color);margin-top:2px;line-height:1.35;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .qg-action-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
@@ -374,7 +373,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 <body>
 <nav class="nav">
   <div class="nav-brand">
-    <span class="nav-logo">QuickGigs</span>
+    <span class="nav-logo sg-wordmark">SwiftGigs</span>
     <span class="nav-role">TASKER</span>
   </div>
   <div class="nav-right">
@@ -428,6 +427,20 @@ body.light .app-legal-footer a{color:var(--purple);}
     <button type="button" class="cpill" onclick="setCat(this,'events')">Events</button>
     <button type="button" class="cpill" onclick="setCat(this,'other')">Other</button>
   </div>
+</div>
+<div class="sg-pill-row" id="browseQuickFilters" style="padding:0 16px 10px">
+  <button type="button" class="sg-pill sg-pill--teal" id="qfNearbyBtn" onclick="qgToggleNearbyQuick()" aria-pressed="false">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+    Nearby
+  </button>
+  <button type="button" class="sg-pill sg-pill--teal" id="qfTodayBtn" onclick="qgToggleQuickFilter('today')" aria-pressed="false">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+    Today
+  </button>
+  <button type="button" class="sg-pill sg-pill--teal" id="qfPayBtn" onclick="qgToggleQuickFilter('pay')" aria-pressed="false">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 6v12M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.2 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/></svg>
+    Highest pay
+  </button>
 </div>
 <div class="photo-required-banner" id="photoRequiredBanner" style="display:none">
   <div>
@@ -742,7 +755,7 @@ function normaliseTask(row){
     applicants:0,
     status:(row.STATUS||row.status||'open').toLowerCase(),
     posterId:posterUid,
-    posterName:posterName||'a QuickGigs member',
+    posterName:posterName||'a SwiftGigs member',
     photoUrls: typeof parsePhotoUrls === 'function' ? parsePhotoUrls(row.photo_urls || row.PHOTO_URLS) : [],
     requiresPhotos: !!(row.requires_photos || row.REQUIRES_PHOTOS),
     isRecurring: !!(row.is_recurring || row.IS_RECURRING || mode === 'recurring'),
@@ -956,6 +969,40 @@ window.setBrowseRadius=function(value){
     return;
   }
   renderCards();
+};
+
+/* Quick-filter chip row (Nearby/Today/Highest pay) — thin UI shortcuts onto the
+ * existing advanced-filter state (nearMeBtn, dateFilter, sortSel). No new
+ * filtering logic; just toggles the same fields the filters panel already uses. */
+window.qgToggleNearbyQuick=async function(){
+  await toggleNearMe();
+  var real=document.getElementById('nearMeBtn');
+  var mine=document.getElementById('qfNearbyBtn');
+  if(mine){
+    var isActive=!!(real&&real.classList.contains('active'));
+    mine.classList.toggle('is-selected',isActive);
+    mine.setAttribute('aria-pressed',String(isActive));
+  }
+};
+window.qgToggleQuickFilter=function(type){
+  if(type==='today'){
+    var df=document.getElementById('dateFilter');
+    var btn=document.getElementById('qfTodayBtn');
+    if(df){
+      var wasActive=df.value==='today';
+      df.value=wasActive?'any':'today';
+      if(btn){btn.classList.toggle('is-selected',!wasActive);btn.setAttribute('aria-pressed',String(!wasActive));}
+    }
+  } else if(type==='pay'){
+    var sel=document.getElementById('sortSel');
+    var payBtn=document.getElementById('qfPayBtn');
+    if(sel){
+      var wasPay=sel.value==='pay';
+      sel.value=wasPay?'nearest':'pay';
+      if(payBtn){payBtn.classList.toggle('is-selected',!wasPay);payBtn.setAttribute('aria-pressed',String(!wasPay));}
+    }
+  }
+  if(typeof applyFilters==='function') applyFilters();
 };
 
 window.toggleNearMe=async function(){
@@ -1543,6 +1590,11 @@ window.clearFilters=function(){
   var nearBtn=document.getElementById('nearMeBtn');
   if(nearBtn){ nearBtn.classList.remove('active'); nearBtn.setAttribute('aria-pressed','false'); }
   if(document.getElementById('dateFilter')) document.getElementById('dateFilter').value='any';
+  if(document.getElementById('sortSel')) document.getElementById('sortSel').value='nearest';
+  ['qfNearbyBtn','qfTodayBtn','qfPayBtn'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el){ el.classList.remove('is-selected'); el.setAttribute('aria-pressed','false'); }
+  });
   if(document.getElementById('locationFilter')) document.getElementById('locationFilter').value='';
   if(typeof clearGeoFilterPos==='function') clearGeoFilterPos();
   if(document.getElementById('radiusFilter'))document.getElementById('radiusFilter').value='any';
@@ -1691,7 +1743,7 @@ function updateOfferFeeLine() {
   el.classList.remove('is-muted');
   // Explicit fee + net take-home (rate from QG_CONFIG.taskerFeePercent).
   el.innerHTML = "You'll receive <span class=\"offer-fee-gross\">$" + b.total.toFixed(2) +
-    "</span> minus the " + b.ratePct + "% QuickGigs fee (<span class=\"offer-fee-cut\">$" +
+    "</span> minus the " + b.ratePct + "% SwiftGigs fee (<span class=\"offer-fee-cut\">$" +
     b.fee.toFixed(2) + "</span>) = <strong class=\"offer-fee-net\">$" + b.payout.toFixed(2) + "</strong>.";
 }
 
@@ -1960,7 +2012,7 @@ window.openModal=async function(id,e){
       '<div class="qg-poster-card" id="qgPosterCard">' +
         '<div class="qg-poster-avatar" id="qgPosterAvatar">' + esc(posterInitial) + '</div>' +
         '<div class="qg-poster-info">' +
-          '<div class="qg-poster-name">' + esc(activeTask.posterName || 'QuickGigs member') +
+          '<div class="qg-poster-name">' + esc(activeTask.posterName || 'SwiftGigs member') +
             '<span class="qg-poster-verified" id="qgPosterVerified" hidden>' + (typeof qgIcon==='function'?qgIcon('checkCircle',{size:14}):'✓') + '</span>' +
           '</div>' +
           '<div class="qg-poster-meta" id="qgPosterMeta">Poster</div>' +
@@ -1998,7 +2050,7 @@ window.openModal=async function(id,e){
             parts.push('<span class="qg-poster-rating">' + star + avg.toFixed(1) + '</span>');
           }
           if (ratings.length) parts.push(ratings.length + ' review' + (ratings.length === 1 ? '' : 's'));
-          metaEl.innerHTML = parts.length ? parts.join(' · ') : 'Poster on QuickGigs';
+          metaEl.innerHTML = parts.length ? parts.join(' · ') : 'Poster on SwiftGigs';
         }
       } catch (_e) {}
     })(activeTask.posterId);
