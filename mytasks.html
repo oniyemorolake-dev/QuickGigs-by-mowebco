@@ -88,7 +88,7 @@ body.qg-mode-worker #tabPosted{display:none!important;visibility:hidden!importan
 body.light .task-card{box-shadow:0 1px 3px rgba(107,63,160,0.08);}
 .tc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;}
 .tc-left{display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0;}
-.tc-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.tc-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;color:var(--teal);}
 .tc-cat{font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);margin-bottom:3px;}
 .tc-cat a.profile-link,.tc-cat .profile-link{color:var(--purple-light,#9b6fc4)!important;text-decoration:underline;text-underline-offset:2px;font-weight:500;}
 body.light .tc-cat a.profile-link,body.light .tc-cat .profile-link{color:var(--purple,#6b3fa0)!important;}
@@ -235,7 +235,7 @@ body.light .app-legal-footer a{color:var(--purple);}
   <div class="nav-title">My posted tasks</div>
   <div class="nav-right">
     <button type="button" class="mode-btn" id="roleSwitchBtn" onclick="typeof switchRoleMode==='function'&&switchRoleMode()">Switch mode</button>
-    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
+    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">Light</button>
   </div>
 </nav>
 <div style="padding:8px 16px 0"><span class="mode-tag tag-poster" data-qg-mode-tag>📌 Poster mode</span></div>
@@ -294,6 +294,7 @@ body.light .app-legal-footer a{color:var(--purple);}
 <script defer src="qg-stripe.js?v=20260811pay1"></script>
 <script defer src="qg-site.js?v=20260726e"></script>
 <script defer src="qg-nav.js?v=20260726n"></script>
+<script src="qg-icons.js"></script>
 <script defer src="qg-pwa.js?v=512ba67-1789575282"></script>
 <script defer src="qg-notifications.js"></script>
 <script defer src="qg-push.js?v=1"></script>
@@ -338,7 +339,7 @@ function applyTheme(){
   else {
     document.body.className = isDark ? '' : 'light';
     var btn = document.getElementById('modeBtn');
-    if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+    if (btn) btn.textContent = isDark ? 'Light' : 'Dark';
   }
 }
 window.toggleTheme = function(){
@@ -597,6 +598,18 @@ function isPaymentGatedChat() {
   if (typeof window.isChatPaymentGated === 'function') return window.isChatPaymentGated();
   var c = window.QG_CONFIG || {};
   return !!(c.paymentsEnabled && c.chatUnlockAfter === 'payment');
+}
+
+// Category id -> qg-icons.js key. Kept local to this page until qg-categories.js
+// grows an iconKey field of its own (that file is Cursor's zone, see AGENTS.md).
+var QG_CAT_ICON_KEYS = {
+  errands: 'car', home: 'home', tutoring: 'graduationCap', beauty: 'scissors',
+  moving: 'truck', cooking: 'pot', tech: 'laptop', care: 'heart',
+  gardening: 'leaf', events: 'party', trades: 'wrench', other: 'package'
+};
+function qgCatIconHtml(cat) {
+  var key = QG_CAT_ICON_KEYS[(cat && cat.id || '').toLowerCase()] || 'package';
+  return typeof qgIcon === 'function' ? qgIcon(key, { size: 18 }) : (cat && cat.icon || '');
 }
 
 function renderApplicantAction(a, taskId, task) {
@@ -1666,7 +1679,7 @@ function renderTab(){
         ? shareButtonHtml('task', taskId, getField(t,'TITLE'))
         : '';
       return '<div class="task-card">'+
-        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(typeof formatTaskDisplayTitle==='function'?formatTaskDisplayTitle(t):getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-open">Open</span></div>'+
+        '<div class="tc-top"><div class="tc-left"><div class="tc-icon" style="background:'+cat.bg+'">'+qgCatIconHtml(cat)+'</div><div><div class="tc-cat">'+esc(getField(t,'CATEGORY'))+'</div><div class="tc-title">'+esc(typeof formatTaskDisplayTitle==='function'?formatTaskDisplayTitle(t):getField(t,'TITLE'))+'</div></div></div><span class="tc-badge badge-open">Open</span></div>'+
         timeline +
         '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' · <span class="tc-meta-price">'+esc(formatTaskBudgetMeta(t))+'</span>'+(postedLabel ? ' · Posted '+esc(postedLabel) : '')+'</div>'+
         '<button type="button" class="tc-applicants-toggle'+(isOpen?' open':'')+'" data-applicants-toggle="'+escAttr(taskId)+'" data-applicant-count="'+escAttr(pendingApps.length + ' applicant' + (pendingApps.length !== 1 ? 's' : ''))+'" data-applicant-names="'+escAttr(namePreview + (pendingApps.length > 3 ? '…' : ''))+'">'+esc(toggleLabel)+'</button>'+
@@ -1787,7 +1800,7 @@ function renderTab(){
         actions = '<div class="action-row"><button class="act-btn btn-secondary" onclick="openChatForTask('+taskIdStr+')">Message poster</button></div>';
       }
         return '<div class="'+cardClass+'">'+
-        '<div class="tc-top"><div class="tc-left">'+profileTapIcon(posterId, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">Applied · Posted by '+personLink(posterName, posterId)+'</div><div class="tc-title">'+esc(typeof formatTaskDisplayTitle==='function'?formatTaskDisplayTitle(task, getField(a,'TASK_ID')):(getField(task,'TITLE')||'Untitled task'))+'</div></div></div>'+statusLabel+'</div>'+
+        '<div class="tc-top"><div class="tc-left">'+profileTapIcon(posterId, '<div class="tc-icon" style="background:'+cat.bg+'">'+qgCatIconHtml(cat)+'</div>')+'<div><div class="tc-cat">Applied · Posted by '+personLink(posterName, posterId)+'</div><div class="tc-title">'+esc(typeof formatTaskDisplayTitle==='function'?formatTaskDisplayTitle(task, getField(a,'TASK_ID')):(getField(task,'TITLE')||'Untitled task'))+'</div></div></div>'+statusLabel+'</div>'+
         '<div class="tc-meta">Your offer: '+formatAppPriceHtml(a)+' · '+esc(getField(a,'MESSAGE')).substring(0,60)+'...'+(getField(task,'CREATED_AT') && typeof formatRelativeTime === 'function' ? ' · Task posted '+esc(formatRelativeTime(getField(task,'CREATED_AT'))) : '')+'</div>'+
         formatTaskerPayoutMetaHtml(getField(a,'PRICE') || getField(a,'price'))+
         negoBlock+
@@ -1839,7 +1852,7 @@ function renderTab(){
         : 'Posted by '+personLink(displayName(posterId, t), posterId);
       var otherUserId = isPosterTask ? workerId : posterId;
       var otherName = isPosterTask ? workerName : displayName(posterId, t);
-      var iconHtml = profileTapIcon(otherUserId, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>');
+      var iconHtml = profileTapIcon(otherUserId, '<div class="tc-icon" style="background:'+cat.bg+'">'+qgCatIconHtml(cat)+'</div>');
       var disputeBtn = typeof disputeButtonHtml === 'function'
         ? disputeButtonHtml(taskId, getField(t,'TITLE'), otherUserId, otherName)
         : '';
@@ -1974,7 +1987,7 @@ function renderTab(){
           (isPoster ? '<button type="button" class="act-btn btn-secondary" data-post-again="'+escAttr(getField(t,'TASK_ID'))+'">Post again</button>' : '') +
           '</div>';
       return '<div class="task-card'+(isCancelled || isExpired ?' is-faded':'')+'">'+
-        '<div class="tc-top"><div class="tc-left">'+profileTapIcon(otherUid, '<div class="tc-icon" style="background:'+cat.bg+'">'+cat.icon+'</div>')+'<div><div class="tc-cat">'+otherLabel+'</div><div class="tc-title">'+esc(typeof formatTaskDisplayTitle==='function'?formatTaskDisplayTitle(t):getField(t,'TITLE'))+'</div></div></div>'+badge+'</div>'+
+        '<div class="tc-top"><div class="tc-left">'+profileTapIcon(otherUid, '<div class="tc-icon" style="background:'+cat.bg+'">'+qgCatIconHtml(cat)+'</div>')+'<div><div class="tc-cat">'+otherLabel+'</div><div class="tc-title">'+esc(typeof formatTaskDisplayTitle==='function'?formatTaskDisplayTitle(t):getField(t,'TITLE'))+'</div></div></div>'+badge+'</div>'+
         (typeof qgTaskTimelineHtml === 'function' && !isCancelled && !isExpired ? qgTaskTimelineHtml('completed') : '')+
         '<div class="tc-meta">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(typeof formatLocationDisplay==='function'?formatLocationDisplay(getField(t,'LOCATION')):getField(t,'LOCATION'))+' · <span class="tc-meta-price">$'+esc(String(getField(t,'BUDGET')))+' CAD</span></div>'+
         '<div class="qg-action-row">'+disputeBtn+reportBtns+'</div>'+
