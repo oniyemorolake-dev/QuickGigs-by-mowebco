@@ -721,17 +721,21 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 <script defer src="qg-role-switch.js?v=20260803role1"></script>
+<script src="qg-theme.js"></script>
 <script>
 var HEADERS = window.HEADERS;
 
 var ALL_SKILLS = ['💻 Tech','🎓 Tutoring','🚗 Errands','🏠 Home','🚚 Moving','🍳 Cooking','👶 Care','🌿 Gardening','🎉 Events','🔧 Trades','💇 Beauty','📋 Admin'];
 var profileData = {};
 var cachedReviews = [];
-var isDark = localStorage.getItem('qg-mode') !== 'light';
 
-function applyTheme(){ document.body.className = isDark ? '' : 'light'; document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark'; }
-window.toggleTheme = function(){ isDark = !isDark; localStorage.setItem('qg-mode', isDark?'dark':'light'); applyTheme(); };
-applyTheme();
+// ── THEME ── qg-theme.js owns the qg-theme key and paints without wiping
+// body classes (poster/tasker mode classes must survive). Do not read/write
+// qg-mode here — that key is reserved for poster/tasker role.
+window.toggleTheme = function(){
+  window.QG_applyTheme(!window.QG_isDarkTheme(), 'modeBtn');
+};
+document.getElementById('modeBtn').textContent = window.QG_isDarkTheme() ? '☀️ Light' : '🌙 Dark';
 
 function decorateProfileChromeIcons() {
   function ico(name, size) {

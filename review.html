@@ -284,19 +284,15 @@ onAuthStateChanged(auth, (user) => {
 <script src="qg-bigtech.js?v=20260810session1" defer></script>
 <script src="qg-wave2.js?v=20260811trust2" defer></script>
 <script defer src="supabase-db.js?v=20260827chat1"></script>
+<script src="qg-theme.js"></script>
 <script>
-// ── THEME ──────────────────────────────────────────────
-var isDark = localStorage.getItem('qg-mode') !== 'light';
-function applyTheme(){
-  document.body.className = isDark ? '' : 'light';
-  document.getElementById('modeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark';
-}
+// ── THEME ── qg-theme.js owns the qg-theme key and paints without wiping
+// body classes (page-review must survive). Do not read/write qg-mode here —
+// that key is reserved for poster/tasker role.
 window.toggleTheme = function(){
-  isDark = !isDark;
-  localStorage.setItem('qg-mode', isDark ? 'dark' : 'light');
-  applyTheme();
+  window.QG_applyTheme(!window.QG_isDarkTheme(), 'modeBtn');
 };
-applyTheme();
+document.getElementById('modeBtn').textContent = window.QG_isDarkTheme() ? '☀️ Light' : '🌙 Dark';
 
 // ── STATE ──────────────────────────────────────────────
 var currentRating = 0;
