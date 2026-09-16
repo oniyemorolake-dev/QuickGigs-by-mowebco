@@ -238,7 +238,7 @@ body.light .app-legal-footer a{color:var(--purple);}
     <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">Light</button>
   </div>
 </nav>
-<div style="padding:8px 16px 0"><span class="mode-tag tag-poster" data-qg-mode-tag>📌 Poster mode</span></div>
+<div style="padding:8px 16px 0"><span class="mode-tag tag-poster" data-qg-mode-tag><span data-qg-ico="briefcase" data-qg-ico-size="12"></span> Poster mode</span></div>
 
 <div class="tabs-wrap">
   <button class="tab-btn active" id="tabPosted" onclick="showTab('posted',this)">Posted</button>
@@ -337,7 +337,7 @@ var TAB_IDS = { posted: 'tabPosted', applied: 'tabApplied', inprogress: 'tabInpr
 function applyTheme(){
   if (typeof window.QG_applyTheme === 'function') window.QG_applyTheme(isDark, 'modeBtn', false);
   else {
-    document.body.className = isDark ? '' : 'light';
+    document.body.classList.toggle('light', !isDark);
     var btn = document.getElementById('modeBtn');
     if (btn) btn.textContent = isDark ? 'Light' : 'Dark';
   }
