@@ -35,16 +35,29 @@ Notes:
 
 ## 2. Never hand-edit generated values
 
-These are written by `scripts/stamp-cache-version.js` and re-stamped on every push
-to `main` by `.github/workflows/stamp-cache-version.yml`:
+`scripts/stamp-cache-version.js` writes exactly three files, re-stamped on every
+push to `main` by `.github/workflows/stamp-cache-version.yml`:
 
-- `<!-- qg-build:... -->` comments in HTML
-- `qg-pwa.js?v=...` query strings
-- the version constant in `sw.js`
+- the `BUILD_ID` constant in `sw.js`
+- the `SHEET_VER` / `BUILD_ID` constant in `qg-pwa.js`
 - `qg-build-id.json`
 
-Hand-editing them produces guaranteed merge conflicts and can roll the PWA cache
-version *backwards*. Leave them exactly as found; CI corrects them.
+Those three are Cursor's zone and CI owns their values. Do not hand-edit them.
+
+**The HTML cache values are frozen and no longer auto-corrected.** The stamp
+script used to rewrite `<!-- qg-build:... -->` and `qg-pwa.js?v=...` across all 33
+root HTML files, so CI landed a commit touching every HTML file on every push.
+That was the single largest source of merge conflicts here, because any edit made
+near a stamped line got pulled into the conflict. The script no longer touches
+HTML at all.
+
+The practical consequence: a hand-edit to those HTML values now **sticks**. Nothing
+will correct it. Leave both exactly as found. To check which build is live, read
+`qg-build-id.json` or the active `CACHE_NAME`, not the HTML comment.
+
+Cache invalidation is unaffected — `BUILD_ID` feeds `sw.js`'s `CACHE_NAME`, so a
+bump makes the service worker install a fresh cache and refetch every asset,
+`qg-pwa.js` included, whatever its `?v=` string says.
 
 ## 3. Editing rules
 

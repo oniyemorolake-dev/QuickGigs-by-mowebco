@@ -80,15 +80,20 @@ if (rewrite('qg-pwa.js', function (src) {
   return src;
 })) changed.push('qg-pwa.js');
 
-// Keep HTML registrar references in sync so browsers don't stick on qg-pwa.js?v=4
-var htmlFiles = fs.readdirSync(root).filter(function (f) {
-  return f.endsWith('.html') && !f.startsWith('_') && !f.startsWith('tmp');
-});
-htmlFiles.forEach(function (file) {
-  if (rewrite(file, function (src) {
-    return src.replace(/qg-pwa\.js\?v=[^"'>\s]+/g, 'qg-pwa.js?v=' + id);
-  })) changed.push(file);
-});
+// Deliberately does NOT rewrite the .html files.
+//
+// It used to stamp `qg-pwa.js?v=` and a `<!-- qg-build: -->` marker into all 33
+// root HTML files. Because CI commits the stamp result, that produced a commit
+// touching every HTML file on every push, which collided constantly with
+// in-flight HTML edits (see AGENTS.md). Anything edited near a stamped line got
+// dragged into the conflict.
+//
+// Cache invalidation does not depend on those HTML values: BUILD_ID below feeds
+// sw.js's CACHE_NAME, so a bump makes the service worker install a fresh cache
+// and refetch every asset, qg-pwa.js included, regardless of its ?v= string.
+// Clients without a service worker fall back to GitHub Pages' short max-age.
+// The `?v=` and `<!-- qg-build: -->` values in HTML are now frozen legacy —
+// read the live build from qg-build-id.json or the active CACHE_NAME instead.
 
 // Machine-readable stamp for debugging / future tooling
 writeUtf8NoBom(
@@ -96,24 +101,6 @@ writeUtf8NoBom(
   JSON.stringify({ buildId: id, stampedAt: new Date().toISOString() }, null, 2) + '\n'
 );
 changed.push('qg-build-id.json');
-
-// Visible marker in HTML so a plain refresh can confirm the deploy (view-source / DevTools)
-htmlFiles.forEach(function (file) {
-  if (rewrite(file, function (src) {
-    if (/<!-- qg-build:[^>]*-->/.test(src)) {
-      return src.replace(/<!-- qg-build:[^>]*-->/, '<!-- qg-build:' + id + ' -->');
-    }
-    if (/<meta charset="UTF-8">/i.test(src)) {
-      return src.replace(
-        /<meta charset="UTF-8">/i,
-        '<meta charset="UTF-8">\n<!-- qg-build:' + id + ' -->'
-      );
-    }
-    return src;
-  })) {
-    if (changed.indexOf(file) < 0) changed.push(file);
-  }
-});
 
 console.log('Stamped BUILD_ID=' + id);
 console.log('Updated: ' + changed.join(', '));

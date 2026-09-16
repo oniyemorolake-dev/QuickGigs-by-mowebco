@@ -5,13 +5,10 @@ cd "$ROOT" || exit 0
 
 if command -v node >/dev/null 2>&1; then
   node scripts/stamp-cache-version.js || exit 1
+  # Stage ONLY the files the stamp script writes. Never `git add -- *.html`:
+  # two agents share this working tree, so a blanket add sweeps the other
+  # agent's in-progress work into your commit. See AGENTS.md.
   git add sw.js qg-pwa.js qg-build-id.json
-  # Re-stage any HTML files whose qg-pwa.js?v= query was rewritten
-  git diff --name-only --diff-filter=M | grep -E '\.html$' | while read -r f; do
-    git add -- "$f"
-  done
-  # Also add HTML that stamp touched even if previously unstaged
-  git add -- *.html 2>/dev/null || true
 fi
 
 exit 0
