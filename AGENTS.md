@@ -120,8 +120,16 @@ bug, fixed in `75a149f`.)
 
 ### UI conventions
 
-- **No emoji in the UI.** Use `qgIcon()` or an inline outline SVG: stroke-based,
-  1.8–1.9px stroke width, rounded caps and joins.
+- **No emoji in the UI.** Use `qgIcon()` where possible, otherwise an inline
+  outline SVG: stroke-based, `stroke-width="1.5"`, rounded caps and joins, on a
+  `0 0 24 24` viewBox.
+
+  1.5px is set once, in `svg()` inside `qg-icons.js` — do not change it there, and
+  match it when hand-writing an inline SVG. (This doc previously specified
+  1.8–1.9px, which matched nothing that ever shipped.) Two exceptions exist and
+  are not worth chasing: a legacy 1.75px cluster on `index.html`, `payment.html`
+  and `qg-stripe.js`, and `.edit-progress-ring` in `profile.html`, which is a
+  progress ring rather than an icon and is correctly heavier.
 - **Money amounts are always `var(--green)`**, weight 700.
 - Design tokens live in `qg-tokens.css`; SwiftGigs component primitives (`.sg-*`)
   live in `qg-swift.css`.
