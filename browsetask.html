@@ -185,12 +185,18 @@ body.light .tc-media{background:#f0eeff;}
   object-fit:cover;object-position:center;
   display:block;border-radius:12px;
 }
-/* Compact zoom hint ? full ?Tap to enlarge? chip is too wide for ~40% media */
+/* Compact zoom hint — full "Tap to enlarge" chip is too wide for ~40% media */
 .tc-media.tc-photo-tappable::before{
-  content:'✨';
+  content:'';
+  position:absolute;
   top:8px;right:8px;
-  padding:4px 6px;
-  font-size:11px;
+  width:22px;height:22px;
+  background:rgba(0,0,0,0.45);
+  border-radius:50%;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:12px 12px;
   opacity:0.85;
 }
 .tc-media-placeholder{
@@ -377,8 +383,8 @@ body.light .app-legal-footer a{color:var(--purple);}
     <span class="nav-role">TASKER</span>
   </div>
   <div class="nav-right">
-    <button class="nav-icon">🔔</button>
-    <button class="mode-btn" id="modeBtn" onclick="toggleMode()">☀️ Light</button>
+    <button class="nav-icon" aria-label="Notifications" data-qg-ico="bell" data-qg-ico-size="18"></button>
+    <button class="mode-btn" id="modeBtn" onclick="toggleMode()">Light</button>
     <div class="avatar" id="avatarEl">M</div>
   </div>
 </nav>
@@ -608,7 +614,7 @@ body.light .app-legal-footer a{color:var(--purple);}
       <div id="teenMeetupBanner" hidden></div>
 
       <div class="apply-already" id="applyAlreadyState" aria-live="polite">
-        <div class="apply-already-icon">✅</div>
+        <div class="apply-already-icon" data-qg-ico="checkCircle" data-qg-ico-size="28"></div>
         <div class="apply-already-title">You've already applied to this task</div>
         <div class="apply-already-sub">Check <a href="mytasks.html?tab=applied">My Tasks → Applied</a> for status updates.</div>
       </div>
@@ -704,6 +710,7 @@ onAuthStateChanged(auth, (user) => {
 <script defer src="qg-config.js?v=20260811teensafety1"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
 <script defer src="qg-categories.js"></script>
+<script src="qg-icons.js"></script>
 <script defer src="supabase-db.js?v=20260827chat1"></script>
 <script defer src="qg-age.js?v=1"></script>
 <script defer src="qg-teen-safety.js?v=20260811teensafety1"></script>
@@ -726,6 +733,17 @@ function esc(s){
       : String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
 }
 var CAT_MAP = window.QG_CAT_MAP || {};
+// Category id -> qg-icons.js key. Kept local to this page until qg-categories.js
+// grows an iconKey field of its own (that file is Cursor's zone, see AGENTS.md).
+var QG_CAT_ICON_KEYS = {
+  errands: 'car', home: 'home', tutoring: 'graduationCap', beauty: 'scissors',
+  moving: 'truck', cooking: 'pot', tech: 'laptop', care: 'heart',
+  gardening: 'leaf', events: 'party', trades: 'wrench', other: 'package'
+};
+function qgCatIconKey(catId){
+  return QG_CAT_ICON_KEYS[(catId||'').toLowerCase()] || 'package';
+}
+
 function normaliseTask(row){
   var catInfo=getCatInfo(row.CATEGORY||row.category);
   var mode=(row.TASK_MODE||row.task_mode||'standard').toLowerCase();
@@ -738,7 +756,7 @@ function normaliseTask(row){
     id: row.task_id || row.TASK_ID || row.id,
     mode:mode,
     cat:(row.CATEGORY||row.category||'other').toLowerCase(),
-    catLabel:catInfo.label,icon:catInfo.icon,iconBg:catInfo.bg,
+    catLabel:catInfo.label,icon:catInfo.icon,iconKey:qgCatIconKey(row.CATEGORY||row.category),iconBg:catInfo.bg,
     title: (typeof formatTaskDisplayTitle === 'function' ? formatTaskDisplayTitle(row) : (row.TITLE || row.title || 'Untitled task')),
     desc:row.DESCRIPTION||row.description||'',
     price:budget,
@@ -1042,7 +1060,7 @@ async function hydratePosterNames() {
   var uids = {};
   allTasks.forEach(function(t) {
     if (!t.posterId) return;
-    if (!t.posterName || (t.posterName === 'a QuickGigs member' || t.posterName === 'QuickGigs user')) uids[String(t.posterId)] = true;
+    if (!t.posterName || (t.posterName === 'a SwiftGigs member' || t.posterName === 'SwiftGigs user')) uids[String(t.posterId)] = true;
   });
   var keys = Object.keys(uids);
   for (var i = 0; i < keys.length; i++) {
@@ -1146,12 +1164,12 @@ async function loadTasks(){
 
 function getDemoTasks(){
   return [
-    {id:1,mode:'quick',cat:'errands',catLabel:'Errands',icon:'🚗',iconBg:'rgba(251,191,36,0.15)',title:'Pick up prescription from Shoppers Drug Mart',desc:'Grab my prescription on 17th Ave SW and drop off at my condo. 20 mins max.',price:20,priceLabel:'$20',location:'Calgary, AB',posted:'5 mins ago',applicants:0,status:'open'},
-    {id:2,mode:'quick',cat:'tech',catLabel:'Tech',icon:'💻',iconBg:'rgba(107,63,160,0.2)',title:'Fix cracked screen on Samsung S22 — need it today',desc:'Screen is badly cracked, phone still works. Need someone experienced.',price:60,priceLabel:'$60',location:'Calgary, AB',posted:'12 mins ago',applicants:1,status:'open'},
-    {id:3,mode:'standard',cat:'home',catLabel:'Home',icon:'🏠',iconBg:'rgba(107,63,160,0.2)',title:'Deep clean 2 bedroom apartment before move out',desc:'Full deep clean before handing over keys this Saturday.',price:120,priceLabel:'$120',location:'Calgary, AB',posted:'2 hrs ago',applicants:3,status:'open'},
-    {id:4,mode:'standard',cat:'beauty',catLabel:'Beauty',icon:'💅',iconBg:'rgba(200,168,233,0.15)',title:'Box braids — medium length, natural hair',desc:'Looking for someone experienced with box braids on natural hair.',price:80,priceLabel:'$80',location:'Calgary, AB',posted:'3 hrs ago',applicants:2,status:'open'},
-    {id:5,mode:'recurring',cat:'care',catLabel:'Care',icon:'👶',iconBg:'rgba(74,222,128,0.1)',title:'Reliable nanny needed Monday to Friday 9am–3pm',desc:'Caring nanny for two kids aged 4 and 7. Starting next Monday.',price:20,priceLabel:'$20/hr',location:'Calgary, AB',posted:'1 hr ago',applicants:1,status:'open'},
-    {id:6,mode:'recurring',cat:'tutoring',catLabel:'Tutoring',icon:'📚',iconBg:'rgba(74,222,128,0.1)',title:'Math tutor for Grade 10 student — twice a week',desc:'My daughter needs a patient tutor for algebra. Twice a week after school.',price:35,priceLabel:'$35/hr',location:'Calgary, AB',posted:'30 mins ago',applicants:0,status:'open'},
+    {id:1,mode:'quick',cat:'errands',catLabel:'Errands',icon:'🚗',iconKey:'car',iconBg:'rgba(251,191,36,0.15)',title:'Pick up prescription from Shoppers Drug Mart',desc:'Grab my prescription on 17th Ave SW and drop off at my condo. 20 mins max.',price:20,priceLabel:'$20',location:'Calgary, AB',posted:'5 mins ago',applicants:0,status:'open'},
+    {id:2,mode:'quick',cat:'tech',catLabel:'Tech',icon:'💻',iconKey:'laptop',iconBg:'rgba(107,63,160,0.2)',title:'Fix cracked screen on Samsung S22 — need it today',desc:'Screen is badly cracked, phone still works. Need someone experienced.',price:60,priceLabel:'$60',location:'Calgary, AB',posted:'12 mins ago',applicants:1,status:'open'},
+    {id:3,mode:'standard',cat:'home',catLabel:'Home',icon:'🏠',iconKey:'home',iconBg:'rgba(107,63,160,0.2)',title:'Deep clean 2 bedroom apartment before move out',desc:'Full deep clean before handing over keys this Saturday.',price:120,priceLabel:'$120',location:'Calgary, AB',posted:'2 hrs ago',applicants:3,status:'open'},
+    {id:4,mode:'standard',cat:'beauty',catLabel:'Beauty',icon:'💅',iconKey:'scissors',iconBg:'rgba(200,168,233,0.15)',title:'Box braids — medium length, natural hair',desc:'Looking for someone experienced with box braids on natural hair.',price:80,priceLabel:'$80',location:'Calgary, AB',posted:'3 hrs ago',applicants:2,status:'open'},
+    {id:5,mode:'recurring',cat:'care',catLabel:'Care',icon:'👶',iconKey:'heart',iconBg:'rgba(74,222,128,0.1)',title:'Reliable nanny needed Monday to Friday 9am–3pm',desc:'Caring nanny for two kids aged 4 and 7. Starting next Monday.',price:20,priceLabel:'$20/hr',location:'Calgary, AB',posted:'1 hr ago',applicants:1,status:'open'},
+    {id:6,mode:'recurring',cat:'tutoring',catLabel:'Tutoring',icon:'📚',iconKey:'graduationCap',iconBg:'rgba(74,222,128,0.1)',title:'Math tutor for Grade 10 student — twice a week',desc:'My daughter needs a patient tutor for algebra. Twice a week after school.',price:35,priceLabel:'$35/hr',location:'Calgary, AB',posted:'30 mins ago',applicants:0,status:'open'},
   ];
 }
 
@@ -1213,7 +1231,8 @@ function browseThumbUrl(url, width) {
 
 function renderCardIcon(t) {
   // Kept for any legacy callers; eBay cards use renderCardMedia instead.
-  return '<div class="tc-icon" style="background:'+t.iconBg+'" aria-hidden="true">'+t.icon+'</div>';
+  var mark = typeof qgIcon==='function' ? qgIcon(t.iconKey||qgCatIconKey(t.cat),{size:18}) : t.icon;
+  return '<div class="tc-icon" style="background:'+t.iconBg+';color:var(--teal)" aria-hidden="true">'+mark+'</div>';
 }
 
 function renderCardMedia(t) {
@@ -1250,7 +1269,7 @@ function renderCardMedia(t) {
   }
   return '<div class="tc-media" aria-hidden="true">' +
     '<div class="tc-media-inner tc-media-placeholder" style="background:'+esc(t.iconBg || 'rgba(107,63,160,0.2)')+'">' +
-      '<span class="tc-media-placeholder-icon">'+t.icon+'</span>' +
+      '<span class="tc-media-placeholder-icon" style="color:var(--teal)">'+(typeof qgIcon==='function'?qgIcon(t.iconKey||qgCatIconKey(t.cat),{size:32}):t.icon)+'</span>' +
       '<span class="tc-media-placeholder-label">'+esc(t.catLabel || 'Task')+'</span>' +
     '</div>' +
   '</div>';
@@ -2485,9 +2504,9 @@ window.toggleMode=function(){
 function applyTheme(){
   if (typeof window.QG_applyTheme === 'function') window.QG_applyTheme(isDark,'modeBtn',false);
   else {
-    document.body.className = isDark ? '' : 'light';
+    document.body.classList.toggle('light', !isDark);
     var btn = document.getElementById('modeBtn');
-    if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+    if (btn) btn.textContent = isDark ? 'Light' : 'Dark';
     if (typeof QG_setThemeDark === 'function') QG_setThemeDark(isDark);
     else localStorage.setItem('qg-theme', isDark ? 'dark' : 'light');
   }
