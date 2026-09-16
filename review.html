@@ -4,19 +4,19 @@
 <meta charset="UTF-8">
 <!-- qg-build:9c6b136-1789577000 -->
 
-<title>Leave a review — QuickGigs</title>
-<meta name="description" content="Leave a review after a completed QuickGigs task.">
+<title>Leave a review — SwiftGigs</title>
+<meta name="description" content="Leave a review after a completed SwiftGigs task.">
 <meta name="robots" content="noindex,nofollow">
 <link rel="canonical" href="https://quickgigs.ca/review.html">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://quickgigs.ca/review.html">
-<meta property="og:title" content="Leave a review — QuickGigs">
-<meta property="og:description" content="Leave a review after a completed QuickGigs task.">
+<meta property="og:title" content="Leave a review — SwiftGigs">
+<meta property="og:description" content="Leave a review after a completed SwiftGigs task.">
 <meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <meta property="og:locale" content="en_CA">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Leave a review — QuickGigs">
-<meta name="twitter:description" content="Leave a review after a completed QuickGigs task.">
+<meta name="twitter:title" content="Leave a review — SwiftGigs">
+<meta name="twitter:description" content="Leave a review after a completed SwiftGigs task.">
 <meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -91,7 +91,7 @@ body.light .mode-btn{background:#f0eeff;color:var(--purple);}
 /* TASK CARD */
 .task-card{border-radius:16px;padding:14px 16px;margin-bottom:24px;background:var(--card-bg);border:0.5px solid var(--border);}
 .tc-row{display:flex;align-items:center;gap:12px;}
-.tc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.tc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;color:var(--purple-light);}
 .tc-info{flex:1;min-width:0;}
 .tc-title{font-size:14px;font-weight:500;color:var(--text);margin-bottom:3px;}
 .tc-meta{font-size:12px;color:var(--text-muted);}
@@ -107,9 +107,11 @@ body.light .mode-btn{background:#f0eeff;color:var(--purple);}
 .stars-section{text-align:center;margin-bottom:28px;}
 .section-label{font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);display:block;margin-bottom:12px;}
 .stars{display:flex;justify-content:center;gap:8px;margin-bottom:8px;}
-.star{font-size:36px;cursor:pointer;transition:transform 0.12s;user-select:none;filter:grayscale(1);opacity:0.3;}
-.star.active{filter:none;opacity:1;transform:scale(1.1);}
+.star{display:inline-flex;cursor:pointer;transition:transform 0.12s;user-select:none;color:var(--text-faint);opacity:0.45;}
+.star svg{width:32px;height:32px;fill:currentColor;stroke:none;display:block;}
+.star.active{color:#fbbf24;opacity:1;transform:scale(1.1);}
 .star:hover{transform:scale(1.15);}
+.success-stars svg,.src-stars svg{fill:currentColor;stroke:none;display:inline-block;vertical-align:middle;}
 .stars-desc{font-size:13px;font-weight:500;color:#fbbf24;min-height:20px;transition:all 0.15s;}
 
 /* QUICK TAGS */
@@ -170,7 +172,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 <nav class="nav">
   <a class="back-btn" href="mytasks.html" id="backBtn">←</a>
   <span class="nav-title" id="navTitle">Leave a review</span>
-  <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">☀️ Light</button>
+  <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">Light</button>
 </nav>
 
 <!-- REVIEW FORM -->
@@ -179,13 +181,13 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   <!-- Task summary -->
   <div class="task-card">
     <div class="tc-row">
-      <div class="tc-icon" id="taskIcon" style="background:rgba(107,63,160,0.2)">🏠</div>
+      <div class="tc-icon" id="taskIcon" style="background:rgba(107,63,160,0.2)" data-qg-ico="clipboard" data-qg-ico-size="22"></div>
       <div class="tc-info">
         <div class="tc-title" id="taskTitle">Deep clean 2 bedroom apartment</div>
         <div class="tc-meta" id="taskMeta">$120 · Completed Jun 21, 2026</div>
       </div>
     </div>
-    <span class="completed-badge">✓ Task completed</span>
+    <span class="completed-badge"><span data-qg-ico="checkCircle" data-qg-ico-size="12"></span> Task completed</span>
   </div>
 
   <!-- Who you're reviewing -->
@@ -199,11 +201,11 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   <div class="stars-section">
     <span class="section-label">Your rating</span>
     <div class="stars" id="starsRow">
-      <span class="star" onclick="setRating(1)">⭐</span>
-      <span class="star" onclick="setRating(2)">⭐</span>
-      <span class="star" onclick="setRating(3)">⭐</span>
-      <span class="star" onclick="setRating(4)">⭐</span>
-      <span class="star" onclick="setRating(5)">⭐</span>
+      <span class="star" onclick="setRating(1)" data-qg-ico="star" data-qg-ico-size="32"></span>
+      <span class="star" onclick="setRating(2)" data-qg-ico="star" data-qg-ico-size="32"></span>
+      <span class="star" onclick="setRating(3)" data-qg-ico="star" data-qg-ico-size="32"></span>
+      <span class="star" onclick="setRating(4)" data-qg-ico="star" data-qg-ico-size="32"></span>
+      <span class="star" onclick="setRating(5)" data-qg-ico="star" data-qg-ico-size="32"></span>
     </div>
     <div class="stars-desc" id="starsDesc">Tap to rate</div>
   </div>
@@ -222,20 +224,20 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   </div>
 
   <button class="submit-btn" id="submitBtn" onclick="submitReviewForm()" disabled>Post review</button>
-  <div class="submit-note" id="submitNote">Your star rating and comment help other QuickGigs users. Both poster and tasker should review after every task.</div>
+  <div class="submit-note" id="submitNote">Your star rating and comment help other SwiftGigs users. Both poster and tasker should review after every task.</div>
 
 </div>
 
 <!-- SUCCESS SCREEN -->
 <div class="success-screen" id="successScreen">
-  <div class="success-icon">🎉</div>
+  <div class="success-icon" data-qg-ico="party" data-qg-ico-size="52"></div>
   <div class="success-title">Review submitted</div>
-  <div class="success-stars" id="successStars">⭐⭐⭐⭐⭐</div>
-  <div class="success-sub">Thanks for reviewing <span id="successName">Sarah K.</span> — your feedback helps build trust on QuickGigs.</div>
+  <div class="success-stars" id="successStars"></div>
+  <div class="success-sub">Thanks for reviewing <span id="successName">Sarah K.</span> — your feedback helps build trust on SwiftGigs.</div>
   <div class="success-rating-card">
     <div class="src-label">Your review for</div>
     <div class="src-name" id="successCardName">Sarah K.</div>
-    <div class="src-stars" id="successCardStars">⭐⭐⭐⭐⭐</div>
+    <div class="src-stars" id="successCardStars"></div>
     <div class="src-tags" id="successCardTags">On time · Great work · Professional</div>
   </div>
   <button class="home-btn" onclick="window.location.href='dashboard.html'">Back to dashboard</button>
@@ -244,11 +246,11 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <!-- TAB BAR -->
 <nav class="tab-bar">
-  <a class="tab-item" href="dashboard.html"><span class="tab-icon">🏠</span><span class="tab-lbl">Home</span></a>
-  <a class="tab-item" href="browsetask.html"><span class="tab-icon">🔍</span><span class="tab-lbl">Browse</span></a>
-  <a class="tab-item" href="posttask.html"><span class="tab-icon">➕</span><span class="tab-lbl">Post</span></a>
-  <a class="tab-item active" href="mytasks.html"><span class="tab-icon">✅</span><span class="tab-lbl">My Tasks</span></a>
-  <a class="tab-item" href="messages.html"><span class="tab-icon">💬</span><span class="tab-lbl">Messages</span></a>
+  <a class="tab-item" href="dashboard.html"><span class="tab-icon" data-qg-ico="home" data-qg-ico-size="22"></span><span class="tab-lbl">Home</span></a>
+  <a class="tab-item" href="browsetask.html"><span class="tab-icon" data-qg-ico="search" data-qg-ico-size="22"></span><span class="tab-lbl">Browse</span></a>
+  <a class="tab-item" href="posttask.html"><span class="tab-icon" data-qg-ico="plus" data-qg-ico-size="22"></span><span class="tab-lbl">Post</span></a>
+  <a class="tab-item active" href="mytasks.html"><span class="tab-icon" data-qg-ico="checkCircle" data-qg-ico-size="22"></span><span class="tab-lbl">My Tasks</span></a>
+  <a class="tab-item" href="messages.html"><span class="tab-icon" data-qg-ico="message" data-qg-ico-size="22"></span><span class="tab-lbl">Messages</span></a>
 </nav>
 
 <script type="module">
@@ -284,6 +286,7 @@ onAuthStateChanged(auth, (user) => {
 <script src="qg-bigtech.js?v=20260810session1" defer></script>
 <script src="qg-wave2.js?v=20260811trust2" defer></script>
 <script defer src="supabase-db.js?v=20260827chat1"></script>
+<script src="qg-icons.js"></script>
 <script src="qg-theme.js"></script>
 <script>
 // ── THEME ── qg-theme.js owns the qg-theme key and paints without wiping
@@ -292,7 +295,7 @@ onAuthStateChanged(auth, (user) => {
 window.toggleTheme = function(){
   window.QG_applyTheme(!window.QG_isDarkTheme(), 'modeBtn');
 };
-document.getElementById('modeBtn').textContent = window.QG_isDarkTheme() ? '☀️ Light' : '🌙 Dark';
+document.getElementById('modeBtn').textContent = window.QG_isDarkTheme() ? 'Light' : 'Dark';
 
 // ── STATE ──────────────────────────────────────────────
 var currentRating = 0;
@@ -304,7 +307,7 @@ function reviewErrorMessage(err) {
   if (code === 'already_reviewed') return 'You already reviewed this task.';
   if (code === 'content_moderation') {
     return (typeof QG_CONTENT_MOD_MESSAGE === 'string' && QG_CONTENT_MOD_MESSAGE) ||
-      "This contains language that isn't allowed on QuickGigs — please edit and try again";
+      "This contains language that isn't allowed on SwiftGigs — please edit and try again";
   }
   if (code === 'reviews_table_missing') return 'Reviews not set up — run supabase/reviews.sql in Supabase SQL Editor.';
   if (code === 'reviews_rls_blocked' || code === 'reviews_save_failed' || code === 'reviews_task_id_type') {
@@ -357,6 +360,15 @@ document.getElementById('tagsContainer').innerHTML = tagsHtml;
 
 // ── STAR RATING ────────────────────────────────────────
 var ratingLabels = ['','Poor','Fair','Good','Great','Excellent'];
+
+function qgStarsHtml(n){
+  var mark = typeof qgIcon === 'function' ? qgIcon('star', { size: 18 }) : '★';
+  var out = '';
+  for (var i = 0; i < 5; i++) {
+    out += '<span style="color:' + (i < n ? '#fbbf24' : 'var(--text-faint)') + ';opacity:' + (i < n ? '1' : '0.4') + '">' + mark + '</span>';
+  }
+  return out;
+}
 
 window.setRating = function(rating){
   currentRating = rating;
@@ -450,7 +462,7 @@ window.submitReviewForm = async function(){
     submitBtn.textContent = 'Post review';
     var raw = err && err.message ? err.message : err;
     var msg = String(raw || '');
-    if (msg.indexOf("isn't allowed on QuickGigs") >= 0 || msg.indexOf('content_moderation') >= 0) {
+    if (msg.indexOf("isn't allowed on SwiftGigs") >= 0 || msg.indexOf('content_moderation') >= 0) {
       showToast(msg.indexOf("isn't allowed") >= 0 ? msg : reviewErrorMessage('content_moderation'), '#ef4444');
     } else {
       showToast(reviewErrorMessage(raw), '#ef4444');
@@ -459,9 +471,9 @@ window.submitReviewForm = async function(){
   }
 
   // Show success screen
-  var starsStr = '⭐'.repeat(currentRating);
-  document.getElementById('successStars').textContent     = starsStr;
-  document.getElementById('successCardStars').textContent = starsStr;
+  var starsHtml = qgStarsHtml(currentRating);
+  document.getElementById('successStars').innerHTML     = starsHtml;
+  document.getElementById('successCardStars').innerHTML = starsHtml;
   document.getElementById('successCardTags').textContent  = selectedTags.length ? selectedTags.join(' · ') : ratingLabels[currentRating];
 
   document.getElementById('reviewForm').style.display    = 'none';
