@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { authErrorStatus, requireFirebaseUser } from '../_shared/firebase-auth.ts';
 import { ageFromDateOfBirth, isTeenDateOfBirth } from '../_shared/age.ts';
 import { signGuardianToken } from '../_shared/guardian-token.ts';
+import { checkRateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -66,6 +67,10 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_URL') || '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '',
     );
+
+    const rl = await checkRateLimit(supabase, identity.uid, 'submit_application');
+    if (!rl.allowed) return rateLimitResponse(rl, corsHeaders);
+
     const { data: actor } = await supabase
       .from('users')
       .select('name,avatar_url,account_status,status,date_of_birth,guardian_email,guardian_consent_status,guardian_stripe_payouts_enabled,is_tasker,tasker_verified,tasker_verification_status,stripe_connect_id,stripe_payouts_enabled,payout_owner')

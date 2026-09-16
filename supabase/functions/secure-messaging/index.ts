@@ -1,5 +1,14 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { authErrorStatus, requireFirebaseUser } from '../_shared/firebase-auth.ts';
+import {
+  analyzeOffPlatformContact,
+  FRAUD_WINDOW_MAX,
+  FRAUD_WINDOW_MS,
+  isExemptBody,
+  isForgedSystemBody,
+  offPlatformWarning,
+} from '../_shared/off-platform.ts';
+import { checkRateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -162,6 +171,51 @@ Deno.serve(async (req) => {
       if (conv.is_unlocked !== true) return json({ success: false, error: 'conversation_locked' }, 403);
       const text = String(body.body || '').trim();
       if (!text || text.length > 2000) return json({ success: false, error: 'invalid_message' }, 400);
+
+      const limit = await checkRateLimit(supabase, uid, 'send_message');
+      if (!limit.allowed) return rateLimitResponse(limit, corsHeaders);
+
+      // System notices are generated server-side (task-evidence). Nothing in the
+      // frontend sends one — sendSystemChatMessage is defined but never called —
+      // so a client body claiming the system prefix is a forgery attempt, and
+      // allowing it would skip the contact filter below entirely.
+      if (isForgedSystemBody(text)) {
+        return json({ success: false, error: 'invalid_message' }, 400);
+      }
+
+      // Contact / off-platform enforcement. The client runs the same logic for
+      // instant feedback, but that copy is UX only: it never runs for a crafted
+      // request. This is the authoritative check.
+      if (!isExemptBody(text)) {
+        const since = new Date(Date.now() - FRAUD_WINDOW_MS).toISOString();
+        const { data: recent } = await supabase
+          .from('messages')
+          .select('body,created_at')
+          .eq('conv_id', conv.conv_id)
+          .eq('sender_id', uid)
+          .gte('created_at', since)
+          .order('created_at', { ascending: false })
+          .limit(FRAUD_WINDOW_MAX);
+
+        // Oldest-first, matching the client's buffer order, so a phone number
+        // split across several messages reassembles the same way.
+        const recentTexts = (recent || [])
+          .map((r) => String(r.body || ''))
+          .filter((b) => !isExemptBody(b))
+          .reverse();
+
+        const verdict = analyzeOffPlatformContact(text, recentTexts);
+        if (verdict.blocked) {
+          return json({
+            success: false,
+            error: 'off_platform_contact',
+            blocked: true,
+            reason: verdict.reason || 'pattern',
+            message: verdict.message || offPlatformWarning(),
+          }, 422);
+        }
+      }
+
       const { data, error } = await supabase
         .from('messages')
         .insert({ conv_id: conv.conv_id, sender_id: uid, body: text })

@@ -1,6 +1,28 @@
 -- QuickGigs — money-path gate: block application accept unless tasker is cleared.
 -- Fires at the DATA layer so no frontend / API path can bypass it.
 -- Does NOT drop or alter protect_qg_application_guardian_fields.
+--
+-- ── Reconciled against the live database 2026-09-16 ─────────────────────────
+-- The live `applications` table already carries:
+--   applications_require_verified_tasker_on_acceptance
+--     BEFORE UPDATE OF status → require_verified_tasker_on_acceptance()
+--     checks users.tasker_verified, joined on firebase_uid.
+--
+-- This migration is ADDITIVE, not a replacement. Differences:
+--   * it gates guardian consent / payout ownership / account_status, which the
+--     live trigger does not check at all;
+--   * it fires on INSERT as well as UPDATE, so a row inserted directly with
+--     status='accepted' can no longer skip the gate (the live trigger is
+--     UPDATE-only, so that path was open);
+--   * it repeats the tasker_verified check so the INSERT path is covered too.
+--     On UPDATE both triggers assert it — same rule, same outcome, harmless.
+--
+-- FIXED BEFORE APPLYING: the worker lookup previously read
+--   WHERE user_id = NEW.worker_id
+-- but applications.worker_id holds a Firebase UID, so it matched no row and
+-- fell through to 'worker % not found', which would have blocked EVERY accept.
+-- Verified on live data: worker_id matched users.firebase_uid 3/3 and
+-- users.user_id 0/3. The join is now on firebase_uid.
 
 -- ── STEP 1: column guard (fail closed if schema drift) ───────────────────────
 DO $$
@@ -34,6 +56,20 @@ BEGIN
       AND column_name = 'account_status'
   ) THEN
     missing := array_append(missing, 'users.account_status');
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'users'
+      AND column_name = 'firebase_uid'
+  ) THEN
+    missing := array_append(missing, 'users.firebase_uid');
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'users'
+      AND column_name = 'tasker_verified'
+  ) THEN
+    missing := array_append(missing, 'users.tasker_verified');
   END IF;
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns
@@ -76,8 +112,10 @@ DECLARE
   w record;
   becoming_accepted boolean;
 BEGIN
-  becoming_accepted := NEW.status = 'accepted'
-    AND (TG_OP = 'INSERT' OR OLD.status IS DISTINCT FROM 'accepted');
+  -- Case-normalised to match the live trigger, which compares LOWER(status).
+  becoming_accepted := LOWER(COALESCE(NEW.status, '')) = 'accepted'
+    AND (TG_OP = 'INSERT'
+         OR LOWER(COALESCE(OLD.status, '')) IS DISTINCT FROM 'accepted');
 
   IF becoming_accepted THEN
 
@@ -89,13 +127,15 @@ BEGIN
         USING ERRCODE = 'check_violation';
     END IF;
 
+    -- applications.worker_id holds a Firebase UID, not users.user_id.
     SELECT guardian_consent_status,
            guardian_stripe_payouts_enabled,
            payout_owner,
-           account_status
+           account_status,
+           tasker_verified
       INTO w
       FROM public.users
-     WHERE user_id = NEW.worker_id
+     WHERE firebase_uid = NEW.worker_id
      LIMIT 1;
 
     IF NOT FOUND THEN
@@ -112,11 +152,21 @@ BEGIN
         USING ERRCODE = 'check_violation';
     END IF;
 
-    -- Teen gate: guardian-owned payouts, or explicit pending/rejected consent.
-    -- Adults use payout_owner='self' and guardian_consent_status='not_required'
-    -- (NULL is NOT treated as adult).
+    -- Identity verification. The live applications_require_verified_tasker_on_acceptance
+    -- trigger asserts this on UPDATE only; repeating it here closes the INSERT path.
+    IF w.tasker_verified IS DISTINCT FROM TRUE THEN
+      RAISE EXCEPTION
+        'Cannot accept: tasker identity verification required.'
+        USING ERRCODE = 'check_violation';
+    END IF;
+
+    -- Teen gate: guardian-owned payouts, or pending/rejected consent.
+    -- Adults use payout_owner='self' and guardian_consent_status='not_required'.
+    -- A NULL consent status coalesces to 'pending' so it fails CLOSED — without
+    -- that, NULL made the whole condition NULL and skipped the gate entirely,
+    -- which contradicted this comment's original claim.
     IF coalesce(w.payout_owner, 'self') = 'guardian'
-       OR w.guardian_consent_status IN ('pending', 'rejected') THEN
+       OR coalesce(w.guardian_consent_status, 'pending') IN ('pending', 'rejected') THEN
       IF w.guardian_consent_status IS DISTINCT FROM 'approved'
          OR coalesce(w.guardian_stripe_payouts_enabled, false) = false THEN
         RAISE EXCEPTION

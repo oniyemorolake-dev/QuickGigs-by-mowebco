@@ -3,6 +3,7 @@ import { isTeenDateOfBirth } from '../_shared/age.ts';
 import { authErrorStatus, requireFirebaseUser } from '../_shared/firebase-auth.ts';
 import { haversineKm, isCanadianCoordinate, roundCoord } from '../_shared/geo.ts';
 import { geocodeCanada } from '../_shared/geocode-canada.ts';
+import { checkRateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -201,6 +202,10 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_URL') || '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '',
     );
+
+    const rl = await checkRateLimit(supabase, identity.uid, 'post_task');
+    if (!rl.allowed) return rateLimitResponse(rl, corsHeaders);
+
     const { data: actor } = await supabase
       .from('users')
       .select('name,account_status,status,date_of_birth,is_poster,poster_verified,poster_verification_status')
