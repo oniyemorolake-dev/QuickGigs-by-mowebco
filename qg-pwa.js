@@ -1,4 +1,4 @@
-/* QuickGigs — PWA install (Android prompt + iPhone Safari guide) */
+/* SwiftGigs — PWA install (Android prompt + iPhone Safari guide) */
 (function () {
   var DISMISS_KEY = 'qg-pwa-dismissed';
   var IOS_DISMISS_KEY = 'qg-ios-install-dismissed';
@@ -19,7 +19,7 @@
     var marker = document.createElement('meta');
     marker.id = 'qg-pwa-head';
     marker.name = 'generator';
-    marker.content = 'QuickGigs PWA';
+    marker.content = 'SwiftGigs PWA';
     document.head.appendChild(marker);
 
     if (!document.querySelector('link[rel="manifest"]')) {
@@ -53,7 +53,7 @@
     if (!document.querySelector('meta[name="apple-mobile-web-app-title"]')) {
       var appleTitle = document.createElement('meta');
       appleTitle.name = 'apple-mobile-web-app-title';
-      appleTitle.content = 'QuickGigs';
+      appleTitle.content = 'SwiftGigs';
       document.head.appendChild(appleTitle);
     }
 
@@ -189,14 +189,14 @@
       overlay.innerHTML =
         '<div class="qg-ios-sheet" role="document">' +
           '<div class="qg-ios-handle" aria-hidden="true"></div>' +
-          '<h2 class="qg-ios-title">Add QuickGigs to Home Screen</h2>' +
+          '<h2 class="qg-ios-title">Add SwiftGigs to Home Screen</h2>' +
           '<p class="qg-ios-sub">iPhone doesn&apos;t have an Install button — use Safari&apos;s Share menu instead.</p>' +
           '<div id="qgIosInAppWarn" class="qg-ios-warn" style="display:none">' +
             '<strong>Open in Safari first.</strong> Instagram, Chrome, and other in-app browsers can&apos;t add home screen apps. Copy the link and open it in Safari.' +
           '</div>' +
           '<div class="qg-ios-step"><span class="qg-ios-num">1</span><div><strong>Tap the Share button</strong><p>Bottom of Safari — square with an arrow pointing up.</p></div></div>' +
           '<div class="qg-ios-step"><span class="qg-ios-num">2</span><div><strong>Scroll → &ldquo;Add to Home Screen&rdquo;</strong><p>It may be in the <em>More</em> (⋯) menu if you don&apos;t see it right away.</p></div></div>' +
-          '<div class="qg-ios-step"><span class="qg-ios-num">3</span><div><strong>Tap Add</strong><p>QuickGigs opens like a real app from your home screen.</p></div></div>' +
+          '<div class="qg-ios-step"><span class="qg-ios-num">3</span><div><strong>Tap Add</strong><p>SwiftGigs opens like a real app from your home screen.</p></div></div>' +
           '<div class="qg-ios-actions">' +
             '<button type="button" class="qg-ios-btn secondary" id="qgIosDismissBtn">Not now</button>' +
             '<button type="button" class="qg-ios-btn primary" id="qgIosGotItBtn">Got it</button>' +
@@ -232,10 +232,10 @@
     banner.id = 'qgPwaBanner';
     banner.className = 'qg-pwa-banner show';
     banner.setAttribute('role', 'region');
-    banner.setAttribute('aria-label', 'Install QuickGigs app');
+    banner.setAttribute('aria-label', 'Install SwiftGigs app');
     banner.innerHTML =
       '<div class="qg-pwa-banner-text">' +
-        '<strong class="qg-pwa-banner-title">Install QuickGigs</strong>' +
+        '<strong class="qg-pwa-banner-title">Install SwiftGigs</strong>' +
         '<span class="qg-pwa-banner-body">Add to your home screen for faster access to tasks and messages.</span>' +
       '</div>' +
       '<div class="qg-pwa-banner-actions">' +
@@ -294,7 +294,7 @@
 
   window.promptQuickGigsInstall = function () {
     if (isStandalone()) {
-      qgNotify('QuickGigs is already installed on this device.', '#4ade80');
+      qgNotify('SwiftGigs is already installed on this device.', '#4ade80');
       return Promise.resolve({ outcome: 'accepted' });
     }
     if (isIos()) {

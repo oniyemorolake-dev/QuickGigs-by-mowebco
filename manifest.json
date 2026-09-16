@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "QuickGigs Canada",
-  "short_name": "QuickGigs",
+  "name": "SwiftGigs Canada",
+  "short_name": "SwiftGigs",
   "description": "Get everyday tasks done in Canada — post gigs or earn as a tasker nationwide. Expanding to more countries soon.",
   "start_url": "/dashboard.html?source=pwa",
   "scope": "/",
