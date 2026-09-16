@@ -46,9 +46,26 @@ not live money. The remaining flip is Test → Live (Phase 6), not this config.
 
 See **[GOOGLE-LOGIN-FIX.md](GOOGLE-LOGIN-FIX.md)** or YOUR-SIDE.md.
 
-### Resend emails (optional)
+### Resend emails — NOT optional any more
 
-See YOUR-SIDE.md — bell works without this.
+This was true when the bell was the only consumer. It is now **required for any
+16–17 signup**, because email is the sole delivery channel for guardian approval:
+
+- `register-account` → guardian consent link
+- `submit-application` → guardian application-approval link
+- `resend-guardian-consent`, `send-notification` → hard-throw `resend_not_configured`
+
+Neither caller crashes without the key (both swallow the error and return
+`email_sent: false`), so this fails **silently**. The teen account is created, but:
+
+- the consent URL is **not** returned in the response, and
+- `users.consent_token` stores only a **hash** of the token,
+
+so the raw link is unrecoverable and there is no admin or manual fallback. The teen
+is stranded until `RESEND_API_KEY` is configured and a resend is triggered.
+
+**Secrets required:** `RESEND_API_KEY`, `FROM_EMAIL`, `SITE_URL`
+(`SITE_URL` defaults to `https://quickgigs.ca`; a wrong value mints dead links).
 
 ---
 
@@ -164,7 +181,11 @@ Client checks stay as UX only. Real enforcement moves to Edge Functions + RLS.
 - [ ] Pin `search_path` on `public.qg_uid` / `public.qg_is_signed_in` (advisor WARN,
       still open — these two gate every RLS policy)
 - [ ] Terms/privacy match live payment flow
-- [ ] Test: post → apply → accept → **pay** → chat → complete → payout
+- [ ] Test: post → apply → accept → **pay** → chat → complete → payout.
+      **Never run — not in live mode, and not in test mode either.** Live DB as of
+      2026-09-16: `payments` 0 rows, tasks `completed` 0, `reviews` 0,
+      `stripe_connect_id` 0, `guardian_consent_sent_at` 0. The money path and the
+      email path are both entirely unexercised code. Run this in **test** mode first.
 - [ ] Admin console bookmarked for moderation
 - [ ] `git push origin main` + hard refresh quickgigs.ca
 
@@ -196,5 +217,10 @@ Client checks stay as UX only. Real enforcement moves to Edge Functions + RLS.
 - 10 testers, 10 tasks posted, **2 completed** on-platform
 - Full loop: post → apply → accept → chat → complete
 - Negotiation, admin moderation, notifications shipped
+
+> **Verify before repeating these numbers externally.** The live DB on 2026-09-16
+> holds 4 users, 6 tasks (4 cancelled / 2 in_progress), 0 completed, 0 reviews.
+> If the beta data was cleared, say so when citing the figures; right now nothing
+> in the database corroborates "10 testers / 2 completed".
 
 Launch adds: **money in escrow**, **locked chat until pay**, **production security**.
