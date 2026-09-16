@@ -18,6 +18,7 @@ context, and a write from you will silently destroy its work.
 | `qg-icons.js` | Claude desktop (append-only, see below) |
 | `*.css` (38 files at repo root) | Cursor |
 | `*.js` at root, except `qg-icons.js` | Cursor |
+| `*.md` at root (`AGENTS.md`, `sweep.md`, …) | Cursor |
 | `supabase/`, `sql/`, `scripts/`, `docs/`, `.github/`, `.githooks/` | Cursor |
 
 Notes:
@@ -59,8 +60,32 @@ version *backwards*. Leave them exactly as found; CI corrects them.
 4. Commit small and push often, so the other agent's base stays current.
 5. Avoid history rewrites (`rebase`, `commit --amend`, force-push) while the other
    agent is active; they invalidate its git state.
+6. **Never check out over work you do not own.** `git pull`, `git rebase`, `git
+   stash`, `git restore` and `git checkout` all rewrite files on disk, and unlike
+   a save they ignore whatever is currently in the file. Re-reading before writing
+   does not protect against them. Before any of these: run `git status`, never
+   suppress its output, and if dirty files in the other agent's zone appear,
+   commit them by explicit path or ask — do not checkout across them.
 
-## 4. Project facts
+## 4. Handoff protocol
+
+Only the Claude desktop app edits files; only Cursor can run git. An edit is not
+safe until it is a commit — until then it is one checkout away from being gone.
+
+1. Claude desktop finishes a batch and **names the exact files that are done**.
+2. Cursor commits **those paths only**, immediately, and pushes.
+3. Only then may Cursor run anything that checks out files (pull, rebase, stamp).
+
+Pushing to `main` triggers `.github/workflows/stamp-cache-version.yml`, so the
+remote is left permanently one commit ahead and the *next* pull rewrites the
+build-ID lines in all 33 HTML files. That is the recurring source of collisions
+here, and step 1 above is what makes it harmless.
+
+For files outside its zone, Claude desktop hands Cursor the diff rather than
+editing (`qg-categories.js` and `qg-theme.js` are the current live examples), or
+ownership is transferred explicitly and recorded in the table above.
+
+## 5. Project facts
 
 - **Static site, no build step.** Plain HTML/CSS/JS loaded directly.
 - **GitHub Pages serves from the repo root** (see `CNAME` and `.nojekyll`).
