@@ -27,22 +27,25 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="SwiftGigs">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#6B21A8">
+<meta name="theme-color" content="#8B5CF6">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --qg-bg:#0D0716;
-  --qg-surface:#140F24;
-  --qg-border:#2A2140;
-  --qg-hairline:#1E1730;
-  --qg-purple:#6B21A8;
-  --qg-heading:#F2EFF8;
-  --qg-body:#9C93B5;
+  /* Aliased onto qg-tokens.css's core palette (see AGENTS.md handoff note).
+     index.html loads qg-polish.css + qg-tokens.css only, not qg-auth.css, and has
+     no theme toggle, so these always resolve to the :root dark values below. */
+  --qg-bg:var(--bg);
+  --qg-surface:var(--surface);
+  --qg-border:var(--border);
+  --qg-hairline:var(--surface-alt);
+  --qg-purple:var(--primary);
+  --qg-heading:var(--text);
+  --qg-body:var(--text-muted);
   --qg-muted:#7B7194;
   --qg-link:#B69BE0;
-  --qg-chip:#2A2140;
-  --qg-chip-text:#DDD7EA;
+  --qg-chip:var(--surface-alt);
+  --qg-chip-text:var(--text);
   --p1:var(--qg-bg);
   --wm:var(--qg-body);
   --ws:var(--qg-muted);
