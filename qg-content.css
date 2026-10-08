@@ -7,7 +7,7 @@ body.page-content,
 body.trust-page {
   font-family: 'DM Sans', sans-serif;
   background: var(--bg);
-  color: var(--text-primary);
+  color: var(--text);
   min-height: 100vh;
   transition: background 0.25s, color 0.25s;
 }
@@ -18,8 +18,8 @@ body.trust-page {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: var(--surface-1);
-  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
   padding: 13px 20px;
   display: flex;
   align-items: center;
@@ -31,8 +31,26 @@ body.trust-page {
 .trust-page .nav-logo {
   font-family: 'Playfair Display', Georgia, serif;
   font-style: italic;
-  font-size: 1.25rem;
-  color: var(--brand);
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1;
+  letter-spacing: normal;
+  background: var(--grad-wordmark);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Without this the transparent fill has nothing to clip against and the
+   wordmark renders invisible rather than merely unstyled. */
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .page-content .nav-logo,
+  .trust-page .nav-logo {
+    background: none;
+    color: var(--primary);
+    -webkit-text-fill-color: var(--primary);
+  }
 }
 
 .page-content .nav-right,
@@ -45,23 +63,32 @@ body.trust-page {
 .page-content .back-btn,
 .trust-page .back-btn {
   font-size: 13px;
-  color: var(--accent);
+  /* !important: qg-light-nav.css is appended at runtime and turns this
+     accent-coloured in light mode. */
+  color: var(--text-muted) !important;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
 }
+
+.page-content .back-btn:hover,
+.trust-page .back-btn:hover { color: var(--text) !important; text-decoration: none; }
 
 .page-content .mode-btn,
 .trust-page .mode-btn,
 .page-content .mode-toggle {
-  padding: 6px 13px;
+  padding: 6px 14px;
   min-height: 36px;
-  border-radius: 20px;
-  font-size: 11px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
-  border: 1px solid var(--line);
   font-family: inherit;
-  background: var(--accent-soft);
-  color: var(--accent);
+  /* !important throughout: qg-light-nav.css is appended at runtime, after this
+     file, and fills the pill with var(--grad-accent) in light mode. */
+  background: var(--surface-alt) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: none !important;
 }
 
 /* ── Reading column ── */
@@ -76,21 +103,30 @@ body.trust-page {
 .trust-page .page-label {
   font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--accent);
-  margin-bottom: 10px;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
   display: block;
   font-weight: 600;
 }
 
 .page-content .page-title,
 .trust-page .page-title {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: clamp(1.75rem, 4vw, 2.15rem);
-  color: var(--text-primary);
-  margin-bottom: 8px;
-  line-height: 1.2;
+  font-family: 'DM Sans', sans-serif;
+  /* !important, and scoped two classes deep, to beat qg-refine.css's
+     `.page-title{font-size:28px !important}` — it is appended at runtime, so
+     source order alone loses. Same reason on .section-title below. */
+  font-size: 24px !important;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin-bottom: 6px;
+  line-height: 1.25;
   font-weight: 700;
+}
+
+@media (max-width: 480px) {
+  .page-content .page-title,
+  .trust-page .page-title { font-size: 22px !important; }
 }
 
 .page-content .page-date,
@@ -104,18 +140,26 @@ body.trust-page {
 
 .page-content .section,
 .trust-page .section {
-  margin-bottom: 28px;
+  margin: 0;
+  padding: 22px 0;
+  border-top: 1px solid var(--border);
   scroll-margin-top: 72px;
 }
 
+/* The TOC and the page date already end in a rule, so the first section's own
+   top border would double it. */
+.page-content .qg-content-toc + .section,
+.page-content .page-date + .section { border-top: none; padding-top: 0; }
+
 .page-content .section-title,
 .trust-page .section-title {
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-size: 17px !important;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  color: var(--text);
   margin-bottom: 10px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--line);
+  padding-bottom: 0;
+  border-bottom: none;
   line-height: 1.35;
 }
 
@@ -123,7 +167,7 @@ body.trust-page {
 .trust-page p {
   font-size: 15px;
   line-height: 1.75;
-  color: var(--text-secondary);
+  color: var(--text);
   margin-bottom: 12px;
   max-width: 72ch;
 }
@@ -141,19 +185,19 @@ body.trust-page {
 .trust-page li {
   font-size: 15px;
   line-height: 1.7;
-  color: var(--text-secondary);
+  color: var(--text);
   margin-bottom: 6px;
 }
 
 .page-content strong,
 .trust-page strong {
-  color: var(--text-primary);
+  color: var(--text);
   font-weight: 600;
 }
 
 .page-content a,
 .trust-page a {
-  color: var(--accent);
+  color: var(--primary);
 }
 
 .page-content a:hover,
@@ -167,13 +211,13 @@ body.trust-page {
   border-radius: 14px;
   padding: 16px 18px;
   margin-bottom: 20px;
-  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
-  background: var(--accent-soft);
+  border: 1px solid var(--border);
+  background: var(--surface);
 }
 
 .page-content .info-box p,
 .trust-page .info-box p {
-  color: var(--text-secondary);
+  color: var(--text);
   margin: 0;
 }
 
@@ -183,7 +227,7 @@ body.trust-page {
   padding: 16px 18px;
   margin-bottom: 20px;
   border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
-  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  background: var(--danger-soft);
 }
 
 .page-content .highlight-box p,
@@ -196,8 +240,8 @@ body.trust-page {
 .trust-page .contact-card {
   border-radius: 16px;
   padding: 20px;
-  border: 1px solid var(--line);
-  background: var(--surface-1);
+  border: 1px solid var(--border);
+  background: var(--surface);
   margin-top: 16px;
 }
 
@@ -215,14 +259,14 @@ body.trust-page {
 .page-content .service-card {
   border-radius: 12px;
   padding: 13px 15px;
-  border: 1px solid var(--line);
-  background: var(--surface-1);
+  border: 1px solid var(--border);
+  background: var(--surface);
 }
 
 .page-content .service-name {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text);
   margin-bottom: 3px;
 }
 
@@ -234,17 +278,17 @@ body.trust-page {
 
 /* ── TOC (long legal) ── */
 .qg-content-toc {
-  margin: 0 0 28px;
-  padding: 16px 18px;
-  border-radius: 16px;
-  background: var(--surface-1);
-  border: 1px solid var(--line);
+  margin: 0 0 24px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
 }
 
 .qg-content-toc-title {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-muted);
   margin-bottom: 10px;
@@ -271,7 +315,7 @@ body.trust-page {
 }
 
 .qg-content-toc a {
-  color: var(--accent);
+  color: var(--primary);
   text-decoration: none;
   font-weight: 500;
 }
@@ -287,8 +331,8 @@ body.trust-page {
   border-radius: 16px;
   padding: 18px 18px 16px;
   margin-bottom: 12px;
-  border: 1px solid var(--line);
-  background: var(--surface-1);
+  border: 1px solid var(--border);
+  background: var(--surface);
 }
 
 .page-content .step-num,
@@ -299,8 +343,8 @@ body.trust-page {
   border-radius: 50%;
   align-items: center;
   justify-content: center;
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--surface-alt);
+  color: var(--primary);
   font-size: 13px;
   font-weight: 700;
   margin-bottom: 10px;
@@ -312,8 +356,8 @@ body.trust-page {
   border-radius: 12px;
   display: grid;
   place-items: center;
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--surface-alt);
+  color: var(--primary);
   margin-bottom: 12px;
 }
 
@@ -327,7 +371,7 @@ body.trust-page {
 .qg-help-card h3 {
   font-size: 16px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text);
   margin-bottom: 6px;
 }
 
@@ -358,11 +402,11 @@ body.trust-page {
   justify-content: center;
   gap: 8px;
   min-height: 48px;
-  padding: 12px 22px;
-  border-radius: 14px;
+  padding: 13px 22px;
+  border-radius: 12px;
   border: none;
-  background: var(--grad-accent);
-  color: var(--on-accent);
+  background: var(--primary);
+  color: var(--primary-text);
   text-decoration: none;
   font-weight: 600;
   font-size: 14px;
@@ -371,14 +415,14 @@ body.trust-page {
 }
 
 .qg-content-cta:hover {
-  filter: brightness(1.05);
+  filter: brightness(1.06);
   text-decoration: none;
 }
 
 .qg-content-cta.is-secondary {
-  background: transparent;
-  color: var(--accent);
-  border: 1px solid var(--line-strong);
+  background: var(--surface-alt);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 /* ── Guidelines tabs ── */
@@ -394,21 +438,21 @@ body.trust-page {
 .trust-page .tab-btn {
   padding: 8px 16px;
   min-height: 40px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--text-muted);
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
   font-family: inherit;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 13.5px;
+  font-weight: 600;
   cursor: pointer;
 }
 
 .page-content .tab-btn.active,
 .trust-page .tab-btn.active {
-  background: var(--accent-soft);
-  color: var(--accent);
-  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: var(--primary);
+  color: var(--primary-text) !important;
+  border-color: var(--primary) !important;
 }
 
 .page-content .tab-panel,
@@ -424,9 +468,9 @@ body.trust-page {
 /* ── FAQ accordion ── */
 .page-content .faq-item,
 .trust-page .faq-item {
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 14px;
-  background: var(--surface-1);
+  background: var(--surface);
   padding: 0;
   margin-bottom: 10px;
   overflow: hidden;
@@ -436,7 +480,7 @@ body.trust-page {
 .trust-page .faq-q {
   font-size: 15px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text);
   cursor: pointer;
   display: flex;
   justify-content: space-between;
@@ -451,13 +495,13 @@ body.trust-page {
 .page-content .faq-q span,
 .trust-page .faq-q span {
   flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  border-radius: 0;
   display: grid;
   place-items: center;
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: none;
+  color: var(--text-muted);
   font-size: 18px;
   font-weight: 500;
   line-height: 1;
@@ -473,7 +517,7 @@ body.trust-page {
 .trust-page .faq-a {
   font-size: 14px;
   line-height: 1.7;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   padding: 0 16px 16px;
   display: none;
   max-width: none;
@@ -499,12 +543,14 @@ body.trust-page {
 }
 
 .qg-err-code {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 4.5rem;
-  color: var(--brand);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 64px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text-muted);
   line-height: 1;
   margin-bottom: 8px;
-  font-style: italic;
+  font-style: normal;
 }
 
 .qg-err-wrap .page-title {
@@ -523,7 +569,7 @@ body.page-feedback .content {
 .page-feedback .nav-title {
   font-size: 15px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .page-feedback .beta-note {
@@ -532,9 +578,9 @@ body.page-feedback .content {
   font-size: 13px;
   line-height: 1.55;
   margin-bottom: 24px;
-  background: var(--accent-soft);
-  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
-  color: var(--text-secondary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
 }
 
 .page-feedback .field {
@@ -564,9 +610,9 @@ body.page-feedback .content {
   font-family: inherit;
   font-size: 14px;
   outline: none;
-  border: 1px solid var(--line);
-  background: var(--surface-1);
-  color: var(--text-primary);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
   box-sizing: border-box;
 }
 
@@ -575,7 +621,7 @@ body.page-feedback .content {
   -webkit-appearance: none;
   cursor: pointer;
   padding-right: 42px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239a91b8' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239C93AC' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 16px center;
 }
@@ -588,8 +634,8 @@ body.page-feedback .content {
 .page-feedback .field-input:focus,
 .page-feedback .field-select:focus,
 .page-feedback .field-textarea:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  border-color: var(--primary);
+  outline: 2px solid color-mix(in srgb, var(--primary) 30%, transparent); outline-offset: 0; box-shadow: none;
 }
 
 .page-feedback .field-input.is-invalid,
@@ -616,7 +662,7 @@ body.page-feedback .content {
 
 .page-feedback .msg-box.err {
   display: block;
-  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  background: var(--danger-soft);
   border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
   color: var(--danger);
 }
@@ -649,8 +695,8 @@ body.page-feedback .content {
   min-height: 50px;
   border: none;
   border-radius: 14px;
-  background: var(--grad-accent);
-  color: var(--on-accent);
+  background: var(--primary);
+  color: var(--primary-text);
   font-family: inherit;
   font-size: 15px;
   font-weight: 600;
@@ -687,20 +733,20 @@ body.page-feedback .content {
   display: grid;
   place-items: center;
   background: var(--money-soft);
-  color: var(--money);
+  color: var(--green);
 }
 
 .page-feedback .success-title {
   font-size: 22px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text);
   margin-bottom: 8px;
 }
 
 .page-feedback .success-sub {
   font-size: 14px;
   line-height: 1.6;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   margin-bottom: 24px;
 }
 
@@ -710,8 +756,8 @@ body.page-feedback .content {
   align-items: center;
   padding: 10px 20px;
   border-radius: 12px;
-  background: var(--grad-accent);
-  color: var(--on-accent);
+  background: var(--primary);
+  color: var(--primary-text);
   text-decoration: none;
   font-weight: 600;
 }
@@ -721,18 +767,50 @@ body.page-feedback .content {
 .trust-page .site-footer {
   text-align: center;
   padding: 24px 20px 32px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-muted);
   line-height: 1.8;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--border);
   max-width: 42rem;
   margin: 0 auto;
 }
 
 .page-content .site-footer a,
 .trust-page .site-footer a {
-  color: var(--accent);
+  color: var(--text-muted);
   text-decoration: none;
+}
+
+.page-content .site-footer a:hover,
+.trust-page .site-footer a:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+/* Footer brand slot rendered by qg-site.js. Same wordmark treatment as the
+   nav, one step smaller. */
+.page-content .qg-foot-brand,
+.trust-page .qg-foot-brand {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 15px;
+  background: var(--grad-wordmark);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  margin-bottom: 2px;
+}
+
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .page-content .qg-foot-brand,
+  .trust-page .qg-foot-brand {
+    background: none;
+    color: var(--primary);
+    -webkit-text-fill-color: var(--primary);
+  }
 }
 
 /* Cookie banner (kept from qg-trust) */
@@ -744,12 +822,12 @@ body.page-feedback .content {
   z-index: 9998;
   padding: 14px 16px;
   border-radius: 14px;
-  background: var(--surface-1);
-  border: 1px solid var(--line);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
   font-family: 'DM Sans', sans-serif;
   font-size: 13px;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   display: none;
   align-items: flex-start;
   gap: 12px;
@@ -765,11 +843,11 @@ body.page-feedback .content {
   margin: 0;
   line-height: 1.55;
   flex: 1;
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 #qgCookieBanner a {
-  color: var(--accent);
+  color: var(--primary);
 }
 
 #qgCookieBanner button {
@@ -777,8 +855,8 @@ body.page-feedback .content {
   padding: 8px 14px;
   border-radius: 10px;
   border: none;
-  background: var(--grad-accent);
-  color: var(--on-accent);
+  background: var(--primary);
+  color: var(--primary-text);
   font-weight: 600;
   cursor: pointer;
   font-size: 12px;

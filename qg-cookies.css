@@ -1,30 +1,27 @@
-/* QuickGigs — cookie consent banner (standalone — load with qg-cookies.js) */
+/* SwiftGigs — cookie consent banner (standalone — load with qg-cookies.js) */
 #qgCookieBanner{
   position:fixed;left:12px;right:12px;bottom:12px;z-index:9998;
   padding:14px 16px;border-radius:14px;
-  background:#150830;border:1px solid rgba(200,168,233,0.25);
-  box-shadow:0 8px 32px rgba(0,0,0,0.45);
-  font-family:'DM Sans',sans-serif;font-size:13px;color:rgba(255,255,255,0.9);
+  background:var(--surface);border:1px solid var(--border);
+  box-shadow:0 8px 24px rgba(0,0,0,0.25);
+  font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-muted);
   display:none;align-items:center;gap:12px;
   max-width:520px;margin:0 auto;
   animation:qgCookieIn 0.35s cubic-bezier(0.22,1,0.36,1);
 }
-body.light #qgCookieBanner{
-  background:#fff;border-color:#e8e2ff;color:#4b5563;
-  box-shadow:0 8px 28px rgba(107,63,160,0.12);
-}
+/* No body.light override needed: --surface, --border and --text-muted above
+   already flip with the theme. */
 #qgCookieBanner.qg-above-tabbar{bottom:calc(72px + env(safe-area-inset-bottom,0px));}
 #qgCookieBanner.show{display:flex;}
 #qgCookieBanner p{margin:0;line-height:1.55;flex:1;}
-#qgCookieBanner a{color:#c8a8e9;text-decoration:underline;}
-body.light #qgCookieBanner a{color:#6b3fa0;}
+#qgCookieBanner a{color:var(--primary);text-decoration:underline;}
 #qgCookieAccept{
   flex-shrink:0;padding:9px 18px;border-radius:10px;border:none;
-  background:linear-gradient(135deg,#9b6fc4,#6b3fa0);color:#fff;
+  background:var(--primary);color:var(--primary-text);
   font-weight:600;cursor:pointer;font-size:13px;font-family:inherit;
-  transition:transform 0.15s,opacity 0.15s;
+  transition:background 0.15s;
 }
-#qgCookieAccept:hover{transform:translateY(-1px);opacity:0.95;}
+#qgCookieAccept:hover{background:color-mix(in srgb, var(--primary) 88%, var(--text));}
 @keyframes qgCookieIn{
   from{opacity:0;transform:translateY(16px);}
   to{opacity:1;transform:translateY(0);}
