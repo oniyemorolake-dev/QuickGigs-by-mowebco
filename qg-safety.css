@@ -77,8 +77,8 @@
 .qg-safety-btn-danger {
   width: 100%;
   background: var(--danger);
-  color: #fff;
-  box-shadow: 0 8px 20px color-mix(in srgb, var(--danger) 28%, transparent);
+  color: var(--danger-text);
+  box-shadow: none;
 }
 
 html.light .qg-safety-btn-danger,

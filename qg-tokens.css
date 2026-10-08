@@ -32,6 +32,14 @@
   --attention: #fbbf24;
   --danger: #f87171;
 
+  /* Label colour for text sitting ON a --danger fill. White gave 2.8:1 here,
+     well under AA. Unlike --teal-text this DOES need a light-mode override:
+     the two danger fills sit on opposite sides of the lightness midpoint, so
+     no single label can serve both. Dark theme's #f87171 is a light red and
+     takes dark text (6.6:1); light theme's #b91c1c is a dark red and keeps
+     white (6.5:1). */
+  --danger-text: #2A0A0A;
+
   /* ── Flow accents ──
    * Posting flow = purple, earning flow = teal.
    * NOTE: this inverts the previous mapping, where tasker was purple and
@@ -110,6 +118,7 @@ body.light {
   /* Darker for AA on white */
   --attention: #92400e;
   --danger: #b91c1c;
+  --danger-text: #ffffff;
 
   /* Soft fills tint toward white so chips read on light surfaces */
   --accent-soft: color-mix(in srgb, var(--accent) 14%, #ffffff);

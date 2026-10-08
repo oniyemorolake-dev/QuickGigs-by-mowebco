@@ -523,7 +523,7 @@ body:not(.light) .qg-activity-card {
 
 .btn-danger,
 .accept-btn.is-done { /* keep green for done */ }
-.btn-danger { color: #fff !important; background: var(--qg-red) !important; }
+.btn-danger { color: var(--danger-text) !important; background: var(--qg-red) !important; }
 
 /* Ghost “post another” card */
 .qg-ghost-card {
