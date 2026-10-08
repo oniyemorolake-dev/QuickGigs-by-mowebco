@@ -7,14 +7,32 @@
   flex-shrink: 0;
 }
 
+/* Matches .sg-wordmark in qg-swift.css. The literal gradient fallback matters:
+   if --grad-wordmark ever fails to resolve, background-clip:text would have
+   nothing to clip and the transparent fill would render the wordmark invisible
+   rather than merely unstyled. All 7 pages load qg-tokens.css first today, so
+   this only guards against qg-brand.css being added to a page that doesn't. */
 .nav-brand .nav-logo {
   font-family: 'Playfair Display', serif;
-  font-style: normal;
+  font-style: italic;
   font-size: 1.45rem;
   font-weight: 700;
-  color: var(--primary, #8B5CF6) !important;
+  background: var(--grad-wordmark, linear-gradient(100deg, #8B5CF6 0%, #2DD4BF 100%));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
   line-height: 1;
   letter-spacing: -0.01em;
+}
+
+/* Fallback for engines without background-clip:text support */
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .nav-brand .nav-logo {
+    background: none;
+    color: var(--primary, #8B5CF6);
+    -webkit-text-fill-color: var(--primary, #8B5CF6);
+  }
 }
 
 .nav-brand .nav-role {
