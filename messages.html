@@ -411,12 +411,12 @@ body.light .app-legal-footer a{color:var(--purple);}
     <div class="im-sidebar-title">
       <h1>Conversations</h1>
       <span id="conversationCount" aria-live="polite"></span>
-    </div>
+  </div>
     <div class="im-sidebar-top">
       <div class="im-search">
         <span aria-hidden="true">⌕</span>
         <input type="search" id="searchInput" placeholder="Search conversations" autocomplete="off">
-      </div>
+</div>
     </div>
     <div class="im-list" id="convList" role="list">
       <div class="qg-list-skel" id="listBoot" role="status" aria-busy="true" aria-label="Loading conversations">
@@ -513,9 +513,9 @@ const redirectTimeout = setTimeout(function () {
 }, 3000);
 onAuthStateChanged(auth, function (user) {
   try {
-    authChecked = true;
-    clearTimeout(redirectTimeout);
-    if (!user) { window.location.href = 'login.html'; return; }
+  authChecked = true;
+  clearTimeout(redirectTimeout);
+  if (!user) { window.location.href = 'login.html'; return; }
     if (typeof setCurrentUser === 'function') setCurrentUser(user);
     else window._currentUser = user;
     bootMessagesApp(0);
@@ -601,9 +601,9 @@ applyTheme();
 
 (function () {
   var allConversations = [];
-  var conversations = [];
-  var filtered = [];
-  var userAvatars = {};
+var conversations = [];
+var filtered = [];
+var userAvatars = {};
   var selectedId = '';
   var currentUserId = null;
   var currentConv = null;
@@ -617,13 +617,13 @@ applyTheme();
   var uiWired = false;
   var lastMarkedReadId = '';
 
-  var AVATAR_GRADIENTS = [
+var AVATAR_GRADIENTS = [
     'linear-gradient(135deg,var(--primary),var(--teal))',
-    'linear-gradient(135deg,#16a34a,#4ade80)',
-    'linear-gradient(135deg,#d97706,#fbbf24)',
+  'linear-gradient(135deg,#16a34a,#4ade80)',
+  'linear-gradient(135deg,#d97706,#fbbf24)',
     'linear-gradient(135deg,var(--teal),var(--primary))',
-    'linear-gradient(135deg,#2563eb,#60a5fa)'
-  ];
+  'linear-gradient(135deg,#2563eb,#60a5fa)'
+];
 
   function $(id) { return document.getElementById(id); }
   function esc(s) {
@@ -658,19 +658,19 @@ applyTheme();
     return typeof isChatImageBody === 'function' && isChatImageBody(body) ? 'Photo' : String(body || '');
   }
   function avatarGradient(name) {
-    var n = 0;
+  var n = 0;
     for (var i = 0; i < (name || '').length; i++) n += name.charCodeAt(i);
-    return AVATAR_GRADIENTS[n % AVATAR_GRADIENTS.length];
-  }
+  return AVATAR_GRADIENTS[n % AVATAR_GRADIENTS.length];
+}
   function formatRelativeTime(iso) {
     if (!iso) return '';
-    var diff = Date.now() - new Date(iso).getTime();
-    var mins = Math.floor(diff / 60000);
+  var diff = Date.now() - new Date(iso).getTime();
+  var mins = Math.floor(diff / 60000);
     if (mins < 1) return 'Now';
     if (mins < 60) return mins + 'm';
-    var hrs = Math.floor(mins / 60);
+  var hrs = Math.floor(mins / 60);
     if (hrs < 24) return hrs + 'h';
-    var days = Math.floor(hrs / 24);
+  var days = Math.floor(hrs / 24);
     if (days === 1) return 'Yesterday';
     if (days < 7) return days + 'd';
     return new Date(iso).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
@@ -693,8 +693,8 @@ applyTheme();
     if (!conv.last_message_at) return 0;
     if (conv.last_sender_id && String(conv.last_sender_id) === String(userId)) return 0;
     if (!lastRead) return conv.last_message && conv.last_message_at ? 1 : 0;
-    return new Date(conv.last_message_at) > new Date(lastRead) ? 1 : 0;
-  }
+  return new Date(conv.last_message_at) > new Date(lastRead) ? 1 : 0;
+}
   function mapConversation(conv, userId) {
     var posterId = conv.poster_id != null ? conv.poster_id : conv.POSTER_ID;
     var workerId = conv.worker_id != null ? conv.worker_id : conv.WORKER_ID;
@@ -704,21 +704,21 @@ applyTheme();
     var iAmTasker = String(workerId) === String(userId);
     var otherUid = iAmPoster ? workerId : posterId;
     otherUid = otherUid != null && String(otherUid) !== '' && String(otherUid) !== 'null' ? String(otherUid) : '';
-    var otherName = iAmPoster ? (conv.worker_name || 'Tasker') : (conv.poster_name || 'Poster');
+  var otherName = iAmPoster ? (conv.worker_name || 'Tasker') : (conv.poster_name || 'Poster');
     if (typeof isGenericDisplayName === 'function' && isGenericDisplayName(otherName)) {
       otherName = iAmPoster ? 'Tasker' : 'Poster';
-    }
-    return {
+  }
+  return {
       id: String(convId || ''),
       conv_id: String(convId || ''),
       taskId: taskId,
       posterId: posterId,
       workerId: workerId,
       side: iAmPoster ? 'poster' : (iAmTasker ? 'tasker' : ''),
-      otherUid: otherUid,
-      name: otherName,
+    otherUid: otherUid,
+    name: otherName,
       avatarUrl: otherUid ? (userAvatars[String(otherUid)] || '') : '',
-      avatarBg: avatarGradient(otherName),
+    avatarBg: avatarGradient(otherName),
       taskName: (typeof formatTaskDisplayTitle === 'function'
         ? formatTaskDisplayTitle({
             title: conv.task_title,
@@ -726,8 +726,8 @@ applyTheme();
             created_at: conv.created_at
           }, taskId)
         : (conv.task_title || 'Task')),
-      lastMessage: conv.last_message || 'No messages yet',
-      time: formatRelativeTime(conv.last_message_at || conv.created_at),
+    lastMessage: conv.last_message || 'No messages yet',
+    time: formatRelativeTime(conv.last_message_at || conv.created_at),
       unread: countUnread(conv, userId)
     };
   }
@@ -815,7 +815,7 @@ applyTheme();
         : '<div class="im-list-loading">Signing you in…</div>';
       return;
     }
-    if (typeof getConversationsForUser !== 'function') {
+  if (typeof getConversationsForUser !== 'function') {
       if (list) {
         list.innerHTML = typeof QG_errorStateHtml === 'function'
           ? QG_errorStateHtml({
@@ -826,10 +826,10 @@ applyTheme();
             })
           : '<div class="im-list-empty"><strong>Offline</strong>Database not ready.</div>';
       }
-      return;
-    }
+    return;
+  }
     try {
-      if (typeof syncCurrentUserProfile === 'function' && window._currentUser) {
+  if (typeof syncCurrentUserProfile === 'function' && window._currentUser) {
         await syncCurrentUserProfile(window._currentUser).catch(function () {});
       }
       var rows = await getConversationsForUser(currentUserId);
@@ -837,18 +837,18 @@ applyTheme();
         ? window.getChatUnlockRule()
         : ((window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept');
       if (rule === 'accept' && typeof forceUnlockConversationForTask === 'function') {
-        await Promise.all((rows || []).map(function (c) {
+      await Promise.all((rows || []).map(function (c) {
           if (c.is_unlocked && String(c.status || '').toLowerCase() !== 'application') return Promise.resolve();
           return forceUnlockConversationForTask(c, 'in_progress').catch(function () {});
-        }));
+      }));
         rows = await getConversationsForUser(currentUserId);
-      }
-      if (typeof getUsersAvatarMap === 'function') {
+    }
+    if (typeof getUsersAvatarMap === 'function') {
         userAvatars = await getUsersAvatarMap().catch(function () { return {}; });
-      }
-      var enriched = typeof enrichConversationNames === 'function'
+    }
+    var enriched = typeof enrichConversationNames === 'function'
         ? await Promise.all((rows || []).map(function (c) { return enrichConversationNames(c); }))
-        : (rows || []);
+      : (rows || []);
       allConversations = enriched.map(function (c) { return mapConversation(c, currentUserId); })
         .filter(function (c) { return !!c.side; });
       conversations = conversationsForCurrentMode();
@@ -983,8 +983,8 @@ applyTheme();
 
       if (typeof getConversation !== 'function') {
         if (chatScroll) chatScroll.innerHTML = '<div class="im-chat-empty"><strong>Still loading</strong>Try again in a moment.</div>';
-        return;
-      }
+    return;
+  }
 
       currentConv = await getConversation(selectedId, { actorId: currentUserId });
       if (!currentConv) {
@@ -1140,8 +1140,8 @@ applyTheme();
     return '<div class="im-chat-photo-placeholder" role="img" aria-label="' + esc(label) + '">' +
       '<span class="im-chat-photo-placeholder-icon" aria-hidden="true">' + (typeof qgIcon === 'function' ? qgIcon('camera', {size: 16}) : '') + '</span>' +
       '<span class="im-chat-photo-placeholder-text">' + esc(caption) + (detail ? ' · ' + esc(detail) : '') + '</span>' +
-      '</div>';
-  }
+  '</div>';
+}
 
   function renderMessageBody(m) {
     if (!m) return '';
