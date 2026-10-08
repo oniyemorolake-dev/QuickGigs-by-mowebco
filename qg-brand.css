@@ -7,7 +7,10 @@
   flex-shrink: 0;
 }
 
-/* Matches .sg-wordmark in qg-swift.css. The literal gradient fallback matters:
+/* Gradient treatment matches .sg-wordmark in qg-swift.css; sizing follows the
+   nav instance of .wordmark-sm in the approved mockup — 18px, letter-spacing
+   left at normal, which .sg-wordmark's -0.01em would otherwise contradict if an
+   element ever carried both classes. The literal gradient fallback matters:
    if --grad-wordmark ever fails to resolve, background-clip:text would have
    nothing to clip and the transparent fill would render the wordmark invisible
    rather than merely unstyled. All 7 pages load qg-tokens.css first today, so
@@ -15,7 +18,7 @@
 .nav-brand .nav-logo {
   font-family: 'Playfair Display', serif;
   font-style: italic;
-  font-size: 1.45rem;
+  font-size: 18px;
   font-weight: 700;
   background: var(--grad-wordmark, linear-gradient(100deg, #8B5CF6 0%, #2DD4BF 100%));
   -webkit-background-clip: text;
@@ -23,7 +26,6 @@
   color: transparent;
   -webkit-text-fill-color: transparent;
   line-height: 1;
-  letter-spacing: -0.01em;
 }
 
 /* Fallback for engines without background-clip:text support */

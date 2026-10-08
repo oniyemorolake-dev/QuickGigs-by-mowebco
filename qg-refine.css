@@ -331,10 +331,9 @@ body:not(.light) .qg-activity-card {
   gap: 12px !important;
 }
 
-.nav-brand .nav-logo {
-  font-size: 20px !important;
-  letter-spacing: -0.02em;
-}
+/* .nav-brand .nav-logo is owned solely by qg-brand.css. This file used to
+   re-declare font-size/letter-spacing here, and because qg-brand-init.js
+   appends it after qg-brand.css it won on the 25 pages that load that script. */
 
 .nav-brand .nav-role,
 .nav-lockup-pill,
