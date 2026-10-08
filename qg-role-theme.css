@@ -1,32 +1,20 @@
-/* QuickGigs — Tasker stays purple; Poster uses a distinct teal accent. */
+/* SwiftGigs — role theming. Posting flow = purple, earning flow = teal.
+ *
+ * This file declares NO colour tokens. It used to open with poster and worker
+ * blocks that redeclared --bg, --surface, --border, --text, --text-muted,
+ * --purple and --lavender with the pre-rebrand palette. Because
+ * qg-brand-init.js appends this sheet after qg-tokens.css, those blocks won on
+ * all 25 pages that load it, which is why the whole site still rendered the old
+ * colours in tasker mode. They also mapped poster to teal and tasker to purple,
+ * the reverse of the current flow accents.
+ *
+ * Do not reintroduce them. qg-tokens.css already handles both axes:
+ * body.light flips the theme, and html[data-qg-mode] flips --accent.
+ */
 
-html[data-qg-mode="poster"]:not(.light),
-body.qg-mode-poster:not(.light) {
-  --role-accent: #2dd4bf;
-  --role-accent-soft: rgba(45, 212, 191, 0.16);
-  --purple: #0f9f91;
-  --purple-light: #5eead4;
-  --lavender: #99f6e4;
-  --border-hover: #2dd4bf;
-}
-
-html.light[data-qg-mode="poster"],
-html[data-qg-mode="poster"] body.light,
-body.light.qg-mode-poster {
-  --role-accent: #0f766e;
-  --role-accent-soft: rgba(13, 148, 136, 0.12);
-  --purple: #0f766e;
-  --purple-light: #0d9488;
-  --lavender: #0f766e;
-  --border-hover: #0d9488;
-}
-
-html[data-qg-mode="poster"] .nav-role,
-body.qg-mode-poster .nav-role {
-  color: #99f6e4 !important;
-  border-color: rgba(45, 212, 191, 0.38) !important;
-  background: rgba(13, 148, 136, 0.18) !important;
-}
+/* .nav-role is brand identity, not flow state, so it stays on --primary in both
+   modes — see qg-brand.css, which owns it. The poster override that forced it
+   teal lived here and is gone. */
 
 html[data-qg-mode="poster"] .tab-item.active .tab-icon,
 html[data-qg-mode="poster"] .tab-item.active .tab-lbl,
@@ -266,49 +254,11 @@ html.qg-role-transitioning body {
 .qg-role-first-enable[data-enable-role="poster"] .qg-role-first-agree a { color: #5eead4; }
 
 /* ══════════════════════════════════════════════════════
-   TASKER — same palette, slightly deeper bg
+   TASKER
    ══════════════════════════════════════════════════════ */
-/* Dark tasker tokens — never apply when light theme is active (html.light / body.light) */
-html[data-qg-mode="worker"]:not(.light),
-body.qg-mode-worker:not(.light) {
-  --bg: #0e061c;
-  --surface: rgba(255, 255, 255, 0.05);
-  --surface-hover: rgba(107, 63, 160, 0.14);
-  --border: rgba(200, 168, 233, 0.16);
-  --border-hover: #c8a8e9;
-  --text: #fff;
-  --text-muted: rgba(255, 255, 255, 0.68);
-  --text-faint: rgba(255, 255, 255, 0.62);
-  --nav-bg: #120828;
-  --tab-bg: #120828;
-  --card-bg: rgba(255, 255, 255, 0.05);
-  --input-bg: rgba(255, 255, 255, 0.07);
-  --purple-light: #c8a8e9;
-  --lavender: #c8a8e9;
-  --purple: #9b6fc4;
-  --role-accent: #c8a8e9;
-  --role-accent-soft: rgba(107, 63, 160, 0.22);
-}
-
-html.light[data-qg-mode="worker"],
-html[data-qg-mode="worker"] body.light,
-body.light.qg-mode-worker {
-  --bg: #f8f6ff;
-  --surface: #fff;
-  --surface-hover: #f5f2ff;
-  --border: #e8e2ff;
-  --border-hover: #9b6fc4;
-  --text: #2d1b4e;
-  --text-muted: #6b6580;
-  --text-faint: #6b6580;
-  --nav-bg: #fff;
-  --tab-bg: #fff;
-  --card-bg: #fff;
-  --input-bg: #f0eeff;
-  --purple-light: #6b3fa0;
-  --lavender: #6b3fa0;
-  --purple: #6b3fa0;
-}
+/* The dark and light tasker token blocks that stood here are deleted — see the
+   header comment. --surface-hover, --input-bg and --border-hover were the only
+   three declared here and nowhere else; they now live in qg-tokens.css. */
 
 /* ══════════════════════════════════════════════════════
    NAV — tasker layout tweaks (brand header is in qg-brand.css)
@@ -840,48 +790,40 @@ body.qg-mode-worker {
 /* ══════════════════════════════════════════════════════
    GLOBAL MODE THEME — one skin, driven only by data-qg-mode
    ══════════════════════════════════════════════════════ */
+/* The hardcoded fallbacks here used to be inverted: worker fell back to purple
+   and poster to teal, the reverse of the current mapping. They are gone along
+   with --qg-mode-accent-rgb, a literal RGB triplet that forced the old hue
+   through ~19 rgba() calls no matter what --accent resolved to. Tints are
+   color-mix on --qg-mode-accent now, so they follow the token.
+
+   --qg-mode-header and --qg-mode-page-tint were a gradient header and a radial
+   page glow. The mockup has neither: flat --surface with a hairline. */
 html[data-qg-mode="worker"] {
-  --qg-mode-accent: var(--accent, var(--accent-tasker, #8b5cf6));
-  --qg-mode-accent-strong: var(--accent-tasker, #6b3fa0);
-  --qg-mode-accent-bright: var(--accent-tasker, #a78bfa);
-  --qg-mode-accent-rgb: 139, 92, 246;
-  --qg-mode-gradient: var(--grad-accent, var(--grad-tasker));
-  --qg-mode-header: linear-gradient(110deg, rgba(42, 18, 74, .98), rgba(21, 8, 42, .98));
-  --qg-mode-page-tint: radial-gradient(circle at 18% -10%, rgba(139, 92, 246, .16), transparent 38%);
+  --qg-mode-accent: var(--accent-tasker);
+  --qg-mode-accent-strong: var(--accent-tasker);
+  --qg-mode-accent-bright: var(--accent-tasker);
+  --qg-mode-gradient: var(--grad-tasker);
 }
 
 html[data-qg-mode="poster"] {
-  --qg-mode-accent: var(--accent, var(--accent-poster, #2dd4bf));
-  --qg-mode-accent-strong: var(--accent-poster, #0f766e);
-  --qg-mode-accent-bright: var(--accent-poster, #5eead4);
-  --qg-mode-accent-rgb: 45, 212, 191;
-  --qg-mode-gradient: var(--grad-accent, var(--grad-poster));
-  --qg-mode-header: linear-gradient(110deg, rgba(7, 58, 60, .98), rgba(5, 28, 39, .98));
-  --qg-mode-page-tint: radial-gradient(circle at 18% -10%, rgba(45, 212, 191, .14), transparent 38%);
+  --qg-mode-accent: var(--accent-poster);
+  --qg-mode-accent-strong: var(--accent-poster);
+  --qg-mode-accent-bright: var(--accent-poster);
+  --qg-mode-gradient: var(--grad-poster);
 }
 
 html[data-qg-mode] {
   --role-accent: var(--qg-mode-accent);
-  --role-accent-soft: rgba(var(--qg-mode-accent-rgb), .14);
+  --role-accent-soft: color-mix(in srgb, var(--qg-mode-accent) 14%, transparent);
   accent-color: var(--qg-mode-accent);
 }
 
-html[data-qg-mode]:not(.light) body:not(.light) {
-  background-color: #0b0718 !important;
-  background-image: var(--qg-mode-page-tint) !important;
-  background-attachment: fixed !important;
-}
-
-html.light[data-qg-mode="worker"] body,
-html[data-qg-mode="worker"] body.light {
-  background-color: #faf8ff !important;
-  background-image: radial-gradient(circle at 18% -10%, rgba(139, 92, 246, .09), transparent 38%) !important;
-}
-
-html.light[data-qg-mode="poster"] body,
-html[data-qg-mode="poster"] body.light {
-  background-color: #f5fcfb !important;
-  background-image: radial-gradient(circle at 18% -10%, rgba(13, 148, 136, .09), transparent 38%) !important;
+/* One rule for all four mode/theme combinations: --bg already differs by theme
+   and the mockup tints the page by neither mode nor glow. The three separate
+   blocks this replaces hardcoded #0b0718, #faf8ff and #f5fcfb. */
+html[data-qg-mode] body {
+  background-color: var(--bg) !important;
+  background-image: none !important;
 }
 
 html[data-qg-mode] body,
@@ -897,34 +839,31 @@ html[data-qg-mode] select {
     color .24s ease, box-shadow .24s ease, opacity .18s ease, transform .18s ease;
 }
 
+/* Mockup nav is a flat surface with a hairline, no accent tint and no drop
+   shadow. One rule covers both themes since --surface and --border flip. */
 html[data-qg-mode] .nav {
-  background: var(--qg-mode-header) !important;
-  border-bottom: 1px solid rgba(var(--qg-mode-accent-rgb), .3) !important;
-  box-shadow: 0 10px 30px rgba(var(--qg-mode-accent-rgb), .09) !important;
+  background: var(--surface) !important;
+  border-bottom: 1px solid var(--border) !important;
+  box-shadow: none !important;
 }
 
-html.light[data-qg-mode] .nav,
-html[data-qg-mode] body.light .nav {
-  background: linear-gradient(110deg, rgba(var(--qg-mode-accent-rgb), .13), rgba(255,255,255,.98)) !important;
-}
-
+/* Layout only. The colours match qg-brand.css, which owns this pill — they are
+   repeated rather than dropped because this rule carries !important and would
+   otherwise be a half-styled override. The mix toward --text is deliberate:
+   flat --primary is 3.5:1 as 11px text on a --primary tint, and AA wants 4.5:1
+   at that size. Keep the two files in step if either changes. */
 html[data-qg-mode] .nav-role {
   display: inline-flex !important;
   align-items: center;
   min-height: 26px;
   padding: 4px 10px !important;
-  color: var(--qg-mode-accent-bright) !important;
-  background: rgba(var(--qg-mode-accent-rgb), .17) !important;
-  border: 1px solid rgba(var(--qg-mode-accent-rgb), .42) !important;
+  color: color-mix(in srgb, var(--primary) 50%, var(--text)) !important;
+  background: color-mix(in srgb, var(--primary) 20%, transparent) !important;
+  border: 0.5px solid color-mix(in srgb, var(--primary) 22%, transparent) !important;
   border-radius: 999px !important;
-  font: 700 11px 'Poppins', sans-serif !important;
+  font: 700 11px 'DM Sans', sans-serif !important;
   letter-spacing: .04em;
   text-transform: uppercase;
-}
-
-html.light[data-qg-mode] .nav-role,
-html[data-qg-mode] body.light .nav-role {
-  color: var(--qg-mode-accent-strong) !important;
 }
 
 .qg-mode-banner {
@@ -937,12 +876,10 @@ html[data-qg-mode] body.light .nav-role {
   gap: 8px;
   min-height: 29px;
   padding: 5px 16px;
-  color: #fff;
-  background: linear-gradient(90deg, rgba(var(--qg-mode-accent-rgb), .2), rgba(var(--qg-mode-accent-rgb), .36), rgba(var(--qg-mode-accent-rgb), .2));
-  border-bottom: 1px solid rgba(var(--qg-mode-accent-rgb), .28);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  font: 600 11px 'Poppins', sans-serif;
+  color: var(--text);
+  background: color-mix(in srgb, var(--qg-mode-accent) 12%, transparent);
+  border-bottom: 1px solid var(--border);
+  font: 600 11px 'DM Sans', sans-serif;
   letter-spacing: .02em;
 }
 
@@ -952,13 +889,6 @@ html[data-qg-mode] body.light .nav-role {
   height: 7px;
   border-radius: 50%;
   background: var(--qg-mode-accent);
-  box-shadow: 0 0 12px rgba(var(--qg-mode-accent-rgb), .85);
-}
-
-html.light[data-qg-mode] .qg-mode-banner,
-html[data-qg-mode] body.light .qg-mode-banner {
-  color: var(--qg-mode-accent-strong);
-  background: rgba(var(--qg-mode-accent-rgb), .11);
 }
 
 html[data-qg-mode] :is(
@@ -966,14 +896,23 @@ html[data-qg-mode] :is(
   .accept-btn, .verify-btn, .cta-btn, .empty-btn, .im-send, button.primary,
   .action-card.primary
 ) {
-  color: #fff !important;
+  /* --accent-text, not #fff: in tasker mode this fill is teal, where white is
+     1.9:1. CTAs are flat in the mockup, so the drop glow goes too. */
+  color: var(--accent-text) !important;
   background: var(--qg-mode-gradient) !important;
   border-color: transparent !important;
-  box-shadow: 0 8px 24px rgba(var(--qg-mode-accent-rgb), .24) !important;
+  box-shadow: none !important;
+}
+
+/* The tab bar is teal-active in both modes per the mockup — it signals location,
+   not which flow you are in, so it does not follow --accent. */
+html[data-qg-mode] :is(
+  .tab-item.active, .tab-item.active .tab-icon, .tab-item.active .tab-lbl
+) {
+  color: var(--teal) !important;
 }
 
 html[data-qg-mode] :is(
-  .tab-item.active, .tab-item.active .tab-icon, .tab-item.active .tab-lbl,
   .tab-btn.active, .filter-btn.active, .mpill.active-all, .cat-active,
   .mode-tag, .im-profile-affordance, .action-icon, .section-icon, .input-icon,
   .icon-accent, .empty-icon
@@ -983,22 +922,26 @@ html[data-qg-mode] :is(
 }
 
 html[data-qg-mode] ::selection {
-  color: #fff;
-  background: rgba(var(--qg-mode-accent-rgb), .72);
+  color: var(--accent-text);
+  background: var(--qg-mode-accent);
 }
 
 html[data-qg-mode] .tab-item.active::before,
 html[data-qg-mode] .tab-item.active::after {
-  background: var(--qg-mode-gradient) !important;
+  background: var(--teal) !important;
 }
 
-html[data-qg-mode] :is(a:not(.tab-item):not(.nav-logo):not(.back-btn), .link-btn, .text-link) {
-  color: var(--qg-mode-accent-bright);
-}
-
-html.light[data-qg-mode] :is(a:not(.tab-item):not(.nav-logo):not(.back-btn), .link-btn, .text-link),
-html[data-qg-mode] body.light :is(a:not(.tab-item):not(.nav-logo):not(.back-btn), .link-btn, .text-link) {
-  color: var(--qg-mode-accent-strong);
+/* Text links only. This used to match every <a>, which recoloured links styled
+   as buttons and left their label the same hue as their fill — invisible on
+   404.html and guardian-portal.html. The class-substring exclusions catch
+   button variants this file does not enumerate; .link-btn and .text-link are
+   named explicitly because they are text links despite the "btn" in one name.
+   One rule for both themes now: --accent already flips with the theme. */
+html[data-qg-mode] :is(
+  a:not(.tab-item):not(.nav-logo):not(.back-btn):not([class*="btn"]):not([class*="button"]):not(.action-card),
+  .link-btn, .text-link
+) {
+  color: var(--qg-mode-accent);
 }
 
 html[data-qg-mode] :is(input, textarea, select, button, a):focus-visible {
@@ -1006,15 +949,15 @@ html[data-qg-mode] :is(input, textarea, select, button, a):focus-visible {
 }
 
 .qg-header-role-toggle {
-  border-color: rgba(var(--qg-mode-accent-rgb), .32);
-  background: rgba(4, 8, 20, .38);
-  box-shadow: inset 0 0 0 1px rgba(var(--qg-mode-accent-rgb), .05);
+  border-color: var(--border);
+  background: var(--surface-alt);
+  box-shadow: none;
 }
 
 .qg-header-role-opt.active {
-  color: #fff !important;
+  color: var(--accent-text) !important;
   background: var(--grad-accent, var(--qg-mode-gradient)) !important;
-  box-shadow: 0 4px 14px rgba(var(--qg-mode-accent-rgb), .3);
+  box-shadow: none;
 }
 
 .qg-header-role-opt.is-unavailable {
@@ -1040,7 +983,7 @@ html[data-qg-mode] :is(input, textarea, select, button, a):focus-visible {
 
 html[data-qg-mode] .qg-role-flip-slider {
   background: var(--qg-mode-gradient) !important;
-  box-shadow: 0 5px 18px rgba(var(--qg-mode-accent-rgb), .32) !important;
+  box-shadow: none !important;
 }
 
 /* Tasker is the first segment; Poster is the second. */
@@ -1058,7 +1001,7 @@ html.qg-role-transitioning::before {
   inset: 0;
   z-index: 20000;
   pointer-events: none;
-  background: rgba(var(--qg-mode-accent-rgb), .11);
+  background: color-mix(in srgb, var(--qg-mode-accent) 11%, transparent);
   animation: qgModeCrossfade .24s ease both;
 }
 

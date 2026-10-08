@@ -81,6 +81,14 @@
   --lavender: var(--primary);
   --nav-bg: var(--surface);
   --tab-bg: var(--surface);
+
+  /* Moved here from qg-role-theme.css, which defined them only inside its
+     worker/poster token blocks. Those blocks shadowed the core palette and had
+     to go, but dashboard.html, messages.html and qg-features.css consume these
+     13 times, so they live here now and derive like everything else. */
+  --surface-hover: var(--surface-alt);
+  --input-bg: var(--surface-alt);
+  --border-hover: var(--accent);
 }
 
 /* ── Light theme (same mechanism as qg-theme.js paint) ── */
