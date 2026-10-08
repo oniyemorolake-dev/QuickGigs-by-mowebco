@@ -1,18 +1,25 @@
 // SwiftGigs — role-based navigation (poster vs tasker). Canonical mode: localStorage qg-mode.
 (function () {
-  var NAV = {
-    poster: [
-      { id: 'home', href: 'dashboard.html', icon: 'home', label: 'Home' },
-      { id: 'tasks', href: 'mytasks.html?tab=posted', icon: 'clipboard', label: 'My Tasks' },
-      { id: 'applicants', href: 'mytasks.html?tab=posted&applicants=1', icon: 'users', label: 'Applicants' },
-      { id: 'messages', href: 'messages.html', icon: 'message', label: 'Messages' }
-    ],
-    worker: [
-      { id: 'home', href: 'dashboard.html', icon: 'home', label: 'Home' },
-      { id: 'browse', href: 'browsetask.html', icon: 'search', label: 'Browse' },
-      { id: 'jobs', href: 'mytasks.html?tab=applied', icon: 'briefcase', label: 'My Jobs' },
-      { id: 'messages', href: 'messages.html', icon: 'message', label: 'Messages' }
-    ]
+  /* One fixed tab bar, identical in both modes: it marks where you are, not
+     which flow you are in. My Tasks and Applicants left the bar and are now
+     reached from Home's "Current task" card, Profile's "See all" and the
+     person menu. */
+  var TABS = [
+    { id: 'home', href: 'dashboard.html', icon: 'home', label: 'Home' },
+    { id: 'gigs', href: 'browsetask.html', icon: 'search', label: 'Gigs' },
+    { id: 'messages', href: 'messages.html', icon: 'message', label: 'Messages' },
+    { id: 'profile', href: 'profile.html', icon: 'user', label: 'Profile' }
+  ];
+
+  /* Call sites still pass the old five-way ids. Anything that no longer owns a
+     tab resolves to '' so the bar simply renders with nothing highlighted,
+     which is correct for screens reached from inside Home. */
+  var TAB_ALIAS = {
+    browse: 'gigs',
+    post: '',
+    tasks: '',
+    applicants: '',
+    jobs: ''
   };
   var roleUnreadCounts = { tasker: 0, poster: 0 };
 
@@ -175,8 +182,12 @@
       if (!el.classList.contains('qg-header-role-opt')) el.style.display = hasBoth ? 'none' : 'none';
     });
     if (!state || (!state.is_tasker && !state.is_poster)) return;
-    document.querySelectorAll('.nav').forEach(function (nav) {
-      var host = nav.querySelector('.nav-right') || nav;
+    /* The toggle used to sit in .nav-right as a Poster/Tasker pill. The header
+       is now wordmark + city + person button only, so it mounts inside the
+       person menu instead — every behaviour below (role opt-in, availability,
+       unread dots) is unchanged. No host means no mount, which is the case on
+       pages whose menu is closed or absent. */
+    document.querySelectorAll('[data-qg-role-toggle-host]').forEach(function (host) {
       var current = getMode();
       var toggle = document.createElement('div');
       toggle.className = 'qg-header-role-toggle';
@@ -220,7 +231,7 @@
           }
         };
       });
-      host.insertBefore(toggle, host.firstChild);
+      host.appendChild(toggle);
     });
     paintRoleUnreadIndicators();
   }
@@ -259,10 +270,16 @@
         wrap.className = 'nav-brand';
         logo.parentNode.insertBefore(wrap, logo);
         wrap.appendChild(logo);
-        var role = document.createElement('span');
-        role.className = 'nav-role';
-        wrap.appendChild(role);
       }
+    });
+    /* The POSTER/TASKER pill beside the wordmark is gone from the header; the
+       current mode now reads off the toggle in the person menu. The painting
+       code below is kept because pages still carry a static .nav-role span. */
+    /* Same for the "You're in Tasker/Poster mode" strip. qg-brand-init.js also
+       clears it, but that sheet is not on every page and this function is what
+       composes the header, so clear it here too — remove() is idempotent. */
+    document.querySelectorAll('.qg-mode-banner').forEach(function (el) {
+      if (el.parentNode) el.parentNode.removeChild(el);
     });
     if (typeof window.QG_applyModeChrome === 'function') window.QG_applyModeChrome();
     else if (typeof window.QG_applyRoleLabels === 'function') window.QG_applyRoleLabels();
@@ -294,10 +311,9 @@
   function renderQuickGigsTabBar(activeId) {
     var bar = document.getElementById('qgTabBar');
     if (!bar) return;
-    var mode = getSessionMode();
-    var items = NAV[mode] || NAV.poster;
-    bar.innerHTML = items.map(function (item) {
-      var cls = item.id === activeId ? 'tab-item active' : 'tab-item';
+    var active = TAB_ALIAS.hasOwnProperty(activeId) ? TAB_ALIAS[activeId] : activeId;
+    bar.innerHTML = TABS.map(function (item) {
+      var cls = item.id === active ? 'tab-item active' : 'tab-item';
       var unreadBadge = item.id === 'messages'
         ? '<span class="tab-unread-badge" id="qgMsgUnreadBadge" aria-hidden="true"></span>'
         : '';
@@ -449,6 +465,9 @@
   window.roleGateHtml = roleGateHtml;
   window.applyRoleTheme = applyRoleTheme;
   window.applyNavBrand = applyNavBrand;
+  /* The person menu re-renders its body on every open and needs to remount the
+     role toggle afterwards. */
+  window.QG_renderHeaderRoleToggle = renderHeaderRoleToggle;
   window.getThemeMode = getThemeMode;
   initRoleThemeEarly();
 

@@ -97,7 +97,9 @@
     root.id = 'qgHelpRoot';
     root.className = 'qg-help-root help-fab';
     root.innerHTML =
-      '<button type="button" class="qg-help-fab" id="qgHelpFab" aria-expanded="false" aria-controls="qgHelpPanel" aria-label="Help and support">?</button>' +
+      /* The floating "?" bubble is gone from the app chrome — Help is a row in
+         the person menu, which calls QG_openHelp(). The panel itself, and
+         everything in it, is unchanged. */
       '<div class="qg-help-panel" id="qgHelpPanel" role="dialog" aria-modal="true" aria-labelledby="qgHelpTitle" hidden>' +
         '<div class="qg-help-head">' +
           '<div class="qg-help-title" id="qgHelpTitle">Help</div>' +
@@ -120,7 +122,8 @@
       '</div>';
     document.body.appendChild(root);
 
-    document.getElementById('qgHelpFab').addEventListener('click', togglePanel);
+    window.QG_openHelp = openPanel;
+    window.QG_toggleHelp = togglePanel;
     document.getElementById('qgHelpClose').addEventListener('click', closePanel);
 
     root.querySelectorAll('.qg-help-q').forEach(function (btn) {

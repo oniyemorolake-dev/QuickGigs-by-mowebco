@@ -16,12 +16,8 @@
    modes — see qg-brand.css, which owns it. The poster override that forced it
    teal lived here and is gone. */
 
-html[data-qg-mode="poster"] .tab-item.active .tab-icon,
-html[data-qg-mode="poster"] .tab-item.active .tab-lbl,
-body.qg-mode-poster .tab-item.active .tab-icon,
-body.qg-mode-poster .tab-item.active .tab-lbl {
-  color: var(--role-accent) !important;
-}
+/* The active tab colour is mode-independent — see the consolidated rule further
+   down this file. Nothing per-mode belongs here. */
 
 html[data-qg-mode="poster"] .btn-primary,
 html[data-qg-mode="poster"] .submit-btn,
@@ -309,29 +305,10 @@ body.light.qg-mode-worker .tab-bar {
   box-shadow: 0 0 0 1px var(--border);
 }
 
-html[data-qg-mode="worker"] .tab-item,
-body.qg-mode-worker .tab-item {
-  border-radius: 14px;
-  padding: 4px 0;
-  transition: background 0.15s;
-}
-
-html[data-qg-mode="worker"] .tab-item.active,
-body.qg-mode-worker .tab-item.active {
-  background: color-mix(in srgb, var(--primary) 28%, transparent);
-}
-
-html[data-qg-mode="worker"] .tab-item.active .tab-icon,
-html[data-qg-mode="worker"] .tab-item.active .tab-lbl,
-body.qg-mode-worker .tab-item.active .tab-icon,
-body.qg-mode-worker .tab-item.active .tab-lbl {
-  color: var(--lavender);
-}
-
-body.light.qg-mode-worker .tab-item.active .tab-icon,
-body.light.qg-mode-worker .tab-item.active .tab-lbl {
-  color: var(--purple);
-}
+/* The worker tab bar used to render each item as a rounded pill with a 28%
+   purple fill behind the active one. The design has no pill — just a purple
+   icon and label on the plain bar — so the fill and the per-mode text colours
+   are gone and the consolidated rule below handles both modes. */
 
 /* ══════════════════════════════════════════════════════
    DASHBOARD — Tasker (purple 2×2) vs Poster (teal command)
@@ -892,12 +869,14 @@ html[data-qg-mode] :is(
   box-shadow: none !important;
 }
 
-/* The tab bar is teal-active in both modes per the mockup — it signals location,
-   not which flow you are in, so it does not follow --accent. */
+/* The tab bar is purple-active in both modes — it signals location, not which
+   flow you are in, so it does not follow --accent. This is the single source of
+   truth for the active tab colour; the per-mode blocks that used to set it
+   teal, lavender and --role-accent have been removed. */
 html[data-qg-mode] :is(
   .tab-item.active, .tab-item.active .tab-icon, .tab-item.active .tab-lbl
 ) {
-  color: var(--teal) !important;
+  color: var(--primary) !important;
 }
 
 html[data-qg-mode] :is(
@@ -916,7 +895,7 @@ html[data-qg-mode] ::selection {
 
 html[data-qg-mode] .tab-item.active::before,
 html[data-qg-mode] .tab-item.active::after {
-  background: var(--teal) !important;
+  background: var(--primary) !important;
 }
 
 /* Text links only. This used to match every <a>, which recoloured links styled

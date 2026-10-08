@@ -57,15 +57,21 @@
     return right;
   }
 
-  function createMenuButton() {
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'qg-menu-btn';
-    btn.id = 'qgMenuBtn';
-    btn.setAttribute('aria-label', 'Open menu');
+  /* Round person button, not a hamburger. On app pages this is the single
+     control in the header and it opens this drawer, which now also carries the
+     notifications, search, mode switch and help that used to have their own
+     header affordances. */
+  var PERSON_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="5"/></svg>';
+
+  function wireTrigger(btn) {
+    if (!btn || btn.getAttribute('data-qg-menu-wired') === '1') return btn;
+    btn.setAttribute('data-qg-menu-wired', '1');
+    btn.setAttribute('aria-label', 'Account menu');
     btn.setAttribute('aria-expanded', 'false');
     btn.setAttribute('aria-controls', 'qgMenuDrawer');
-    btn.innerHTML = '<span></span><span></span><span></span>';
     btn.addEventListener('click', function (e) {
       e.stopPropagation();
       toggleMenu();
@@ -73,28 +79,38 @@
     return btn;
   }
 
+  function createMenuButton() {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'qg-menu-btn';
+    btn.id = 'qgMenuBtn';
+    btn.innerHTML = PERSON_SVG;
+    return wireTrigger(btn);
+  }
+
+  /* Home owns the person button. Inner screens show a back square instead and
+     reach the menu through Profile, so nothing is injected there — but a button
+     placed in the markup is always honoured, on any page. */
   function injectTrigger() {
-    var nav = document.querySelector('.nav');
-    if (nav) {
-      var right = ensureNavRight(nav);
-      if (!right.querySelector('#qgMenuBtn')) {
-        menuBtn = createMenuButton();
-        right.insertBefore(menuBtn, right.firstChild);
-      } else {
-        menuBtn = right.querySelector('#qgMenuBtn');
-      }
+    var existing = document.getElementById('qgMenuBtn');
+    if (existing) {
+      menuBtn = wireTrigger(existing);
       return;
     }
 
-    if (pageKey() === 'index') {
+    var key = pageKey();
+    if (key === 'index') {
       var slot = document.getElementById('qgTopnavMenu');
-      if (slot && !slot.querySelector('#qgMenuBtn')) {
-        menuBtn = createMenuButton();
-        slot.appendChild(menuBtn);
-      } else if (slot) {
-        menuBtn = slot.querySelector('#qgMenuBtn');
-      }
+      if (slot) slot.appendChild(menuBtn = createMenuButton());
       return;
+    }
+
+    if (isAppPage() && key !== 'dashboard') return;
+
+    var nav = document.querySelector('.nav');
+    if (nav) {
+      var right = ensureNavRight(nav);
+      right.appendChild(menuBtn = createMenuButton());
     }
   }
 
@@ -111,6 +127,11 @@
     return isDark ? 'Light mode' : 'Dark mode';
   }
 
+  function notificationCount() {
+    if (typeof window.QG_notificationCount !== 'function') return 0;
+    try { return Number(window.QG_notificationCount()) || 0; } catch (e) { return 0; }
+  }
+
   function appMenuSections() {
     var worker = typeof isWorkerMode === 'function' && isWorkerMode();
     var mode = worker ? 'worker' : 'poster';
@@ -121,9 +142,19 @@
     var sections = [];
 
     var accountItems = [
-      { type: 'link', href: 'profile.html', icon: 'users', label: 'Profile' }
+      { type: 'link', href: 'profile.html', icon: 'users', label: 'Profile' },
+      /* Moved out of the header, where it was a bell button. */
+      { type: 'action', action: 'notifications', icon: 'bell', label: 'Notifications', badge: notificationCount() }
     ];
-    if (canOfferTarget) {
+    /* The Poster/Tasker pill moved here from .nav-right. The toggle itself is
+       rendered by qg-nav.js into the host below, because it owns the role
+       availability and opt-in logic. If role access has not loaded we cannot
+       render it, so fall back to the plain switch row rather than leaving the
+       user with no way to change mode. */
+    var canRenderToggle = !!(access && (access.is_tasker || access.is_poster));
+    if (canRenderToggle) {
+      accountItems.push({ type: 'roleToggle' });
+    } else if (canOfferTarget) {
       accountItems.push({
         type: 'action',
         action: 'switchMode',
@@ -140,31 +171,44 @@
       items: accountItems
     });
 
+    /* My tasks and Applicants lost their bottom-tab slots, so this is one of
+       their three remaining routes (with Home's "Current task" card and
+       Profile's "See all"). */
     var goItems = [
       { type: 'link', href: 'dashboard.html', icon: 'home', label: 'Home' },
       worker
-        ? { type: 'link', href: 'browsetask.html', icon: 'search', label: 'Browse tasks' }
+        ? { type: 'link', href: 'browsetask.html', icon: 'search', label: 'Browse gigs' }
         : { type: 'link', href: 'posttask.html', icon: 'plus', label: 'Post a task' },
-      { type: 'link', href: 'mytasks.html', icon: 'clipboard', label: worker ? 'My jobs' : 'My tasks' },
-      { type: 'link', href: 'messages.html', icon: 'message', label: 'Messages' }
+      { type: 'link', href: 'mytasks.html', icon: 'clipboard', label: worker ? 'My jobs' : 'My tasks' }
     ];
+    if (!worker) {
+      goItems.push({ type: 'link', href: 'mytasks.html?tab=posted&applicants=1', icon: 'users', label: 'Applicants' });
+    }
+    goItems.push({ type: 'link', href: 'messages.html', icon: 'message', label: 'Messages' });
     if (worker) goItems.push({ type: 'link', href: 'categories.html', icon: 'folder', label: 'Categories' });
     else goItems.push({ type: 'link', href: 'workers.html', icon: 'users', label: 'Find taskers' });
+    /* Moved out of the header, where it was a magnifier button. */
+    if (typeof window.qgOpenCommandSearch === 'function') {
+      goItems.push({ type: 'action', action: 'search', icon: 'search', label: 'Search' });
+    }
     sections.push({
       label: 'Go to',
       items: goItems
     });
 
-    sections.push({
-      label: 'Help',
-      items: [
-        { type: 'link', href: 'how-it-works.html', icon: 'sparkles', label: 'How it works' },
-        { type: 'link', href: 'faq.html', icon: 'helpCircle', label: 'FAQ' },
-        { type: 'link', href: 'safety.html', icon: 'alert', label: 'Safety' },
-        { type: 'link', href: 'guidelines.html', icon: 'list', label: 'Guidelines' },
-        { type: 'link', href: 'feedback.html', icon: 'bug', label: 'Beta feedback' }
-      ]
-    });
+    var helpItems = [];
+    /* Moved out of the chrome, where it was the floating "?" bubble. */
+    if (typeof window.QG_openHelp === 'function') {
+      helpItems.push({ type: 'action', action: 'help', icon: 'helpCircle', label: 'Quick help' });
+    }
+    helpItems.push(
+      { type: 'link', href: 'how-it-works.html', icon: 'sparkles', label: 'How it works' },
+      { type: 'link', href: 'faq.html', icon: 'helpCircle', label: 'FAQ' },
+      { type: 'link', href: 'safety.html', icon: 'alert', label: 'Safety' },
+      { type: 'link', href: 'guidelines.html', icon: 'list', label: 'Guidelines' },
+      { type: 'link', href: 'feedback.html', icon: 'bug', label: 'Beta feedback' }
+    );
+    sections.push({ label: 'Help', items: helpItems });
 
     var settings = [
       { type: 'action', action: 'theme', icon: 'eye', label: themeLabel() },
@@ -243,19 +287,26 @@
         ? '<div class="qg-menu-section-label">' + section.label + '</div>'
         : '';
       var links = section.items.map(function (item) {
+        /* Mount point only — qg-nav.js fills this with the role toggle. */
+        if (item.type === 'roleToggle') {
+          return '<div class="qg-menu-role-host" data-qg-role-toggle-host></div>';
+        }
         var cls = item.danger ? ' danger' : '';
         if (item.action === 'switchMode') {
           cls += worker ? ' qg-menu-switch-poster' : ' qg-menu-switch-tasker';
         }
         var ico = '<span class="ico qg-menu-ico-chip" aria-hidden="true">' + renderMenuIcon(item.icon) + '</span>';
+        var badge = item.badge
+          ? '<span class="qg-menu-badge">' + (item.badge > 9 ? '9+' : item.badge) + '</span>'
+          : '';
         if (item.type === 'link') {
           return '<a class="qg-menu-link' + cls + '" href="' + item.href + '">' +
             ico +
-            '<span>' + item.label + '</span></a>';
+            '<span>' + item.label + '</span>' + badge + '</a>';
         }
         return '<button type="button" class="qg-menu-action' + cls + '" data-qg-action="' + item.action + '">' +
           ico +
-          '<span>' + item.label + '</span></button>';
+          '<span>' + item.label + '</span>' + badge + '</button>';
       }).join('');
       return '<div class="qg-menu-section">' + label + links + '</div>';
     }).join('');
@@ -311,7 +362,17 @@
     body.innerHTML = renderSections(sections);
     var roleEl = overlay.querySelector('.qg-menu-role');
     if (roleEl) roleEl.textContent = isAppPage() ? roleLabel() + ' mode' : 'Canada-wide tasks';
+    /* innerHTML above discards any previously mounted toggle, so ask qg-nav.js
+       to render a fresh one into the host. */
+    if (typeof window.QG_renderHeaderRoleToggle === 'function') {
+      window.QG_renderHeaderRoleToggle();
+    }
   }
+
+  /* Keep the Notifications count live while the drawer is open. */
+  document.addEventListener('qg-notifications-changed', function () {
+    if (overlay && overlay.classList.contains('open')) refreshDrawerContent();
+  });
 
   function handleAction(action) {
     closeMenu();
@@ -331,6 +392,19 @@
     }
     if (action === 'switchMode' && typeof window.switchRoleMode === 'function') {
       window.switchRoleMode();
+      return;
+    }
+    /* Three features that used to have their own header affordances. */
+    if (action === 'notifications') {
+      if (typeof window.QG_openNotifications === 'function') window.QG_openNotifications();
+      return;
+    }
+    if (action === 'search') {
+      if (typeof window.qgOpenCommandSearch === 'function') window.qgOpenCommandSearch();
+      return;
+    }
+    if (action === 'help') {
+      if (typeof window.QG_openHelp === 'function') window.QG_openHelp();
       return;
     }
     if (action === 'install' && typeof window.promptQuickGigsInstall === 'function') {
@@ -360,7 +434,10 @@
   }
 
   document.addEventListener('qg-role-access-changed', function () {
-    if (overlay && overlay.classList.contains('open')) refreshContent();
+    /* Was refreshContent(), which does not exist and threw a ReferenceError.
+       It matters now: the role toggle lives in the drawer, so this event is
+       what re-renders it when a role is granted. */
+    if (overlay && overlay.classList.contains('open')) refreshDrawerContent();
   });
 
   function openMenu() {

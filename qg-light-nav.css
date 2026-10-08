@@ -76,5 +76,6 @@ body.light .tab-item .tab-lbl {
 
 body.light .tab-item.active .tab-icon,
 body.light .tab-item.active .tab-lbl {
-  color: var(--accent) !important;
+  /* --primary, not --accent: the active tab is purple in both modes. */
+  color: var(--primary) !important;
 }

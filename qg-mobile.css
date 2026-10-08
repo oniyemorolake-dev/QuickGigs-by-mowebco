@@ -45,9 +45,9 @@
 
 .tab-item.active .tab-icon,
 .tab-item.active .tab-lbl {
-  /* Teal in both modes per the mockup: the tab bar signals where you are,
-     not which flow you are in, so it does not follow --accent. */
-  color: var(--teal);
+  /* Purple in both modes: the tab bar signals where you are, not which flow
+     you are in, so it does not follow --accent. */
+  color: var(--primary);
 }
 
 body.qg-keyboard-open .tab-bar {

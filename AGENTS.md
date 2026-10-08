@@ -12,9 +12,17 @@ Stay inside your zone. If a task needs a file you do not own, **stop and flag it
 rather than editing it — the other agent may have that file open with unsaved
 context, and a write from you will silently destroy its work.
 
+> **TEMPORARY TRANSFER — app-page HTML is Cursor's, assigned by Morolake.**
+> For the SwiftGigs layout rebuild (`Claude outputs/sg-design/SPEC.md`), Cursor
+> owns `dashboard.html`, `browsetask.html`, `mytasks.html`, `posttask.html`,
+> `messages.html` and `profile.html`, plus the shared shell they depend on.
+> **Claude must not touch any `.html` file until Cursor reports back and this
+> block is removed.** All other HTML files stay Claude's but are frozen for the
+> duration, because the shared shell edits reach them.
+
 | Zone | Owner |
 | --- | --- |
-| `*.html` (33 files at repo root) | Claude desktop |
+| `*.html` (33 files at repo root) | Claude desktop — **suspended, see above** |
 | `qg-icons.js` | Claude desktop (append-only, see below) |
 | `*.css` (38 files at repo root) | Cursor |
 | `*.js` at root, except `qg-icons.js` | Cursor |

@@ -304,22 +304,14 @@
     });
   }
 
+  /* The header no longer carries a search button: Browse and Messages own their
+     own contextual search control, and the command palette is reachable from the
+     person menu and the "/" shortcut. A page that still ships a
+     .qg-nav-search-btn in its markup is wired up here. */
   function injectSearchButton() {
-    if (PAGE !== 'dashboard.html' && PAGE !== 'browsetask.html' && PAGE !== 'mytasks.html') return;
-    if (document.querySelector('.qg-nav-search-btn')) return;
-    var right = document.querySelector('.nav-right, .nav .nav-right');
-    var nav = document.querySelector('nav.nav, .nav');
-    var host = right || nav;
-    if (!host) return;
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'qg-nav-search-btn';
-    btn.setAttribute('aria-label', 'Search tasks');
-    btn.title = 'Search (/)';
-    btn.textContent = '⌕';
-    btn.onclick = openCommandSearch;
-    if (right) host.insertBefore(btn, host.firstChild);
-    else host.appendChild(btn);
+    document.querySelectorAll('.qg-nav-search-btn').forEach(function (btn) {
+      btn.onclick = openCommandSearch;
+    });
   }
 
   /* ── Keyboard shortcuts (desktop) ── */

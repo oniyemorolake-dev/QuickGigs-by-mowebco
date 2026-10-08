@@ -232,6 +232,13 @@
     if (!Array.isArray(dismissed)) dismissed = [];
     if (dismissed.indexOf(QG_ANNOUNCE.id) >= 0) return;
     if (document.getElementById('qgWave2Announce')) return;
+    /* This bar carried the same "beta is live" copy as dashboard.html's own
+       strip and was injected above the nav on every page, so the app showed it
+       twice on Home and once everywhere else. The strip belongs to Home alone,
+       and Home ships its own, so stand down when a page provides one. The
+       dismiss key is shared, so dismissing either hides both. */
+    if (document.getElementById('sgBetaBanner')) return;
+    if (PAGE && PAGE !== 'dashboard.html') return;
     var bar = document.createElement('div');
     bar.id = 'qgWave2Announce';
     bar.className = 'qg-announce-bar';
@@ -249,6 +256,26 @@
     var nav = document.querySelector('nav.nav, .nav');
     if (nav && nav.parentNode) nav.parentNode.insertBefore(bar, nav);
     else document.body.insertBefore(bar, document.body.firstChild);
+  }
+
+  /* Home's beta strip is markup, not injected, so give it the same persistence
+     the injected bar has — it used to reappear on every visit. */
+  function initPageBetaStrip() {
+    var strip = document.getElementById('sgBetaBanner');
+    if (!strip) return;
+    var dismissed = readJson(DISMISS_KEY, []);
+    if (!Array.isArray(dismissed)) dismissed = [];
+    if (dismissed.indexOf(QG_ANNOUNCE.id) >= 0) {
+      strip.style.display = 'none';
+      return;
+    }
+    var close = strip.querySelector('.sg-beta-close, [data-sg-beta-close]');
+    if (!close) return;
+    close.onclick = function () {
+      dismissed.push(QG_ANNOUNCE.id);
+      writeJson(DISMISS_KEY, dismissed);
+      strip.style.display = 'none';
+    };
   }
 
   /* ── Title/desc quality hints (posttask) ── */
@@ -513,6 +540,7 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     initOfflineBanner();
+    initPageBetaStrip();
     initAnnounceBar();
     enhanceSavedLocal();
     initPostQualityHints();

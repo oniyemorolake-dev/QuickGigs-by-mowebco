@@ -1,60 +1,42 @@
-/* QuickGigs — slide-out hamburger menu */
+/* SwiftGigs — person-button slide-out menu */
 
+/* The trigger is a round person button, not a hamburger. It is the only
+   control in the Home header, and the menu it opens absorbed the notifications,
+   search, mode switch and help that used to each have their own affordance.
+   Styled in full here because this sheet is appended at runtime and therefore
+   cascades after qg-swift.css. */
 .qg-menu-btn {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  display: inline-flex;
   align-items: center;
-  gap: 5px;
-  width: 40px;
-  height: 40px;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
   padding: 0;
   border: none;
-  border-radius: 10px;
-  background: transparent;
+  border-radius: 50%;
+  background: var(--surface-alt);
+  color: var(--primary);
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.15s;
+  transition: filter 0.15s;
+}
+
+.qg-menu-btn svg {
+  width: 20px;
+  height: 20px;
 }
 
 .qg-menu-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
+  filter: brightness(1.08);
 }
 
 .qg-menu-btn:focus-visible {
-  outline: 2px solid #B69BE0;
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
-}
-
-.qg-menu-btn span {
-  display: block;
-  width: 20px;
-  height: 2px;
-  border-radius: 1px;
-  background: #9C93B5;
-  transition: transform 0.2s, opacity 0.2s;
-}
-
-body.light .qg-menu-btn span {
-  background: #6b3fa0;
 }
 
 .nav .qg-menu-btn {
   z-index: 10;
-  border: 1px solid #2A2140;
-  background: transparent;
-}
-
-.qg-menu-btn[aria-expanded="true"] span:nth-child(1) {
-  transform: translateY(6px) rotate(45deg);
-}
-
-.qg-menu-btn[aria-expanded="true"] span:nth-child(2) {
-  opacity: 0;
-}
-
-.qg-menu-btn[aria-expanded="true"] span:nth-child(3) {
-  transform: translateY(-6px) rotate(-45deg);
 }
 
 /* Legacy landing FAB — replaced by in-header menu on index */
@@ -251,6 +233,34 @@ body.qg-has-menu .nav .mode-toggle {
   body.qg-has-menu .nav #avatarMenu {
     display: none !important;
   }
+}
+
+/* Unread count on the Notifications row, which replaced the header bell. */
+.qg-menu-badge {
+  margin-left: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 100px;
+  background: var(--danger);
+  color: var(--danger-text);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* Mount point for the Poster/Tasker toggle that moved out of the header.
+   qg-nav.js injects .qg-header-role-toggle in here; it was sized for a nav bar,
+   so widen it to the drawer. */
+.qg-menu-role-host {
+  padding: 6px 0 2px;
+}
+
+.qg-menu-role-host .qg-header-role-toggle {
+  width: 100%;
+  display: grid;
+  gap: 3px;
 }
 
 /* Landing page — keep drawer on-brand even when body.light is set */

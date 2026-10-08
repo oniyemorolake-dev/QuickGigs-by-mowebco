@@ -84,17 +84,19 @@ html[data-qg-mode] .qg-header-role-opt.active {
   background: var(--accent-poster) !important;
 }
 
-/* Bell + hamburger */
-.qg-bell-btn,
-.qg-menu-btn {
+/* Bell, for pages that still carry one in markup. The menu trigger used to be
+   styled here too, as a bordered square hamburger with three bars. It is now a
+   round person button owned entirely by qg-menu.css — these !important rules
+   beat that sheet whatever the load order, so .qg-menu-btn is deliberately
+   absent from the selectors below. */
+.qg-bell-btn {
   color: var(--text-secondary) !important;
   background: transparent !important;
   border: 1px solid var(--line) !important;
   border-radius: 10px !important;
 }
 
-.qg-bell-btn:hover,
-.qg-menu-btn:hover {
+.qg-bell-btn:hover {
   background: var(--surface-2) !important;
 }
 
@@ -102,20 +104,6 @@ html[data-qg-mode] .qg-header-role-opt.active {
 .qg-bell-btn svg {
   color: var(--text-secondary) !important;
   stroke: currentColor !important;
-}
-
-.nav .qg-menu-btn {
-  background: transparent !important;
-  border-color: var(--line) !important;
-}
-
-.qg-menu-btn span {
-  background: var(--text-secondary) !important;
-}
-
-body.light .qg-menu-btn span,
-html.light .qg-menu-btn span {
-  background: var(--text-secondary) !important;
 }
 
 .qg-bell-dot {
@@ -207,7 +195,9 @@ body.light .tab-item.active .tab-icon,
 body.light .tab-item.active .tab-lbl,
 body.light.qg-mode-worker .tab-item.active .tab-icon,
 body.light.qg-mode-worker .tab-item.active .tab-lbl {
-  color: var(--accent) !important;
+  /* --primary, not --accent: the tab bar marks location, not flow, so the
+     active item is purple in poster and tasker mode alike. */
+  color: var(--primary) !important;
   border-color: transparent !important;
 }
 

@@ -287,8 +287,8 @@ body:not(.light) .qg-activity-card {
 }
 .qg-activity-ico .qg-ico { width: 16px; height: 16px; }
 .tab-icon .qg-ico { width: 22px; height: 22px; }
-/* --qg-lavender is theme-aware now, so the old body.light override is gone. */
-.tab-item.active .tab-icon { color: var(--qg-lavender); }
+/* Active tab colour is owned by qg-role-theme.css — purple in both modes. */
+.tab-item.active .tab-icon { color: var(--primary); }
 
 .meta-pin {
   display: inline-flex;

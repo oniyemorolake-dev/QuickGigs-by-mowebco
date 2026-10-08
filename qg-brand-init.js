@@ -87,38 +87,16 @@
         logo.parentNode.insertBefore(brand, logo);
         brand.appendChild(logo);
       }
-      if (brand && !brand.querySelector('.nav-role')) {
-        var role = document.createElement('span');
-        role.className = 'nav-role';
-        brand.appendChild(role);
-      }
+      /* The POSTER/TASKER pill beside the wordmark is no longer part of the
+         header. The current mode reads off the toggle in the person menu. */
     }
 
-    /* Exactly one mode banner app-wide (re-runs used to duplicate when
-       something else inserted itself between .nav and the banner). */
-    var banners = Array.prototype.slice.call(document.querySelectorAll('.qg-mode-banner'));
-    var banner = document.getElementById('qgModeBanner') || banners[0] || null;
-    banners.forEach(function (el) {
-      if (banner && el !== banner) el.parentNode && el.parentNode.removeChild(el);
+    /* The "You're in Tasker/Poster mode" strip is gone from the chrome — the
+       person menu states the mode instead. Any strip still present in page
+       markup is removed here so no page can reintroduce it. */
+    document.querySelectorAll('.qg-mode-banner').forEach(function (el) {
+      if (el.parentNode) el.parentNode.removeChild(el);
     });
-    if (!banner && nav) {
-      banner = document.createElement('div');
-      banner.className = 'qg-mode-banner';
-      banner.id = 'qgModeBanner';
-      banner.setAttribute('role', 'status');
-      banner.setAttribute('aria-live', 'polite');
-      nav.insertAdjacentElement('afterend', banner);
-    } else if (banner && nav && banner.previousElementSibling !== nav) {
-      nav.insertAdjacentElement('afterend', banner);
-    }
-    if (banner) {
-      banner.id = 'qgModeBanner';
-      banner.className = 'qg-mode-banner';
-      banner.setAttribute('role', 'status');
-      banner.setAttribute('aria-live', 'polite');
-      banner.textContent = activeMode === 'tasker' ? "You're in Tasker mode" : "You're in Poster mode";
-      banner.setAttribute('data-mode', activeMode);
-    }
     applyRoleLabels();
   }
 

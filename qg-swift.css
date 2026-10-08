@@ -274,8 +274,261 @@
   .sg-btn { transition: none; }
 }
 
-/*
- * Bottom tab bar is intentionally NOT styled here. The brief says to leave
- * the existing nav untouched, so the mockup's tab-bar metrics (10px 8px 16px,
- * 22px icons, 11px labels) are recorded in docs rather than applied.
- */
+/* ── App bar ──────────────────────────────────────────────────────────── */
+/* Home shows the wordmark + city and one person button. Every inner screen
+   shows a back square on the left and at most ONE contextual control on the
+   right. The page title lives in the body, not here. */
+
+.sg-appbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px var(--sg-page-x);
+  background: var(--bg);
+  border-bottom: none;
+}
+
+.sg-appbar__brand {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.sg-appbar__brand .sg-wordmark { font-size: 23px; line-height: 1.15; }
+
+.sg-appbar__city {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 36px square for back / filter / search / overflow. Round variant is the
+   person button on Home. */
+.sg-iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--sg-radius-square);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.sg-iconbtn svg { width: 18px; height: 18px; }
+.sg-iconbtn:active { background: var(--surface-alt); }
+
+/* The 36px visual is under the 44px minimum tap target, so extend the hit
+   area with a pseudo-element rather than growing the button. */
+.sg-iconbtn::after {
+  content: "";
+  position: absolute;
+  width: 44px;
+  height: 44px;
+}
+.sg-iconbtn { position: relative; }
+
+.sg-iconbtn--round {
+  border-radius: 50%;
+  border-color: transparent;
+  background: var(--surface-alt);
+  color: var(--primary);
+}
+
+.sg-iconbtn--teal { color: var(--teal); background: var(--surface-alt); border-color: transparent; }
+
+/* Count badge on the filter control */
+.sg-iconbtn__badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 100px;
+  background: var(--teal);
+  color: var(--teal-text);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+}
+
+/* The beta strip is deliberately not styled here: it appears on Home only, so
+   it lives in dashboard.html's own <style> block rather than a shared sheet. */
+
+/* ── Segmented control ────────────────────────────────────────────────── */
+
+.sg-seg {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 100px;
+  background: var(--surface-alt);
+}
+
+.sg-seg__opt {
+  flex: 1;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 100px;
+  background: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+/* Active segment is solid teal — this is a view switcher, not a flow action,
+   so it does not follow --accent. */
+.sg-seg__opt.is-active {
+  background: var(--teal);
+  color: var(--teal-text);
+}
+
+/* ── Step progress (Post a Task wizard) ───────────────────────────────── */
+
+.sg-steps {
+  display: flex;
+  gap: 6px;
+}
+
+.sg-steps__seg {
+  flex: 1;
+  height: 4px;
+  border-radius: 100px;
+  background: var(--border);
+}
+
+.sg-steps__seg.is-done { background: var(--primary); }
+
+/* ── Progress dots (Active Gig) ───────────────────────────────────────── */
+
+.sg-prog {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sg-prog__step {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.sg-prog__step.is-done { color: var(--text); }
+
+.sg-prog__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: transparent;
+}
+
+.sg-prog__step.is-done .sg-prog__dot {
+  border-color: var(--teal);
+  background: var(--teal);
+}
+
+.sg-prog__line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Initials avatar ──────────────────────────────────────────────────── */
+
+.sg-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-on-soft);
+  font-size: 13.5px;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.sg-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.sg-avatar--lg { width: 52px; height: 52px; font-size: 17px; }
+.sg-avatar--sm { width: 32px; height: 32px; font-size: 11.5px; }
+
+/* ── Bottom tab bar ───────────────────────────────────────────────────── */
+/* Exactly four items: Home / Gigs / Messages / Profile. Active is purple in
+   both flows — the tab bar says where you are, not which flow you are in. */
+
+.sg-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 200;
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+}
+
+.sg-tabbar__item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-height: 48px;
+  padding: 2px 0;
+  color: var(--text-muted);
+  text-decoration: none;
+  position: relative;
+}
+
+.sg-tabbar__item svg { width: 22px; height: 22px; }
+.sg-tabbar__lbl { font-size: 11px; font-weight: 500; }
+.sg-tabbar__item.is-active { color: var(--primary); }
+.sg-tabbar__item.is-active .sg-tabbar__lbl { font-weight: 600; }
+
+/* Unread count on Messages */
+.sg-tabbar__badge {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  margin-left: 4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 100px;
+  background: var(--danger);
+  color: var(--danger-text);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+.sg-tabbar__badge:empty { display: none; }
+
+/* Pages with the tab bar need room to scroll past it. */
+body.sg-has-tabbar {
+  padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+}

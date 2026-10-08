@@ -76,6 +76,7 @@
   var markAllBtn;
   var bellBtn;
   var bellDot;
+  var lastUnread = 0;
   var open = false;
   var loading = false;
   var pollTimer;
@@ -208,33 +209,30 @@
     return right;
   }
 
+  /* The bell no longer has a header button of its own — the header is wordmark
+     + city + person button. Notifications live in the person menu, which calls
+     QG_openNotifications(). A page that still ships a #qgBellBtn in its markup
+     is adopted and wired as before, and every bellBtn/bellDot read below is
+     null-guarded, so having no button at all is safe. */
   function injectBell() {
     var right = ensureNavRight();
-    if (!right || right.querySelector('#qgBellBtn')) {
-      bellBtn = document.getElementById('qgBellBtn');
-      bellDot = document.getElementById('qgBellDot');
-      return;
+    if (right) {
+      right.querySelectorAll('.nav-icon').forEach(function (el) {
+        if ((el.textContent || '').indexOf('🔔') >= 0) el.classList.add('qg-bell-hidden');
+      });
     }
-    right.querySelectorAll('.nav-icon').forEach(function (el) {
-      if ((el.textContent || '').indexOf('🔔') >= 0) el.classList.add('qg-bell-hidden');
-    });
-    bellBtn = document.createElement('button');
-    bellBtn.type = 'button';
-    bellBtn.className = 'qg-bell-btn';
-    bellBtn.id = 'qgBellBtn';
-    bellBtn.setAttribute('aria-label', 'Notifications');
-    bellBtn.setAttribute('aria-expanded', 'false');
-    bellBtn.setAttribute('aria-haspopup', 'dialog');
-    bellBtn.innerHTML = ico('bell', 20) +
-      '<span class="qg-bell-dot" id="qgBellDot" hidden aria-hidden="true"></span>';
-    bellBtn.addEventListener('click', function (e) {
-      e.stopPropagation();
-      toggleBellPanel();
-    });
-    var menuBtn = right.querySelector('#qgMenuBtn');
-    if (menuBtn) right.insertBefore(bellBtn, menuBtn);
-    else right.insertBefore(bellBtn, right.firstChild);
+    bellBtn = document.getElementById('qgBellBtn');
     bellDot = document.getElementById('qgBellDot');
+    if (bellBtn && bellBtn.getAttribute('data-qg-bell-wired') !== '1') {
+      bellBtn.setAttribute('data-qg-bell-wired', '1');
+      bellBtn.setAttribute('aria-label', 'Notifications');
+      bellBtn.setAttribute('aria-expanded', 'false');
+      bellBtn.setAttribute('aria-haspopup', 'dialog');
+      bellBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        toggleBellPanel();
+      });
+    }
   }
 
   function buildPanel() {
@@ -306,6 +304,10 @@
   }
 
   function updateBadge(count) {
+    /* Kept outside the bellDot guard so the person menu can still show a count
+       on pages that have no bell button in the header. */
+    lastUnread = count || 0;
+    document.dispatchEvent(new CustomEvent('qg-notifications-changed', { detail: { count: lastUnread } }));
     if (!bellDot) return;
     if (!count) {
       bellDot.hidden = true;
@@ -647,6 +649,9 @@
       if (window._currentUser && window._currentUser.uid && !pollTimer) startPolling();
     }, 2000);
     window.QG_refreshNotifications = refreshNotifications;
+    /* Entry points for the person menu, now that the header bell is gone. */
+    window.QG_openNotifications = openBellPanel;
+    window.QG_notificationCount = function () { return lastUnread; };
   }
 
   if (document.readyState === 'loading') {
