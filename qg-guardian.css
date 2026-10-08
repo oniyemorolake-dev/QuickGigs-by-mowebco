@@ -14,51 +14,28 @@ body.page-parent-consent .nav {
   border-bottom: 1px solid var(--line) !important;
 }
 
-body.page-parent-consent .nav-logo {
-  color: var(--accent-tasker) !important;
-}
-
-body.page-parent-consent .back-btn {
-  color: var(--accent-tasker) !important;
-}
-
-body.page-parent-consent .page-label {
-  color: var(--accent-tasker) !important;
-}
-
-body.page-parent-consent .page-title {
-  color: var(--text-primary) !important;
-}
-
-body.page-parent-consent .page-date,
-body.page-parent-consent .content > p {
-  color: var(--text-muted) !important;
-}
-
-body.page-parent-consent .info-box {
-  background: var(--accent-soft) !important;
-  border: 1px solid color-mix(in srgb, var(--accent-tasker) 32%, transparent) !important;
-}
-
-body.page-parent-consent .info-box p,
-body.page-parent-consent .info-box a {
-  color: var(--accent-tasker) !important;
-}
+/* Eight !important colour overrides for .nav-logo, .back-btn, .page-label,
+   .page-title, .page-date, .content > p and .info-box are removed. The rebuilt
+   parent-consent.html styles all of them itself, so these could only fight it.
+   .nav-logo was the clearest case: it forced a flat teal onto the wordmark,
+   which is a purple-to-teal gradient everywhere else. */
 
 body.page-parent-consent .consent-card {
   max-width: 480px;
   margin: 28px auto;
   padding: 28px 22px;
-  border-radius: 20px;
+  border-radius: 14px;
   border: 1px solid var(--line);
   background: var(--surface-1);
   text-align: center;
   box-shadow: 0 12px 40px color-mix(in srgb, var(--bg) 35%, transparent);
 }
 
+/* Playfair is the wordmark face only — see .gp-brand below, which keeps it.
+   A page heading in it reads as a second logo. */
 body.page-parent-consent .consent-card h2 {
-  font-family: 'Playfair Display', Georgia, serif;
   font-size: 1.45rem;
+  font-weight: 700;
   margin: 0 0 10px;
   color: var(--text-primary);
 }
@@ -226,9 +203,7 @@ body.page-parent-consent .consent-verify-step strong {
 body.page-guardian-portal {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 50% -8%, color-mix(in srgb, var(--accent-tasker) 22%, transparent), transparent 42%),
-    var(--bg);
+  background: var(--bg);
   color: var(--text-primary);
   font-family: 'DM Sans', sans-serif;
 }
@@ -303,7 +278,7 @@ body.page-guardian-portal .gp-teen-bar {
   gap: 10px 14px;
   margin: 18px 0 20px;
   padding: 14px 16px;
-  border-radius: 16px;
+  border-radius: 14px;
   background: var(--surface-1);
   border: 1px solid var(--line);
 }
@@ -339,7 +314,7 @@ body.page-guardian-portal .gp-pending-badge {
 body.page-guardian-portal .gp-payout-prompt {
   margin-bottom: 18px;
   padding: 14px 16px;
-  border-radius: 16px;
+  border-radius: 14px;
   background: var(--attention-soft);
   border: 1px solid color-mix(in srgb, var(--attention) 38%, transparent);
   color: var(--text-secondary);
@@ -356,7 +331,7 @@ body.page-guardian-portal .gp-payout-prompt strong {
 body.page-guardian-portal .gp-state {
   padding: 28px 20px;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 14px;
   background: var(--surface-1);
   text-align: center;
   color: var(--text-muted);
@@ -383,7 +358,7 @@ body.page-guardian-portal .gp-queue {
 body.page-guardian-portal .gp-card {
   background: var(--surface-1);
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: 14px;
   padding: 20px;
 }
 
@@ -520,7 +495,7 @@ body.page-guardian-portal .gp-btn-decline {
 
 body.page-guardian-portal .gp-result {
   padding: 18px;
-  border-radius: 16px;
+  border-radius: 14px;
   text-align: center;
   background: var(--money-soft);
   border: 1px solid color-mix(in srgb, var(--money) 35%, transparent);
@@ -589,15 +564,13 @@ body.page-dashboard .guardian-banner strong {
 body.page-guardian-portal .gp-live {
   margin: 0 0 22px;
   padding: 18px 16px;
-  border-radius: 18px;
+  border-radius: 14px;
   border: 1px solid color-mix(in srgb, var(--accent-tasker) 28%, transparent);
   background: color-mix(in srgb, var(--accent-soft) 45%, var(--surface-1));
 }
 
-html.light body.page-guardian-portal .gp-live,
-body.light.page-guardian-portal .gp-live {
-  background: color-mix(in srgb, var(--accent-soft) 40%, #fff);
-}
+/* The light override is gone: --accent-soft and --surface already flip on
+   body.light, and its only difference was mixing toward literal #fff. */
 
 body.page-guardian-portal .gp-live-head {
   display: flex;
@@ -649,14 +622,11 @@ body.page-guardian-portal .gp-live-pulse::before {
   height: 8px;
   border-radius: 50%;
   background: var(--money);
-  animation: qgGpPulse 1.6s ease-out infinite;
 }
 
-@keyframes qgGpPulse {
-  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--money) 45%, transparent); }
-  70% { box-shadow: 0 0 0 8px transparent; }
-  100% { box-shadow: 0 0 0 0 transparent; }
-}
+/* The qgGpPulse ring animation is removed — the mockup has no pulses, and a
+   perpetual animation on a guardian safety panel competes with the real
+   alert state rather than reinforcing it. */
 
 body.page-guardian-portal .gp-live-queue {
   display: grid;
