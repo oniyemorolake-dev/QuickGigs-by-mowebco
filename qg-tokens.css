@@ -40,6 +40,12 @@
      white (6.5:1). */
   --danger-text: #2A0A0A;
 
+  /* Modal backdrop. Deliberately has no light-mode override: a scrim's job is
+     to dim whatever sits behind it, so it stays dark in both themes. Deriving
+     it from --bg would invert it to a white wash on light mode and brighten
+     the page instead of dimming it. */
+  --scrim: rgba(11, 10, 20, 0.78);
+
   /* ── Flow accents ──
    * Posting flow = purple, earning flow = teal.
    * NOTE: this inverts the previous mapping, where tasker was purple and
