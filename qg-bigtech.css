@@ -198,7 +198,7 @@
 .qg-new-pill {
   display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px;
   font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
-  background: var(--accent-soft); color: var(--accent); margin-left: 6px;
+  background: var(--accent-soft); color: var(--accent-on-soft); margin-left: 6px;
 }
 .qg-saving-dot {
   font-size: 11px; color: var(--text-muted); margin-left: 6px;

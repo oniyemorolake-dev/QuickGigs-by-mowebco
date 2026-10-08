@@ -20,7 +20,7 @@ body.page-profile .qg-verified-badge,
   border-radius: 999px;
   background: var(--accent-soft);
   border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
-  color: var(--accent) !important;
+  color: var(--accent-on-soft) !important;
   font-size: 11px;
   font-weight: 600;
 }
@@ -142,7 +142,7 @@ body.page-profile .qg-earned-empty {
 .qg-earned-pill.tone-accent {
   background: var(--accent-soft);
   border-color: color-mix(in srgb, var(--accent) 32%, transparent);
-  color: var(--accent);
+  color: var(--accent-on-soft);
 }
 
 .qg-earned-pill.tone-attention {

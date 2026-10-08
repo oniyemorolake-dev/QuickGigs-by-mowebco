@@ -536,13 +536,13 @@ html[data-qg-mode] .nego-block .act-btn:not(.btn-secondary) {
 
 .qg-evidence-step.is-done .qg-evidence-dot {
   background: var(--accent);
-  border-color: var(--accent);
+  border-color: var(--accent-on-soft);
   box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
 .qg-evidence-step.is-current .qg-evidence-dot {
   background: var(--accent);
-  border-color: var(--accent);
+  border-color: var(--accent-on-soft);
   box-shadow: 0 0 0 5px var(--accent-soft);
 }
 

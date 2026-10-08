@@ -20,7 +20,7 @@ body.page-dashboard .dash-loading-hint {
 body.page-dashboard .mode-tag,
 body.page-dashboard .mode-tag.tag-poster,
 body.page-dashboard .mode-tag.tag-worker {
-  color: var(--accent) !important;
+  color: var(--accent-on-soft) !important;
   background: var(--accent-soft) !important;
   border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
 }
@@ -277,7 +277,7 @@ body.page-dashboard .dash-earn-trend {
   padding: 3px 8px;
   border-radius: 999px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-soft);
 }
 
 body.page-dashboard .dash-earn-trend.is-up {
@@ -392,7 +392,7 @@ body.page-dashboard .dash-app-badge {
 
 body.page-dashboard .task-dot {
   background: var(--accent-soft) !important;
-  color: var(--accent) !important;
+  color: var(--accent-on-soft) !important;
   border-radius: 12px;
   display: flex;
   align-items: center;

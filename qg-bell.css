@@ -223,7 +223,7 @@
   align-items: center;
   justify-content: center;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-soft);
 }
 
 .qg-bell-empty-icon .qg-ico,

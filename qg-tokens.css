@@ -40,6 +40,14 @@
      white (6.5:1). */
   --danger-text: #2A0A0A;
 
+  /* Label colour for text on an --accent-soft fill — the badge/pill idiom used
+     ~34 times across the app. Flat var(--accent) fails AA on its own tint in
+     two of the four theme/mode combinations: 4.1:1 for poster purple in dark
+     mode and 3.17:1 for tasker teal in light mode, against a 4.5:1 bar. Mixing
+     30% of --text in lifts the worst case to 5.11:1 while keeping the hue
+     recognisable. Pair this with --accent-soft; use plain --accent on --surface. */
+  --accent-on-soft: color-mix(in srgb, var(--accent) 70%, var(--text));
+
   /* Modal backdrop. Deliberately has no light-mode override: a scrim's job is
      to dim whatever sits behind it, so it stays dark in both themes. Deriving
      it from --bg would invert it to a white wash on light mode and brighten

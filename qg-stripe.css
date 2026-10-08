@@ -129,7 +129,7 @@ body.light .qg-stripe-sheet {
   border: none;
   border-radius: 50%;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-soft);
   font-size: 20px;
   line-height: 1;
   cursor: pointer;

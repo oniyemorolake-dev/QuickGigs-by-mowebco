@@ -1188,7 +1188,7 @@ body.light .qg-role-flip-opt.active {
 }
 .pay-st-held { background: var(--attention-soft); color: var(--attention); }
 .pay-st-paid { background: var(--money-soft); color: var(--money); }
-.pay-st-pending { background: var(--accent-soft); color: var(--accent); }
+.pay-st-pending { background: var(--accent-soft); color: var(--accent-on-soft); }
 .pay-st-refunded { background: var(--danger-soft); color: var(--danger); }
 .pay-history-empty {
   text-align: center;

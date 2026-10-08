@@ -311,7 +311,7 @@ body.qg-mode-poster .qg-best-match-btn {
   padding: 5px 10px;
   border-radius: 999px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-soft);
   font-size: 11px;
   font-weight: 600;
 }
@@ -373,7 +373,7 @@ body.qg-mode-poster .qg-best-match-btn {
 
 .task-card.is-best-match,
 .qg-browse-map-row.is-best-match {
-  border-color: var(--accent) !important;
+  border-color: var(--accent-on-soft) !important;
   box-shadow: 0 0 0 2px var(--accent-soft), inset 0 0 0 1px var(--accent);
 }
 
@@ -437,7 +437,7 @@ body.qg-mode-poster .qg-best-match-btn {
 .qg-browse-filters-btn.has-active {
   border-color: color-mix(in srgb, var(--accent) 45%, transparent);
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-soft);
 }
 
 .qg-browse-filters-ico {
@@ -715,7 +715,7 @@ body.page-browse .qg-af-chip {
   cursor: pointer;
   border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-on-soft);
 }
 
 body.page-browse .qg-af-chip .qg-af-x {

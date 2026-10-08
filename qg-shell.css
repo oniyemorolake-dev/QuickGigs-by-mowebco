@@ -33,7 +33,7 @@ html.light .nav-brand .nav-logo {
 .nav-brand .nav-role,
 .nav .nav-role,
 html[data-qg-mode] .nav-role {
-  color: var(--accent) !important;
+  color: var(--accent-on-soft) !important;
   background: var(--accent-soft) !important;
   border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent) !important;
   border-radius: 999px !important;
@@ -43,7 +43,7 @@ html[data-qg-mode] .nav-role {
 html.light[data-qg-mode] .nav-role,
 html[data-qg-mode] body.light .nav-role,
 body.light .nav-brand .nav-role {
-  color: var(--accent) !important;
+  color: var(--accent-on-soft) !important;
   background: var(--accent-soft) !important;
 }
 
@@ -134,7 +134,7 @@ html.light .qg-bell-dot {
 html[data-qg-mode] .qg-mode-banner,
 html.light[data-qg-mode] .qg-mode-banner,
 html[data-qg-mode] body.light .qg-mode-banner {
-  color: var(--accent) !important;
+  color: var(--accent-on-soft) !important;
   background: var(--accent-soft) !important;
   border-bottom: 1px solid color-mix(in srgb, var(--accent) 28%, transparent) !important;
   backdrop-filter: none !important;
