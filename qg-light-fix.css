@@ -87,12 +87,18 @@ html.light .task-card,
 html.light .stat-card,
 html.light .action-card,
 html.light .qg-spotlight-card,
-html.light .im-row,
 body.light .task-card,
 body.light .stat-card,
 body.light .action-card {
   border-color: var(--line) !important;
   box-shadow: 0 1px 3px color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+
+/* .im-row is a list row rather than a card, so it takes the edge without the
+   lift — a shadow on every conversation row reads as clutter on white. */
+html.light .im-row {
+  border-color: var(--line) !important;
+  box-shadow: none !important;
 }
 
 /* Map price pins on light OSM tiles */
@@ -101,7 +107,7 @@ body.light .qg-price-pin {
   background: var(--surface-1);
   color: var(--money);
   border: 1px solid var(--line-strong);
-  box-shadow: 0 2px 10px rgba(30, 21, 51, 0.22);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--text) 22%, transparent);
 }
 
 html.light .qg-price-pin.is-active,
@@ -114,7 +120,7 @@ body.light .qg-price-pin.is-active {
 
 html.light .leaflet-control-attribution,
 body.light .leaflet-control-attribution {
-  background: color-mix(in srgb, #fff 88%, transparent) !important;
+  background: color-mix(in srgb, var(--surface) 88%, transparent) !important;
   color: var(--text-muted) !important;
 }
 
@@ -145,12 +151,12 @@ body.light .qg-list-skel-row {
 /* Toast defaults usable on light pages */
 html.light .toast,
 body.light .toast {
-  box-shadow: 0 8px 28px rgba(30, 21, 51, 0.18);
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--text) 18%, transparent);
 }
 
 html.light .toast.green,
 html.light .toast.amber,
 body.light .toast.green,
 body.light .toast.amber {
-  color: #ffffff !important;
+  color: var(--primary-text) !important;
 }
