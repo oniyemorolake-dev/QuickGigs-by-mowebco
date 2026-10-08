@@ -41,10 +41,12 @@ body.light {
   background: var(--qg-bg) !important;
 }
 
-/* ── Type scale: 28 / 20 / 15 / 13 / 11 ── */
+/* Type scale: sizes are no longer forced here. The pages were rebuilt to the
+   mockup and set their own, so a !important font-size in a runtime-injected
+   sheet could only override the correct value with the old one. Weight and
+   tracking stay because the mockup shares them across all 33 pages. */
 .page-title,
 .greet-name {
-  font-size: 28px !important;
   font-weight: 500;
   letter-spacing: -0.02em;
   line-height: 1.2;
@@ -58,7 +60,6 @@ body.light {
 .modal-title,
 .locked-title,
 .dash-hero-body strong {
-  font-size: 20px !important;
   font-weight: 500;
   letter-spacing: -0.02em;
   line-height: 1.25;
@@ -170,18 +171,13 @@ body.page-messages #conversations {
 .conv-item,
 .qg-bell-item,
 .locked-banner {
-  border-radius: 16px !important;
+  border-radius: 14px !important;
   border: 0.5px solid var(--qg-border) !important;
   background: var(--qg-card) !important;
   box-shadow: none !important;
 }
 
-.stat-card,
-.action-card.secondary,
-.task-card,
-.qg-activity-card {
-  padding: 20px !important;
-}
+/* Card padding is no longer forced either — the mockup pages set it. */
 
 .stats,
 .actions {
@@ -462,11 +458,10 @@ body:not(.light) .qg-activity-card {
   color: var(--qg-amber) !important;
   line-height: 1.45;
 }
-body.light .fraud-bar {
-  background: transparent !important;
-  color: #b45309 !important;
-  border-left-color: #f59e0b !important;
-}
+/* The body.light .fraud-bar override is gone: --qg-amber resolves to
+   --attention, which already darkens to #92400e in light mode for AA on white.
+   Its three declarations were a transparent background the base rule also
+   sets, plus #b45309 and #f59e0b — hand-picked equivalents of that same flip. */
 
 .bubble {
   max-width: 70% !important;
@@ -555,7 +550,7 @@ body.light .fraud-bar {
 
 /* Nav bar flat (no muddy shadow stack) */
 body:not(.light) .nav {
-  background: #0a0014 !important;
+  background: var(--surface) !important;
   box-shadow: none !important;
   border-bottom: 0.5px solid var(--qg-border) !important;
 }
@@ -567,13 +562,11 @@ body:not(.light) .nav {
   max-width: var(--qg-col);
 }
 
-/* Section titles use scale */
-.section-title { font-size: 20px !important; }
-.action-title { font-size: 15px !important; letter-spacing: normal !important; font-weight: 500; }
-.tc-title, .task-name, .conv-name { font-size: 15px !important; letter-spacing: normal !important; font-weight: 500; }
-.greet-name { font-size: 28px !important; }
-.nav-title { font-size: 20px !important; }
-.qg-bell-item-title { font-size: 15px !important; font-weight: 600; letter-spacing: normal !important; }
+/* Same reasoning as the type scale above — the forced sizes are gone and the
+   pages set their own. Weight and tracking remain. */
+.action-title { letter-spacing: normal !important; font-weight: 500; }
+.tc-title, .task-name, .conv-name { letter-spacing: normal !important; font-weight: 500; }
+.qg-bell-item-title { font-weight: 600; letter-spacing: normal !important; }
 
 /* Empty states */
 .empty, .empty-state {
