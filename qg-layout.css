@@ -1,4 +1,4 @@
-/* QuickGigs — wider layouts on laptop/desktop */
+/* SwiftGigs — wider layouts on laptop/desktop */
 @media (min-width: 768px) {
   .qg-page-wrap {
     max-width: 720px;
@@ -27,18 +27,16 @@
   }
 }
 
-/* Light mode button contrast fixes */
-body.light .btn-secondary,
-body.light .act-btn.btn-secondary {
-  background: #f0eeff;
-  border-color: #c4b5fd;
-  color: #4c1d95;
+/* Secondary button contrast. These were light-mode-only hex overrides; the
+   tokens flip with the theme, so the rules now apply to both and the
+   body.light scoping is gone. */
+.btn-secondary,
+.act-btn.btn-secondary,
+.switch-btn {
+  background: var(--surface-alt);
+  border-color: var(--border);
+  color: var(--text);
 }
-body.light .switch-btn {
-  background: #f0eeff;
-  border-color: #e8e2ff;
-  color: #4c1d95;
-}
-body.light .tab-btn {
-  color: #5a5a72;
+.tab-btn {
+  color: var(--text-muted);
 }

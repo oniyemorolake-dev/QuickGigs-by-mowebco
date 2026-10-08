@@ -1,72 +1,80 @@
-/* QuickGigs — light mode nav + toggle contrast (readable on all pages) */
+/* SwiftGigs — light mode nav + toggle contrast (readable on all pages).
+ *
+ * qg-brand-init.js appends this sheet at runtime on 25 pages, so it sorts last
+ * and beats the statically linked stylesheets. That makes it the effective
+ * owner of the light-mode nav, which is why the flattening has to happen here
+ * and not only in qg-brand.css.
+ */
 
 /* Early paint: qg-theme.js sets html.light before body exists */
 html.light {
   color-scheme: light;
-  background: var(--bg, #f7f5ff);
+  background: var(--bg);
 }
 html.light body {
-  background: var(--bg, #f7f5ff);
-  color: var(--text-primary, #1e1533);
+  background: var(--bg);
+  color: var(--text);
 }
 
 body.light .nav,
 html.light .nav {
-  background: var(--surface-1, #ffffff) !important;
-  border-bottom: 1px solid var(--line, #ddd6f3) !important;
-  box-shadow: 0 2px 12px color-mix(in srgb, var(--accent) 10%, transparent) !important;
+  background: var(--surface) !important;
+  border-bottom: 1px solid var(--border) !important;
+  box-shadow: none !important;
 }
 
 body.light .nav-brand .nav-logo,
 body.light .nav-brand .nav-role,
 body.light .nav .nav-logo {
-  color: var(--accent, #5b21b6) !important;
+  color: var(--accent) !important;
 }
 
 body.light .nav-title,
 body.light .nav .nav-title {
-  color: var(--text-primary, #1e1533) !important;
+  color: var(--text) !important;
 }
 
 body.light .back-btn {
-  color: var(--accent, #5b21b6) !important;
+  color: var(--text-muted) !important;
 }
 
+/* Secondary pill, not a filled CTA. This used to carry --grad-accent with a
+   white label, which made the mode toggle the loudest thing in the header. */
 body.light .mode-btn,
 body.light .mode-toggle {
-  background: var(--grad-accent) !important;
-  color: var(--on-accent, #ffffff) !important;
-  border: 1px solid transparent !important;
+  background: var(--surface-alt) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
   font-weight: 600 !important;
-  box-shadow: 0 1px 4px color-mix(in srgb, var(--accent) 28%, transparent);
+  box-shadow: none;
 }
 
 body.light .tabs-wrap {
-  background: var(--surface-1, #ffffff);
-  border-bottom-color: var(--line, #ddd6f3);
+  background: var(--surface);
+  border-bottom-color: var(--border);
 }
 
 body.light .tab-btn {
-  color: var(--text-muted, #5c5670);
+  color: var(--text-muted);
 }
 
-body.light .tab-btn.active {
-  color: var(--accent, #5b21b6) !important;
-  border-bottom-color: var(--accent, #5b21b6) !important;
-}
+/* The `body.light .tab-btn.active { color: var(--accent) }` rule that stood
+   here is deleted. The mockup's active tab is a solid --primary pill, so an
+   accent-coloured label on it was purple-on-purple and effectively invisible
+   in poster mode. qg-content.css and qg-mobile.css style the active tab. */
 
 body.light .tab-bar {
-  background: var(--surface-1, #ffffff) !important;
-  border-top-color: var(--line, #ddd6f3) !important;
-  box-shadow: 0 -2px 12px color-mix(in srgb, var(--accent) 8%, transparent);
+  background: var(--surface) !important;
+  border-top-color: var(--border) !important;
+  box-shadow: none;
 }
 
 body.light .tab-item .tab-icon,
 body.light .tab-item .tab-lbl {
-  color: var(--text-muted, #5c5670);
+  color: var(--text-muted);
 }
 
 body.light .tab-item.active .tab-icon,
 body.light .tab-item.active .tab-lbl {
-  color: var(--accent, #5b21b6) !important;
+  color: var(--accent) !important;
 }
