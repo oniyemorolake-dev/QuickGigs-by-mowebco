@@ -241,18 +241,14 @@
   }
 }
 
-/* Destructive safety.
-   NOTE: qg-refine.css also declares .btn-danger, as a solid --danger fill, and
-   is appended at runtime so it wins there. This tinted treatment therefore only
-   reaches .decline-btn in practice. Flagged for a decision on which one the two
-   should settle on. */
-.btn-danger, .act-btn.btn-danger, button.btn-danger, .decline-btn {
+/* Destructive safety. The .btn-danger / .decline-btn rule that stood here is
+   now in qg-refine.css, which reaches 25 pages to this file's 10 — the two
+   declared it differently, both with !important, so the later sheet silently
+   won. */
+.confirm-ok.is-danger {
   background: var(--danger-soft) !important;
   color: var(--danger) !important;
   border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent) !important;
-}
-.confirm-ok.is-danger {
-  background: var(--danger) !important; color: var(--danger-text) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

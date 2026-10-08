@@ -191,9 +191,9 @@ body.page-posttask .qg-photo-slot .qg-photo-remove {
   width: 24px;
   height: 24px;
   border-radius: 999px;
-  border: none;
-  background: var(--danger);
-  color: var(--danger-text);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+  background: var(--danger-soft);
+  color: var(--danger);
   display: inline-flex;
   align-items: center;
   justify-content: center;

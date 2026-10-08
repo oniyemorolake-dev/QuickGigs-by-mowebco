@@ -76,14 +76,10 @@
 
 .qg-safety-btn-danger {
   width: 100%;
-  background: var(--danger);
-  color: var(--danger-text);
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
   box-shadow: none;
-}
-
-html.light .qg-safety-btn-danger,
-body.light .qg-safety-btn-danger {
-  color: #fff;
 }
 
 .qg-safety-btn-muted {

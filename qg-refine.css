@@ -521,9 +521,20 @@ body:not(.light) .qg-activity-card {
 .task-price,
 .pay-st-paid { color: var(--qg-green) !important; }
 
-.btn-danger,
 .accept-btn.is-done { /* keep green for done */ }
-.btn-danger { color: var(--danger-text) !important; background: var(--qg-red) !important; }
+
+/* Canonical destructive treatment: tinted, not a solid red slab. This lives
+   here rather than in qg-bigtech.css because this sheet reaches 25 pages to
+   that one's 10, and the two used to declare .btn-danger differently — both
+   with !important, so whichever loaded last silently won. */
+.btn-danger,
+.act-btn.btn-danger,
+button.btn-danger,
+.decline-btn {
+  background: var(--danger-soft) !important;
+  color: var(--danger) !important;
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent) !important;
+}
 
 /* Ghost “post another” card */
 .qg-ghost-card {
