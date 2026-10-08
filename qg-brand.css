@@ -69,9 +69,16 @@
 /* Light mode keeps a hairline border and a soft drop shadow instead of the 3px
    purple underline, so it still needs its own rule — the colors above already
    resolve correctly and are not repeated here.
-   NOTE: qg-light-nav.css duplicates these selectors with a --accent/--surface-1
-   vocabulary, but it is referenced by zero HTML files, so it cannot override
-   this. Do not "defer to" that file without first adding a <link> for it. */
+
+   NOTE: qg-light-nav.css declares the same `body.light .nav` selector, also with
+   !important and identical specificity. It is NOT dead and it is NOT reachable by
+   grepping the HTML: qg-brand-init.js appends it (and qg-refine.css, qg-chrome.css,
+   qg-states.css, qg-role-theme.css) to document.head at runtime, on the 25 pages
+   that load that script. A dynamically appended <link> sorts last in the cascade,
+   so on those pages qg-light-nav.css wins this rule and the one below is only a
+   fallback for when qg-brand-init.js does not run. Its values resolve to the same
+   tokens by a different alias chain (--surface-1/--line/--accent), so the result
+   matches. Check qg-brand-init.js before assuming any sheet here is unloaded. */
 body.light .nav {
   border-bottom: 1px solid var(--border, #E8DFF2) !important;
   box-shadow: 0 2px 12px color-mix(in srgb, var(--primary, #6B21A8) 8%, transparent) !important;
