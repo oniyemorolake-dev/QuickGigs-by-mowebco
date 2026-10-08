@@ -1,4 +1,4 @@
-/* QuickGigs — login + signup visual shell.
+/* SwiftGigs — login + signup visual shell.
    The --qg-* vocabulary below derives FROM qg-tokens.css rather than defining
    its own palette, so login.html and signup.html track the brand automatically.
    Do not reintroduce hardcoded hex here, and do not alias back the other way
@@ -19,7 +19,7 @@ body.qg-auth-page {
   --qg-link: color-mix(in srgb, var(--primary) 50%, var(--text));
   --qg-input-text: var(--text);
   margin: 0;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   background: var(--qg-bg) !important;
   color: var(--qg-body);
 }
@@ -141,7 +141,7 @@ body.qg-auth-page .signup-theme-btn:focus-visible {
 }
 
 body.qg-auth-page .signup-title {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 22px;
   font-weight: 500;
   letter-spacing: -0.015em;
@@ -210,7 +210,7 @@ body.qg-auth-page .signup-field .qg-custom-input {
   background: var(--qg-surface);
   border: 1px solid var(--qg-border);
   border-radius: 8px;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 14px;
   color: var(--qg-input-text);
   box-shadow: none;
@@ -268,7 +268,7 @@ body.qg-auth-page .signup-btn {
      which put 14px text at 2.1:1 on the purple button — the token exists for
      exactly this case and qg-swift.css's .sg-btn--primary already uses it. */
   color: var(--primary-text);
-  font-family: 'Poppins', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 14px;
   font-weight: 600;
   box-shadow: none;
@@ -308,7 +308,7 @@ body.qg-auth-page .signup-google-btn {
   border: 1px solid var(--qg-border);
   background: transparent;
   color: var(--qg-heading);
-  font-family: 'Poppins', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 14px;
   font-weight: 500;
   box-shadow: none;
@@ -443,14 +443,14 @@ body.qg-auth-page .qg-dob-date {
 
 body.qg-auth-page .qg-dob-date-val {
   color: var(--qg-heading);
-  font-family: 'Poppins', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 16px;
   font-weight: 500;
 }
 
 body.qg-auth-page .qg-age-number {
   color: var(--qg-heading);
-  font-family: 'Poppins', sans-serif;
+  font-family: 'DM Sans', sans-serif;
 }
 
 body.qg-auth-page .qg-age-status {
@@ -674,7 +674,7 @@ body.qg-auth-page .signup-terms-check input[type="checkbox"]:focus-visible {
 }
 
 body.qg-auth-page .qg-step-title {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 18px;
   font-weight: 500;
   color: var(--qg-heading);

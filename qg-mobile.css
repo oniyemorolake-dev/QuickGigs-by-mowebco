@@ -1,4 +1,4 @@
-/* QuickGigs — mobile shell: fixed nav, keyboard, safe areas */
+/* SwiftGigs — mobile shell: fixed nav, keyboard, safe areas */
 
 .tab-bar {
   position: fixed !important;
@@ -7,18 +7,15 @@
   bottom: 0;
   z-index: 200;
   display: flex;
-  background: var(--tab-bg, #0b0118);
-  border-top: 0.5px solid var(--border, rgba(200, 168, 233, 0.1));
+  background: var(--surface);
+  border-top: 1px solid var(--border);
   padding: 8px 0 calc(14px + env(safe-area-inset-bottom, 0px));
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   transition: background 0.25s;
 }
 
-body.light .tab-bar {
-  background: var(--tab-bg, #fff);
-  border-top-color: var(--border, #f0eeff);
-}
+/* No body.light twin: --surface and --border already flip with the theme. */
 
 .tab-item {
   flex: 1;
@@ -34,26 +31,23 @@ body.light .tab-bar {
 
 .tab-icon {
   font-size: 22px;
-  color: var(--text-faint, rgba(255, 255, 255, 0.35));
+  color: var(--text-muted);
   transition: color 0.15s;
   line-height: 1;
 }
 
 .tab-lbl {
   font-size: 10px;
-  color: var(--text-faint, rgba(255, 255, 255, 0.35));
+  color: var(--text-muted);
   transition: color 0.15s;
   line-height: 1.2;
 }
 
 .tab-item.active .tab-icon,
 .tab-item.active .tab-lbl {
-  color: var(--purple-light, #c8a8e9);
-}
-
-body.light .tab-item.active .tab-icon,
-body.light .tab-item.active .tab-lbl {
-  color: var(--purple, #6b3fa0);
+  /* Teal in both modes per the mockup: the tab bar signals where you are,
+     not which flow you are in, so it does not follow --accent. */
+  color: var(--teal);
 }
 
 body.qg-keyboard-open .tab-bar {
@@ -96,7 +90,7 @@ body.qg-page-chat {
 
 /* Focus visible for keyboard users */
 :focus-visible {
-  outline: 2px solid #c8a8e9;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -139,11 +133,8 @@ body.qg-page-chat {
 }
 
 @media (max-width: 480px) {
-  .hint-box {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-  }
+  /* The .hint-box column-stack that stood here is removed: the rebuilt hint
+     box is a single text block, so forcing a column left a stray gap. */
   .hint-text {
     line-height: 1.55;
   }
@@ -167,7 +158,7 @@ body.qg-page-chat {
     padding: 0;
   }
   .confirm-overlay.open .confirm-box {
-    border-radius: 20px 20px 0 0;
+    border-radius: 14px 14px 0 0;
     max-width: 100%;
     width: 100%;
     padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px));
