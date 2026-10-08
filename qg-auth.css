@@ -12,7 +12,10 @@ body.qg-auth-page {
   --qg-purple: var(--primary);
   --qg-heading: var(--text);
   --qg-body: var(--text-muted);
-  --qg-muted: var(--text-faint);
+  /* Not var(--text-faint): qg-tokens.css currently aliases that straight to
+     --text-muted, which would flatten --qg-muted and --qg-body into one colour
+     and lose the two-level hierarchy these pages rely on. */
+  --qg-muted: color-mix(in srgb, var(--text-muted) 78%, transparent);
   --qg-link: color-mix(in srgb, var(--primary) 50%, var(--text));
   --qg-input-text: var(--text);
   margin: 0;
@@ -364,18 +367,18 @@ body.qg-auth-page .signup-role {
 body.qg-auth-page .signup-msg.error {
   background: var(--qg-bg);
   border: 1px solid var(--qg-border);
-  color: #f87171;
+  color: var(--danger);
 }
 
 body.qg-auth-page .signup-msg.ok {
   background: var(--qg-bg);
   border: 1px solid var(--qg-border);
-  color: #4ade80;
+  color: var(--green);
 }
 
 body.qg-auth-page .signup-error {
   display: none;
-  color: #f87171;
+  color: var(--danger);
   font-size: 12px;
   line-height: 1.45;
   margin-top: 6px;
@@ -383,13 +386,13 @@ body.qg-auth-page .signup-error {
 
 body.qg-auth-page .signup-field input.is-invalid,
 body.qg-auth-page .signup-field .qg-custom-input.is-invalid {
-  border-color: #f87171;
+  border-color: var(--danger);
 }
 
 body.qg-auth-page .signup-field input.is-invalid:focus,
 body.qg-auth-page .signup-field input.is-invalid:focus-visible {
-  outline-color: #f87171;
-  border-color: #f87171;
+  outline-color: var(--danger);
+  border-color: var(--danger);
 }
 
 body.qg-auth-page .qg-wizard-progress .qg-wizard-dot {
@@ -463,7 +466,7 @@ body.qg-auth-page .qg-dob-picker {
 }
 
 body.qg-auth-page .qg-dob-picker::before {
-  background: rgba(107, 33, 168, 0.14);
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
   border: 1px solid var(--qg-border);
   box-shadow: none;
 }
@@ -477,8 +480,10 @@ body.qg-auth-page .qg-dob-wrap::after {
   background: linear-gradient(0deg, var(--qg-bg) 15%, transparent);
 }
 
+/* Light keeps its own rule only because the tint is lighter here (10% vs 14%);
+   the hue itself now comes from --primary in both themes. */
 body.qg-auth-page.light .qg-dob-picker::before {
-  background: rgba(107, 33, 168, 0.1);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 body.qg-auth-page.light .qg-dob-picker::after,
@@ -562,32 +567,25 @@ body.qg-auth-page.light {
 }
 
 body.qg-auth-page.light .signup-card {
-  box-shadow: 0 4px 24px rgba(26, 10, 61, 0.08);
+  box-shadow: 0 4px 24px color-mix(in srgb, var(--text) 8%, transparent);
 }
 
 body.qg-auth-page.light .signup-theme-btn:hover {
-  background: #EDE8F5;
+  background: var(--surface-alt);
 }
 
 body.qg-auth-page.light .signup-btn-secondary:hover {
-  background: #EDE8F5;
+  background: var(--surface-alt);
 }
 
 body.qg-auth-page.light .signup-google-btn:hover {
-  background: #EDE8F5;
+  background: var(--surface-alt);
 }
 
-body.qg-auth-page.light .signup-msg.error {
-  color: #dc2626;
-}
-
-body.qg-auth-page.light .signup-msg.ok {
-  color: #16a34a;
-}
-
-body.qg-auth-page.light .signup-error {
-  color: #dc2626;
-}
+/* The light overrides for .signup-msg.error / .ok / .signup-error are gone:
+   --danger and --green already flip on body.light, and the token values
+   (#b91c1c, #15803D) are darker than the #dc2626 / #16a34a that used to be
+   hardcoded here, so contrast on the white card improves rather than regresses. */
 
 body.qg-auth-page .qg-password-wrap input {
   width: 100%;
