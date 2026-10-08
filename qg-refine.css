@@ -1,28 +1,28 @@
 /* QuickGigs — visual refinement (type, cards, grid, icons, motion, color) */
 
+/* This file's --qg-* vocabulary now derives FROM qg-tokens.css rather than
+   defining its own palette. It used to do the reverse -- it set --qg-bg/--qg-text/
+   --qg-lavender to literals and then aliased the core tokens back onto them
+   (--bg: var(--qg-bg), --border: var(--qg-border), and so on). Because
+   qg-brand-init.js appends this sheet after qg-tokens.css, those reverse aliases
+   shadowed the design tokens on all 25 pages that load that script, which is why
+   the site kept painting the pre-rebrand palette. Do not reintroduce them: an
+   alias in both directions is also a dependency cycle and resolves to nothing. */
 :root {
-  --qg-bg: #06000f;
-  --qg-card: rgba(255, 255, 255, 0.03);
-  --qg-card-hover: rgba(255, 255, 255, 0.055);
-  --qg-border: rgba(200, 168, 233, 0.10);
-  --qg-text: rgba(255, 255, 255, 1);
-  --qg-text-70: rgba(255, 255, 255, 0.70);
-  --qg-text-50: rgba(255, 255, 255, 0.50);
-  --qg-lavender: #c8a8e9;
-  --qg-green: #4ade80;
-  --qg-red: #ef4444;
-  --qg-amber: #fbbf24;
+  --qg-bg: var(--bg);
+  --qg-card: var(--surface);
+  --qg-card-hover: var(--surface-alt);
+  --qg-border: var(--border);
+  --qg-text: var(--text);
+  --qg-text-70: var(--text-muted);
+  --qg-text-50: color-mix(in srgb, var(--text-muted) 78%, transparent);
+  --qg-lavender: var(--primary);
+  --qg-green: var(--green);
+  --qg-red: var(--danger);
+  --qg-amber: var(--attention);
   --qg-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   --qg-pad: 20px;
   --qg-col: 680px;
-  --text: var(--qg-text);
-  --text-muted: var(--qg-text-70);
-  --text-faint: var(--qg-text-50);
-  --lavender: var(--qg-lavender);
-  --green: var(--qg-green);
-  --border: var(--qg-border);
-  --card-bg: var(--qg-card);
-  --bg: var(--qg-bg);
 }
 
 body {
@@ -33,15 +33,8 @@ body {
 }
 
 body.light {
-  --qg-bg: #fafafe;
-  --qg-card: #ffffff;
-  --qg-card-hover: #f5f2ff;
-  --qg-border: rgba(107, 63, 160, 0.12);
-  --qg-text: #1a0a3d;
-  --qg-text-70: #6b6580;
-  --qg-text-50: #8a84a0;
-  --qg-lavender: #6b3fa0;
-  --qg-green: #16a34a;
+  /* No colour overrides needed: the --qg-* aliases above resolve through
+     theme-aware tokens, so they flip to the light palette on their own. */
   background: var(--qg-bg) !important;
 }
 
@@ -242,7 +235,7 @@ body:not(.light) .qg-activity-card {
 
 /* Keep primary CTA gradient only */
 .action-card.primary {
-  background: linear-gradient(135deg, #6b3fa0, #9b6fc4) !important;
+  background: var(--primary) !important;
   border: none !important;
   box-shadow: none !important;
   padding: 20px !important;
@@ -269,12 +262,11 @@ body:not(.light) .qg-activity-card {
   line-height: 1;
 }
 
-html[data-qg-mode="poster"] .stat-icon,
-html[data-qg-mode="poster"] .action-icon,
-body.qg-mode-poster .stat-icon,
-body.qg-mode-poster .action-icon {
-  color: var(--lavender, #99f6e4);
-}
+/* Removed: a poster-mode icon override whose #99f6e4 fallback encoded the old
+   inverted mapping (poster=teal). qg-tokens.css now defines poster=purple and
+   tasker=teal, and the same inverted block was already removed from
+   messages.html. Icons therefore follow --qg-lavender (= --primary) in both
+   modes; see the handoff note if they should instead track var(--accent). */
 
 .stat-icon .qg-ico { width: 20px; height: 20px; }
 .action-icon .qg-ico { width: 22px; height: 22px; }
@@ -283,7 +275,7 @@ body.qg-mode-poster .action-icon {
   height: 48px;
   margin: 0 auto 12px;
   border-radius: 14px;
-  background: rgba(107, 63, 160, 0.15);
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
   color: var(--qg-lavender);
 }
 .empty-icon .qg-ico { width: 24px; height: 24px; }
@@ -291,13 +283,13 @@ body.qg-mode-poster .action-icon {
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: rgba(107, 63, 160, 0.12);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
   color: var(--qg-lavender);
 }
 .qg-activity-ico .qg-ico { width: 16px; height: 16px; }
 .tab-icon .qg-ico { width: 22px; height: 22px; }
+/* --qg-lavender is theme-aware now, so the old body.light override is gone. */
 .tab-item.active .tab-icon { color: var(--qg-lavender); }
-body.light .tab-item.active .tab-icon { color: #6b3fa0; }
 
 .meta-pin {
   display: inline-flex;
@@ -353,20 +345,19 @@ body.light .tab-item.active .tab-icon { color: #6b3fa0; }
   font-weight: 500 !important;
   letter-spacing: normal !important;
   text-transform: none !important;
-  color: var(--qg-lavender) !important;
-  background: rgba(107, 63, 160, 0.2) !important;
-  border: 0.5px solid rgba(200, 168, 233, 0.22) !important;
+  /* Kept in step with qg-brand.css's .nav-role: flat var(--primary) is only
+     3.5:1 on this tint at 11px, so the text mixes toward --text for AA. */
+  color: color-mix(in srgb, var(--primary) 50%, var(--text)) !important;
+  background: color-mix(in srgb, var(--primary) 20%, transparent) !important;
+  border: 0.5px solid color-mix(in srgb, var(--primary) 22%, transparent) !important;
   line-height: 1.2;
   white-space: nowrap;
 }
 
 .nav-beta-pill { display: none !important; } /* merged into nav-role */
 
-body.light .nav-brand .nav-role {
-  color: #6b3fa0 !important;
-  background: #ede9ff !important;
-  border-color: #e8e2ff !important;
-}
+/* No body.light override: the rule above is theme-aware and already resolves to
+   the dark-purple-on-pale-tint treatment in light mode. */
 
 /* Hide redundant page mode tags when nav lockup exists */
 .mode-tag[data-qg-mode-tag] {
@@ -395,8 +386,8 @@ body.light .nav-brand .nav-role {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1.5px solid rgba(200, 168, 233, 0.25);
+  background: color-mix(in srgb, var(--text) 12%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--primary) 25%, transparent);
   position: absolute;
   top: 0;
   left: 50%;
@@ -412,22 +403,23 @@ body.light .nav-brand .nav-role {
   left: calc(50% + 7px);
   width: calc(100% - 14px);
   height: 1px;
-  background: rgba(200, 168, 233, 0.18);
+  background: color-mix(in srgb, var(--primary) 18%, transparent);
   z-index: 1;
 }
 .qg-tl-step.done { color: var(--qg-lavender) !important; }
 .qg-tl-step.done::before {
-  background: #6b3fa0;
-  border-color: #9b6fc4;
+  background: var(--primary);
+  border-color: var(--primary);
   content: '';
 }
 .qg-tl-step.done:not(:last-child)::after {
-  background: #6b3fa0;
+  background: var(--primary);
 }
 .qg-tl-step.current { color: var(--qg-lavender) !important; font-weight: 600; }
+/* Current keeps a lighter ring than done, which is what #9b6fc4/#c8a8e9 did. */
 .qg-tl-step.current::before {
-  background: #9b6fc4;
-  border-color: #c8a8e9;
+  background: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 50%, var(--text));
   box-shadow: none;
   animation: none !important;
 }
@@ -522,7 +514,7 @@ body.light .fraud-bar {
   background-image: none !important;
 }
 .task-dot {
-  background-color: rgba(107, 63, 160, 0.2) !important;
+  background-color: color-mix(in srgb, var(--primary) 20%, transparent) !important;
 }
 
 /* Color discipline */
@@ -545,7 +537,7 @@ body.light .fraud-bar {
   padding: 20px;
   margin-bottom: 12px;
   border-radius: 16px;
-  border: 0.5px dashed rgba(200, 168, 233, 0.28);
+  border: 0.5px dashed color-mix(in srgb, var(--primary) 28%, transparent);
   background: transparent;
   color: var(--qg-text-50);
   font-size: 13px;
