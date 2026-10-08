@@ -1,15 +1,20 @@
-/* QuickGigs — login + signup visual shell (matches landing palette) */
+/* QuickGigs — login + signup visual shell.
+   The --qg-* vocabulary below derives FROM qg-tokens.css rather than defining
+   its own palette, so login.html and signup.html track the brand automatically.
+   Do not reintroduce hardcoded hex here, and do not alias back the other way
+   (--bg: var(--qg-bg)) — an alias in both directions is a dependency cycle and
+   resolves to nothing. Both pages load qg-tokens.css, so every token resolves. */
 body.qg-auth-page {
-  --qg-bg: #0D0716;
-  --qg-surface: #140F24;
-  --qg-border: #2A2140;
-  --qg-hairline: #221A38;
-  --qg-purple: #6B21A8;
-  --qg-heading: #F2EFF8;
-  --qg-body: #9C93B5;
-  --qg-muted: #7B7194;
-  --qg-link: #B69BE0;
-  --qg-input-text: #EDE9F5;
+  --qg-bg: var(--bg);
+  --qg-surface: var(--surface);
+  --qg-border: var(--border);
+  --qg-hairline: var(--border);
+  --qg-purple: var(--primary);
+  --qg-heading: var(--text);
+  --qg-body: var(--text-muted);
+  --qg-muted: var(--text-faint);
+  --qg-link: color-mix(in srgb, var(--primary) 50%, var(--text));
+  --qg-input-text: var(--text);
   margin: 0;
   font-family: 'Poppins', sans-serif;
   background: var(--qg-bg) !important;
@@ -76,11 +81,35 @@ body.qg-auth-page .qg-auth-mark img {
   display: block;
 }
 
+/* Matches .nav-brand .nav-logo in qg-brand.css. Georgia is listed because
+   login.html and signup.html do not load Playfair Display yet; italic Georgia
+   is the closest stand-in until they do. The literal gradient fallback guards
+   the same failure the nav rule does: with a transparent fill, an unresolved
+   --grad-wordmark would leave background-clip:text nothing to clip and hide
+   the wordmark entirely rather than merely unstyle it. */
 body.qg-auth-page .qg-auth-name {
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--qg-heading);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  font-size: 18px;
+  font-weight: 700;
+  background: var(--grad-wordmark, linear-gradient(100deg, #8B5CF6 0%, #2DD4BF 100%));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+}
+
+/* Fallback for engines without background-clip:text support. Uses --qg-heading
+   rather than the nav's --primary: at 18px/700 this sits just under the WCAG
+   large-text threshold, and --primary on --qg-surface measures 4.3:1 in dark
+   mode, short of the 4.5:1 this size needs. */
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  body.qg-auth-page .qg-auth-name {
+    background: none;
+    color: var(--qg-heading);
+    -webkit-text-fill-color: var(--qg-heading);
+  }
 }
 
 body.qg-auth-page .signup-logo {
@@ -231,7 +260,11 @@ body.qg-auth-page .signup-btn {
   border: 1px solid var(--qg-purple);
   border-radius: 8px;
   background: var(--qg-purple);
-  color: var(--qg-heading);
+  /* --primary-text, not --qg-heading: this is label-on-fill, so it must track
+     the fill rather than the theme. --qg-heading is near-black in light mode,
+     which put 14px text at 2.1:1 on the purple button — the token exists for
+     exactly this case and qg-swift.css's .sg-btn--primary already uses it. */
+  color: var(--primary-text);
   font-family: 'Poppins', sans-serif;
   font-size: 14px;
   font-weight: 600;
@@ -240,8 +273,10 @@ body.qg-auth-page .signup-btn {
 }
 
 body.qg-auth-page .signup-btn:hover {
-  background: #7B2CBF;
-  border-color: #7B2CBF;
+  /* Was #7B2CBF, a lighten of the old #6B21A8 base. Against the new --primary
+     that read as a jump to a different purple, so this darkens instead. */
+  background: color-mix(in srgb, var(--primary) 85%, #000);
+  border-color: color-mix(in srgb, var(--primary) 85%, #000);
   transform: none;
   box-shadow: none;
 }
@@ -514,17 +549,14 @@ body.qg-auth-page .signup-perk {
   font-size: 12px;
 }
 
+/* Only --qg-link needs a light-mode value. Every other --qg-* above is already
+   theme-aware: qg-tokens.css flips --bg/--surface/--text/--primary on body.light,
+   and the base block points at those, so restating them here would be nine lines
+   that can only drift out of sync. --qg-link is the exception because the dark
+   value lightens --primary toward --text for contrast on a dark surface, which
+   in light mode would darken it into near-black instead. */
 body.qg-auth-page.light {
-  --qg-bg: #F5F2FA;
-  --qg-surface: #FFFFFF;
-  --qg-border: #E2DBF0;
-  --qg-hairline: #EDE8F5;
-  --qg-purple: #6B21A8;
-  --qg-heading: #1A0A3D;
-  --qg-body: #4A3F66;
-  --qg-muted: #7B7194;
-  --qg-link: #6B21A8;
-  --qg-input-text: #1A0A3D;
+  --qg-link: var(--primary);
   background: var(--qg-bg) !important;
   color: var(--qg-body);
 }
