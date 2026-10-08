@@ -3,7 +3,7 @@
   var DISMISS_KEY = 'qg-pwa-dismissed';
   var IOS_DISMISS_KEY = 'qg-ios-install-dismissed';
   // Auto-stamped by scripts/stamp-cache-version.js — do not hand-edit.
-  var SHEET_VER = '6cc1673-1791445110';
+  var SHEET_VER = '9cd86a6-1791445359';
 
   function assetUrl(path) {
     try {
