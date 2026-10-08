@@ -16,7 +16,10 @@
   --qg-text: var(--text);
   --qg-text-70: var(--text-muted);
   --qg-text-50: color-mix(in srgb, var(--text-muted) 78%, transparent);
-  --qg-lavender: var(--primary);
+  /* Mode-aware: --accent is --primary (purple) for poster and --teal for tasker.
+     Brand-identity surfaces (.nav-role) and the posting CTA (.action-card.primary)
+     deliberately stay on --primary instead, since they are not mode-sensitive. */
+  --qg-lavender: var(--accent);
   --qg-green: var(--green);
   --qg-red: var(--danger);
   --qg-amber: var(--attention);
@@ -275,7 +278,7 @@ body:not(.light) .qg-activity-card {
   height: 48px;
   margin: 0 auto 12px;
   border-radius: 14px;
-  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
   color: var(--qg-lavender);
 }
 .empty-icon .qg-ico { width: 24px; height: 24px; }
@@ -283,7 +286,7 @@ body:not(.light) .qg-activity-card {
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
   color: var(--qg-lavender);
 }
 .qg-activity-ico .qg-ico { width: 16px; height: 16px; }
@@ -387,7 +390,7 @@ body:not(.light) .qg-activity-card {
   height: 10px;
   border-radius: 50%;
   background: color-mix(in srgb, var(--text) 12%, transparent);
-  border: 1.5px solid color-mix(in srgb, var(--primary) 25%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 25%, transparent);
   position: absolute;
   top: 0;
   left: 50%;
@@ -403,23 +406,23 @@ body:not(.light) .qg-activity-card {
   left: calc(50% + 7px);
   width: calc(100% - 14px);
   height: 1px;
-  background: color-mix(in srgb, var(--primary) 18%, transparent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
   z-index: 1;
 }
 .qg-tl-step.done { color: var(--qg-lavender) !important; }
 .qg-tl-step.done::before {
-  background: var(--primary);
-  border-color: var(--primary);
+  background: var(--accent);
+  border-color: var(--accent);
   content: '';
 }
 .qg-tl-step.done:not(:last-child)::after {
-  background: var(--primary);
+  background: var(--accent);
 }
 .qg-tl-step.current { color: var(--qg-lavender) !important; font-weight: 600; }
 /* Current keeps a lighter ring than done, which is what #9b6fc4/#c8a8e9 did. */
 .qg-tl-step.current::before {
-  background: var(--primary);
-  border-color: color-mix(in srgb, var(--primary) 50%, var(--text));
+  background: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--text));
   box-shadow: none;
   animation: none !important;
 }
@@ -514,7 +517,7 @@ body.light .fraud-bar {
   background-image: none !important;
 }
 .task-dot {
-  background-color: color-mix(in srgb, var(--primary) 20%, transparent) !important;
+  background-color: color-mix(in srgb, var(--accent) 20%, transparent) !important;
 }
 
 /* Color discipline */
@@ -537,7 +540,7 @@ body.light .fraud-bar {
   padding: 20px;
   margin-bottom: 12px;
   border-radius: 16px;
-  border: 0.5px dashed color-mix(in srgb, var(--primary) 28%, transparent);
+  border: 0.5px dashed color-mix(in srgb, var(--accent) 28%, transparent);
   background: transparent;
   color: var(--qg-text-50);
   font-size: 13px;
