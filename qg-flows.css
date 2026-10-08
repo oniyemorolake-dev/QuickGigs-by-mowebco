@@ -47,9 +47,9 @@ body.page-review .comment-input:focus {
 body.page-posttask .field-input:focus,
 body.page-browse .modal-input:focus,
 body.page-review .comment-input:focus {
-  border-color: var(--line-strong) !important;
+  border-color: var(--accent) !important;
   outline: none;
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 body.page-posttask .field-error,
@@ -104,9 +104,9 @@ body.page-posttask .age-pref-card.selected,
 body.page-posttask .rec-opt.selected,
 body.page-posttask .time-slot.selected,
 body.page-posttask .date-chip.selected {
-  background: var(--accent-soft) !important;
-  border-color: color-mix(in srgb, var(--accent-poster) 55%, transparent) !important;
-  color: var(--accent-poster) !important;
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent-text) !important;
 }
 
 body.page-posttask .cat-chip {
@@ -116,15 +116,17 @@ body.page-posttask .cat-chip {
 }
 
 body.page-posttask .cat-chip.selected {
-  background: var(--accent-soft) !important;
-  border-color: var(--accent-poster) !important;
-  color: var(--accent-poster) !important;
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent-text) !important;
 }
 
+/* Plain surfaces, not accent-tinted: these are informational, and tinting them
+   the same colour as the selected-state chips made them read as selected. */
 body.page-posttask .schedule-preview,
 body.page-posttask .hint-box {
-  background: var(--accent-soft) !important;
-  border: 1px solid color-mix(in srgb, var(--accent-poster) 35%, transparent) !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
   color: var(--text-primary);
 }
 
@@ -224,7 +226,7 @@ body.page-posttask #submitBtn {
   background: var(--grad-poster) !important;
   color: var(--on-accent) !important;
   border: none !important;
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--accent-poster) 28%, transparent) !important;
+  box-shadow: none !important;
 }
 
 body.page-posttask #draftBtn,
@@ -654,9 +656,11 @@ body.page-review .completed-badge {
   color: var(--money) !important;
 }
 
+/* Neutral chip with primary initials, not an accent fill — an avatar is
+   identity, not an action, so it should not read as a filled CTA. */
 body.page-review .rev-avatar {
-  background: var(--grad-accent) !important;
-  color: var(--on-accent) !important;
+  background: var(--surface-alt) !important;
+  color: var(--primary) !important;
 }
 
 body.page-review .star {
@@ -678,13 +682,13 @@ body.page-review .stars-desc {
 body.page-review .tag {
   background: var(--surface-1) !important;
   border: 1px solid var(--line) !important;
-  color: var(--text-muted) !important;
+  color: var(--text) !important;
 }
 
 body.page-review .tag.selected {
-  background: var(--accent-soft) !important;
-  border-color: color-mix(in srgb, var(--accent) 45%, transparent) !important;
-  color: var(--accent) !important;
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent-text) !important;
 }
 
 body.page-review .submit-btn,
