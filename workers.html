@@ -7,6 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>SwiftGigs — Find Taskers</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-layout.css">
 <link rel="stylesheet" href="qg-role-theme.css?v=20260811tokens1">
 <link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
@@ -18,16 +19,54 @@
 <script src="qg-brand-init.js"></script>
 <script>document.documentElement.setAttribute('data-qg-mode','poster');</script>
 <style>
-body{font-family:'DM Sans',sans-serif;background:var(--bg,#0b0118);color:var(--text,#fff);min-height:100vh;padding-bottom:76px;}
-.nav{position:sticky;top:0;z-index:50;background:var(--nav-bg,#0b0118);border-bottom:0.5px solid var(--border,rgba(200,168,233,0.1));padding:12px 18px;display:flex;align-items:center;justify-content:space-between;}
-.nav-logo{font-family:'Playfair Display',serif;font-style:italic;font-size:1.25rem;color:var(--lavender,#c8a8e9);}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:76px;}
+.nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.nav-logo{font-family:'Playfair Display',Georgia,serif;font-style:italic;font-weight:700;font-size:18px;}
 .nav-right{display:flex;align-items:center;gap:10px;}
-.mode-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.65);}
-body.light .mode-btn{background:#f0eeff;color:#6b3fa0;}
-.back-link{color:var(--lavender,#c8a8e9);text-decoration:none;font-size:14px;}
-.filter-pills{display:flex;gap:8px;padding:0 20px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
-.filter-pill{flex-shrink:0;padding:8px 14px;border-radius:999px;border:0.5px solid var(--border,rgba(200,168,233,0.15));background:var(--card-bg,rgba(255,255,255,0.04));font-size:12px;cursor:pointer;color:var(--text-muted,rgba(255,255,255,0.5));}
-.filter-pill.active{border-color:var(--purple-light,#9b6fc4);color:var(--lavender,#c8a8e9);background:rgba(107,63,160,0.2);}
+.mode-btn{padding:6px 13px;border-radius:100px;font-size:11.5px;font-weight:600;cursor:pointer;border:1px solid var(--border);font-family:'DM Sans',sans-serif;background:var(--surface-alt);color:var(--text);transition:border-color .15s;}
+.mode-btn:hover{border-color:var(--accent);}
+.back-link{color:var(--accent);text-decoration:none;font-size:13.5px;font-weight:600;}
+/* Page header (overrides qg-features.css old-palette hero) */
+.qg-page-hero{padding:20px 16px 4px;}
+.qg-page-kicker{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:6px;}
+.qg-page-title{font-family:'DM Sans',sans-serif;font-style:normal;font-size:21px;font-weight:700;line-height:1.25;color:var(--text);margin-bottom:4px;}
+.qg-page-sub{font-size:13px;line-height:1.5;color:var(--text-muted);max-width:520px;}
+/* Search input */
+.qg-search-hero{padding:14px 16px 12px;}
+.qg-search-box{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);box-shadow:none;transition:border-color .15s;}
+.qg-search-box:focus-within{border-color:var(--accent);box-shadow:none;outline:2px solid color-mix(in srgb, var(--accent) 30%, transparent);}
+.qg-search-box input{flex:1;min-width:0;border:none;outline:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);}
+.qg-search-box input::placeholder{color:var(--text-muted);}
+/* Skill filter chips */
+.filter-pills{display:flex;gap:8px;padding:0 16px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.filter-pills::-webkit-scrollbar{display:none;}
+.filter-pill{flex-shrink:0;padding:7px 14px;border-radius:100px;border:1px solid var(--border);background:var(--surface);font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--text);transition:background .15s,border-color .15s,color .15s;}
+.filter-pill:hover{border-color:var(--accent);}
+.filter-pill.active{border-color:var(--accent);color:var(--accent-text, var(--primary-text));background:var(--accent);}
+.filter-pill:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+/* Tasker list: divided rows like the mockup Messages list */
+.qg-worker-list{display:flex;flex-direction:column;gap:0;padding:0 16px 24px;}
+.qg-worker-card{display:flex;align-items:flex-start;gap:11px;padding:12px 0;border:none;border-bottom:1px solid var(--border);border-radius:0;background:transparent;color:var(--text);text-decoration:none;transition:background .15s;}
+.qg-worker-card:last-child{border-bottom:none;}
+.qg-worker-card:hover{transform:none;border-color:var(--border);background:color-mix(in srgb, var(--surface-alt) 50%, transparent);}
+.qg-worker-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px;}
+.qg-worker-avatar{width:38px;height:38px;border-radius:50%;flex-shrink:0;background-color:var(--surface-alt);background-image:none;background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--primary);}
+.qg-worker-avatar.has-photo{color:transparent;}
+.qg-worker-body{flex:1;min-width:0;}
+.qg-worker-name{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.qg-worker-meta{font-size:11px;line-height:1.45;color:var(--text-muted);margin-bottom:6px;}
+.qg-worker-meta svg{vertical-align:-2px;color:var(--text-muted);}
+.qg-worker-skills{display:flex;flex-wrap:wrap;gap:5px;}
+.qg-worker-skill{display:inline-flex;align-items:center;font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:100px;border:1px solid var(--border);background:var(--surface);color:var(--text);}
+body.light .qg-worker-skill{background:var(--surface);color:var(--text);}
+.qg-worker-name .qg-worker-skill{font-weight:600;background:var(--attention-soft);border-color:transparent;color:var(--attention);}
+/* Rating / completion chips (markup from qg-stats.js) */
+.qg-worker-card .qg-trust-row{justify-content:flex-start;gap:5px;margin:0 0 6px;}
+.qg-worker-card .qg-trust-badge,
+body.light .qg-worker-card .qg-trust-badge{font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:100px;border:none;background:var(--accent-soft);color:var(--accent);}
+.qg-worker-card .qg-trust-badge.is-green{background:var(--money-soft);color:var(--green);}
+.qg-worker-card .qg-trust-badge.is-amber{background:var(--attention-soft);color:var(--attention);}
+.qg-worker-list .qg-empty-discovery{text-align:center;padding:48px 24px;font-size:13px;color:var(--text-muted);}
 </style>
 </head>
 <body>

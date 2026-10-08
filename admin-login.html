@@ -11,91 +11,118 @@
 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<meta name="theme-color" content="#06000f">
+<meta name="theme-color" content="#0B0A14">
 <title>Admin log in — SwiftGigs</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: 'DM Sans', sans-serif;
     min-height: 100vh;
-    background: #06000f;
-    color: #fff;
+    background: var(--bg);
+    color: var(--text);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px;
+    padding: 24px 16px;
+    -webkit-font-smoothing: antialiased;
   }
   .card {
     width: 100%;
     max-width: 400px;
-    padding: 28px 24px;
-    border-radius: 16px;
-    background: rgba(255,255,255,0.03);
-    border: 0.5px solid rgba(200,168,233,0.12);
+    padding: 26px 22px 22px;
+    border-radius: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.12);
   }
   .logo {
+    display: inline-block;
     font-family: 'Playfair Display', serif;
     font-style: italic;
-    font-size: 1.35rem;
-    color: #c8a8e9;
+    font-weight: 700;
+    font-size: 22px;
+    line-height: 1.2;
+    background: var(--grad-wordmark);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
   .badge {
     display: inline-block;
     margin-top: 6px;
-    font-size: 10px;
-    letter-spacing: 0.06em;
+    margin-left: 8px;
+    vertical-align: 4px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: #ef4444;
-    border: 0.5px solid rgba(239,68,68,0.35);
-    background: rgba(239,68,68,0.12);
-    border-radius: 20px;
-    padding: 2px 8px;
+    color: var(--danger);
+    background: var(--danger-soft);
+    border-radius: 100px;
+    padding: 3px 9px;
   }
   h1 {
-    margin-top: 20px;
-    font-size: 1.35rem;
-    font-weight: 500;
+    margin-top: 18px;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--text);
   }
   .sub {
     margin-top: 6px;
     font-size: 13px;
-    color: rgba(255,255,255,0.55);
-    line-height: 1.45;
+    color: var(--text-muted);
+    line-height: 1.5;
   }
   label {
     display: block;
     margin-top: 16px;
-    font-size: 12px;
-    color: rgba(255,255,255,0.7);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
   }
   input {
     width: 100%;
     margin-top: 6px;
     padding: 12px 14px;
-    border-radius: 10px;
-    border: 0.5px solid rgba(200,168,233,0.18);
-    background: rgba(0,0,0,0.35);
-    color: #fff;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
     font: inherit;
     font-size: 14px;
     outline: none;
+    transition: border-color 0.15s;
   }
-  input:focus { border-color: rgba(155,111,196,0.7); }
+  input::placeholder { color: var(--text-muted); }
+  input:focus {
+    border-color: var(--accent);
+    outline: 2px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  }
   button[type="submit"] {
     width: 100%;
     margin-top: 20px;
-    padding: 12px 16px;
+    padding: 13px 16px;
     border: none;
     border-radius: 12px;
-    background: #6b3fa0;
-    color: #fff;
+    background: var(--primary);
+    color: var(--primary-text);
     font: inherit;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
+    transition: filter 0.15s;
+  }
+  button[type="submit"]:hover:not(:disabled) { filter: brightness(1.08); }
+  button[type="submit"]:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--primary) 40%, transparent);
+    outline-offset: 2px;
   }
   button[type="submit"]:disabled {
     opacity: 0.55;
@@ -111,28 +138,31 @@
   }
   .msg.error {
     display: block;
-    background: rgba(239,68,68,0.12);
-    border: 0.5px solid rgba(239,68,68,0.3);
-    color: #fca5a5;
+    background: var(--danger-soft);
+    border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
+    color: var(--danger);
   }
   .msg.ok {
     display: block;
-    background: rgba(74,222,128,0.1);
-    border: 0.5px solid rgba(74,222,128,0.25);
-    color: #86efac;
+    background: var(--money-soft);
+    border: 1px solid color-mix(in srgb, var(--green) 30%, transparent);
+    color: var(--green);
   }
   .foot {
     margin-top: 18px;
-    font-size: 12px;
-    color: rgba(255,255,255,0.4);
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text-muted);
     text-align: center;
   }
-  .foot a { color: #c8a8e9; text-decoration: none; }
+  .foot a { color: var(--primary); font-weight: 600; text-decoration: none; }
+  .foot a:hover { text-decoration: underline; }
   .note {
     margin-top: 14px;
-    font-size: 11px;
-    color: rgba(255,255,255,0.35);
-    line-height: 1.4;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.45;
   }
 </style>
 <link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">

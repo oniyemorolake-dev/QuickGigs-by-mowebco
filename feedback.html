@@ -21,11 +21,55 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
-<meta name="theme-color" content="#6b3fa0">
+<meta name="theme-color" content="#0B0A14">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400;1,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-tokens.css?v=20260811content1" id="qg-tokens-css">
 <link rel="stylesheet" href="qg-content.css?v=20260811content1">
+<style>
+/* Mockup v3 alignment (page-level; mirror into qg-content.css .page-feedback / .page-content rules) */
+.page-feedback .nav{background:var(--surface);border-bottom:1px solid var(--border);}
+.page-feedback .back-btn{color:var(--text-muted);font-weight:600;}
+.page-feedback .back-btn:hover{color:var(--text);}
+.page-feedback .mode-btn{border-radius:100px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);font-weight:600;font-size:12px;}
+.page-feedback .mode-btn:hover{color:var(--text);}
+
+/* Header: icon square + DM Sans heading */
+.page-feedback .qg-help-ico{width:40px;height:40px;border-radius:10px;background:var(--surface-alt);color:var(--accent);}
+.page-feedback .page-title{font-family:'DM Sans',sans-serif;font-size:22px;font-weight:700;line-height:1.25;color:var(--text);margin-bottom:6px;}
+.page-feedback .page-sub{font-size:14px;color:var(--text-muted);margin-bottom:20px;}
+.page-feedback .beta-note{border-radius:12px;background:var(--surface-alt);border:1px solid var(--border);color:var(--text-muted);}
+.page-feedback .beta-note strong{color:var(--text);}
+.page-feedback .beta-note a{color:var(--accent);}
+
+/* Form card */
+.page-feedback #feedbackForm{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 18px 18px;}
+.page-feedback .field label{font-size:11px;font-weight:600;letter-spacing:0.05em;color:var(--text-muted);}
+.page-feedback .field-input,
+.page-feedback .field-select,
+.page-feedback .field-textarea{background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);}
+.page-feedback .field-input::placeholder,
+.page-feedback .field-textarea::placeholder{color:var(--text-muted);}
+.page-feedback .field-input:focus,
+.page-feedback .field-select:focus,
+.page-feedback .field-textarea:focus{border-color:var(--accent);box-shadow:none;outline:2px solid color-mix(in srgb,var(--accent) 30%,transparent);}
+.page-feedback .field-input.is-invalid,
+.page-feedback .field-select.is-invalid,
+.page-feedback .field-textarea.is-invalid{border-color:var(--danger);}
+.page-feedback .msg-box.err{background:var(--danger-soft);border-color:color-mix(in srgb,var(--danger) 35%,transparent);}
+.page-feedback .submit-btn{background:var(--accent);color:var(--accent-text,var(--primary-text));border-radius:12px;font-weight:700;margin-top:4px;transition:filter 0.15s;}
+.page-feedback .submit-btn:not(:disabled):hover{filter:brightness(1.06);}
+.page-feedback .footer-note a{color:var(--text-muted);}
+.page-feedback .footer-note a:hover{color:var(--text);}
+
+/* Success state as a centered message card */
+.page-feedback .success-screen{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:32px 20px;}
+.page-feedback .success-icon{border-radius:10px;background:var(--surface-alt);color:var(--green);}
+.page-feedback .success-title{font-size:21px;font-weight:700;color:var(--text);}
+.page-feedback .success-sub{color:var(--text-muted);}
+/* color !important: qg-role-theme.css (injected by qg-brand-init.js) recolors every <a> with html[data-qg-mode] :is(a…) */
+.page-feedback .home-link{background:var(--accent);color:var(--accent-text,var(--primary-text)) !important;border-radius:12px;font-weight:700;}
+</style>
 <script src="qg-theme.js"></script>
 <script src="qg-brand-init.js"></script>
 <script src="qg-config.js"></script>

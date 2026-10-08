@@ -8,12 +8,27 @@
 <title>SwiftGigs — Welcome!</title>
 <meta name="robots" content="noindex">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-signup.css?v=4">
 <style>
-body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
-.signup-card{text-align:center;}
-.signup-title{font-size:1.5rem;}
-.signup-subtitle{margin-bottom:1.5rem;}
+body{margin:0;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);}
+/* Mockup v3 alignment: flatten the qg-signup.css chrome (old palette lives there) */
+.signup-bg-mesh{display:none;}
+.signup-card-wrap{max-width:400px;}
+.signup-card-wrap::before{content:none;display:none;animation:none;}
+.signup-card{text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:30px 22px 22px;box-shadow:0 8px 28px rgba(0,0,0,0.18);backdrop-filter:none;-webkit-backdrop-filter:none;}
+/* Wordmark (rendered via CSS so page copy stays unchanged) */
+.ty-wordmark{margin:0 0 18px;line-height:1.2;}
+.ty-wordmark::before{content:'SwiftGigs';font-family:'Playfair Display',Georgia,serif;font-style:italic;font-weight:700;font-size:24px;letter-spacing:-0.01em;background:var(--grad-wordmark);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;}
+.signup-step-icon{width:48px;height:48px;margin:0 auto 16px;border-radius:10px;background:var(--surface-alt);border:0;box-shadow:none;color:var(--primary);animation:none;}
+.signup-title{font-family:'DM Sans',sans-serif;font-size:22px;font-weight:700;line-height:1.25;color:var(--text);margin-bottom:6px;}
+.signup-subtitle{font-size:14px;font-weight:400;line-height:1.55;color:var(--text-muted);margin-bottom:22px;}
+.signup-btn{background:var(--primary);background-size:auto;color:var(--primary-text) !important;border-radius:12px;font-weight:700;box-shadow:none;transition:filter 0.15s;}
+.signup-btn:hover{transform:none;box-shadow:none;filter:brightness(1.06);}
+.signup-btn:focus-visible{box-shadow:none;outline:2px solid color-mix(in srgb,var(--primary) 40%,transparent);outline-offset:2px;}
+.signup-login{font-size:13px;color:var(--text-muted);}
+.signup-login a{color:var(--text-muted);font-weight:600;}
+.signup-login a:hover{color:var(--text);}
 </style>
 <script src="qg-icons.js"></script>
 <script src="qg-config.js"></script>
@@ -26,6 +41,7 @@ body{margin:0;font-family:'DM Sans',sans-serif;background:#0a0118;color:#fff;}
 <div class="signup-page">
   <div class="signup-card-wrap">
     <div class="signup-card">
+      <div class="ty-wordmark" role="img" aria-label="SwiftGigs"></div>
       <div class="signup-step-icon" aria-hidden="true" data-qg-ico="party" data-qg-ico-size="26"></div>
       <h1 class="signup-title">You're in!</h1>
       <p class="signup-subtitle">Your SwiftGigs account is ready. Head to your dashboard to post a task or browse gigs across Canada.</p>

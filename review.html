@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
-<meta name="theme-color" content="#6b3fa0">
+<meta name="theme-color" content="#0B0A14">
 <link rel="stylesheet" href="qg-polish.css?v=20260726contrast">
 <link rel="stylesheet" href="qg-ux.css?v=20260728welcome1">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
@@ -31,135 +31,113 @@
 <script src="qg-brand-init.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-chrome.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-:root{
-  --bg:#0b0118;
-  --surface:rgba(255,255,255,0.04);
-  --border:rgba(200,168,233,0.1);
-  --text:#fff;
-  --text-muted:rgba(255,255,255,0.68);
-  --text-faint:rgba(255,255,255,0.62);
-  --purple:#6b3fa0;
-  --purple-light:#9b6fc4;
-  --lavender:#c8a8e9;
-  --nav-bg:#0b0118;
-  --tab-bg:#0e021f;
-  --card-bg:rgba(255,255,255,0.04);
-  --input-bg:rgba(255,255,255,0.05);
-  --input-border:rgba(200,168,233,0.15);
-  --tag-bg:transparent;
-  --tag-border:rgba(200,168,233,0.15);
-  --tag-color:rgba(255,255,255,0.4);
-  --tag-active-bg:rgba(107,63,160,0.3);
-  --tag-active-border:#9b6fc4;
-  --tag-active-color:#c8a8e9;
-}
-body.light{
-  --bg:#fafafe;
-  --surface:#fff;
-  --border:#f0eeff;
-  --text:#1a0a3d;
-  --text-muted:#6b6580;
-  --text-faint:#6b6580;
-  --nav-bg:#fff;
-  --tab-bg:#fff;
-  --card-bg:#fff;
-  --input-bg:#f8f7ff;
-  --input-border:#e8e2ff;
-  --tag-bg:#f8f7ff;
-  --tag-border:#e8e2ff;
-  --tag-color:#6b7280;
-  --tag-active-bg:#ede9ff;
-  --tag-active-border:#9b6fc4;
-  --tag-active-color:#6b3fa0;
-  --lavender:#6b3fa0;
-}
+/* All colors come from qg-tokens.css — no tokens are redeclared here, so light
+   mode and the poster/tasker --accent flip automatically. */
 
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:76px;transition:background 0.25s,color 0.25s;}
 
-/* NAV */
-.nav{position:sticky;top:0;z-index:50;background:var(--nav-bg);border-bottom:0.5px solid var(--border);padding:13px 20px;display:flex;align-items:center;gap:12px;transition:background 0.25s;}
-.back-btn{font-size:20px;color:var(--purple-light);text-decoration:none;flex-shrink:0;}
-.nav-title{flex:1;font-size:16px;font-weight:500;color:var(--text);}
-.mode-btn{padding:6px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);}
-body.light .mode-btn{background:#f0eeff;color:var(--purple);}
+/* NAV — surface bar with a hairline */
+.nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:12px;transition:background 0.25s;}
+body.page-review .nav{background:var(--surface);box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;}
+.back-btn{width:36px;height:36px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:var(--text);background:var(--surface-alt);text-decoration:none;flex-shrink:0;}
+.back-btn:hover{color:var(--accent);}
+.nav-title{flex:1;font-size:16px;font-weight:700;color:var(--text);}
+.mode-btn{padding:6px 12px;border-radius:100px;font-size:11.5px;font-weight:600;cursor:pointer;border:1px solid var(--border);font-family:'DM Sans',sans-serif;background:transparent;color:var(--text-muted);}
+.mode-btn:hover{color:var(--text);background:var(--surface-alt);}
 
 /* MAIN CONTENT */
-.content{max-width:520px;margin:0 auto;padding:20px 20px;}
+.content{max-width:520px;margin:0 auto;padding:20px 16px;}
 
-/* TASK CARD */
-.task-card{border-radius:16px;padding:14px 16px;margin-bottom:24px;background:var(--card-bg);border:0.5px solid var(--border);}
+/* TASK CARD — flat surface card */
+.task-card{border-radius:14px;padding:14px 16px;margin-bottom:24px;background:var(--surface);border:1px solid var(--border);}
+/* qg-refine.css forces 16px radius / 20px padding / 12px margin with !important. */
+body.page-review .content .task-card{border-radius:14px!important;padding:14px 16px!important;margin-bottom:24px!important;box-shadow:none!important;}
+body.page-review .content .task-card:hover{transform:none;}
 .tc-row{display:flex;align-items:center;gap:12px;}
-.tc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;color:var(--purple-light);}
+.tc-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;color:var(--primary);background:var(--surface-alt);}
 .tc-info{flex:1;min-width:0;}
-.tc-title{font-size:14px;font-weight:500;color:var(--text);margin-bottom:3px;}
+.tc-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px;}
 .tc-meta{font-size:12px;color:var(--text-muted);}
-.completed-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border-radius:20px;margin-top:10px;background:rgba(74,222,128,0.12);color:#16a34a;}
+.completed-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px;margin-top:12px;background:var(--money-soft);color:var(--green);}
 
 /* WHO YOU'RE REVIEWING */
-.reviewer-section{text-align:center;margin-bottom:28px;}
-.rev-avatar{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#6b3fa0,#c8a8e9);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:500;color:#fff;margin:0 auto 10px;}
+.reviewer-section{text-align:center;margin-bottom:24px;}
+.rev-avatar{width:56px;height:56px;border-radius:50%;background:var(--surface-alt);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--primary);margin:0 auto 10px;}
 .rev-label{font-size:13px;color:var(--text-muted);margin-bottom:4px;}
-.rev-name{font-size:18px;font-weight:500;color:var(--text);}
+.rev-name{font-size:18px;font-weight:700;color:var(--text);}
 
 /* STAR RATING */
-.stars-section{text-align:center;margin-bottom:28px;}
-.section-label{font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);display:block;margin-bottom:12px;}
+.stars-section{text-align:center;margin-bottom:24px;padding:18px 16px;background:var(--surface);border:1px solid var(--border);border-radius:14px;}
+.section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);display:block;margin-bottom:12px;}
 .stars{display:flex;justify-content:center;gap:8px;margin-bottom:8px;}
-.star{display:inline-flex;cursor:pointer;transition:transform 0.12s;user-select:none;color:var(--text-faint);opacity:0.45;}
+.star{display:inline-flex;cursor:pointer;transition:transform 0.12s;user-select:none;color:var(--attention);opacity:0.28;}
 .star svg{width:32px;height:32px;fill:currentColor;stroke:none;display:block;}
-.star.active{color:#fbbf24;opacity:1;transform:scale(1.1);}
-.star:hover{transform:scale(1.15);}
+.star.active{color:var(--attention);opacity:1;transform:scale(1.06);}
+.star:hover{transform:scale(1.1);}
 .success-stars svg,.src-stars svg{fill:currentColor;stroke:none;display:inline-block;vertical-align:middle;}
-.stars-desc{font-size:13px;font-weight:500;color:#fbbf24;min-height:20px;transition:all 0.15s;}
+.stars-desc{font-size:13px;font-weight:600;color:var(--attention);min-height:20px;transition:color 0.15s;}
 
-/* QUICK TAGS */
+/* QUICK TAGS — pills */
 .tags-section{margin-bottom:24px;}
 .tags{display:flex;flex-wrap:wrap;gap:8px;}
-.tag{padding:8px 14px;border-radius:20px;font-size:13px;cursor:pointer;border:0.5px solid var(--tag-border);background:var(--tag-bg);color:var(--tag-color);transition:all 0.15s;user-select:none;}
-.tag:hover{border-color:var(--purple-light);}
-.tag.selected{background:var(--tag-active-bg);border-color:var(--tag-active-border);color:var(--tag-active-color);}
+.tag{padding:7px 14px;border-radius:100px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text);transition:background .15s,border-color .15s,color .15s;user-select:none;}
+.tag:hover{border-color:var(--accent);}
+.tag.selected{background:var(--accent);border-color:var(--accent);color:var(--accent-text, var(--primary-text));}
+/* qg-flows.css styles tags muted / soft-selected with !important; mockup pills are text-colored, solid when selected. */
+body.page-review .tags .tag{color:var(--text)!important;}
+body.page-review .tags .tag.selected{background:var(--accent)!important;border-color:var(--accent)!important;color:var(--accent-text, var(--primary-text))!important;}
 
 /* COMMENT */
-.comment-section{margin-bottom:28px;}
-.comment-input{width:100%;background:var(--input-bg);border:0.5px solid var(--input-border);border-radius:14px;padding:13px 16px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;resize:none;min-height:100px;transition:border-color 0.2s;line-height:1.6;}
-.comment-input:focus{border-color:var(--purple-light);}
-.comment-input::placeholder{color:var(--lavender);opacity:0.35;}
-body.light .comment-input::placeholder{color:var(--purple);opacity:0.3;}
-.char-count{font-size:11px;color:var(--text-faint);text-align:right;margin-top:5px;}
+.comment-section{margin-bottom:24px;}
+.comment-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;resize:none;min-height:110px;transition:border-color 0.15s;line-height:1.55;}
+.comment-input::placeholder{color:var(--text-muted);opacity:1;}
+body.page-review .comment-section .comment-input{border-radius:12px;}
+body.page-review .comment-section .comment-input:focus{
+  border-color:var(--accent)!important;box-shadow:none;
+  outline:2px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.char-count{font-size:11px;color:var(--text-muted);text-align:right;margin-top:6px;}
 
-/* SUBMIT */
-.submit-btn{width:100%;padding:15px;border-radius:14px;border:none;background:linear-gradient(135deg,#6b3fa0,#9b6fc4);color:#fff;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:opacity 0.15s;}
-.submit-btn:hover{opacity:0.9;}
+/* SUBMIT — flat accent CTA */
+.submit-btn{width:100%;padding:14px;border-radius:12px;border:none;background:var(--accent);color:var(--accent-text, var(--primary-text));font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:opacity 0.15s;}
+.submit-btn:hover{opacity:0.92;}
 .submit-btn:disabled{opacity:0.45;cursor:not-allowed;}
-.submit-note{font-size:12px;color:var(--text-faint);text-align:center;margin-top:10px;}
+/* qg-role-theme.css (appended at runtime) adds a glow shadow to .submit-btn. */
+body.page-review #submitBtn.submit-btn{box-shadow:none!important;}
+.submit-note{font-size:12px;color:var(--text-muted);text-align:center;margin-top:10px;line-height:1.5;}
 
 /* SUCCESS SCREEN */
-.success-screen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;padding:40px 30px;text-align:center;}
+.success-screen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;padding:40px 24px;text-align:center;}
 .success-screen.show{display:flex;}
-.success-icon{font-size:64px;margin-bottom:16px;}
-.success-title{font-size:22px;font-weight:500;color:var(--text);margin-bottom:8px;}
+.success-icon{width:64px;height:64px;border-radius:16px;background:var(--surface-alt);color:var(--teal);display:flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:16px;}
+.success-title{font-size:22px;font-weight:700;color:var(--text);margin-bottom:8px;}
 .success-stars{font-size:28px;margin-bottom:12px;letter-spacing:2px;}
-.success-sub{font-size:14px;color:var(--text-muted);line-height:1.6;margin-bottom:32px;max-width:300px;}
-.success-rating-card{background:var(--card-bg);border:0.5px solid var(--border);border-radius:16px;padding:16px 20px;margin-bottom:28px;width:100%;max-width:280px;}
-.src-label{font-size:11px;color:var(--text-faint);margin-bottom:4px;}
-.src-name{font-size:15px;font-weight:500;color:var(--text);margin-bottom:6px;}
+.success-sub{font-size:14px;color:var(--text-muted);line-height:1.6;margin-bottom:28px;max-width:300px;}
+.success-rating-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:24px;width:100%;max-width:280px;}
+body.page-review .success-rating-card{border-radius:14px;}
+.src-label{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:4px;}
+.src-name{font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;}
 .src-stars{font-size:18px;letter-spacing:1px;}
-.src-tags{font-size:11px;color:var(--purple-light);margin-top:6px;}
-body.light .src-tags{color:var(--purple);}
-.home-btn{width:100%;max-width:280px;padding:14px;border-radius:14px;background:var(--purple);color:#fff;border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:10px;transition:opacity 0.15s;}
-.home-btn:hover{opacity:0.9;}
-.browse-btn{width:100%;max-width:280px;padding:14px;border-radius:14px;background:transparent;border:0.5px solid var(--border);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-muted);cursor:pointer;transition:all 0.15s;}
-.browse-btn:hover{border-color:var(--purple-light);color:var(--purple-light);}
+.src-tags{font-size:12px;color:var(--text-muted);margin-top:6px;}
+.home-btn{width:100%;max-width:280px;padding:14px;border-radius:12px;background:var(--accent);color:var(--accent-text, var(--primary-text));border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;transition:opacity 0.15s;}
+.home-btn:hover{opacity:0.92;}
+.browse-btn{width:100%;max-width:280px;padding:14px;border-radius:12px;background:var(--surface-alt);border:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;transition:border-color 0.15s;}
+.browse-btn:hover{border-color:var(--accent);}
 
 /* TAB BAR */
-.tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--tab-bg);border-top:0.5px solid var(--border);display:flex;padding:8px 0 14px;z-index:100;transition:background 0.25s;}
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;padding:8px 0 14px;z-index:100;transition:background 0.25s;}
 .tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;text-decoration:none;}
-.tab-icon{font-size:22px;color:var(--text-faint);}
-.tab-lbl{font-size:10px;color:var(--text-faint);}
-.tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:var(--purple-light);}
-body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color:var(--purple);}
+.tab-icon{font-size:22px;color:var(--text-muted);}
+.tab-lbl{font-size:10px;color:var(--text-muted);}
+.tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:var(--teal);}
+.tab-item.active .tab-lbl{font-weight:600;}
+/* qg-role-theme.css paints the active tab with the mode accent; mockup uses teal. */
+body.page-review nav.tab-bar .tab-item.active,
+body.page-review nav.tab-bar .tab-item.active .tab-icon,
+body.page-review nav.tab-bar .tab-item.active .tab-lbl{color:var(--teal)!important;}
 </style>
 <script src="qg-config.js"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
@@ -181,7 +159,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
   <!-- Task summary -->
   <div class="task-card">
     <div class="tc-row">
-      <div class="tc-icon" id="taskIcon" style="background:rgba(107,63,160,0.2)" data-qg-ico="clipboard" data-qg-ico-size="22"></div>
+      <div class="tc-icon" id="taskIcon" style="background:var(--surface-alt)" data-qg-ico="clipboard" data-qg-ico-size="22"></div>
       <div class="tc-info">
         <div class="tc-title" id="taskTitle">Deep clean 2 bedroom apartment</div>
         <div class="tc-meta" id="taskMeta">$120 · Completed Jun 21, 2026</div>
@@ -230,7 +208,7 @@ body.light .tab-item.active .tab-icon,body.light .tab-item.active .tab-lbl{color
 
 <!-- SUCCESS SCREEN -->
 <div class="success-screen" id="successScreen">
-  <div class="success-icon" data-qg-ico="party" data-qg-ico-size="52"></div>
+  <div class="success-icon" data-qg-ico="party" data-qg-ico-size="32"></div>
   <div class="success-title">Review submitted</div>
   <div class="success-stars" id="successStars"></div>
   <div class="success-sub">Thanks for reviewing <span id="successName">Sarah K.</span> — your feedback helps build trust on SwiftGigs.</div>
@@ -365,7 +343,7 @@ function qgStarsHtml(n){
   var mark = typeof qgIcon === 'function' ? qgIcon('star', { size: 18 }) : '★';
   var out = '';
   for (var i = 0; i < 5; i++) {
-    out += '<span style="color:' + (i < n ? '#fbbf24' : 'var(--text-faint)') + ';opacity:' + (i < n ? '1' : '0.4') + '">' + mark + '</span>';
+    out += '<span style="color:' + (i < n ? 'var(--attention)' : 'var(--text-faint)') + ';opacity:' + (i < n ? '1' : '0.4') + '">' + mark + '</span>';
   }
   return out;
 }

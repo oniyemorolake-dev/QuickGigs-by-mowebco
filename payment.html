@@ -13,6 +13,52 @@
 <link rel="stylesheet" href="qg-tokens.css?v=20260811pay1" id="qg-tokens-css">
 <link rel="stylesheet" href="qg-stripe.css?v=20260811pay1">
 <link rel="stylesheet" href="qg-payment.css?v=20260811pay1">
+<style>
+/* Mockup v3 alignment (page-level; mirror into qg-payment.css .page-payment rules) */
+.page-payment .pay-shell{max-width:420px;margin:16px auto 0;}
+.page-payment .pay-top{justify-content:center;margin-bottom:16px;}
+.page-payment .pay-brand{font-weight:700;letter-spacing:-0.01em;background:var(--grad-wordmark);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;}
+.page-payment .pay-brand span{color:inherit;-webkit-text-fill-color:inherit;}
+.page-payment .pay-card{border:1px solid var(--border);border-radius:14px;padding:22px 18px 18px;box-shadow:0 6px 24px rgba(0,0,0,0.16);}
+.page-payment .pay-kicker{border:0;color:var(--primary);background:color-mix(in srgb,var(--primary) 16%,transparent);border-radius:100px;}
+.page-payment .pay-title{font-size:21px;font-weight:700;color:var(--text);}
+.page-payment .pay-sub{color:var(--text-muted);}
+
+/* Summary: flat rows with 1px dividers, no boxed panel */
+.page-payment .pay-summary{background:transparent;border:0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);border-radius:0;padding:12px 0 10px;margin-bottom:16px;}
+.page-payment .pay-task-title{font-size:14px;font-weight:600;color:var(--text);margin:0;padding-bottom:12px;border-bottom:1px solid var(--border);}
+.page-payment .pay-row{padding:10px 0;align-items:center;}
+.page-payment .pay-row + .pay-row{border-top:1px solid var(--border);}
+.page-payment .pay-row-label{font-size:11px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-muted);}
+.page-payment .pay-row.is-total{margin-top:0;padding-top:12px;border-top:0;font-size:17px;}
+.page-payment .pay-row.is-money .pay-row-val,
+.page-payment .pay-row.is-total .pay-row-val{color:var(--green);font-weight:700;}
+.page-payment .pay-fee-note{font-size:11.5px;color:var(--text-muted);margin:2px 0 0;}
+
+/* Escrow explainer: hairline row with icon square */
+.page-payment .pay-escrow{background:transparent;border:1px solid var(--border);border-radius:12px;padding:12px;}
+.page-payment .pay-escrow-ico{background:var(--surface-alt);color:var(--primary);border-radius:10px;}
+.page-payment .pay-escrow strong{font-size:13.5px;font-weight:700;color:var(--text);}
+.page-payment .pay-escrow p{color:var(--text-muted);}
+
+/* Buttons: flat primary + quiet outline */
+.page-payment .pay-cta{background:var(--primary);color:var(--primary-text);border-radius:12px;font-weight:700;transition:filter 0.15s;}
+.page-payment .pay-cta:focus-visible{outline:2px solid color-mix(in srgb,var(--primary) 40%,transparent);outline-offset:2px;}
+/* color !important: qg-role-theme.css (injected by qg-brand-init.js) recolors every <a> with html[data-qg-mode] :is(a…) */
+.page-payment .pay-secondary{border:1px solid var(--border);border-radius:12px;color:var(--text) !important;font-weight:600;transition:border-color 0.15s,color 0.15s;}
+.page-payment .pay-secondary:hover{border-color:var(--primary);color:var(--primary) !important;}
+
+/* Muted "secured by Stripe" line */
+.page-payment .pay-trust{color:var(--text-muted);}
+.page-payment .pay-trust svg{color:var(--text-muted);}
+
+/* State panels */
+.page-payment .pay-spinner{border-color:var(--border);border-top-color:var(--primary);}
+.page-payment .pay-state-title{font-weight:700;color:var(--text);}
+.page-payment .pay-state.is-success .pay-state-amt{font-weight:700;color:var(--green);}
+.page-payment .pay-state.is-success .pay-state-icon{background:var(--money-soft);color:var(--green);}
+.page-payment .pay-state.is-error .pay-state-icon{background:var(--danger-soft);color:var(--danger);}
+</style>
 <script>document.documentElement.setAttribute('data-qg-mode','poster');</script>
 </head>
 <body class="page-payment">
@@ -27,7 +73,7 @@
 
 <div class="pay-shell">
   <div class="pay-top">
-    <div class="pay-brand">Quick<span>Gigs</span></div>
+    <div class="pay-brand">Swift<span>Gigs</span></div>
   </div>
 
   <div class="pay-card" id="payCard">

@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
-<meta name="theme-color" content="#6b3fa0">
+<meta name="theme-color" content="#0B0A14">
 <link rel="stylesheet" href="qg-polish.css?v=20260726contrast">
 <link rel="stylesheet" href="qg-ux.css?v=20260728welcome1">
 <link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
@@ -29,28 +29,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-:root{
-  --bg:#0b0118;
-  --surface:rgba(255,255,255,0.05);
-  --surface-hover:rgba(107,63,160,0.15);
-  --border:rgba(200,168,233,0.12);
-  --text:#fff;
-  --text-muted:rgba(255,255,255,0.68);
-  --purple:#6b3fa0;
-  --purple-light:#9b6fc4;
-  --lavender:#c8a8e9;
-}
-body.light{
-  --bg:#fafafe;
-  --surface:#fff;
-  --surface-hover:#f5f2ff;
-  --border:#ede9ff;
-  --text:#1a0a3d;
-  --text-muted:#6b6580;
-  --lavender:#6b3fa0;
-}
 
 body{
   font-family:'DM Sans',sans-serif;
@@ -61,64 +42,64 @@ body{
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  padding:24px 20px;
+  padding:24px 16px;
   transition:background 0.25s,color 0.25s;
 }
 
-.mode-btn{position:fixed;top:18px;right:18px;padding:6px 14px;border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);transition:all 0.2s;}
-body.light .mode-btn{background:#f0eeff;color:var(--purple);}
+.mode-btn{position:fixed;top:16px;right:16px;padding:7px 14px;border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);font-family:inherit;background:var(--surface);color:var(--text-muted);transition:color 0.15s,border-color 0.15s;}
+.mode-btn:hover{color:var(--text);border-color:var(--line-strong);}
 
 .card{width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;}
 
-.logo{font-family:'Playfair Display',serif;font-style:italic;font-size:1.5rem;color:var(--lavender);margin-bottom:36px;}
+/* Wordmark */
+.logo{font-family:'Playfair Display',Georgia,serif;font-style:italic;font-weight:700;font-size:26px;letter-spacing:-0.01em;background:var(--grad-wordmark);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;margin-bottom:28px;}
 
-.greeting{text-align:center;margin-bottom:36px;}
-.greeting-hi{font-size:1.6rem;font-weight:500;margin-bottom:8px;color:var(--text);}
+.greeting{text-align:center;margin-bottom:24px;}
+.greeting-hi{font-size:22px;font-weight:700;margin-bottom:6px;color:var(--text);}
 .greeting-sub{font-size:14px;color:var(--text-muted);line-height:1.5;}
 
+/* Choice cards: posting = primary, earning = teal */
 .choice-card{
+  --card-accent:var(--primary);
   width:100%;
-  border-radius:18px;
-  padding:22px 20px;
-  margin-bottom:12px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:18px 16px;
+  margin-bottom:10px;
   cursor:pointer;
   display:flex;
   align-items:center;
-  gap:16px;
-  border:0.5px solid transparent;
-  transition:all 0.2s;
+  gap:14px;
+  color:var(--text);
   text-decoration:none;
+  transition:border-color 0.15s,background 0.15s,box-shadow 0.15s;
 }
-.choice-card:hover{transform:translateY(-1px);}
-.choice-card.hire{
-  background:linear-gradient(135deg,#6b3fa0,#9b6fc4);
-  border-color:rgba(200,168,233,0.3);
+.choice-card.hire{--card-accent:var(--primary);}
+.choice-card.earn{--card-accent:var(--teal);}
+/* Selected look (1.5px accent border + soft tint); inset shadow adds the 0.5px without reflow */
+.choice-card:hover,
+.choice-card:focus-visible,
+.choice-card:active{
+  border-color:var(--card-accent);
+  box-shadow:inset 0 0 0 0.5px var(--card-accent);
+  background:color-mix(in srgb,var(--card-accent) 10%,var(--surface));
 }
-.choice-card.hire:hover{background:linear-gradient(135deg,#7a4ab5,#a97fd4);}
-.choice-card.earn{
-  background:var(--surface);
-  border-color:var(--border);
-}
-.choice-card.earn:hover{background:var(--surface-hover);border-color:var(--purple-light);}
+.choice-card:focus-visible{outline:2px solid color-mix(in srgb,var(--card-accent) 30%,transparent);outline-offset:2px;}
 
-.choice-icon{font-size:32px;flex-shrink:0;width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;}
-.hire .choice-icon{background:rgba(255,255,255,0.15);}
-.earn .choice-icon{background:rgba(107,63,160,0.2);}
-body.light .earn .choice-icon{background:#ede9ff;}
+/* Icon square */
+.choice-icon{flex-shrink:0;width:46px;height:46px;border-radius:10px;background:var(--surface-alt);color:var(--card-accent);display:flex;align-items:center;justify-content:center;}
 
-.choice-title{font-size:17px;font-weight:500;margin-bottom:4px;}
-.hire .choice-title{color:#fff;}
-.earn .choice-title{color:var(--text);}
-.choice-desc{font-size:13px;line-height:1.5;}
-.hire .choice-desc{color:rgba(255,255,255,0.7);}
-.earn .choice-desc{color:var(--text-muted);}
+.choice-text{flex:1;min-width:0;}
+.choice-title{font-size:16px;font-weight:700;margin-bottom:3px;color:var(--text);}
+.choice-desc{font-size:13px;line-height:1.5;color:var(--text-muted);}
 
-.choice-arrow{margin-left:auto;font-size:18px;flex-shrink:0;}
-.hire .choice-arrow{color:rgba(255,255,255,0.6);}
-.earn .choice-arrow{color:var(--purple-light);}
+.choice-arrow{margin-left:auto;flex-shrink:0;display:flex;color:var(--text-muted);transition:color 0.15s,transform 0.15s;}
+.choice-card:hover .choice-arrow,
+.choice-card:focus-visible .choice-arrow{color:var(--card-accent);transform:translateX(2px);}
 
-.both-link{margin-top:8px;font-size:13px;color:var(--purple-light);cursor:pointer;text-decoration:none;opacity:0.8;transition:opacity 0.15s;}
-.both-link:hover{opacity:1;}
+.both-link{margin-top:10px;padding:8px 4px;font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer;text-decoration:none;transition:color 0.15s;}
+.both-link:hover{color:var(--primary);}
 </style>
 <script src="qg-config.js"></script>
 <script defer src="qg-analytics.js?v=20260726seo"></script>
@@ -137,7 +118,7 @@ body.light .earn .choice-icon{background:#ede9ff;}
   </div>
 
   <a class="choice-card hire" href="dashboard.html" onclick="chooseRoleMode('poster')">
-    <div class="choice-icon" data-qg-ico="clipboard" data-qg-ico-size="28"></div>
+    <div class="choice-icon" data-qg-ico="clipboard" data-qg-ico-size="22"></div>
     <div class="choice-text">
       <div class="choice-title">I need help</div>
       <div class="choice-desc">Post a task and find someone local to get it done</div>
@@ -146,7 +127,7 @@ body.light .earn .choice-icon{background:#ede9ff;}
   </a>
 
   <a class="choice-card earn" href="dashboard.html" onclick="chooseRoleMode('tasker')">
-    <div class="choice-icon" data-qg-ico="briefcase" data-qg-ico-size="28"></div>
+    <div class="choice-icon" data-qg-ico="briefcase" data-qg-ico-size="22"></div>
     <div class="choice-text">
       <div class="choice-title">I want to earn</div>
       <div class="choice-desc">Browse tasks near you, apply and get paid</div>

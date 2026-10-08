@@ -7,9 +7,58 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Parent consent — SwiftGigs</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="qg-trust.css">
 <link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
 <link rel="stylesheet" href="qg-guardian.css?v=20260811guardian1" id="qg-guardian-css">
+<style>
+/* Mockup v3 alignment (page-level; mirror into qg-guardian.css body.page-parent-consent rules).
+   !important only where qg-guardian.css itself uses !important. */
+body.page-parent-consent{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
+body.page-parent-consent .nav-logo{font-family:'Playfair Display',Georgia,serif;font-style:italic;font-weight:700;font-size:20px;letter-spacing:-0.01em;background:var(--grad-wordmark);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;}
+body.page-parent-consent .back-btn{font-weight:600;}
+body.page-parent-consent .content{max-width:34rem;padding:28px 16px 64px;}
+
+/* Header */
+body.page-parent-consent .page-label{font-size:11px;font-weight:600;letter-spacing:0.05em;color:var(--text-muted) !important;margin-bottom:8px;}
+body.page-parent-consent .page-title{font-family:'DM Sans',sans-serif;font-size:22px;font-weight:700;line-height:1.25;margin-bottom:6px;}
+body.page-parent-consent .page-date{font-size:14px;margin-bottom:8px;}
+
+/* Consent card */
+body.page-parent-consent .consent-card{max-width:none;margin:20px 0;padding:24px 18px 20px;border-radius:14px;border:1px solid var(--border);background:var(--surface);box-shadow:0 6px 24px rgba(0,0,0,0.14);}
+body.page-parent-consent .consent-card h2{font-family:'DM Sans',sans-serif;font-size:20px;font-weight:700;color:var(--text);margin:0 0 6px;}
+body.page-parent-consent .consent-teen{font-size:14px;color:var(--text-muted);margin:0 0 16px;}
+body.page-parent-consent .consent-teen strong{color:var(--text);font-weight:700;}
+body.page-parent-consent .teen-details{border-radius:12px;background:var(--surface-alt);border:0;color:var(--text-muted);font-size:13.5px;}
+body.page-parent-consent .teen-details strong{display:inline-block;margin-bottom:2px;font-size:11px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-muted);}
+
+/* Points: hairline-divided rows, not boxed */
+body.page-parent-consent .consent-points{margin:14px 0 4px;}
+body.page-parent-consent .consent-points li{margin:0;padding:11px 0 11px 22px;border:0;border-radius:0;background:transparent;color:var(--text);font-size:13.5px;}
+body.page-parent-consent .consent-points li + li{border-top:1px solid var(--border);}
+body.page-parent-consent .consent-points li::before{left:4px;top:18px;width:7px;height:7px;background:var(--accent);}
+
+body.page-parent-consent .consent-check{border-radius:12px;background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);color:var(--text);}
+body.page-parent-consent .consent-check input{accent-color:var(--accent);}
+body.page-parent-consent .consent-check a{color:var(--accent);font-weight:600;}
+
+/* Buttons: flat primary + outline decline */
+body.page-parent-consent .consent-btn{box-sizing:border-box;display:flex;width:100%;margin-top:14px;padding:13px 18px;border-radius:12px;background:var(--accent);color:var(--accent-text,var(--primary-text));box-shadow:none;font-weight:700;transition:filter 0.15s;}
+body.page-parent-consent .consent-btn:not(:disabled):hover{filter:brightness(1.06);}
+body.page-parent-consent .consent-decline{box-sizing:border-box;display:flex;width:100%;margin-top:8px;border-radius:12px;background:transparent;border:1px solid color-mix(in srgb,var(--danger) 45%,transparent);color:var(--danger);}
+body.page-parent-consent .consent-btn:focus-visible,
+body.page-parent-consent .consent-decline:focus-visible{outline:2px solid color-mix(in srgb,var(--accent) 40%,transparent);outline-offset:2px;}
+
+/* Status messages */
+body.page-parent-consent .consent-ok{color:var(--green);font-weight:600;}
+body.page-parent-consent .consent-err{color:var(--danger);}
+body.page-parent-consent .consent-verify-step{border-radius:12px;background:var(--attention-soft);border:1px solid color-mix(in srgb,var(--attention) 30%,transparent);color:var(--text);}
+
+/* Legal note: calm neutral panel */
+body.page-parent-consent .info-box{border-radius:14px;background:var(--surface) !important;border:1px solid var(--border) !important;}
+body.page-parent-consent .info-box p{color:var(--text-muted) !important;font-size:13px;line-height:1.55;margin:0;}
+body.page-parent-consent .info-box a{color:var(--accent) !important;font-weight:600;}
+</style>
 <script src="qg-theme.js"></script>
 <script src="qg-brand-init.js"></script>
 <script>document.documentElement.setAttribute('data-qg-mode','worker');</script>
