@@ -31,7 +31,8 @@
   /** First name + last initial (privacy). */
   function privacyDisplayName(fullName) {
     var raw = String(fullName || '').trim();
-    if (!raw || /^a quickgigs member$/i.test(raw) || /^someone$/i.test(raw)) return 'Someone';
+    // Matches both brands — pre-rename rows still say "a QuickGigs member".
+    if (!raw || /^a (quick|swift)gigs member$/i.test(raw) || /^someone$/i.test(raw)) return 'Someone';
     if (typeof isGenericDisplayName === 'function' && isGenericDisplayName(raw)) return 'Someone';
     var parts = raw.split(/\s+/).filter(Boolean);
     if (!parts.length) return 'Someone';

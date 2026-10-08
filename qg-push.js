@@ -1,4 +1,4 @@
-/* QuickGigs — device notifications (browser / PWA on phone) */
+/* SwiftGigs — device notifications (browser / PWA on phone) */
 (function () {
   var POLL_MS = 45000;
   var timer = null;
@@ -14,7 +14,7 @@
     opts = opts || {};
     if (!canNotify()) return;
     try {
-      var n = new Notification(opts.title || 'QuickGigs', {
+      var n = new Notification(opts.title || 'SwiftGigs', {
         body: opts.body || '',
         icon: '/QuickGigsLogo.png',
         badge: '/QuickGigsLogo.png',
@@ -54,7 +54,7 @@
     var prev = parseInt(localStorage.getItem(lastUnreadKey) || '0', 10);
     if (canNotify() && total > prev && latest) {
       showPush({
-        title: total === 1 ? 'New message on QuickGigs' : total + ' new messages',
+        title: total === 1 ? 'New message on SwiftGigs' : total + ' new messages',
         body: latest.body,
         url: latest.url,
         tag: 'qg-msg'
@@ -74,7 +74,7 @@
     var prev = localStorage.getItem(lastAcceptedKey) || '';
     if (canNotify() && ids && ids !== prev && accepted.length > (prev ? prev.split(',').length : 0)) {
       showPush({
-        title: 'You were hired on QuickGigs 🎉',
+        title: 'You were hired on SwiftGigs 🎉',
         body: 'A poster accepted your application — open My Jobs to get started.',
         url: 'mytasks.html?tab=inprogress',
         tag: 'qg-accept'
@@ -99,7 +99,7 @@
 
   window.requestQuickGigsNotifications = async function () {
     if (typeof Notification === 'undefined') {
-      qgNotify('Notifications are not supported in this browser. Add QuickGigs to your home screen.', '#f59e0b');
+      qgNotify('Notifications are not supported in this browser. Add SwiftGigs to your home screen.', '#f59e0b');
       return false;
     }
     var perm = Notification.permission;
@@ -107,7 +107,7 @@
     if (perm === 'granted') {
       localStorage.setItem(promptedKey, '1');
       startPolling();
-      showPush({ title: 'QuickGigs notifications on', body: 'We will alert you for new messages and accepted jobs.', tag: 'qg-on' });
+      showPush({ title: 'SwiftGigs notifications on', body: 'We will alert you for new messages and accepted jobs.', tag: 'qg-on' });
       return true;
     }
     return false;

@@ -1,4 +1,4 @@
-/* QuickGigs — in-app notifications panel (opens from shell bell) */
+/* SwiftGigs — in-app notifications panel (opens from shell bell) */
 (function () {
   var SKIP = { login: 1, signup: 1, 'parent-consent': 1, admin: 1, 'admin-login': 1 };
   var APP = {
@@ -47,7 +47,7 @@
     new_gig_match: { icon: 'mapPin', title: 'New gig near you', tone: '' },
     task_removed_admin: { icon: 'alert', title: 'Task removed', tone: 'attention' },
     task_removed_applicant: { icon: 'alert', title: 'Task removed', tone: 'attention' },
-    system: { icon: 'bell', title: 'QuickGigs', tone: '' }
+    system: { icon: 'bell', title: 'SwiftGigs', tone: '' }
   };
 
   var DEFAULT_LINK = {

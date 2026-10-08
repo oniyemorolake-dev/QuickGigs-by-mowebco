@@ -1,4 +1,4 @@
-/* QuickGigs — platform announcement banner + admin soft close */
+/* SwiftGigs — platform announcement banner + admin soft close */
 (function () {
   var SKIP = { admin: 1, 'admin-login': 1, terms: 1, privacy: 1, login: 1, 'reset-password': 1 };
   var BLOCK_PAGES = { posttask: 1, browsetask: 1, signup: 1 };
@@ -94,7 +94,7 @@
     if (wrap) {
       wrap.innerHTML =
         '<div class="qg-soft-close-box">' +
-          '<p class="qg-soft-close-title">' + esc(banner.message || 'QuickGigs beta is closed while we prepare for launch.') + '</p>' +
+          '<p class="qg-soft-close-title">' + esc(banner.message || 'SwiftGigs beta is closed while we prepare for launch.') + '</p>' +
           '<p class="qg-soft-close-sub" style="margin-top:14px">Already have an account? <a href="login.html" style="color:var(--al);font-weight:500;text-decoration:none">Log in to continue →</a></p>' +
           (function () {
             var safeLink = typeof safeUrl === 'function' ? safeUrl(banner.link) : '';

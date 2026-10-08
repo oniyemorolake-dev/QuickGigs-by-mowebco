@@ -1,4 +1,4 @@
-/* QuickGigs — Report & Block (client-side). Do not rename reports/blocks columns.
+/* SwiftGigs — Report & Block (client-side). Do not rename reports/blocks columns.
  * Report → reports (reporter_id, target_type task|user, target_id, reason, detail).
  * Block → blocks (blocker_id, blocked_id). Browse hides blocked posters; chat blocked both ways.
  */
@@ -83,7 +83,7 @@
           '<button type="button" class="qg-report-close" id="qgReportClose" aria-label="Close report">✕</button>' +
           '<div class="qg-report-kicker">Safety</div>' +
           '<h2 class="qg-report-title" id="qgReportTitle">Report</h2>' +
-          '<p class="qg-report-sub" id="qgReportSub">Help keep QuickGigs safe. Reports are reviewed by our team.</p>' +
+          '<p class="qg-report-sub" id="qgReportSub">Help keep SwiftGigs safe. Reports are reviewed by our team.</p>' +
         '</div>' +
         '<div class="qg-report-body">' +
           '<div class="qg-report-target" id="qgReportTarget" aria-live="polite">' +
@@ -273,7 +273,7 @@
         qgNotify('Report submitted. Thanks — our team will review it.', '#4ade80');
       }
     } else {
-      var mailSubject = encodeURIComponent('QuickGigs report: ' + (currentContext.targetType || 'item'));
+      var mailSubject = encodeURIComponent('SwiftGigs report: ' + (currentContext.targetType || 'item'));
       var mailBody = encodeURIComponent(
         'Reason: ' + selectedReason + '\n' +
         'Target: ' + (currentContext.targetLabel || '') + ' (' + targetType + ' #' + targetId + ')\n\n' +

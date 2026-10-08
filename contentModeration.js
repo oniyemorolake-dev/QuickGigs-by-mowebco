@@ -34,7 +34,7 @@
     /\b(kill(ed|ing)? you|i( will|ll) (kill|hurt|find|hunt|stab|shoot)|hurt you|rape|assault|beat you|watch your back|i know where you (live|work)|stab( you)?|shoot you|murder you|strangle|break your (legs|neck|face)|come after you|you( will|ll) regret)\b/i
   ];
 
-  /** Sexual / adult content (not appropriate for QuickGigs tasks) */
+  /** Sexual / adult content (not appropriate for SwiftGigs tasks) */
   var SEXUAL_PATTERNS = [
     /\b(sex(ual)?|nude|nudes|naked|escort|hook ?up|hookup|sugar ?(baby|daddy)|xxx|only ?fans|onlyfans|explicit|sexual favor|send (nudes|pics)|dick pic|porn|erotic|intimate (services|massage)|cam ?girl|cam ?boy)\b/i
   ];
@@ -47,7 +47,7 @@
   // ══════════════════════════════════════════════════════════════
 
   var USER_MESSAGE =
-    "This contains language that isn't allowed on QuickGigs — please edit and try again";
+    "This contains language that isn't allowed on SwiftGigs — please edit and try again";
 
   /**
    * Normalize before matching so obvious evasions are still caught:

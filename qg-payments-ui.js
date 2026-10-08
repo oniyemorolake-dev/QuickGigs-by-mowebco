@@ -1,4 +1,4 @@
-/* QuickGigs — payment history rendering (dashboard, profile) */
+/* SwiftGigs — payment history rendering (dashboard, profile) */
 (function () {
   function payField(row, key) {
     if (!row) return '';
@@ -90,14 +90,14 @@
           title: role === 'worker' ? 'No earnings yet' : 'No payments yet',
           sub: role === 'worker'
             ? 'Get hired and complete a paid task to see payouts here.'
-            : 'Pay through QuickGigs after you accept a tasker.',
+            : 'Pay through SwiftGigs after you accept a tasker.',
           compact: true
         });
       }
       return '<div class="pay-history-empty">' +
         (role === 'worker'
           ? 'No earnings yet — get hired and complete a paid task to see payouts here.'
-          : 'No payments yet — pay through QuickGigs after you accept a tasker.') +
+          : 'No payments yet — pay through SwiftGigs after you accept a tasker.') +
         '</div>';
     }
     return list.map(function (p) {

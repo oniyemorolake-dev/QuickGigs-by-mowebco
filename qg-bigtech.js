@@ -1,4 +1,4 @@
-/* QuickGigs — big-tech UX patterns (vanilla). Additive; does not change auth/query logic. */
+/* SwiftGigs — big-tech UX patterns (vanilla). Additive; does not change auth/query logic. */
 (function () {
   'use strict';
 
@@ -108,7 +108,7 @@
   function showSessionModal(opts) {
     opts = opts || {};
     var title = opts.title || 'Your session needs a refresh';
-    var body = opts.body || 'For your security, please log in again to continue using QuickGigs.';
+    var body = opts.body || 'For your security, please log in again to continue using SwiftGigs.';
     var btn = opts.button || 'Log in again';
     var existing = document.getElementById('qgSessionOverlay');
     if (existing) {

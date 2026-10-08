@@ -1,4 +1,4 @@
-/* QuickGigs — trust stats: completion rate, response rate, warnings / auto-ban */
+/* SwiftGigs — trust stats: completion rate, response rate, warnings / auto-ban */
 (function () {
   var WARNINGS_BEFORE_BAN = (window.QG_CONFIG && window.QG_CONFIG.autoBanAfterWarnings) || 3;
 
@@ -366,7 +366,7 @@
   function renderVerifiedBadge(isVerified) {
     if (!isVerified) return '';
     var mark = typeof qgIcon === 'function' ? qgIcon('checkCircle', { size: 12, className: 'qg-trust-ico' }) : '';
-    return '<span class="qg-verified-badge" title="QuickGigs identity verified">' + mark + 'Identity verified</span>';
+    return '<span class="qg-verified-badge" title="SwiftGigs identity verified">' + mark + 'Identity verified</span>';
   }
 
   window.isWorkerVerified = isWorkerVerified;

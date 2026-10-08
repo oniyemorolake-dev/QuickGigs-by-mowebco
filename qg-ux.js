@@ -1,4 +1,4 @@
-/* QuickGigs — UX overhaul helpers (trust, a11y, forms, onboarding). Safe additive. */
+/* SwiftGigs — UX overhaul helpers (trust, a11y, forms, onboarding). Safe additive. */
 (function () {
   'use strict';
 
@@ -24,20 +24,20 @@
       var desc = document.createElement('meta');
       desc.name = 'description';
       var map = {
-        'dashboard.html': 'Your QuickGigs dashboard — post tasks, track jobs, and manage gigs across Canada.',
-        'browsetask.html': 'Browse open QuickGigs tasks near you and apply in under a minute.',
-        'posttask.html': 'Post a task on QuickGigs — free during beta. Find local help across Canada.',
-        'mytasks.html': 'Manage your QuickGigs postings and applications in one place.',
-        'messages.html': 'QuickGigs messages — chat with posters and taskers after you match.',
-        'chat.html': 'QuickGigs chat — coordinate your gig safely in-app.',
-        'review.html': 'Leave a QuickGigs review and help keep the marketplace trustworthy.',
-        'profile.html': 'Your QuickGigs profile — skills, payouts, and account settings.',
-        'modeselector.html': 'Choose Poster or Tasker mode on QuickGigs.',
-        'feedback.html': 'Send QuickGigs beta feedback — we read every message.',
-        'terms.html': 'QuickGigs Terms of Service.',
-        'privacy.html': 'QuickGigs Privacy Policy — PIPEDA-aligned data practices.'
+        'dashboard.html': 'Your SwiftGigs dashboard — post tasks, track jobs, and manage gigs across Canada.',
+        'browsetask.html': 'Browse open SwiftGigs tasks near you and apply in under a minute.',
+        'posttask.html': 'Post a task on SwiftGigs — free during beta. Find local help across Canada.',
+        'mytasks.html': 'Manage your SwiftGigs postings and applications in one place.',
+        'messages.html': 'SwiftGigs messages — chat with posters and taskers after you match.',
+        'chat.html': 'SwiftGigs chat — coordinate your gig safely in-app.',
+        'review.html': 'Leave a SwiftGigs review and help keep the marketplace trustworthy.',
+        'profile.html': 'Your SwiftGigs profile — skills, payouts, and account settings.',
+        'modeselector.html': 'Choose Poster or Tasker mode on SwiftGigs.',
+        'feedback.html': 'Send SwiftGigs beta feedback — we read every message.',
+        'terms.html': 'SwiftGigs Terms of Service.',
+        'privacy.html': 'SwiftGigs Privacy Policy — PIPEDA-aligned data practices.'
       };
-      desc.content = map[PAGE] || 'QuickGigs — Canada\'s marketplace for everyday tasks and gigs.';
+      desc.content = map[PAGE] || 'SwiftGigs — Canada\'s marketplace for everyday tasks and gigs.';
       head.appendChild(desc);
     }
     if (PAGE === 'dashboard.html' && !document.querySelector('link[rel="prefetch"][href*="browsetask"]')) {
@@ -179,7 +179,7 @@
     } else {
       el.classList.add('qg-trust-footer', 'site-footer');
       el.innerHTML =
-        '<div class="qg-foot-brand">QuickGigs</div>' +
+        '<div class="qg-foot-brand">SwiftGigs</div>' +
         '<div class="qg-foot-co">A MoTechCo company © 2026</div>' +
         '<div class="qg-foot-links">' +
         '<a href="terms.html">Terms</a> · ' +

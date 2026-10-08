@@ -1,4 +1,4 @@
-/* QuickGigs — signup wizard: pronouns, gender, DOB picker, guardian (Option B) */
+/* SwiftGigs — signup wizard: pronouns, gender, DOB picker, guardian (Option B) */
 (function () {
   var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   var MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -292,7 +292,7 @@
           if (dobApi && dobApi.sync) dobApi.sync();
           var age = getAgeFromState(state);
           if (age < 16) {
-            qgNotify('QuickGigs is for ages 16 and up.', '#f59e0b');
+            qgNotify('SwiftGigs is for ages 16 and up.', '#f59e0b');
             return false;
           }
         }
@@ -328,11 +328,11 @@
         }
         if (status) {
           if (age < 16) {
-            status.innerHTML = '<strong>Not eligible yet.</strong> QuickGigs requires you to be at least <strong>16 years old</strong>.';
+            status.innerHTML = '<strong>Not eligible yet.</strong> SwiftGigs requires you to be at least <strong>16 years old</strong>.';
           } else if (age < 18) {
             status.innerHTML = 'You\'re <strong>' + age + '</strong> — a parent or guardian must approve before you can post or apply.';
           } else {
-            status.innerHTML = 'You\'re <strong>' + age + '</strong> — you meet the age requirement for QuickGigs.';
+            status.innerHTML = 'You\'re <strong>' + age + '</strong> — you meet the age requirement for SwiftGigs.';
           }
         }
         var guardianStep = root.querySelector('[data-step="guardian"]');

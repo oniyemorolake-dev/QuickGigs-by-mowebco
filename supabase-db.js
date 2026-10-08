@@ -1,5 +1,5 @@
 // ================================================================
-// QuickGigs — Supabase Database Utility
+// SwiftGigs — Supabase Database Utility
 // Load after supabaseClient.js (single shared client).
 // ================================================================
 
@@ -1986,9 +1986,14 @@ function isGenericDisplayName(name) {
   if (!name) return true;
   var n = String(name).trim().toLowerCase();
   return !n ||
+    // Both brands: the display fallback now emits "a SwiftGigs member", but
+    // rows written before the rename still carry the QuickGigs wording.
     n === 'quickgigs user' ||
     n === 'a quickgigs member' ||
     n === 'quickgigs member' ||
+    n === 'swiftgigs user' ||
+    n === 'a swiftgigs member' ||
+    n === 'swiftgigs member' ||
     n === 'worker' ||
     n === 'poster' ||
     n === 'user' ||
@@ -2524,7 +2529,7 @@ async function ensureTaskerProfilePhoto() {
 }
 
 function resolveUserName(uid, taskRow, userNames) {
-  if (!uid) return 'a QuickGigs member';
+  if (!uid) return 'a SwiftGigs member';
   var uidStr = String(uid);
 
   if (taskRow) {
@@ -2552,7 +2557,7 @@ function resolveUserName(uid, taskRow, userNames) {
     if (me && !isGenericDisplayName(me)) return me;
   }
 
-  return 'a QuickGigs member';
+  return 'a SwiftGigs member';
 }
 
 async function enrichConversationNames(conv) {
@@ -2954,7 +2959,7 @@ function notifyChatRecipientAsync(convId, senderId, preview) {
       if (!recipientId || recipientId === senderId) return;
       var senderName = typeof getUserNameByFirebaseUid === 'function'
         ? await getUserNameByFirebaseUid(senderId)
-        : 'a QuickGigs member';
+        : 'a SwiftGigs member';
       var chatLink = 'https://quickgigs.ca/chat.html?conv=' + encodeURIComponent(convId);
       if (typeof notifyNewChatMessage === 'function') {
         // Do not fetch other users' email on the client — queue by user_id only.
@@ -4681,7 +4686,7 @@ var INAPP_BODY = {
     return 'Your account is approved — you can apply to gigs now.';
   },
   guardian_consent: function (p) {
-    return (p.teenName || 'Your teen') + ' needs your approval to use QuickGigs.';
+    return (p.teenName || 'Your teen') + ' needs your approval to use SwiftGigs.';
   }
 };
 

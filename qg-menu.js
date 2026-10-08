@@ -1,4 +1,4 @@
-/* QuickGigs — hamburger slide-out menu (app + public pages) */
+/* SwiftGigs — hamburger slide-out menu (app + public pages) */
 (function () {
   var SKIP = { login: 1, signup: 1, 'parent-consent': 1, 'admin-login': 1 };
   var APP = {
@@ -280,7 +280,7 @@
       '<div id="qgMenuDrawer" class="qg-menu-drawer" role="dialog" aria-modal="true" aria-label="Menu">' +
         '<div class="qg-menu-head">' +
           '<div class="qg-menu-brand">' +
-            '<span class="qg-menu-title">QuickGigs</span>' +
+            '<span class="qg-menu-title">SwiftGigs</span>' +
             '<span class="qg-menu-role">' + subtitle + '</span>' +
           '</div>' +
           '<button type="button" class="qg-menu-close" id="qgMenuClose" aria-label="Close menu">×</button>' +

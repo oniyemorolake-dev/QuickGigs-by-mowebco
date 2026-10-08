@@ -1,4 +1,4 @@
-/* QuickGigs — share task / profile (Web Share API + clipboard fallback) */
+/* SwiftGigs — share task / profile (Web Share API + clipboard fallback) */
 (function () {
   function getShareBaseUrl() {
     if (window.QG_CONFIG && window.QG_CONFIG.shareBaseUrl) {
@@ -33,7 +33,7 @@
   }
 
   async function shareContent(opts) {
-    var title = opts.title || 'QuickGigs';
+    var title = opts.title || 'SwiftGigs';
     var text = opts.text || '';
     var url = opts.url || window.location.href;
 
@@ -59,10 +59,10 @@
   async function shareTask(task) {
     if (!task) return { success: false };
     var id = task.task_id || task.TASK_ID || task.id;
-    var title = task.title || task.TITLE || 'QuickGigs task';
+    var title = task.title || task.TITLE || 'SwiftGigs task';
     if (typeof formatTitle === 'function') title = formatTitle(title);
     var price = task.price || task.PRICE;
-    var text = price ? title + ' — $' + price + ' on QuickGigs' : title + ' on QuickGigs';
+    var text = price ? title + ' — $' + price + ' on SwiftGigs' : title + ' on SwiftGigs';
     return shareContent({
       title: title,
       text: text,
@@ -72,8 +72,8 @@
 
   async function shareProfile(userId, displayName) {
     return shareContent({
-      title: (displayName || 'QuickGigs profile'),
-      text: 'Check out this tasker on QuickGigs',
+      title: (displayName || 'SwiftGigs profile'),
+      text: 'Check out this tasker on SwiftGigs',
       url: buildProfileShareUrl(userId)
     });
   }

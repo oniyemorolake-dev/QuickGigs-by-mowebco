@@ -1,11 +1,11 @@
-/* QuickGigs — big tech UX wave 2. Vanilla only. Zero new blocking requests. */
+/* SwiftGigs — big tech UX wave 2. Vanilla only. Zero new blocking requests. */
 (function () {
   'use strict';
 
   // ── 16. Announcement bar (JS constant) ──
   var QG_ANNOUNCE = {
     id: 'beta-live-2026',
-    message: '🎉 QuickGigs beta is live — payments live via Stripe.',
+    message: 'SwiftGigs beta is live — payments live via Stripe.',
     link: 'feedback.html',
     linkLabel: 'Feedback'
   };

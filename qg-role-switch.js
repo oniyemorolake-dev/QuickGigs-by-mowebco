@@ -1,4 +1,4 @@
-/* QuickGigs — poster / tasker role switch (Profile + quick actions) */
+/* SwiftGigs — poster / tasker role switch (Profile + quick actions) */
 (function () {
   function getCurrentMode() {
     if (typeof getMode === 'function') return getMode();
@@ -130,7 +130,7 @@
     if (both) {
       el.innerHTML =
         '<div class="qg-role-flip" role="group" aria-label="Switch between Tasker and Poster mode">' +
-          '<p class="qg-role-flip-kicker">Your QuickGigs mode</p>' +
+          '<p class="qg-role-flip-kicker">Your SwiftGigs mode</p>' +
           '<div class="qg-role-flip-track' + (isWorker ? ' is-worker' : '') + '">' +
             '<button type="button" class="qg-role-flip-opt' + (isWorker ? ' active' : '') + '" data-mode="tasker" aria-pressed="' + isWorker + '">' +
               '<span class="qg-role-flip-icon">💼</span><span class="qg-role-flip-label">Tasker</span><span class="qg-role-flip-desc">Find work</span>' +
@@ -167,7 +167,7 @@
     }
     el.innerHTML =
       '<div class="qg-role-flip qg-role-opt-in">' +
-        '<p class="qg-role-flip-kicker">Your QuickGigs account</p>' +
+        '<p class="qg-role-flip-kicker">Your SwiftGigs account</p>' +
         '<strong class="qg-role-opt-in-title">' + title + '</strong>' +
         '<p class="qg-role-flip-note">' + description + '</p>' +
         (access.is_teen ? '' : '<button type="button" class="qg-role-enable-btn" data-enable-role="' + addMode + '">' + title + '</button>') +
@@ -223,7 +223,7 @@
         '</ul>' +
         '<label class="qg-role-first-agree">' +
           '<input type="checkbox" data-role-agree>' +
-          '<span>I agree to the QuickGigs <a href="terms.html" target="_blank" rel="noopener">Terms</a> AND the <a href="' + agreementHref + '" target="_blank" rel="noopener">' + agreementName + '</a>.</span>' +
+          '<span>I agree to the SwiftGigs <a href="terms.html" target="_blank" rel="noopener">Terms</a> AND the <a href="' + agreementHref + '" target="_blank" rel="noopener">' + agreementName + '</a>.</span>' +
         '</label>' +
         '<div class="qg-role-opt-in-actions">' +
           '<button type="button" data-role-cancel>Maybe later</button>' +

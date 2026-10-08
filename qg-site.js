@@ -1,11 +1,11 @@
-/* QuickGigs — shared footer, loading, empty states, back nav */
+/* SwiftGigs — shared footer, loading, empty states, back nav */
 (function () {
   window.renderQuickGigsFooter = function (containerId) {
     var el = document.getElementById(containerId || 'siteFooter');
     if (!el) return;
     el.classList.add('site-footer', 'qg-trust-footer');
     el.innerHTML =
-      '<div class="qg-foot-brand">QuickGigs</div>' +
+      '<div class="qg-foot-brand">SwiftGigs</div>' +
       '<div class="qg-foot-co">A MoTechCo company © 2026</div>' +
       '<div class="qg-foot-links">' +
       '<a href="terms.html">Terms</a> · ' +

@@ -1,4 +1,4 @@
-/* QuickGigs — email notification queue (apply, accept, complete) */
+/* SwiftGigs — email notification queue (apply, accept, complete) */
 (function () {
   function titled(str) {
     if (typeof formatTitle === 'function') return formatTitle(str || '');
@@ -11,7 +11,7 @@
       subject: function (p) { return 'New applicant for “' + (p.taskTitle || 'your task') + '”'; },
       body: function (p) {
         return (p.workerName || 'A tasker') + ' applied to your task “' + (p.taskTitle || '') + '”' +
-          (p.offer ? ' with an offer of $' + p.offer : '') + '.\n\nOpen QuickGigs to review applicants:\n' +
+          (p.offer ? ' with an offer of $' + p.offer : '') + '.\n\nOpen SwiftGigs to review applicants:\n' +
           (p.link || 'https://quickgigs.ca/mytasks.html?tab=posted');
       }
     },
@@ -26,28 +26,28 @@
     task_completed: {
       subject: function (p) { return 'Task complete: “' + (p.taskTitle || 'your task') + '”'; },
       body: function (p) {
-        return '“' + (p.taskTitle || 'Your task') + '” was marked complete on QuickGigs.\n\n' +
+        return '“' + (p.taskTitle || 'Your task') + '” was marked complete on SwiftGigs.\n\n' +
           'Please leave a review to help the community:\n' +
           (p.link || 'https://quickgigs.ca/mytasks.html?tab=completed');
       }
     },
     new_message: {
-      subject: function (p) { return 'New message from ' + (p.senderName || 'QuickGigs'); },
+      subject: function (p) { return 'New message from ' + (p.senderName || 'SwiftGigs'); },
       body: function (p) {
         // Privacy: do not put private chat content in email — open in-app to read.
         return (p.senderName || 'Someone') + ' sent you a message' +
           (p.taskTitle ? ' about “' + p.taskTitle + '”' : '') +
-          '.\n\nOpen QuickGigs to read and reply:\n' +
+          '.\n\nOpen SwiftGigs to read and reply:\n' +
           (p.link || 'https://quickgigs.ca/messages.html');
       }
     },
     guardian_consent: {
-      subject: function (p) { return 'Approve ' + (p.teenName || 'your teen') + '\'s QuickGigs account'; },
+      subject: function (p) { return 'Approve ' + (p.teenName || 'your teen') + '\'s SwiftGigs account'; },
       body: function (p) {
-        return 'Hi,\n\n' + (p.teenName || 'Your teen') + ' signed up for QuickGigs and listed you as their parent/guardian.\n\n' +
+        return 'Hi,\n\n' + (p.teenName || 'Your teen') + ' signed up for SwiftGigs and listed you as their parent/guardian.\n\n' +
           'Because they are 16 or 17, we need your approval before they can post or apply to tasks.\n\n' +
           'Approve their account here:\n' + (p.consentUrl || 'https://quickgigs.ca/parent-consent.html') + '\n\n' +
-          'If you did not authorize this, ignore this email or contact support@quickgigs.ca.\n\n— QuickGigs';
+          'If you did not authorize this, ignore this email or contact support@quickgigs.ca.\n\n— SwiftGigs';
       }
     },
     chat_unlocked: {
@@ -69,32 +69,32 @@
       subject: function () { return 'Waiting for guardian approval' },
       body: function (p) {
         return 'Ask ' + (p.guardianName || 'your parent/guardian') +
-          ' to approve your QuickGigs account before you can apply or post.\n\n' +
+          ' to approve your SwiftGigs account before you can apply or post.\n\n' +
           (p.link || 'https://quickgigs.ca/dashboard.html');
       }
     },
     guardian_approved: {
-      subject: function () { return 'Your QuickGigs account was approved' },
+      subject: function () { return 'Your SwiftGigs account was approved' },
       body: function (p) {
         return 'Great news — your parent/guardian approved your account. You can apply to gigs now.\n\n' +
           (p.link || 'https://quickgigs.ca/dashboard.html');
       }
     },
     waitlist_invite: {
-      subject: function () { return 'You\'re invited to QuickGigs beta 🎉'; },
+      subject: function () { return 'You\'re invited to SwiftGigs beta 🎉'; },
       body: function (p) {
-        return 'Hi,\n\nYou\'re on the QuickGigs waitlist — we\'re ready for you to join the beta.\n\n' +
-          'QuickGigs is Canada\'s marketplace for everyday tasks. Post a gig or earn helping others in your community.\n\n' +
+        return 'Hi,\n\nYou\'re on the SwiftGigs waitlist — we\'re ready for you to join the beta.\n\n' +
+          'SwiftGigs is Canada\'s marketplace for everyday tasks. Post a gig or earn helping others in your community.\n\n' +
           'Create your free account here:\n' + (p.link || 'https://quickgigs.ca/signup.html') + '\n\n' +
-          'See you on QuickGigs,\n— The QuickGigs team';
+          'See you on SwiftGigs,\n— The SwiftGigs team';
       }
     },
     waitlist_reminder: {
-      subject: function () { return 'Reminder: your QuickGigs beta invite is waiting'; },
+      subject: function () { return 'Reminder: your SwiftGigs beta invite is waiting'; },
       body: function (p) {
-        return 'Hi,\n\nJust a friendly reminder — your QuickGigs beta invite is still open.\n\n' +
+        return 'Hi,\n\nJust a friendly reminder — your SwiftGigs beta invite is still open.\n\n' +
           'Sign up free and start posting tasks or browsing gigs:\n' + (p.link || 'https://quickgigs.ca/signup.html') + '\n\n' +
-          '— QuickGigs';
+          '— SwiftGigs';
       }
     },
     counter_offer_received: {
@@ -117,44 +117,44 @@
       subject: function (p) { return 'Price agreed: $' + (p.amount || '') + ' on “' + (p.taskTitle || 'a task') + '”'; },
       body: function (p) {
         return (p.partyName || 'They') + ' accepted $' + (p.amount || '?') +
-          ' for “' + (p.taskTitle || '') + '”.\n\nOpen QuickGigs to continue:\n' +
+          ' for “' + (p.taskTitle || '') + '”.\n\nOpen SwiftGigs to continue:\n' +
           (p.link || 'https://quickgigs.ca/mytasks.html');
       }
     },
     task_removed_admin: {
       subject: function (p) { return 'Your task was removed: “' + (p.taskTitle || 'task') + '”'; },
       body: function (p) {
-        return 'Hi,\n\nYour task “' + (p.taskTitle || '') + '” was removed by a QuickGigs moderator.\n\nReason:\n' +
-          (p.reason || 'Not specified') + '\n\nIf you believe this was a mistake, reply to support@quickgigs.ca.\n\n— QuickGigs';
+        return 'Hi,\n\nYour task “' + (p.taskTitle || '') + '” was removed by a SwiftGigs moderator.\n\nReason:\n' +
+          (p.reason || 'Not specified') + '\n\nIf you believe this was a mistake, reply to support@quickgigs.ca.\n\n— SwiftGigs';
       }
     },
     task_removed_applicant: {
       subject: function (p) { return 'Task removed: “' + (p.taskTitle || 'a task') + '”'; },
       body: function (p) {
-        return 'Hi,\n\nA task you applied to was removed by QuickGigs moderation.\n\nTask: “' + (p.taskTitle || '') +
+        return 'Hi,\n\nA task you applied to was removed by SwiftGigs moderation.\n\nTask: “' + (p.taskTitle || '') +
           '”\nReason: ' + (p.reason || 'Not specified') + '\n\nBrowse other gigs:\n' +
-          (p.link || 'https://quickgigs.ca/browsetask.html') + '\n\n— QuickGigs';
+          (p.link || 'https://quickgigs.ca/browsetask.html') + '\n\n— SwiftGigs';
       }
     },
     new_gig_match: {
       subject: function (p) { return 'New gig near you: “' + (p.taskTitle || 'a task') + '”'; },
       body: function (p) {
-        return 'A new QuickGigs task matches your alerts:\n\n“' + (p.taskTitle || '') + '”\n' +
+        return 'A new SwiftGigs task matches your alerts:\n\n“' + (p.taskTitle || '') + '”\n' +
           (p.location || 'Near you') + (p.budget ? ' · $' + p.budget : '') +
           (p.distanceKm != null ? '\nAbout ' + p.distanceKm + ' km away' : '') +
           '\n\nOpen the gig:\n' + (p.link || 'https://quickgigs.ca/browsetask.html') +
-          '\n\nManage alerts in your Tasker profile settings.\n\n— QuickGigs';
+          '\n\nManage alerts in your Tasker profile settings.\n\n— SwiftGigs';
       }
     },
     guardian_teen_job_start: {
       subject: function (p) { return 'Job started — ' + (p.teenName || 'your teen'); },
       body: function (p) {
-        return (p.teenName || 'Your teen') + ' started an in-person QuickGigs job.\n\n' +
+        return (p.teenName || 'Your teen') + ' started an in-person SwiftGigs job.\n\n' +
           'Task: ' + (p.taskTitle || 'Gig') + '\n' +
           'Poster: ' + (p.posterName || 'Poster') + (p.posterVerified ? ' (verified)' : '') + '\n' +
           (p.distanceKm != null ? 'Distance from home (approx): ' + p.distanceKm + ' km\n' : '') +
           'Open your guardian portal to monitor check-ins and location during this job only.\n\n' +
-          (p.link || '') + '\n\nQuickGigs is not an emergency responder.';
+          (p.link || '') + '\n\nSwiftGigs is not an emergency responder.';
       }
     },
     guardian_teen_stamp: {
@@ -167,28 +167,28 @@
     guardian_teen_missed_checkin: {
       subject: function (p) { return 'Missed check-in — ' + (p.teenName || 'your teen'); },
       body: function (p) {
-        return (p.teenName || 'Your teen') + ' missed a safety check-in on an active QuickGigs job.\n\n' +
+        return (p.teenName || 'Your teen') + ' missed a safety check-in on an active SwiftGigs job.\n\n' +
           (p.locationLink ? 'Last shared location:\n' + p.locationLink + '\n\n' : '') +
           'Open the guardian portal to review or end the job.\n\n' +
-          'QuickGigs is not an emergency responder.';
+          'SwiftGigs is not an emergency responder.';
       }
     },
     guardian_teen_need_help: {
       subject: function (p) { return 'Need help — ' + (p.teenName || 'your teen'); },
       body: function (p) {
-        return (p.teenName || 'Your teen') + ' tapped “Need help” on an active QuickGigs job.\n\n' +
+        return (p.teenName || 'Your teen') + ' tapped “Need help” on an active SwiftGigs job.\n\n' +
           (p.locationLink ? 'Live location:\n' + p.locationLink + '\n\n' : '') +
           'Contact them and consider ending the job from the guardian portal.\n\n' +
-          'QuickGigs is not an emergency responder.';
+          'SwiftGigs is not an emergency responder.';
       }
     },
     guardian_teen_safety_alert: {
       subject: function (p) { return 'Safety alert — ' + (p.teenName || 'your teen'); },
       body: function (p) {
-        return (p.teenName || 'Your teen') + ' triggered a Safety alert on an active QuickGigs job.\n\n' +
+        return (p.teenName || 'Your teen') + ' triggered a Safety alert on an active SwiftGigs job.\n\n' +
           (p.locationLink ? 'Live location:\n' + p.locationLink + '\n\n' : '') +
           'Contact them immediately. If needed, call local emergency services.\n\n' +
-          'QuickGigs is not an emergency responder and does not dispatch help.';
+          'SwiftGigs is not an emergency responder and does not dispatch help.';
       }
     }
   };
@@ -216,7 +216,7 @@
       guardian_approved: 1,
       guardian_consent: 1
     };
-    // Guardians without a QuickGigs user id only get email (userId "guardian").
+    // Guardians without a SwiftGigs user id only get email (userId "guardian").
     if (opts.type === 'guardian_consent' && (!opts.userId || String(opts.userId) === 'guardian')) {
       delete inAppTypes.guardian_consent;
     }

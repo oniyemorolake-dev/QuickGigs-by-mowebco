@@ -1,4 +1,4 @@
-// QuickGigs — role-based navigation (poster vs tasker). Canonical mode: localStorage qg-mode.
+// SwiftGigs — role-based navigation (poster vs tasker). Canonical mode: localStorage qg-mode.
 (function () {
   var NAV = {
     poster: [
@@ -183,7 +183,7 @@
       toggle.setAttribute('data-tasker-enabled', String(state.is_tasker === true));
       toggle.setAttribute('data-poster-enabled', String(state.is_poster === true));
       toggle.setAttribute('role', 'group');
-      toggle.setAttribute('aria-label', 'Current QuickGigs mode');
+      toggle.setAttribute('aria-label', 'Current SwiftGigs mode');
       var taskerAvailable = state.is_tasker === true;
       var posterVisible = state.is_teen !== true;
       var posterAvailable = state.is_poster === true;

@@ -1,14 +1,14 @@
 /**
- * QuickGigs — in-person Safety / emergency tools (tokens only).
+ * SwiftGigs — in-person Safety / emergency tools (tokens only).
  * Call emergency services via config number (911 in Canada).
- * QuickGigs does NOT monitor or respond to emergencies.
+ * SwiftGigs does NOT monitor or respond to emergencies.
  */
 (function (global) {
   'use strict';
 
   var SETTINGS_PREFIX = 'qg-safety-settings:';
   var DISCLAIMER =
-    '911 connects you to public emergency services. QuickGigs is not an emergency responder.';
+    '911 connects you to public emergency services. SwiftGigs is not an emergency responder.';
 
   function esc(s) {
     return String(s == null ? '' : s)
@@ -41,7 +41,7 @@
     if (label === '911') return DISCLAIMER;
     return (
       label +
-      ' connects you to public emergency services. QuickGigs is not an emergency responder.'
+      ' connects you to public emergency services. SwiftGigs is not an emergency responder.'
     );
   }
 
@@ -283,7 +283,7 @@
         var link = mapsUrl(lat, lng);
         var s = loadSettings();
         var text =
-          'QuickGigs safety share — my current location: ' + link;
+          'SwiftGigs safety share — my current location: ' + link;
         var phone = normalizePhone(s.contactPhone);
 
         function doneCopied() {

@@ -1,4 +1,4 @@
-// QuickGigs — platform rules (single place to change launch behaviour)
+// SwiftGigs — platform rules (single place to change launch behaviour)
 window.QG_CONFIG = {
   // When chat unlocks: 'payment' (escrow) | 'accept' | 'apply' (internal only)
   // Stripe testing paused: gate chat on acceptance.
@@ -174,8 +174,8 @@ window.getChatLockMessage = function (isPoster) {
     : ((window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept');
   if (rule === 'payment') {
     return isPoster
-      ? 'Chat unlocks after you accept a worker and complete payment through QuickGigs. This keeps everyone protected and stops off-platform deals.'
-      : 'Chat unlocks once the poster accepts you and pays through QuickGigs escrow. Until then, your application is all they need to review.';
+      ? 'Chat unlocks after you accept a worker and complete payment through SwiftGigs. This keeps everyone protected and stops off-platform deals.'
+      : 'Chat unlocks once the poster accepts you and pays through SwiftGigs escrow. Until then, your application is all they need to review.';
   }
   if (rule === 'accept') {
     return 'Chat unlocks once the poster accepts your application.';
@@ -190,7 +190,7 @@ window.getMessagesBannerCopy = function () {
   if (rule === 'payment') {
     return {
       title: 'Chat locked until payment',
-      sub: 'Apply and get accepted first — messaging opens only after the poster pays through QuickGigs. No phone numbers or off-platform contact.'
+      sub: 'Apply and get accepted first — messaging opens only after the poster pays through SwiftGigs. No phone numbers or off-platform contact.'
     };
   }
   if (rule === 'apply') {

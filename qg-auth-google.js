@@ -1,4 +1,4 @@
-/* QuickGigs — shared Google sign-in helpers */
+/* SwiftGigs — shared Google sign-in helpers */
 (function () {
   window.qgGoogleAuthErrorMessage = function (error) {
     if (!error) return 'Google sign-in failed. Try again.';
@@ -13,7 +13,7 @@
       return 'This email already has a password account. Log in with email and password instead.';
     }
     if (code === 'auth/credential-already-in-use') {
-      return 'This Google account is already linked to another QuickGigs user. Try a different Google account or log in with email.';
+      return 'This Google account is already linked to another SwiftGigs user. Try a different Google account or log in with email.';
     }
     if (code === 'auth/email-already-in-use') {
       return 'This email is already registered. Log in with email and password, or use the same Google account you signed up with.';

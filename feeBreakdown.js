@@ -1,5 +1,5 @@
 /**
- * QuickGigs — platform fee math (SINGLE SOURCE OF TRUTH for the client).
+ * SwiftGigs — platform fee math (SINGLE SOURCE OF TRUTH for the client).
  * Route ALL fee display / commitment math through feeBreakdown() — never hardcode rates.
  * Server mirror: supabase/functions/_shared/fee.ts + create-checkout / create-escrow-intent.
  *
@@ -176,7 +176,7 @@
   }
 
   /**
-   * Tasker-facing: "You'll receive $TOTAL minus the N% QuickGigs fee ($FEE) = $PAYOUT."
+   * Tasker-facing: "You'll receive $TOTAL minus the N% SwiftGigs fee ($FEE) = $PAYOUT."
    */
   function formatTaskerPayoutLine(amountOrTask, opts) {
     opts = opts || {};
@@ -187,7 +187,7 @@
     var b = feeBreakdown(amount, opts);
     var period = periodSuffix(opts, task);
     return "You'll receive $" + b.total.toFixed(2) + period +
-      ' minus the ' + b.ratePct + '% QuickGigs fee ($' + b.fee.toFixed(2) + ')' +
+      ' minus the ' + b.ratePct + '% SwiftGigs fee ($' + b.fee.toFixed(2) + ')' +
       ' = $' + b.payout.toFixed(2) + period + '.';
   }
 

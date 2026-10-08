@@ -1,4 +1,4 @@
-/* QuickGigs — floating help panel (logged-in app pages) */
+/* SwiftGigs — floating help panel (logged-in app pages) */
 (function () {
   var PAGE = (window.location.pathname.split('/').pop() || '').toLowerCase();
   var APP_PAGES = {
@@ -25,7 +25,7 @@
     },
     {
       q: 'When do payments start?',
-      a: 'Payments are in beta setup. When live, posters pay through QuickGigs before work begins so funds stay protected until the task is done.'
+      a: 'Payments are in beta setup. When live, posters pay through SwiftGigs before work begins so funds stay protected until the task is done.'
     },
     {
       q: 'How do I report a problem?',

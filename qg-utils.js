@@ -1,4 +1,4 @@
-// QuickGigs — shared input/display helpers (XSS protection)
+// SwiftGigs — shared input/display helpers (XSS protection)
 // Default: treat all user-generated text as plain text. Prefer textContent;
 // when building HTML strings, always escapeHtml / escAttr / safeUrl.
 
@@ -580,7 +580,7 @@ function isPureDigitChunk(text) {
 }
 
 function getOffPlatformWarning() {
-  return 'Sharing contact details is against QuickGigs rules — keep chat and payment on QuickGigs';
+  return 'Sharing contact details is against SwiftGigs rules — keep chat and payment on SwiftGigs';
 }
 
 function getDigitsOnlyWarning() {
@@ -785,7 +785,7 @@ function renderUserAvatarHtml(name, avatarUrl, opts) {
   opts = opts || {};
   var cls = opts.className || 'user-avatar';
   var initial = (name || 'U').charAt(0).toUpperCase();
-  var label = escapeHtml(name || 'a QuickGigs member');
+  var label = escapeHtml(name || 'a SwiftGigs member');
   var photo = safeMediaUrl(avatarUrl);
   var size = Number(opts.size) || 40;
   if (photo) {
@@ -830,7 +830,7 @@ function profileNameLink(name, uid, opts) {
   opts = opts || {};
   var label = opts.pronouns && opts.pronouns !== 'prefer not to say'
     ? formatNameWithPronouns(name, opts.pronouns)
-    : (name || 'a QuickGigs member');
+    : (name || 'a SwiftGigs member');
   if (!uid) return escapeHtml(label);
   var cls = opts.className || 'profile-link';
   var style = opts.style || 'color:inherit;text-decoration:underline;text-underline-offset:2px';
@@ -840,7 +840,7 @@ function profileNameLink(name, uid, opts) {
 function formatNameWithPronouns(name, pronouns) {
   var n = (name || '').trim();
   var p = (pronouns || '').trim();
-  if (!p || p.toLowerCase() === 'prefer not to say') return n || 'a QuickGigs member';
+  if (!p || p.toLowerCase() === 'prefer not to say') return n || 'a SwiftGigs member';
   return n ? n + ' · ' + p : p;
 }
 
@@ -1275,7 +1275,7 @@ function formatTaskerPayoutLine(amount, opts) {
   }
   var b = feeBreakdown(amount, opts);
   return "You'll receive $" + b.total.toFixed(2) +
-    ' minus the ' + b.ratePct + '% QuickGigs fee ($' + b.fee.toFixed(2) + ')' +
+    ' minus the ' + b.ratePct + '% SwiftGigs fee ($' + b.fee.toFixed(2) + ')' +
     ' = $' + b.payout.toFixed(2) + '.';
 }
 
