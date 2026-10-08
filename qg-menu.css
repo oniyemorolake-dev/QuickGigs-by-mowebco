@@ -119,7 +119,7 @@ body.light .qg-menu-drawer {
 }
 
 .qg-menu-title {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 16px;
   font-style: normal;
   font-weight: 600;
@@ -192,7 +192,7 @@ body.light .qg-menu-close {
   border-radius: 8px;
   background: transparent;
   color: #DDD7EA;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 14px;
   font-weight: 400;
   text-decoration: none;
