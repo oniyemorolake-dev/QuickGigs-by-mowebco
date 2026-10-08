@@ -1,4 +1,4 @@
-/* QuickGigs — UX overhaul layer (trust, a11y, mobile, polish). Additive; does not rename CSS vars. */
+/* SwiftGigs — UX overhaul layer (trust, a11y, mobile, polish). Additive; does not rename CSS vars. */
 
 .skip-link {
   position: absolute;
@@ -6,8 +6,8 @@
   top: 0;
   z-index: 10000;
   padding: 10px 16px;
-  background: #6b3fa0;
-  color: #fff;
+  background: var(--primary);
+  color: var(--primary-text);
   font-size: 14px;
   font-weight: 500;
   border-radius: 0 0 10px 0;
@@ -16,7 +16,7 @@
 .skip-link:focus,
 .skip-link:focus-visible {
   left: 0;
-  outline: 2px solid #c8a8e9;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -51,7 +51,7 @@ body.page-chat #chatScroll {
 }
 
 :focus-visible {
-  outline: 2px solid var(--purple-light, #9b6fc4);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -72,17 +72,11 @@ body {
 .results-txt,
 .empty-txt,
 .signup-subtitle {
-  color: rgba(255, 255, 255, 0.55) !important;
-}
-body.light .tc-cat,
-body.light .tc-info,
-body.light .tab-lbl,
-body.light .app-legal-footer,
-body.light .field-hint,
-body.light .modal-sub,
-body.light .results-txt,
-body.light .empty-txt {
-  color: rgba(45, 27, 78, 0.62) !important;
+  /* !important is a readability floor against older page CSS. --text-muted
+     already flips with the theme, so the body.light twin that stood here is
+     deleted. .tab-lbl is inert either way: qg-shell.css sets the same token
+     at higher specificity, also !important. */
+  color: var(--text-muted) !important;
 }
 
 .nav-beta-pill {
@@ -95,9 +89,9 @@ body.light .empty-txt {
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #4ade80;
-  background: rgba(74, 222, 128, 0.12);
-  border: 1px solid rgba(74, 222, 128, 0.28);
+  color: var(--green);
+  background: var(--money-soft);
+  border: 1px solid color-mix(in srgb, var(--green) 28%, transparent);
   vertical-align: middle;
   white-space: nowrap;
 }
@@ -107,23 +101,35 @@ body.light .empty-txt {
   padding: 20px 16px calc(96px + env(safe-area-inset-bottom, 0px));
   font-size: 12px;
   line-height: 1.75;
-  color: rgba(255, 255, 255, 0.5);
-  border-top: 0.5px solid rgba(200, 168, 233, 0.12);
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
 }
-body.light .qg-trust-footer { color: rgba(45, 27, 78, 0.55); border-top-color: #eee8ff; }
 .qg-trust-footer .qg-foot-brand {
   font-family: 'Playfair Display', Georgia, serif;
   font-style: italic;
-  font-size: 1.1rem;
-  color: var(--lavender, #c8a8e9);
+  font-weight: 700;
+  font-size: 15px;
+  background: var(--grad-wordmark);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
   margin-bottom: 6px;
+}
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .qg-trust-footer .qg-foot-brand {
+    background: none;
+    color: var(--primary);
+    -webkit-text-fill-color: var(--primary);
+  }
 }
 .qg-trust-footer .qg-foot-co { margin-bottom: 8px; }
 .qg-trust-footer a {
-  color: var(--purple-light, #9b6fc4);
+  color: var(--text-muted);
   text-decoration: none;
 }
-body.light .qg-trust-footer a { color: var(--purple, #6b3fa0); }
+.qg-trust-footer a:hover { color: var(--text); text-decoration: underline; }
 .qg-trust-footer .qg-foot-links { margin: 8px 0; }
 .qg-trust-footer .qg-foot-email { word-break: break-word; }
 
@@ -132,40 +138,38 @@ body.light .qg-trust-footer a { color: var(--purple, #6b3fa0); }
   margin-top: 10px;
   font-size: 12px;
   line-height: 1.45;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--text-muted);
   text-align: center;
 }
-body.light .qg-pipeda-line { color: rgba(45, 27, 78, 0.6); }
 
 .qg-field-error {
   display: none;
   margin-top: 4px;
   font-size: 12px;
-  color: #ef4444;
+  color: var(--danger);
   line-height: 1.4;
 }
 .qg-field-error.show { display: block; }
 .qg-invalid {
-  border-color: #ef4444 !important;
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+  border-color: var(--danger) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 25%, transparent) !important;
 }
 .qg-submit-hint {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
   text-align: center;
   margin-top: 8px;
   min-height: 1.2em;
 }
-body.light .qg-submit-hint { color: rgba(45, 27, 78, 0.55); }
 
 .qg-tip-wrap { position: relative; display: inline-flex; align-items: center; gap: 4px; }
 .qg-tip-btn {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 0.5px solid rgba(200, 168, 233, 0.35);
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--lavender, #c8a8e9);
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  color: var(--text);
   font-size: 11px;
   line-height: 1;
   cursor: pointer;
@@ -181,17 +185,11 @@ body.light .qg-submit-hint { color: rgba(45, 27, 78, 0.55); }
   width: min(260px, 70vw);
   padding: 10px 12px;
   border-radius: 12px;
-  background: #1a0a30;
-  border: 0.5px solid rgba(200, 168, 233, 0.25);
-  color: rgba(255, 255, 255, 0.85);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
   font-size: 12px;
   line-height: 1.5;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-}
-body.light .qg-tip-pop {
-  background: #fff;
-  color: #2d1b4e;
-  border-color: #e8e0ff;
 }
 .qg-tip-wrap.open .qg-tip-pop { display: block; }
 
@@ -199,7 +197,7 @@ body.light .qg-tip-pop {
   position: fixed;
   inset: 0;
   z-index: 9000;
-  background: rgba(5, 0, 15, 0.82);
+  background: var(--scrim);
   display: none;
   align-items: center;
   justify-content: center;
@@ -209,27 +207,24 @@ body.light .qg-tip-pop {
 .qg-onboard-overlay.open { display: flex; }
 .qg-onboard-card {
   width: min(400px, 100%);
-  border-radius: 20px;
+  border-radius: 14px;
   padding: 24px 22px;
-  background: #140628;
-  border: 0.5px solid rgba(200, 168, 233, 0.2);
-  color: #fff;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
 }
-body.light .qg-onboard-card { background: #fff; color: #2d1b4e; }
-.qg-onboard-step { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #9b6fc4; margin-bottom: 8px; }
-.qg-onboard-title { font-size: 18px; font-weight: 500; margin-bottom: 8px; line-height: 1.35; }
-.qg-onboard-sub { font-size: 14px; line-height: 1.55; color: rgba(255, 255, 255, 0.55); margin-bottom: 20px; }
-body.light .qg-onboard-sub { color: rgba(45, 27, 78, 0.6); }
+.qg-onboard-step { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+.qg-onboard-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; line-height: 1.35; }
+.qg-onboard-sub { font-size: 14px; line-height: 1.55; color: var(--text-muted); margin-bottom: 20px; }
 .qg-onboard-btn {
   width: 100%;
   min-height: 48px;
   border: none;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #6b3fa0, #9b6fc4);
-  color: #fff;
+  border-radius: 12px;
+  background: var(--primary);
+  color: var(--primary-text);
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   font-family: inherit;
 }
@@ -241,7 +236,7 @@ body.light .qg-onboard-sub { color: rgba(45, 27, 78, 0.6); }
   border: none;
   border-radius: 12px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--text-muted);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -249,24 +244,17 @@ body.light .qg-onboard-sub { color: rgba(45, 27, 78, 0.6); }
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-body.light .qg-onboard-skip { color: rgba(45, 27, 78, 0.55); }
-.qg-onboard-skip:hover { color: #c8a8e9; }
-body.light .qg-onboard-skip:hover { color: #6b3fa0; }
+.qg-onboard-skip:hover { color: var(--text); }
 
 .qg-hint-banner {
   margin: 10px 16px 0;
   padding: 12px 14px;
   border-radius: 12px;
-  background: rgba(107, 63, 160, 0.15);
-  border: 0.5px solid rgba(200, 168, 233, 0.25);
+  background: var(--surface);
+  border: 1px solid var(--border);
   font-size: 13px;
   line-height: 1.5;
-  color: rgba(255, 255, 255, 0.75);
-}
-body.light .qg-hint-banner {
-  background: #f5f0ff;
-  border-color: #e0d8ff;
-  color: #2d1b4e;
+  color: var(--text);
 }
 
 .qg-online-dot {
@@ -274,8 +262,8 @@ body.light .qg-hint-banner {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #4ade80;
-  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.25);
+  background: var(--green);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--green) 25%, transparent);
   margin-left: 6px;
   vertical-align: middle;
 }
@@ -320,7 +308,7 @@ body.light .qg-hint-banner {
     width: 36px;
     height: 4px;
     border-radius: 2px;
-    background: rgba(200, 168, 233, 0.25);
+    background: var(--border);
     margin: 8px auto 14px;
   }
 
@@ -368,10 +356,8 @@ body.light .qg-hint-banner {
     bottom: calc(72px + env(safe-area-inset-bottom, 0px));
     z-index: 90;
     padding: 10px 16px;
-    background: linear-gradient(180deg, transparent, rgba(11, 1, 24, 0.95) 30%);
-  }
-  body.light .qg-sticky-post-bar {
-    background: linear-gradient(180deg, transparent, rgba(250, 250, 254, 0.96) 30%);
+    /* Fades the page out behind the bar, so it tracks --bg, not --surface. */
+    background: linear-gradient(180deg, transparent, var(--bg) 30%);
   }
   .qg-sticky-post-bar .submit-btn,
   .qg-sticky-post-bar #postBtn,
@@ -404,8 +390,8 @@ body.light .qg-hint-banner {
   height: 16px;
   padding: 0 4px;
   border-radius: 999px;
-  background: #ef4444;
-  color: #fff;
+  background: var(--danger);
+  color: var(--danger-text);
   font-size: 10px;
   font-weight: 600;
   display: none;
@@ -421,19 +407,16 @@ body.light .qg-hint-banner {
   margin-top: 10px;
   font-size: 13px;
   line-height: 1.45;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--text-muted);
 }
-body.light .qg-beta-free-note { color: #6b6580; }
 
 .qg-field-hint,
 .field-hint.qg-field-hint {
   font-size: 12px;
   line-height: 1.5;
   margin: 4px 0 8px;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--text-muted);
 }
-body.light .qg-field-hint,
-body.light .field-hint.qg-field-hint { color: #6b6580; }
 
 /* Contrast / readability pass — informational muted text floor */
 /* The ":root, body" and "body.light" blocks that stood here redeclared
@@ -448,30 +431,18 @@ body.light .field-hint.qg-field-hint { color: #6b6580; }
 .bubble-check,
 .date-divider {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.55);
-}
-body.light .bubble-time,
-body.light .bubble-check,
-body.light .date-divider {
-  color: #6b6580;
+  color: var(--text-muted);
 }
 
-/* Notification panel body — tokens (qg-bell.css owns the panel) */
+/* Notification panel body — tokens (qg-bell.css owns the panel).
+   Every rule below used to be followed by a body.light / html.light twin
+   declaring the identical token. Those were no-ops — the token already flips
+   with the theme — so they are deleted rather than kept. */
 .qg-bell-item-body {
-  color: var(--text-secondary);
-}
-body.light .qg-bell-item-body,
-html.light .qg-bell-item-body {
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 .qg-bell-item-time,
 .qg-bell-empty {
-  color: var(--text-muted);
-}
-body.light .qg-bell-item-time,
-body.light .qg-bell-empty,
-html.light .qg-bell-item-time,
-html.light .qg-bell-empty {
   color: var(--text-muted);
 }
 
@@ -479,27 +450,15 @@ html.light .qg-bell-empty {
 .tc-price,
 .tc-meta-price,
 .task-price {
-  color: var(--money);
-  font-weight: 500;
-}
-body.light .tc-price,
-body.light .tc-meta-price,
-body.light .task-price {
-  color: var(--money);
-  font-weight: 500;
+  color: var(--green);
+  font-weight: 700;
 }
 .tc-meta {
-  color: var(--text-muted);
-}
-body.light .tc-meta {
   color: var(--text-muted);
 }
 .tc-info {
   color: var(--text-muted);
   font-size: 11px;
-}
-body.light .tc-info {
-  color: var(--text-muted);
 }
 
 .empty-state .empty-btn { margin-top: 14px; }
