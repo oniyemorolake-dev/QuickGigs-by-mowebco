@@ -436,30 +436,12 @@ body.light .qg-field-hint,
 body.light .field-hint.qg-field-hint { color: #6b6580; }
 
 /* Contrast / readability pass — informational muted text floor */
-:root, body {
-  --text-muted: rgba(255, 255, 255, 0.68);
-  --text-faint: rgba(255, 255, 255, 0.62);
-  --time-color: rgba(255, 255, 255, 0.55);
-  --desc-color: rgba(255, 255, 255, 0.62);
-  --info-color: rgba(255, 255, 255, 0.62);
-  --results-color: rgba(255, 255, 255, 0.62);
-  --empty-color: rgba(200, 168, 233, 0.78);
-  --read-preview: rgba(255, 255, 255, 0.62);
-  --pill-inactive-color: rgba(255, 255, 255, 0.62);
-  --cat-inactive-color: rgba(255, 255, 255, 0.62);
-}
-body.light {
-  --text-muted: #6b6580;
-  --text-faint: #6b6580;
-  --time-color: #6b6580;
-  --desc-color: #6b6580;
-  --info-color: #6b6580;
-  --results-color: #8a84a0;
-  --empty-color: #6b6580;
-  --read-preview: #6b6580;
-  --pill-inactive-color: #6b6580;
-  --cat-inactive-color: #6b6580;
-}
+/* The ":root, body" and "body.light" blocks that stood here redeclared
+   --text-muted and --text-faint as fixed alphas, shadowing qg-tokens.css on
+   every page that loads this sheet. The eight other vars they declared
+   (--time-color, --desc-color, --info-color, --results-color, --empty-color,
+   --read-preview, --pill-inactive-color, --cat-inactive-color) had no
+   consumers anywhere in the repo, so both blocks are deleted outright. */
 
 /* Chat timestamps + read receipts */
 .bubble-time,
