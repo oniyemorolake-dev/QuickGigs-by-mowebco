@@ -22,6 +22,12 @@
   --teal-tint: #123832;
   --green: #4ADE80;
 
+  /* Label colour for text sitting ON a --teal fill. White fails badly there:
+     1.9:1 against the dark-mode teal and 3.7:1 against the light-mode teal,
+     where AA wants 4.5:1. One value serves both themes — 9.2:1 on #2DD4BF and
+     4.6:1 on #0D9488 — so there is deliberately no light-mode override. */
+  --teal-text: #05201C;
+
   /* ── Semantic accents (not part of the redesign spec, values unchanged) ── */
   --attention: #fbbf24;
   --danger: #f87171;
@@ -33,6 +39,11 @@
   --accent-poster: var(--primary);
   --accent-tasker: var(--teal);
   --accent: var(--accent-tasker);
+
+  /* Label colour for text on an --accent fill. Tracks whichever flow is active,
+     so a CTA can say `background: var(--accent); color: var(--accent-text)` and
+     stay legible in both modes. Defaults to the tasker value, matching --accent. */
+  --accent-text: var(--teal-text);
 
   /* ── Derived structure ── */
   --line-strong: color-mix(in srgb, var(--border) 60%, var(--text-muted));
@@ -105,6 +116,7 @@ html[data-mode="tasker"],
 body.qg-mode-worker {
   --accent: var(--accent-tasker);
   --grad-accent: var(--grad-tasker);
+  --accent-text: var(--teal-text);
 }
 
 html[data-qg-mode="poster"],
@@ -112,6 +124,7 @@ html[data-mode="poster"],
 body.qg-mode-poster {
   --accent: var(--accent-poster);
   --grad-accent: var(--grad-poster);
+  --accent-text: var(--primary-text);
 }
 
 /* Legacy poster aliases — previously forced teal, now follow the flow accent. */
