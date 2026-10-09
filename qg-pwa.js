@@ -221,9 +221,43 @@
     document.body.style.overflow = 'hidden';
   }
 
+  /* The banner's styling lived only in qg-features.css and qg-shell.css, and
+     login.html loads neither (nor qg-brand-init.js, which injects the latter),
+     so it rendered as raw unstyled HTML there. This is a self-contained
+     baseline: it goes in as the first child of <head>, so every page that does
+     style the banner still wins on load order. */
+  function injectBannerCss() {
+    if (document.getElementById('qg-pwa-banner-css')) return;
+    var style = document.createElement('style');
+    style.id = 'qg-pwa-banner-css';
+    style.textContent =
+      '.qg-pwa-banner{display:none;align-items:flex-start;gap:14px;' +
+        'margin:12px 20px 14px;padding:14px 16px;border-radius:16px;' +
+        'background:var(--surface);border:1px solid var(--border);' +
+        "font-family:'DM Sans',system-ui,sans-serif;}" +
+      '.qg-pwa-banner.show{display:flex;}' +
+      '.qg-pwa-banner-text{flex:1;min-width:0;display:flex;flex-direction:column;' +
+        'gap:6px;font-size:13px;line-height:1.45;}' +
+      '.qg-pwa-banner-title{display:block;margin:0;font-size:14px;font-weight:600;' +
+        'color:var(--text);}' +
+      '.qg-pwa-banner-body{display:block;color:var(--text-muted);}' +
+      '.qg-pwa-banner-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}' +
+      '.qg-pwa-install{padding:10px 16px;border:none;border-radius:12px;' +
+        'background:var(--primary);color:var(--primary-text);' +
+        "font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;}" +
+      '.qg-pwa-dismiss{width:36px;height:36px;display:inline-flex;align-items:center;' +
+        'justify-content:center;border:1px solid var(--border);border-radius:10px;' +
+        'background:var(--surface-alt);color:var(--text-muted);cursor:pointer;}' +
+      '.qg-pwa-dismiss svg{width:16px;height:16px;stroke:currentColor;}';
+    var head = document.head || document.documentElement;
+    head.insertBefore(style, head.firstChild);
+  }
+
   function showAndroidBanner(deferredPrompt) {
     if (localStorage.getItem(DISMISS_KEY) === '1') return;
     if (isStandalone()) return;
+
+    injectBannerCss();
 
     var existing = document.getElementById('qgPwaBanner');
     if (existing) existing.remove();
