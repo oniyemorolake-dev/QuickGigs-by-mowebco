@@ -450,7 +450,8 @@
     });
   };
 
-  window.captureTaskLocationFromDevice = function () {
+  window.captureTaskLocationFromDevice = function (opts) {
+    opts = opts || {};
     return new Promise(function (resolve) {
       if (!navigator.geolocation) {
         resolve({ ok: false, error: 'unsupported' });
@@ -458,7 +459,13 @@
       }
       navigator.geolocation.getCurrentPosition(
         function (pos) {
-          reverseGeocodeCity(pos.coords.latitude, pos.coords.longitude)
+          var lat = pos.coords.latitude;
+          var lng = pos.coords.longitude;
+          if (!isCanadianCoordinate(lat, lng)) {
+            resolve({ ok: false, error: 'outside_canada' });
+            return;
+          }
+          reverseGeocodeCity(lat, lng)
             .then(function (res) {
               resolve({
                 ok: true,
@@ -471,16 +478,280 @@
               resolve({
                 ok: true,
                 location: '',
-                lat: roundCoord(pos.coords.latitude, 2),
-                lng: roundCoord(pos.coords.longitude, 2)
+                lat: roundCoord(lat, 2),
+                lng: roundCoord(lng, 2)
               });
             });
         },
         function (err) {
           resolve({ ok: false, error: err && err.code === 1 ? 'denied' : 'failed' });
         },
-        { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+        {
+          enableHighAccuracy: !!opts.enableHighAccuracy,
+          timeout: opts.enableHighAccuracy ? 12000 : 8000,
+          maximumAge: opts.enableHighAccuracy ? 0 : 60000
+        }
       );
+    });
+  };
+
+  // Canadian cities / large towns for typeahead. Neighbourhoods and postal
+  // codes still go through geocode-canada on submit; this list is the instant
+  // “as you type” set so posters are not staring at a blank field.
+  var CANADIAN_CITIES = [
+    'Calgary, AB', 'Edmonton, AB', 'Red Deer, AB', 'Lethbridge, AB', 'St. Albert, AB',
+    'Medicine Hat, AB', 'Grande Prairie, AB', 'Airdrie, AB', 'Spruce Grove, AB',
+    'Leduc, AB', 'Fort McMurray, AB', 'Fort Saskatchewan, AB', 'Okotoks, AB',
+    'Cochrane, AB', 'Camrose, AB', 'Brooks, AB', 'Canmore, AB', 'Banff, AB',
+    'Chestermere, AB', 'Beaumont, AB', 'Lloydminster, AB', 'Cold Lake, AB',
+    'Lacombe, AB', 'Wetaskiwin, AB', 'High River, AB', 'Strathmore, AB',
+    'Sherwood Park, AB', 'Stony Plain, AB', 'Sylvan Lake, AB', 'Hinton, AB',
+    'Jasper, AB', 'Peace River, AB', 'Whitecourt, AB',
+    'Vancouver, BC', 'Victoria, BC', 'Surrey, BC', 'Burnaby, BC', 'Richmond, BC',
+    'Kelowna, BC', 'Kamloops, BC', 'Nanaimo, BC', 'Abbotsford, BC', 'Coquitlam, BC',
+    'Langley, BC', 'Delta, BC', 'North Vancouver, BC', 'West Vancouver, BC',
+    'New Westminster, BC', 'Maple Ridge, BC', 'Chilliwack, BC', 'Prince George, BC',
+    'Vernon, BC', 'Courtenay, BC', 'Penticton, BC', 'Campbell River, BC',
+    'Mission, BC', 'Port Coquitlam, BC', 'White Rock, BC', 'Port Moody, BC',
+    'Cranbrook, BC', 'Fort St. John, BC', 'Terrace, BC', 'Prince Rupert, BC',
+    'Williams Lake, BC', 'Dawson Creek, BC', 'Squamish, BC', 'Whistler, BC',
+    'Revelstoke, BC', 'Nelson, BC', 'Trail, BC', 'Castlegar, BC', 'Salmon Arm, BC',
+    'Parksville, BC', 'Sidney, BC', 'Saanich, BC', 'Langford, BC', 'Colwood, BC',
+    'Sooke, BC', 'Duncan, BC', 'Pitt Meadows, BC', 'Port Alberni, BC',
+    'Winnipeg, MB', 'Brandon, MB', 'Steinbach, MB', 'Thompson, MB',
+    'Portage la Prairie, MB', 'Winkler, MB', 'Selkirk, MB', 'Dauphin, MB',
+    'Morden, MB', 'Flin Flon, MB',
+    'Moncton, NB', 'Saint John, NB', 'Fredericton, NB', 'Dieppe, NB',
+    'Miramichi, NB', 'Edmundston, NB', 'Bathurst, NB', 'Riverview, NB',
+    "St. John's, NL", 'Mount Pearl, NL', 'Corner Brook, NL', 'Conception Bay South, NL',
+    'Paradise, NL', 'Grand Falls-Windsor, NL', 'Gander, NL', 'Labrador City, NL',
+    'Happy Valley-Goose Bay, NL',
+    'Halifax, NS', 'Dartmouth, NS', 'Sydney, NS', 'Truro, NS', 'New Glasgow, NS',
+    'Kentville, NS', 'Amherst, NS', 'Bridgewater, NS', 'Yarmouth, NS',
+    'Antigonish, NS', 'Wolfville, NS', 'Bedford, NS', 'Sackville, NS',
+    'Toronto, ON', 'Ottawa, ON', 'Mississauga, ON', 'Brampton, ON', 'Hamilton, ON',
+    'London, ON', 'Markham, ON', 'Vaughan, ON', 'Kitchener, ON', 'Windsor, ON',
+    'Richmond Hill, ON', 'Oakville, ON', 'Burlington, ON', 'Greater Sudbury, ON',
+    'Oshawa, ON', 'Barrie, ON', 'St. Catharines, ON', 'Cambridge, ON', 'Kingston, ON',
+    'Guelph, ON', 'Thunder Bay, ON', 'Waterloo, ON', 'Brantford, ON', 'Pickering, ON',
+    'Niagara Falls, ON', 'Peterborough, ON', 'Newmarket, ON', 'Sault Ste. Marie, ON',
+    'Sarnia, ON', 'Welland, ON', 'North Bay, ON', 'Belleville, ON', 'Cornwall, ON',
+    'Chatham-Kent, ON', 'Ajax, ON', 'Whitby, ON', 'Milton, ON', 'Clarington, ON',
+    'Caledon, ON', 'Aurora, ON', 'Halton Hills, ON', 'St. Thomas, ON',
+    'Woodstock, ON', 'Stratford, ON', 'Orillia, ON', 'Orangeville, ON',
+    'Collingwood, ON', 'Wasaga Beach, ON', 'Owen Sound, ON', 'Brockville, ON',
+    'Timmins, ON', 'Kenora, ON', 'Bracebridge, ON', 'Huntsville, ON', 'Grimsby, ON',
+    'Fort Erie, ON', 'Cobourg, ON', 'Port Hope, ON', 'Quinte West, ON',
+    'Niagara-on-the-Lake, ON', 'Midland, ON', 'Lindsay, ON',
+    'Charlottetown, PE', 'Summerside, PE', 'Stratford, PE', 'Cornwall, PE',
+    'Montreal, QC', 'Quebec City, QC', 'Laval, QC', 'Gatineau, QC', 'Longueuil, QC',
+    'Sherbrooke, QC', 'Saguenay, QC', 'Levis, QC', 'Trois-Rivieres, QC',
+    'Terrebonne, QC', 'Brossard, QC', 'Repentigny, QC', 'Drummondville, QC',
+    'Saint-Jerome, QC', 'Granby, QC', 'Blainville, QC', 'Saint-Hyacinthe, QC',
+    'Shawinigan, QC', 'Rimouski, QC', 'Chateauguay, QC', 'Victoriaville, QC',
+    'Rouyn-Noranda, QC', "Val-d'Or, QC", 'Magog, QC', 'Mascouche, QC', 'Mirabel, QC',
+    'Boucherville, QC', 'Alma, QC', 'Sept-Iles, QC', 'Riviere-du-Loup, QC',
+    'Baie-Comeau, QC', 'Gaspe, QC', 'Pointe-Claire, QC', 'Dollard-des-Ormeaux, QC',
+    'Saskatoon, SK', 'Regina, SK', 'Prince Albert, SK', 'Moose Jaw, SK',
+    'Swift Current, SK', 'Yorkton, SK', 'North Battleford, SK', 'Estevan, SK',
+    'Weyburn, SK', 'Lloydminster, SK', 'Warman, SK', 'Martensville, SK',
+    'Yellowknife, NT', 'Hay River, NT', 'Inuvik, NT', 'Fort Smith, NT',
+    'Iqaluit, NU', 'Rankin Inlet, NU',
+    'Whitehorse, YT', 'Dawson City, YT'
+  ];
+  var MAJOR_CITIES = [
+    'Toronto, ON', 'Montreal, QC', 'Vancouver, BC', 'Calgary, AB',
+    'Edmonton, AB', 'Ottawa, ON', 'Winnipeg, MB', 'Halifax, NS'
+  ];
+
+  function isPostalish(q) {
+    return /^[A-Za-z]\d[A-Za-z]/.test(String(q || '').trim());
+  }
+
+  function rankCityMatch(city, q) {
+    var c = city.toLowerCase();
+    var name = c.split(',')[0];
+    var major = MAJOR_CITIES.indexOf(city) >= 0 ? 0 : 10;
+    var r;
+    if (name === q) r = 0;
+    else if (name.indexOf(q) === 0) r = 1;
+    else if (c.indexOf(q) === 0) r = 2;
+    else if (name.indexOf(q) >= 0) r = 3;
+    else if (c.indexOf(q) >= 0) r = 4;
+    else return -1;
+    return r + major;
+  }
+
+  window.suggestCanadianCities = function (query, limit) {
+    limit = limit || 8;
+    var q = String(query || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    if (isPostalish(q)) return [];
+    if (!q) return MAJOR_CITIES.slice(0, limit);
+    var scored = [];
+    var seen = {};
+    for (var i = 0; i < CANADIAN_CITIES.length; i++) {
+      var city = CANADIAN_CITIES[i];
+      var key = city.toLowerCase();
+      if (seen[key]) continue;
+      var r = rankCityMatch(city, q);
+      if (r < 0) continue;
+      seen[key] = true;
+      scored.push({ city: city, r: r });
+    }
+    scored.sort(function (a, b) {
+      return a.r - b.r || a.city.length - b.city.length || a.city.localeCompare(b.city);
+    });
+    var out = [];
+    for (var j = 0; j < scored.length && out.length < limit; j++) out.push(scored[j].city);
+    return out;
+  };
+
+  window.searchCanadianPlaces = function (query, signal) {
+    var q = String(query || '').trim();
+    if (q.length < 3 || isPostalish(q)) return Promise.resolve([]);
+    return fetch(
+      NOMINATIM + '/search?q=' + encodeURIComponent(q) +
+      '&countrycodes=ca&format=json&addressdetails=1&limit=8',
+      { headers: nominatimHeaders(), signal: signal }
+    )
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (rows) {
+        var seen = {};
+        var out = [];
+        (rows || []).forEach(function (row) {
+          var cls = String(row.class || '');
+          if (cls && cls !== 'place' && cls !== 'boundary') return;
+          var label = canadianLocationLabel(row, '');
+          var key = label.toLowerCase();
+          if (!label || seen[key]) return;
+          seen[key] = true;
+          out.push(label);
+        });
+        return out;
+      })
+      .catch(function (err) {
+        if (err && err.name === 'AbortError') return [];
+        return [];
+      });
+  };
+
+  window.bindCanadianCityTypeahead = function (input, listEl, opts) {
+    if (!input || !listEl) return;
+    opts = opts || {};
+    var active = -1;
+    var items = [];
+    var timer = null;
+    var ac = null;
+
+    function close() {
+      listEl.hidden = true;
+      listEl.innerHTML = '';
+      active = -1;
+      items = [];
+      input.setAttribute('aria-expanded', 'false');
+      if (ac) { try { ac.abort(); } catch (e) {} ac = null; }
+    }
+
+    function select(city) {
+      input.value = city;
+      close();
+      if (typeof opts.onSelect === 'function') opts.onSelect(city);
+    }
+
+    function paint() {
+      listEl.innerHTML = '';
+      if (!items.length) {
+        listEl.hidden = true;
+        input.setAttribute('aria-expanded', 'false');
+        return;
+      }
+      items.forEach(function (city, i) {
+        var li = document.createElement('li');
+        li.setAttribute('role', 'option');
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = city;
+        btn.setAttribute('aria-selected', i === active ? 'true' : 'false');
+        btn.addEventListener('mousedown', function (e) { e.preventDefault(); });
+        btn.addEventListener('click', function () { select(city); });
+        li.appendChild(btn);
+        listEl.appendChild(li);
+      });
+      listEl.hidden = false;
+      input.setAttribute('aria-expanded', 'true');
+    }
+
+    function showLocal(q) {
+      items = suggestCanadianCities(q, 8);
+      active = items.length ? 0 : -1;
+      paint();
+    }
+
+    function mergeRemote(remote) {
+      if (!remote || !remote.length) return;
+      var seen = {};
+      items.forEach(function (c) { seen[c.toLowerCase()] = true; });
+      remote.forEach(function (c) {
+        var key = String(c || '').toLowerCase();
+        if (!key || seen[key]) return;
+        seen[key] = true;
+        items.push(c);
+      });
+      items = items.slice(0, 8);
+      if (active < 0 && items.length) active = 0;
+      paint();
+    }
+
+    function onQuery() {
+      var q = input.value;
+      showLocal(q);
+      if (timer) clearTimeout(timer);
+      if (ac) { try { ac.abort(); } catch (e) {} ac = null; }
+      if (String(q || '').trim().length < 3 || isPostalish(q)) return;
+      timer = setTimeout(function () {
+        ac = typeof AbortController === 'function' ? new AbortController() : null;
+        searchCanadianPlaces(q, ac && ac.signal).then(mergeRemote);
+      }, 320);
+    }
+
+    input.setAttribute('role', 'combobox');
+    input.setAttribute('aria-autocomplete', 'list');
+    input.setAttribute('aria-controls', listEl.id || 'sgAreaSuggest');
+    input.setAttribute('aria-expanded', 'false');
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('autocorrect', 'off');
+    input.setAttribute('spellcheck', 'false');
+
+    input.addEventListener('input', onQuery);
+    input.addEventListener('focus', function () { onQuery(); });
+    input.addEventListener('blur', function () {
+      setTimeout(close, 120);
+    });
+    input.addEventListener('keydown', function (e) {
+      if (listEl.hidden) {
+        if (e.key === 'ArrowDown') { onQuery(); e.preventDefault(); }
+        return;
+      }
+      if (e.key === 'ArrowDown') {
+        active = Math.min(items.length - 1, active + 1);
+        paint();
+        e.preventDefault();
+      } else if (e.key === 'ArrowUp') {
+        active = Math.max(0, active - 1);
+        paint();
+        e.preventDefault();
+      } else if (e.key === 'Enter' && active >= 0 && items[active]) {
+        select(items[active]);
+        e.preventDefault();
+      } else if (e.key === 'Escape') {
+        close();
+        e.preventDefault();
+      }
+    });
+
+    document.addEventListener('click', function (e) {
+      if (e.target === input || listEl.contains(e.target)) return;
+      close();
     });
   };
 })();

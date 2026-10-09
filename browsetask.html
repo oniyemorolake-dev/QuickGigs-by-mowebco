@@ -499,8 +499,14 @@ onAuthStateChanged(auth, (user) => {
     byId('sgMapList').innerHTML = list.length ? list.slice(0, 20).map(gigRowHtml).join('') : emptyHtml();
     if (typeof L === 'undefined') return;
     if (!map) {
-      map = L.map('sgMap', { zoomControl: false, attributionControl: false });
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+      map = L.map('sgMap', { zoomControl: false, attributionControl: true });
+      /* OpenStreetMap, not cartocdn: carto answers 200 with an "API key
+         required" placeholder tile now, so the map rendered blank. OSM's tile
+         policy requires the attribution line, hence attributionControl above. */
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      }).addTo(map);
       map.setView([51.0447, -114.0719], 11);
     }
     if (layer) layer.remove();

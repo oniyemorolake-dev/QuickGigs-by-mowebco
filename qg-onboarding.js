@@ -2,15 +2,19 @@
 (function () {
   var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   var MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var DOB_ITEM_H = 40;
 
   function daysInMonth(month, year) {
     return new Date(year, month, 0).getDate();
   }
 
   function calcAge(y, m, d) {
+    var year = Number(y);
+    var month = Number(m);
+    var day = Number(d);
+    if (!isFinite(year) || !isFinite(month) || !isFinite(day)) return -1;
     var today = new Date();
-    var birth = new Date(y, m - 1, d);
+    var birth = new Date(year, month - 1, day);
+    if (isNaN(birth.getTime())) return -1;
     var age = today.getFullYear() - birth.getFullYear();
     var md = today.getMonth() - birth.getMonth();
     if (md < 0 || (md === 0 && today.getDate() < birth.getDate())) age--;
@@ -49,12 +53,16 @@
   function buildDobPicker(mount, state, onChange) {
     var now = new Date();
     var startYear = now.getFullYear() - 100;
-    var endYear = now.getFullYear() - 10;
+    // Youngest selectable year is 16 years ago. Listing ages 10–15 made the
+    // wheel bounce to “under 16” on phones even when the highlight showed 19.
+    var endYear = now.getFullYear() - 16;
     var cols = {};
 
     state.dobMonth = state.dobMonth || 1;
     state.dobDay = state.dobDay || 1;
     state.dobYear = state.dobYear || (now.getFullYear() - 20);
+    if (state.dobYear > endYear) state.dobYear = endYear;
+    if (state.dobYear < startYear) state.dobYear = startYear;
 
     function monthItems() {
       return MONTHS.map(function (m, i) { return { label: m, value: i + 1 }; });
@@ -73,8 +81,9 @@
     }
 
     function indexForValue(items, val) {
+      var n = Number(val);
       for (var i = 0; i < items.length; i++) {
-        if (items[i].value === val) return i;
+        if (items[i].value === val || items[i].value === n) return i;
       }
       return 0;
     }
@@ -83,31 +92,75 @@
       var col = document.createElement('div');
       col.className = 'qg-dob-col';
       col.setAttribute('data-dob-col', type);
-      items.forEach(function (item) {
+      items.forEach(function (item, idx) {
         var el = document.createElement('div');
         el.className = 'qg-dob-item';
         el.textContent = item.label;
         el.setAttribute('data-value', String(item.value));
+        el.addEventListener('click', function () {
+          applyValue(type, item.value);
+          highlightCols();
+          if (onChange) onChange();
+          scrollColTo(type, idx, true);
+          clearTimeout(col._snapT);
+          col._snapT = setTimeout(function () { finishSnap(type, true); }, 180);
+        });
         col.appendChild(el);
       });
       col.addEventListener('scroll', function () {
         highlightCols();
         clearTimeout(col._snapT);
-        col._snapT = setTimeout(function () { finishSnap(type); }, 120);
+        col._snapT = setTimeout(function () { finishSnap(type); }, 150);
       }, { passive: true });
       return col;
+    }
+
+    function pickerIsLaidOut() {
+      var col = cols.year || cols.month;
+      return !!(col && col.clientHeight > 8);
+    }
+
+    function applyValue(type, value) {
+      var n = Number(value);
+      if (!isFinite(n)) return;
+      if (type === 'month') state.dobMonth = n;
+      else if (type === 'day') state.dobDay = n;
+      else if (type === 'year') state.dobYear = n;
     }
 
     function colIndex(type) {
       var col = cols[type];
       if (!col) return 0;
-      return Math.max(0, Math.round(col.scrollTop / DOB_ITEM_H));
+      var items = col.querySelectorAll('.qg-dob-item');
+      if (!items.length) return 0;
+      if (!pickerIsLaidOut()) {
+        var want = type === 'month' ? state.dobMonth : type === 'day' ? state.dobDay : state.dobYear;
+        return indexForValue(
+          type === 'month' ? monthItems() : type === 'day' ? dayItems() : yearItems(),
+          want
+        );
+      }
+      var mid = col.getBoundingClientRect().top + col.clientHeight / 2;
+      var best = 0;
+      var bestDist = Infinity;
+      for (var i = 0; i < items.length; i++) {
+        var r = items[i].getBoundingClientRect();
+        var dist = Math.abs((r.top + r.height / 2) - mid);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = i;
+        }
+      }
+      return best;
     }
 
     function scrollColTo(type, index, smooth) {
       var col = cols[type];
       if (!col) return;
-      var top = index * DOB_ITEM_H;
+      var items = col.querySelectorAll('.qg-dob-item');
+      var el = items[index];
+      if (!el) return;
+      var top = el.offsetTop - (col.clientHeight / 2) + (el.offsetHeight / 2);
       if (smooth && col.scrollTo) col.scrollTo({ top: top, behavior: 'smooth' });
       else col.scrollTop = top;
     }
@@ -116,14 +169,15 @@
       ['month', 'day', 'year'].forEach(function (type) {
         var col = cols[type];
         if (!col) return;
-        var idx = colIndex(type);
-        col.querySelectorAll('.qg-dob-item').forEach(function (el, i) {
-          el.classList.toggle('selected', i === idx);
+        var want = type === 'month' ? state.dobMonth : type === 'day' ? state.dobDay : state.dobYear;
+        col.querySelectorAll('.qg-dob-item').forEach(function (el) {
+          el.classList.toggle('selected', Number(el.getAttribute('data-value')) === Number(want));
         });
       });
     }
 
     function readStateFromCols() {
+      if (!pickerIsLaidOut()) return;
       var mItems = monthItems();
       var yItems = yearItems();
       var mi = Math.min(colIndex('month'), mItems.length - 1);
@@ -144,14 +198,23 @@
       scrollColTo('day', idx, false);
     }
 
-    function finishSnap(type) {
-      scrollColTo(type, colIndex(type), false);
-      var prevM = state.dobMonth;
-      var prevY = state.dobYear;
-      readStateFromCols();
-      if (type === 'month' || type === 'year' || prevM !== state.dobMonth || prevY !== state.dobYear) {
-        rebuildDayCol();
+    function finishSnap(type, keepState) {
+      if (!pickerIsLaidOut()) {
+        highlightCols();
+        if (onChange) onChange();
+        return;
+      }
+      if (!keepState) {
+        scrollColTo(type, colIndex(type), false);
+        var prevM = state.dobMonth;
+        var prevY = state.dobYear;
         readStateFromCols();
+        if (type === 'month' || type === 'year' || prevM !== state.dobMonth || prevY !== state.dobYear) {
+          rebuildDayCol();
+          readStateFromCols();
+        }
+      } else if (type === 'month' || type === 'year') {
+        rebuildDayCol();
       }
       highlightCols();
       if (onChange) onChange();
@@ -183,7 +246,7 @@
 
     return {
       sync: function () {
-        readStateFromCols();
+        if (pickerIsLaidOut()) readStateFromCols();
         highlightCols();
         if (onChange) onChange();
       },
@@ -292,9 +355,10 @@
           if (dobApi && dobApi.sync) dobApi.sync();
           var age = getAgeFromState(state);
           if (age < 16) {
-            qgNotify('SwiftGigs is for ages 16 and up.', '#f59e0b');
+            qgNotify('That birthday makes you ' + age + '. Scroll the year until it says 16 or older — 19 years old is around ' + (new Date().getFullYear() - 19) + '.', '#f59e0b');
             return false;
           }
+          state.dateOfBirthIso = getDobIso(state);
         }
         if (type === 'guardian') {
           if (gName) state.guardianName = gName.value.trim();
@@ -321,6 +385,7 @@
 
         if (dateVal) dateVal.textContent = formatDobLong(state);
         if (ageNum) ageNum.innerHTML = age + ' <span>years old</span>';
+        if (age >= 16) state.dateOfBirthIso = getDobIso(state);
 
         if (summary) {
           summary.style.display = 'block';
@@ -376,13 +441,15 @@
           if (gName) state.guardianName = gName.value.trim();
           if (gEmail) state.guardianEmail = gEmail.value.trim();
           if (gPhone) state.guardianPhone = gPhone.value.trim();
-          var age = getAgeFromState(state);
+          var dobIso = state.dateOfBirthIso || getDobIso(state);
+          var parts = String(dobIso).split('-');
+          var age = calcAge(parts[0], parts[1], parts[2]);
           var isMinor = age >= 16 && age < 18;
           var now = new Date().toISOString();
           var payload = {
             pronouns: resolveChipValue(state, 'pronouns'),
             gender: resolveChipValue(state, 'gender') || 'prefer not to say',
-            date_of_birth: getDobIso(state),
+            date_of_birth: dobIso,
             identity_collected_at: now
           };
           if (isMinor) {

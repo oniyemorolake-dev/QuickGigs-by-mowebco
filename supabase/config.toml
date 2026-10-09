@@ -45,3 +45,12 @@ verify_jwt = false
 
 [functions.create-checkout]
 verify_jwt = false
+
+[functions.geocode-canada]
+verify_jwt = false
+
+[functions.marketplace-activity]
+verify_jwt = false
+
+[functions.teen-safety]
+verify_jwt = false

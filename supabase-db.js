@@ -1626,7 +1626,8 @@ function formatUploadError(err) {
     return 'That file type is not allowed. Use JPEG, PNG, or WebP.';
   }
   if (lower.indexOf('row-level') >= 0 || lower.indexOf('403') >= 0 ||
-      lower.indexOf('unauthorized') >= 0 || lower.indexOf('42501') >= 0) {
+      lower.indexOf('unauthorized') >= 0 || lower.indexOf('42501') >= 0 ||
+      lower.indexOf('permission denied') >= 0) {
     return 'Photo upload is blocked. Sign in again, then retry. If it persists, check chat-photos / task-photos storage policies.';
   }
   if (lower.indexOf('bucket') >= 0 || lower.indexOf('not found') >= 0) {

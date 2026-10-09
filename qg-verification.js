@@ -65,6 +65,105 @@
     } catch (_e) {}
   }
 
+  var FB_AUTH_MOD = 'https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js';
+  var VERIFY_SENT_MS = 10 * 60 * 1000;
+
+  function authInstance() {
+    return window._auth || window.auth || null;
+  }
+
+  function currentAuthUser() {
+    var auth = authInstance();
+    return (auth && auth.currentUser) || null;
+  }
+
+  function continueUrl() {
+    return 'https://quickgigs.ca/dashboard.html';
+  }
+
+  async function invokeSendEmailVerification(user) {
+    var sendFn;
+    if (typeof user.sendEmailVerification === 'function') {
+      sendFn = function (settings) {
+        return settings ? user.sendEmailVerification(settings) : user.sendEmailVerification();
+      };
+    } else {
+      var mod = await import(FB_AUTH_MOD);
+      sendFn = function (settings) {
+        return settings ? mod.sendEmailVerification(user, settings) : mod.sendEmailVerification(user);
+      };
+    }
+    // Never pass localhost as the continue URL — Firebase rejects it and the
+    // mail never leaves. Default template first; production URL as fallback.
+    try {
+      await sendFn();
+    } catch (err) {
+      var code = err && err.code ? String(err.code) : '';
+      if (code === 'auth/too-many-requests') throw err;
+      await sendFn({ url: continueUrl(), handleCodeInApp: false });
+    }
+  }
+
+  async function sendVerificationEmail(user) {
+    user = user || currentAuthUser();
+    if (!user) {
+      return { ok: false, error: 'not_signed_in', message: 'Sign in again, then request a confirmation email.' };
+    }
+    try { await user.reload(); } catch (_e) {}
+    user = currentAuthUser() || user;
+    if (user.emailVerified) {
+      return { ok: true, sent: false, already: true, email_verified: true, message: 'Your email is already confirmed.' };
+    }
+    try {
+      await invokeSendEmailVerification(user);
+      var inbox = user.email || 'your inbox';
+      return {
+        ok: true,
+        sent: true,
+        message: 'We sent a confirmation email to ' + inbox + '. Open it, tap the link, then come back and tap Refresh status.'
+      };
+    } catch (err) {
+      var code = err && err.code ? String(err.code) : '';
+      if (code === 'auth/too-many-requests') {
+        return {
+          ok: false,
+          error: 'too_many_requests',
+          message: 'A confirmation email was already sent. Check inbox and spam, then wait a minute before asking again.'
+        };
+      }
+      return {
+        ok: false,
+        error: (err && err.message) || 'email_send_failed',
+        message: 'Could not send the confirmation email. Try again in a minute.'
+      };
+    }
+  }
+
+  var sendInFlight = {};
+
+  async function ensureVerificationEmailSent(user) {
+    user = user || currentAuthUser();
+    if (!user || user.emailVerified) return { ok: true, sent: false };
+    var uid = user.uid;
+    if (sendInFlight[uid]) return sendInFlight[uid];
+    var key = 'qg-email-verify-sent:' + uid;
+    try {
+      var last = Number(localStorage.getItem(key) || 0);
+      if (last && (Date.now() - last) < VERIFY_SENT_MS) {
+        return { ok: true, sent: false, throttled: true };
+      }
+    } catch (_e) {}
+    sendInFlight[uid] = sendVerificationEmail(user).then(function (res) {
+      if (res && res.ok && res.sent) {
+        try { localStorage.setItem(key, String(Date.now())); } catch (_e2) {}
+      }
+      return res;
+    }).finally(function () {
+      delete sendInFlight[uid];
+    });
+    return sendInFlight[uid];
+  }
+
   async function start(role) {
     if (role === 'poster') {
       if (!posterPmEnabled()) {
@@ -87,18 +186,31 @@
   }
 
   async function syncFirebaseEmail() {
-    try {
-      if (window.auth && window.auth.currentUser) {
-        await window.auth.currentUser.reload();
-        if (!window.auth.currentUser.emailVerified && typeof window.auth.currentUser.sendEmailVerification === 'function') {
-          await window.auth.currentUser.sendEmailVerification();
-          return { ok: true, sent: true, message: 'Check your inbox and confirm your email, then tap Refresh status.' };
-        }
-      }
-    } catch (err) {
-      return { ok: false, error: err && err.message ? err.message : 'email_send_failed' };
+    var sent = await sendVerificationEmail();
+    if (sent && sent.already) {
+      return await request('sync_tasker_contacts').then(publish);
     }
+    if (sent && sent.ok && sent.sent) return sent;
+    if (sent && !sent.ok) return sent;
     return await request('sync_tasker_contacts').then(publish);
+  }
+
+  function paintEmailVerifyStrip(user) {
+    var strip = document.getElementById('sgVerifyStrip');
+    if (!strip) return;
+    user = user || currentAuthUser();
+    var unverified = !!(user && user.emailVerified === false);
+    strip.hidden = !unverified;
+    if (!unverified) return;
+    var link = document.getElementById('sgVerifyLink');
+    if (link && !link.getAttribute('data-qg-verify-wired')) {
+      link.setAttribute('data-qg-verify-wired', '1');
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+        openEmailLaunchPanel({ email_verified: false });
+      });
+    }
+    ensureVerificationEmailSent(user);
   }
 
   function ensureStyles() {
@@ -109,6 +221,7 @@
       '.qg-verify-overlay{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px;background:color-mix(in srgb,var(--bg) 40%,rgba(0,0,0,.75));backdrop-filter:blur(10px)}' +
       '.qg-verify-card{width:min(460px,100%);padding:24px;border-radius:22px;background:var(--surface-1);border:1px solid var(--line);box-shadow:0 28px 80px rgba(0,0,0,.45);color:var(--text-primary);font-family:DM Sans,sans-serif}' +
       '.qg-verify-icon{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;margin-bottom:14px}' +
+      '.qg-verify-icon svg{width:22px;height:22px}' +
       '.qg-verify-card h2{font-size:20px;line-height:1.25;margin:0 0 8px;font-weight:600;color:var(--text-primary)}.qg-verify-card p{font-size:13px;line-height:1.6;color:var(--text-muted);margin:0}' +
       '.qg-verify-note{margin-top:13px!important;padding:11px;border-radius:12px;background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 32%,transparent);font-size:12px!important;color:var(--text-secondary)!important}' +
       '.qg-verify-steps{display:grid;gap:10px;margin-top:16px}' +
@@ -181,17 +294,21 @@
     if (old) old.remove();
     var accent = modeAccent('tasker');
     var emailOk = !!(state && state.email_verified);
+    var authUser = currentAuthUser();
+    var inbox = (authUser && authUser.email) || 'the email on your account';
     var overlay = document.createElement('div');
     overlay.id = 'qgVerificationOverlay';
     overlay.className = 'qg-verify-overlay';
     overlay.innerHTML =
       '<div class="qg-verify-card is-tasker" role="dialog" aria-modal="true" aria-labelledby="qgVerifyEmailTitle">' +
-        '<div class="qg-verify-icon" style="background:' + accent.soft + ';color:' + accent.text + '" aria-hidden="true">✉️</div>' +
-        '<h2 id="qgVerifyEmailTitle">Verify your email to start working</h2>' +
-        '<p>Confirm the email on your account. Teens still need guardian approval before applications go live.</p>' +
+        '<div class="qg-verify-icon" style="background:' + accent.soft + ';color:' + accent.text + '" aria-hidden="true">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>' +
+        '</div>' +
+        '<h2 id="qgVerifyEmailTitle">Confirm your email</h2>' +
+        '<p>We send a confirmation link to <strong>' + String(inbox).replace(/</g, '') + '</strong>. Open that email, tap the link, then tap Refresh status here. Check spam if you do not see it.</p>' +
         '<div class="qg-verify-steps">' +
           '<div class="qg-verify-step">' +
-            '<strong>Email confirmation ' + (emailOk ? '✓' : '') + '</strong>' +
+            '<strong>Confirm email' + (emailOk ? ' — done' : '') + '</strong>' +
             '<div class="qg-verify-step-actions">' +
               '<button type="button" class="qg-verify-mini" id="qgVerifyEmailBtn">' +
                 (emailOk ? 'Email confirmed' : 'Send confirmation email') +
@@ -201,7 +318,7 @@
             '<div class="qg-verify-status" id="qgVerifyEmailStatus"></div>' +
           '</div>' +
         '</div>' +
-        '<p class="qg-verify-note">Later: phone (Firebase Phone Auth) and hard ID check can be required without rebuilding this gate. Care categories are already flagged.</p>' +
+        '<p class="qg-verify-note">Teens still need a parent or guardian to approve the account after this. Later we can add phone or ID checks without rebuilding this gate.</p>' +
         '<div class="qg-verify-actions">' +
           '<button type="button" class="qg-verify-primary" id="qgVerifyDone">Done</button>' +
           '<button type="button" class="qg-verify-later" id="qgVerifyLaterEmail">Close</button>' +
@@ -218,7 +335,7 @@
     overlay.querySelector('#qgVerifyDone').onclick = async function () {
       var latest = await load(true);
       if (latest && latest.tasker_verified) overlay.remove();
-      else setStatus('Confirm your email, then tap Refresh status.');
+      else setStatus('Confirm your email from the inbox link, then tap Refresh status.');
     };
     overlay.onclick = function (event) { if (event.target === overlay) overlay.remove(); };
 
@@ -227,11 +344,11 @@
     if (emailBtn && !emailOk) {
       emailBtn.onclick = async function () {
         emailBtn.disabled = true;
-        setStatus('Sending…');
+        setStatus('Sending a confirmation email to ' + inbox + '…');
         var res = await syncFirebaseEmail();
-        if (res && res.sent) setStatus(res.message || 'Verification email sent.');
+        if (res && res.sent) setStatus(res.message || 'Confirmation email sent.');
         else if (res && (res.email_verified || res.tasker_verified)) {
-          setStatus('Email confirmed ✓');
+          setStatus('Email confirmed.');
           emailBtn.textContent = 'Email confirmed';
           if (res.tasker_verified) overlay.remove();
         } else {
@@ -239,21 +356,29 @@
           emailBtn.disabled = false;
         }
       };
+      setStatus('Sending a confirmation email to ' + inbox + '…');
+      ensureVerificationEmailSent(authUser).then(function (res) {
+        if (res && res.sent) setStatus(res.message);
+        else if (res && res.throttled) {
+          setStatus('We already sent a confirmation email to ' + inbox + '. Check inbox and spam, then tap Refresh status.');
+        } else if (res && res.already) setStatus('Your email is already confirmed.');
+        else if (res && !res.ok) setStatus(res.message || 'Could not send the confirmation email.');
+        else setStatus('If you do not see a confirmation email, tap Send confirmation email.');
+      });
     }
     if (refreshBtn) {
       refreshBtn.onclick = async function () {
         refreshBtn.disabled = true;
         setStatus('Checking…');
-        try {
-          if (window.auth && window.auth.currentUser) await window.auth.currentUser.reload();
-        } catch (_e) {}
+        var live = currentAuthUser();
+        try { if (live) await live.reload(); } catch (_e) {}
         var res = await request('sync_tasker_contacts').then(publish);
         if (res && (res.email_verified || res.tasker_verified)) {
-          setStatus('Email confirmed ✓');
+          setStatus('Email confirmed.');
           if (emailBtn) emailBtn.textContent = 'Email confirmed';
           if (res.tasker_verified) overlay.remove();
         } else {
-          setStatus('Not confirmed yet — open the link in your inbox, then refresh.');
+          setStatus('Not confirmed yet — open the Confirm your email link in your inbox, then refresh.');
         }
         refreshBtn.disabled = false;
       };
@@ -341,6 +466,9 @@
   window.QG_openEmailLaunchVerification = openEmailLaunchPanel;
   window.QG_syncVerificationReturn = syncReturn;
   window.QG_syncTaskerContacts = function () { return request('sync_tasker_contacts').then(publish); };
+  window.QG_sendEmailVerification = sendVerificationEmail;
+  window.QG_ensureEmailVerificationSent = ensureVerificationEmailSent;
+  window.QG_paintEmailVerifyStrip = paintEmailVerifyStrip;
   window.QG_posterPaymentVerificationEnabled = posterPmEnabled;
   window.QG_hideVerificationPrompt = hideVerificationPrompt;
 })();

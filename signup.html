@@ -185,7 +185,7 @@
         <!-- Step 5: Terms -->
         <div class="qg-wizard-step" data-step="terms">
           <div class="qg-step-title">You're almost in</div>
-          <p class="qg-step-sub">One last step — review and create your account.</p>
+          <p class="qg-step-sub">Create your account. Next we will email you a link to confirm your email.</p>
           <div class="signup-terms-check">
             <input type="checkbox" id="termsAgree">
             <label for="termsAgree">I agree to the <a href="terms.html" target="_blank" rel="noopener noreferrer">Terms of Service</a> and <a href="privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>. I confirm my name, birthday, and age information are accurate.</label>
@@ -194,6 +194,15 @@
             <button type="button" class="signup-btn signup-btn-secondary" data-qg-back>← Back</button>
             <button type="button" class="signup-btn" id="submitBtn">Create account</button>
           </div>
+        </div>
+      </div>
+
+      <div id="signupEmailConfirm" hidden>
+        <div class="qg-step-title">Confirm your email</div>
+        <p class="qg-step-sub" id="signupEmailConfirmCopy">Check your inbox for a confirmation link.</p>
+        <div class="qg-wizard-nav" style="margin-top:1rem">
+          <button type="button" class="signup-btn signup-btn-secondary" id="signupEmailResend">Resend email</button>
+          <button type="button" class="signup-btn" id="signupEmailContinue">Continue</button>
         </div>
       </div>
 
@@ -239,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { initializeAuth, browserLocalPersistence, browserPopupRedirectResolver, createUserWithEmailAndPassword, deleteUser, updateProfile, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { initializeAuth, browserLocalPersistence, browserPopupRedirectResolver, createUserWithEmailAndPassword, sendEmailVerification, deleteUser, updateProfile, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
@@ -670,6 +679,73 @@ document.querySelector('[data-step="security"] [data-qg-next]').onclick = functi
   wizard.next();
 };
 
+async function sendSignupEmailConfirmation(user) {
+  if (!user || user.emailVerified) return { sent: false, already: true };
+  try {
+    await sendEmailVerification(user);
+    return { sent: true };
+  } catch (err) {
+    var code = err && err.code ? String(err.code) : '';
+    if (code === 'auth/too-many-requests') return { sent: true, throttled: true };
+    try {
+      await sendEmailVerification(user, {
+        url: 'https://quickgigs.ca/dashboard.html',
+        handleCodeInApp: false
+      });
+      return { sent: true };
+    } catch (err2) {
+      console.warn('Email confirmation send failed:', err2);
+      return { sent: false, error: err2 };
+    }
+  }
+}
+
+function showConfirmEmailStep(opts) {
+  var email = opts.email || 'your inbox';
+  var wizardEl = document.getElementById('signupWizard');
+  var footer = document.getElementById('signupFooter');
+  var panel = document.getElementById('signupEmailConfirm');
+  var copy = document.getElementById('signupEmailConfirmCopy');
+  var title = document.getElementById('cardTitle');
+  var sub = document.getElementById('cardSubtitle');
+  var counter = document.getElementById('stepCounter');
+  var label = document.getElementById('stepLabel');
+  var okMsg = document.getElementById('okMsg');
+  if (wizardEl) wizardEl.style.display = 'none';
+  if (footer) footer.style.display = 'none';
+  if (panel) panel.hidden = false;
+  if (title) title.textContent = 'Confirm your email';
+  if (sub) {
+    sub.textContent = 'We sent a confirmation link to ' + email;
+    sub.style.display = 'block';
+  }
+  if (counter) counter.textContent = 'Last step';
+  if (label) label.textContent = 'Confirm email';
+  if (okMsg) okMsg.style.display = 'none';
+  if (copy) {
+    var extra = opts.guardianNote ? ' ' + opts.guardianNote : '';
+    copy.textContent = (opts.sent
+      ? 'Open the Confirm your email message we sent to ' + email + '. Tap the link in that email, then come back and tap Continue. Check spam if you do not see it.'
+      : 'We could not send the confirmation email automatically. Tap Resend email, then check inbox and spam for ' + email + '.') + extra;
+  }
+  var go = document.getElementById('signupEmailContinue');
+  if (go) go.onclick = function () { window.location.href = opts.dest; };
+  var resend = document.getElementById('signupEmailResend');
+  if (resend) {
+    resend.onclick = async function () {
+      resend.disabled = true;
+      if (copy) copy.textContent = 'Sending a confirmation email to ' + email + '…';
+      var again = await sendSignupEmailConfirmation(opts.user);
+      if (copy) {
+        copy.textContent = again.sent
+          ? 'Sent again to ' + email + '. Check inbox and spam, then tap Continue.'
+          : 'Still could not send. Wait a minute and tap Resend email again.';
+      }
+      resend.disabled = false;
+    };
+  }
+}
+
 document.getElementById('submitBtn').onclick = async function() {
   var errorMsg = document.getElementById('errorMsg');
   var okMsg = document.getElementById('okMsg');
@@ -823,6 +899,33 @@ document.getElementById('submitBtn').onclick = async function() {
       try { localStorage.setItem('qg-onboarding-done:' + userCredential.user.uid, '1'); } catch (eFlag) {}
     }
 
+    var dest = account.role === 'worker'
+      ? 'profile.html?setup=photo&required=1&welcome=1'
+      : 'thank-you.html?mode=poster&welcome=1';
+    var needsEmailConfirm = !!(userCredential.user && !userCredential.user.emailVerified && !oauthSignupMode);
+    var emailConfirmSent = false;
+    if (needsEmailConfirm) {
+      var sendRes = await sendSignupEmailConfirmation(userCredential.user);
+      emailConfirmSent = !!(sendRes && sendRes.sent);
+      if (emailConfirmSent) {
+        try { localStorage.setItem('qg-email-verify-sent:' + userCredential.user.uid, String(Date.now())); } catch (eSent) {}
+      }
+      var guardianNote = '';
+      if (identity.account_status === 'pending_guardian') {
+        guardianNote = saveResult.email_sent
+          ? 'We also emailed ' + (identity.guardian_email || 'your parent/guardian') + ' a one-click approval link.'
+          : 'We still need your parent or guardian to approve the account — ask them to check spam, or contact support@quickgigs.ca.';
+      }
+      showConfirmEmailStep({
+        email: account.email,
+        dest: dest,
+        sent: emailConfirmSent,
+        user: userCredential.user,
+        guardianNote: guardianNote
+      });
+      return;
+    }
+
     okMsg.textContent = identity.account_status === 'pending_guardian'
       ? (saveResult.email_sent
         ? 'Account created! We emailed ' + (identity.guardian_email || 'your parent/guardian') + ' a one-click approval link. Redirecting…'
@@ -830,9 +933,6 @@ document.getElementById('submitBtn').onclick = async function() {
       : 'Welcome to SwiftGigs! Redirecting…';
     okMsg.style.display = 'block';
 
-    var dest = account.role === 'worker'
-      ? 'profile.html?setup=photo&required=1&welcome=1'
-      : 'thank-you.html?mode=poster&welcome=1';
     var redirectDelay = identity.account_status === 'pending_guardian'
       ? (saveResult.email_sent ? 2500 : 6000)
       : 1500;

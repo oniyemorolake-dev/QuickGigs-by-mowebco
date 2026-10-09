@@ -96,7 +96,19 @@
       <div class="sg-label">Location</div>
       <div class="sg-two" id="sgLocType"><button class="sg-card sg-loc on" data-loc-type="in_person">In person</button><button class="sg-card sg-loc" data-loc-type="remote">Remote / online</button></div>
       <div id="sgAreaWrap">
-        <label class="sg-card sg-input"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5a7 7 0 0 0-14 0C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><input type="text" id="sgArea" placeholder="Area, city or postal code" aria-label="Area"></label>
+        <button type="button" class="sg-chip is-icon" id="sgUseLocChip" aria-pressed="false" style="margin-top:10px">
+          <svg class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/><circle cx="12" cy="12" r="8"/></svg>
+          <span id="sgUseLocLabel">Use my location</span>
+        </button>
+        <div class="sg-loc-field">
+          <div class="sg-card sg-input" id="sgAreaBox">
+            <button type="button" class="sg-loc-pin" id="sgUseLoc" aria-label="Use my location" title="Use my location" aria-pressed="false">
+              <svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5a7 7 0 0 0-14 0C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+            </button>
+            <input type="text" id="sgArea" placeholder="Start typing a city" aria-label="Area">
+          </div>
+          <ul class="sg-suggest" id="sgAreaSuggest" role="listbox" hidden></ul>
+        </div>
         <p class="sg-help">We use this to show nearby taskers your task — never your exact address.</p>
         <p class="sg-err" id="sgAreaError" hidden>Enter a valid Canadian city, area, or postal code.</p>
       </div>
@@ -220,6 +232,7 @@ onAuthStateChanged(auth, (user) => {
   var selectedPhotos = [];
   var requirePhotos = false;
   var inFlight = false;
+  var deviceArea = null;
 
   function byId(id) { return document.getElementById(id); }
   function esc(s) {
@@ -542,7 +555,14 @@ onAuthStateChanged(auth, (user) => {
 
     var geocoded = null;
     if (selectedLocType === 'in_person') {
-      if (typeof geocodeCanadaLocation === 'function') {
+      if (deviceArea && deviceArea.location === area && isFinite(Number(deviceArea.lat))) {
+        geocoded = {
+          success: true,
+          location: deviceArea.location,
+          lat: deviceArea.lat,
+          lng: deviceArea.lng
+        };
+      } else if (typeof geocodeCanadaLocation === 'function') {
         geocoded = await geocodeCanadaLocation(area);
         if (!geocoded || !geocoded.success) {
           setErr('sgAreaError', true, (geocoded && geocoded.message) || 'Enter a valid Canadian city, area, or postal code.');
@@ -679,6 +699,54 @@ onAuthStateChanged(auth, (user) => {
       b.classList.toggle(cls, b.getAttribute('data-' + attr) === value);
     });
   }
+  function paintLocChip(busy) {
+    var on = !!deviceArea;
+    var pin = byId('sgUseLoc');
+    var chip = byId('sgUseLocChip');
+    var label = byId('sgUseLocLabel');
+    if (pin) pin.setAttribute('aria-pressed', on ? 'true' : 'false');
+    if (chip) {
+      chip.classList.toggle('teal-on', on);
+      chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+      chip.disabled = !!busy;
+    }
+    if (label) {
+      label.textContent = busy ? 'Finding you…' : (on ? 'Using your location' : 'Use my location');
+    }
+  }
+  function clearDeviceAreaIfEdited() {
+    if (!deviceArea) return;
+    if (byId('sgArea').value.trim() !== deviceArea.location) {
+      deviceArea = null;
+      paintLocChip();
+    }
+  }
+  function useMyLocation() {
+    if (typeof captureTaskLocationFromDevice !== 'function') {
+      toast('Location is unavailable in this browser.');
+      return;
+    }
+    paintLocChip(true);
+    captureTaskLocationFromDevice({ enableHighAccuracy: true }).then(function (res) {
+      if (!res || !res.ok || !res.location) {
+        deviceArea = null;
+        paintLocChip();
+        var err = res && res.error;
+        if (err === 'denied') toast('Allow location to fill your current area.');
+        else if (err === 'unsupported') toast('Location is unavailable in this browser.');
+        else if (err === 'outside_canada') toast('In-person tasks have to be in Canada.');
+        else toast('Could not read your location. Try typing a city.');
+        return;
+      }
+      deviceArea = { location: res.location, lat: res.lat, lng: res.lng };
+      byId('sgArea').value = res.location;
+      var suggest = byId('sgAreaSuggest');
+      if (suggest) { suggest.hidden = true; suggest.innerHTML = ''; }
+      setErr('sgAreaError', false);
+      paintLocChip();
+      toast('Using your current area', true);
+    });
+  }
   function paintSelections() {
     document.querySelectorAll('.sg-choice[data-urgency]').forEach(function (b) {
       b.classList.toggle('on', b.getAttribute('data-urgency') === selectedMode);
@@ -739,6 +807,25 @@ onAuthStateChanged(auth, (user) => {
       var b = e.target.closest('[data-loc-type]');
       if (b) { selectedLocType = b.getAttribute('data-loc-type'); paintSelections(); }
     };
+
+    if (typeof bindCanadianCityTypeahead === 'function') {
+      bindCanadianCityTypeahead(byId('sgArea'), byId('sgAreaSuggest'), {
+        onSelect: function () {
+          deviceArea = null;
+          setErr('sgAreaError', false);
+          paintLocChip();
+        }
+      });
+    }
+    byId('sgAreaBox').addEventListener('click', function (e) {
+      if (!e.target.closest('button')) byId('sgArea').focus();
+    });
+    byId('sgArea').addEventListener('input', function () {
+      setErr('sgAreaError', false);
+      clearDeviceAreaIfEdited();
+    });
+    byId('sgUseLoc').onclick = useMyLocation;
+    byId('sgUseLocChip').onclick = useMyLocation;
     byId('sgSlotChips').onclick = function (e) {
       var b = e.target.closest('[data-slot]');
       if (b) { selectedTimeSlot = b.getAttribute('data-slot'); paintSelections(); }

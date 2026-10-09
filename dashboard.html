@@ -36,12 +36,13 @@
 <script defer src="qg-location.js"></script>
 <script defer src="qg-age.js"></script>
 <script defer src="qg-notifications.js"></script>
+<script defer src="qg-verification.js"></script>
 </head>
 <body class="sg-app">
 <div class="sg-screen has-tabs">
   <div class="sg-beta" id="sgBeta"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15 9.5a3.5 3.5 0 0 1 0 5"/><path d="M17.5 7a7 7 0 0 1 0 10"/></svg><span class="sg-beta-text">SwiftGigs beta is live — payments live via Stripe.</span><a href="feedback.html">Feedback</a><button class="sg-x" id="sgBetaClose" aria-label="Dismiss"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
   <!-- Only while the user's email is unverified: same strip style. -->
-  <div class="sg-beta" id="sgVerifyStrip" hidden><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span class="sg-beta-text">Verify your email to start working</span><a href="#" id="sgVerifyLink">Verify</a></div>
+  <div class="sg-beta" id="sgVerifyStrip" hidden><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span class="sg-beta-text">Confirm your email — check your inbox for the link</span><a href="#" id="sgVerifyLink">Confirm email</a></div>
   <header class="sg-home-head">
     <div><div class="sg-wordmark">SwiftGigs</div><div class="sg-city" id="sgCity">Calgary, AB</div></div>
     <button class="sg-round" id="sgPersonBtn" aria-label="Account menu"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/></svg></button>
@@ -698,8 +699,10 @@ onAuthStateChanged(auth, async (user) => {
   // the only place the streak appears; the old streak card is gone.
   if (window.SG_paintGreeting) window.SG_paintGreeting();
 
-  // Unverified email gets the strip the design reserves for it.
-  if (live.emailVerified === false) {
+  // Unverified email gets the strip the design reserves for it, and a
+  // confirmation email is sent if one has not gone out recently.
+  if (typeof QG_paintEmailVerifyStrip === 'function') QG_paintEmailVerifyStrip(live);
+  else if (live.emailVerified === false) {
     var strip = document.getElementById('sgVerifyStrip');
     if (strip) strip.hidden = false;
   }

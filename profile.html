@@ -46,6 +46,7 @@
 </head>
 <body class="sg-app">
 <div class="sg-screen has-tabs">
+  <div class="sg-beta" id="sgVerifyStrip" hidden><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span class="sg-beta-text">Confirm your email — check your inbox for the link</span><a href="#" id="sgVerifyLink">Confirm email</a></div>
   <main class="sg-body">
     <div class="sg-profile-head"><span class="sg-avatar lg" id="sgAvatar">JB</span><span><b id="sgName">Jordan Blake</b><span id="sgMeta">Calgary, AB · Member since 2025</span><a href="#" id="sgEditProfile">Edit profile</a></span></div>
     <h2 class="sg-section-title">Recent activity</h2>
@@ -765,7 +766,7 @@ window.SG_signOut = async function () {
     if (hasTasker) {
       html += u.tasker_verified === true
         ? '<div class="sg-set is-row"><span>Tasker<small>Email verified. You can apply and accept. Guardian approval still applies for teens.</small></span><span class="sg-chip-status">Verified</span></div>'
-        : '<button class="sg-set is-row" data-verify="tasker"><span>Tasker<small>Verify your email to start working.</small></span><span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>';
+        : '<button class="sg-set is-row" data-verify="tasker"><span>Tasker<small>Confirm your email to start working.</small></span><span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>';
     }
     if (hasPoster) {
       html += u.poster_verified === true
@@ -838,6 +839,9 @@ window.SG_signOut = async function () {
     isOwnProfile = !viewUserId || viewUserId === user.uid;
     targetId = viewUserId || user.uid;
     if (typeof QG_applyRoleMode === 'function') QG_applyRoleMode();
+    if (isOwnProfile && typeof QG_paintEmailVerifyStrip === 'function') {
+      QG_paintEmailVerifyStrip(user);
+    }
 
     // Someone else's profile is read-only: no settings, no logout, no editing.
     if (!isOwnProfile) {
