@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- qg-build:947d37a-1789577525 -->
+
+<title>Post a task · SwiftGigs</title>
+<meta name="description" content="Post a task in minutes on SwiftGigs. Hire local taskers for errands, cleaning, tutoring, and more across Canada.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://quickgigs.ca/posttask.html">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://quickgigs.ca/posttask.html">
+<meta property="og:title" content="Post a task · SwiftGigs">
+<meta property="og:description" content="Post a task in minutes on SwiftGigs. Hire local taskers for errands, cleaning, tutoring, and more across Canada.">
+<meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
+<meta property="og:locale" content="en_CA">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Post a task · SwiftGigs">
+<meta name="twitter:description" content="Post a task in minutes on SwiftGigs. Hire local taskers for errands, cleaning, tutoring, and more across Canada.">
+<meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com">
+<meta name="theme-color" content="#0B0A14">
+<link rel="stylesheet" href="qg-polish.css?v=20260726contrast">
+<link rel="stylesheet" href="qg-ux.css?v=20260728welcome1">
+<link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
+<link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="qg-layout.css">
+<link rel="stylesheet" href="qg-role-theme.css?v=20260811tokens1">
+<link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
+<link rel="stylesheet" href="qg-flows.css?v=20260811flows1" id="qg-flows-css">
+<script src="qg-brand-init.js"></script>
+<script>document.documentElement.setAttribute('data-qg-mode','poster');</script>
+<style>
+/* Post a Task — SwiftGigs mockup v3 ("Post a Task — Step 1").
+   Tokens only (qg-tokens.css); light mode flips via body.light tokens.
+   Poster flow: var(--accent) resolves to var(--primary).
+   Rules prefixed `html[data-qg-mode] body.theme-posttask` carry !important only to
+   beat legacy shared sheets (qg-flows / qg-role-theme / qg-refine / qg-light-nav / qg-ux). */
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;font-size:15px;min-height:100vh;background:var(--bg);color:var(--text);transition:background 0.3s,color 0.3s;padding-bottom:76px;}
+html[data-qg-mode][lang] body.theme-posttask{background:var(--bg)!important;background-image:none!important;}
+/* overflow-x:clip (not hidden) so the sticky action bar is not trapped in a scroll container */
+html[data-qg-mode] body.theme-posttask #formContent{overflow-x:clip;overflow-y:visible;}
+
+/* NAV */
+.nav{padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+html[data-qg-mode] body.theme-posttask .nav{background:var(--surface)!important;border-bottom:1px solid var(--border)!important;box-shadow:none!important;backdrop-filter:none;-webkit-backdrop-filter:none;}
+.back-btn{font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:4px;}
+html[data-qg-mode] body.theme-posttask .back-btn{color:var(--text-muted)!important;}
+.back-btn:hover{color:var(--text);}
+.mode-toggle{padding:6px 14px;border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;}
+html[data-qg-mode] body.theme-posttask .mode-toggle{background:var(--surface-alt)!important;color:var(--text)!important;border:1px solid var(--border)!important;box-shadow:none!important;}
+
+/* HEADER — muted step label + slim segmented progress (mockup).
+   .qg-post-progress / .qg-post-step are injected by qg-bigtech.js after .step-pill. */
+.content{max-width:580px;margin:0 auto;padding:20px 20px 24px;}
+.step-pill{display:block;font-size:11px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:10px;}
+html[data-qg-mode] body.theme-posttask .step-pill{background:none!important;border:none!important;color:var(--text-muted)!important;padding:0;border-radius:0;}
+html[data-qg-mode] body.theme-posttask .qg-post-progress{gap:4px;margin:0 0 16px;padding:0;border:none;border-radius:0;background:none;overflow:visible;}
+html[data-qg-mode] body.theme-posttask .qg-post-step{min-width:0;text-align:left;font-size:10.5px;padding-top:9px;color:var(--text-muted);}
+html[data-qg-mode] body.theme-posttask .qg-post-step::before{left:0;right:0;height:3px;border-radius:2px;background:var(--border);}
+html[data-qg-mode] body.theme-posttask .qg-post-step:is(.done,.current){color:var(--text);font-weight:600;}
+html[data-qg-mode] body.theme-posttask .qg-post-step:is(.done,.current)::before{background:var(--accent);}
+html[data-qg-mode] body.theme-posttask .page-title{font-size:20px!important;font-weight:700;letter-spacing:-0.01em;line-height:1.25;margin:0 0 4px;color:var(--text);}
+.page-sub{font-size:13px;margin:0 0 24px;color:var(--text-muted);}
+
+/* SECTIONS */
+.section{margin-bottom:22px;}
+.section-label{font-size:11px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;display:block;margin-bottom:8px;color:var(--text-muted);}
+.section-label.sub-label{font-size:10.5px;margin-bottom:6px;}
+.field-hint{font-size:12.5px;line-height:1.55;margin:-2px 0 10px;color:var(--text-muted);}
+.field-check{display:flex;align-items:flex-start;gap:10px;margin-top:14px;font-size:13px;color:var(--text-muted);cursor:pointer;}
+.field-check input{margin-top:3px;accent-color:var(--accent);}
+.photo-upload-btn{width:100%;padding:14px 16px;border-radius:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;transition:border-color 0.2s,background 0.2s;background:var(--surface);color:var(--text);border:1.5px dashed var(--border);}
+.photo-upload-btn:hover{border-color:var(--accent);}
+
+/* CHOICE CARDS — urgency / age / budget type / location type / recurrence */
+.mode-grid{display:grid;grid-template-columns:1fr;gap:8px;}
+.mode-card,.age-pref-card,.budget-type-card,.location-type-card,.rec-opt{border-radius:12px;cursor:pointer;transition:border-color 0.2s,background 0.2s,box-shadow 0.2s;font-family:inherit;color:var(--text);}
+html[data-qg-mode] body.theme-posttask :is(.mode-card,.age-pref-card,.budget-type-card,.location-type-card,.rec-opt){background:var(--surface)!important;border:1px solid var(--border)!important;color:var(--text)!important;box-shadow:none!important;}
+html[data-qg-mode] body.theme-posttask :is(.mode-card,.age-pref-card,.budget-type-card,.location-type-card,.rec-opt):hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--border))!important;}
+html[data-qg-mode] body.theme-posttask :is(.mode-card,.age-pref-card,.budget-type-card,.location-type-card,.rec-opt).selected{background:var(--surface)!important;border-color:var(--accent)!important;box-shadow:inset 0 0 0 0.5px var(--accent)!important;color:var(--text)!important;}
+
+.mode-emoji{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;background:var(--surface-alt);color:var(--text-muted);flex-shrink:0;font-size:18px;line-height:1;transition:color 0.2s,background 0.2s;}
+.mode-card.selected .mode-emoji{color:var(--accent);background:var(--accent-soft);}
+.mode-name{font-size:14px;font-weight:600;display:block;color:var(--text);}
+.mode-desc{font-size:12px;color:var(--text-muted);display:block;}
+/* stack name + desc to the right of the icon square */
+.mode-card{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;align-items:center;column-gap:12px;row-gap:1px;padding:11px 14px;text-align:left;font-size:13px;}
+.mode-card .mode-emoji{grid-row:1/3;}
+.mode-card .mode-name{align-self:end;}
+.mode-card .mode-desc{align-self:start;}
+
+.age-pref-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.age-pref-card{padding:12px;text-align:left;}
+.age-pref-card strong{display:block;font-size:13px;font-weight:600;margin-bottom:3px;}
+.age-pref-card span{display:block;font-size:11px;line-height:1.4;color:var(--text-muted);}
+@media(max-width:560px){.age-pref-grid{grid-template-columns:1fr;}}
+
+.budget-type-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.budget-type-card{padding:12px 14px;}
+.budget-type-card strong{display:block;font-size:13px;font-weight:600;margin-bottom:2px;color:var(--text);}
+.budget-type-card span{font-size:11px;color:var(--text-muted);}
+.location-type-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.location-type-card{display:block;padding:12px;font-size:13px;font-weight:600;text-align:center;}
+.location-type-card input{position:absolute;opacity:0;pointer-events:none;}
+#inPersonLocationField{grid-column:1/-1;}
+
+.recurring-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:2px;}
+.rec-opt{padding:10px 8px;text-align:center;font-size:13px;font-weight:500;}
+
+/* PILLS — category / time slot / quick time */
+.cat-wrap{display:flex;flex-wrap:wrap;gap:7px;}
+.cat-chip,.time-slot,.time-pick{display:inline-flex;align-items:center;gap:6px;border-radius:100px;font-size:13px;font-weight:600;cursor:pointer;transition:background 0.2s,border-color 0.2s,color 0.2s;}
+.cat-chip{padding:8px 14px;}
+.time-slot{padding:8px 14px;}
+.time-pick{padding:8px 13px;}
+html[data-qg-mode] body.theme-posttask :is(.cat-chip,.time-slot,.time-pick){background:transparent!important;border:1px solid var(--border)!important;color:var(--text)!important;box-shadow:none!important;transform:none;}
+html[data-qg-mode] body.theme-posttask :is(.cat-chip,.time-slot,.time-pick):hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--border))!important;}
+html[data-qg-mode] body.theme-posttask :is(.cat-chip,.time-slot,.time-pick).selected{background:var(--accent)!important;border-color:var(--accent)!important;color:var(--accent-text,var(--primary-text))!important;}
+.cat-chip .qg-ico{color:var(--text-muted);}
+.cat-chip.selected .qg-ico{color:inherit;}
+.time-slots{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px;}
+.time-pick-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px;}
+.time-custom-wrap{margin-top:8px;}
+
+/* SCHEDULE — flat surface card + date tiles */
+.schedule-preview{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;margin-bottom:12px;overflow:hidden;position:relative;}
+html[data-qg-mode] body.theme-posttask .schedule-preview{background:var(--surface)!important;border:1px solid var(--border)!important;box-shadow:none!important;}
+.schedule-preview-icon{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;background:var(--surface-alt);color:var(--accent);flex-shrink:0;font-size:18px;line-height:1;}
+.schedule-preview-main{display:block;font-size:15px;font-weight:600;line-height:1.25;color:var(--text);}
+.schedule-preview-sub{display:block;font-size:12px;margin-top:2px;color:var(--text-muted);}
+.schedule-preview-text{min-width:0;animation:scheduleTextIn 0.4s cubic-bezier(0.22,1,0.36,1);}
+@keyframes scheduleTextIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.date-strip-wrap{margin-bottom:12px;overflow:hidden;}
+.date-strip{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.date-strip::-webkit-scrollbar{display:none;}
+.date-chip{flex:0 0 auto;min-width:64px;padding:10px 8px;border-radius:12px;text-align:center;cursor:pointer;scroll-snap-align:start;transition:transform 0.2s,background 0.2s,border-color 0.2s,color 0.2s;}
+html[data-qg-mode] body.theme-posttask .date-chip{background:var(--surface)!important;border:1px solid var(--border)!important;color:var(--text)!important;box-shadow:none!important;}
+html[data-qg-mode] body.theme-posttask .date-chip:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--border))!important;}
+html[data-qg-mode] body.theme-posttask .date-chip.selected{background:var(--accent)!important;border-color:var(--accent)!important;color:var(--accent-text,var(--primary-text))!important;}
+.date-chip:active{transform:scale(0.96);}
+.date-chip-day{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;opacity:0.75;display:block;margin-bottom:4px;}
+.date-chip-num{font-size:18px;font-weight:700;display:block;line-height:1;}
+.date-chip-label{font-size:10px;margin-top:4px;opacity:0.75;display:block;}
+.date-more-chip{min-width:68px;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-direction:column;}
+.date-native-fallback{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden;clip:rect(0,0,0,0);}
+
+/* INPUTS */
+.field{margin-bottom:16px;}
+.field-input{width:100%;border-radius:12px;padding:13px 14px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s,outline-color 0.2s;}
+html[data-qg-mode] body.theme-posttask .field-input{background:var(--surface)!important;border:1px solid var(--border)!important;color:var(--text)!important;-webkit-text-fill-color:var(--text);border-radius:12px;box-shadow:none!important;}
+html[data-qg-mode] body.theme-posttask .field-input::placeholder{color:var(--text-muted)!important;-webkit-text-fill-color:var(--text-muted);opacity:1;}
+html[data-qg-mode] body.theme-posttask .field-input:focus{border-color:var(--accent)!important;outline:2px solid color-mix(in srgb,var(--accent) 30%,transparent);outline-offset:0;}
+html[data-qg-mode] body.theme-posttask .field-input.invalid{border-color:var(--danger)!important;}
+body:not(.light) .field-input{color-scheme:dark;}
+textarea.field-input{resize:none;min-height:100px;line-height:1.5;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.price-wrap{position:relative;}
+.price-pre{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-weight:700;color:var(--green);font-size:14px;z-index:1;}
+html[data-qg-mode] body.theme-posttask .price-wrap .field-input{padding-left:28px;}
+
+/* HINT — flat surface card */
+.hint-box{border-radius:14px;padding:12px 14px;margin-bottom:22px;display:flex;align-items:center;gap:10px;}
+html[data-qg-mode] body.theme-posttask .hint-box{background:var(--surface)!important;border:1px solid var(--border)!important;box-shadow:none!important;flex-direction:row;align-items:center;gap:10px;}
+.hint-box > [data-qg-ico]{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:10px;background:var(--surface-alt);color:var(--accent);flex-shrink:0;}
+.hint-text{font-size:12.5px;line-height:1.5;margin:0;color:var(--text-muted);}
+.hint-text strong{color:var(--green);font-weight:700;}
+
+/* ERRORS */
+.field-error{font-size:12px;color:var(--danger);margin-top:5px;display:none;}
+.cat-wrap.needs-selection{outline:2px solid var(--danger);outline-offset:4px;border-radius:12px;}
+.error-banner{border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:13px;display:none;background:var(--danger-soft);border:1px solid color-mix(in srgb,var(--danger) 40%,transparent);color:var(--danger);}
+.error-banner-actions{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;}
+.error-skip-btn{padding:8px 14px;border-radius:10px;border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;background:var(--surface-alt);color:var(--text);}
+
+/* SUBMIT — flat accent buttons in a sticky bottom action bar (mockup) */
+.post-submit-row{position:sticky;bottom:calc(64px + env(safe-area-inset-bottom,0px));z-index:20;grid-template-columns:1.6fr 1fr;align-items:center;margin:0 -20px;padding:12px 20px;background:var(--bg);border-top:1px solid var(--border);box-shadow:0 16px 0 var(--bg);}
+body.qg-keyboard-open .post-submit-row{position:static;box-shadow:none;}
+/* lift the shared help FAB (qg-help.js) above the sticky action bar, like chat does above its composer */
+html[data-qg-mode] body.theme-posttask .qg-help-root{bottom:calc(148px + env(safe-area-inset-bottom,0px));}
+.submit-btn{width:100%;padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;background:var(--accent);color:var(--accent-text,var(--primary-text));transition:filter 0.2s,opacity 0.2s;}
+html[data-qg-mode] body.theme-posttask .submit-btn,
+html[data-qg-mode] body.theme-posttask #submitBtn{background:var(--accent)!important;color:var(--accent-text,var(--primary-text))!important;border:none!important;border-radius:12px;box-shadow:none!important;margin:0;}
+html[data-qg-mode] body.theme-posttask #draftBtn.submit-btn.secondary{background:var(--surface)!important;color:var(--text)!important;border:1px solid var(--border)!important;box-shadow:none!important;font-weight:600;}
+.submit-btn:hover:not(:disabled){filter:brightness(1.08);}
+.submit-btn:disabled{opacity:0.6;cursor:not-allowed;}
+.qg-beta-free-note{font-size:12px;line-height:1.5;text-align:center;margin-top:14px;color:var(--text-muted);}
+.footer-note{font-size:11.5px;line-height:1.5;text-align:center;margin-top:8px;color:var(--text-muted);}
+
+/* SUCCESS */
+.success-screen{display:none;text-align:center;padding:56px 20px;}
+.success-icon{display:flex;align-items:center;justify-content:center;width:84px;height:84px;margin:0 auto 18px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-size:44px;line-height:1;}
+.success-title{font-size:20px;font-weight:700;margin-bottom:8px;color:var(--text);}
+.success-sub{font-size:14px;line-height:1.5;margin-bottom:24px;color:var(--text-muted);}
+.success-btn{display:inline-block;padding:13px 24px;background:var(--accent);color:var(--accent-text,var(--primary-text));border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;border:none;font-family:'DM Sans',sans-serif;}
+html[data-qg-mode] body.theme-posttask .success-btn{background:var(--accent)!important;color:var(--accent-text,var(--primary-text))!important;box-shadow:none!important;}
+html[data-qg-mode] body.theme-posttask .success-btn.is-secondary{background:var(--surface-alt)!important;color:var(--text)!important;border:1px solid var(--border);}
+
+/* BOTTOM TAB BAR */
+.tab-bar{position:fixed;bottom:0;left:0;right:0;display:flex;padding:8px 0 14px;z-index:100;}
+html[data-qg-mode] body.theme-posttask .tab-bar{background:var(--surface)!important;border-top:1px solid var(--border)!important;box-shadow:none!important;}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;}
+html[data-qg-mode] body.theme-posttask .tab-bar :is(.tab-icon,.tab-lbl){color:var(--text-muted)!important;}
+.tab-icon{font-size:22px;}
+.tab-lbl{font-size:10px;}
+html[data-qg-mode] body.theme-posttask .tab-bar .tab-item.active{color:var(--teal)!important;border-color:transparent!important;}
+html[data-qg-mode] body.theme-posttask .tab-bar .tab-item.active :is(.tab-icon,.tab-lbl){color:var(--teal)!important;}
+.tab-item.active .tab-lbl{font-weight:600;}
+
+@media (prefers-reduced-motion: reduce){.schedule-preview-text{animation:none;}}
+</style>
+<link rel="stylesheet" href="qg-brand.css">
+<link rel="stylesheet" href="qg-swift.css">
+</head>
+<body class="theme-posttask">
+<script src="qg-icons.js"></script>
+<script src="qg-theme.js"></script>
+<script defer src="qg-location.js?v=20260827geo1"></script>
+<script defer src="qg-nav.js"></script>
+
+<!-- NAV -->
+<nav class="nav">
+  <a class="back-btn" href="dashboard.html"><span data-qg-ico="arrowRight" data-qg-ico-size="14" style="display:inline-flex;transform:scaleX(-1)"></span> Dashboard</a>
+  <div class="nav-brand">
+    <span class="nav-logo sg-wordmark">SwiftGigs</span>
+    <span class="nav-role">POSTER</span>
+  </div>
+  <button class="mode-toggle" onclick="toggleMode()" id="modeBtn">Light</button>
+</nav>
+
+<!-- MAIN FORM -->
+<div class="content" id="postRoleGate" style="display:none"></div>
+<div class="content" id="formContent">
+
+  <span class="step-pill">Post a task</span>
+  <p class="page-title">What do you need done?</p>
+  <p class="page-sub">Takes less than 60 seconds to post</p>
+
+  <!-- ERROR BANNER -->
+  <div class="error-banner" id="errorBanner">
+    <span id="errorBannerText"></span>
+    <div class="error-banner-actions" id="errorBannerActions" style="display:none;">
+      <button type="button" class="error-skip-btn" id="skipPhotosBtn" onclick="postWithoutPhotos()">Post without photos</button>
+    </div>
+  </div>
+
+  <!-- TASK MODE -->
+  <div class="section">
+    <span class="section-label">How urgent is this?</span>
+    <div class="mode-grid">
+      <div class="mode-card selected" data-mode="quick" onclick="selectMode(this)">
+        <span class="mode-emoji" data-qg-ico="zap" data-qg-ico-size="20"></span>
+        <span class="mode-name">Quick</span>
+        <span class="mode-desc">Within hours</span>
+      </div>
+      <div class="mode-card" data-mode="standard" onclick="selectMode(this)">
+        <span class="mode-emoji" data-qg-ico="clipboard" data-qg-ico-size="20"></span>
+        <span class="mode-name">Standard</span>
+        <span class="mode-desc">This week</span>
+      </div>
+      <div class="mode-card" data-mode="recurring" onclick="selectMode(this)">
+        <span class="mode-emoji" data-qg-ico="repeat" data-qg-ico-size="20"></span>
+        <span class="mode-name">Recurring</span>
+        <span class="mode-desc">Ongoing</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECURRING OPTIONS -->
+  <div class="section" id="recurringSection" style="display:none;">
+    <span class="section-label">How often?</span>
+    <div class="recurring-opts">
+      <div class="rec-opt selected" onclick="selectRec(this)">Daily</div>
+      <div class="rec-opt" onclick="selectRec(this)">Weekly</div>
+      <div class="rec-opt" onclick="selectRec(this)">Bi-weekly</div>
+      <div class="rec-opt" onclick="selectRec(this)">Monthly</div>
+      <div class="rec-opt" onclick="selectRec(this)">Weekdays</div>
+      <div class="rec-opt" onclick="selectRec(this)">Weekends</div>
+    </div>
+  </div>
+
+  <!-- CATEGORY -->
+  <div class="section">
+    <span class="section-label">Category</span>
+    <div class="cat-wrap" id="catWrap">
+      <span class="cat-chip" data-qg-ico="car" data-qg-ico-size="14" onclick="selectCat(this)">Errands</span>
+      <span class="cat-chip" data-qg-ico="home" data-qg-ico-size="14" onclick="selectCat(this)">Home</span>
+      <span class="cat-chip" data-qg-ico="graduationCap" data-qg-ico-size="14" onclick="selectCat(this)">Tutoring</span>
+      <span class="cat-chip" data-qg-ico="scissors" data-qg-ico-size="14" onclick="selectCat(this)">Beauty</span>
+      <span class="cat-chip" data-qg-ico="package" data-qg-ico-size="14" onclick="selectCat(this)">Moving</span>
+      <span class="cat-chip" data-qg-ico="pot" data-qg-ico-size="14" onclick="selectCat(this)">Cooking</span>
+      <span class="cat-chip" data-qg-ico="laptop" data-qg-ico-size="14" onclick="selectCat(this)">Tech</span>
+      <span class="cat-chip" data-qg-ico="heart" data-qg-ico-size="14" onclick="selectCat(this)">Care</span>
+      <span class="cat-chip" data-qg-ico="leaf" data-qg-ico-size="14" onclick="selectCat(this)">Gardening</span>
+      <span class="cat-chip" data-qg-ico="party" data-qg-ico-size="14" onclick="selectCat(this)">Events</span>
+      <span class="cat-chip" data-qg-ico="wrench" data-qg-ico-size="14" onclick="selectCat(this)">Trades</span>
+      <span class="cat-chip" data-qg-ico="clipboard" data-qg-ico-size="14" onclick="selectCat(this)">Other</span>
+    </div>
+    <div class="field-error" id="catError">Select a category</div>
+  </div>
+
+  <!-- AGE PREFERENCE -->
+  <div class="section">
+    <span class="section-label">Who can apply?</span>
+    <p class="field-hint">Taskers aged 16–17 always need guardian approval for each application.</p>
+    <div class="age-pref-grid" id="agePreferenceGrid">
+      <button type="button" class="age-pref-card selected" data-age-preference="adults_only" onclick="selectAgePreference(this)">
+        <strong>18+ only</strong><span>Only adult taskers will see this gig.</span>
+      </button>
+      <button type="button" class="age-pref-card" data-age-preference="teens_welcome" onclick="selectAgePreference(this)">
+        <strong>16+ welcome</strong><span>Teen taskers may request guardian approval.</span>
+      </button>
+      <button type="button" class="age-pref-card" data-age-preference="any_with_guardian" onclick="selectAgePreference(this)">
+        <strong>Any age</strong><span>Currently 16+ under SwiftGigs policy; guardian approval applies.</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- TITLE -->
+  <div class="field section">
+    <span class="section-label">Task title</span>
+    <input class="field-input" id="taskTitle" type="text" placeholder="e.g. Pick up prescription from Shoppers" maxlength="100">
+    <div class="field-error" id="titleError">Add a title</div>
+  </div>
+
+  <!-- DESCRIPTION -->
+  <div class="field section">
+    <span class="section-label">Description</span>
+    <textarea class="field-input" id="taskDesc" placeholder="Add details — location, timing, anything helpful..."></textarea>
+    <div class="field-error" id="descError">Add a clearer description</div>
+  </div>
+
+  <!-- PHOTOS -->
+  <div class="section">
+    <span class="section-label">Photos <span style="font-weight:400;text-transform:none;letter-spacing:0;opacity:0.85">(optional but recommended)</span></span>
+    <p class="field-hint">Add photos here so taskers see the task before they apply — room, item, or area. <strong>No IDs, mail, or personal documents.</strong> You can also send more in chat after payment.</p>
+    <input type="file" id="taskPhotos" accept="image/*" multiple style="display:none" onchange="handlePhotoPick(this)">
+    <div class="qg-photo-slots" id="photoSlots" aria-label="Photo uploads, up to 3"></div>
+    <div class="qg-photo-count" id="photoCount">0 / 3 photos</div>
+    <div id="photoPreview" hidden></div>
+    <label class="field-check">
+      <input type="checkbox" id="requiresPhotos">
+      <span>Ask the tasker to share before &amp; after photo updates when working</span>
+    </label>
+  </div>
+
+  <!-- SCHEDULE -->
+  <div class="section" id="scheduleSection">
+    <span class="section-label">When do you need this?</span>
+    <p class="field-hint" id="scheduleHint">Pick a date and time so taskers know when to show up.</p>
+
+    <div class="schedule-preview" id="schedulePreview" aria-live="polite">
+      <span class="schedule-preview-icon" aria-hidden="true" data-qg-ico="calendar" data-qg-ico-size="18"></span>
+      <div class="schedule-preview-text" id="schedulePreviewText">
+        <span class="schedule-preview-main" id="schedulePreviewMain">Select a date</span>
+        <span class="schedule-preview-sub" id="schedulePreviewSub">Tap a day below</span>
+      </div>
+    </div>
+
+    <div class="date-strip-wrap">
+      <div class="date-strip" id="dateStrip"></div>
+    </div>
+    <input type="date" id="taskDate" class="date-native-fallback" aria-hidden="true" tabindex="-1">
+
+    <div class="field-row" id="scheduleDateRow">
+      <div class="field" id="exactTimeField" style="grid-column:1/-1;">
+        <span class="section-label sub-label">Time</span>
+        <div class="time-pick-row" id="timePickRow"></div>
+        <div class="time-custom-wrap" id="timeCustomWrap" style="display:none;">
+          <input class="field-input" id="taskTime" type="time">
+        </div>
+        <div class="field-error" id="timeError">Choose a time</div>
+      </div>
+    </div>
+    <div class="field-error" id="dateError">Choose a date</div>
+    <div class="time-slots" id="timeSlots">
+      <div class="time-slot selected" data-slot="exact" onclick="selectTimeSlot(this)">Exact time</div>
+      <div class="time-slot" data-slot="morning" onclick="selectTimeSlot(this)">Morning</div>
+      <div class="time-slot" data-slot="afternoon" onclick="selectTimeSlot(this)">Afternoon</div>
+      <div class="time-slot" data-slot="evening" onclick="selectTimeSlot(this)">Evening</div>
+      <div class="time-slot" data-slot="flexible" onclick="selectTimeSlot(this)">Flexible</div>
+    </div>
+  </div>
+
+  <!-- BUDGET + LOCATION -->
+  <div class="field-row section">
+    <div class="field">
+      <span class="section-label">Your budget</span>
+      <div class="price-wrap">
+        <span class="price-pre">$</span>
+        <input class="field-input" id="taskBudget" type="number" min="20" inputmode="decimal" enterkeyhint="done" placeholder="40">
+      </div>
+      <div class="field-error" id="budgetError">Minimum budget is $20</div>
+    </div>
+    <div class="field">
+      <span class="section-label">Where is this task?</span>
+      <div class="location-type-row" role="radiogroup" aria-label="Task location type">
+        <label class="location-type-card selected" data-location-type="in_person">
+          <input type="radio" name="locationType" value="in_person" checked> In person
+        </label>
+        <label class="location-type-card" data-location-type="remote">
+          <input type="radio" name="locationType" value="remote"> Remote / online
+        </label>
+      </div>
+    </div>
+    <div class="field" id="inPersonLocationField">
+      <span class="section-label">Location</span>
+      <input class="field-input" id="taskLocation" type="text" list="canadianLocationSuggestions"
+        placeholder="City, Province or postal code (e.g. Halifax, NS or B3H 2Y5)" autocomplete="postal-code">
+      <datalist id="canadianLocationSuggestions">
+        <option value="Toronto, ON"></option>
+        <option value="Vancouver, BC"></option>
+        <option value="Montreal, QC"></option>
+        <option value="Calgary, AB"></option>
+        <option value="Edmonton, AB"></option>
+        <option value="Winnipeg, MB"></option>
+        <option value="Halifax, NS"></option>
+        <option value="Regina, SK"></option>
+        <option value="Whitehorse, YT"></option>
+      </datalist>
+      <div class="field-error" id="locationError">Enter a valid Canadian city, area, or postal code</div>
+      <p class="hint-text" id="locationHint" style="margin-top:8px">We use this to show your task to nearby taskers — not your exact address.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <span class="section-label">Budget type</span>
+    <div class="budget-type-row">
+      <div class="budget-type-card selected" data-budget-type="fixed" onclick="selectBudgetType(this)">
+        <strong>Fixed</strong>
+        <span>Non-negotiable price</span>
+      </div>
+      <div class="budget-type-card" data-budget-type="negotiable" onclick="selectBudgetType(this)">
+        <strong>Negotiable</strong>
+        <span>Open to offers</span>
+      </div>
+    </div>
+    <p class="hint-text" id="budgetTypeHint" style="margin-top:10px">Taskers see your exact budget. Use chat for schedule and details — not price haggling.</p>
+  </div>
+
+  <!-- HINT -->
+  <div class="hint-box" id="hintBox">
+    <span data-qg-ico="lightbulb" data-qg-ico-size="16"></span>
+    <p class="hint-text" id="hintText">Typical budgets for this category: <strong>$20 – $40</strong>. Minimum budget is $20.</p>
+  </div>
+
+  <!-- SUBMIT -->
+  <div class="post-submit-row" style="display:grid;gap:10px">
+    <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">Post &amp; fund</button>
+    <button type="button" class="submit-btn secondary" id="draftBtn" onclick="handleSubmit(false,'draft')">Save draft</button>
+  </div>
+  <p class="qg-beta-free-note">Browse freely anytime. Publishing requires a verified card (Setup verification — not a charge). You’re only charged when you fund a task. Drafts do not require verification.</p>
+  <p class="footer-note">After beta, payment is held in escrow when you accept — released only after you confirm the task is done. <span data-qg-tip="Escrow means funds are held safely until you mark the task complete. During beta, posting is free.">What is escrow?</span></p>
+
+</div>
+
+<!-- SUCCESS SCREEN -->
+<div class="success-screen content" id="successScreen">
+  <div class="success-icon" data-qg-ico="party" data-qg-ico-size="48"></div>
+  <p class="success-title">Task posted</p>
+  <p class="success-sub">Your task is live under <strong>My Tasks → Posted</strong> (Poster mode). Browse only shows other people's tasks — not your own.</p>
+  <button class="success-btn" onclick="window.location.href='mytasks.html?tab=posted'">View in My Tasks</button>
+  <button class="success-btn is-secondary" style="margin-left:8px;background:var(--surface-alt)" onclick="window.location.href='dashboard.html'">Back to dashboard</button>
+</div>
+
+<script defer src="qg-utils.js?v=20260728welcome1"></script>
+<script defer src="contentModeration.js?v=20260727cm1"></script>
+<script defer src="qg-polish.js?v=20260728xss1"></script>
+<script src="qg-ux.js?v=20260728welcome1" defer></script>
+<script src="qg-bigtech.js?v=20260810session1" defer></script>
+<script src="qg-wave2.js?v=20260811trust2" defer></script>
+<script defer src="qg-config.js?v=20260803escrow1"></script>
+<script defer src="qg-analytics.js?v=20260726seo"></script>
+<script defer src="supabase-db.js?v=20260827chat1"></script>
+<script defer src="qg-verification.js?v=20260811pay1"></script>
+<script>
+var selectedPhotos = [];
+
+window.handlePhotoPick = function(input) {
+  var max = (window.QG_CONFIG && window.QG_CONFIG.maxTaskPhotos) || 3;
+  var files = Array.from(input.files || []);
+  files.forEach(function(file) {
+    if (selectedPhotos.length >= max) return;
+    if (!file.type || file.type.indexOf('image/') !== 0) return;
+    selectedPhotos.push(file);
+  });
+  input.value = '';
+  renderPhotoPreview();
+};
+
+function renderPhotoPreview() {
+  var max = (window.QG_CONFIG && window.QG_CONFIG.maxTaskPhotos) || 3;
+  var slots = document.getElementById('photoSlots');
+  var countEl = document.getElementById('photoCount');
+  var wrap = document.getElementById('photoPreview');
+  if (countEl) countEl.textContent = selectedPhotos.length + ' / ' + max + ' photos';
+  if (!slots) {
+    if (!wrap) return;
+    wrap.hidden = false;
+    wrap.innerHTML = selectedPhotos.map(function(file, i) {
+      var url = URL.createObjectURL(file);
+      return '<div class="qg-photo-slot is-filled"><img src="'+url+'" alt="Preview"><button type="button" class="qg-photo-remove" onclick="removePhoto('+i+')" aria-label="Remove photo">'+(typeof qgIcon==='function'?qgIcon('x',{size:12}):'×')+'</button></div>';
+    }).join('');
+    return;
+  }
+  var html = '';
+  var i;
+  for (i = 0; i < max; i++) {
+    if (selectedPhotos[i]) {
+      var url = URL.createObjectURL(selectedPhotos[i]);
+      html += '<button type="button" class="qg-photo-slot is-filled" aria-label="Photo '+(i+1)+'">' +
+        '<img src="'+url+'" alt="Task photo '+(i+1)+'">' +
+        '<span class="qg-photo-remove" onclick="event.stopPropagation();removePhoto('+i+')" role="button" aria-label="Remove photo">'+(typeof qgIcon==='function'?qgIcon('x',{size:12}):'×')+'</span>' +
+        '</button>';
+    } else {
+      var disabled = selectedPhotos.length >= max ? ' is-disabled' : '';
+      html += '<button type="button" class="qg-photo-slot'+disabled+'" '+(disabled?'disabled ':'')+'onclick="document.getElementById(\'taskPhotos\').click()">' +
+        (typeof qgIcon==='function'?qgIcon('image',{size:22}):'') +
+        '<span class="qg-photo-slot-label">Add photo</span></button>';
+    }
+  }
+  slots.innerHTML = html;
+  if (wrap) { wrap.hidden = true; wrap.innerHTML = ''; }
+}
+
+window.removePhoto = function(index) {
+  selectedPhotos.splice(index, 1);
+  renderPhotoPreview();
+};
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function () { renderPhotoPreview(); });
+} else {
+  renderPhotoPreview();
+}
+</script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
+  authDomain: "quickgigs-7b12d.firebaseapp.com",
+  projectId: "quickgigs-7b12d",
+  storageBucket: "quickgigs-7b12d.firebasestorage.app",
+  messagingSenderId: "698985399366",
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+let authChecked = false;
+const redirectTimeout = setTimeout(() => {
+  if (!authChecked) window.location.href = 'login.html';
+}, 3000);
+
+onAuthStateChanged(auth, function(user) {
+  authChecked = true;
+  clearTimeout(redirectTimeout);
+  if (!user) { window.location.href = 'login.html'; return; }
+  window._currentUser = user;
+});
+</script>
+
+<script>
+var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : true;
+function applyTheme() {
+  // Must not throw ? a crash here stops selectMode / handleSubmit from registering
+  if (typeof window.QG_applyTheme === 'function') {
+    window.QG_applyTheme(isDark, 'modeBtn', true);
+  } else {
+    document.body.classList.toggle('dark', !!isDark);
+    document.body.classList.toggle('light', !isDark);
+    document.body.classList.add('theme-posttask', 'page-posttask');
+    var btn = document.getElementById('modeBtn');
+    if (btn) btn.textContent = isDark ? 'Light' : 'Dark';
+  }
+}
+window.toggleMode = function() {
+  isDark = !isDark;
+  if (typeof QG_setThemeDark === 'function') QG_setThemeDark(isDark);
+  else localStorage.setItem('qg-theme', isDark ? 'dark' : 'light');
+  applyTheme();
+};
+applyTheme();
+document.body.classList.add('page-posttask');
+
+document.addEventListener('DOMContentLoaded', function bootPosterVerification(){
+  if (!window._currentUser || typeof QG_loadVerification !== 'function') {
+    setTimeout(bootPosterVerification, 120);
+    return;
+  }
+
+  function applyPosterPublishGate(state) {
+    var button = document.getElementById('submitBtn');
+    if (!button) return;
+    var verified = !!(state && state.poster_verified === true);
+    button.textContent = verified ? 'Post & fund' : 'Verify payment to post';
+    button.disabled = false;
+    if (verified && typeof QG_hideVerificationPrompt === 'function') {
+      QG_hideVerificationPrompt();
+    } else if (verified) {
+      var overlay = document.getElementById('qgVerificationOverlay');
+      if (overlay) overlay.remove();
+    }
+  }
+  window.QG_applyPosterPublishGate = applyPosterPublishGate;
+
+  window.addEventListener('qg-verification-ready', function (ev) {
+    applyPosterPublishGate(ev.detail || window.QG_verificationState);
+  });
+  window.addEventListener('qg-poster-payment-verified', function (ev) {
+    applyPosterPublishGate(ev.detail || window.QG_verificationState);
+    if (typeof showToast === 'function') {
+      showToast('Payment method verified — you can publish now', '#0f766e');
+    }
+  });
+
+  var chain = Promise.resolve(null);
+  if (typeof QG_syncVerificationReturn === 'function') {
+    chain = QG_syncVerificationReturn();
+  }
+  chain.then(function (synced) {
+    if (synced && synced.cancelled) {
+      applyPosterPublishGate(window.QG_verificationState);
+      return QG_loadVerification(true).then(applyPosterPublishGate);
+    }
+    if (synced && synced.poster_verified === true) {
+      applyPosterPublishGate(synced);
+      return synced;
+    }
+    return QG_loadVerification(true).then(applyPosterPublishGate);
+  }).catch(function () {
+    QG_loadVerification(true).then(applyPosterPublishGate);
+  });
+
+  try {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('verified_payment') === '1' && window.history && window.history.replaceState) {
+      params.delete('verified_payment');
+      var next = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
+      window.history.replaceState({}, '', next);
+      if (typeof showToast === 'function') {
+        showToast('Payment method verified — you can publish now', '#0f766e');
+      }
+    }
+  } catch (_e) {}
+});
+
+var selectedMode = 'quick';
+var selectedCat  = '';
+var selectedBudgetType = 'fixed';
+var selectedAgePreference = 'adults_only';
+var selectedRec  = 'Daily';
+var selectedTimeSlot = 'exact';
+var TIME_SLOT_LABELS = {
+  exact: 'Exact time',
+  morning: 'Morning (8am – 12pm)',
+  afternoon: 'Afternoon (12pm – 5pm)',
+  evening: 'Evening (5pm – 9pm)',
+  flexible: 'Flexible — tasker can suggest'
+};
+var DATE_STRIP_DAYS = 14;
+var QUICK_TIMES = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'];
+var selectedQuickTime = '';
+var CAT_SLUGS = {
+  'Errands': 'errands', 'Home': 'home', 'Tutoring': 'tutoring', 'Beauty': 'beauty',
+  'Moving': 'moving', 'Cooking': 'cooking', 'Tech': 'tech', 'Care': 'care',
+  'Gardening': 'gardening', 'Events': 'events', 'Trades': 'trades', 'Other': 'other'
+};
+
+function saveVerificationDraftState() {
+  try {
+    localStorage.setItem('qg-post-verification-state', JSON.stringify({
+      mode: selectedMode,
+      category: selectedCat,
+      budgetType: selectedBudgetType,
+      agePreference: selectedAgePreference,
+      recurring: selectedRec,
+      timeSlot: selectedTimeSlot,
+      date: document.getElementById('taskDate') ? document.getElementById('taskDate').value : '',
+      time: document.getElementById('taskTime') ? document.getElementById('taskTime').value : '',
+      requiresPhotos: !!(document.getElementById('requiresPhotos') && document.getElementById('requiresPhotos').checked)
+    }));
+  } catch (e) {}
+}
+
+document.addEventListener('DOMContentLoaded', function restoreVerificationDraftState(){
+  try {
+    var state = JSON.parse(localStorage.getItem('qg-post-verification-state') || 'null');
+    if (!state) return;
+    var mode = document.querySelector('.mode-card[data-mode="' + state.mode + '"]');
+    if (mode) selectMode(mode);
+    document.querySelectorAll('.cat-chip').forEach(function(chip){
+      var label = chip.textContent.replace(/[^\w\s]/g, '').trim();
+      var slug = CAT_SLUGS[label] || label.toLowerCase();
+      if (slug === state.category) selectCat(chip);
+    });
+    var budgetType = document.querySelector('.budget-type-card[data-budget-type="' + state.budgetType + '"]');
+    if (budgetType) selectBudgetType(budgetType);
+    var age = document.querySelector('.age-pref-card[data-age-preference="' + state.agePreference + '"]');
+    if (age) selectAgePreference(age);
+    if (document.getElementById('taskDate') && state.date) document.getElementById('taskDate').value = state.date;
+    if (document.getElementById('taskTime') && state.time) document.getElementById('taskTime').value = state.time;
+    if (document.getElementById('requiresPhotos')) document.getElementById('requiresPhotos').checked = !!state.requiresPhotos;
+    updateSchedulePreview();
+  } catch (e) {}
+});
+
+window.selectAgePreference = function(el) {
+  document.querySelectorAll('.age-pref-card').forEach(function(card) {
+    card.classList.remove('selected');
+  });
+  el.classList.add('selected');
+  selectedAgePreference = el.getAttribute('data-age-preference') || 'adults_only';
+};
+
+function applyLocationDefaults() {
+  var locInput = document.getElementById('taskLocation');
+  var saved = window.getUserLocation ? window.getUserLocation() : '';
+  if (locInput && !locInput.value && saved) {
+    locInput.value = saved;
+  }
+  updateHint(window.getUserCityLabel ? window.getUserCityLabel() : '');
+}
+
+function readHeroPostalParam() {
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var postal = (params.get('postal') || '').trim();
+    if (!postal) return;
+    var locInput = document.getElementById('taskLocation');
+    if (locInput && !locInput.value) locInput.value = postal;
+    setLocationType('in_person');
+  } catch (e) {}
+}
+
+function getSelectedLocationType() {
+  var checked = document.querySelector('input[name="locationType"]:checked');
+  return checked ? String(checked.value) : 'in_person';
+}
+
+function setLocationType(type) {
+  type = type === 'remote' ? 'remote' : 'in_person';
+  document.querySelectorAll('.location-type-card').forEach(function (card) {
+    var isSel = card.getAttribute('data-location-type') === type;
+    card.classList.toggle('selected', isSel);
+    var input = card.querySelector('input[type="radio"]');
+    if (input) input.checked = isSel;
+  });
+  var field = document.getElementById('inPersonLocationField');
+  var locInput = document.getElementById('taskLocation');
+  if (field) field.style.display = type === 'remote' ? 'none' : '';
+  if (locInput) locInput.required = type !== 'remote';
+}
+
+document.querySelectorAll('.location-type-card').forEach(function (card) {
+  card.addEventListener('click', function () {
+    setLocationType(card.getAttribute('data-location-type') || 'in_person');
+  });
+});
+
+function bootPostTaskLocation() {
+  readHeroPostalParam();
+  setLocationType(getSelectedLocationType());
+  if (typeof initUserLocation === 'function') {
+    initUserLocation().then(applyLocationDefaults).catch(function () { applyLocationDefaults(); });
+  } else {
+    applyLocationDefaults();
+  }
+}
+bootPostTaskLocation();
+document.addEventListener('DOMContentLoaded', bootPostTaskLocation);
+initScheduleDefaults();
+
+function isoDateLocal(d) {
+  var yyyy = d.getFullYear();
+  var mm = String(d.getMonth() + 1).padStart(2, '0');
+  var dd = String(d.getDate()).padStart(2, '0');
+  return yyyy + '-' + mm + '-' + dd;
+}
+
+function startOfDay(d) {
+  var x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function formatFriendlyDate(isoDate) {
+  if (!isoDate) return 'Select a date';
+  var d = new Date(isoDate + 'T12:00:00');
+  var today = startOfDay(new Date());
+  var tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  var target = startOfDay(d);
+  if (target.getTime() === today.getTime()) {
+    return 'Today ? ' + d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  }
+  if (target.getTime() === tomorrow.getTime()) {
+    return 'Tomorrow ? ' + d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  }
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+function formatFriendlyTime(timeVal) {
+  if (!timeVal) return '';
+  var parts = String(timeVal).split(':');
+  var h = parseInt(parts[0], 10);
+  var m = parts[1] || '00';
+  var ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return h + ':' + m + ' ' + ampm;
+}
+
+function animateSchedulePreview() {
+  var wrap = document.getElementById('schedulePreviewText');
+  if (!wrap) return;
+  wrap.style.animation = 'none';
+  void wrap.offsetWidth;
+  wrap.style.animation = 'scheduleTextIn 0.4s cubic-bezier(0.22,1,0.36,1)';
+}
+
+function updateSchedulePreview() {
+  var main = document.getElementById('schedulePreviewMain');
+  var sub = document.getElementById('schedulePreviewSub');
+  if (!main || !sub) return;
+  var dateVal = document.getElementById('taskDate') ? document.getElementById('taskDate').value : '';
+  var timeVal = document.getElementById('taskTime') ? document.getElementById('taskTime').value : '';
+  var slotLabel = TIME_SLOT_LABELS[selectedTimeSlot] || 'Flexible';
+
+  if (selectedMode === 'recurring') {
+    main.textContent = selectedRec + ' sessions';
+    sub.textContent = slotLabel;
+    animateSchedulePreview();
+    return;
+  }
+
+  if (!dateVal) {
+    main.textContent = 'Select a date';
+    sub.textContent = 'Tap a day below';
+    return;
+  }
+
+  main.textContent = formatFriendlyDate(dateVal);
+  if (selectedTimeSlot === 'exact') {
+    sub.textContent = timeVal ? formatFriendlyTime(timeVal) + ' ? Exact time' : 'Pick a time below';
+  } else {
+    sub.textContent = slotLabel;
+  }
+  animateSchedulePreview();
+}
+
+function renderDateStrip() {
+  var strip = document.getElementById('dateStrip');
+  var dateInput = document.getElementById('taskDate');
+  if (!strip || !dateInput) return;
+
+  var today = startOfDay(new Date());
+  var selected = dateInput.value;
+  var html = '';
+
+  for (var i = 0; i < DATE_STRIP_DAYS; i++) {
+    var d = new Date(today);
+    d.setDate(d.getDate() + i);
+    var iso = isoDateLocal(d);
+    var isSelected = iso === selected;
+    var dayLabel = i === 0 ? 'Today' : (i === 1 ? 'Tomorrow' : d.toLocaleDateString('en-US', { weekday: 'short' }));
+    var monthLabel = d.toLocaleDateString('en-US', { month: 'short' });
+    html += '<div class="date-chip' + (isSelected ? ' selected' : '') + '" data-date="' + iso + '" onclick="selectDateChip(this)">' +
+      '<span class="date-chip-day">' + dayLabel + '</span>' +
+      '<span class="date-chip-num">' + d.getDate() + '</span>' +
+      '<span class="date-chip-label">' + monthLabel + '</span></div>';
+  }
+
+  html += '<div class="date-chip date-more-chip" onclick="openMoreDates()">' + (typeof qgIcon === 'function' ? qgIcon('calendar', { size: 16 }) : '') + '<br><span style="font-size:10px;margin-top:4px;display:block">More</span></div>';
+  strip.innerHTML = html;
+
+  var active = strip.querySelector('.date-chip.selected');
+  if (active) active.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+}
+
+window.selectDateChip = function(el) {
+  var iso = el.getAttribute('data-date');
+  if (!iso) return;
+  var dateInput = document.getElementById('taskDate');
+  dateInput.value = iso;
+  document.getElementById('dateError').style.display = 'none';
+  renderDateStrip();
+  updateSchedulePreview();
+};
+
+window.openMoreDates = function() {
+  var dateInput = document.getElementById('taskDate');
+  dateInput.style.pointerEvents = 'auto';
+  dateInput.style.position = 'fixed';
+  dateInput.style.opacity = '0';
+  dateInput.style.width = '100%';
+  dateInput.style.height = '100%';
+  dateInput.style.top = '0';
+  dateInput.style.left = '0';
+  dateInput.style.clip = 'auto';
+  if (typeof dateInput.showPicker === 'function') {
+    dateInput.showPicker();
+  } else {
+    dateInput.click();
+  }
+  setTimeout(function() {
+    dateInput.style.pointerEvents = '';
+    dateInput.style.position = '';
+    dateInput.style.opacity = '';
+    dateInput.style.width = '';
+    dateInput.style.height = '';
+    dateInput.style.top = '';
+    dateInput.style.left = '';
+    dateInput.style.clip = '';
+  }, 500);
+};
+
+function renderTimePicks() {
+  var row = document.getElementById('timePickRow');
+  var customWrap = document.getElementById('timeCustomWrap');
+  var timeInput = document.getElementById('taskTime');
+  if (!row || !timeInput) return;
+
+  if (selectedTimeSlot !== 'exact' || selectedMode === 'recurring') {
+    row.innerHTML = '';
+    if (customWrap) customWrap.style.display = 'none';
+    return;
+  }
+
+  var current = timeInput.value;
+  var html = QUICK_TIMES.map(function(t) {
+    var label = formatFriendlyTime(t);
+    var sel = (selectedQuickTime === t || (!selectedQuickTime && current === t)) ? ' selected' : '';
+    return '<div class="time-pick' + sel + '" data-time="' + t + '" onclick="selectQuickTime(this)">' + label + '</div>';
+  }).join('');
+  html += '<div class="time-pick' + (selectedQuickTime === 'custom' ? ' selected' : '') + '" data-time="custom" onclick="selectQuickTime(this)">Custom</div>';
+  row.innerHTML = html;
+
+  if (customWrap) {
+    customWrap.style.display = selectedQuickTime === 'custom' ? 'block' : 'none';
+  }
+}
+
+window.selectQuickTime = function(el) {
+  var t = el.getAttribute('data-time');
+  var timeInput = document.getElementById('taskTime');
+  selectedQuickTime = t;
+  if (t === 'custom') {
+    renderTimePicks();
+    if (timeInput) timeInput.focus();
+    updateSchedulePreview();
+    return;
+  }
+  if (timeInput) timeInput.value = t;
+  document.getElementById('timeError').style.display = 'none';
+  renderTimePicks();
+  updateSchedulePreview();
+};
+
+function initScheduleDefaults() {
+  var dateInput = document.getElementById('taskDate');
+  var timeInput = document.getElementById('taskTime');
+  if (!dateInput) return;
+  var now = new Date();
+  var todayIso = isoDateLocal(now);
+  dateInput.min = todayIso;
+  if (!dateInput.value) dateInput.value = todayIso;
+  if (timeInput && !timeInput.value) {
+    now.setHours(now.getHours() + 2);
+    timeInput.value = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  }
+  if (timeInput && timeInput.value) {
+    selectedQuickTime = QUICK_TIMES.indexOf(timeInput.value) >= 0 ? timeInput.value : 'custom';
+  }
+  dateInput.addEventListener('change', function() {
+    document.getElementById('dateError').style.display = 'none';
+    renderDateStrip();
+    updateSchedulePreview();
+  });
+  if (timeInput) {
+    timeInput.addEventListener('change', function() {
+      selectedQuickTime = 'custom';
+      document.getElementById('timeError').style.display = 'none';
+      renderTimePicks();
+      updateSchedulePreview();
+    });
+  }
+  renderDateStrip();
+  renderTimePicks();
+  syncScheduleUI();
+  updateSchedulePreview();
+}
+
+window.selectTimeSlot = function(el) {
+  document.querySelectorAll('.time-slot').forEach(function(t){ t.classList.remove('selected'); });
+  el.classList.add('selected');
+  selectedTimeSlot = el.getAttribute('data-slot') || 'exact';
+  syncScheduleUI();
+  renderTimePicks();
+  updateSchedulePreview();
+};
+
+function syncScheduleUI() {
+  var exactField = document.getElementById('exactTimeField');
+  var dateRow = document.getElementById('scheduleDateRow');
+  var dateStripWrap = document.querySelector('.date-strip-wrap');
+  var preview = document.getElementById('schedulePreview');
+  var hint = document.getElementById('scheduleHint');
+  var isRecurring = selectedMode === 'recurring';
+  if (dateStripWrap) dateStripWrap.style.display = isRecurring ? 'none' : 'block';
+  if (preview) preview.style.display = isRecurring ? 'flex' : 'flex';
+  if (dateRow) dateRow.style.display = isRecurring ? 'none' : 'block';
+  if (exactField) exactField.style.display = (selectedTimeSlot === 'exact' && !isRecurring) ? 'block' : 'none';
+  if (hint) {
+    hint.textContent = isRecurring
+      ? 'Choose a preferred time window for each session.'
+      : (selectedTimeSlot === 'flexible'
+        ? 'Pick a date ? taskers can propose a time that works.'
+        : 'Pick a date and time so taskers know when to show up.');
+  }
+  if (!isRecurring) renderTimePicks();
+}
+
+function buildSchedulePayload() {
+  var dateVal = document.getElementById('taskDate') ? document.getElementById('taskDate').value : '';
+  var timeVal = document.getElementById('taskTime') ? document.getElementById('taskTime').value : '';
+  var slotLabel = TIME_SLOT_LABELS[selectedTimeSlot] || 'Flexible';
+  var scheduledAt = null;
+  var scheduledLabel = '';
+
+  if (selectedMode === 'recurring') {
+    scheduledLabel = selectedRec + ' ? ' + slotLabel;
+    return { scheduled_at: null, scheduled_label: scheduledLabel };
+  }
+
+  if (!dateVal) return { error: 'date' };
+
+  if (selectedTimeSlot === 'exact') {
+    if (!timeVal) return { error: 'time' };
+    scheduledAt = dateVal + 'T' + timeVal + ':00';
+    var dt = new Date(scheduledAt);
+    scheduledLabel = formatFriendlyDate(dateVal) + ' ? ' + formatFriendlyTime(timeVal);
+  } else {
+    scheduledLabel = formatFriendlyDate(dateVal) + ' ? ' + slotLabel;
+  }
+
+  return { scheduled_at: scheduledAt, scheduled_label: scheduledLabel };
+}
+
+// -- MODE / CAT / REC -----------------------------------
+window.selectMode = function(el) {
+  document.querySelectorAll('.mode-card').forEach(function(c){ c.classList.remove('selected'); });
+  el.classList.add('selected');
+  selectedMode = el.dataset.mode;
+  document.getElementById('recurringSection').style.display = selectedMode === 'recurring' ? 'block' : 'none';
+  syncScheduleUI();
+  updateHint();
+  updateSchedulePreview();
+};
+
+window.selectBudgetType = function(el) {
+  document.querySelectorAll('.budget-type-card').forEach(function(c){ c.classList.remove('selected'); });
+  el.classList.add('selected');
+  selectedBudgetType = el.getAttribute('data-budget-type') || 'fixed';
+  var hint = document.getElementById('budgetTypeHint');
+  if (hint) {
+    hint.textContent = selectedBudgetType === 'negotiable'
+      ? 'Taskers see ?Around $X, open to offers.? Counter-offers stay on the application ? use chat for schedule and details.'
+      : 'Taskers see your exact budget. Use chat for schedule and details ? not price haggling.';
+  }
+};
+
+window.selectCat = function(el) {
+  document.querySelectorAll('.cat-chip').forEach(function(c){ c.classList.remove('selected'); });
+  el.classList.add('selected');
+  var label = el.textContent.replace(/[^\w\s]/g, '').trim();
+  selectedCat = CAT_SLUGS[label] || label.toLowerCase();
+  document.getElementById('catError').style.display = 'none';
+  document.getElementById('catWrap').classList.remove('needs-selection');
+  updateHint();
+};
+
+function scrollToFirstFormError() {
+  var errors = document.querySelectorAll('.field-error');
+  for (var i = 0; i < errors.length; i++) {
+    if (errors[i].style.display === 'block') {
+      errors[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return errors[i].textContent;
+    }
+  }
+  return '';
+}
+
+function showFormBanner(message, opts) {
+  opts = opts || {};
+  var banner = document.getElementById('errorBanner');
+  var text = document.getElementById('errorBannerText');
+  var actions = document.getElementById('errorBannerActions');
+  if (text) text.textContent = message;
+  else banner.textContent = message;
+  banner.style.display = 'block';
+  if (actions) actions.style.display = opts.showSkipPhotos ? 'flex' : 'none';
+  banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+window.postWithoutPhotos = function() {
+  selectedPhotos = [];
+  renderPhotoPreview();
+  var actions = document.getElementById('errorBannerActions');
+  if (actions) actions.style.display = 'none';
+  handleSubmit(true);
+};
+
+window.selectRec = function(el) {
+  document.querySelectorAll('.rec-opt').forEach(function(c){ c.classList.remove('selected'); });
+  el.classList.add('selected');
+  selectedRec = el.textContent;
+  updateSchedulePreview();
+};
+
+function updateHint(city) {
+  var area = city ? (' in ' + city) : '';
+  var hints = {
+    'quick':     'Quick tasks' + area + ' usually go for <strong>$20 – $60</strong>',
+    'standard':  'Standard tasks' + area + ' usually go for <strong>$40 – $150</strong>',
+    'recurring': 'Recurring tasks — set a per-session rate, minimum <strong>$20</strong>'
+  };
+  document.getElementById('hintText').innerHTML = (hints[selectedMode] || 'Typical budgets for this category: <strong>$20 – $40</strong>') + '. Minimum budget is $20.';
+}
+
+// -- SUBMIT ---------------------------------------------
+window._postTaskInFlight = false;
+window.handleSubmit = async function(skipPhotos, publishMode) {
+  // Guard duplicate clicks / sticky?original double-fire before any work runs twice
+  if (window._postTaskInFlight) return;
+  window._postTaskInFlight = true;
+  var asDraft = publishMode === 'draft';
+
+  var btn = document.getElementById('submitBtn');
+  var draftBtn = document.getElementById('draftBtn');
+  var btnDefaultLabel = window.QG_verificationState &&
+    window.QG_verificationState.poster_verified !== true
+    ? 'Verify payment to post'
+    : 'Post & fund';
+  function unlockSubmit() {
+    window._postTaskInFlight = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = btnDefaultLabel;
+    }
+    if (draftBtn) {
+      draftBtn.disabled = false;
+      draftBtn.textContent = 'Save draft';
+    }
+  }
+  function lockSubmitPosting() {
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = asDraft ? 'Saving draft…' : 'Posting…';
+    }
+    if (draftBtn) draftBtn.disabled = true;
+  }
+
+  var title    = window.sanitizeInput(document.getElementById('taskTitle').value, 120);
+  var desc     = window.sanitizeInput(document.getElementById('taskDesc').value, 2000);
+  var budget   = parseFloat(document.getElementById('taskBudget').value);
+  var locationType = getSelectedLocationType();
+  var location = window.sanitizeInput(document.getElementById('taskLocation').value, 100);
+  var valid    = true;
+
+  // Clear previous errors
+  document.querySelectorAll('.field-error').forEach(function(e){ e.style.display='none'; });
+  document.querySelectorAll('.field-input').forEach(function(i){ i.classList.remove('invalid'); });
+  document.getElementById('errorBanner').style.display = 'none';
+  var errorActions = document.getElementById('errorBannerActions');
+  if (errorActions) errorActions.style.display = 'none';
+
+  // Validate
+  if (!selectedCat) {
+    document.getElementById('catError').style.display = 'block';
+    document.getElementById('catWrap').classList.add('needs-selection');
+    valid = false;
+  } else {
+    document.getElementById('catWrap').classList.remove('needs-selection');
+  }
+  if (!title) {
+    document.getElementById('titleError').style.display = 'block';
+    document.getElementById('taskTitle').classList.add('invalid');
+    valid = false;
+  }
+  if (!budget || budget < 20) {
+    document.getElementById('budgetError').style.display = 'block';
+    document.getElementById('taskBudget').classList.add('invalid');
+    valid = false;
+  }
+  if (locationType === 'in_person' && !location) {
+    document.getElementById('locationError').style.display = 'block';
+    document.getElementById('taskLocation').classList.add('invalid');
+    valid = false;
+  }
+  var schedule = buildSchedulePayload();
+  if (schedule.error === 'date') {
+    document.getElementById('dateError').style.display = 'block';
+    if (document.getElementById('taskDate')) document.getElementById('taskDate').classList.add('invalid');
+    valid = false;
+  }
+  if (schedule.error === 'time') {
+    document.getElementById('timeError').style.display = 'block';
+    if (document.getElementById('taskTime')) document.getElementById('taskTime').classList.add('invalid');
+    valid = false;
+  }
+  if (!valid) {
+    var errMsg = scrollToFirstFormError() || 'Fix the highlighted fields above.';
+    showFormBanner(errMsg);
+    unlockSubmit();
+    return;
+  }
+
+  // FIRST-PASS content moderation (once per submit). Server + API later.
+  var modMsg = (typeof QG_CONTENT_MOD_MESSAGE === 'string' && QG_CONTENT_MOD_MESSAGE) ||
+    "This contains language that isn't allowed on SwiftGigs ? please edit and try again";
+  var titleMod = typeof moderateText === 'function' ? moderateText(title) : { blocked: false };
+  var descMod = typeof moderateText === 'function' ? moderateText(desc || '') : { blocked: false };
+  if (titleMod.blocked || descMod.blocked) {
+    var badField = titleMod.blocked ? 'title' : 'description';
+    var badFlags = (titleMod.blocked ? titleMod.flags : descMod.flags) || [];
+    if (typeof logModerationAttempt === 'function') {
+      logModerationAttempt({
+        userId: window._currentUser && window._currentUser.uid,
+        source: 'task',
+        targetType: 'task_post',
+        targetId: 'post_attempt',
+        field: badField,
+        flags: badFlags,
+        preview: titleMod.blocked ? title : desc,
+        message: modMsg
+      });
+    }
+    if (titleMod.blocked) {
+      var te = document.getElementById('titleError');
+      if (te) { te.textContent = modMsg; te.style.display = 'block'; }
+      document.getElementById('taskTitle').classList.add('invalid');
+    }
+    if (descMod.blocked) {
+      var de = document.getElementById('descError');
+      if (de) { de.textContent = modMsg; de.style.display = 'block'; }
+      document.getElementById('taskDesc').classList.add('invalid');
+    }
+    showFormBanner(modMsg);
+    scrollToFirstFormError();
+    unlockSubmit();
+    return;
+  }
+
+  if (!window._currentUser) {
+    showFormBanner('Log in again to post a task.');
+    unlockSubmit();
+    setTimeout(function(){ window.location.href = 'login.html'; }, 2000);
+    return;
+  }
+  if (typeof getAccountActionPermission === 'function') {
+    var postPermission = await getAccountActionPermission(
+      window._currentUser.uid,
+      asDraft ? 'draft' : 'post'
+    );
+    if (!postPermission.allowed) {
+      showFormBanner(postPermission.message);
+      if (postPermission.reason === 'poster_role_required' &&
+          typeof QG_offerRoleOptIn === 'function') {
+        QG_offerRoleOptIn('poster');
+      }
+      if (postPermission.reason === 'poster_payment_verification_required' &&
+          typeof QG_openVerificationPrompt === 'function') {
+        saveVerificationDraftState();
+        QG_openVerificationPrompt('poster', {
+          onVerified: function () {
+            if (typeof window.QG_applyPosterPublishGate === 'function') {
+              window.QG_applyPosterPublishGate(window.QG_verificationState);
+            }
+          }
+        });
+      }
+      unlockSubmit();
+      return;
+    }
+  }
+
+  var geocodedLocation = null;
+  if (locationType === 'in_person') {
+    if (typeof geocodeCanadaLocation === 'function') {
+      geocodedLocation = await geocodeCanadaLocation(location);
+      if (!geocodedLocation || !geocodedLocation.success) {
+        document.getElementById('locationError').style.display = 'block';
+        document.getElementById('taskLocation').classList.add('invalid');
+        showFormBanner((geocodedLocation && geocodedLocation.message) || 'Enter a valid Canadian city, area, or postal code.');
+        unlockSubmit();
+        return;
+      }
+    } else if (typeof geocodeDisplayLocation === 'function') {
+      geocodedLocation = await geocodeDisplayLocation(location);
+      if (!geocodedLocation) {
+        document.getElementById('locationError').style.display = 'block';
+        document.getElementById('taskLocation').classList.add('invalid');
+        showFormBanner('Enter a valid Canadian city, area, or postal code.');
+        unlockSubmit();
+        return;
+      }
+      geocodedLocation = { success: true, location: geocodedLocation.location, lat: geocodedLocation.lat, lng: geocodedLocation.lng };
+    } else {
+      showFormBanner('Location lookup is unavailable. Try again in a moment.');
+      unlockSubmit();
+      return;
+    }
+    location = geocodedLocation.location || location;
+    if (typeof setUserLocationResult === 'function') {
+      setUserLocationResult(location, geocodedLocation.lat, geocodedLocation.lng);
+    }
+  }
+
+  // Lock immediately ? only one network post path from here
+  lockSubmitPosting();
+
+  // Do not await profile sync here ? it blocked the UI and is not required to insert a task.
+  var posterName = window._currentUser.displayName || (window._currentUser.email && window._currentUser.email.split('@')[0]) || 'Poster';
+  if (typeof formatPersonName === 'function') posterName = formatPersonName(posterName);
+
+  // Build task object for Supabase
+  var taskData = {
+    title:       title,
+    description: desc || '',
+    category:    selectedCat,
+    task_mode:   selectedMode,
+    budget:      budget,
+    budget_negotiable: selectedBudgetType === 'negotiable',
+    location:    locationType === 'remote' ? 'Remote / Online' : location,
+    location_type: locationType,
+    lat:         locationType === 'remote' ? null : geocodedLocation.lat,
+    lng:         locationType === 'remote' ? null : geocodedLocation.lng,
+    posted_by:   window._currentUser.uid,
+    poster_name: posterName,
+    requires_photos: !!document.getElementById('requiresPhotos').checked,
+    scheduled_at: schedule.scheduled_at,
+    scheduled_label: schedule.scheduled_label,
+    age_preference: selectedAgePreference,
+    status: asDraft ? 'draft' : 'open'
+  };
+  if (schedule.scheduled_label && taskData.description.indexOf('When:') === -1) {
+    taskData.description = ('When: ' + schedule.scheduled_label + (taskData.description ? '\n\n' + taskData.description : '')).trim();
+  }
+
+  try {
+    if (selectedPhotos.length && !skipPhotos) {
+      var photoUrls = [];
+      for (var i = 0; i < selectedPhotos.length; i++) {
+        var upload = await uploadTaskPhoto(selectedPhotos[i], window._currentUser.uid);
+        if (!upload.success) {
+          var photoMsg = typeof formatUploadError === 'function'
+            ? formatUploadError(upload.error)
+            : 'Photo upload failed.';
+          showFormBanner(photoMsg, { showSkipPhotos: true });
+          unlockSubmit();
+          return;
+        }
+        photoUrls.push(upload.url);
+      }
+      taskData.photo_urls = JSON.stringify(photoUrls);
+    }
+
+    var result = await postTask(taskData);
+
+    if (result.success) {
+      // Flip to poster only on successful post ? never on mere page visit
+      if (typeof setMode === 'function') setMode('poster');
+      else if (typeof setSessionMode === 'function') setSessionMode('poster');
+      try { sessionStorage.setItem('qg-just-posted', '1'); } catch (e) {}
+      if (typeof window.qgClearPostDraft === 'function') window.qgClearPostDraft();
+      try { localStorage.removeItem('qg-post-verification-state'); } catch (draftErr) {}
+      try {
+        if (!asDraft && !localStorage.getItem('qg-first-post-done')) {
+          localStorage.setItem('qg-first-post-done', '1');
+          if (typeof qgCelebrate === 'function') qgCelebrate({ count: 40 });
+        }
+      } catch (e2) {}
+      if (typeof haptic === 'function') haptic([15, 30, 15]);
+      if (typeof qgTrackEvent === 'function') qgTrackEvent(asDraft ? 'draft_task' : 'post_task', { category: taskData.category || '' });
+      var successTitle = document.querySelector('#successScreen .success-title');
+      var successSub = document.querySelector('#successScreen .success-sub');
+      if (asDraft) {
+        if (successTitle) successTitle.textContent = 'Draft saved';
+        if (successSub) successSub.innerHTML = 'Your draft is saved under <strong>My Tasks → Posted</strong>. Verify a payment method when you are ready to publish — you are only charged when you fund a task.';
+      } else {
+        if (successTitle) successTitle.textContent = 'Task posted';
+        if (successSub) successSub.innerHTML = 'Your task is live under <strong>My Tasks → Posted</strong> (Poster mode). Browse only shows other people\'s tasks — not your own.';
+      }
+      document.getElementById('formContent').style.display = 'none';
+      document.getElementById('successScreen').style.display = 'block';
+      // Keep inFlight true ? form is gone; no second insert from this page
+    } else {
+      if (result.error === 'poster_payment_verification_required' &&
+          typeof QG_openVerificationPrompt === 'function') {
+        saveVerificationDraftState();
+        QG_openVerificationPrompt('poster', {
+          onVerified: function () {
+            if (typeof window.QG_applyPosterPublishGate === 'function') {
+              window.QG_applyPosterPublishGate(window.QG_verificationState);
+            }
+          }
+        });
+      }
+      if (result.error === 'poster_role_required' &&
+          typeof QG_offerRoleOptIn === 'function') {
+        QG_offerRoleOptIn('poster');
+      }
+      var failMsg = typeof formatSupabaseActionError === 'function'
+        ? formatSupabaseActionError('post task', result.error)
+        : 'Could not save your task. Sign in again, refresh, and try again.';
+      showFormBanner(failMsg);
+      console.error('postTask failed:', result.error);
+      unlockSubmit();
+    }
+  } catch (postErr) {
+    console.error('postTask exception:', postErr);
+    showFormBanner('Could not save your task. Check your connection and try again.');
+    unlockSubmit();
+  }
+};
+</script>
+
+<nav class="tab-bar" id="qgTabBar"></nav>
+<script>
+(function bootPostTabBar() {
+  if (typeof renderQuickGigsTabBar === 'function') {
+    renderQuickGigsTabBar('post');
+    return;
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('post');
+  });
+})();
+(function () {
+  function refreshPostModeBanner() {
+    var gate = document.getElementById('postRoleGate');
+    var form = document.getElementById('formContent');
+    if (!gate || !form) return;
+    var mode = typeof getMode === 'function' ? getMode() : 'poster';
+    var blocked = mode === 'tasker';
+    form.style.display = blocked ? 'none' : '';
+    gate.style.display = blocked ? 'block' : 'none';
+    if (blocked) {
+      var allowed = typeof QG_canUseRole === 'function' ? QG_canUseRole('poster') : null;
+      var access = typeof QG_getRoleAccess === 'function' ? QG_getRoleAccess() : null;
+      var teen = !!(access && access.is_teen);
+      gate.innerHTML = typeof roleGateHtml === 'function' && !teen
+        ? roleGateHtml({
+            targetMode: 'poster',
+            iconName: 'clipboard',
+            title: allowed === false ? 'Become a Poster to post tasks' : 'Switch to Poster mode',
+            sub: allowed === false
+              ? 'Poster mode stays off until you explicitly enable it.'
+              : 'Task publishing is available only in Poster mode.'
+          })
+        : '<div class="empty-state"><div class="empty-title">Poster mode is available at 18</div><div class="empty-sub">Teen accounts can find age-appropriate work in Tasker mode.</div></div>';
+    }
+  }
+  refreshPostModeBanner();
+  document.addEventListener('qg-mode-changed', refreshPostModeBanner);
+  document.addEventListener('qg-role-access-changed', refreshPostModeBanner);
+})();
+</script>
+<script defer src="qg-help.js?v=20260726seo"></script>
+<script defer src="qg-pwa.js?v=947d37a-1789577525"></script>
+</body>
+</html>
