@@ -60,7 +60,8 @@
     ban: '<circle cx="12" cy="12" r="9"/><path d="m5.5 5.5 13 13"/>',
     flag: '<path d="M6 3v18"/><path d="M6 4h11l-3 4 3 4H6Z"/>',
     settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
-    menu: '<path d="M4 6h16M4 12h16M4 18h16"/>'
+    menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+    grid: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>'
   };
 
   function svg(name, opts) {

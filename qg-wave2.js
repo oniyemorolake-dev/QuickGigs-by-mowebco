@@ -569,14 +569,12 @@
           var recent = document.getElementById('dashRecent');
           if (recent && recent.parentNode) recent.parentNode.insertBefore(sug, recent.nextSibling);
         }
-        if (!document.getElementById('dashStreak')) {
-          var st = document.createElement('div');
-          st.id = 'dashStreak';
-          var greet = document.querySelector('.greeting');
-          if (greet && greet.parentNode) greet.parentNode.insertBefore(st, greet.nextSibling);
-        }
+        /* The streak pill is not on the Home design, so it is no longer
+           injected under the greeting. qgTouchStreak still runs, so the count
+           keeps accruing, and window.qgRenderStreak(hostId) will still draw it
+           into any host a screen chooses to give it. */
         window.qgRenderRecentlyViewed('dashRecent');
-        window.qgRenderStreak('dashStreak');
+        if (document.getElementById('dashStreak')) window.qgRenderStreak('dashStreak');
         var isWorker = (typeof isWorkerMode === 'function' && isWorkerMode()) ||
           (typeof getMode === 'function' ? getMode() === 'tasker' : localStorage.getItem('qg-mode') === 'tasker' || localStorage.getItem('qg-session-mode') === 'worker');
         if (isWorker) window.qgRenderSuggested('dashSuggested');

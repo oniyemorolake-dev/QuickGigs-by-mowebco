@@ -6,7 +6,7 @@
      person menu. */
   var TABS = [
     { id: 'home', href: 'dashboard.html', icon: 'home', label: 'Home' },
-    { id: 'gigs', href: 'browsetask.html', icon: 'search', label: 'Gigs' },
+    { id: 'gigs', href: 'browsetask.html', icon: 'grid', label: 'Gigs' },
     { id: 'messages', href: 'messages.html', icon: 'message', label: 'Messages' },
     { id: 'profile', href: 'profile.html', icon: 'user', label: 'Profile' }
   ];

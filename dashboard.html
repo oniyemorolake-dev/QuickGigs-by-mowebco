@@ -127,6 +127,21 @@ html:root body .dash-hero-switch-btn{font:600 12px 'DM Sans',sans-serif !importa
 /* ── PRIMARY ACTION TILES (mockup: two surface cards, isq + bold label) ── */
 .sg-dash-tiles{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:16px 16px 0;}
 .sg-dash-tiles .sg-card{display:flex;flex-direction:column;gap:8px;padding:14px 12px;border-radius:14px;text-decoration:none;color:var(--text);}
+/* ── CURRENT TASK / THIS WEEK row cards ── */
+.sg-dash-sec{padding:18px 16px 0;}
+.sg-dash-sec .sg-label{margin-bottom:8px;}
+.sg-rowcard{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:14px;text-decoration:none;color:var(--text);}
+.sg-rowcard-body{flex:1;min-width:0;}
+.sg-rowcard-title{display:block;font-size:14.5px;font-weight:700;color:var(--text);line-height:1.25;}
+.sg-rowcard-meta{display:block;margin-top:2px;font-size:12.5px;color:var(--text-muted);line-height:1.3;}
+.sg-rowcard-title.is-money{color:var(--green);font-size:16px;}
+.sg-rowcard-chev{flex-shrink:0;color:var(--text-muted);display:flex;}
+.sg-rowcard-chev svg{width:17px;height:17px;}
+
+.sg-dash-tile-name{font-size:15px;font-weight:700;color:var(--text);line-height:1.2;}
+.sg-dash-tile-sub{font-size:12.5px;color:var(--text-muted);line-height:1.3;}
+.sg-dash-tiles .sg-card{gap:4px;}
+.sg-dash-tiles .sg-isq{margin-bottom:6px;}
 .sg-dash-tiles .sg-card:hover{border-color:var(--border-hover);}
 .sg-dash-tiles .sg-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 .sg-dash-tiles .sg-isq{width:32px;height:32px;}
@@ -266,52 +281,33 @@ html:root body #qgTabBar .tab-item.active .tab-lbl{font-weight:600;}
 </head>
 <body>
 
-<!-- NAV -->
-<nav class="nav">
-  <div class="nav-brand">
-    <span class="nav-logo sg-wordmark">SwiftGigs</span>
-    <span class="nav-role">POSTER</span>
-  </div>
-  <div class="nav-right">
-    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">Light</button>
-    <div class="avatar" id="avatarEl" onclick="toggleAvatarMenu()" style="cursor:pointer">M</div>
-    <div id="avatarMenu" style="display:none;position:absolute;top:56px;right:20px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:6px;min-width:190px;z-index:200;box-shadow:0 10px 30px rgba(0,0,0,0.28);">
-      <a href="profile.html" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;text-decoration:none;color:var(--text);font-size:13px;font-weight:500;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='var(--surface-alt)'" onmouseout="this.style.background='transparent'"><svg class="qg-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="5"/></svg> View profile</a>
-      <div id="avatarMenuSwitch" onclick="quickSwitchFromMenu()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:var(--text);font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='var(--surface-alt)'" onmouseout="this.style.background='transparent'"><svg class="qg-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/></svg> Switch mode</div>
-      <div id="avatarMenuInstall" onclick="typeof promptQuickGigsInstall===\'function\'&&promptQuickGigsInstall()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:var(--text);font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='var(--surface-alt)'" onmouseout="this.style.background='transparent'"><svg class="qg-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg> Add to Home Screen</div>
-      <a href="feedback.html" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;text-decoration:none;color:var(--text);font-size:13px;font-weight:500;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='var(--surface-alt)'" onmouseout="this.style.background='transparent'"><svg class="qg-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 9h8v7a4 4 0 0 1-8 0V9Z"/><path d="M9 5.5 7 3M15 5.5 17 3M12 3v3M5 12H2M22 12h-3M5.5 17 3 19M18.5 17 21 19"/></svg> Beta feedback</a>
-      <div onclick="doLogout()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:var(--danger);font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif;" onmouseover="this.style.background='var(--danger-soft)'" onmouseout="this.style.background='transparent'"><svg class="qg-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg> Log out</div>
-    </div>
-  </div>
-</nav>
-
-<!-- BETA BANNER -->
+<!-- BETA BANNER — one only, Home only, above the header -->
 <div class="sg-page sg-beta" id="sgBetaBanner" role="note">
   <span class="sg-beta-ico" aria-hidden="true">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4a1 1 0 0 0 1 1h2.5l5 3.5v-13L6.5 9H4a1 1 0 0 0-1 1z"/><path d="M15 9a3.5 3.5 0 0 1 0 6"/><path d="M18 6.5a7 7 0 0 1 0 11"/></svg>
   </span>
   <span class="sg-body sg-beta-text">SwiftGigs beta is live — payments live via Stripe.</span>
   <a class="sg-beta-link" href="feedback.html">Feedback</a>
-  <button type="button" class="sg-beta-close" onclick="document.getElementById('sgBetaBanner').style.display='none'" aria-label="Dismiss">
+  <button type="button" class="sg-beta-close" aria-label="Dismiss">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
   </button>
 </div>
 
-<!-- PRIMARY ACTION TILES -->
-<div class="sg-page sg-dash-tiles qg-page-wide">
-  <a href="posttask.html" class="sg-card">
-    <span class="sg-isq sg-isq--primary" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-    </span>
-    <span class="sg-body">Post a Task</span>
-  </a>
-  <a href="browsetask.html" class="sg-card">
-    <span class="sg-isq sg-isq--teal" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 6v12M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.2 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/></svg>
-    </span>
-    <span class="sg-body">Earn Money</span>
-  </a>
-</div>
+<!-- NAV — wordmark + city, and one person button. The theme toggle, mode
+     switch, install prompt, feedback link and log out all live in the menu
+     that person button opens. -->
+<nav class="nav sg-appbar">
+  <div class="nav-brand sg-appbar__brand">
+    <span class="nav-logo sg-wordmark">SwiftGigs</span>
+    <span class="sg-appbar__city" id="dashCityLine"></span>
+  </div>
+  <div class="nav-right">
+    <button type="button" class="qg-menu-btn" id="qgMenuBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="5"/></svg>
+    </button>
+    <div class="avatar" id="avatarEl" hidden>M</div>
+  </div>
+</nav>
 
 <!-- GREETING + SMART HERO -->
 <div id="guardianBanner" style="display:none"></div>
@@ -324,37 +320,60 @@ html:root body #qgTabBar .tab-item.active .tab-lbl{font-weight:600;}
 </div>
 <div id="verificationGateBanner" class="verification-gate-banner qg-page-wide"></div>
 <div class="greeting qg-page-wide">
-  <div class="mode-tag tag-poster" id="modeTag" data-qg-mode-tag><span data-qg-ico="briefcase" data-qg-ico-size="12"></span> Poster mode</div>
-  <div class="greet-name" id="greetName">Good evening</div>
+  <h1 class="greet-name" id="greetName">Good evening</h1>
   <div class="greet-note" id="greetNote" hidden>
     <span class="greet-note-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="currentColor" focusable="false"><path d="M12 2.2l1.4 5.1 5.1 1.4-5.1 1.4L12 15.2l-1.4-5.1L5.5 8.7l5.1-1.4L12 2.2zm6.8 10.3l.9 3.2 3.2.9-3.2.9-.9 3.2-.9-3.2-3.2-.9 3.2-.9.9-3.2zM5.2 14.4l.7 2.4 2.4.7-2.4.7-.7 2.4-.7-2.4-2.4-.7 2.4-.7.7-2.4z"/></svg>
     </span>
     <span class="greet-note-text" id="greetNoteText"></span>
   </div>
-  <div class="greet-sub" id="greetSub">Loading your dashboard…</div>
-  <div class="dash-reputation" id="dashReputation" aria-label="Your reputation"></div>
-  <div id="dashHero"><div class="qg-skel qg-skel-hero" aria-hidden="true"></div></div>
+  <!-- Not in the design, but every one of these is still written to by the
+       dashboard's JS, so the elements stay and are simply not shown. The
+       reputation line and smart hero now surface on Profile. -->
+  <div class="greet-sub" id="greetSub" hidden>Loading your dashboard…</div>
+  <div class="dash-reputation" id="dashReputation" aria-label="Your reputation" hidden></div>
+  <div id="dashHero" hidden></div>
 </div>
 <div id="dashApplicantsAlert" hidden></div>
 <div id="dashEarnings" hidden></div>
-<p class="dash-loading-hint" id="dashLoadHint">Fetching your tasks…</p>
+<p class="dash-loading-hint" id="dashLoadHint" hidden>Fetching your tasks…</p>
 
-<!-- STATS -->
-<div class="stats" id="statsGrid">
-  <div class="qg-skel qg-skel-stat"></div>
-  <div class="qg-skel qg-skel-stat"></div>
-  <div class="qg-skel qg-skel-stat"></div>
+<!-- PRIMARY ACTION TILES -->
+<div class="sg-page sg-dash-tiles qg-page-wide">
+  <a href="posttask.html" class="sg-card">
+    <span class="sg-isq sg-isq--primary" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+    </span>
+    <span class="sg-dash-tile-name">Post a Task</span>
+    <span class="sg-dash-tile-sub">Get help fast</span>
+  </a>
+  <a href="browsetask.html" class="sg-card">
+    <span class="sg-isq sg-isq--teal" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 6v12M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.2 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/></svg>
+    </span>
+    <span class="sg-dash-tile-name">Earn Money</span>
+    <span class="sg-dash-tile-sub">Find gigs nearby</span>
+  </a>
 </div>
 
-<!-- ACTION CARDS -->
-<div class="actions" id="actionsGrid">
-  <div class="qg-skel qg-skel-action"></div>
-  <div class="qg-skel qg-skel-action"></div>
+<!-- CURRENT TASK — the row card that replaces My Tasks in the tab bar.
+     Hidden until there is one; filled by renderCurrentTaskCard(). -->
+<div class="sg-page sg-dash-sec qg-page-wide" id="dashCurrentSec" hidden>
+  <div class="sg-label">Current task</div>
+  <a class="sg-card sg-rowcard" id="dashCurrentCard" href="mytasks.html"></a>
 </div>
 
-<div id="dashActivity" class="qg-page-wide"></div>
-<div id="dashMarketTicker" class="qg-page-wide"></div>
+<!-- THIS WEEK — earnings the page already fetches; see renderThisWeekCard(). -->
+<div class="sg-page sg-dash-sec qg-page-wide" id="dashWeekSec" hidden>
+  <div class="sg-label">This week</div>
+  <a class="sg-card sg-rowcard" id="dashWeekCard" href="profile.html#payments"></a>
+</div>
+
+<!-- Not in the design. Kept so their render functions keep working. -->
+<div class="stats" id="statsGrid" hidden></div>
+<div class="actions" id="actionsGrid" hidden></div>
+<div id="dashActivity" class="qg-page-wide" hidden></div>
+<div id="dashMarketTicker" class="qg-page-wide" hidden></div>
 
 <div id="dashConnectBanner" style="display:none"></div>
 
@@ -370,7 +389,7 @@ html:root body #qgTabBar .tab-item.active .tab-lbl{font-weight:600;}
 <!-- FEED SECTION -->
 <div class="section qg-page-wide">
   <div class="section-hdr">
-    <span class="section-title" id="sectionTitle">Tasks near you</span>
+    <span class="section-title" id="sectionTitle">Nearby gigs</span>
     <a class="see-all" href="browsetask.html">See all</a>
   </div>
   <div id="tasksList">
@@ -454,7 +473,8 @@ onAuthStateChanged(auth, async (user) => {
   const name = live.displayName || (live.email ? live.email.split('@')[0] : 'there');
   const firstName = name.split(' ')[0];
   window._userName = firstName;
-  document.getElementById('avatarEl').textContent = firstName.charAt(0).toUpperCase();
+  var avatarEl = document.getElementById('avatarEl');
+  if (avatarEl) avatarEl.textContent = firstName.charAt(0).toUpperCase();
   var hint = document.getElementById('dashLoadHint');
   if (hint) hint.textContent = 'Loading your tasks…';
   // First paint data ? do not await profile sync.
@@ -730,10 +750,13 @@ function updateAvatarMenuSwitchLabel() {
 document.addEventListener('qg-role-access-changed', updateAvatarMenuSwitchLabel);
 
 function updateModeTag() {
-  var tag = document.getElementById('modeTag');
-  if (!tag) return;
+  // Refreshing isPoster is the load-bearing half of this function — the
+  // earnings card and renderAll both branch on it. It must happen whether or
+  // not the mode tag is on the page; the tag itself is gone from the design.
   var posterNow = (typeof getMode === 'function' ? getMode() : (isPoster ? 'poster' : 'tasker')) === 'poster';
   isPoster = posterNow;
+  var tag = document.getElementById('modeTag');
+  if (!tag) return;
   tag.textContent = posterNow ? 'Poster mode' : 'Tasker mode';
   tag.className = 'mode-tag ' + (posterNow ? 'tag-poster' : 'tag-worker');
 }
@@ -1180,6 +1203,130 @@ function renderDashReputation(rep) {
   el.style.display = 'block';
 }
 
+/* ── CURRENT TASK / THIS WEEK ─────────────────────────────────────────────
+   Both cards read data the dashboard already fetches into dashData — no new
+   query. CURRENT TASK is the route to My Tasks now that it has left the tab
+   bar, so it links straight into mytasks.html. */
+
+var DASH_LIVE_STATES = {
+  accepted: 1, assigned: 1, arrived: 1, in_progress: 1, 'in progress': 1, inprogress: 1
+};
+
+function dashChevron() {
+  return '<span class="sg-rowcard-chev" aria-hidden="true">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" ' +
+    'stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>';
+}
+
+function dashIsq(iconName, tone) {
+  var svg = typeof qgIcon === 'function' ? qgIcon(iconName || 'clipboard', { size: 19 }) : '';
+  return '<span class="sg-isq sg-isq--' + (tone || 'primary') + '" aria-hidden="true">' + svg + '</span>';
+}
+
+/** Short, human date for the task row: "Today · 4:00 PM" where possible. */
+function dashWhenLabel(task) {
+  var raw = taskField(task, 'scheduled_at') || taskField(task, 'task_date') ||
+    taskField(task, 'due_date') || taskField(task, 'created_at');
+  if (!raw) return '';
+  var d = typeof parseQgTimestamp === 'function' ? parseQgTimestamp(raw) : new Date(raw);
+  if (!d || isNaN(d.getTime())) return '';
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var that = new Date(d); that.setHours(0, 0, 0, 0);
+  var days = Math.round((that - today) / 86400000);
+  var day = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : days === -1 ? 'Yesterday'
+    : d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  var time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return day + ' · ' + time;
+}
+
+function renderCurrentTaskCard(myPosted, myApps, userId) {
+  var sec = document.getElementById('dashCurrentSec');
+  var card = document.getElementById('dashCurrentCard');
+  if (!sec || !card) return;
+
+  var task = null;
+  var state = '';
+  if (isPoster) {
+    task = (myPosted || []).filter(function (t) {
+      return DASH_LIVE_STATES[String(taskField(t, 'status') || '').toLowerCase()];
+    })[0] || null;
+    if (task) state = taskField(task, 'status');
+  } else {
+    var app = (myApps || []).filter(function (a) {
+      return DASH_LIVE_STATES[String(appField(a, 'status') || '').toLowerCase()];
+    })[0];
+    if (app) {
+      var tid = String(appField(app, 'task_id'));
+      task = (dashData.posted || []).filter(function (t) {
+        return String(taskField(t, 'id')) === tid;
+      })[0] || null;
+      state = appField(app, 'status');
+    }
+  }
+
+  // The design hides the whole section when there is nothing under way.
+  if (!task) { sec.hidden = true; return; }
+
+  var title = taskField(task, 'title') || 'Your task';
+  var when = dashWhenLabel(task);
+  var pretty = String(state || '').replace(/[_-]+/g, ' ').trim();
+  pretty = pretty ? pretty.charAt(0).toUpperCase() + pretty.slice(1) : '';
+  var meta = [when, pretty].filter(Boolean).join(' · ');
+  // getCatInfo carries the iconKey per category (beauty -> scissors, etc.).
+  var cat = taskField(task, 'category');
+  var info = typeof window.getCatInfo === 'function' ? window.getCatInfo(cat) : null;
+  var icon = (info && info.iconKey) || 'clipboard';
+
+  card.href = 'mytasks.html?tab=' + (isPoster ? 'posted' : 'applied');
+  card.innerHTML = dashIsq(icon, 'primary') +
+    '<span class="sg-rowcard-body">' +
+      '<span class="sg-rowcard-title">' + dashEsc(title) + '</span>' +
+      (meta ? '<span class="sg-rowcard-meta">' + dashEsc(meta) + '</span>' : '') +
+    '</span>' + dashChevron();
+  sec.hidden = false;
+}
+
+function renderThisWeekCard(workerPayments) {
+  var sec = document.getElementById('dashWeekSec');
+  var card = document.getElementById('dashWeekCard');
+  if (!sec || !card) return;
+
+  var paid = (workerPayments || []).filter(function (p) {
+    return String(p.status || '').toLowerCase() === 'paid';
+  });
+  var weekStart = dashDayStart(-6);
+  var nextDay = dashDayStart(1);
+  var earned = dashSumPaidInRange(paid, weekStart, nextDay);
+  var count = paid.filter(function (p) {
+    var d = dashPayDate(p);
+    return d && d >= weekStart && d < nextDay;
+  }).length;
+
+  // Nothing earned this week is not a card worth showing.
+  if (earned <= 0 && count === 0) { sec.hidden = true; return; }
+
+  card.innerHTML = dashIsq('dollar', 'teal') +
+    '<span class="sg-rowcard-body">' +
+      '<span class="sg-rowcard-title is-money">$' + Math.round(earned) + ' earned</span>' +
+      '<span class="sg-rowcard-meta">' + count + ' gig' + (count === 1 ? '' : 's') + ' completed</span>' +
+    '</span>' + dashChevron();
+  sec.hidden = false;
+}
+
+/** "Calgary, AB" under the wordmark. */
+function renderDashCity() {
+  var el = document.getElementById('dashCityLine');
+  if (!el) return;
+  var city = typeof window.getUserCityLabel === 'function' ? window.getUserCityLabel() : '';
+  el.textContent = city || '';
+}
+
+function dashEsc(s) {
+  return typeof escapeHtml === 'function' ? escapeHtml(s)
+    : (typeof qgEsc === 'function' ? qgEsc(s)
+      : String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+}
+
 function renderAll(){
   function dashEsc(s) {
     return typeof escapeHtml === 'function' ? escapeHtml(s)
@@ -1306,6 +1453,9 @@ function renderAll(){
   renderDashboardHero(userId);
   renderDashApplicantsAlert(pendingApplicantsOnMine);
   renderDashEarningsCard(workerPayments, totalEarned);
+  renderCurrentTaskCard(myPosted, myApps, userId);
+  renderThisWeekCard(workerPayments);
+  renderDashCity();
 
   var actions = isPoster
     ? [

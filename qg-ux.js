@@ -155,9 +155,19 @@
     document.querySelectorAll('.nav-beta-pill').forEach(function (el) { el.remove(); });
   }
 
+  /* In the app the footer appears on Profile only, where the design draws it as
+     a card. Everywhere else it is a tall block of links between the content and
+     the tab bar that no screen in the design has. Content and marketing pages
+     are unaffected and keep theirs. */
+  var FOOTERLESS = {
+    'dashboard.html': 1, 'browsetask.html': 1, 'posttask.html': 1,
+    'mytasks.html': 1, 'messages.html': 1, 'chat.html': 1,
+    'workers.html': 1, 'categories.html': 1, 'review.html': 1
+  };
+
   function ensureTrustFooter() {
     // Chat is a full-viewport flex column — a site footer steals height and clips the composer.
-    if (PAGE === 'chat.html' ||
+    if (FOOTERLESS[PAGE] ||
         document.body.classList.contains('qg-page-chat') ||
         document.body.classList.contains('page-chat') ||
         document.getElementById('chatScroll')) {
