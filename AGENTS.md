@@ -12,19 +12,22 @@ Stay inside your zone. If a task needs a file you do not own, **stop and flag it
 rather than editing it — the other agent may have that file open with unsaved
 context, and a write from you will silently destroy its work.
 
-> **TEMPORARY TRANSFER — six app pages are Cursor's, assigned by Morolake.**
-> For the SwiftGigs data-wiring pass, Cursor owns `dashboard.html`,
-> `browsetask.html`, `posttask.html`, `messages.html`, `profile.html` and
-> `mytasks.html`, plus their `*-legacy.html` rollback copies and the new
-> `sg-app.css`. The finished layout already exists in
-> `Claude outputs/sg-design/templates/`; this task is wiring real data into it,
-> not design. **Claude must not touch those six files or their legacy copies
-> until Cursor reports back and this block is removed.** The other 27 root HTML
-> files remain Claude's and are not frozen.
+> **HTML is Claude's again. `dashboard.html` was rebuilt by Cursor and handed
+> back; the rest of the wiring pass is Claude's.**
+> Claude is rebuilding `browsetask.html`, `posttask.html`, `messages.html`,
+> `profile.html` and `mytasks.html` from `Claude outputs/sg-design/templates/`.
+> **Cursor must not edit those five files, or `dashboard.html`, until Claude
+> says it is done.** Cursor continues on CSS, JS, scripts and docs, including
+> `sg-app.css` and any helper extracted out of an injector.
+>
+> `dashboard.html` is finished and pushed. `dashboard-legacy.html` is its
+> rollback copy and is not linked from anywhere. Follow the same pattern for
+> the other five: copy to `<name>-legacy.html` before replacing the body.
 
 | Zone | Owner |
 | --- | --- |
-| `*.html` (33 files at repo root) | Claude desktop — **six suspended, see above** |
+| `*.html` (33 files at repo root) | Claude desktop |
+| `sg-app.css`, `qg-streak.js` | Cursor (new, see below) |
 | `qg-icons.js` | Claude desktop (append-only, see below) |
 | `*.css` (38 files at repo root) | Cursor |
 | `*.js` at root, except `qg-icons.js` | Cursor |
@@ -141,10 +144,34 @@ back onto screens the design does not have them on. Do not add them back. Their
 markup is written into the page and their chrome comes from `sg-app.css`.
 
 If one of those pages needs a function that lives inside an injector, call it
-directly or extract it — do not load the injector. Already done this way:
-`readTasksCache` and `readAppsCache` come from `supabase-db.js` rather than
-`qg-wave2.js`, and logout uses the inline `signOut` path rather than
-`qgLogout` from `qg-menu.js`.
+directly or extract it — do not load the injector.
+
+Run `node scripts/injector-deps.js <page.html>` to list what a page still needs
+from an injector. It separates names that are only in an injector, which need a
+decision, from names also available in a safe file, which just need that file
+loaded instead.
+
+Already resolved, safe to use on a rebuilt page:
+
+| Need | Load this instead of the injector |
+| --- | --- |
+| `readTasksCache`, `readAppsCache` | `supabase-db.js` (not `qg-wave2.js`) |
+| `escapeHtml`, `showToast`, `parseQgTimestamp`, `formatRelativeTime` | `qg-utils.js` |
+| `qgIcon` | `qg-icons.js` |
+| `isTaskSaved`, `bookmarkButtonHtml`, `bindSavedTriggers` | `qg-saved.js` |
+| `QG_canUseRole`, `QG_getRoleAccess`, `QG_setActiveRoleMode` | `qg-role-access.js` |
+| visit streak | `qg-streak.js` |
+| `getMode`, `setMode`, `getSessionMode`, `setSessionMode`, `isWorkerMode`, `isPosterMode`, `toggleMode` | `qg-mode.js` |
+| logout | the inline `signOut` path, not `qgLogout` from `qg-menu.js` |
+
+`qg-mode.js` also exports `QG_applyRoleMode()`, which paints
+`data-qg-mode` / `data-mode` / `.qg-mode-poster` / `.qg-mode-worker` so the
+role-scoped token blocks in `qg-tokens.css` apply. It repaints nothing else.
+It fills in `applyRoleTheme` only when `qg-nav.js` is absent, so injector pages
+keep theirs.
+
+`renderQuickGigsTabBar` needs no replacement: the templates carry their own
+static `.sg-tabs` markup, so those calls should simply go.
 
 The remaining 27 pages still use the old injector architecture described below.
 
