@@ -209,6 +209,15 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .sg-tabs a svg.i{width:23px;height:23px;}
 .sg-tabs a.on{color:var(--primary);font-weight:600;}
 
+/* ── Home greeting block ── */
+.sg-greet{margin-top:14px;}
+.sg-quip{font-size:14px;color:var(--text-muted);margin-top:4px;}
+.sg-streak{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:6px 12px 6px 10px;border-radius:100px;
+  background:var(--attention-soft);color:var(--text);font-size:13px;}
+.sg-streak svg.i{width:15px;height:15px;color:var(--attention);}
+.sg-streak b{font-weight:700;}
+.sg-streak-sub{color:var(--text-muted);}
+
 /* ── Sheets and sub-views ──
    Where a feature has no place on a screen it moves into one of these, opened
    from a control that is in the design. Nothing is deleted. */

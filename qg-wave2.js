@@ -569,12 +569,12 @@
           var recent = document.getElementById('dashRecent');
           if (recent && recent.parentNode) recent.parentNode.insertBefore(sug, recent.nextSibling);
         }
-        /* The streak pill is not on the Home design, so it is no longer
-           injected under the greeting. qgTouchStreak still runs, so the count
-           keeps accruing, and window.qgRenderStreak(hostId) will still draw it
-           into any host a screen chooses to give it. */
+        /* The streak card is retired: the streak now shows only in the Home
+           greeting pill, drawn by SG_renderGreeting from the count that
+           qg-streak.js keeps. qgTouchStreak still runs below so the count
+           accrues on injector pages too, and qgRenderStreak(hostId) is still
+           exported for anything that asks for it by name. */
         window.qgRenderRecentlyViewed('dashRecent');
-        if (document.getElementById('dashStreak')) window.qgRenderStreak('dashStreak');
         var isWorker = (typeof isWorkerMode === 'function' && isWorkerMode()) ||
           (typeof getMode === 'function' ? getMode() === 'tasker' : localStorage.getItem('qg-mode') === 'tasker' || localStorage.getItem('qg-session-mode') === 'worker');
         if (isWorker) window.qgRenderSuggested('dashSuggested');

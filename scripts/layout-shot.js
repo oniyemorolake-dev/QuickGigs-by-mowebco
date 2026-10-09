@@ -95,7 +95,8 @@ function fixtures() {
 const FIXTURE_SRC = '\n;(' + fixtures.toString() + ')();\n';
 
 const IDS = {
-  'dashboard.html': ['sgCity', 'sgGreeting', 'sgCurrentTask', 'sgWeek', 'sgNearbyList', 'sgPersonBtn', 'sgTabs']
+  'dashboard.html': ['sgCity', 'sgGreetBlock', 'sgGreeting', 'sgQuip', 'sgStreak', 'sgStreakCount',
+    'sgCurrentTask', 'sgWeek', 'sgNearbyList', 'sgPersonBtn', 'sgTabs']
 };
 
 (async () => {
@@ -121,7 +122,15 @@ const IDS = {
     });
 
     await page.addInitScript((t) => {
-      try { localStorage.setItem('qg-theme', t); } catch (e) {}
+      try {
+        localStorage.setItem('qg-theme', t);
+        // Seed a streak so the greeting pill renders through the real path.
+        var d = new Date();
+        var day = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') +
+          '-' + String(d.getDate()).padStart(2, '0');
+        localStorage.setItem('qg-streak', JSON.stringify({ lastDate: day, count: 3 }));
+        localStorage.removeItem('sg-greet-hidden');
+      } catch (e) {}
     }, theme);
 
     await page.goto(BASE + '/' + pageName, { waitUntil: 'domcontentloaded' });

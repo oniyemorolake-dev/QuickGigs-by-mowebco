@@ -31,6 +31,8 @@
 <script defer src="supabaseClient.js"></script>
 <script defer src="supabase-db.js"></script>
 <script defer src="qg-categories.js"></script>
+<!-- Visit streak, extracted from qg-wave2.js so the injector stays unloaded. -->
+<script src="qg-streak.js"></script>
 <script defer src="qg-location.js"></script>
 <script defer src="qg-age.js"></script>
 <script defer src="qg-notifications.js"></script>
@@ -45,7 +47,12 @@
     <button class="sg-round" id="sgPersonBtn" aria-label="Account menu"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/></svg></button>
   </header>
   <main class="sg-body">
-    <div class="sg-title-row" style="margin-top:14px"><h1 class="sg-h1" id="sgGreeting">Good afternoon</h1><button class="sg-x" id="sgGreetClose" aria-label="Hide greeting"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <!-- Greeting block: time-of-day greeting + a light-hearted line + streak. The x hides it until tomorrow. -->
+    <section class="sg-greet" id="sgGreetBlock">
+      <div class="sg-title-row"><h1 class="sg-h1" id="sgGreeting">Good afternoon</h1><button class="sg-x" id="sgGreetClose" aria-label="Hide greeting until tomorrow"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <p class="sg-quip" id="sgQuip">Lunch is done. Errands aren't. We can help.</p>
+      <span class="sg-streak" id="sgStreak"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21c-3.9 0-7-2.8-7-6.6 0-3.1 2.1-5.2 3.6-6.8.4 1.8 1.4 3 2.6 3.4C11 7.8 12.6 5 15 3c.2 3 1.6 4.6 2.8 6.1 1.1 1.4 2.2 3 2.2 5.3 0 3.8-3.1 6.6-8 6.6z"/></svg><span><b id="sgStreakCount">3</b>-day streak</span><span class="sg-streak-sub" id="sgStreakSub">· keep it going</span></span>
+    </section>
     <div class="sg-tiles">
       <a class="sg-card sg-tile" href="posttask.html"><span class="sg-isq"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><b>Post a Task</b><span>Get help fast</span></a>
       <a class="sg-card sg-tile" href="browsetask.html"><span class="sg-isq teal"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9-9-9z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span><b>Earn Money</b><span>Find gigs nearby</span></a>
@@ -250,13 +257,23 @@
     else el.hidden = true;
   }
 
-  function renderGreeting() {
-    var el = document.getElementById('sgGreeting');
-    if (!el) return;
-    // The design shows the greeting alone, with no name after it.
-    var h = new Date().getHours();
-    el.textContent = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  /* The greeting, quip and streak pill are drawn by the template's own script
+     at the bottom of this page. Recording the visit has to happen before that
+     script runs so the pill shows today's count, and the name arrives later,
+     when auth resolves. */
+  function touchStreak() {
+    if (typeof window.qgTouchStreak === 'function') {
+      var data = window.qgTouchStreak();
+      return (data && data.count) || 0;
+    }
+    return typeof window.qgStreakCount === 'function' ? window.qgStreakCount() : 0;
   }
+
+  function paintGreeting() {
+    if (typeof window.SG_renderGreeting !== 'function') return;
+    window.SG_renderGreeting(window._userName || '', touchStreak());
+  }
+  window.SG_paintGreeting = paintGreeting;
 
   /* ── Current task ──
      Whichever role is active, this is the one gig in flight. The worker's comes
@@ -418,7 +435,6 @@
   }
 
   function renderAll() {
-    renderGreeting();
     renderCity();
     renderCurrentTask();
     renderWeek();
@@ -550,8 +566,9 @@
       renderNotifications();
     });
 
-    /* The beta strip and the greeting both carry a dismiss control in the
-       design, so both stay dismissed for the session. */
+    /* Beta strip only. The greeting's own dismiss button is wired by the
+       template script, which hides it until tomorrow rather than for the
+       session. */
     var beta = document.getElementById('sgBeta');
     var betaX = document.getElementById('sgBetaClose');
     if (beta && sessionStorage.getItem('sg-beta-hidden') === '1') beta.hidden = true;
@@ -559,26 +576,74 @@
       if (beta) beta.hidden = true;
       try { sessionStorage.setItem('sg-beta-hidden', '1'); } catch (e) {}
     });
-
-    var greetRow = document.querySelector('.sg-title-row');
-    var greetX = document.getElementById('sgGreetClose');
-    if (greetRow && sessionStorage.getItem('sg-greet-hidden') === '1') greetRow.hidden = true;
-    if (greetX) greetX.addEventListener('click', function () {
-      if (greetRow) greetRow.hidden = true;
-      try { sessionStorage.setItem('sg-greet-hidden', '1'); } catch (e) {}
-    });
   }
 
+  /* The template's greeting script reads this when it runs, a few lines below.
+     No name is known yet, so the first paint is the greeting without one; auth
+     fills it in afterwards. The demo values in the template never show. */
+  window.SG_USER = { firstName: '', streakDays: touchStreak() };
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { wireChrome(); renderGreeting(); });
+    document.addEventListener('DOMContentLoaded', wireChrome);
   } else {
     wireChrome();
-    renderGreeting();
   }
 
   window.SG_loadDashboardData = loadDashboardData;
   window.SG_openSheet = openSheet;
   window.SG_esc = esc;
+})();
+</script>
+
+<script>
+/* KEEP THIS SCRIPT (real behaviour, not preview-only).
+   Wiring: set window.SG_USER = { firstName, streakDays } before it runs, or call SG_renderGreeting(firstName, streakDays) after data loads. */
+(function () {
+  var GREET = {
+    morning:   ['Good morning', 'Good morning', 'Rise and shine', 'Bonjour', 'Top of the morning'],
+    afternoon: ['Good afternoon', 'Good afternoon', 'Hey there', 'Howdy', 'Hiya'],
+    evening:   ['Good evening', 'Good evening', 'Bonsoir', 'Hey there', 'Evening'],
+    night:     ['Still up?', 'Up late?', 'Bonsoir', 'Hey there']
+  };
+  var QUIPS = {
+    morning: ['Coffee first. Then conquer the to-do list.', 'Early bird gets the gig.', 'Your to-do list called. It misses you.',
+              'Rise and grind — or let someone else grind for you.', 'Fresh day, fresh gigs. Let’s go.'],
+    afternoon: ['Lunch is done. Errands aren’t. We can help.', 'Afternoon slump? Outsource it.',
+                'Halfway there — let’s make the rest count.', 'Peak productivity hours, apparently.', 'Busy hands, happy wallet.'],
+    evening: ['Put your feet up. Let a tasker handle it.', 'Evening plans: absolutely nothing. Perfect.',
+              'The day’s winding down — your gigs aren’t.', 'Netflix can wait. Okay, maybe it can’t.', 'Tomorrow-you will thank today-you.'],
+    night: ['Night owl mode: activated.', 'Can’t sleep? Browse a few gigs.', 'Plan tonight, get it done tomorrow.', 'The moon is out. So are the deals.']
+  };
+  function slot(h) { return h < 5 ? 'night' : h < 12 ? 'morning' : h < 17 ? 'afternoon' : h < 22 ? 'evening' : 'night'; }
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function today() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+  function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+  window.SG_renderGreeting = function (firstName, streakDays) {
+    var block = document.getElementById('sgGreetBlock');
+    if (!block) return;
+    if (get('sg-greet-hidden') === today()) { block.hidden = true; return; }
+    var s = slot(new Date().getHours());
+    var g = pick(GREET[s]);
+    if (firstName) g = /\?$/.test(g) ? g.slice(0, -1) + ', ' + firstName + '?' : g + ', ' + firstName;
+    document.getElementById('sgGreeting').textContent = g;
+    document.getElementById('sgQuip').textContent = pick(QUIPS[s]);
+    var streak = document.getElementById('sgStreak');
+    var n = +streakDays || 0;
+    if (n < 1) { streak.hidden = true; }
+    else {
+      streak.hidden = false;
+      document.getElementById('sgStreakCount').textContent = n;
+      document.getElementById('sgStreakSub').textContent = n === 1 ? '· come back tomorrow' : n >= 7 ? '· on fire!' : '· keep it going';
+    }
+  };
+  document.getElementById('sgGreetClose').addEventListener('click', function () {
+    set('sg-greet-hidden', today());
+    document.getElementById('sgGreetBlock').hidden = true;
+  });
+  var u = window.SG_USER || { firstName: 'Morolake', streakDays: 3 };
+  SG_renderGreeting(u.firstName, u.streakDays);
 })();
 </script>
 
@@ -628,6 +693,10 @@ onAuthStateChanged(auth, async (user) => {
 
   const name = live.displayName || (live.email ? live.email.split('@')[0] : 'there');
   window._userName = name.split(' ')[0];
+
+  // Redraw the greeting now the real first name is known. The streak pill is
+  // the only place the streak appears; the old streak card is gone.
+  if (window.SG_paintGreeting) window.SG_paintGreeting();
 
   // Unverified email gets the strip the design reserves for it.
   if (live.emailVerified === false) {
