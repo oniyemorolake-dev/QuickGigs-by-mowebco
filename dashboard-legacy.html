@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- qg-build:947d37a-1789577525 -->
+
+<title>Dashboard · SwiftGigs</title>
+<meta name="description" content="Your SwiftGigs dashboard for posting tasks and finding work as a tasker.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="canonical" href="https://quickgigs.ca/dashboard.html">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://quickgigs.ca/dashboard.html">
+<meta property="og:title" content="Dashboard · SwiftGigs">
+<meta property="og:description" content="Your SwiftGigs dashboard for posting tasks and finding work as a tasker.">
+<meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
+<meta property="og:locale" content="en_CA">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Dashboard · SwiftGigs">
+<meta name="twitter:description" content="Your SwiftGigs dashboard for posting tasks and finding work as a tasker.">
+<meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com">
+<link rel="stylesheet" href="qg-polish.css?v=20260726contrast">
+<link rel="stylesheet" href="qg-ux.css?v=20260728welcome1">
+<link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
+<link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<link rel="manifest" href="/manifest.json?v=4">
+<link rel="apple-touch-icon" href="/QuickGigsLogo.png" sizes="180x180">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SwiftGigs">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0B0A14">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="qg-layout.css">
+<link rel="stylesheet" href="qg-role-theme.css?v=20260811tokens1">
+<link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
+<link rel="stylesheet" href="qg-features.css?v=20260726contrast">
+<link rel="stylesheet" href="qg-dashboard.css?v=20260811dash1" id="qg-dashboard-css">
+<link rel="stylesheet" href="qg-trust-profile.css?v=20260811trust3" id="qg-trust-profile-css">
+<script src="qg-icons.js"></script>
+<script src="qg-theme.js"></script>
+<script src="qg-brand-init.js"></script>
+<script defer src="qg-pwa.js?v=947d37a-1789577525"></script>
+<link rel="stylesheet" href="qg-cookies.css">
+<link rel="stylesheet" href="qg-menu.css?v=2">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+/* Every colour on this page comes from qg-tokens.css (loaded above). Do NOT redeclare
+   --bg/--surface/--border/--text/--primary/--purple*/--lavender/… here — that shadows the
+   design tokens. Light mode needs no rules of its own: the tokens flip on body.light.
+
+   Cascade note: shared sheets (qg-refine, qg-role-theme, qg-dashboard, qg-bigtech, some
+   appended at runtime by qg-brand-init.js) still restyle these components, several with
+   !important. Rules prefixed `html:root body` outrank their selectors; !important is used
+   only where those sheets use it. Drop the prefix once the shared sheets are migrated. */
+:root{
+  --surface-hover: var(--surface-alt);
+  --border-hover: color-mix(in srgb, var(--accent) 50%, var(--border));
+  --input-bg: var(--surface);
+}
+
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh;padding-bottom:76px;transition:background .25s,color .25s;overflow-x:hidden;}
+
+/* ── BETA STRIP (mockup: slim surface-alt bar above the header) ── */
+#sgBetaBanner.sg-beta{display:flex;align-items:flex-start;gap:8px;padding:9px 16px;background:var(--surface-alt);color:var(--text);font-size:11.5px;line-height:1.4;}
+.sg-beta-ico{display:flex;flex-shrink:0;margin-top:1px;color:var(--teal);}
+.sg-beta-ico svg{width:13px;height:13px;}
+.sg-beta-text{flex:1;min-width:0;}
+#sgBetaBanner .sg-beta-text.sg-body{font-size:11.5px;line-height:1.4;color:var(--text);}
+#sgBetaBanner .sg-beta-link{flex-shrink:0;color:var(--teal);font-weight:700;text-decoration:none;}
+.sg-beta-link:hover{text-decoration:underline;}
+.sg-beta-close{display:flex;flex-shrink:0;padding:1px;margin:-1px -2px 0 2px;background:none;border:none;color:var(--text-muted);cursor:pointer;border-radius:6px;}
+.sg-beta-close svg{width:14px;height:14px;}
+.sg-beta-close:hover{color:var(--text);}
+
+/* ── HEADER ── */
+.nav{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--border);padding:14px 16px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+/* .nav-logo (wordmark) comes from qg-brand.css: 18px Playfair italic, --grad-wordmark */
+html:root body .nav .nav-brand .nav-role{font-size:10.5px;font-weight:600 !important;letter-spacing:.05em;text-transform:uppercase;padding:5px 12px;border:none !important;background:var(--accent-soft) !important;color:var(--accent) !important;}
+.nav-right{display:flex;align-items:center;gap:8px;}
+.switch-btn{padding:6px 13px;border-radius:100px;font-size:11.5px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;transition:border-color .15s,color .15s;white-space:nowrap;}
+.switch-btn:hover{border-color:var(--accent);color:var(--accent);}
+html:root body .mode-btn{padding:6px 12px;border-radius:100px;font-size:11.5px !important;font-weight:600 !important;cursor:pointer;border:1px solid var(--border) !important;font-family:'DM Sans',sans-serif;background:var(--surface-alt) !important;color:var(--text) !important;box-shadow:none !important;transition:border-color .15s;}
+html:root body .mode-btn:hover{border-color:var(--border-hover) !important;}
+html:root body .avatar{width:32px;height:32px;border-radius:50%;background:var(--surface-alt);border:1px solid var(--border);box-shadow:none;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--primary);flex-shrink:0;}
+#avatarMenu a,#avatarMenu > div{transition:background .15s;}
+
+/* Mode switcher (rendered by shared role-switch UI) */
+.mode-switcher{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.mode-switch-opt{border-radius:12px;padding:12px 10px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;transition:border-color .15s,background .15s;color:var(--text);}
+.mode-switch-opt:hover{border-color:var(--border-hover);}
+.mode-switch-opt.active,.mode-switch-opt.active-worker{border:1.5px solid var(--accent);background:var(--accent-soft);box-shadow:none;}
+.mode-switch-icon{display:flex;color:var(--accent);margin-bottom:6px;}
+.mode-switch-label{font-size:13px;font-weight:600;display:block;color:var(--text);}
+.mode-switch-desc{font-size:11px;color:var(--text-muted);display:block;margin-top:2px;}
+.mode-switch-note{font-size:11.5px;color:var(--text-muted);margin-top:10px;line-height:1.5;}
+
+/* ── GREETING ── */
+html:root body .greeting{padding:18px 16px 16px;background:transparent;}
+html:root body .greeting .mode-tag{display:inline-flex;align-items:center;gap:5px;font-size:10.5px !important;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:4px 10px;border-radius:100px;margin-bottom:10px;border:none !important;background:var(--accent-soft) !important;color:var(--accent) !important;}
+.tag-poster,.tag-worker{background:var(--accent-soft);color:var(--accent);}
+html:root body .greeting .greet-name.greet-name{font-size:20px !important;font-weight:700 !important;letter-spacing:-.01em;line-height:1.25;color:var(--text) !important;margin-bottom:4px;}
+html:root body .greet-sub{font-size:13px !important;line-height:1.45;color:var(--text-muted) !important;}
+html:root body .greet-note-icon{color:var(--teal);}
+html:root body .dash-reputation{display:none;margin-top:8px;font:600 12.5px 'DM Sans',sans-serif;color:var(--accent);letter-spacing:0;}
+.dash-reputation a{color:inherit;text-decoration:none;border-bottom:1px solid color-mix(in srgb, var(--accent) 35%, transparent);}
+.dash-reputation a:hover{border-bottom-color:var(--accent);}
+
+/* Contextual hero (markup from qg-role-switch.js) — flat surface card + isq icon */
+html:root body #dashHero .dash-hero{display:flex !important;align-items:center;gap:12px !important;margin-top:14px !important;padding:14px !important;border-radius:14px !important;border:1px solid var(--border) !important;background:var(--surface) !important;box-shadow:none !important;color:var(--text) !important;text-decoration:none;transition:border-color .15s;}
+html:root body #dashHero .dash-hero:hover{transform:none;border-color:var(--border-hover) !important;}
+html:root body #dashHero .dash-hero-emoji{display:flex;align-items:center;justify-content:center;width:38px;height:38px;flex-shrink:0;border-radius:10px;background:var(--surface-alt);color:var(--accent) !important;font-size:17px !important;line-height:1;margin:0 !important;}
+html:root body #dashHero .dash-hero-body{flex:1;min-width:0;grid-column:auto;}
+html:root body #dashHero .dash-hero .dash-hero-body strong{display:block;font-size:13.5px !important;font-weight:700 !important;letter-spacing:0;color:var(--text) !important;margin-bottom:2px;}
+html:root body #dashHero .dash-hero .dash-hero-body span{display:block;font-size:11.5px !important;line-height:1.4;color:var(--text-muted) !important;}
+html:root body #dashHero .dash-hero .dash-hero-cta{margin:0 0 0 auto !important;flex-shrink:0;width:auto !important;padding:7px 12px !important;border-radius:100px !important;font-size:12px !important;font-weight:600 !important;background:var(--accent-soft) !important;color:var(--accent) !important;box-shadow:none !important;}
+/* Poster "post a task" hero: icon + copy, then a flat full-width primary button */
+html:root body #dashHero .dash-hero.dash-hero-post{display:grid !important;grid-template-columns:auto 1fr;align-items:center;}
+html:root body #dashHero .dash-hero.dash-hero-post .dash-hero-cta{grid-column:1 / -1;display:flex;justify-content:center;margin:2px 0 0 !important;width:100% !important;padding:12px 14px !important;border-radius:12px !important;font-size:13.5px !important;background:var(--accent) !important;color:var(--accent-text, var(--primary-text)) !important;}
+html:root body .dash-hero-switch{margin-top:10px;}
+html:root body .dash-hero-switch-btn{font:600 12px 'DM Sans',sans-serif !important;color:var(--accent) !important;background:transparent !important;border:none !important;padding:0;cursor:pointer;}
+
+/* ── PRIMARY ACTION TILES (mockup: two surface cards, isq + bold label) ── */
+.sg-dash-tiles{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:16px 16px 0;}
+.sg-dash-tiles .sg-card{display:flex;flex-direction:column;gap:8px;padding:14px 12px;border-radius:14px;text-decoration:none;color:var(--text);}
+/* ── CURRENT TASK / THIS WEEK row cards ── */
+.sg-dash-sec{padding:18px 16px 0;}
+.sg-dash-sec .sg-label{margin-bottom:8px;}
+.sg-rowcard{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:14px;text-decoration:none;color:var(--text);}
+.sg-rowcard-body{flex:1;min-width:0;}
+.sg-rowcard-title{display:block;font-size:14.5px;font-weight:700;color:var(--text);line-height:1.25;}
+.sg-rowcard-meta{display:block;margin-top:2px;font-size:12.5px;color:var(--text-muted);line-height:1.3;}
+.sg-rowcard-title.is-money{color:var(--green);font-size:16px;}
+.sg-rowcard-chev{flex-shrink:0;color:var(--text-muted);display:flex;}
+.sg-rowcard-chev svg{width:17px;height:17px;}
+
+.sg-dash-tile-name{font-size:15px;font-weight:700;color:var(--text);line-height:1.2;}
+.sg-dash-tile-sub{font-size:12.5px;color:var(--text-muted);line-height:1.3;}
+.sg-dash-tiles .sg-card{gap:4px;}
+.sg-dash-tiles .sg-isq{margin-bottom:6px;}
+.sg-dash-tiles .sg-card:hover{border-color:var(--border-hover);}
+.sg-dash-tiles .sg-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.sg-dash-tiles .sg-isq{width:32px;height:32px;}
+.sg-dash-tiles .sg-isq svg{width:16px;height:16px;}
+.sg-dash-tiles .sg-body{font-size:13px;font-weight:700;line-height:1.3;color:var(--text);}
+
+/* ── STAT TILES (mockup: 12px radius, centred 16px number, tiny muted label) ── */
+html:root body #statsGrid.stats{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:8px !important;padding:0 16px 18px;}
+html:root body #statsGrid.stats[data-dash-layout="tasker"]{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+@media (min-width:380px){html:root body #statsGrid.stats[data-dash-layout="tasker"]{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}}
+html:root body #statsGrid .stat-card{display:flex !important;flex-direction:column !important;align-items:center !important;justify-content:center;gap:2px;text-align:center !important;min-width:0 !important;padding:10px 6px !important;border-radius:12px !important;border:1px solid var(--border) !important;background:var(--surface) !important;box-shadow:none !important;color:var(--text);text-decoration:none;transition:border-color .15s;}
+html:root body #statsGrid .stat-card:hover{transform:none;background:var(--surface) !important;border-color:var(--border-hover) !important;}
+html:root body #statsGrid .stat-icon{display:none !important;}
+.stat-meta{min-width:0;text-align:center;}
+html:root body #statsGrid .stat-val{font-family:'DM Sans',sans-serif !important;font-size:16px !important;font-weight:700 !important;letter-spacing:0;line-height:1.25;color:var(--text) !important;margin:0;word-break:break-word;}
+html:root body #statsGrid .stat-val.is-attention,html:root body #statsGrid .stat-val.purple{color:var(--text) !important;}
+html:root body #statsGrid .stat-val.is-money,html:root body #statsGrid .stat-val.green{color:var(--green) !important;}
+html:root body #statsGrid .stat-lbl{font-family:'DM Sans',sans-serif !important;font-weight:500 !important;font-size:10px !important;line-height:1.3;color:var(--text-muted) !important;}
+html:root body #statsGrid .stat-sub{font-size:9.5px !important;color:var(--text-muted) !important;margin-top:1px;}
+.stat-card-link{text-decoration:none;color:inherit;display:block;cursor:pointer;}
+
+/* ── SECONDARY ACTIONS (rendered into #actionsGrid) ── */
+html:root body #actionsGrid.actions{display:grid !important;grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:9px !important;padding:0 16px 18px;align-items:stretch;}
+@media (min-width:720px){html:root body #actionsGrid.actions{grid-template-columns:repeat(3,minmax(0,1fr)) !important;}}
+html:root body #actionsGrid .action-card{display:flex;flex-direction:column;gap:8px !important;height:100%;min-width:0;padding:14px 12px !important;border-radius:14px !important;border:1px solid var(--border) !important;background:var(--surface) !important;box-shadow:none !important;color:var(--text);text-decoration:none;cursor:pointer;transition:border-color .15s;}
+html:root body #actionsGrid .action-card:hover{transform:none;background:var(--surface) !important;border-color:var(--border-hover) !important;}
+html:root body #actionsGrid .action-card.primary:hover{background:var(--accent) !important;}
+html:root body #actionsGrid .action-icon{display:flex;align-items:center;justify-content:center;width:32px;height:32px;margin:0;border-radius:10px;background:var(--surface-alt);color:var(--accent) !important;font-size:16px;}
+.action-icon svg{width:16px;height:16px;}
+.action-copy{min-width:0;}
+html:root body #actionsGrid .action-title{font-family:'DM Sans',sans-serif !important;font-size:13px !important;font-weight:700 !important;line-height:1.3;color:var(--text) !important;margin-bottom:2px;}
+html:root body #actionsGrid .action-desc{font-family:'DM Sans',sans-serif !important;font-size:11px !important;line-height:1.4;color:var(--text-muted) !important;opacity:1;}
+/* Primary action = flat accent fill */
+html:root body #actionsGrid .action-card.primary{background:var(--accent) !important;border-color:var(--accent) !important;}
+html:root body #actionsGrid .action-card.primary .action-title,html:root body #actionsGrid .action-card.primary .action-desc,html:root body #actionsGrid .action-card.primary .action-icon{color:var(--accent-text, var(--primary-text)) !important;}
+html:root body #actionsGrid .action-card.primary .action-icon{background:color-mix(in srgb, var(--primary-text) 18%, transparent);}
+/* Full-width utility rows (install, feedback, payments note) */
+html:root body #actionsGrid .dash-span-full{grid-column:1 / -1;flex-direction:row !important;align-items:center !important;text-align:left !important;gap:12px !important;padding:12px !important;}
+html:root body #actionsGrid .dash-span-full .action-icon{margin:0 !important;flex-shrink:0;}
+.actions .action-card[style*="grid-column"]{margin-top:0;}
+
+/* ── SECTIONS + LIST ROWS (mockup "Nearby gigs") ── */
+html:root body .section{padding:0 16px 20px;}
+.section-hdr{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:4px;}
+html:root body .section-title{font-size:11px !important;font-weight:600 !important;letter-spacing:.05em !important;line-height:1.3;text-transform:uppercase;color:var(--text-muted) !important;}
+html:root body .see-all{font-size:12px !important;font-weight:600;color:var(--accent) !important;text-decoration:none;}
+.see-all:hover{text-decoration:underline;}
+html:root body #tasksList .task-row{display:flex;align-items:center;gap:11px;padding:10px 0 !important;margin:0;border:none !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;cursor:pointer;transition:opacity .15s;}
+html:root body #tasksList .task-row + .task-row{border-top:1px solid var(--border) !important;}
+.task-row:hover{opacity:.8;}
+html:root body #tasksList .task-dot{width:36px;height:36px;flex-shrink:0;border-radius:10px !important;background:var(--surface-alt) !important;color:var(--accent) !important;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.task-dot svg{width:17px;height:17px;}
+html:root body #tasksList .task-row.is-attention .task-dot{background:var(--attention-soft) !important;color:var(--attention) !important;}
+.task-info{flex:1;min-width:0;}
+html:root body #tasksList .task-name{font-size:13px !important;font-weight:600;letter-spacing:0 !important;line-height:1.35;color:var(--text) !important;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+html:root body .task-meta{font-size:11px !important;color:var(--text-muted) !important;}
+.task-meta svg{vertical-align:-2px;}
+.task-right{text-align:right;flex-shrink:0;}
+html:root body #tasksList .task-price{font-size:12.5px !important;font-weight:700;color:var(--accent) !important;margin-bottom:3px;}
+html:root body #tasksList .task-price.is-money{color:var(--green) !important;}
+html:root body #tasksList .task-badge{display:inline-block;font-size:9.5px !important;font-weight:600;padding:2px 8px;border-radius:100px;border:none;background:var(--accent-soft);color:var(--accent);}
+html:root body #tasksList .badge-quick{background:var(--attention-soft);color:var(--attention);}
+html:root body #tasksList .badge-standard{background:var(--accent-soft);color:var(--accent);}
+html:root body #tasksList .badge-recurring{background:var(--money-soft);color:var(--green);}
+html:root body #paymentHistoryList .pay-history-row{padding:10px 0;border:none;border-radius:0;background:transparent;}
+html:root body #paymentHistoryList .pay-history-row + .pay-history-row{border-top:1px solid var(--border);}
+
+/* EMPTY STATE */
+html:root body .empty{text-align:center;padding:28px 16px;border:1px solid var(--border) !important;border-radius:14px !important;background:var(--surface) !important;box-shadow:none !important;}
+html:root body .empty-icon{display:flex;align-items:center;justify-content:center;width:40px;height:40px;margin:0 auto 10px;border-radius:10px;background:var(--surface-alt);color:var(--accent) !important;font-size:18px;}
+html:root body .empty-txt{font-size:13px !important;color:var(--text-muted) !important;margin-bottom:14px;}
+html:root body .empty-btn{padding:11px 20px;border-radius:12px;background:var(--accent) !important;color:var(--accent-text, var(--primary-text)) !important;border:none !important;box-shadow:none !important;font-family:'DM Sans',sans-serif;font-size:13px !important;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;}
+
+/* ── RECENT ACTIVITY (markup from qg-bigtech.js) — label + divided rows ── */
+html:root body #dashActivity .qg-activity-card{width:auto !important;max-width:none;margin:0 16px 18px !important;padding:0 !important;background:transparent !important;border:none !important;border-radius:0 !important;box-shadow:none !important;}
+html:root body #dashActivity .qg-activity-title{font-size:11px !important;font-weight:600 !important;letter-spacing:.05em !important;line-height:1.3;text-transform:uppercase;color:var(--text-muted) !important;margin-bottom:4px;}
+html:root body #dashActivity .qg-activity-row{display:flex;align-items:center;gap:11px;min-height:0;padding:9px 0;border-top:1px solid var(--border);}
+html:root body #dashActivity .qg-activity-title + .qg-activity-row{border-top:none;}
+html:root body #dashActivity .qg-activity-ico{display:flex;align-items:center;justify-content:center;width:32px;height:32px;flex-shrink:0;border-radius:10px;background:var(--surface-alt);color:var(--accent);font-size:15px;}
+html:root body #dashActivity .qg-activity-text{font-size:12.5px;line-height:1.4;color:var(--text);}
+html:root body #dashActivity .qg-activity-time{font-size:10.5px;margin-top:1px;color:var(--text-muted);}
+html:root body #dashMarketTicker .qg-activity-ticker{margin:0 16px 18px;border-radius:14px;}
+html:root body #dashMarketTicker .qg-activity-avatar{background:var(--surface-alt);color:var(--primary);font-size:12px;}
+html:root body #dashApplicantsAlert .dash-alert-attention,html:root body #dashEarnings .dash-earn-card,html:root body #dashConnectBanner.dash-prompt-card{margin:0 16px 14px;border-radius:14px;}
+html:root body #dashEarnings .dash-earn-figure{font-weight:700;}
+
+/* ── STATUS BANNERS ── */
+.guardian-banner,.teen-dashboard-banner,.graduation-banner,.verification-gate-banner{margin:12px 16px 0;padding:13px 14px;border-radius:14px;font-size:12.5px;line-height:1.55;color:var(--text);}
+.guardian-banner strong,.teen-dashboard-banner strong,.verification-gate-banner strong{display:block;margin-bottom:3px;font:600 13.5px 'DM Sans',sans-serif;color:var(--text);}
+.guardian-banner{background:var(--attention-soft);border:1px solid color-mix(in srgb, var(--attention) 35%, transparent);}
+.guardian-banner a{color:var(--attention);font-weight:600;}
+.teen-dashboard-banner{display:none;background:var(--accent-soft);border:1px solid color-mix(in srgb, var(--accent) 30%, transparent);}
+.teen-dashboard-banner p{margin:0;color:var(--text-muted);font-size:12px;line-height:1.5;}
+.graduation-banner{display:none;background:var(--money-soft);border:1px solid color-mix(in srgb, var(--green) 30%, transparent);}
+.graduation-banner a{color:var(--green);font-weight:600;}
+.verification-gate-banner{display:none;background:var(--accent-soft);border:1px solid color-mix(in srgb, var(--accent) 30%, transparent);}
+.guardian-banner button,.verification-gate-banner button{margin-top:8px;padding:8px 12px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-text, var(--primary-text));font:600 12px 'DM Sans',sans-serif;cursor:pointer;}
+
+/* ── GRADUATION MODAL ── */
+.graduation-overlay{display:none;position:fixed;inset:0;z-index:1200;background:color-mix(in srgb, var(--bg) 78%, transparent);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px;}
+.graduation-overlay.open{display:flex;}
+.graduation-card{width:min(440px,100%);border-radius:16px;padding:22px 20px;background:var(--surface);border:1px solid var(--border);box-shadow:0 20px 50px rgba(0,0,0,.35);}
+.graduation-card .eyebrow{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);}
+.graduation-card h2{font:700 19px/1.3 'DM Sans',sans-serif;margin:8px 0 6px;color:var(--text);}
+.graduation-card p{color:var(--text-muted);font-size:13px;line-height:1.6;}
+.graduation-actions{display:grid;gap:9px;margin-top:18px;}
+.graduation-primary,.graduation-later{padding:13px;border-radius:12px;text-align:center;font:600 14px 'DM Sans',sans-serif;text-decoration:none;cursor:pointer;}
+.graduation-primary{border:0;background:var(--accent);color:var(--accent-text, var(--primary-text));}
+.graduation-later{border:1px solid var(--border);background:var(--surface-alt);color:var(--text);}
+.graduation-primary:focus-visible,.graduation-later:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+/* ── TAB BAR (markup from qg-nav.js) ── */
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;padding:8px 0 14px;z-index:100;transition:background .25s;}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;text-decoration:none;}
+.tab-icon{font-size:22px;color:var(--text-muted);transition:color .15s;}
+.tab-lbl{font-size:10.5px;color:var(--text-muted);transition:color .15s;}
+html:root body #qgTabBar .tab-item.active .tab-icon,html:root body #qgTabBar .tab-item.active .tab-lbl{color:var(--teal) !important;}
+html:root body #qgTabBar .tab-item.active .tab-lbl{font-weight:600;}
+
+/* ── FOOTER ── */
+.legal-footer{text-align:center;padding:20px 16px 120px;font-size:11px;color:var(--text-muted);}
+.legal-footer a{color:var(--text-muted);text-decoration:none;}
+.legal-footer a:hover{color:var(--text);text-decoration:underline;}
+
+/* ── SKELETONS (functional loading cue, kept subtle) ── */
+.qg-skel{background:linear-gradient(90deg,var(--surface) 25%,var(--surface-alt) 50%,var(--surface) 75%);background-size:200% 100%;animation:qgSkel 1.4s ease-in-out infinite;border-radius:12px;}
+@keyframes qgSkel{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.qg-skel{animation:none;}}
+.qg-skel-stat{height:60px;border-radius:12px;}
+.qg-skel-action{height:88px;border-radius:14px;}
+.qg-skel-row{height:52px;margin-bottom:8px;border-radius:12px;}
+.qg-skel-hero{height:64px;margin-top:14px;border-radius:14px;}
+.dash-loading-hint{font-size:12px;color:var(--text-muted);margin:0 16px 10px;}
+</style>
+<link rel="stylesheet" href="qg-brand.css">
+<link rel="stylesheet" href="qg-swift.css">
+</head>
+<body>
+
+<!-- BETA BANNER — one only, Home only, above the header -->
+<div class="sg-page sg-beta" id="sgBetaBanner" role="note">
+  <span class="sg-beta-ico" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4a1 1 0 0 0 1 1h2.5l5 3.5v-13L6.5 9H4a1 1 0 0 0-1 1z"/><path d="M15 9a3.5 3.5 0 0 1 0 6"/><path d="M18 6.5a7 7 0 0 1 0 11"/></svg>
+  </span>
+  <span class="sg-body sg-beta-text">SwiftGigs beta is live — payments live via Stripe.</span>
+  <a class="sg-beta-link" href="feedback.html">Feedback</a>
+  <button type="button" class="sg-beta-close" aria-label="Dismiss">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+</div>
+
+<!-- NAV — wordmark + city, and one person button. The theme toggle, mode
+     switch, install prompt, feedback link and log out all live in the menu
+     that person button opens. -->
+<nav class="nav sg-appbar">
+  <div class="nav-brand sg-appbar__brand">
+    <span class="nav-logo sg-wordmark">SwiftGigs</span>
+    <span class="sg-appbar__city" id="dashCityLine"></span>
+  </div>
+  <div class="nav-right">
+    <button type="button" class="qg-menu-btn" id="qgMenuBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="5"/></svg>
+    </button>
+    <div class="avatar" id="avatarEl" hidden>M</div>
+  </div>
+</nav>
+
+<!-- GREETING + SMART HERO -->
+<div id="guardianBanner" style="display:none"></div>
+<div id="teenDashboardBanner" class="teen-dashboard-banner qg-page-wide">
+  <strong>Your teen tasker dashboard</strong>
+  <p>Browse age-eligible gigs and track which applications are waiting for guardian review.</p>
+</div>
+<div id="graduationPayoutBanner" class="graduation-banner qg-page-wide">
+  <strong>Your completed-gig payouts are on hold.</strong> Add your own payout details now that you are 18. <a href="profile.html#payouts">Set up payouts →</a>
+</div>
+<div id="verificationGateBanner" class="verification-gate-banner qg-page-wide"></div>
+<div class="greeting qg-page-wide">
+  <h1 class="greet-name" id="greetName">Good evening</h1>
+  <div class="greet-note" id="greetNote" hidden>
+    <span class="greet-note-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="currentColor" focusable="false"><path d="M12 2.2l1.4 5.1 5.1 1.4-5.1 1.4L12 15.2l-1.4-5.1L5.5 8.7l5.1-1.4L12 2.2zm6.8 10.3l.9 3.2 3.2.9-3.2.9-.9 3.2-.9-3.2-3.2-.9 3.2-.9.9-3.2zM5.2 14.4l.7 2.4 2.4.7-2.4.7-.7 2.4-.7-2.4-2.4-.7 2.4-.7.7-2.4z"/></svg>
+    </span>
+    <span class="greet-note-text" id="greetNoteText"></span>
+  </div>
+  <!-- Not in the design, but every one of these is still written to by the
+       dashboard's JS, so the elements stay and are simply not shown. The
+       reputation line and smart hero now surface on Profile. -->
+  <div class="greet-sub" id="greetSub" hidden>Loading your dashboard…</div>
+  <div class="dash-reputation" id="dashReputation" aria-label="Your reputation" hidden></div>
+  <div id="dashHero" hidden></div>
+</div>
+<div id="dashApplicantsAlert" hidden></div>
+<div id="dashEarnings" hidden></div>
+<p class="dash-loading-hint" id="dashLoadHint" hidden>Fetching your tasks…</p>
+
+<!-- PRIMARY ACTION TILES -->
+<div class="sg-page sg-dash-tiles qg-page-wide">
+  <a href="posttask.html" class="sg-card">
+    <span class="sg-isq sg-isq--primary" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+    </span>
+    <span class="sg-dash-tile-name">Post a Task</span>
+    <span class="sg-dash-tile-sub">Get help fast</span>
+  </a>
+  <a href="browsetask.html" class="sg-card">
+    <span class="sg-isq sg-isq--teal" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 6v12M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.2 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/></svg>
+    </span>
+    <span class="sg-dash-tile-name">Earn Money</span>
+    <span class="sg-dash-tile-sub">Find gigs nearby</span>
+  </a>
+</div>
+
+<!-- CURRENT TASK — the row card that replaces My Tasks in the tab bar.
+     Hidden until there is one; filled by renderCurrentTaskCard(). -->
+<div class="sg-page sg-dash-sec qg-page-wide" id="dashCurrentSec" hidden>
+  <div class="sg-label">Current task</div>
+  <a class="sg-card sg-rowcard" id="dashCurrentCard" href="mytasks.html"></a>
+</div>
+
+<!-- THIS WEEK — earnings the page already fetches; see renderThisWeekCard(). -->
+<div class="sg-page sg-dash-sec qg-page-wide" id="dashWeekSec" hidden>
+  <div class="sg-label">This week</div>
+  <a class="sg-card sg-rowcard" id="dashWeekCard" href="profile.html#payments"></a>
+</div>
+
+<!-- Not in the design. Kept so their render functions keep working. -->
+<div class="stats" id="statsGrid" hidden></div>
+<div class="actions" id="actionsGrid" hidden></div>
+<div id="dashActivity" class="qg-page-wide" hidden></div>
+<div id="dashMarketTicker" class="qg-page-wide" hidden></div>
+
+<div id="dashConnectBanner" style="display:none"></div>
+
+<!-- PAYMENT HISTORY -->
+<div class="section qg-page-wide" id="paymentHistorySection" style="display:none">
+  <div class="section-hdr">
+    <span class="section-title">Payment history</span>
+    <a class="see-all" href="profile.html#payments">View all</a>
+  </div>
+  <div id="paymentHistoryList"></div>
+</div>
+
+<!-- FEED SECTION -->
+<div class="section qg-page-wide">
+  <div class="section-hdr">
+    <span class="section-title" id="sectionTitle">Nearby gigs</span>
+    <a class="see-all" href="browsetask.html">See all</a>
+  </div>
+  <div id="tasksList">
+    <div class="qg-skel qg-skel-row"></div>
+    <div class="qg-skel qg-skel-row"></div>
+    <div class="qg-skel qg-skel-row"></div>
+  </div>
+</div>
+
+<footer class="legal-footer site-footer" id="siteFooter">
+  <a href="terms.html">Terms of Service</a> · <a href="privacy.html">Privacy Policy</a> · <a href="feedback.html">Report issue</a>
+</footer>
+
+<!-- TAB BAR -->
+<nav class="tab-bar" id="qgTabBar"></nav>
+<div class="graduation-overlay" id="graduationOverlay" role="dialog" aria-modal="true" aria-labelledby="graduationTitle">
+  <div class="graduation-card">
+    <div class="eyebrow">Full account access</div>
+    <h2 id="graduationTitle">You're now an adult on SwiftGigs</h2>
+    <p>Guardian approval no longer applies to new gigs, and teen filters have been removed. Before completed-gig payouts can be released, add payout details in your own name.</p>
+    <div class="graduation-actions">
+      <a class="graduation-primary" href="profile.html#payouts">Set up my payouts</a>
+      <button type="button" class="graduation-later" onclick="document.getElementById('graduationOverlay').classList.remove('open')">Do this later</button>
+    </div>
+  </div>
+</div>
+<script defer src="qg-utils.js?v=20260810auth1"></script>
+<script defer src="qg-config.js?v=20260810auth1"></script>
+<script defer src="supabaseClient.js?v=20260810auth1"></script>
+<script defer src="supabase-db.js?v=20260903gate1"></script>
+<script defer src="qg-nav.js"></script>
+<script defer src="qg-menu.js?v=20260727auth2"></script>
+<script defer src="qg-auth-google.js?v=20260811google1"></script>
+<script defer src="qg-age.js?v=1"></script>
+<script defer src="qg-verification.js?v=20260811pay1"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
+  authDomain: "quickgigs-7b12d.firebaseapp.com",
+  projectId: "quickgigs-7b12d",
+  storageBucket: "quickgigs-7b12d.firebasestorage.app",
+  messagingSenderId: "698985399366",
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+window._auth = auth;
+
+window.doLogout = function() {
+  if (typeof qgLogout === 'function') {
+    qgLogout(auth);
+    return;
+  }
+  if (typeof clearQgUserScopedStorage === 'function') clearQgUserScopedStorage();
+  signOut(auth)
+    .then(function(){ window.location.href = 'login.html'; })
+    .catch(function(){ window.location.href = 'login.html'; });
+};
+
+let authChecked = false;
+const redirectTimeout = setTimeout(() => {
+  if (!authChecked) window.location.href = 'login.html';
+}, 3000);
+
+onAuthStateChanged(auth, async (user) => {
+  authChecked = true;
+  clearTimeout(redirectTimeout);
+  if (!user) {
+    if (typeof setCurrentUser === 'function') setCurrentUser(null);
+    window.location.href = 'login.html';
+    return;
+  }
+  var live = auth.currentUser && auth.currentUser.uid === user.uid ? auth.currentUser : user;
+  if (typeof setCurrentUser === 'function') setCurrentUser(live);
+  else window._currentUser = live;
+  const name = live.displayName || (live.email ? live.email.split('@')[0] : 'there');
+  const firstName = name.split(' ')[0];
+  window._userName = firstName;
+  var avatarEl = document.getElementById('avatarEl');
+  if (avatarEl) avatarEl.textContent = firstName.charAt(0).toUpperCase();
+  var hint = document.getElementById('dashLoadHint');
+  if (hint) hint.textContent = 'Loading your tasks…';
+  // First paint data ? do not await profile sync.
+  loadDashboardData(live.uid);
+
+  function applyDbUserAfterLogin(dbUser) {
+    if (dbUser && typeof qgMarkOnboardingDone === 'function') {
+      qgMarkOnboardingDone(live.uid);
+    }
+    if (dbUser && dbUser.role) {
+      // Profile role is account metadata ? do NOT overwrite workspace qg-mode
+      localStorage.setItem('qg-role', dbUser.role);
+      if (typeof applyRoleTheme === 'function') applyRoleTheme();
+    }
+    if (dbUser && typeof QG_setAgeTierFromUser === 'function') {
+      var ageState = QG_setAgeTierFromUser(dbUser);
+      var teenBanner = document.getElementById('teenDashboardBanner');
+      if (teenBanner) teenBanner.style.display = ageState.tier === 'teen' ? 'block' : 'none';
+      if (dashData && dashData.userId) renderAll();
+    }
+    if (typeof isAccountPendingGuardian === 'function' && isAccountPendingGuardian(dbUser)) {
+      var banner = document.getElementById('guardianBanner');
+      if (banner) {
+        var pending = {};
+        try { pending = JSON.parse(localStorage.getItem('qg-guardian-pending') || '{}'); } catch (e) {}
+        var email = (dbUser && dbUser.guardian_email) || pending.guardianEmail || 'your parent';
+        banner.style.display = 'block';
+        banner.className = 'guardian-banner qg-page-wide';
+        banner.textContent = '';
+        var strong = document.createElement('strong');
+        strong.textContent = 'Pending guardian consent';
+        banner.appendChild(strong);
+        banner.appendChild(document.createTextNode(
+          ' You can browse while waiting. Posting and applying stay paused until ' + String(email) + ' approves from the secure email link.'
+        ));
+        var resend = document.createElement('button');
+        resend.type = 'button';
+        resend.textContent = 'Resend approval email';
+        resend.onclick = async function () {
+          resend.disabled = true;
+          resend.textContent = 'Sending…';
+          var url = window.QG_CONFIG && window.QG_CONFIG.resendGuardianConsentUrl;
+          var result = typeof callVerifiedFunction === 'function'
+            ? await callVerifiedFunction(url, {})
+            : { success: false };
+          resend.textContent = result.success ? 'Email sent' : 'Could not send — try again';
+          if (!result.success) setTimeout(function () {
+            resend.disabled = false;
+            resend.textContent = 'Resend approval email';
+          }, 2500);
+        };
+        banner.appendChild(document.createElement('br'));
+        banner.appendChild(resend);
+      }
+    }
+    if (dbUser && (dbUser.status === 'banned' || dbUser.account_status === 'blocked') &&
+        typeof enforceBanOnLogin === 'function') {
+      enforceBanOnLogin(live);
+    }
+  }
+
+  // Light gate in parallel with dashboard fetch ? ban only. Never bounce existing
+  // users (row by firebase_uid) to signup for missing DOB / profile fields.
+  function runEarlyLoginGate() {
+    var run = function () {
+      if (typeof getUserLoginGate !== 'function') return;
+      getUserLoginGate(live.uid).then(function (gateUser) {
+        if (!gateUser) {
+          return getUserLoginGate(live.uid).then(function (retryUser) {
+            if (!retryUser) {
+              window.location.replace('signup.html?oauth=continue');
+              return;
+            }
+            if (typeof qgMarkOnboardingDone === 'function') qgMarkOnboardingDone(live.uid);
+            applyDbUserAfterLogin(retryUser);
+          });
+        }
+        if (typeof qgMarkOnboardingDone === 'function') qgMarkOnboardingDone(live.uid);
+        applyDbUserAfterLogin(gateUser);
+      }).catch(function (gateErr) {
+        console.warn('dashboard login gate failed:', gateErr && gateErr.message ? gateErr.message : gateErr);
+      });
+    };
+    if (typeof getUserLoginGate === 'function') run();
+    else setTimeout(run, 120);
+  }
+  runEarlyLoginGate();
+
+  // Background profile sync AFTER first paint ? never blocks dashboard render.
+  function runDeferredProfileSync() {
+    if (typeof syncCurrentUserProfile !== 'function') {
+      if (typeof getUserByFirebaseUid === 'function') {
+        getUserByFirebaseUid(live.uid, { self: true }).then(applyDbUserAfterLogin).catch(function () {});
+      }
+      return;
+    }
+    var run = function () {
+      try { sessionStorage.removeItem('qg-pending-profile-sync'); } catch (e) {}
+      syncCurrentUserProfile(live).then(function (res) {
+        if (res && res.user) return applyDbUserAfterLogin(res.user);
+        if (typeof getUserByFirebaseUid === 'function') {
+          return getUserByFirebaseUid(live.uid, { self: true }).then(applyDbUserAfterLogin);
+        }
+      }).catch(function () {});
+    };
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 2200 });
+    else setTimeout(run, 400);
+  }
+  runDeferredProfileSync();
+});
+</script>
+
+<script defer src="qg-payments-ui.js?v=1"></script>
+<script defer src="qg-location.js?v=20260827geo1"></script>
+<script defer src="qg-analytics.js?v=20260726seo"></script>
+<script defer src="qg-stats.js?v=20260811trust3"></script>
+<script defer src="qg-trust-profile.js?v=20260811trust3"></script>
+<script defer src="qg-activity-ticker.js?v=20260811trust1"></script>
+<script defer src="qg-notifications.js"></script>
+<script defer src="qg-push.js?v=1"></script>
+<script defer src="qg-cookies.js"></script>
+<script defer src="qg-site.js"></script>
+<script defer src="qg-role-switch.js?v=20260803role1"></script>
+<script>
+// -- THEME ----------------------------------------------
+window._qgAgeTier=window._qgAgeTier||'loading';
+var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
+function applyTheme(){
+  if (typeof window.QG_applyTheme === 'function') window.QG_applyTheme(isDark, 'modeBtn', false);
+  else {
+    document.body.classList.toggle('light', !isDark);
+    var btn = document.getElementById('modeBtn');
+    if (btn) btn.textContent = isDark ? 'Light' : 'Dark';
+  }
+}
+window.toggleTheme = function(){
+  isDark = !isDark;
+  if (typeof QG_setThemeDark === 'function') QG_setThemeDark(isDark);
+  else localStorage.setItem('qg-theme', isDark ? 'dark' : 'light');
+  applyTheme();
+};
+applyTheme();
+
+function applyGraduationState(result) {
+  if (!result || !result.ok) return;
+  var banner = document.getElementById('graduationPayoutBanner');
+  if (banner) banner.style.display = result.needs_payout_setup ? 'block' : 'none';
+  if (result.graduated) {
+    var overlay = document.getElementById('graduationOverlay');
+    if (overlay) overlay.classList.add('open');
+  }
+}
+function bootGraduationFallback(attempt) {
+  attempt = attempt || 0;
+  try {
+    var stored = JSON.parse(sessionStorage.getItem('qg-graduation-state') || 'null');
+    if (stored) {
+      applyGraduationState(stored);
+      sessionStorage.removeItem('qg-graduation-state');
+    }
+  } catch (e) {}
+  var url = window.QG_CONFIG && window.QG_CONFIG.graduateAccountUrl;
+  if (window._currentUser && url && typeof callVerifiedFunction === 'function') {
+    callVerifiedFunction(url, {}).then(applyGraduationState).catch(function(){});
+    return;
+  }
+  if (attempt < 30) setTimeout(function(){ bootGraduationFallback(attempt + 1); }, 120);
+}
+document.addEventListener('DOMContentLoaded', function(){ bootGraduationFallback(0); });
+
+function renderDashboardVerificationGate(state) {
+  var banner = document.getElementById('verificationGateBanner');
+  if (!banner || !state) return;
+  var posterMode = typeof getMode === 'function' ? getMode() === 'poster' : !!isPoster;
+  var role = posterMode ? 'poster' : 'tasker';
+  var isVerified = posterMode ? state.poster_verified === true : state.tasker_verified === true;
+  if (isVerified) { banner.style.display = 'none'; return; }
+  banner.style.display = 'block';
+  banner.innerHTML = '<strong>' + (posterMode ? 'Verify a card to post' : 'Verify your email to start working') + '</strong>' +
+    (posterMode
+      ? ' We verify your card so you can post — you’re only charged when you fund a task. Drafts stay free.'
+      : ' Browse and build your profile freely; verification is required before applying or accepting gigs.') +
+    '<br><button type="button" id="dashboardVerifyBtn">' + (posterMode ? 'Verify payment method' : 'Verify identity') + '</button>';
+  document.getElementById('dashboardVerifyBtn').onclick = function () {
+    if (typeof QG_openVerificationPrompt === 'function') QG_openVerificationPrompt(role);
+  };
+}
+document.addEventListener('DOMContentLoaded', function bootDashboardVerification(){
+  if (!window._currentUser || typeof QG_loadVerification !== 'function') {
+    setTimeout(bootDashboardVerification, 120);
+    return;
+  }
+  var chain = Promise.resolve(null);
+  if (typeof QG_syncVerificationReturn === 'function') {
+    chain = QG_syncVerificationReturn();
+  }
+  chain.then(function (synced) {
+    if (synced && synced.poster_verified === true) {
+      renderDashboardVerificationGate(synced);
+      return synced;
+    }
+    return QG_loadVerification(true).then(renderDashboardVerificationGate);
+  }).catch(function () {
+    QG_loadVerification().then(renderDashboardVerificationGate);
+  });
+});
+document.addEventListener('qg-mode-changed', function(){
+  if (window.QG_verificationState) renderDashboardVerificationGate(window.QG_verificationState);
+});
+document.addEventListener('qg-verification-ready', function (ev) {
+  renderDashboardVerificationGate(ev.detail || window.QG_verificationState);
+});
+document.addEventListener('qg-poster-payment-verified', function (ev) {
+  renderDashboardVerificationGate(ev.detail || window.QG_verificationState);
+});
+
+// -- MODE (poster / tasker) ? never set from URL; only getMode/setMode --
+var isPoster = (typeof getMode === 'function' ? getMode() : 'poster') === 'poster';
+var dashData = { posted: [], apps: [], payments: [], userId: null, reputation: null };
+
+window.switchMode = function(){
+  if (typeof switchRoleMode === 'function') switchRoleMode();
+  else if (typeof setMode === 'function') {
+    setMode(isPoster ? 'tasker' : 'poster');
+    window.location.reload();
+  }
+};
+
+window.setDashboardMode = function(mode) {
+  var next = (mode === 'worker' || mode === 'tasker') ? 'tasker' : 'poster';
+  if (typeof setQuickGigsMode === 'function') {
+    setQuickGigsMode(next, { toast: true, reload: true });
+  } else if (typeof setMode === 'function') {
+    setMode(next);
+    window.location.reload();
+  }
+};
+
+window.quickSwitchFromMenu = function() {
+  var next = isPoster ? 'tasker' : 'poster';
+  document.getElementById('avatarMenu').style.display = 'none';
+  var allowed = typeof QG_canUseRole === 'function' ? QG_canUseRole(next) : null;
+  if (allowed === false && typeof QG_offerRoleOptIn === 'function') {
+    QG_offerRoleOptIn(next);
+    return;
+  }
+  if (typeof setQuickGigsMode === 'function') {
+    setQuickGigsMode(next, { toast: true, reload: true });
+  } else if (typeof switchRoleMode === 'function') {
+    switchRoleMode();
+  }
+};
+
+window.onQuickGigsModeChange = function() {
+  window.location.reload();
+};
+
+function updateAvatarMenuSwitchLabel() {
+  var el = document.getElementById('avatarMenuSwitch');
+  if (!el) return;
+  var access = typeof QG_getRoleAccess === 'function' ? QG_getRoleAccess() : null;
+  if (access && access.is_teen && !isPoster) {
+    el.style.display = 'none';
+    return;
+  }
+  el.style.display = 'flex';
+  var target = isPoster ? 'tasker' : 'poster';
+  var hasTarget = !access || (target === 'tasker' ? access.is_tasker : access.is_poster);
+  el.textContent = hasTarget
+    ? (isPoster ? 'Switch to Tasker' : 'Switch to Poster')
+    : (isPoster ? 'Start finding work' : 'Become a Poster');
+}
+document.addEventListener('qg-role-access-changed', updateAvatarMenuSwitchLabel);
+
+function updateModeTag() {
+  // Refreshing isPoster is the load-bearing half of this function — the
+  // earnings card and renderAll both branch on it. It must happen whether or
+  // not the mode tag is on the page; the tag itself is gone from the design.
+  var posterNow = (typeof getMode === 'function' ? getMode() : (isPoster ? 'poster' : 'tasker')) === 'poster';
+  isPoster = posterNow;
+  var tag = document.getElementById('modeTag');
+  if (!tag) return;
+  tag.textContent = posterNow ? 'Poster mode' : 'Tasker mode';
+  tag.className = 'mode-tag ' + (posterNow ? 'tag-poster' : 'tag-worker');
+}
+
+function taskField(row, key) {
+  var map = {
+    id: ['task_id', 'TASK_ID', 'id'],
+    title: ['title', 'TITLE'],
+    status: ['status', 'STATUS'],
+    budget: ['budget', 'BUDGET'],
+    posted_by: ['posted_by', 'POSTED_BY'],
+    mode: ['task_mode', 'TASK_MODE'],
+    category: ['category', 'CATEGORY']
+  };
+  var keys = map[key] || [key];
+  for (var i = 0; i < keys.length; i++) {
+    if (row && row[keys[i]] != null) return row[keys[i]];
+  }
+  return '';
+}
+
+function appField(row, key) {
+  var map = {
+    id: ['app_id', 'APP_ID', 'id'],
+    task_id: ['task_id', 'TASK_ID'],
+    worker_id: ['worker_id', 'WORKER_ID'],
+    status: ['status', 'STATUS']
+  };
+  var keys = map[key] || [key];
+  for (var i = 0; i < keys.length; i++) {
+    if (row && row[keys[i]] != null) return row[keys[i]];
+  }
+  return '';
+}
+
+function getTimeGreeting(){
+  var h = new Date().getHours();
+  if(h < 12) return 'Good morning';
+  if(h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+/* 'random' = one note per load; 'cycle' = rotate every ~5s with 0.4s fade */
+var QG_POSTER_NOTE_MODE = 'random';
+var QG_POSTER_NOTES = [
+  'Ready to get something done today?',
+  'Someone nearby can help — post it.',
+  'Errands, repairs, tutoring — all covered.',
+  'The right tasker is a post away.',
+  'What can we take off your plate today?'
+];
+var _posterNoteTimer = null;
+var _posterNoteIdx = -1;
+
+function isMobilePosterDash() {
+  return !!(isPoster && window.matchMedia('(max-width: 719px)').matches);
+}
+
+function renderPosterNote() {
+  var noteEl = document.getElementById('greetNote');
+  var textEl = document.getElementById('greetNoteText');
+  if (!noteEl || !textEl) return;
+  if (_posterNoteTimer) {
+    clearInterval(_posterNoteTimer);
+    _posterNoteTimer = null;
+  }
+  if (!isMobilePosterDash()) {
+    noteEl.hidden = true;
+    noteEl.classList.remove('is-fading');
+    return;
+  }
+  noteEl.hidden = false;
+  if (_posterNoteIdx < 0) {
+    _posterNoteIdx = Math.floor(Math.random() * QG_POSTER_NOTES.length);
+  }
+  textEl.textContent = QG_POSTER_NOTES[_posterNoteIdx];
+  if (QG_POSTER_NOTE_MODE !== 'cycle') return;
+  _posterNoteTimer = setInterval(function () {
+    noteEl.classList.add('is-fading');
+    setTimeout(function () {
+      _posterNoteIdx = (_posterNoteIdx + 1) % QG_POSTER_NOTES.length;
+      textEl.textContent = QG_POSTER_NOTES[_posterNoteIdx];
+      noteEl.classList.remove('is-fading');
+    }, 400);
+  }, 5000);
+}
+
+function renderGreeting(contextOpts){
+  var name = window._userName || '';
+  var first = String(name || '').trim().split(/\s+/)[0] || '';
+  document.getElementById('greetName').textContent = getTimeGreeting() + (first ? ', ' + first : '');
+  var sub = 'Ready to get something done today?';
+  if (contextOpts && typeof qgContextualGreetingLine === 'function') {
+    sub = qgContextualGreetingLine(contextOpts);
+  } else if (contextOpts) {
+    if (contextOpts.pendingApplications > 0) sub = 'You have ' + contextOpts.pendingApplications + ' application' + (contextOpts.pendingApplications === 1 ? '' : 's') + ' waiting';
+    else if (contextOpts.inProgress > 0) sub = 'You have a task in progress';
+  }
+  document.getElementById('greetSub').textContent = sub;
+  renderPosterNote();
+  updateModeTag();
+  updateAvatarMenuSwitchLabel();
+}
+
+async function loadDashboardData(userId) {
+  dashData.userId = userId;
+  loadDashReputation(userId);
+  var hint = document.getElementById('dashLoadHint');
+  var cached = typeof readTasksCache === 'function' ? readTasksCache() : null;
+  var cachedApps = typeof readAppsCache === 'function' ? readAppsCache() : null;
+  if (cached && cached.length) {
+    dashData.posted = cached;
+    if (cachedApps && cachedApps.length) dashData.apps = cachedApps;
+    renderAll();
+    if (hint) hint.textContent = 'Refreshing?';
+  }
+
+  function finishLoad() {
+    if (hint) hint.remove();
+  }
+
+  function waitForDb(attempt) {
+    attempt = attempt || 0;
+    if (typeof fetchDashboardBootstrap === 'function' || typeof fetchAllTasksFresh === 'function') {
+      return runFetch();
+    }
+    if (attempt > 40) {
+      console.warn('Dashboard DB helpers not ready');
+      finishLoad();
+      return Promise.resolve();
+    }
+    return new Promise(function (resolve) {
+      setTimeout(function () { resolve(waitForDb(attempt + 1)); }, 40);
+    });
+  }
+
+  async function runFetch() {
+    try {
+      var role = isPoster ? 'poster' : 'worker';
+      if (typeof fetchDashboardBootstrap === 'function') {
+        // First paint: role-scoped parallel wave (poster 1 / worker 2). No payments while offline.
+        var boot = await fetchDashboardBootstrap(userId, role, { includePosterApps: false });
+        dashData.posted = Array.isArray(boot.tasks) ? boot.tasks : [];
+        dashData.apps = Array.isArray(boot.apps) ? boot.apps : [];
+        dashData.payments = Array.isArray(boot.payments) ? boot.payments : [];
+        renderAll();
+        finishLoad();
+        if (role === 'poster' && boot.myTaskIds && boot.myTaskIds.length &&
+            typeof fetchPosterAppsForTasks === 'function') {
+          fetchPosterAppsForTasks(boot.myTaskIds).then(function (posterApps) {
+            if (!posterApps || !posterApps.length) return;
+            var map = {};
+            (dashData.apps || []).forEach(function (a) {
+              var id = a.app_id || a.APP_ID || a.id;
+              var key = id != null && id !== ''
+                ? String(id)
+                : String(a.task_id || a.TASK_ID) + ':' + String(a.worker_id || a.WORKER_ID);
+              map[key] = a;
+            });
+            posterApps.forEach(function (a) {
+              var id = a.app_id || a.APP_ID || a.id;
+              var key = id != null && id !== ''
+                ? String(id)
+                : String(a.task_id || a.TASK_ID) + ':' + String(a.worker_id || a.WORKER_ID);
+              map[key] = a;
+            });
+            dashData.apps = Object.keys(map).map(function (k) { return map[k]; });
+            try { if (typeof writeAppsCache === 'function') writeAppsCache(dashData.apps); } catch (e) {}
+            renderAll();
+          }).catch(function () {});
+        }
+        if (boot.needWorkerPosted && typeof fetchWorkerPostedTasks === 'function') {
+          fetchWorkerPostedTasks(userId).then(function (posted) {
+            if (!posted || !posted.length) return;
+            var map = {};
+            (dashData.posted || []).forEach(function (t) {
+              var id = String(taskField(t, 'id') || '');
+              if (id) map[id] = t;
+            });
+            posted.forEach(function (t) {
+              var id = String(taskField(t, 'id') || '');
+              if (id) map[id] = t;
+            });
+            dashData.posted = Object.keys(map).map(function (k) { return map[k]; });
+            try { if (typeof writeTasksCache === 'function') writeTasksCache(dashData.posted); } catch (e) {}
+            renderAll();
+          }).catch(function () {});
+        }
+        return;
+      } else {
+        var headers = typeof getSupabaseHeaders === 'function'
+          ? await getSupabaseHeaders()
+          : window.SUPABASE_HEADERS;
+        var res = await Promise.all([
+          fetchAllTasksFresh({ limit: 20, select: (typeof SELECT_TASKS_DASH !== 'undefined' ? SELECT_TASKS_DASH : (typeof SELECT_TASKS_BROWSE !== 'undefined' ? SELECT_TASKS_BROWSE : undefined)) }),
+          typeof fetchApplicationsForActor === 'function'
+            ? fetchApplicationsForActor(userId)
+            : Promise.resolve([]),
+          (window.QG_CONFIG && window.QG_CONFIG.paymentsEnabled && typeof getPaymentsForUser === 'function')
+            ? getPaymentsForUser(userId, role, { limit: 20 })
+            : Promise.resolve([])
+        ]);
+        dashData.posted = Array.isArray(res[0]) ? res[0] : [];
+        dashData.apps = Array.isArray(res[1]) ? res[1] : [];
+        dashData.payments = Array.isArray(res[2]) ? res[2] : [];
+      }
+    } catch (err) {
+      console.warn('Dashboard stats load failed:', err);
+      if (!cached || !cached.length) {
+        dashData.posted = [];
+        dashData.apps = [];
+      }
+    }
+    renderAll();
+    finishLoad();
+  }
+
+  await waitForDb();
+}
+
+function applyDashboardRoleTheme() {
+  document.documentElement.setAttribute('data-qg-mode', isPoster ? 'poster' : 'worker');
+  if (typeof applyRoleTheme === 'function') applyRoleTheme();
+}
+
+function initDashboardRoleShell() {
+  applyDashboardRoleTheme();
+  renderGreeting();
+}
+initDashboardRoleShell();
+
+function renderDashboardHero(userId) {
+  var heroEl = document.getElementById('dashHero');
+  if (!heroEl || typeof buildDashboardHero !== 'function') return;
+  var city = window.getUserCityLabel ? window.getUserCityLabel() : '';
+  var myPosted = userId ? dashData.posted.filter(function(t){ return taskField(t, 'posted_by') === userId; }) : [];
+  var myOpenPosted = myPosted.filter(function(t){ return taskField(t, 'status') === 'open'; });
+  var myApps = userId ? dashData.apps.filter(function(a){ return appField(a, 'worker_id') === userId; }) : [];
+  var pendingApplicants = 0;
+  myOpenPosted.forEach(function(t) {
+    pendingApplicants += dashData.apps.filter(function(a) {
+      return String(appField(a, 'task_id')) === String(taskField(t, 'id')) &&
+        String(appField(a, 'status') || 'pending').toLowerCase() === 'pending';
+    }).length;
+  });
+  var inProgressPosted = myPosted.filter(function(t){ return taskField(t, 'status') === 'in_progress'; }).length;
+  var workerInProgress = dashData.posted.filter(function(t) {
+    if (taskField(t, 'status') !== 'in_progress') return false;
+    return myApps.some(function(a) {
+      return String(appField(a, 'task_id')) === String(taskField(t, 'id')) &&
+        String(appField(a, 'status') || '').toLowerCase() === 'accepted';
+    });
+  }).length;
+  var openNearby = dashData.posted.filter(function(t) {
+    return taskField(t, 'status') === 'open' && taskField(t, 'posted_by') !== userId;
+  }).length;
+
+  heroEl.innerHTML = buildDashboardHero({
+    isPoster: isPoster,
+    city: city,
+    pendingApplicants: pendingApplicants,
+    inProgressPosted: inProgressPosted,
+    workerInProgress: workerInProgress,
+    openNearby: openNearby,
+    mobilePoster: isMobilePosterDash()
+  });
+}
+
+function dashPayAmount(p) {
+  return parseFloat(p.worker_payout != null ? p.worker_payout : p.WORKER_PAYOUT) || 0;
+}
+
+function dashPayDate(p) {
+  var raw = p.paid_at || p.PAID_AT || p.created_at || p.CREATED_AT || p.updated_at || p.UPDATED_AT || '';
+  var d = raw ? new Date(raw) : null;
+  return d && !isNaN(d.getTime()) ? d : null;
+}
+
+function dashDayStart(offsetDays) {
+  var d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + (offsetDays || 0));
+  return d;
+}
+
+function dashSumPaidInRange(payments, start, end) {
+  return (payments || []).reduce(function (s, p) {
+    if (String(p.status || '').toLowerCase() !== 'paid') return s;
+    var d = dashPayDate(p);
+    if (!d || d < start || d >= end) return s;
+    return s + dashPayAmount(p);
+  }, 0);
+}
+
+function renderDashApplicantsAlert(pendingCount) {
+  var el = document.getElementById('dashApplicantsAlert');
+  if (!el) return;
+  if (!isPoster || !pendingCount) {
+    el.hidden = true;
+    el.innerHTML = '';
+    return;
+  }
+  el.hidden = false;
+  el.innerHTML =
+    '<a class="dash-alert-attention" href="mytasks.html?tab=posted&applicants=1">' +
+      '<span class="dash-alert-body">' +
+        '<strong>' + pendingCount + ' applicant' + (pendingCount !== 1 ? 's' : '') + ' waiting</strong>' +
+        '<span>Review and accept a tasker for your open tasks</span>' +
+      '</span>' +
+      '<span class="dash-alert-cta">Review →</span>' +
+    '</a>';
+}
+
+function renderDashEarningsCard(workerPayments, totalEarned) {
+  var el = document.getElementById('dashEarnings');
+  if (!el) return;
+  if (isPoster) {
+    el.hidden = true;
+    el.innerHTML = '';
+    return;
+  }
+  var paid = (workerPayments || []).filter(function (p) {
+    return String(p.status || '').toLowerCase() === 'paid';
+  });
+  var weekStart = dashDayStart(-6);
+  var nextDay = dashDayStart(1);
+  var prevWeekStart = dashDayStart(-13);
+  var weekEarned = dashSumPaidInRange(paid, weekStart, nextDay);
+  var prevWeekEarned = dashSumPaidInRange(paid, prevWeekStart, weekStart);
+  var series = [];
+  var i;
+  for (i = 6; i >= 0; i--) {
+    var day0 = dashDayStart(-i);
+    var day1 = dashDayStart(-i + 1);
+    series.push(dashSumPaidInRange(paid, day0, day1));
+  }
+  var maxBar = Math.max.apply(null, series.concat([1]));
+  var trendCls = 'is-flat';
+  var trendTxt = 'Flat vs last week';
+  if (weekEarned > prevWeekEarned + 0.01) {
+    trendCls = 'is-up';
+    var upPct = prevWeekEarned > 0
+      ? Math.round(((weekEarned - prevWeekEarned) / prevWeekEarned) * 100)
+      : 100;
+    trendTxt = '+' + upPct + '% vs last week';
+  } else if (weekEarned < prevWeekEarned - 0.01) {
+    trendCls = 'is-flat';
+    trendTxt = 'Down vs last week';
+  } else if (weekEarned === 0 && prevWeekEarned === 0) {
+    trendTxt = 'No payouts yet';
+  }
+
+  var goal = 200;
+  try {
+    var storedGoal = parseFloat(localStorage.getItem('qg-earn-goal'));
+    if (!isNaN(storedGoal) && storedGoal > 0) goal = storedGoal;
+  } catch (eGoal) {}
+  var paidCount = paid.length;
+  var avgGig = paidCount > 0 ? (totalEarned / paidCount) : 40;
+  if (!avgGig || avgGig < 10) avgGig = 40;
+  var remaining = Math.max(0, goal - weekEarned);
+  var gigsNeeded = remaining <= 0 ? 0 : Math.ceil(remaining / avgGig);
+  var nudge;
+  if (remaining <= 0 && weekEarned > 0) {
+    nudge = 'You hit your $' + goal.toFixed(0) + ' weekly goal — nice work.';
+  } else if (weekEarned <= 0) {
+    nudge = gigsNeeded + ' gig' + (gigsNeeded !== 1 ? 's' : '') +
+      ' to your $' + goal.toFixed(0) + ' goal · <a href="browsetask.html">Browse tasks</a>';
+  } else {
+    nudge = gigsNeeded + ' gig' + (gigsNeeded !== 1 ? 's' : '') +
+      ' to your $' + goal.toFixed(0) + ' goal';
+  }
+
+  var bars = series.map(function (v, idx) {
+    var h = Math.max(4, Math.round((v / maxBar) * 36));
+    var isToday = idx === series.length - 1;
+    return '<div class="dash-earn-bar' + (isToday ? ' is-today' : '') +
+      '" style="height:' + h + 'px" title="$' + v.toFixed(0) + '"></div>';
+  }).join('');
+
+  el.hidden = false;
+  el.innerHTML =
+    '<div class="dash-earn-card">' +
+      '<div class="dash-earn-label">Earned this week</div>' +
+      '<div class="dash-earn-top">' +
+        '<div class="dash-earn-figure">$' + weekEarned.toFixed(0) + '</div>' +
+        '<span class="dash-earn-trend ' + trendCls + '">' + trendTxt + '</span>' +
+      '</div>' +
+      '<div class="dash-earn-spark" aria-hidden="true">' + bars + '</div>' +
+      '<div class="dash-earn-nudge">' + nudge + '</div>' +
+    '</div>';
+}
+
+
+async function loadDashReputation(userId) {
+  var el = document.getElementById('dashReputation');
+  if (!el || !userId) return;
+  var workerMode = true;
+  try {
+    if (typeof getMode === 'function') workerMode = getMode() !== 'poster';
+    else if (typeof getSessionMode === 'function') workerMode = getSessionMode() === 'worker';
+    else workerMode = !isPoster;
+  } catch (eMode) { workerMode = !isPoster; }
+  if (!workerMode) {
+    el.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+  try {
+    var rep = typeof getTaskerReputation === 'function'
+      ? await getTaskerReputation(userId)
+      : null;
+    dashData.reputation = rep;
+    renderDashReputation(rep);
+  } catch (eRep) {
+    el.style.display = 'none';
+  }
+}
+
+function renderDashReputation(rep) {
+  var el = document.getElementById('dashReputation');
+  if (!el) return;
+  var workerMode = !isPoster;
+  try {
+    if (typeof getMode === 'function') workerMode = getMode() !== 'poster';
+  } catch (e) {}
+  if (!workerMode) {
+    el.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+  rep = rep || dashData.reputation || null;
+  if (!rep) {
+    el.style.display = 'none';
+    return;
+  }
+  var label = typeof formatUserRatingLabel === 'function'
+    ? formatUserRatingLabel(rep.avgRating, rep.reviewCount, rep.completedJobs)
+    : 'New';
+  var reviewBit = (rep.reviewCount > 0)
+    ? (' · ' + rep.reviewCount + ' review' + (rep.reviewCount === 1 ? '' : 's'))
+    : '';
+  el.innerHTML = '<a href="profile.html#reviewsSection">' + label + reviewBit + '</a>';
+  el.style.display = 'block';
+}
+
+/* ── CURRENT TASK / THIS WEEK ─────────────────────────────────────────────
+   Both cards read data the dashboard already fetches into dashData — no new
+   query. CURRENT TASK is the route to My Tasks now that it has left the tab
+   bar, so it links straight into mytasks.html. */
+
+var DASH_LIVE_STATES = {
+  accepted: 1, assigned: 1, arrived: 1, in_progress: 1, 'in progress': 1, inprogress: 1
+};
+
+function dashChevron() {
+  return '<span class="sg-rowcard-chev" aria-hidden="true">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" ' +
+    'stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>';
+}
+
+function dashIsq(iconName, tone) {
+  var svg = typeof qgIcon === 'function' ? qgIcon(iconName || 'clipboard', { size: 19 }) : '';
+  return '<span class="sg-isq sg-isq--' + (tone || 'primary') + '" aria-hidden="true">' + svg + '</span>';
+}
+
+/** Short, human date for the task row: "Today · 4:00 PM" where possible. */
+function dashWhenLabel(task) {
+  var raw = taskField(task, 'scheduled_at') || taskField(task, 'task_date') ||
+    taskField(task, 'due_date') || taskField(task, 'created_at');
+  if (!raw) return '';
+  var d = typeof parseQgTimestamp === 'function' ? parseQgTimestamp(raw) : new Date(raw);
+  if (!d || isNaN(d.getTime())) return '';
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var that = new Date(d); that.setHours(0, 0, 0, 0);
+  var days = Math.round((that - today) / 86400000);
+  var day = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : days === -1 ? 'Yesterday'
+    : d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  var time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return day + ' · ' + time;
+}
+
+function renderCurrentTaskCard(myPosted, myApps, userId) {
+  var sec = document.getElementById('dashCurrentSec');
+  var card = document.getElementById('dashCurrentCard');
+  if (!sec || !card) return;
+
+  var task = null;
+  var state = '';
+  if (isPoster) {
+    task = (myPosted || []).filter(function (t) {
+      return DASH_LIVE_STATES[String(taskField(t, 'status') || '').toLowerCase()];
+    })[0] || null;
+    if (task) state = taskField(task, 'status');
+  } else {
+    var app = (myApps || []).filter(function (a) {
+      return DASH_LIVE_STATES[String(appField(a, 'status') || '').toLowerCase()];
+    })[0];
+    if (app) {
+      var tid = String(appField(app, 'task_id'));
+      task = (dashData.posted || []).filter(function (t) {
+        return String(taskField(t, 'id')) === tid;
+      })[0] || null;
+      state = appField(app, 'status');
+    }
+  }
+
+  // The design hides the whole section when there is nothing under way.
+  if (!task) { sec.hidden = true; return; }
+
+  var title = taskField(task, 'title') || 'Your task';
+  var when = dashWhenLabel(task);
+  var pretty = String(state || '').replace(/[_-]+/g, ' ').trim();
+  pretty = pretty ? pretty.charAt(0).toUpperCase() + pretty.slice(1) : '';
+  var meta = [when, pretty].filter(Boolean).join(' · ');
+  // getCatInfo carries the iconKey per category (beauty -> scissors, etc.).
+  var cat = taskField(task, 'category');
+  var info = typeof window.getCatInfo === 'function' ? window.getCatInfo(cat) : null;
+  var icon = (info && info.iconKey) || 'clipboard';
+
+  card.href = 'mytasks.html?tab=' + (isPoster ? 'posted' : 'applied');
+  card.innerHTML = dashIsq(icon, 'primary') +
+    '<span class="sg-rowcard-body">' +
+      '<span class="sg-rowcard-title">' + dashEsc(title) + '</span>' +
+      (meta ? '<span class="sg-rowcard-meta">' + dashEsc(meta) + '</span>' : '') +
+    '</span>' + dashChevron();
+  sec.hidden = false;
+}
+
+function renderThisWeekCard(workerPayments) {
+  var sec = document.getElementById('dashWeekSec');
+  var card = document.getElementById('dashWeekCard');
+  if (!sec || !card) return;
+
+  var paid = (workerPayments || []).filter(function (p) {
+    return String(p.status || '').toLowerCase() === 'paid';
+  });
+  var weekStart = dashDayStart(-6);
+  var nextDay = dashDayStart(1);
+  var earned = dashSumPaidInRange(paid, weekStart, nextDay);
+  var count = paid.filter(function (p) {
+    var d = dashPayDate(p);
+    return d && d >= weekStart && d < nextDay;
+  }).length;
+
+  // Nothing earned this week is not a card worth showing.
+  if (earned <= 0 && count === 0) { sec.hidden = true; return; }
+
+  card.innerHTML = dashIsq('dollar', 'teal') +
+    '<span class="sg-rowcard-body">' +
+      '<span class="sg-rowcard-title is-money">$' + Math.round(earned) + ' earned</span>' +
+      '<span class="sg-rowcard-meta">' + count + ' gig' + (count === 1 ? '' : 's') + ' completed</span>' +
+    '</span>' + dashChevron();
+  sec.hidden = false;
+}
+
+/** "Calgary, AB" under the wordmark. */
+function renderDashCity() {
+  var el = document.getElementById('dashCityLine');
+  if (!el) return;
+  var city = typeof window.getUserCityLabel === 'function' ? window.getUserCityLabel() : '';
+  el.textContent = city || '';
+}
+
+function dashEsc(s) {
+  return typeof escapeHtml === 'function' ? escapeHtml(s)
+    : (typeof qgEsc === 'function' ? qgEsc(s)
+      : String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+}
+
+function renderAll(){
+  function dashEsc(s) {
+    return typeof escapeHtml === 'function' ? escapeHtml(s)
+      : (typeof qgEsc === 'function' ? qgEsc(s)
+        : String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+  }
+  if (window._qgAgeTier === 'loading') return;
+  if (typeof getMode === 'function') {
+    isPoster = getMode() === 'poster';
+  } else if (typeof getSessionMode === 'function') {
+    isPoster = getSessionMode() !== 'worker';
+  }
+  var userId = dashData.userId;
+  var myPosted = userId ? dashData.posted.filter(function(t){ return taskField(t, 'posted_by') === userId; }) : [];
+  var myOpenPosted = myPosted.filter(function(t){ return taskField(t, 'status') === 'open'; });
+  var myCompleted = myPosted.filter(function(t){ return taskField(t, 'status') === 'completed'; });
+  var myApps = userId ? dashData.apps.filter(function(a){ return appField(a, 'worker_id') === userId; }) : [];
+  var myAcceptedApps = myApps.filter(function(a){ return appField(a, 'status') === 'accepted'; });
+  var applicantCount = userId ? dashData.apps.filter(function(a){
+    return myPosted.some(function(t){ return String(taskField(t, 'id')) === String(appField(a, 'task_id')); });
+  }).length : 0;
+  var pendingApplicantsOnMine = 0;
+  myOpenPosted.forEach(function (t) {
+    pendingApplicantsOnMine += dashData.apps.filter(function (a) {
+      return String(appField(a, 'task_id')) === String(taskField(t, 'id')) &&
+        String(appField(a, 'status') || 'pending').toLowerCase() === 'pending';
+    }).length;
+  });
+  var pendingWorkerApps = myApps.filter(function (a) {
+    return String(appField(a, 'status') || 'pending').toLowerCase() === 'pending';
+  }).length;
+  var guardianWaiting = myApps.filter(function(a) {
+    return String(appField(a, 'guardian_status') || '').toLowerCase() === 'pending_guardian';
+  }).length;
+  var isTeenDashboard = window._qgAgeTier === 'teen' && !isPoster;
+  var inProgressCount = isPoster
+    ? myPosted.filter(function (t) { return taskField(t, 'status') === 'in_progress'; }).length
+    : 0;
+  var posterPayments = (dashData.payments || []).filter(function(p) {
+    return String(p.poster_id || p.POSTER_ID || '') === String(userId);
+  });
+  var posterPaySums = typeof QG_sumPayments === 'function'
+    ? QG_sumPayments(posterPayments, { role: 'poster' })
+    : { held: 0, paid: 0 };
+  var paidTotal = posterPaySums.paid || 0;
+  var heldTotal = posterPaySums.held || 0;
+  var totalPaidDisplay = '$' + (paidTotal > 0 ? paidTotal.toFixed(0) : '0');
+  var paidSubLabel = paidTotal > 0
+    ? ''
+    : (heldTotal > 0 ? 'Held in escrow' : '');
+
+  var myInProgressWorker = userId ? dashData.posted.filter(function(t){
+    if (taskField(t, 'status') !== 'in_progress') return false;
+    return myAcceptedApps.some(function(a){
+      return String(appField(a, 'task_id')) === String(taskField(t, 'id'));
+    });
+  }).length : 0;
+  if (!isPoster) inProgressCount = myInProgressWorker;
+
+  renderGreeting({
+    pendingApplications: isPoster ? pendingApplicantsOnMine : pendingWorkerApps,
+    inProgress: inProgressCount
+  });
+  renderDashReputation(dashData.reputation);
+
+  var activityEl = document.getElementById('dashActivity');
+  if (activityEl && typeof qgBuildActivityFeed === 'function') {
+    activityEl.innerHTML = qgBuildActivityFeed({
+      userId: userId,
+      tasks: dashData.posted || [],
+      apps: dashData.apps || [],
+      reviews: dashData.reviews || []
+    });
+  }
+  var marketTicker = document.getElementById('dashMarketTicker');
+  if (marketTicker && !isPoster && window.QGActivityTicker && typeof QGActivityTicker.mount === 'function') {
+    QGActivityTicker.mount(marketTicker);
+  } else if (marketTicker && isPoster) {
+    marketTicker.innerHTML = '';
+  }
+
+  var workerPayments = (dashData.payments || []).filter(function(p) {
+    return String(p.worker_id || p.WORKER_ID || '') === String(userId);
+  });
+  var totalEarned = workerPayments.reduce(function(s, p) {
+    if (String(p.status || '').toLowerCase() !== 'paid') return s;
+    return s + (parseFloat(p.worker_payout != null ? p.worker_payout : p.WORKER_PAYOUT) || 0);
+  }, 0);
+  var pendingEarned = workerPayments.reduce(function(s, p) {
+    if (String(p.status || '').toLowerCase() !== 'held') return s;
+    return s + (parseFloat(p.worker_payout != null ? p.worker_payout : p.WORKER_PAYOUT) || 0);
+  }, 0);
+  var earnedLabel = '$' + (totalEarned > 0 ? totalEarned.toFixed(0) : '0');
+  var earnedSub = pendingEarned > 0 ? '$' + pendingEarned.toFixed(0) + ' pending' : '';
+
+  var ico = function(name){ return typeof qgIcon==='function' ? qgIcon(name,{size:20}) : ''; };
+  var stats = isPoster
+    ? [
+        {icon:'clipboard', val: String(myOpenPosted.length), cls:'', lbl:'Active tasks', href:'mytasks.html?tab=posted'},
+        {icon:'users', val: String(pendingApplicantsOnMine), cls:'is-attention', lbl:'Applicants', href:'mytasks.html?tab=posted&applicants=1'},
+        {icon:'dollar', val: totalPaidDisplay, cls:'is-money', lbl:'Paid out', sub: paidSubLabel, href:'profile.html#payments'}
+      ]
+    : [
+        {icon:'inbox', val: String(isTeenDashboard ? guardianWaiting : myApps.length), cls:'', lbl:isTeenDashboard?'Guardian review':'Applications', href:'mytasks.html?tab=applied'},
+        {icon:'checkCircle', val: String(myAcceptedApps.length), cls:'', lbl:'Jobs accepted', href:'mytasks.html?tab=applied'},
+        {icon:'clock', val: String(myInProgressWorker), cls:'', lbl:'In progress', href:'mytasks.html?tab=inprogress'},
+        {icon:'dollar', val: earnedLabel, cls:'is-money', lbl:'Total earned', sub: earnedSub, href:'profile.html#payments'}
+      ];
+
+  document.getElementById('statsGrid').innerHTML = stats.map(function(s){
+    return '<a class="stat-card stat-card-link" href="'+s.href+'">' +
+      '<div class="stat-icon">'+ico(s.icon)+'</div>' +
+      '<div class="stat-meta">' +
+        '<div class="stat-val '+s.cls+'">'+s.val+'</div>' +
+        '<div class="stat-lbl">'+s.lbl+'</div>' +
+        (s.sub ? '<div class="stat-sub">'+s.sub+'</div>' : '') +
+      '</div>' +
+      '</a>';
+  }).join('');
+
+  applyDashboardRoleTheme();
+  updateModeTag();
+  updateAvatarMenuSwitchLabel();
+  renderDashboardHero(userId);
+  renderDashApplicantsAlert(pendingApplicantsOnMine);
+  renderDashEarningsCard(workerPayments, totalEarned);
+  renderCurrentTaskCard(myPosted, myApps, userId);
+  renderThisWeekCard(workerPayments);
+  renderDashCity();
+
+  var actions = isPoster
+    ? [
+        {icon:'users',title:'Find taskers',desc:'Browse skilled taskers near you',href:'workers.html',cls:'secondary'},
+        {icon:'folder',title:'Review applicants',desc:'See who applied to your tasks',href:'mytasks.html?tab=posted&applicants=1',cls:'secondary'}
+      ]
+    : [
+        {icon:'search',title:isTeenDashboard?'Browse teen-friendly gigs':'Browse tasks',desc:isTeenDashboard?'Only gigs that welcome ages 16–17':'Find tasks near you',href:'browsetask.html',cls:'primary'},
+        {icon:'list',title:'Categories',desc:'Explore tasks by skill type',href:'categories.html',cls:'secondary'},
+        {icon:'briefcase',title:'My tasks',desc:'Applications & active work',href:'mytasks.html?tab=applied&mode=worker',cls:'secondary'}
+      ];
+  document.getElementById('actionsGrid').innerHTML = actions.map(function(a){
+    var copy = '<div class="action-copy"><div class="action-title">'+a.title+'</div><div class="action-desc">'+a.desc+'</div></div>';
+    return '<a class="action-card '+a.cls+'" href="'+a.href+'"><div class="action-icon">'+ico(a.icon)+'</div>'+copy+'</a>';
+  }).join('') +
+    (window.QG_CONFIG && !window.QG_CONFIG.paymentsEnabled
+      ? '<div class="action-card secondary dash-span-full" style="cursor:default;opacity:0.92"><div class="action-icon">'+ico('creditCard')+'</div><div class="action-copy"><div class="action-title">Payments live via Stripe</div><div class="action-desc">Payments run through Stripe — funds are held in escrow and released on task completion.</div></div></div>'
+      : '') +
+    '<button type="button" class="action-card secondary dash-span-full" style="margin-top:2px;border:none;width:100%;text-align:left;font:inherit;color:inherit" onclick="typeof promptQuickGigsInstall===\'function\'&&promptQuickGigsInstall()"><div class="action-icon">'+ico('smartphone')+'</div><div class="action-copy"><div class="action-title">Add to Home Screen</div><div class="action-desc">Install SwiftGigs on iPhone (Safari Share menu) or Android</div></div></button>' +
+    '<a class="action-card secondary dash-span-full" href="feedback.html" style="margin-top:2px"><div class="action-icon">'+ico('bug')+'</div><div class="action-copy"><div class="action-title">Beta feedback</div><div class="action-desc">Report a bug or share an idea — we read every message</div></div></a>';
+
+  var statsEl = document.getElementById('statsGrid');
+  var actionsEl = document.getElementById('actionsGrid');
+  if (statsEl) statsEl.setAttribute('data-dash-layout', isPoster ? 'poster' : 'tasker');
+  if (actionsEl) actionsEl.setAttribute('data-dash-layout', isPoster ? 'poster' : 'tasker');
+
+  var paySection = document.getElementById('paymentHistorySection');
+  var payList = document.getElementById('paymentHistoryList');
+  if (paySection && payList && window.QG_CONFIG && window.QG_CONFIG.paymentsEnabled && typeof QG_renderPaymentHistoryList === 'function') {
+    var rolePayments = dashData.payments || [];
+    if (rolePayments.length) {
+      paySection.style.display = 'block';
+      payList.innerHTML = QG_renderPaymentHistoryList(rolePayments.slice(0, 5), {
+        role: isPoster ? 'poster' : 'worker',
+        taskMap: typeof QG_buildTaskTitleMap === 'function' ? QG_buildTaskTitleMap(dashData.posted) : {}
+      });
+    } else {
+      paySection.style.display = 'none';
+    }
+  }
+
+  var connectBanner = document.getElementById('dashConnectBanner');
+  if (connectBanner && !isPoster && window.QG_CONFIG && window.QG_CONFIG.paymentsEnabled && userId) {
+    var needsPayout = myInProgressWorker > 0 || pendingEarned > 0;
+    if (needsPayout && typeof getUserByFirebaseUid === 'function') {
+      getUserByFirebaseUid(userId).then(function(u) {
+        var ok = u && (u.stripe_payouts_enabled === true || u.stripe_payouts_enabled === 'true' || u.stripe_payouts_enabled === 1);
+        if (ok) {
+          connectBanner.style.display = 'none';
+          return;
+        }
+        connectBanner.style.display = 'block';
+        connectBanner.className = 'dash-prompt-card';
+        connectBanner.innerHTML = '<strong>Set up payouts</strong> — connect Stripe so you get paid when tasks complete. ' +
+          '<a href="profile.html#payouts">Set up now →</a>';
+      }).catch(function() { connectBanner.style.display = 'none'; });
+    } else {
+      connectBanner.style.display = 'none';
+    }
+  } else if (connectBanner) {
+    connectBanner.style.display = 'none';
+  }
+
+  var sectionTitle = document.getElementById('sectionTitle');
+  var seeAll = document.querySelector('.section-hdr .see-all');
+  var city = window.getUserCityLabel ? window.getUserCityLabel() : '';
+  var html = '';
+
+  if (isPoster) {
+    sectionTitle.textContent = 'Needs your attention';
+    if (seeAll) { seeAll.href = 'mytasks.html?tab=posted&applicants=1'; seeAll.textContent = 'See all'; }
+    var attentionTasks = myOpenPosted.slice().sort(function (a, b) {
+      function pendingFor(t) {
+        return dashData.apps.filter(function (app) {
+          return String(appField(app, 'task_id')) === String(taskField(t, 'id')) &&
+            String(appField(app, 'status') || 'pending').toLowerCase() === 'pending';
+        }).length;
+      }
+      return pendingFor(b) - pendingFor(a);
+    });
+    if (attentionTasks.length) {
+      html = attentionTasks.slice(0, 5).map(function(t){
+        var pendingOnTask = dashData.apps.filter(function(a){
+          return String(appField(a, 'task_id')) === String(taskField(t, 'id')) &&
+            String(appField(a, 'status') || 'pending').toLowerCase() === 'pending';
+        }).length;
+        var taskId = taskField(t, 'id');
+        var needsAction = pendingOnTask > 0;
+        var taskHref = 'mytasks.html?tab=posted&applicants=1' +
+          (needsAction ? '&expand=' + encodeURIComponent(String(taskId)) : '');
+        var badge = needsAction
+          ? '<span class="dash-app-badge">' + pendingOnTask + ' waiting</span>'
+          : '';
+        var cta = needsAction ? 'Review applicants' : 'View';
+        return '<a class="task-row' + (needsAction ? ' is-attention' : '') + '" href="'+taskHref+'" style="text-decoration:none">' +
+          '<div class="task-dot">'+ico('clipboard')+'</div>' +
+          '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title')) + badge + '</div>' +
+          '<div class="task-meta">Open · $'+dashEsc(taskField(t,'budget'))+'</div></div>' +
+          '<div class="task-right"><div class="task-price">' + cta + '</div></div>' +
+        '</a>';
+      }).join('');
+    } else {
+      html = '<div class="empty"><div class="empty-icon">'+ico('clipboard')+'</div><div class="empty-txt">Nothing needs you right now — post a task to get applicants</div><a class="empty-btn" href="posttask.html">Post a task</a></div>';
+    }
+  } else {
+    sectionTitle.textContent = 'Tasks near you';
+    if (seeAll) { seeAll.href = 'browsetask.html'; seeAll.textContent = 'See all'; }
+    var openNearby = dashData.posted.filter(function(t){
+      if (taskField(t, 'status') !== 'open' || taskField(t, 'posted_by') === userId) return false;
+      if (isTeenDashboard && typeof QG_taskAllowsTeen === 'function' && !QG_taskAllowsTeen(t)) return false;
+      return true;
+    }).slice(0, 5);
+    if (openNearby.length) {
+      html = openNearby.map(function(t){
+        var mode = taskField(t, 'mode') || 'standard';
+        var badge = mode === 'quick' ? 'badge-quick' : mode === 'recurring' ? 'badge-recurring' : 'badge-standard';
+        var badgeLabel = mode === 'quick'
+          ? ((typeof qgIcon==='function'?qgIcon('zap',{size:12}):'')+' Quick')
+          : mode === 'recurring'
+            ? ((typeof qgIcon==='function'?qgIcon('repeat',{size:12}):'')+' Recurring')
+            : 'Standard';
+        var pin = typeof qgIcon==='function' ? '<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>' : '';
+        var locTxt = typeof formatLocationDisplay==='function'?formatLocationDisplay(taskField(t,'location')||city):String(taskField(t,'location')||city);
+        return '<a class="task-row" href="browsetask.html" style="text-decoration:none">' +
+          '<div class="task-dot">'+ico('briefcase')+'</div>' +
+          '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title'))+'</div><div class="task-meta">'+pin+dashEsc(locTxt)+'</div></div>' +
+          '<div class="task-right"><div class="task-price is-money">$'+dashEsc(taskField(t,'budget'))+'</div><span class="task-badge '+badge+'">'+badgeLabel+'</span></div>' +
+        '</a>';
+      }).join('');
+    } else {
+      html = '<div class="empty"><div class="empty-icon">'+ico('search')+'</div><div class="empty-txt">No tasks nearby yet — post one or widen your area</div><a class="empty-btn" href="browsetask.html">Browse all tasks</a></div>';
+    }
+    if (myPosted.length) {
+      html += '<div class="dash-section-gap"></div><div class="section-hdr"><span class="section-title">Tasks you posted</span><a class="see-all" href="mytasks.html?tab=posted">See all</a></div>';
+      html += myOpenPosted.slice(0, 2).map(function(t){
+        return '<a class="task-row" href="mytasks.html?tab=posted" style="text-decoration:none">' +
+          '<div class="task-dot">'+ico('clipboard')+'</div>' +
+          '<div class="task-info"><div class="task-name">'+dashEsc(taskField(t,'title'))+'</div><div class="task-meta">You posted · $'+dashEsc(taskField(t,'budget'))+'</div></div></a>';
+      }).join('');
+    }
+  }
+
+  document.getElementById('tasksList').innerHTML = html;
+}
+
+// Geolocation / Nominatim ? after first paint (cellular-friendly)
+function deferDashLocation() {
+  if (typeof initUserLocation !== 'function') return;
+  var run = function () {
+    initUserLocation().then(function () { renderGreeting(); }).catch(function () {});
+  };
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 2500 });
+  else setTimeout(run, 600);
+}
+deferDashLocation();
+
+(function bindPosterMobileLayout() {
+  var mq = window.matchMedia('(max-width: 719px)');
+  var lastMobilePoster = null;
+  function sync() {
+    if (typeof getMode === 'function') isPoster = getMode() === 'poster';
+    var now = isMobilePosterDash();
+    if (lastMobilePoster === now) return;
+    lastMobilePoster = now;
+    renderPosterNote();
+    if (dashData && dashData.userId) renderDashboardHero(dashData.userId);
+    else if (typeof renderDashboardHero === 'function') renderDashboardHero(window._currentUser && window._currentUser.uid);
+  }
+  if (mq.addEventListener) mq.addEventListener('change', sync);
+  else if (mq.addListener) mq.addListener(sync);
+  document.addEventListener('qg-mode-changed', function () {
+    lastMobilePoster = null;
+    sync();
+  });
+})();
+
+if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('home');
+else {
+  document.addEventListener('DOMContentLoaded', function () {
+    if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('home');
+  });
+}
+
+window.toggleAvatarMenu = function() {
+  var menu = document.getElementById('avatarMenu');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+};
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#avatarEl') && !e.target.closest('#avatarMenu')) {
+    var menu = document.getElementById('avatarMenu');
+    if (menu) menu.style.display = 'none';
+  }
+});
+</script>
+<script defer src="qg-polish.js?v=20260728xss1"></script>
+<script src="qg-ux.js?v=20260728welcome1" defer></script>
+<script src="qg-bigtech.js?v=20260810auth1" defer></script>
+<script src="qg-wave2.js?v=20260811trust2" defer></script>
+<script defer src="qg-help.js?v=20260726seo"></script>
+</body>
+</html>

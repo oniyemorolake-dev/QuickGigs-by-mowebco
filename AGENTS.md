@@ -12,9 +12,19 @@ Stay inside your zone. If a task needs a file you do not own, **stop and flag it
 rather than editing it — the other agent may have that file open with unsaved
 context, and a write from you will silently destroy its work.
 
+> **TEMPORARY TRANSFER — six app pages are Cursor's, assigned by Morolake.**
+> For the SwiftGigs data-wiring pass, Cursor owns `dashboard.html`,
+> `browsetask.html`, `posttask.html`, `messages.html`, `profile.html` and
+> `mytasks.html`, plus their `*-legacy.html` rollback copies and the new
+> `sg-app.css`. The finished layout already exists in
+> `Claude outputs/sg-design/templates/`; this task is wiring real data into it,
+> not design. **Claude must not touch those six files or their legacy copies
+> until Cursor reports back and this block is removed.** The other 27 root HTML
+> files remain Claude's and are not frozen.
+
 | Zone | Owner |
 | --- | --- |
-| `*.html` (33 files at repo root) | Claude desktop |
+| `*.html` (33 files at repo root) | Claude desktop — **six suspended, see above** |
 | `qg-icons.js` | Claude desktop (append-only, see below) |
 | `*.css` (38 files at repo root) | Cursor |
 | `*.js` at root, except `qg-icons.js` | Cursor |
@@ -118,11 +128,31 @@ theme state in `qg-mode`. Do not repaint by assigning `document.body.className`
 wholesale — it strips page-level classes. (Writing theme into `qg-mode` was a real
 bug, fixed in `75a149f`.)
 
-### App chrome is owned by shared JS, not by the pages
+### Two page architectures — know which one you are in
 
-Four pieces of chrome are injected and removed by shared scripts. A page that
-hand-writes them will get duplicates, and a page that expects them to persist
-will lose them. Build page bodies around this, do not fight it:
+The six rebuilt pages (`dashboard`, `browsetask`, `posttask`, `messages`,
+`profile`, `mytasks`) are **self-contained**. They load `qg-tokens.css`,
+`sg-app.css` and data/auth/logic scripts only. They deliberately do **not** load
+`qg-brand-init.js`, any legacy visual stylesheet, or any UI-injector
+(`qg-ux.js`, `qg-bigtech.js`, `qg-wave2.js`, `qg-help.js`, `qg-onboarding.js`,
+`qg-nav.js`, `qg-menu.js`, `qg-bell.js`). That is the whole point: those
+injectors were adding streak cards, goal cards, stat tiles, tips and banners
+back onto screens the design does not have them on. Do not add them back. Their
+markup is written into the page and their chrome comes from `sg-app.css`.
+
+If one of those pages needs a function that lives inside an injector, call it
+directly or extract it — do not load the injector. Already done this way:
+`readTasksCache` and `readAppsCache` come from `supabase-db.js` rather than
+`qg-wave2.js`, and logout uses the inline `signOut` path rather than
+`qgLogout` from `qg-menu.js`.
+
+The remaining 27 pages still use the old injector architecture described below.
+
+### App chrome on injector-architecture pages
+
+On the 27 pages that still load the injectors, four pieces of chrome are
+injected and removed by shared scripts. A page that hand-writes them will get
+duplicates, and a page that expects them to persist will lose them:
 
 - **Footer.** `ensureTrustFooter()` in `qg-ux.js` keeps a `FOOTERLESS` map of app
   pages it skips. Among app pages the footer renders on `profile.html` only.
