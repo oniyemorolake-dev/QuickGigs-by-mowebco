@@ -162,7 +162,28 @@ Already resolved, safe to use on a rebuilt page:
 | `QG_canUseRole`, `QG_getRoleAccess`, `QG_setActiveRoleMode` | `qg-role-access.js` |
 | visit streak | `qg-streak.js` |
 | `getMode`, `setMode`, `getSessionMode`, `setSessionMode`, `isWorkerMode`, `isPosterMode`, `toggleMode` | `qg-mode.js` |
+| `QG_emptyStateHtml`, `QG_errorStateHtml`, `QG_listSkeletonHtml`, `QG_spinnerHtml` | `qg-states.js` |
+| `haptic`, `toggleTheme`, `qgStaggerCards`, `qgLoadBrowseFilters`, `qgSaveBrowseFilters`, `qgTrackTaskView`, `qgSavePostDraft`, `qgLoadPostDraft`, `qgClearPostDraft`, `defaultMyTasksTab`, `normalizeMyTasksTab` | `qg-page-bits.js` |
+| verification, payment maths, trust rows, role opt-in, task timeline | load `qg-verification.js`, `qg-payments-ui.js`, `qg-trust-profile.js`, `qg-role-switch.js`, `qg-bigtech.js` — measured, they add nothing on their own |
 | logout | the inline `signOut` path, not `qgLogout` from `qg-menu.js` |
+
+Only ten files actually inject on load, and the list is measured rather than
+guessed — `node scripts/injector-probe.js` loads each one into an empty page
+and reports what it added. They are `qg-brand-init.js`, `qg-nav.js`,
+`qg-menu.js`, `qg-bell.js`, `qg-help.js`, `qg-ux.js`, `qg-wave2.js`,
+`qg-polish.js`, `qg-site.js` and `qg-cookies.js`. Everything else is a feature
+module that only acts when called, so it is safe to load even though it
+contains plenty of `innerHTML`.
+
+`qg-states.js` and `qg-page-bits.js` define each name only when it is missing,
+so an injector page keeps the original whatever the load order. Storage keys
+and stored shapes match the originals exactly, so values written on one kind of
+page read correctly on the other. `node scripts/test-page-bits.js` covers that.
+
+What is left per page needs a page-level decision, not an extraction:
+`applyFilters` (browse), `roleGateHtml` (post task, my tasks),
+`applyMyTasksTabsForMode` (my tasks) and `refreshMessagesUnreadBadge`
+(messages).
 
 `qg-mode.js` also exports `QG_applyRoleMode()`, which paints
 `data-qg-mode` / `data-mode` / `.qg-mode-poster` / `.qg-mode-worker` so the

@@ -239,3 +239,40 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .sg-menu-row .t small{display:block;font-size:13px;color:var(--text-muted);margin-top:2px;}
 .sg-menu-row .sg-chev{margin-left:auto;}
 .sg-menu-row .count{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--primary);color:var(--primary-text);font-size:12px;font-weight:700;display:grid;place-items:center;}
+/* ── Empty, error, skeleton and spinner ──
+   Drawn by qg-states.js, which replaces the qg-brand-init.js versions on the
+   rebuilt pages. */
+.sg-state{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:40px 16px;}
+.sg-state.is-compact{padding:22px 16px;}
+.sg-state-icon{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:var(--surface-alt);color:var(--text-muted);margin-bottom:4px;}
+.sg-state-icon svg.i{width:24px;height:24px;}
+/* Not --accent: that is role-coloured, so an error would turn teal for a
+   tasker and purple for a poster. Offline is a warning, a failure is not. */
+.sg-state.is-error .sg-state-icon{color:var(--danger);background:var(--danger-soft);}
+.sg-state.is-offline .sg-state-icon{color:var(--attention);background:var(--attention-soft);}
+.sg-state-title{font-size:16px;font-weight:600;color:var(--text);}
+.sg-state-sub{font-size:14px;color:var(--text-muted);max-width:30ch;}
+.sg-state-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:10px;}
+.sg-state-actions .sg-btn{width:auto;flex:0 0 auto;white-space:nowrap;padding-left:20px;padding-right:20px;}
+.sg-btn-quiet{background:var(--surface-alt);color:var(--text);border:1px solid var(--border);}
+
+.sg-skel{display:flex;flex-direction:column;gap:2px;}
+.sg-skel-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--border);}
+.sg-skel-sq{width:40px;height:40px;border-radius:12px;background:var(--surface-alt);flex-shrink:0;}
+.sg-skel-lines{flex:1;display:flex;flex-direction:column;gap:7px;}
+.sg-skel-line{height:10px;border-radius:5px;background:var(--surface-alt);}
+.sg-skel-line.w80{width:80%;}
+.sg-skel-line.w60{width:60%;}
+.sg-skel-line.w40{width:40%;}
+.sg-skel-sq,.sg-skel-line{animation:sg-pulse 1.4s ease-in-out infinite;}
+@keyframes sg-pulse{0%,100%{opacity:1;}50%{opacity:.45;}}
+
+.sg-inline-load{display:inline-flex;align-items:center;gap:9px;font-size:14px;color:var(--text-muted);}
+div.sg-inline-load{display:flex;justify-content:center;padding:22px 0;}
+.sg-spinner{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--primary);animation:sg-spin .7s linear infinite;flex-shrink:0;}
+.sg-spinner.is-lg{width:24px;height:24px;border-width:3px;}
+@keyframes sg-spin{to{transform:rotate(360deg);}}
+
+@media (prefers-reduced-motion: reduce){
+  .sg-skel-sq,.sg-skel-line,.sg-spinner{animation:none;}
+}

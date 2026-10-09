@@ -19,12 +19,15 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
 
-// Files a rebuilt page must not load.
+/* Files a rebuilt page must not load. Measured, not guessed: each one adds
+   chrome or a legacy stylesheet to an empty page purely by being loaded.
+   Re-check with `node scripts/injector-probe.js` if this list is ever doubted.
+   Everything else — including qg-verification.js, qg-payments-ui.js,
+   qg-bigtech.js, qg-trust-profile.js and qg-role-switch.js — adds nothing on
+   its own and is safe to load. */
 const INJECTORS = new Set([
-  'qg-brand-init.js', 'qg-ux.js', 'qg-bigtech.js', 'qg-wave2.js', 'qg-help.js',
-  'qg-onboarding.js', 'qg-nav.js', 'qg-menu.js', 'qg-bell.js', 'qg-polish.js',
-  'qg-site.js', 'qg-trust-profile.js', 'qg-activity-ticker.js', 'qg-cookies.js',
-  'qg-payments-ui.js', 'qg-role-switch.js', 'qg-verification.js'
+  'qg-brand-init.js', 'qg-nav.js', 'qg-menu.js', 'qg-bell.js', 'qg-help.js',
+  'qg-ux.js', 'qg-wave2.js', 'qg-polish.js', 'qg-site.js', 'qg-cookies.js'
 ]);
 
 const DEFAULT_PAGES = [
@@ -46,7 +49,10 @@ for (const file of fs.readdirSync(ROOT)) {
   const patterns = [
     /\bwindow\.([A-Za-z_$][\w$]*)\s*=/g,
     /(?:^|\n)\s*function\s+([A-Za-z_$][\w$]*)\s*\(/g,
-    /(?:^|\n)\s*(?:var|let|const)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?function/g
+    /(?:^|\n)\s*(?:var|let|const)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?function/g,
+    // qg-page-bits.js registers through def('name', fn) so it only defines
+    // what is missing; those count as definitions too.
+    /\bdef\(\s*['"]([A-Za-z_$][\w$]*)['"]/g
   ];
   for (const re of patterns) {
     let m;
