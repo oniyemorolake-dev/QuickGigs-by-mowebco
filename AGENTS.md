@@ -12,17 +12,9 @@ Stay inside your zone. If a task needs a file you do not own, **stop and flag it
 rather than editing it — the other agent may have that file open with unsaved
 context, and a write from you will silently destroy its work.
 
-> **TEMPORARY TRANSFER — app-page HTML is Cursor's, assigned by Morolake.**
-> For the SwiftGigs layout rebuild (`Claude outputs/sg-design/SPEC.md`), Cursor
-> owns `dashboard.html`, `browsetask.html`, `mytasks.html`, `posttask.html`,
-> `messages.html` and `profile.html`, plus the shared shell they depend on.
-> **Claude must not touch any `.html` file until Cursor reports back and this
-> block is removed.** All other HTML files stay Claude's but are frozen for the
-> duration, because the shared shell edits reach them.
-
 | Zone | Owner |
 | --- | --- |
-| `*.html` (33 files at repo root) | Claude desktop — **suspended, see above** |
+| `*.html` (33 files at repo root) | Claude desktop |
 | `qg-icons.js` | Claude desktop (append-only, see below) |
 | `*.css` (38 files at repo root) | Cursor |
 | `*.js` at root, except `qg-icons.js` | Cursor |
@@ -125,6 +117,32 @@ and `window.QG_isDarkTheme()`. Do not touch `qg-theme` directly, and never store
 theme state in `qg-mode`. Do not repaint by assigning `document.body.className`
 wholesale — it strips page-level classes. (Writing theme into `qg-mode` was a real
 bug, fixed in `75a149f`.)
+
+### App chrome is owned by shared JS, not by the pages
+
+Four pieces of chrome are injected and removed by shared scripts. A page that
+hand-writes them will get duplicates, and a page that expects them to persist
+will lose them. Build page bodies around this, do not fight it:
+
+- **Footer.** `ensureTrustFooter()` in `qg-ux.js` keeps a `FOOTERLESS` map of app
+  pages it skips. Among app pages the footer renders on `profile.html` only.
+  Content and marketing pages still get theirs. To change which pages have one,
+  edit that map — do not add `<footer>` markup to a page.
+- **Tab bar.** `renderQuickGigsTabBar(activeId)` in `qg-nav.js` renders four
+  tabs: Home, Gigs, Messages, Profile. My Tasks and Applicants no longer own a
+  tab and are reached from Home's current-task card and the person menu. Old
+  five-way ids still resolve through `TAB_ALIAS`; anything without a tab maps to
+  `''` and the bar renders with nothing highlighted. Pass the id matching the
+  page you are on.
+- **Person menu.** `qg-menu.js` owns the round person button and the drawer. The
+  theme toggle, poster/tasker switch, notifications, search, quick help, install
+  prompt, feedback and log out all live in there now. Pages should not render
+  their own copies of those controls in the header.
+- **Mode banner.** Both `qg-nav.js` and `qg-brand-init.js` strip
+  `.qg-mode-banner` on load, so static mode strips left in markup will vanish.
+  Three pages still carry dead `<span class="nav-role">` markup
+  (`browsetask.html`, `mytasks.html`, `posttask.html`) plus a stale mode strip in
+  `mytasks.html`; remove them when you next touch those files.
 
 ### UI conventions
 
