@@ -28,15 +28,17 @@
 <meta name="apple-mobile-web-app-title" content="SwiftGigs">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0B0A14">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-:root{
+:root,
+body{
   /* Aliased onto qg-tokens.css's core palette (see AGENTS.md handoff note).
-     index.html loads qg-polish.css + qg-tokens.css only, not qg-auth.css, and has
-     no theme toggle, so these always resolve to the :root dark values below. */
+     Declared on body as well as :root so they re-resolve when qg-theme.js puts
+     .light on <body> or <html>. On :root alone they froze at the dark values
+     while text tokens flipped, which made light-mode users see dark text on a
+     dark page. */
   --qg-bg:var(--bg);
   --qg-surface:var(--surface);
   --qg-border:var(--border);
@@ -173,7 +175,7 @@ main{
 /* ── Hero ── */
 .qg-hero{
   width:100%;
-  max-width:1100px;
+  max-width:1000px; /* lines up with the sections below */
   margin:0 auto 64px;
   text-align:left;
 }
@@ -270,9 +272,9 @@ main{
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  min-height:48px;
+  min-height:50px;
   padding:0 26px;
-  border-radius:100px;
+  border-radius:14px; /* same as the app's buttons (.sg-btn) */
   font-family:'DM Sans',system-ui,sans-serif;
   font-size:15px;
   text-decoration:none;
@@ -591,7 +593,7 @@ main{
   color:var(--text-muted);
   border-top:1px solid var(--border);
 }
-.legal-footer .qg-foot-brand{font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.legal-footer .qg-foot-brand{display:inline-block;font-family:'Playfair Display',Georgia,serif;font-style:italic;font-size:19px;font-weight:700;margin-bottom:2px;background:var(--grad-wordmark);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;}
 .legal-footer .qg-foot-links{margin:8px 0;}
 .legal-footer .qg-foot-email{word-break:break-word;}
 .legal-footer a{color:var(--qg-link);text-decoration:none;}
@@ -694,6 +696,21 @@ main{
   html{scroll-behavior:auto;}
   #qg-blank,.qg-where{transition:none;}
 }
+
+/* ── Readability pass ──
+   Grey (--text-muted) is for labels and fine print only. Sentences people
+   actually read use a brighter secondary tone: about 10:1 on the dark page
+   instead of 6.5:1, and still dark on the light page. Mixed inline rather than
+   via --text-secondary, because that token is resolved once on :root and
+   would not flip when body gets .light. */
+.qg-where,.step-desc,.mode-desc,.scope-note,.founder-text{color:color-mix(in srgb,var(--text) 72%,var(--text-muted));}
+.qg-where{font-size:17px;}
+.step-desc,.mode-desc{font-size:14.5px;}
+.scope-note,.founder-text{font-size:15px;}
+.founder-photo{color:color-mix(in srgb,var(--primary) 50%,var(--text));}
+/* Primary CTA: a slightly deeper purple in dark mode so the white label clears
+   AA (4.2:1 on the flat token, about 5.6:1 here). Light mode is already 8.7:1. */
+html:not(.light) body:not(.light) .qg-btn-primary{background:color-mix(in srgb,var(--primary) 82%,#000);}
 </style>
 <link rel="stylesheet" href="qg-polish.css?v=32e06f4-1787866369">
 <link rel="stylesheet" href="qg-tokens.css?v=32e06f4-1787866369" id="qg-tokens-css">
@@ -737,13 +754,13 @@ main{
         </form>
 
         <p class="qg-fine">No fee to post · $20 minimum · Money held in escrow</p>
-      </div>
+  </div>
 
       <aside class="qg-live-feed" id="qgLiveFeed" hidden aria-label="Open tasks near you">
         <div class="qg-live-head">
           <span class="qg-live-dot" aria-hidden="true"></span>
           <h2 class="qg-live-title">Live near you</h2>
-        </div>
+  </div>
         <div class="qg-live-list" id="qgLiveList" role="list"></div>
       </aside>
     </div>
@@ -756,7 +773,7 @@ main{
       <span>CAD only</span>
       <span class="qg-trust-sep" aria-hidden="true">·</span>
       <span>Canadian owned</span>
-    </div>
+  </div>
   </section>
 
   <p class="how-title">How it works</p>
