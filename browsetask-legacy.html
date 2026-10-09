@@ -1,0 +1,2635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- qg-build:947d37a-1789577525 -->
+
+<title>Browse tasks · SwiftGigs</title>
+<meta name="description" content="Browse open tasks near you on SwiftGigs — Canada's marketplace to earn money doing errands, home help, and more.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://quickgigs.ca/browsetask.html">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://quickgigs.ca/browsetask.html">
+<meta property="og:title" content="Browse tasks · SwiftGigs">
+<meta property="og:description" content="Browse open tasks near you on SwiftGigs — Canada's marketplace to earn money doing errands, home help, and more.">
+<meta property="og:image" content="https://quickgigs.ca/QuickGigsLogo.png">
+<meta property="og:locale" content="en_CA">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Browse tasks · SwiftGigs">
+<meta name="twitter:description" content="Browse open tasks near you on SwiftGigs — Canada's marketplace to earn money doing errands, home help, and more.">
+<meta name="twitter:image" content="https://quickgigs.ca/QuickGigsLogo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com">
+<meta name="theme-color" content="#0B0A14">
+<link rel="stylesheet" href="qg-polish.css?v=e653274-1787876226">
+<link rel="stylesheet" href="qg-ux.css?v=20260728welcome1">
+<link rel="stylesheet" href="qg-bigtech.css?v=20260726bt">
+<link rel="stylesheet" href="qg-wave2.css?v=20260726w2">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="qg-layout.css">
+<link rel="stylesheet" href="qg-role-theme.css?v=20260811tokens1">
+<link rel="stylesheet" href="qg-tokens.css?v=20260811light1" id="qg-tokens-css">
+<link rel="stylesheet" href="qg-flows.css?v=20260811flows1" id="qg-flows-css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="qg-browse-views.css?v=e653274-1787876226" id="qg-browse-views-css">
+<link rel="stylesheet" href="qg-trust-profile.css?v=20260811trust3" id="qg-trust-profile-css">
+<link rel="stylesheet" href="qg-sheet.css?v=20260716c">
+<link rel="stylesheet" href="qg-features.css?v=20260726contrast">
+<script src="qg-theme.js"></script>
+<script src="qg-brand-init.js"></script>
+<script>document.documentElement.setAttribute('data-qg-mode','worker');</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+/* Colors come from qg-tokens.css (light/dark flip automatically on body.light).
+   Do not redeclare --bg/--surface/--border/--text/--primary/... here, and no
+   page-local helper variables either: write the tokens directly.
+   Earning flow: --accent resolves to --teal on this page (data-qg-mode="worker").
+   Several shared sheets (qg-role-theme, qg-refine, qg-flows, qg-ux) force old
+   card/CTA styles with !important, some appended at runtime after this block, so
+   the mockup rules below are id-scoped (#cardsArea, #modalOverlay, ...) to win. */
+/* qg-role-theme.css paints body with a radial purple/teal glow (!important); flatten it. */
+html[data-qg-mode]:not(.light) body.page-browse:not(.light),
+html[data-qg-mode] body.page-browse.light,
+html.light[data-qg-mode] body.page-browse{background:var(--bg)!important;background-image:none!important;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh;transition:background 0.25s,color 0.25s;padding-bottom:72px;}
+
+/* ── Top nav (shared chrome in qg-shell.css / qg-brand.css owns the final look) ── */
+.nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;transition:background 0.25s;}
+.nav-logo{font-family:'Playfair Display',serif;font-style:italic;font-weight:700;font-size:18px;background:var(--grad-wordmark);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.nav-icon{background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:18px;padding:2px;display:inline-flex;align-items:center;}
+.nav-icon:hover{color:var(--text);}
+.mode-btn,
+html[data-qg-mode] .mode-btn{padding:5px 12px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);font-family:'DM Sans',sans-serif;background:var(--surface-alt);color:var(--text);}
+.avatar,
+#avatarEl{width:30px;height:30px;border-radius:50%;background:var(--surface-alt);box-shadow:none;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--primary);}
+
+/* ── Search row ── */
+.search-wrap{padding:14px 16px 0;background:var(--bg);transition:background 0.25s;}
+.qg-browse-search-row{display:flex;align-items:stretch;gap:8px;}
+.qg-browse-search-row .search-box{flex:1;min-width:0;}
+.search-form{margin:0;}
+.search-box,
+html[data-qg-mode] .search-box{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 14px;transition:border-color 0.2s,outline-color 0.2s;}
+.search-box:focus-within,
+html[data-qg-mode] .search-box:focus-within{border-color:var(--accent);outline:2px solid color-mix(in srgb, var(--accent) 30%, transparent);outline-offset:0;}
+.search-icon{color:var(--text-muted);font-size:16px;flex-shrink:0;pointer-events:none;display:inline-flex;}
+.search-input{
+  flex:1;min-width:0;background:transparent!important;border:none!important;outline:none!important;
+  box-shadow:none!important;-webkit-appearance:none;appearance:none;
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);
+}
+.search-input:focus,.search-input:focus-visible{outline:none!important;border:none!important;box-shadow:none!important;}
+.search-input::placeholder{color:var(--text-muted);opacity:1;}
+body .qg-browse-filters-btn{min-height:44px;min-width:44px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--accent);font:600 13px 'DM Sans',sans-serif;}
+body .qg-browse-filters-btn .qg-browse-filters-label{color:var(--text);}
+body .qg-browse-filters-btn[aria-expanded="true"],
+body .qg-browse-filters-btn.has-active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);}
+body .qg-browse-filters-badge{background:var(--accent);color:var(--accent-text, var(--primary-text));}
+@media (max-width:420px){ body .qg-browse-filters-btn{width:44px;min-width:44px;min-height:44px;} }
+
+/* ── List / Map / Spotlight segmented control + count ── */
+body .qg-browse-toolbar{margin:0;padding:12px 16px 10px;gap:10px;background:var(--bg);backdrop-filter:none;-webkit-backdrop-filter:none;}
+body .qg-browse-view-toggle{gap:2px;padding:2px;border-radius:10px;background:var(--surface-alt);border:none;}
+body .qg-browse-view-toggle .qg-browse-view-opt{min-height:36px;border-radius:8px;padding:6px 8px;background:transparent;color:var(--text-muted);font:600 12px 'DM Sans',sans-serif;box-shadow:none;}
+body .qg-browse-view-toggle .qg-browse-view-opt:hover{color:var(--text);}
+body .qg-browse-view-toggle .qg-browse-view-opt.active,
+html[data-qg-mode] body .qg-browse-view-toggle .qg-browse-view-opt.active{background:var(--accent);color:var(--accent-text, var(--primary-text));box-shadow:none;}
+body .qg-browse-gig-count{font-size:11.5px;font-weight:600;color:var(--text-muted);min-width:3.5em;}
+
+/* ── Location filter (inside Filters sheet) ── */
+.location-filter-row{margin-top:10px;}
+.loc-filter-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);display:block;margin-bottom:6px;}
+.location-filter-box{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:6px 6px 6px 12px;color:var(--text-muted);}
+.location-filter-box:focus-within{border-color:var(--accent);outline:2px solid color-mix(in srgb, var(--accent) 30%, transparent);}
+.location-filter-input{
+  flex:1;min-width:0;background:transparent!important;border:none!important;outline:none!important;
+  box-shadow:none!important;-webkit-appearance:none;appearance:none;
+  font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);
+}
+.location-filter-input:focus,.location-filter-input:focus-visible{outline:none!important;border:none!important;box-shadow:none!important;}
+.location-filter-input::placeholder{color:var(--text-muted);opacity:1;}
+.loc-near-btn{
+  flex-shrink:0;padding:8px 12px;min-height:44px;border-radius:100px;border:1px solid var(--border);
+  background:var(--surface-alt);color:var(--text);font-family:'DM Sans',sans-serif;
+  font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background 0.15s,color 0.15s,border-color 0.15s;
+}
+.loc-near-btn.active{background:var(--accent);color:var(--accent-text, var(--primary-text));border-color:var(--accent);}
+.location-radius-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.radius-select{flex:1;min-width:0;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px;color:var(--text);font:500 13px 'DM Sans',sans-serif;outline:none;}
+.radius-select:focus{border-color:var(--accent);}
+.location-status{min-height:16px;margin-top:5px;font-size:11px;color:var(--text-muted);}
+.location-status.is-error{color:var(--danger);}
+
+/* ── Task-type choice chips (Filters sheet) ── */
+.mode-row{display:flex;gap:7px;overflow-x:auto;padding:0;-webkit-overflow-scrolling:touch;}
+.mode-row::-webkit-scrollbar{display:none;}
+.mpill,
+#modeRow .mpill{
+  min-height:44px;padding:8px 15px;border-radius:100px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;
+  border:1px solid var(--border);background:var(--surface);color:var(--text);
+  transition:background 0.15s,color 0.15s,border-color 0.15s;user-select:none;font-family:inherit;-webkit-tap-highlight-color:transparent;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.mpill.active-all,.mpill.active-quick,.mpill.active-standard,.mpill.active-recurring,.mpill.active-saved,
+#modeRow .mpill.active-all,#modeRow .mpill.active-quick,#modeRow .mpill.active-standard,#modeRow .mpill.active-recurring,#modeRow .mpill.active-saved{
+  background:var(--accent)!important;color:var(--accent-text, var(--primary-text))!important;border-color:var(--accent)!important;
+}
+
+/* ── Category chips ── */
+.cat-wrap-outer{padding:0 16px 10px;background:transparent;border:none;border-radius:0;margin:0;}
+.cat-label-txt{display:none;}
+.cat-row{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.cat-row::-webkit-scrollbar{display:none;}
+.cpill,
+#browseCatPills .cpill{
+  position:relative;min-height:36px;padding:7px 14px;border-radius:100px;font-size:13px;font-weight:600;
+  cursor:pointer;white-space:nowrap;user-select:none;font-family:inherit;
+  border:1px solid var(--border);background:var(--surface);color:var(--text);box-shadow:none;
+  transition:background 0.15s,color 0.15s,border-color 0.15s;-webkit-tap-highlight-color:transparent;
+}
+/* keep a 44px tap target without changing the 36px visual */
+.cpill::after{content:"";position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);height:44px;}
+.cpill.cat-active,
+#browseCatPills .cpill.cat-active{
+  background:var(--accent)!important;color:var(--accent-text, var(--primary-text))!important;border-color:var(--accent)!important;box-shadow:none!important;
+}
+
+/* ── Quick filters (Nearby / Today / Highest pay) — sg-pill in qg-swift.css ── */
+#browseQuickFilters{gap:6px;}
+#browseQuickFilters .sg-pill{font-size:13px;padding:7px 14px;}
+#browseQuickFilters .sg-pill--teal.is-selected{background:var(--accent);border-color:var(--accent);color:var(--accent-text, var(--primary-text));}
+
+/* ── Results meta line ── */
+.results-bar{padding:12px 16px 0;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+body .qg-browse-results-meta{padding:2px 16px 0;}
+.results-txt,
+#resultsCount{font-size:11.5px;color:var(--text-muted)!important;flex:1;min-width:140px;}
+.filter-sorts{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.date-filter,.sort-sel{font-size:13px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px;min-height:44px;color:var(--text);font-family:'DM Sans',sans-serif;cursor:pointer;outline:none;width:100%;}
+.date-filter:focus,.sort-sel:focus{border-color:var(--accent);}
+.loading-state{text-align:center;padding:48px 0;}
+.loading-spinner{font-size:32px;animation:spin 1.2s linear infinite;display:inline-block;margin-bottom:10px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-txt{font-size:13px;color:var(--text-muted);}
+
+/* ── Task cards (mockup "Browse Gigs" row card) ── */
+.cards-area{padding:10px 16px 0;}
+.task-card,
+#cardsArea .task-card{
+  position:relative;display:flex;align-items:flex-start;gap:12px;
+  border-radius:14px!important;padding:12px!important;margin-bottom:10px!important;
+  border:1px solid var(--border)!important;background:var(--surface)!important;box-shadow:none!important;
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+  cursor:pointer;overflow:hidden;
+}
+.task-card:hover,
+#cardsArea .task-card:hover{border-color:color-mix(in srgb, var(--accent) 45%, var(--border))!important;background:var(--surface)!important;box-shadow:none!important;transform:none;}
+.task-card.has-photo:hover .tc-media-img{opacity:0.94;}
+
+/* Media column → icon square (no photo) or compact thumbnail (photo) */
+.tc-media,
+#cardsArea .tc-media{
+  flex:0 0 auto;width:40px;height:40px;min-width:0;max-width:none;aspect-ratio:1 / 1;
+  align-self:flex-start;position:relative;margin:0;border-radius:10px;
+  background:var(--surface-alt);overflow:hidden;
+}
+#cardsArea .task-card.has-photo .tc-media{width:64px;height:64px;}
+.tc-media-inner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+.tc-media-img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;border-radius:10px;}
+/* Compact zoom hint on photo thumbnails */
+.tc-media.tc-photo-tappable::before{
+  content:'';position:absolute;top:4px;right:4px;width:16px;height:16px;z-index:1;
+  background-color:color-mix(in srgb, #000 45%, transparent);border-radius:50%;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:center;background-size:9px 9px;
+}
+.tc-media.tc-photo-tappable{cursor:zoom-in;}
+.tc-media-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:0;box-sizing:border-box;border-radius:10px;}
+.tc-media-placeholder-icon{font-size:18px;line-height:1;display:inline-flex;}
+.tc-media-placeholder-icon svg{width:18px;height:18px;}
+/* category name already shown in .tc-cat — hidden inside the 40px square */
+.tc-media-placeholder-label{display:none;}
+.tc-media-dots{position:absolute;left:0;right:0;bottom:4px;display:flex;justify-content:center;gap:3px;z-index:2;pointer-events:none;}
+.tc-media-dot{width:4px;height:4px;border-radius:50%;background:color-mix(in srgb, #fff 45%, transparent);box-shadow:0 0 0 1px rgba(0,0,0,0.2);}
+.tc-media-dot.is-active{background:#fff;} /* sits on a photo, not a themed surface */
+
+.tc-body,
+#cardsArea .tc-body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-start;padding:0;gap:6px;align-self:stretch;}
+/* title block leaves room for the price, which sits top-right like the mockup */
+.tc-top{display:flex;align-items:center;flex-wrap:wrap;gap:4px 5px;margin-bottom:0;padding-right:72px;}
+.tc-left{display:flex;align-items:flex-start;gap:0;flex:1 1 100%;min-width:0;}
+.tc-icon{display:none;} /* legacy small icon — media column replaces it */
+.tc-meta,
+#cardsArea .tc-meta{flex:1;min-width:0;color:var(--text);font-size:inherit!important;}
+.tc-cat,
+#cardsArea .tc-cat{font-size:10.5px!important;font-weight:600;text-transform:uppercase;letter-spacing:0.05em!important;color:var(--text-muted)!important;margin-bottom:2px;}
+.tc-title,
+#cardsArea .tc-title{font-size:14px!important;font-weight:600;color:var(--text);line-height:1.35;letter-spacing:normal!important;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+
+/* status chips */
+.tc-badge,
+#cardsArea .tc-badge,#taskDetailPanel .tc-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:100px;font-size:10.5px!important;font-weight:600;letter-spacing:0;white-space:nowrap;flex-shrink:0;margin:0;border:none;}
+.tc-badge svg{width:11px;height:11px;}
+.badge-quick{background:var(--attention-soft);color:var(--attention);}
+.badge-standard{background:var(--surface-alt);color:var(--text-muted);}
+.badge-recurring{background:color-mix(in srgb, var(--teal) 16%, transparent);color:var(--teal);}
+.badge-negotiable,
+#cardsArea .badge-negotiable,#taskDetailPanel .badge-negotiable{background:var(--money-soft)!important;color:var(--green)!important;border:none!important;}
+.badge-age-adult{background:var(--surface-alt);color:var(--text-muted);}
+.badge-age-teen{background:var(--money-soft);color:var(--green);}
+
+.tc-desc{font-size:12px;line-height:1.55;color:var(--text-muted);margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.tc-desc.is-empty{display:none;}
+.tc-bottom{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-top:auto;}
+.tc-price,
+#cardsArea .tc-price{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;align-items:flex-end;gap:4px;
+  font-size:15px!important;font-weight:700;color:var(--green)!important;font-variant-numeric:tabular-nums;line-height:1.2;text-align:right;max-width:30%;}
+#cardsArea .tc-price .qg-new-pill{margin:0;padding:1px 7px;font-size:9.5px;background:color-mix(in srgb, var(--teal) 16%, transparent);color:var(--teal);}
+.tc-info,
+#cardsArea .tc-info{font-size:11.5px!important;color:var(--text-muted)!important;margin-top:0;line-height:1.4;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.tc-info .meta-pin{display:inline-flex;vertical-align:-1px;margin-right:3px;}
+.qg-action-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+#cardsArea .qg-chip-btn{padding:5px 10px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:11.5px;font-weight:600;transform:none;}
+#cardsArea .qg-chip-btn:hover{border-color:color-mix(in srgb, var(--accent) 45%, var(--border));color:var(--text);}
+#cardsArea .qg-save-trigger.is-saved{border-color:color-mix(in srgb, var(--attention) 45%, transparent);color:var(--attention);}
+.apply-btn,
+#cardsArea .apply-btn{padding:8px 14px;min-height:36px;border-radius:10px!important;border:none!important;font-size:12.5px!important;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;
+  background:var(--accent)!important;color:var(--accent-text, var(--primary-text))!important;box-shadow:none!important;flex-shrink:0;white-space:nowrap;}
+.btn-quick,.btn-standard,.btn-recurring{background:var(--accent);}
+
+@media (max-width:420px){
+  .cards-area{padding:10px 12px 0;}
+  #cardsArea .task-card.has-photo .tc-media{width:56px;height:56px;}
+  .tc-media.tc-photo-tappable::before{display:none;}
+  .apply-btn,#cardsArea .apply-btn{padding:8px 12px;}
+}
+
+.empty-state{text-align:center;padding:48px 0 32px;}
+.empty-emoji{font-size:40px;margin-bottom:10px;}
+.empty-txt{font-size:13px;color:var(--text-muted)!important;}
+
+/* ── Gig detail / apply sheet (mockup "Gig Detail") ── */
+.modal-overlay{position:fixed;inset:0;background:color-mix(in srgb, #000 62%, transparent);z-index:300;display:none;align-items:flex-end;justify-content:center;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:0;}
+.modal-overlay.open{display:flex;}
+.modal,
+#modalOverlay .modal{width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:12px 16px calc(14px + env(safe-area-inset-bottom, 0px));background:linear-gradient(var(--surface), var(--surface)), var(--bg)!important;border:1px solid var(--border)!important;border-bottom:none!important;box-shadow:none;max-height:min(92dvh,92vh);display:flex;flex-direction:column;margin-top:auto;}
+.modal-scroll{flex:1 1 auto;overflow-y:auto;min-height:0;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:4px;}
+.modal-footer,
+#modalOverlay .modal-footer{flex-shrink:0;padding-top:12px;margin:8px -16px 0;padding-left:16px;padding-right:16px;border-top:1px solid var(--border)!important;background:linear-gradient(var(--surface), var(--surface)), var(--bg)!important;}
+.modal-handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 14px;}
+.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:4px;}
+.modal-title,
+#modalOverlay #modalTitle{font-size:19px!important;font-weight:700;letter-spacing:-0.01em;line-height:1.3;color:var(--text);margin:0;flex:1;min-width:0;padding-right:8px;}
+.modal-close,
+#modalOverlay .modal-close{flex-shrink:0;width:36px;height:36px;margin:0;border-radius:10px;border:none!important;background:var(--surface-alt)!important;color:var(--text-muted);font-size:18px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
+.modal-close:hover{color:var(--text);}
+.modal-sub{font-size:12.5px;color:var(--text-muted)!important;margin-bottom:16px;}
+.modal-label,
+#modalOverlay .modal-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted)!important;display:block;margin-bottom:8px;}
+
+/* detail panel: price directly under the title, meta row with outline pin, poster card */
+#taskDetailPanel:not([hidden]){display:flex;flex-direction:column;}
+body #taskDetailPanel.qg-task-detail{margin:0 0 16px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+body #taskDetailPanel .qg-td-price{order:-1;display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:2px 0 12px;font-size:19px;font-weight:700;color:var(--green);font-variant-numeric:tabular-nums;}
+body #taskDetailPanel .qg-td-meta{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;line-height:1.45;color:var(--text-muted);margin-bottom:4px;}
+body #taskDetailPanel .qg-td-meta::before{content:"";flex:0 0 14px;width:14px;height:14px;margin-top:1px;background:currentColor;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 21s7-6.5 7-11.5A7 7 0 0 0 5 9.5C5 14.5 12 21 12 21z'/%3E%3Ccircle cx='12' cy='9.5' r='2.3'/%3E%3C/svg%3E") center/14px 14px no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 21s7-6.5 7-11.5A7 7 0 0 0 5 9.5C5 14.5 12 21 12 21z'/%3E%3Ccircle cx='12' cy='9.5' r='2.3'/%3E%3C/svg%3E") center/14px 14px no-repeat;}
+body #taskDetailPanel .qg-td-desc{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:13.5px;line-height:1.55;color:var(--text);white-space:pre-wrap;}
+body #taskDetailPanel .qg-td-note{margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--attention-soft);border:1px solid color-mix(in srgb, var(--attention) 30%, transparent);color:var(--attention);font-size:12px;}
+body #taskDetailPanel .qg-td-photos{display:flex;gap:8px;overflow-x:auto;margin:12px 0 0;}
+body #taskDetailPanel .qg-td-photos img{height:110px;width:auto;max-width:150px;object-fit:cover;border-radius:12px;border:1px solid var(--border);flex-shrink:0;}
+body #taskDetailPanel .qg-poster-card{display:flex;align-items:center;gap:11px;margin-top:16px;padding:12px;border-radius:14px;background:var(--surface);border:1px solid var(--border);}
+body #taskDetailPanel .qg-poster-avatar{width:36px;height:36px;border-radius:50%;background:var(--surface-alt);color:var(--primary);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;}
+body #taskDetailPanel .qg-poster-avatar img{width:100%;height:100%;object-fit:cover;}
+body #taskDetailPanel .qg-poster-name{font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:5px;}
+body #taskDetailPanel .qg-poster-verified{color:var(--teal);display:inline-flex;}
+body #taskDetailPanel .qg-poster-verified[hidden]{display:none;}
+body #taskDetailPanel .qg-poster-meta{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
+body #taskDetailPanel .qg-poster-pay{display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:2px 8px;border-radius:100px;background:var(--money-soft);font-size:10.5px;font-weight:600;color:var(--green);}
+body #taskDetailPanel .qg-poster-pay[hidden]{display:none;}
+
+.offer-fee-line{font-size:12px;color:var(--text-muted);line-height:1.45;margin:8px 0 4px;min-height:1.3em;}
+.offer-fee-line.is-muted{color:var(--text-muted);}
+.offer-fee-line .offer-fee-net{color:var(--green);font-weight:700;}
+.offer-fee-line .offer-fee-gross,.offer-fee-line .offer-fee-cut{font-variant-numeric:tabular-nums;}
+.apply-already,
+body #applyAlreadyState{display:none;text-align:center;padding:24px 16px 18px;border-radius:14px;background:var(--surface);border:1px solid var(--border);}
+.apply-already.is-visible,
+body #applyAlreadyState.is-visible{display:block;}
+.apply-already-icon{font-size:28px;margin-bottom:10px;color:var(--teal);display:inline-flex;}
+.apply-already-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px;}
+.apply-already-sub{font-size:13px;color:var(--text-muted);line-height:1.5;}
+.apply-already-sub a{color:var(--accent);font-weight:600;}
+#applyFormFields.is-hidden{display:none;}
+.modal-footer.is-hidden,
+#modalOverlay .modal-footer.is-hidden{display:none;}
+.msg-hint{font-size:11px;color:var(--text-muted);margin:-6px 0 10px;}
+/* 16px+ prevents iOS Safari zooming the whole page when focusing inputs */
+.modal-input,
+#modalOverlay .modal-input{width:100%;background:var(--surface)!important;border:1px solid var(--border)!important;border-radius:12px;padding:12px 14px;font-family:'DM Sans',sans-serif;font-size:16px;color:var(--text)!important;outline:none;box-shadow:none;margin-bottom:13px;-webkit-text-size-adjust:100%;}
+.modal-input:focus,
+#modalOverlay .modal-input:focus{border-color:var(--accent)!important;outline:2px solid color-mix(in srgb, var(--accent) 30%, transparent);box-shadow:none;}
+.modal-input::placeholder{color:var(--text-muted);opacity:1;}
+textarea.modal-input{resize:vertical;min-height:110px;max-height:40vh;}
+.price-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:13px;}
+.price-wrap{position:relative;}
+.price-pre{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-weight:600;font-size:16px;}
+.price-wrap .modal-input,
+#modalOverlay .price-wrap .modal-input{padding-left:28px;margin-bottom:0;}
+@media (max-width:768px){
+  .modal-overlay.open{align-items:flex-end;}
+  .modal{max-height:min(88dvh,88vh);}
+  body.qg-keyboard-open .modal-overlay.open{align-items:flex-start;padding-top:max(8px, env(safe-area-inset-top));}
+  body.qg-keyboard-open .modal{max-height:calc(var(--qg-vvh, 100dvh) - 16px);margin-bottom:0;}
+  body.qg-keyboard-open .modal-scroll{padding-bottom:12px;}
+  .search-input,.location-filter-input,.date-filter,.sort-sel{font-size:16px!important;}
+}
+/* bottom bar: full-width flat Apply, quiet Cancel underneath */
+.modal-btns{display:grid;grid-template-columns:1fr;gap:6px;margin-top:4px;}
+.cancel-btn,
+#applyModalFooter .cancel-btn{order:2;margin:0;padding:10px;min-height:40px;border-radius:12px;border:none!important;background:transparent!important;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-muted)!important;}
+#applyModalFooter .cancel-btn:hover{color:var(--text)!important;}
+.submit-btn,
+#modalOverlay #applySubmitBtn{order:1;width:100%;margin:0;padding:13px;min-height:48px;border-radius:12px!important;border:none!important;background:var(--accent)!important;color:var(--accent-text, var(--primary-text))!important;box-shadow:none!important;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+.submit-btn:disabled,.submit-btn.is-apply-blocked,
+#modalOverlay #applySubmitBtn:disabled,#modalOverlay #applySubmitBtn.is-apply-blocked{opacity:0.5;cursor:not-allowed;}
+/* Keep pointer events while blocked so tap can surface validation errors (HTML disabled swallows taps). */
+.submit-btn:disabled{pointer-events:none;}
+.submit-btn.is-apply-blocked:not(:disabled){pointer-events:auto;}
+.apply-inline-alert{display:none;margin:0 0 10px;padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.45;font-weight:500;text-align:left;}
+.apply-inline-alert.is-visible{display:block;}
+.apply-inline-alert.is-error{background:var(--danger-soft);border:1px solid color-mix(in srgb, var(--danger) 40%, transparent);color:var(--danger);}
+.apply-inline-alert.is-warn{background:var(--attention-soft);border:1px solid color-mix(in srgb, var(--attention) 40%, transparent);color:var(--attention);}
+.apply-inline-alert.is-ok{background:var(--money-soft);border:1px solid color-mix(in srgb, var(--green) 40%, transparent);color:var(--green);}
+.toast{position:fixed;left:50%;transform:translateX(-50%);background:var(--green);color:var(--bg);padding:11px 22px;border-radius:12px;font-size:13px;font-weight:600;display:none;z-index:13000;max-width:min(92vw,420px);white-space:normal;text-align:center;line-height:1.4;bottom:calc(88px + env(safe-area-inset-bottom, 0px));}
+/* When apply sheet is open, pin toast to the top so it isn't under the keyboard / sheet on iOS+Android */
+body.qg-apply-open .toast,
+body.qg-apply-open .qg-toast{
+  top:calc(12px + env(safe-area-inset-top, 0px));
+  bottom:auto;
+  z-index:14000;
+}
+
+/* ── Banners ── */
+.photo-required-banner{margin:10px 16px 0;padding:12px 14px;border-radius:14px;background:var(--attention-soft);border:1px solid color-mix(in srgb, var(--attention) 30%, transparent);display:flex;align-items:center;gap:12px;}
+.photo-required-banner strong{display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.photo-required-banner p{font-size:11.5px;color:var(--text-muted);line-height:1.45;margin:0;}
+.photo-required-banner a,
+#photoRequiredBanner a{flex-shrink:0;padding:9px 13px;border-radius:10px;background:var(--accent);color:var(--accent-text, var(--primary-text));text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap;}
+.teen-browse-banner{margin:10px 16px 0;padding:12px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--teal);display:none;}
+.teen-browse-banner strong{display:block;font-size:13.5px;font-weight:700;margin-bottom:3px;color:var(--text);}
+.teen-browse-banner p{margin:0;font-size:11.5px;line-height:1.5;color:var(--text-muted);}
+
+/* ── Filters sheet (shared panel in qg-browse-views.css; flatten + tokenise) ── */
+#browseFiltersPanel,#browseFiltersPanel .qg-browse-filters-foot{background:linear-gradient(var(--surface), var(--surface)), var(--bg);}
+#browseFiltersPanel{box-shadow:0 -8px 24px rgba(0,0,0,0.18);border:1px solid var(--border);border-bottom:none;}
+#browseFiltersPanel .qg-browse-filters-sec-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);}
+#browseFiltersPanel .qg-browse-filters-apply{background:var(--accent);color:var(--accent-text, var(--primary-text));box-shadow:none;border-radius:12px;font-weight:700;}
+#browseFiltersPanel .qg-browse-filters-clear{background:var(--surface-alt);color:var(--text);border:none;border-radius:12px;}
+#budgetChips .qg-bchip{border:1px solid var(--border);background:var(--surface);color:var(--text);font-weight:600;border-radius:100px;}
+#budgetChips .qg-bchip.active{background:var(--accent);border-color:var(--accent);color:var(--accent-text, var(--primary-text));}
+#browseFiltersPanel .qg-budget-labels{color:var(--text-muted);opacity:1;font-weight:600;}
+#browseFiltersPanel .qg-dual-range input[type=range]::-webkit-slider-runnable-track{background:var(--surface-alt);}
+#browseFiltersPanel .qg-dual-range input[type=range]::-webkit-slider-thumb{background:var(--accent);border:2px solid var(--surface);}
+#browseFiltersPanel .qg-dual-range input[type=range]::-moz-range-track{background:var(--surface-alt);height:4px;border-radius:4px;}
+#browseFiltersPanel .qg-dual-range input[type=range]::-moz-range-thumb{background:var(--accent);border:2px solid var(--surface);}
+#activeFilters .qg-af-chip{background:var(--accent-soft);color:var(--accent);border:1px solid color-mix(in srgb, var(--accent) 30%, transparent);}
+#activeFilters .qg-af-clear{color:var(--accent);}
+
+/* Map total bar + spotlight: drop glows */
+#browseTotalBar{border-radius:14px;border:1px solid var(--border);background:var(--surface);}
+#findBestMatchBtn{background:var(--accent);color:var(--accent-text, var(--primary-text));box-shadow:none;font-weight:700;}
+#spotlightCard .qg-spotlight-card{border-radius:14px;border:1px solid var(--border);background:var(--surface);box-shadow:none;}
+
+/* Opaque-surface guard: qg-role-theme.css currently redefines --surface as a
+   5%-white translucent value in tasker dark mode, which makes sheets / sticky bars
+   see-through. Layering --surface over --bg keeps them opaque; once that
+   redeclaration is removed this renders exactly as var(--surface). */
+html[data-qg-mode] body > nav.nav,
+#qgTabBar{background:linear-gradient(var(--surface), var(--surface)), var(--bg)!important;}
+/* ── Bottom tab bar (final look owned by qg-shell.css) ── */
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;padding:8px 0 12px;z-index:100;}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;text-decoration:none;}
+.tab-icon{font-size:20px;color:var(--text-muted);}
+.tab-lbl{font-size:10px;color:var(--text-muted);}
+.tab-item.active .tab-icon,.tab-item.active .tab-lbl{color:var(--teal);font-weight:600;}
+.app-legal-footer{text-align:center;padding:20px 16px 96px;font-size:10.5px;color:var(--text-muted);line-height:1.75;}
+.app-legal-footer a{color:var(--accent);text-decoration:none;}
+</style>
+<link rel="stylesheet" href="qg-brand.css">
+<link rel="stylesheet" href="qg-mobile.css?v=20260726n">
+<link rel="stylesheet" href="qg-menu.css?v=2">
+<link rel="stylesheet" href="qg-lightbox.css?v=1">
+<link rel="stylesheet" href="qg-swift.css">
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-brand">
+    <span class="nav-logo sg-wordmark">SwiftGigs</span>
+    <span class="nav-role">TASKER</span>
+  </div>
+  <div class="nav-right">
+    <button class="nav-icon" aria-label="Notifications" data-qg-ico="bell" data-qg-ico-size="18"></button>
+    <button class="mode-btn" id="modeBtn" onclick="toggleMode()">Light</button>
+    <div class="avatar" id="avatarEl">M</div>
+  </div>
+</nav>
+<div class="search-wrap">
+  <form class="search-form" autocomplete="off" onsubmit="return false" role="search">
+    <div class="qg-browse-search-row">
+    <div class="search-box">
+      <span class="search-icon" aria-hidden="true"><svg class="qg-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
+      <label class="sr-only" for="searchInput">Search tasks</label>
+      <input class="search-input" id="searchInput" type="text" name="qg-browse-q"
+          placeholder="Search tasks"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        data-lpignore="true" data-1p-ignore="true" data-form-type="other"
+        readonly onfocus="this.removeAttribute('readonly')"
+        oninput="applyFilters()">
+      </div>
+      <button type="button" class="qg-browse-filters-btn" id="browseFiltersBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="browseFiltersPanel">
+        <span class="qg-browse-filters-ico" aria-hidden="true" data-qg-ico="sliders"></span>
+        <span class="qg-browse-filters-label">Filters</span>
+        <span class="qg-browse-filters-badge" id="browseFiltersBadge" hidden>0</span>
+      </button>
+    </div>
+  </form>
+</div>
+<div class="qg-browse-toolbar">
+  <div class="qg-browse-view-toggle" role="group" aria-label="Browse view">
+    <button type="button" class="qg-browse-view-opt active" data-view="list" aria-pressed="true">List</button>
+    <button type="button" class="qg-browse-view-opt" data-view="map" aria-pressed="false">Map</button>
+    <button type="button" class="qg-browse-view-opt" data-view="spotlight" aria-pressed="false">Spotlight</button>
+  </div>
+  <span class="qg-browse-gig-count" id="browseGigCount" aria-live="polite">…</span>
+</div>
+<div class="cat-wrap-outer" id="browseCatPills">
+  <div class="cat-row" role="toolbar" aria-label="Category filter">
+    <button type="button" class="cpill cat-active" onclick="setCat(this,'all')">All</button>
+    <button type="button" class="cpill" onclick="setCat(this,'home')">Cleaning</button>
+    <button type="button" class="cpill" onclick="setCat(this,'moving')">Moving</button>
+    <button type="button" class="cpill" onclick="setCat(this,'trades')">Handywork</button>
+    <button type="button" class="cpill" onclick="setCat(this,'errands')">Delivery</button>
+    <button type="button" class="cpill" onclick="setCat(this,'tutoring')">Tutoring</button>
+    <button type="button" class="cpill" onclick="setCat(this,'beauty')">Beauty</button>
+    <button type="button" class="cpill" onclick="setCat(this,'cooking')">Cooking</button>
+    <button type="button" class="cpill" onclick="setCat(this,'tech')">Tech</button>
+    <button type="button" class="cpill" onclick="setCat(this,'care')">Care</button>
+    <button type="button" class="cpill" onclick="setCat(this,'gardening')">Garden</button>
+    <button type="button" class="cpill" onclick="setCat(this,'events')">Events</button>
+    <button type="button" class="cpill" onclick="setCat(this,'other')">Other</button>
+  </div>
+</div>
+<div class="sg-pill-row" id="browseQuickFilters" style="padding:0 16px 10px">
+  <button type="button" class="sg-pill sg-pill--teal" id="qfNearbyBtn" onclick="qgToggleNearbyQuick()" aria-pressed="false">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+    Nearby
+  </button>
+  <button type="button" class="sg-pill sg-pill--teal" id="qfTodayBtn" onclick="qgToggleQuickFilter('today')" aria-pressed="false">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+    Today
+  </button>
+  <button type="button" class="sg-pill sg-pill--teal" id="qfPayBtn" onclick="qgToggleQuickFilter('pay')" aria-pressed="false">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 6v12M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.2 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/></svg>
+    Highest pay
+  </button>
+</div>
+<div class="photo-required-banner" id="photoRequiredBanner" style="display:none">
+  <div>
+    <strong>Profile photo required</strong>
+    <p>Add a clear photo before you apply — posters need to see who they're hiring.</p>
+  </div>
+  <a href="profile.html?setup=photo&required=1&return=browsetask.html">Add photo</a>
+</div>
+<div class="teen-browse-banner" id="teenBrowseBanner">
+  <strong>Gigs open to teen taskers</strong>
+  <p>Only age-eligible gigs are shown. When you apply, your guardian reviews the request before the poster sees it.</p>
+</div>
+<div id="browseHintSlot" class="qg-browse-hint-slot"></div>
+<div class="qg-browse-results-meta">
+  <span class="results-txt" id="resultsCount">Loading tasks…</span>
+</div>
+<div class="qg-active-filters" id="activeFilters" aria-label="Active filters"></div>
+
+<!-- Advanced filters: dropdown (desktop) / bottom sheet (mobile) -->
+<div class="qg-browse-filters-overlay" id="browseFiltersOverlay" hidden>
+  <div class="qg-browse-filters-panel" id="browseFiltersPanel" role="dialog" aria-modal="true" aria-labelledby="browseFiltersTitle" tabindex="-1">
+    <div class="qg-browse-filters-handle" aria-hidden="true"></div>
+    <div class="qg-browse-filters-head">
+      <h2 class="qg-browse-filters-title" id="browseFiltersTitle">Filters</h2>
+      <button type="button" class="qg-browse-filters-close" id="browseFiltersClose" aria-label="Close filters">×</button>
+    </div>
+    <div class="qg-browse-filters-body">
+      <section class="qg-browse-filters-section" aria-labelledby="browseLocHeading">
+        <h3 class="qg-browse-filters-sec-title" id="browseLocHeading">Location</h3>
+        <div class="location-filter-row" id="browseLocationBlock">
+    <span class="loc-filter-label" id="locationFilterLabel">Filter by location</span>
+    <div class="location-filter-box">
+      <span aria-hidden="true" class="meta-pin"><svg class="qg-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+      <label class="sr-only" for="locationFilter">Filter by location</label>
+      <input class="location-filter-input" id="locationFilter" type="text" name="qg-browse-loc"
+              list="browseCanadianLocations" placeholder="Choose a Canadian city or area"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        data-lpignore="true" data-1p-ignore="true" data-form-type="other"
+        readonly onfocus="this.removeAttribute('readonly')"
+              onchange="applyBrowseLocation()">
+            <button type="button" class="loc-near-btn" id="nearMeBtn" onclick="toggleNearMe()" aria-pressed="false">Use my location</button>
+    </div>
+          <datalist id="browseCanadianLocations">
+            <option value="Calgary, AB"></option>
+            <option value="Edmonton, AB"></option>
+            <option value="Red Deer, AB"></option>
+            <option value="Lethbridge, AB"></option>
+            <option value="Toronto, ON"></option>
+            <option value="Vancouver, BC"></option>
+            <option value="Winnipeg, MB"></option>
+            <option value="Montreal, QC"></option>
+            <option value="Halifax, NS"></option>
+          </datalist>
+          <div class="location-radius-row">
+            <label class="sr-only" for="radiusFilter">Distance radius</label>
+            <select class="radius-select" id="radiusFilter" onchange="setBrowseRadius(this.value)">
+              <option value="25">Within 25 km</option>
+              <option value="50">Within 50 km</option>
+              <option value="100">Within 100 km</option>
+              <option value="250">Within 250 km</option>
+              <option value="any">Anywhere in Canada</option>
+            </select>
+  </div>
+          <div class="location-status" id="locationStatus" role="status" aria-live="polite"></div>
+  </div>
+      </section>
+
+      <section class="qg-browse-filters-section" aria-labelledby="browseTypeHeading">
+        <h3 class="qg-browse-filters-sec-title" id="browseTypeHeading">Task type</h3>
+<div class="mode-row" id="modeRow">
+          <button type="button" class="mpill active-all" onclick="setMode(this,'all')">All tasks</button>
+          <button type="button" class="mpill" onclick="setMode(this,'quick')" data-qg-ico="zap">Quick</button>
+          <button type="button" class="mpill" onclick="setMode(this,'standard')" data-qg-ico="clipboard">Standard</button>
+          <button type="button" class="mpill" onclick="setMode(this,'recurring')" data-qg-ico="repeat">Recurring</button>
+          <button type="button" class="mpill" onclick="setMode(this,'saved')" data-qg-ico="star">Saved</button>
+</div>
+      </section>
+
+      <section class="qg-browse-filters-section" aria-labelledby="browseBudgetHeading">
+        <h3 class="qg-browse-filters-sec-title" id="browseBudgetHeading">Price</h3>
+        <div class="qg-budget-row">
+          <div class="qg-budget-labels"><span id="budgetMinLabel">$20</span><span id="budgetMaxLabel">$300+</span></div>
+          <div class="qg-dual-range" aria-label="Budget range">
+            <input type="range" id="budgetMin" min="20" max="300" value="20" step="5" aria-label="Minimum budget">
+            <input type="range" id="budgetMax" min="20" max="300" value="300" step="5" aria-label="Maximum budget">
+  </div>
+          <div class="qg-budget-chips" id="budgetChips">
+            <button type="button" class="qg-bchip" data-budget="under50">Under $50</button>
+            <button type="button" class="qg-bchip" data-budget="50to100">$50–100</button>
+            <button type="button" class="qg-bchip" data-budget="100plus">$100+</button>
+</div>
+  </div>
+      </section>
+
+      <section class="qg-browse-filters-section" aria-labelledby="browseSortHeading">
+        <h3 class="qg-browse-filters-sec-title" id="browseSortHeading">Sort &amp; timing</h3>
+        <div class="qg-browse-filters-sorts">
+          <label class="qg-browse-filters-field">
+            <span class="qg-browse-filters-field-lbl">Posted</span>
+    <select class="date-filter" id="dateFilter" onchange="applyFilters()" aria-label="Filter by post date">
+      <option value="any">Any time</option>
+      <option value="today">Posted today</option>
+      <option value="week">This week</option>
+      <option value="month">This month</option>
+    </select>
+          </label>
+          <label class="qg-browse-filters-field">
+            <span class="qg-browse-filters-field-lbl">Sort</span>
+    <select class="sort-sel" id="sortSel" onchange="applyFilters()" aria-label="Sort tasks">
+              <option value="nearest">Nearest</option>
+      <option value="newest">Newest</option>
+      <option value="pay">Budget high to low</option>
+      <option value="pay_low">Budget low to high</option>
+      <option value="deadline">Closest deadline</option>
+      <option value="oldest">Oldest</option>
+    </select>
+          </label>
+  </div>
+      </section>
+</div>
+    <div class="qg-browse-filters-foot">
+      <button type="button" class="qg-browse-filters-clear" id="browseFiltersClear">Clear all</button>
+      <button type="button" class="qg-browse-filters-apply" id="browseFiltersApply">Apply</button>
+  </div>
+  </div>
+</div>
+
+<div class="cards-area" id="cardsArea">
+  <div class="loading-state qg-browse-loading" id="browseLoadingState">
+    <div class="qg-list-skel" role="status" aria-busy="true" aria-label="Loading tasks near you">
+      <div class="qg-list-skel-label">Loading tasks near you…</div>
+      <div class="qg-list-skel-row" aria-hidden="true"><div class="qg-list-skel-avatar"></div><div class="qg-list-skel-lines"><div class="qg-list-skel-line w80"></div><div class="qg-list-skel-line w60"></div></div></div>
+      <div class="qg-list-skel-row" aria-hidden="true"><div class="qg-list-skel-avatar"></div><div class="qg-list-skel-lines"><div class="qg-list-skel-line w60"></div><div class="qg-list-skel-line w40"></div></div></div>
+      <div class="qg-list-skel-row" aria-hidden="true"><div class="qg-list-skel-avatar"></div><div class="qg-list-skel-lines"><div class="qg-list-skel-line w80"></div><div class="qg-list-skel-line w60"></div></div></div>
+    </div>
+  </div>
+</div>
+<div class="qg-browse-map-view" id="browseMapView" hidden>
+  <div class="qg-browse-map-split">
+    <div id="browseMap" class="qg-browse-map" role="application" aria-label="Task map"></div>
+    <div id="browseMapList" class="qg-browse-map-list" aria-label="Tasks on map"></div>
+  </div>
+  <div class="qg-browse-total-bar" id="browseTotalBar">
+    <div class="qg-browse-total-copy">
+      <span class="qg-browse-total-label">Total available in view</span>
+      <span class="qg-browse-total-amt is-money" id="browseTotalAmt">$0</span>
+    </div>
+    <button type="button" class="qg-best-match-btn" id="findBestMatchBtn" aria-label="Find best match">Find best match</button>
+  </div>
+</div>
+<div class="qg-browse-spotlight" id="browseSpotlightView" hidden>
+  <div id="spotlightCard" aria-live="polite"></div>
+</div>
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-scroll">
+      <div class="modal-head">
+        <p class="modal-title" id="modalTitle">Task details</p>
+        <button type="button" class="modal-close" id="modalCloseBtn" onclick="closeModal()" aria-label="Close">×</button>
+      </div>
+      <div id="taskDetailPanel" class="qg-task-detail" hidden></div>
+      <p class="modal-sub" id="modalSub" hidden>Send your offer to the poster</p>
+      <p class="modal-sub" id="modalNegoHint" style="display:none;margin-top:-6px;font-size:11px;color:var(--text-muted)"></p>
+      <div id="teenMeetupBanner" hidden></div>
+
+      <div class="apply-already" id="applyAlreadyState" aria-live="polite">
+        <div class="apply-already-icon" data-qg-ico="checkCircle" data-qg-ico-size="28"></div>
+        <div class="apply-already-title">You've already applied to this task</div>
+        <div class="apply-already-sub">Check <a href="mytasks.html?tab=applied">My Tasks → Applied</a> for status updates.</div>
+      </div>
+
+      <div id="applyFormFields">
+      <div class="price-grid">
+        <div><span class="modal-label">Your offer</span><div class="price-wrap"><span class="price-pre">$</span><input class="modal-input" id="offerPrice" type="number" min="20" placeholder="40" inputmode="decimal"></div></div>
+        <div><span class="modal-label">Availability</span><input class="modal-input" id="offerAvail" type="text" placeholder="e.g. This Saturday, mornings"></div>
+      </div>
+        <p class="offer-fee-line is-muted" id="offerFeeLine" aria-live="polite">Enter an offer of at least $20 to see your payout.</p>
+      <span class="modal-label">Message to poster</span>
+        <textarea class="modal-input" id="offerMsg" placeholder="Tell them why you're the right person..." rows="4" maxlength="1000"></textarea>
+        <p class="msg-hint" id="offerMsgHint">At least 20 characters</p>
+        <div class="field-error" id="offerFraudError" style="display:none;font-size:12px;margin-top:8px;"></div>
+      <div id="modalPhotoWrap" style="display:none;margin-top:12px;"></div>
+    </div>
+    </div>
+    <div class="modal-footer" id="applyModalFooter">
+      <div class="apply-inline-alert" id="applyInlineAlert" role="alert" aria-live="assertive"></div>
+      <div class="modal-btns">
+        <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>
+        <button type="button" class="submit-btn is-apply-blocked" id="applySubmitBtn" aria-disabled="true">Apply with an offer</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast">Application sent. You will hear back soon.</div>
+<footer class="app-legal-footer site-footer" id="siteFooter"></footer>
+<nav class="tab-bar" id="qgTabBar"></nav>
+<script defer src="qg-site.js"></script>
+<script defer src="qg-nav.js"></script>
+<script defer src="qg-menu.js?v=2"></script>
+<script defer src="qg-lightbox.js?v=20260728xss1"></script>
+<script>
+(function bootBrowseTabBar() {
+  if (typeof renderQuickGigsTabBar === 'function') {
+renderQuickGigsTabBar('browse');
+    return;
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    if (typeof renderQuickGigsTabBar === 'function') renderQuickGigsTabBar('browse');
+  });
+})();
+</script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
+  authDomain: "quickgigs-7b12d.firebaseapp.com",
+  projectId: "quickgigs-7b12d",
+  storageBucket: "quickgigs-7b12d.firebasestorage.app",
+  messagingSenderId: "698985399366",
+  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+let authChecked = false;
+const redirectTimeout = setTimeout(() => {
+  if (!authChecked) window.location.href = 'login.html';
+}, 3000);
+onAuthStateChanged(auth, (user) => {
+  authChecked = true;
+  clearTimeout(redirectTimeout);
+  if (!user) { window.location.href = 'login.html'; return; }
+  if (typeof enforceBanOnLogin === 'function') {
+    enforceBanOnLogin(user).then(function (check) { if (!check.ok) return; });
+  }
+  const name = user.displayName || user.email.split('@')[0];
+  document.getElementById('avatarEl').textContent = name.charAt(0).toUpperCase();
+  window._currentUser = user;
+  if (typeof syncCurrentUserProfile === 'function') syncCurrentUserProfile(user);
+  if (typeof ensureTaskerProfilePhoto === 'function') {
+    ensureTaskerProfilePhoto().then(function(check) {
+      var banner = document.getElementById('photoRequiredBanner');
+      if (!banner) return;
+      var isTasker = typeof isWorkerMode === 'function' && isWorkerMode();
+      banner.style.display = (isTasker && !check.ok) ? 'flex' : 'none';
+    });
+  }
+  if (typeof window.reloadBrowseTasks === 'function') window.reloadBrowseTasks();
+});
+</script>
+
+<script defer src="qg-utils.js?v=20260728welcome1"></script>
+<script defer src="feeBreakdown.js?v=20260811fee2"></script>
+<script defer src="contentModeration.js?v=20260727cm1"></script>
+<script defer src="qg-polish.js?v=20260728xss1"></script>
+<script src="qg-ux.js?v=20260811browse4" defer></script>
+<script src="qg-bigtech.js?v=20260810session1" defer></script>
+<script src="qg-wave2.js?v=20260811trust2" defer></script>
+<script defer src="qg-config.js?v=20260811teensafety1"></script>
+<script defer src="qg-analytics.js?v=20260726seo"></script>
+<script defer src="qg-categories.js"></script>
+<script src="qg-icons.js"></script>
+<script defer src="supabase-db.js?v=20260827chat1"></script>
+<script defer src="qg-age.js?v=1"></script>
+<script defer src="qg-teen-safety.js?v=20260811teensafety1"></script>
+<link rel="stylesheet" href="qg-safety.css?v=20260811teensafety1" id="qg-safety-css">
+<script defer src="qg-verification.js?v=20260811pay1"></script>
+<script defer src="qg-location.js?v=20260827geo1"></script>
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script defer src="qg-browse-views.js?v=20260811browse4"></script>
+<script defer src="qg-activity-ticker.js?v=20260811trust1"></script>
+<script defer src="qg-pwa.js?v=947d37a-1789577525"></script>
+<script defer src="qg-notifications.js"></script>
+<script defer src="qg-share.js"></script>
+<script defer src="qg-saved.js?v=1"></script>
+<script defer src="qg-report.js?v=20260716d"></script>
+<script defer src="qg-stats.js?v=20260811trust3"></script>
+<script>
+function esc(s){
+  return typeof escapeHtml === 'function' ? escapeHtml(s)
+    : (typeof qgEsc === 'function' ? qgEsc(s)
+      : String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+}
+var CAT_MAP = window.QG_CAT_MAP || {};
+// Category id -> qg-icons.js key. Kept local to this page until qg-categories.js
+// grows an iconKey field of its own (that file is Cursor's zone, see AGENTS.md).
+var QG_CAT_ICON_KEYS = {
+  errands: 'car', home: 'home', tutoring: 'graduationCap', beauty: 'scissors',
+  moving: 'truck', cooking: 'pot', tech: 'laptop', care: 'heart',
+  gardening: 'leaf', events: 'party', trades: 'wrench', other: 'package'
+};
+function qgCatIconKey(catId){
+  return QG_CAT_ICON_KEYS[(catId||'').toLowerCase()] || 'package';
+}
+
+function normaliseTask(row){
+  var catInfo=getCatInfo(row.CATEGORY||row.category);
+  var mode=(row.TASK_MODE||row.task_mode||'standard').toLowerCase();
+  var budget=parseFloat(row.BUDGET||row.budget||0);
+  var budgetNegotiable=!!(row.budget_negotiable||row.BUDGET_NEGOTIABLE);
+  var posterUid=row.posted_by||row.POSTED_BY||'';
+  var posterName=row.poster_name||row.POSTER_NAME||'';
+  if(!posterName&&posterUid&&typeof resolveUserName==='function') posterName=resolveUserName(posterUid,row,userNames);
+  return {
+    id: row.task_id || row.TASK_ID || row.id,
+    mode:mode,
+    cat:(row.CATEGORY||row.category||'other').toLowerCase(),
+    catLabel:catInfo.label,icon:catInfo.icon,iconKey:qgCatIconKey(row.CATEGORY||row.category),iconBg:catInfo.bg,
+    title: (typeof formatTaskDisplayTitle === 'function' ? formatTaskDisplayTitle(row) : (row.TITLE || row.title || 'Untitled task')),
+    desc:row.DESCRIPTION||row.description||'',
+    price:budget,
+    budgetNegotiable:budgetNegotiable,
+    priceLabel:(budgetNegotiable?'Around ':'')+'$'+budget+(mode==='recurring'?'/hr':'')+' CAD'+(budgetNegotiable?', open to offers':''),
+    location:row.LOCATION||row.location||'',
+    location_type: String(row.location_type || row.LOCATION_TYPE || 'in_person').toLowerCase(),
+    lat: row.lat != null ? Number(row.lat) : (row.LAT != null ? Number(row.LAT) : null),
+    lng: row.lng != null ? Number(row.lng) : (row.LNG != null ? Number(row.LNG) : null),
+    when: row.scheduled_label || row.SCHEDULED_LABEL || '',
+    createdAt: row.created_at || row.CREATED_AT || '',
+    // Computed at render from createdAt ? do not bake a stale relative string here
+    posted: '',
+    applicants:0,
+    status:(row.STATUS||row.status||'open').toLowerCase(),
+    posterId:posterUid,
+    posterName:posterName||'a SwiftGigs member',
+    photoUrls: typeof parsePhotoUrls === 'function' ? parsePhotoUrls(row.photo_urls || row.PHOTO_URLS) : [],
+    requiresPhotos: !!(row.requires_photos || row.REQUIRES_PHOTOS),
+    isRecurring: !!(row.is_recurring || row.IS_RECURRING || mode === 'recurring'),
+    rateType: String(row.rate_type || row.RATE_TYPE || (mode === 'recurring' ? 'hourly' : 'fixed')).toLowerCase(),
+    hourlyRate: row.hourly_rate != null ? row.hourly_rate : row.HOURLY_RATE,
+    estHours: row.est_hours != null ? row.est_hours : row.EST_HOURS,
+    frequency: row.frequency || row.FREQUENCY || '',
+    agePreference: String(row.age_preference || row.AGE_PREFERENCE || 'adults_only').toLowerCase()
+  };
+}
+var allTasks=[],activeMode='all',activeCat='all',activeTask=null;
+var budgetMinVal=20,budgetMaxVal=300,budgetPreset='';
+var appliedTaskIds = {};
+var userNames={};
+var isDark = typeof QG_isDarkTheme === 'function' ? QG_isDarkTheme() : (localStorage.getItem('qg-theme') !== 'light');
+window._nearMeOnly=false;
+window._qgAgeTier=window._qgAgeTier||'loading';
+
+function bootBrowseAgeTier(attempt) {
+  attempt = attempt || 0;
+  if (window._currentUser && typeof QG_loadAgeTier === 'function') {
+    QG_loadAgeTier(window._currentUser.uid).then(function(result) {
+      var banner = document.getElementById('teenBrowseBanner');
+      if (banner) banner.style.display = result.tier === 'teen' ? 'block' : 'none';
+      if (allTasks.length) renderCards();
+    });
+    return;
+  }
+  if (attempt < 30) setTimeout(function(){ bootBrowseAgeTier(attempt + 1); }, 100);
+}
+document.addEventListener('DOMContentLoaded', function(){ bootBrowseAgeTier(0); });
+document.addEventListener('DOMContentLoaded', function bootBrowseVerification(){
+  if (typeof QG_loadVerification === 'function' && window._currentUser) {
+    QG_loadVerification().then(function(){ if(allTasks.length)renderCards(); });
+  } else {
+    setTimeout(bootBrowseVerification, 120);
+  }
+});
+
+/** Resolve the DB apply fn ? never capture at parse time (defer scripts load later). */
+function getDbSubmitApplication() {
+  if (typeof window.submitApplicationToDb === 'function' &&
+      window.submitApplicationToDb !== window.submitBrowseApplication) {
+    return window.submitApplicationToDb;
+  }
+  if (typeof window._qgSubmitApplicationDb === 'function' &&
+      window._qgSubmitApplicationDb !== window.submitBrowseApplication) {
+    return window._qgSubmitApplicationDb;
+  }
+  return null;
+}
+
+function bindBrowseSubmitApplication() {
+  // If supabase-db overwrote window.submitApplication with the raw DB fn, stash it
+  if (typeof window.submitApplication === 'function' &&
+      window.submitApplication !== window.submitBrowseApplication) {
+    window._qgSubmitApplicationDb = window.submitApplication;
+  }
+  if (typeof window.submitApplicationToDb === 'function' &&
+      window.submitApplicationToDb !== window.submitBrowseApplication) {
+    window._qgSubmitApplicationDb = window.submitApplicationToDb;
+  }
+  if (typeof window.submitBrowseApplication === 'function') {
+    window.submitApplication = window.submitBrowseApplication;
+  }
+}
+
+function applyNotify(msg, color) {
+  var text = String(msg || 'Something went wrong. Try again.');
+  console.warn('[QuickGigs apply]', text);
+  var tone = 'is-error';
+  var c = String(color || '#ef4444');
+  if (c.indexOf('4ade80') >= 0 || c.indexOf('16a34a') >= 0) tone = 'is-ok';
+  else if (c.indexOf('f59e0b') >= 0 || c.indexOf('d97706') >= 0) tone = 'is-warn';
+
+  // Always show inside the modal footer first ? never rely on bottom toasts under the keyboard.
+  var inline = document.getElementById('applyInlineAlert');
+  var overlayOpen = document.getElementById('modalOverlay');
+  var modalOpen = overlayOpen && overlayOpen.classList.contains('open');
+  if (inline && modalOpen) {
+    inline.textContent = text;
+    inline.className = 'apply-inline-alert is-visible ' + tone;
+    try { inline.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (eScroll) {}
+  }
+
+  var fraudErr = document.getElementById('offerFraudError');
+  if (fraudErr && tone === 'is-error') {
+    fraudErr.textContent = text;
+    fraudErr.style.display = 'block';
+    try {
+      var scroll = document.querySelector('#modalOverlay .modal-scroll');
+      if (scroll) scroll.scrollTop = scroll.scrollHeight;
+    } catch (e2) {}
+  }
+
+  if (typeof showToast === 'function') {
+    try { showToast(text, color || '#ef4444'); } catch (e) {}
+  } else {
+    var toast = document.getElementById('toast');
+    if (toast) {
+      toast.textContent = text;
+      toast.style.background = color || '#ef4444';
+      toast.style.color = '#fff';
+      toast.style.display = 'block';
+      setTimeout(function () { toast.style.display = 'none'; }, 5000);
+    }
+  }
+}
+
+function clearApplyInlineAlert() {
+  var inline = document.getElementById('applyInlineAlert');
+  if (inline) {
+    inline.textContent = '';
+    inline.className = 'apply-inline-alert';
+  }
+}
+document.addEventListener('DOMContentLoaded', bindBrowseSubmitApplication);
+window.addEventListener('load', bindBrowseSubmitApplication);
+
+function taskMatchesLocation(task, filterLoc, nearMeOnly) {
+  if (!filterLoc && !nearMeOnly) return true;
+  var taskLoc = String(task.location || '').toLowerCase();
+  if (nearMeOnly) {
+    var ref = typeof getUserLocation === 'function' ? getUserLocation() : '';
+    if (!ref) return true;
+    if (typeof getLocationProximityScore === 'function') {
+      return getLocationProximityScore(task.location, ref) === 0;
+    }
+    return taskLoc.indexOf(String(ref).split(',')[0].trim().toLowerCase()) >= 0;
+  }
+  if (!filterLoc) return true;
+  var q = String(filterLoc).toLowerCase().trim();
+  if (!q) return true;
+  if (taskLoc.indexOf(q) >= 0) return true;
+  var parts = q.split(/[,\s]+/).map(function (p) { return p.trim(); }).filter(function (p) { return p.length >= 2; });
+  for (var i = 0; i < parts.length; i++) {
+    if (taskLoc.indexOf(parts[i]) >= 0) return true;
+  }
+  if (typeof getLocationProximityScore === 'function') {
+    return getLocationProximityScore(task.location, filterLoc) <= 1;
+  }
+  return false;
+}
+
+function parseTaskTimestamp(iso) {
+  if (!iso) return 0;
+  if (typeof parseQgTimestamp === 'function') {
+    var ms = parseQgTimestamp(iso);
+    return isNaN(ms) ? 0 : ms;
+  }
+  var t = Date.parse(iso);
+  return isNaN(t) ? 0 : t;
+}
+
+function postedLabelForTask(t) {
+  var created = (t && (t.createdAt || t.created_at || t.CREATED_AT)) || '';
+  if (typeof formatPostedTime === 'function') return formatPostedTime(created);
+  if (typeof formatRelativeTime === 'function') {
+    var rel = formatRelativeTime(created);
+    if (!rel || rel === 'Recently') return 'Posted recently';
+    return /^posted\b/i.test(rel) ? rel : ('Posted ' + rel);
+  }
+  return 'Posted recently';
+}
+
+function taskMatchesDateRange(task, range) {
+  if (!range || range === 'any') return true;
+  var ts = parseTaskTimestamp(task.createdAt);
+  if (!ts) return true;
+  var age = Date.now() - ts;
+  if (range === 'today') return age <= 86400000;
+  if (range === 'week') return age <= 604800000;
+  if (range === 'month') return age <= 2592000000;
+  return true;
+}
+
+function setLocationStatus(message, isError) {
+  var el=document.getElementById('locationStatus');
+  if(!el)return;
+  el.textContent=message||'';
+  el.classList.toggle('is-error',!!isError);
+}
+
+window.applyBrowseLocation=async function(){
+  var locEl=document.getElementById('locationFilter');
+  var value=locEl ? locEl.value.trim() : '';
+  if(!value)return;
+  setLocationStatus('Finding '+value+'\u2026',false);
+  var result=typeof setUserLocation==='function' ? await setUserLocation(value) : null;
+  if(!result){
+    setLocationStatus('Choose a valid Canadian city or area.',true);
+    return;
+  }
+  if(locEl&&result.location)locEl.value=result.location;
+  window._nearMeOnly=false;
+  var btn=document.getElementById('nearMeBtn');
+  if(btn){
+    btn.classList.remove('active');
+    btn.setAttribute('aria-pressed','false');
+  }
+  setLocationStatus('Showing gigs nearest to '+(result.location||value)+'.',false);
+  var sort=document.getElementById('sortSel');
+  if(sort)sort.value='nearest';
+  renderCards();
+};
+
+window.setBrowseRadius=function(value){
+  if(typeof setNearRadiusKm==='function')setNearRadiusKm(value);
+  if(String(value)!=='any'&&typeof getGeoFilterPos==='function'&&!getGeoFilterPos()){
+    applyBrowseLocation();
+    return;
+  }
+  renderCards();
+};
+
+/* Quick-filter chip row (Nearby/Today/Highest pay) — thin UI shortcuts onto the
+ * existing advanced-filter state (nearMeBtn, dateFilter, sortSel). No new
+ * filtering logic; just toggles the same fields the filters panel already uses. */
+window.qgToggleNearbyQuick=async function(){
+  await toggleNearMe();
+  var real=document.getElementById('nearMeBtn');
+  var mine=document.getElementById('qfNearbyBtn');
+  if(mine){
+    var isActive=!!(real&&real.classList.contains('active'));
+    mine.classList.toggle('is-selected',isActive);
+    mine.setAttribute('aria-pressed',String(isActive));
+  }
+};
+window.qgToggleQuickFilter=function(type){
+  if(type==='today'){
+    var df=document.getElementById('dateFilter');
+    var btn=document.getElementById('qfTodayBtn');
+    if(df){
+      var wasActive=df.value==='today';
+      df.value=wasActive?'any':'today';
+      if(btn){btn.classList.toggle('is-selected',!wasActive);btn.setAttribute('aria-pressed',String(!wasActive));}
+    }
+  } else if(type==='pay'){
+    var sel=document.getElementById('sortSel');
+    var payBtn=document.getElementById('qfPayBtn');
+    if(sel){
+      var wasPay=sel.value==='pay';
+      sel.value=wasPay?'nearest':'pay';
+      if(payBtn){payBtn.classList.toggle('is-selected',!wasPay);payBtn.setAttribute('aria-pressed',String(!wasPay));}
+    }
+  }
+  if(typeof applyFilters==='function') applyFilters();
+};
+
+window.toggleNearMe=async function(){
+  var btn=document.getElementById('nearMeBtn');
+  if(btn){btn.disabled=true;btn.textContent='Locating\u2026';}
+  setLocationStatus('Requesting your approximate location\u2026',false);
+  var pos=typeof requestGeoForFilter==='function' ? await requestGeoForFilter() : null;
+  if(!pos){
+    if(btn){btn.disabled=false;btn.textContent='Use my location';}
+    setLocationStatus('Location permission was unavailable. Choose a city instead.',true);
+    return;
+  }
+  window._nearMeOnly=true;
+  var result=typeof reverseGeocodeCity==='function' ? await reverseGeocodeCity(pos.lat,pos.lng).catch(function(){return null;}) : null;
+    var locEl=document.getElementById('locationFilter');
+  if(result&&result.location){
+    if(locEl)locEl.value=result.location;
+    if(typeof setUserLocationLabel==='function')setUserLocationLabel(result.location);
+  }
+  if(btn){
+    btn.disabled=false;btn.textContent='Using my location';btn.classList.add('active');
+    btn.setAttribute('aria-pressed','true');
+  }
+  var sort=document.getElementById('sortSel');
+  if(sort)sort.value='nearest';
+  setLocationStatus('Using your approximate location for distance only.',false);
+  renderCards();
+};
+
+function syncLocationFilterDefault(){
+  var locEl=document.getElementById('locationFilter');
+  if(!locEl) return;
+  if(!locEl.value&&typeof getUserLocation==='function') locEl.value=getUserLocation();
+}
+
+async function hydratePosterNames() {
+  var uids = {};
+  allTasks.forEach(function(t) {
+    if (!t.posterId) return;
+    if (!t.posterName || (t.posterName === 'a SwiftGigs member' || t.posterName === 'SwiftGigs user')) uids[String(t.posterId)] = true;
+  });
+  var keys = Object.keys(uids);
+  for (var i = 0; i < keys.length; i++) {
+    var uid = keys[i];
+    if (userNames[uid] && typeof isGenericDisplayName === 'function' && !isGenericDisplayName(userNames[uid])) continue;
+    if (typeof getUserNameByFirebaseUid !== 'function') continue;
+    var name = await getUserNameByFirebaseUid(uid);
+    if (name && typeof isGenericDisplayName === 'function' && !isGenericDisplayName(name)) userNames[uid] = name;
+  }
+  allTasks.forEach(function(t) {
+    if (t.posterId && userNames[t.posterId]) t.posterName = userNames[t.posterId];
+  });
+}
+
+function getCurrentUserId(){
+  return window._currentUser ? String(window._currentUser.uid) : '';
+}
+function isOwnPostedTask(t){
+  return !!(t && t.posterId && getCurrentUserId() && String(t.posterId) === getCurrentUserId());
+}
+function filterBrowseTasks(list){
+  return (list || []).filter(function(t){
+    return t.status === 'open' && !isOwnPostedTask(t) && !appliedTaskIds[String(t.id)];
+  });
+}
+
+async function loadMyAppliedTaskIds(userId) {
+  appliedTaskIds = {};
+  if (!userId || typeof getApplicationsByWorker !== 'function') return;
+  try {
+    var apps = await getApplicationsByWorker(userId);
+    (apps || []).forEach(function(a) {
+      var tid = a.task_id || a.TASK_ID;
+      var st = String(a.status || a.STATUS || 'pending').toLowerCase();
+      if (!tid) return;
+      if (st === 'declined' || st === 'withdrawn' || st === 'cancelled') return;
+      appliedTaskIds[String(tid)] = true;
+    });
+  } catch (e) {
+    console.warn('Could not load your applications:', e);
+  }
+}
+
+async function loadTasks(){
+  if (typeof getUsersNameMap === 'function') {
+    getUsersNameMap().then(function(map){ userNames = map || {}; renderCards(); });
+  }
+  var cached = typeof readTasksCache === 'function' ? readTasksCache(true) : null;
+  if (cached && cached.length) {
+    allTasks = filterBrowseTasks(cached.map(normaliseTask));
+    renderCards();
+  }
+  try{
+    var items = await getTasks();
+    if (items && items.length) {
+      allTasks = filterBrowseTasks(items.map(normaliseTask));
+    } else if ((!cached || !cached.length) && !window._currentUser) {
+      // Production: never inject seed/demo tasks into Browse (list/map/spotlight).
+      allTasks = [];
+    }
+  }catch(err){
+    console.warn('Supabase unreachable:', err);
+    if ((!cached || !cached.length) && !window._currentUser) {
+      allTasks = [];
+    } else if ((!cached || !cached.length) && window._currentUser) {
+      var areaErr = document.getElementById('cardsArea');
+      if (areaErr && typeof QG_errorStateHtml === 'function') {
+        areaErr.innerHTML = QG_errorStateHtml({
+          offline: true,
+          title: "Can't connect",
+          sub: 'Check your connection and try again.',
+          retry: { label: 'Try again', icon: 'refresh', onclick: "typeof loadTasks==='function'&&loadTasks()" }
+        });
+        return;
+      }
+    }
+  }
+  await hydratePosterNames();
+  if (typeof loadSavedTaskIds === 'function' && getCurrentUserId()) {
+    await loadSavedTaskIds(getCurrentUserId());
+  }
+  if (getCurrentUserId()) {
+    await loadMyAppliedTaskIds(getCurrentUserId());
+  }
+  renderCards();
+  if (typeof fetchAllTasksFresh === 'function') {
+    fetchAllTasksFresh().then(function(fresh){
+      if (!fresh || !fresh.length) return;
+      allTasks = filterBrowseTasks(fresh.map(normaliseTask));
+      hydratePosterNames().then(function() {
+        if (getCurrentUserId()) {
+          return loadMyAppliedTaskIds(getCurrentUserId()).then(renderCards);
+        }
+        renderCards();
+      });
+    }).catch(function(err) {
+      console.warn('Background task refresh failed:', err);
+    });
+  }
+}
+
+function getDemoTasks(){
+  return [
+    {id:1,mode:'quick',cat:'errands',catLabel:'Errands',icon:'🚗',iconKey:'car',iconBg:'var(--attention-soft)',title:'Pick up prescription from Shoppers Drug Mart',desc:'Grab my prescription on 17th Ave SW and drop off at my condo. 20 mins max.',price:20,priceLabel:'$20',location:'Calgary, AB',posted:'5 mins ago',applicants:0,status:'open'},
+    {id:2,mode:'quick',cat:'tech',catLabel:'Tech',icon:'💻',iconKey:'laptop',iconBg:'color-mix(in srgb, var(--primary) 20%, transparent)',title:'Fix cracked screen on Samsung S22 — need it today',desc:'Screen is badly cracked, phone still works. Need someone experienced.',price:60,priceLabel:'$60',location:'Calgary, AB',posted:'12 mins ago',applicants:1,status:'open'},
+    {id:3,mode:'standard',cat:'home',catLabel:'Home',icon:'🏠',iconKey:'home',iconBg:'color-mix(in srgb, var(--primary) 20%, transparent)',title:'Deep clean 2 bedroom apartment before move out',desc:'Full deep clean before handing over keys this Saturday.',price:120,priceLabel:'$120',location:'Calgary, AB',posted:'2 hrs ago',applicants:3,status:'open'},
+    {id:4,mode:'standard',cat:'beauty',catLabel:'Beauty',icon:'💅',iconKey:'scissors',iconBg:'color-mix(in srgb, var(--primary) 15%, transparent)',title:'Box braids — medium length, natural hair',desc:'Looking for someone experienced with box braids on natural hair.',price:80,priceLabel:'$80',location:'Calgary, AB',posted:'3 hrs ago',applicants:2,status:'open'},
+    {id:5,mode:'recurring',cat:'care',catLabel:'Care',icon:'👶',iconKey:'heart',iconBg:'var(--money-soft)',title:'Reliable nanny needed Monday to Friday 9am–3pm',desc:'Caring nanny for two kids aged 4 and 7. Starting next Monday.',price:20,priceLabel:'$20/hr',location:'Calgary, AB',posted:'1 hr ago',applicants:1,status:'open'},
+    {id:6,mode:'recurring',cat:'tutoring',catLabel:'Tutoring',icon:'📚',iconKey:'graduationCap',iconBg:'var(--money-soft)',title:'Math tutor for Grade 10 student — twice a week',desc:'My daughter needs a patient tutor for algebra. Twice a week after school.',price:35,priceLabel:'$35/hr',location:'Calgary, AB',posted:'30 mins ago',applicants:0,status:'open'},
+  ];
+}
+
+function esc(s){
+  return typeof escapeHtml === 'function' ? escapeHtml(s)
+    : (typeof qgEsc === 'function' ? qgEsc(s)
+      : String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+}
+function getBadge(m,t){
+  var modeBadge='';
+  if(m==='quick')modeBadge='<span class="tc-badge badge-quick">'+(typeof qgIcon==='function'?qgIcon('zap',{size:12}):'')+' Quick</span>';
+  else if(m==='recurring')modeBadge='<span class="tc-badge badge-recurring">'+(typeof qgIcon==='function'?qgIcon('repeat',{size:12}):'')+' Recurring</span>';
+  else modeBadge='<span class="tc-badge badge-standard">'+(typeof qgIcon==='function'?qgIcon('clipboard',{size:12}):'')+' Standard</span>';
+  if(t&&t.budgetNegotiable)modeBadge+='<span class="tc-badge badge-negotiable">Negotiable</span>';
+  if(t){
+    modeBadge += t.agePreference === 'adults_only'
+      ? '<span class="tc-badge badge-age-adult">18+ only</span>'
+      : '<span class="tc-badge badge-age-teen">16+ welcome</span>';
+  }
+  return modeBadge;
+}
+function getBtnClass(m){return 'btn-'+m;}
+function getBtnLabel(m){
+  if(window.QG_verificationState&&window.QG_verificationState.tasker_verified!==true)return 'Verify to apply';
+  if(window._qgAgeTier==='teen')return 'Ask guardian';
+  return m==='quick'?'Apply now':'Apply';
+}
+
+function formatLocationDisplay(loc) {
+  if (typeof window.formatLocationDisplay === 'function' && window.formatLocationDisplay !== formatLocationDisplay) {
+    return window.formatLocationDisplay(loc);
+  }
+  if (!loc) return '';
+  return String(loc).trim().split(',').map(function(part) {
+    part = part.trim();
+    if (!part) return part;
+    if (/^[a-zA-Z]{2}$/.test(part)) return part.toUpperCase();
+    return part.replace(/\b([a-zA-Z])([a-zA-Z]*)/g, function(_m, first, rest) {
+      return first.toUpperCase() + rest.toLowerCase();
+    });
+  }).filter(Boolean).join(', ');
+}
+
+/** Prefer a resized storage URL so browse stays light on cellular. */
+function browseThumbUrl(url, width) {
+  width = width || 480;
+  var u = String(url || '').trim();
+  if (!u) return '';
+  try {
+    // Supabase public object ? render/image transform (safe no-op if transform unavailable)
+    if (u.indexOf('/storage/v1/object/public/') >= 0) {
+      var rendered = u.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+      var join = rendered.indexOf('?') >= 0 ? '&' : '?';
+      return rendered + join + 'width=' + width + '&resize=cover&quality=70';
+    }
+  } catch (e) {}
+  return u;
+}
+
+function renderCardIcon(t) {
+  // Kept for any legacy callers; eBay cards use renderCardMedia instead.
+  var mark = typeof qgIcon==='function' ? qgIcon(t.iconKey||qgCatIconKey(t.cat),{size:18}) : t.icon;
+  return '<div class="tc-icon" style="background:'+t.iconBg+';color:var(--teal)" aria-hidden="true">'+mark+'</div>';
+}
+
+function renderCardMedia(t) {
+  var urls = (t.photoUrls && t.photoUrls.length) ? t.photoUrls : [];
+  var hasPhoto = urls.length > 0;
+  var dots = '';
+  if (urls.length > 1) {
+    dots = '<div class="tc-media-dots" aria-hidden="true">' +
+      urls.map(function (_u, i) {
+        return '<span class="tc-media-dot'+(i===0?' is-active':'')+'"></span>';
+      }).join('') +
+      '</div>';
+  }
+  if (hasPhoto) {
+    var safeUrls = urls.map(function (u) {
+      return typeof safeMediaUrl === 'function' ? safeMediaUrl(u)
+        : (typeof safeUrl === 'function' ? safeUrl(u) : '');
+    }).filter(Boolean);
+    if (!safeUrls.length) {
+      // fall through to placeholder
+    } else {
+      var photosJson = esc(JSON.stringify(safeUrls));
+      var raw = String(safeUrls[0] || '');
+      var thumb = browseThumbUrl(raw, 480);
+      var src = esc(typeof safeMediaUrl === 'function' ? (safeMediaUrl(thumb) || raw) : thumb);
+      var fallbackSafe = esc(raw);
+      var fallbackAttr = (src !== fallbackSafe) ? ' data-fallback="'+fallbackSafe+'" onerror="if(this.dataset.fallback){this.src=this.dataset.fallback;delete this.dataset.fallback;this.onerror=null;}"' : '';
+      return '<div class="tc-media tc-photo-tappable" role="button" tabindex="0" aria-label="View task photos — tap to enlarge" data-photos="'+photosJson+'" data-photo-caption="'+esc(t.title)+'">' +
+        '<div class="tc-media-inner">' +
+          '<img class="tc-media-img" src="'+src+'" alt="'+esc(t.title)+' photo" loading="lazy" decoding="async" width="168" height="168"'+fallbackAttr+'>' +
+        '</div>' + dots +
+      '</div>';
+    }
+  }
+  return '<div class="tc-media" aria-hidden="true">' +
+    '<div class="tc-media-inner tc-media-placeholder" style="background:'+esc(t.iconBg || 'color-mix(in srgb, var(--primary) 20%, transparent)')+'">' +
+      '<span class="tc-media-placeholder-icon" style="color:var(--teal)">'+(typeof qgIcon==='function'?qgIcon(t.iconKey||qgCatIconKey(t.cat),{size:32}):t.icon)+'</span>' +
+      '<span class="tc-media-placeholder-label">'+esc(t.catLabel || 'Task')+'</span>' +
+    '</div>' +
+  '</div>';
+}
+
+/** @deprecated use renderCardMedia ? kept so older call sites don't break */
+function renderCardPhotoHero(t) {
+  return renderCardMedia(t);
+}
+
+function countAdvancedBrowseFilters(){
+  var n = 0;
+  if (activeMode !== 'all') n += 1;
+  var loc = (document.getElementById('locationFilter') && document.getElementById('locationFilter').value || '').trim();
+  if (loc || window._nearMeOnly) n += 1;
+  var radiusFilter = (document.getElementById('radiusFilter') || {}).value;
+  if (radiusFilter && radiusFilter !== 'any') n += 1;
+  if (budgetPreset || budgetMinVal > 20 || budgetMaxVal < 300) n += 1;
+  var dateFilter = (document.getElementById('dateFilter') || {}).value;
+  if (dateFilter && dateFilter !== 'any') n += 1;
+  var sortVal = (document.getElementById('sortSel') || {}).value;
+  if (sortVal && sortVal !== 'nearest') n += 1;
+  return n;
+}
+
+function updateBrowseFiltersBadge(){
+  var badge = document.getElementById('browseFiltersBadge');
+  var btn = document.getElementById('browseFiltersBtn');
+  var n = countAdvancedBrowseFilters();
+  if (badge) {
+    if (n > 0) {
+      badge.hidden = false;
+      badge.textContent = String(n);
+    } else {
+      badge.hidden = true;
+      badge.textContent = '0';
+    }
+  }
+  if (btn) btn.classList.toggle('has-active', n > 0);
+}
+
+function persistBrowseState(){
+  if (typeof qgSaveBrowseFilters !== 'function') return;
+  qgSaveBrowseFilters({
+    mode: activeMode, cat: activeCat,
+    sort: (document.getElementById('sortSel')||{}).value,
+    date: (document.getElementById('dateFilter')||{}).value,
+    loc: (document.getElementById('locationFilter')||{}).value,
+    radius: (document.getElementById('radiusFilter')||{}).value,
+    budgetMin: budgetMinVal, budgetMax: budgetMaxVal, budgetPreset: budgetPreset,
+    search: (document.getElementById('searchInput')||{}).value
+  });
+}
+function renderActiveFilters(){
+  var host=document.getElementById('activeFilters');
+  if(!host) return;
+  updateBrowseFiltersBadge();
+  var chips=[];
+  // Category stays visible in the pill row — don't duplicate it here.
+  if(activeMode!=='all') chips.push({key:'mode',label: activeMode.charAt(0).toUpperCase()+activeMode.slice(1)});
+  var loc=(document.getElementById('locationFilter')&&document.getElementById('locationFilter').value||'').trim();
+  if(loc) chips.push({key:'loc',label:loc.split(',')[0].trim() || loc});
+  else if(window._nearMeOnly) chips.push({key:'loc',label:'Near me'});
+  if(budgetPreset==='under50') chips.push({key:'budget',label:'Under $50'});
+  else if(budgetPreset==='50to100') chips.push({key:'budget',label:'$50–100'});
+  else if(budgetPreset==='100plus') chips.push({key:'budget',label:'$100+'});
+  else if(budgetMinVal>20||budgetMaxVal<300) chips.push({key:'budget',label:'$'+budgetMinVal+'–$'+budgetMaxVal});
+  var dateFilter=(document.getElementById('dateFilter')||{}).value;
+  if(dateFilter&&dateFilter!=='any') chips.push({key:'date',label:'Posted: '+dateFilter});
+  var radiusFilter=(document.getElementById('radiusFilter')||{}).value;
+  if(radiusFilter&&radiusFilter!=='any')chips.push({key:'radius',label:'Within '+radiusFilter+' km'});
+  var sortVal=(document.getElementById('sortSel')||{}).value;
+  if(sortVal&&sortVal!=='nearest') chips.push({key:'sort',label:'Sort: '+sortVal});
+  if(!chips.length){ host.innerHTML=''; return; }
+  host.innerHTML=chips.map(function(c){
+    return '<button type="button" class="qg-af-chip" data-clear="'+c.key+'" aria-label="Remove '+esc(c.label)+'">'+esc(c.label)+' <span class="qg-af-x" aria-hidden="true">&times;</span></button>';
+  }).join('')+'<button type="button" class="qg-af-clear" id="clearAllFilters">Clear all</button>';
+  host.querySelectorAll('[data-clear]').forEach(function(btn){
+    btn.onclick=function(){
+      var k=btn.getAttribute('data-clear');
+      if(k==='mode'){ activeMode='all'; document.querySelectorAll('.mpill').forEach(function(p,i){ p.className=i===0?'mpill active-all':'mpill'; }); }
+      if(k==='cat'){ activeCat='all'; document.querySelectorAll('.cpill').forEach(function(p){ p.classList.remove('cat-active'); }); }
+      if(k==='budget'){ budgetMinVal=20; budgetMaxVal=300; budgetPreset=''; syncBudgetUI(); }
+      if(k==='date'&&document.getElementById('dateFilter')) document.getElementById('dateFilter').value='any';
+      if(k==='sort'&&document.getElementById('sortSel')) document.getElementById('sortSel').value='nearest';
+      if(k==='loc'){
+        window._nearMeOnly=false;
+        var nearBtn=document.getElementById('nearMeBtn');
+        if(nearBtn){ nearBtn.classList.remove('active'); nearBtn.setAttribute('aria-pressed','false'); }
+        if(document.getElementById('locationFilter')) document.getElementById('locationFilter').value='';
+        if(typeof clearGeoFilterPos==='function') clearGeoFilterPos();
+        else if(typeof setUserLocation==='function'){ try{ setUserLocation(''); }catch(e){} }
+      }
+      if(k==='radius'&&document.getElementById('radiusFilter')){
+        document.getElementById('radiusFilter').value='any';
+        if(typeof setNearRadiusKm==='function')setNearRadiusKm('any');
+      }
+      renderCards();
+    };
+  });
+  var clear=document.getElementById('clearAllFilters');
+  if(clear) clear.onclick=function(){ if(typeof clearFilters==='function') clearFilters(); else location.href='browsetask.html'; };
+}
+function syncBudgetUI(){
+  var a=document.getElementById('budgetMin'), b=document.getElementById('budgetMax');
+  if(a) a.value=budgetMinVal; if(b) b.value=budgetMaxVal;
+  var ml=document.getElementById('budgetMinLabel'), xl=document.getElementById('budgetMaxLabel');
+  if(ml) ml.textContent='$'+budgetMinVal;
+  if(xl) xl.textContent=budgetMaxVal>=300?'$300+':('$'+budgetMaxVal);
+  document.querySelectorAll('.qg-bchip').forEach(function(c){
+    c.classList.toggle('active', c.getAttribute('data-budget')===budgetPreset);
+  });
+}
+function getFilteredBrowseTasks(){
+  var search=(document.getElementById('searchInput')&&document.getElementById('searchInput').value||'').toLowerCase().trim();
+  var locFilter=(document.getElementById('locationFilter')&&document.getElementById('locationFilter').value||'').trim();
+  var dateFilter=(document.getElementById('dateFilter')&&document.getElementById('dateFilter').value)||'any';
+  var sortVal = (document.getElementById('sortSel') && document.getElementById('sortSel').value) || 'nearest';
+  var radiusKm = typeof getNearRadiusKm==='function' ? getNearRadiusKm() : Infinity;
+  var locationPos = typeof getGeoFilterPos==='function' ? getGeoFilterPos() : null;
+  var filtered=allTasks.filter(function(t){
+    if(window._qgAgeTier==='teen'&&typeof QG_taskAllowsTeen==='function'&&!QG_taskAllowsTeen(t))return false;
+    if (activeMode==='saved'){
+      if (typeof isTaskSaved !== 'function' || !isTaskSaved(t.id)) return false;
+    } else if (activeMode!=='all'&&t.mode!==activeMode) return false;
+    if (activeCat!=='all'&&t.cat!==activeCat) return false;
+    if (!taskMatchesDateRange(t, dateFilter)) return false;
+    var price=Number(t.price)||0;
+    if(price < budgetMinVal) return false;
+    if(budgetMaxVal < 300 && price > budgetMaxVal) return false;
+    if(budgetPreset==='under50' && price>=50) return false;
+    if(budgetPreset==='50to100' && (price<50||price>100)) return false;
+    if(budgetPreset==='100plus' && price<100) return false;
+    if (!search) return true;
+    var hay = (t.title+' '+t.catLabel+' '+t.desc+' '+(t.posterName||'')+' '+(t.location||'')).toLowerCase();
+    return hay.indexOf(search) >= 0;
+  });
+  if(locationPos && isFinite(radiusKm) && typeof filterTasksByDistance==='function'){
+    filtered=filterTasksByDistance(filtered,{
+      pos:locationPos,
+      radiusKm:radiusKm
+    });
+  }
+  if (sortVal === 'nearest' && typeof sortTasksByProximity === 'function') {
+    filtered = sortTasksByProximity(filtered, locFilter || (typeof getUserLocation==='function'?getUserLocation():''));
+  } else if (sortVal === 'pay') {
+    filtered = filtered.slice().sort(function(a,b){ return (b.price||0)-(a.price||0); });
+  } else if (sortVal === 'pay_low') {
+    filtered = filtered.slice().sort(function(a,b){ return (a.price||0)-(b.price||0); });
+  } else if (sortVal === 'deadline') {
+    filtered = filtered.slice().sort(function(a,b){
+      var aw = a.when ? parseTaskTimestamp(a.when) : Infinity;
+      var bw = b.when ? parseTaskTimestamp(b.when) : Infinity;
+      if (aw === Infinity && a.createdAt) aw = parseTaskTimestamp(a.createdAt);
+      if (bw === Infinity && b.createdAt) bw = parseTaskTimestamp(b.createdAt);
+      return aw - bw;
+    });
+  } else if (sortVal === 'oldest') {
+    filtered = filtered.slice().sort(function(a,b){ return parseTaskTimestamp(a.createdAt)-parseTaskTimestamp(b.createdAt); });
+  } else {
+    filtered = filtered.slice().sort(function(a,b){ return parseTaskTimestamp(b.createdAt)-parseTaskTimestamp(a.createdAt); });
+  }
+  return filtered;
+}
+window.getFilteredBrowseTasks = getFilteredBrowseTasks;
+
+function updateBrowseResultsCount(filtered){
+  var search=(document.getElementById('searchInput')&&document.getElementById('searchInput').value||'').toLowerCase().trim();
+  var locFilter=(document.getElementById('locationFilter')&&document.getElementById('locationFilter').value||'').trim();
+  var dateFilter=(document.getElementById('dateFilter')&&document.getElementById('dateFilter').value)||'any';
+  var radiusKm = typeof getNearRadiusKm==='function' ? getNearRadiusKm() : Infinity;
+  var locationPos = typeof getGeoFilterPos==='function' ? getGeoFilterPos() : null;
+  var scopeLabel = locFilter
+    ? locFilter.split(',')[0].trim()
+    : (window._nearMeOnly && window.getUserCityLabel ? window.getUserCityLabel() : '');
+  var openTotal = (allTasks || []).length;
+  var countTxt = openTotal + ' open task' + (openTotal !== 1 ? 's' : '');
+  if (filtered.length !== openTotal && (activeMode !== 'all' || activeCat !== 'all' || search || locFilter || isFinite(radiusKm) || window._nearMeOnly || dateFilter !== 'any' || budgetPreset)) {
+    countTxt = filtered.length + ' of ' + openTotal + ' open task' + (openTotal !== 1 ? 's' : '');
+  }
+  var el = document.getElementById('resultsCount');
+  if (el) {
+    if (locationPos && isFinite(radiusKm)) {
+      var radiusLbl = typeof formatBrowseRadiusLabel === 'function'
+        ? formatBrowseRadiusLabel(radiusKm)
+        : ('within ' + radiusKm + ' km');
+      el.textContent = countTxt + (scopeLabel ? ' near ' + scopeLabel : '') + ' · ' + radiusLbl;
+    } else if (scopeLabel) {
+      el.textContent = countTxt + ' near ' + scopeLabel;
+    } else {
+      el.textContent = countTxt + ' · Canada-wide';
+    }
+  }
+}
+
+function renderCards(){
+  if(window._qgAgeTier==='loading'){
+    var loadingArea=document.getElementById('cardsArea');
+    if(loadingArea)loadingArea.innerHTML = typeof QG_listSkeletonHtml === 'function'
+      ? QG_listSkeletonHtml({ rows: 3, label: 'Checking gig eligibility…' })
+      : '<div class="loading-state"><div class="loading-txt">Checking gig eligibility…</div></div>';
+    if (window.QGBrowseViews && typeof QGBrowseViews.renderBrowseView === 'function') {
+      QGBrowseViews.renderBrowseView([]);
+    }
+    return;
+  }
+  var filtered = getFilteredBrowseTasks();
+  window._browseFiltered = filtered;
+  persistBrowseState();
+  renderActiveFilters();
+  updateBrowseResultsCount(filtered);
+  if (window.QGBrowseViews && typeof QGBrowseViews.renderBrowseView === 'function') {
+    if (QGBrowseViews.renderBrowseView(filtered)) return;
+  }
+  var locFilter=(document.getElementById('locationFilter')&&document.getElementById('locationFilter').value||'').trim();
+  var dateFilter=(document.getElementById('dateFilter')&&document.getElementById('dateFilter').value)||'any';
+  var radiusKm = typeof getNearRadiusKm==='function' ? getNearRadiusKm() : Infinity;
+  var locationPos = typeof getGeoFilterPos==='function' ? getGeoFilterPos() : null;
+  var area=document.getElementById('cardsArea');
+  if (!filtered.length && (locationPos || isFinite(radiusKm) || window._nearMeOnly || locFilter) && allTasks.length) {
+    var radiusLbl = isFinite(radiusKm)
+      ? (typeof formatBrowseRadiusLabel === 'function' ? formatBrowseRadiusLabel(radiusKm) : ('within ' + radiusKm + ' km'))
+      : 'anywhere in Canada';
+    var nearLbl = locFilter ? locFilter.split(',')[0].trim() : (window.getUserCityLabel ? window.getUserCityLabel() : 'you');
+    area.innerHTML = typeof QG_emptyStateHtml === 'function'
+      ? QG_emptyStateHtml({
+          icon: 'mapPin',
+          title: 'No tasks ' + radiusLbl,
+          sub: 'Searched ' + allTasks.length + ' open task' + (allTasks.length !== 1 ? 's' : '') +
+            ' near ' + nearLbl + '. Remote / online tasks are always included when location is set. Try a wider radius or clear filters.',
+          action: { label: 'Clear filters', icon: 'refresh', onclick: "if(typeof clearFilters==='function')clearFilters();else location.reload()" }
+        })
+      : '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('mapPin',{size:24}):'')+'</div><p class="empty-txt">No tasks '+radiusLbl+' near '+nearLbl+' — searched '+allTasks.length+' open tasks.</p><button type="button" class="empty-btn" onclick="if(typeof clearFilters===\'function\')clearFilters();else location.reload()">Clear filters</button></div>';
+    return;
+  }
+  if(!filtered.length && activeMode==='saved'){
+    area.innerHTML = typeof QG_emptyStateHtml === 'function'
+      ? QG_emptyStateHtml({
+          icon: 'star',
+          title: 'No saved tasks yet',
+          sub: 'Tap Save on any task to bookmark it here.',
+          action: { label: 'Browse open tasks', href: 'browsetask.html', icon: 'search' }
+        })
+      : '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('star',{size:24}):'')+'</div><p class="empty-txt">No saved tasks yet — tap Save on any task to bookmark it here.</p><button type="button" class="empty-btn" onclick="location.href=\'browsetask.html\'">Browse open tasks</button></div>';
+    return;
+  }
+  if (!filtered.length && (locFilter || dateFilter !== 'any') && allTasks.length) {
+    area.innerHTML = typeof QG_emptyStateHtml === 'function'
+      ? QG_emptyStateHtml({
+          icon: 'mapPin',
+          title: 'No tasks match',
+          sub: 'Clear location, date, or search filters to see more gigs.',
+          action: { label: 'Clear filters', icon: 'refresh', onclick: "if(typeof clearFilters==='function')clearFilters();else location.reload()" }
+        })
+      : '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('mapPin',{size:24}):'')+'</div><p class="empty-txt">No tasks match your filters — try clearing location, date, or search</p><button type="button" class="empty-btn" onclick="if(typeof clearFilters===\'function\')clearFilters();else location.reload()">Clear filters</button></div>';
+    return;
+  }
+  if(!filtered.length){
+    var emptyLead = allTasks.length===0 ? 'No open tasks yet' : 'No tasks match this filter';
+    var emptySub = allTasks.length===0
+      ? 'Be the first to post a gig in your area.'
+      : 'Try another category or reset browse.';
+    area.innerHTML = (typeof QG_emptyStateHtml === 'function'
+      ? QG_emptyStateHtml({
+          icon: 'search',
+          title: emptyLead,
+          sub: emptySub,
+          action: allTasks.length===0
+            ? { label: 'Post a task', href: 'posttask.html', icon: 'plus' }
+            : { label: 'Reset browse', icon: 'refresh', onclick: 'location.reload()' }
+        })
+      : '<div class="empty-state"><div class="empty-icon">'+(typeof qgIcon==='function'?qgIcon('search',{size:24}):'')+'</div><p class="empty-txt">'+emptyLead+'</p></div>') +
+      (allTasks.length===0?'<div id="browseActivityTicker" class="qg-activity-ticker-host"></div>':'');
+    if (allTasks.length===0 && window.QGActivityTicker && typeof QGActivityTicker.mount === 'function') {
+      QGActivityTicker.mount('#browseActivityTicker');
+    }
+    return;
+  }
+  area.innerHTML=filtered.map(function(t){
+    var loc = typeof formatPublicTaskLocation === 'function'
+      ? formatPublicTaskLocation(t)
+      : formatLocationDisplay(t.location);
+    var shareBtn = typeof shareButtonHtml === 'function' ? shareButtonHtml('task', t.id, t.title) : '';
+    var saveBtn = typeof bookmarkButtonHtml === 'function' ? bookmarkButtonHtml(t.id) : '';
+    var hasPhoto = !!(t.photoUrls && t.photoUrls[0]);
+    var mediaHtml = renderCardMedia(t);
+    var cardClass = 'task-card' + (hasPhoto ? ' has-photo' : ' no-photo');
+    var postedLbl = postedLabelForTask(t);
+    var distLbl = (t._distanceKm != null && typeof formatDistanceKm === 'function')
+      ? formatDistanceKm(t._distanceKm)
+      : '';
+    var metaBits = [loc, distLbl, postedLbl].filter(Boolean);
+    // eBay-style: large media left, details + actions right (same height with/without photo)
+    return '<div class="'+cardClass+'" data-task-id="'+esc(String(t.id))+'">'+
+      mediaHtml +
+      '<div class="tc-body">'+
+        '<div class="tc-top">'+
+          '<div class="tc-left"><div class="tc-meta">'+
+            '<p class="tc-cat">'+esc(t.catLabel || '')+'</p>'+
+            '<p class="tc-title">'+esc(t.title)+'</p>'+
+          '</div></div>'+getBadge(t.mode,t)+
+        '</div>'+
+        '<div class="tc-bottom">'+
+          '<div style="min-width:0;flex:1">'+
+            '<div class="tc-price">'+esc(t.priceLabel)+(typeof qgNewPillHtml==='function'?qgNewPillHtml(t.createdAt||t.created_at):'')+'</div>'+
+            '<div class="tc-info">'+(typeof qgIcon==='function'?'<span class="meta-pin">'+qgIcon('mapPin',{size:12})+'</span>':'')+esc(metaBits.join(' · '))+'</div>'+
+            '<div class="qg-action-row">'+saveBtn+shareBtn+'</div>'+
+          '</div>'+
+          '<button type="button" class="apply-btn '+getBtnClass(t.mode)+'" onclick="openModal(\''+esc(String(t.id))+'\',event)">'+getBtnLabel(t.mode)+'</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+  if (typeof bindShareTriggers === 'function') {
+    bindShareTriggers(area, function(id){ return allTasks.find(function(t){ return String(t.id)===String(id); }); });
+  }
+  if (typeof bindSavedTriggers === 'function') {
+    bindSavedTriggers(area, function(){ if (activeMode==='saved') renderCards(); });
+  }
+  if (typeof bindReportTriggers === 'function') bindReportTriggers(area);
+  if (typeof bindQgPhotoLightbox === 'function') bindQgPhotoLightbox(document.body);
+  if (typeof qgStaggerCards === 'function') qgStaggerCards(area);
+  if (window.QGBrowseViews && typeof QGBrowseViews.onAfterListRender === 'function') {
+    QGBrowseViews.onAfterListRender(filtered);
+  }
+}
+
+window.setMode=function(el,mode){document.querySelectorAll('.mpill').forEach(function(p){p.className='mpill';});activeMode=mode;el.className='mpill active-'+mode;if(typeof haptic==='function')haptic(10);renderCards();};
+window.setCat=function(el,cat){document.querySelectorAll('.cpill').forEach(function(p){p.classList.remove('cat-active');});el.classList.add('cat-active');activeCat=cat;if(typeof haptic==='function')haptic(10);renderCards();};
+window.applyFilters=renderCards;
+window.renderCards=renderCards;
+window.clearFilters=function(){
+  activeMode='all'; activeCat='all'; budgetMinVal=20; budgetMaxVal=300; budgetPreset='';
+  window._nearMeOnly=false;
+  document.querySelectorAll('.mpill').forEach(function(p,i){ p.className=i===0?'mpill active-all':'mpill'; });
+  document.querySelectorAll('.cpill').forEach(function(p){ p.classList.remove('cat-active'); });
+  var nearBtn=document.getElementById('nearMeBtn');
+  if(nearBtn){ nearBtn.classList.remove('active'); nearBtn.setAttribute('aria-pressed','false'); }
+  if(document.getElementById('dateFilter')) document.getElementById('dateFilter').value='any';
+  if(document.getElementById('sortSel')) document.getElementById('sortSel').value='nearest';
+  ['qfNearbyBtn','qfTodayBtn','qfPayBtn'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el){ el.classList.remove('is-selected'); el.setAttribute('aria-pressed','false'); }
+  });
+  if(document.getElementById('locationFilter')) document.getElementById('locationFilter').value='';
+  if(typeof clearGeoFilterPos==='function') clearGeoFilterPos();
+  if(document.getElementById('radiusFilter'))document.getElementById('radiusFilter').value='any';
+  if(typeof setNearRadiusKm==='function')setNearRadiusKm('any');
+  if(document.getElementById('searchInput')) document.getElementById('searchInput').value='';
+  if(document.getElementById('sortSel')) document.getElementById('sortSel').value='nearest';
+  syncBudgetUI(); renderCards();
+};
+
+(function initBrowseFiltersPanel(){
+  var overlay = document.getElementById('browseFiltersOverlay');
+  var panel = document.getElementById('browseFiltersPanel');
+  var openBtn = document.getElementById('browseFiltersBtn');
+  var closeBtn = document.getElementById('browseFiltersClose');
+  var applyBtn = document.getElementById('browseFiltersApply');
+  var clearBtn = document.getElementById('browseFiltersClear');
+  if (!overlay || !openBtn) return;
+
+  var icoHost = openBtn.querySelector('.qg-browse-filters-ico');
+  if (icoHost && typeof qgIcon === 'function' && !icoHost.querySelector('.qg-ico')) {
+    icoHost.innerHTML = qgIcon('sliders', { size: 18 });
+  }
+
+  function isOpen() {
+    return !overlay.hasAttribute('hidden');
+  }
+
+  function openPanel() {
+    overlay.removeAttribute('hidden');
+    openBtn.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+    if (panel) {
+      try { panel.focus(); } catch (e) {}
+    }
+  }
+
+  function closePanel() {
+    overlay.setAttribute('hidden', '');
+    openBtn.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  }
+
+  openBtn.addEventListener('click', function () {
+    if (isOpen()) closePanel();
+    else openPanel();
+  });
+  if (closeBtn) closeBtn.addEventListener('click', closePanel);
+  if (applyBtn) applyBtn.addEventListener('click', function () {
+    if (typeof renderCards === 'function') renderCards();
+    closePanel();
+  });
+  if (clearBtn) clearBtn.addEventListener('click', function () {
+    if (typeof clearFilters === 'function') clearFilters();
+  });
+  overlay.addEventListener('click', function (e) {
+    if (e.target === overlay) closePanel();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && isOpen()) closePanel();
+  });
+  window.openBrowseFilters = openPanel;
+  window.closeBrowseFilters = closePanel;
+})();
+
+(function initBudgetControls(){
+  var a=document.getElementById('budgetMin'), b=document.getElementById('budgetMax');
+  function onRange(){
+    budgetMinVal=Math.min(Number(a.value), Number(b.value));
+    budgetMaxVal=Math.max(Number(a.value), Number(b.value));
+    budgetPreset='';
+    syncBudgetUI(); renderCards();
+  }
+  if(a&&b){ a.addEventListener('input', onRange); b.addEventListener('input', onRange); }
+  document.querySelectorAll('.qg-bchip').forEach(function(chip){
+    chip.onclick=function(){
+      budgetPreset=chip.getAttribute('data-budget');
+      if(budgetPreset==='under50'){ budgetMinVal=20; budgetMaxVal=49; }
+      else if(budgetPreset==='50to100'){ budgetMinVal=50; budgetMaxVal=100; }
+      else if(budgetPreset==='100plus'){ budgetMinVal=100; budgetMaxVal=300; }
+      if(typeof haptic==='function') haptic(10);
+      syncBudgetUI(); renderCards();
+    };
+  });
+  // Restore persisted filters
+  var saved = typeof qgLoadBrowseFilters==='function' ? qgLoadBrowseFilters() : null;
+  if(saved){
+    if(saved.mode) activeMode=saved.mode;
+    if(saved.cat) activeCat=saved.cat;
+    if(saved.sort&&document.getElementById('sortSel')) document.getElementById('sortSel').value=saved.sort;
+    if(saved.date&&document.getElementById('dateFilter')) document.getElementById('dateFilter').value=saved.date;
+    if(saved.loc&&document.getElementById('locationFilter')) document.getElementById('locationFilter').value=saved.loc;
+    if(saved.radius&&document.getElementById('radiusFilter')){
+      document.getElementById('radiusFilter').value=saved.radius;
+      if(typeof setNearRadiusKm==='function')setNearRadiusKm(saved.radius);
+    }
+    if(saved.search&&document.getElementById('searchInput')) document.getElementById('searchInput').value=saved.search;
+    if(saved.budgetMin!=null) budgetMinVal=saved.budgetMin;
+    if(saved.budgetMax!=null) budgetMaxVal=saved.budgetMax;
+    if(saved.budgetPreset) budgetPreset=saved.budgetPreset;
+    document.querySelectorAll('.mpill').forEach(function(p){
+      p.className='mpill'+(p.getAttribute('onclick')&&p.getAttribute('onclick').indexOf("'"+activeMode+"'")>=0?' active-'+activeMode:'');
+    });
+    if(activeMode==='all'){ var first=document.querySelector('.mpill'); if(first) first.className='mpill active-all'; }
+  }
+  syncLocationFilterDefault();
+  var radiusSelect=document.getElementById('radiusFilter');
+  if(radiusSelect&&!(saved&&saved.radius)&&typeof getNearRadiusKm==='function'){
+    var storedRadius=getNearRadiusKm();
+    radiusSelect.value=isFinite(storedRadius)?String(storedRadius):'any';
+  }
+  if(typeof getGeoFilterPos==='function'&&!getGeoFilterPos()){
+    var initialLocation=document.getElementById('locationFilter');
+    if(initialLocation&&initialLocation.value)setTimeout(function(){ applyBrowseLocation(); },0);
+  }
+  syncBudgetUI();
+})();
+
+var APPLY_MSG_MIN = 20;
+var _applySubmitInFlight = false;
+var _applyModalEscBound = false;
+
+function applyFeeOptsForActiveTask() {
+  var isRecurring = !!(activeTask && (activeTask.isRecurring || activeTask.mode === 'recurring'));
+  var isSubscriber = typeof currentUserIsSubscriber === 'function'
+    ? currentUserIsSubscriber()
+    : !!window._qgIsSubscriber;
+  return { isRecurring: isRecurring, isSubscriber: isSubscriber };
+}
+
+function updateOfferFeeLine() {
+  var el = document.getElementById('offerFeeLine');
+  if (!el) return;
+  var priceNum = parseFloat((document.getElementById('offerPrice') || {}).value);
+  if (!priceNum || isNaN(priceNum) || priceNum < 20) {
+    el.classList.add('is-muted');
+    el.textContent = 'Enter an offer of at least $20 to see your payout.';
+    return;
+  }
+  var opts = applyFeeOptsForActiveTask();
+  if (typeof feeBreakdown !== 'function') {
+    el.classList.add('is-muted');
+    el.textContent = 'Fee breakdown loading…';
+    return;
+  }
+  var b = feeBreakdown(priceNum, opts);
+  el.classList.remove('is-muted');
+  // Explicit fee + net take-home (rate from QG_CONFIG.taskerFeePercent).
+  el.innerHTML = "You'll receive <span class=\"offer-fee-gross\">$" + b.total.toFixed(2) +
+    "</span> minus the " + b.ratePct + "% SwiftGigs fee (<span class=\"offer-fee-cut\">$" +
+    b.fee.toFixed(2) + "</span>) = <strong class=\"offer-fee-net\">$" + b.payout.toFixed(2) + "</strong>.";
+}
+
+function refreshApplySubmitEnabled() {
+  var btn = document.getElementById('applySubmitBtn');
+  if (!btn) return;
+  var priceNum = parseFloat((document.getElementById('offerPrice') || {}).value);
+  var msg = String((document.getElementById('offerMsg') || {}).value || '').trim();
+  var fraudErr = document.getElementById('offerFraudError');
+  var hint = document.getElementById('offerMsgHint');
+  var priceOk = !isNaN(priceNum) && priceNum >= 20;
+  var msgOk = msg.length >= APPLY_MSG_MIN;
+  var blocked = false;
+  var blockMsg = '';
+
+  if (msg) {
+    if (typeof analyzeOffPlatformContact === 'function') {
+      var fraud = analyzeOffPlatformContact(msg);
+      if (fraud && fraud.blocked) {
+        blocked = true;
+        blockMsg = fraud.message || (typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : 'Remove contact details.');
+      }
+    } else if (typeof containsOffPlatformContact === 'function' && containsOffPlatformContact(msg)) {
+      blocked = true;
+      blockMsg = typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : 'Remove contact details.';
+    }
+    if (!blocked && typeof moderateText === 'function') {
+      var mod = moderateText(msg);
+      if (mod && mod.blocked) {
+        blocked = true;
+        blockMsg = mod.message || (typeof QG_CONTENT_MOD_MESSAGE === 'string' ? QG_CONTENT_MOD_MESSAGE : 'Message not allowed.');
+      }
+    }
+  }
+
+  if (fraudErr) {
+    if (blocked) {
+      fraudErr.textContent = blockMsg;
+      fraudErr.style.display = 'block';
+    } else {
+      fraudErr.style.display = 'none';
+    }
+  }
+  if (hint) {
+    if (!msg) hint.textContent = 'At least 20 characters';
+    else if (!msgOk) hint.textContent = (APPLY_MSG_MIN - msg.length) + ' more characters needed';
+    else if (blocked) hint.textContent = 'Fix the message above to continue';
+    else hint.textContent = 'Looks good — ready to send';
+  }
+
+  // Only hard-disable while a submit is in flight. Invalid drafts stay clickable so
+  // the handler can show a clear toast (HTML disabled swallows clicks with no feedback).
+  var ready = priceOk && msgOk && !blocked;
+  btn._qgApplyReady = ready;
+  btn.setAttribute('aria-disabled', ready && !_applySubmitInFlight ? 'false' : 'true');
+  btn.classList.toggle('is-apply-blocked', !ready);
+  if (_applySubmitInFlight) {
+    btn.disabled = true;
+  } else {
+    btn.disabled = false;
+    btn.removeAttribute('disabled');
+  }
+}
+
+function setApplyModalAlreadyApplied(already) {
+  var form = document.getElementById('applyFormFields');
+  var footer = document.getElementById('applyModalFooter');
+  var state = document.getElementById('applyAlreadyState');
+  if (form) form.classList.toggle('is-hidden', !!already);
+  if (footer) footer.classList.toggle('is-hidden', !!already);
+  if (state) state.classList.toggle('is-visible', !!already);
+}
+
+function hasTypedApplyDraft() {
+  var price = String((document.getElementById('offerPrice') || {}).value || '').trim();
+  var msg = String((document.getElementById('offerMsg') || {}).value || '').trim();
+  var avail = String((document.getElementById('offerAvail') || {}).value || '').trim();
+  var defaultPrice = activeTask && activeTask.price != null ? String(activeTask.price) : '';
+  return !!(msg || avail || (price && price !== defaultPrice));
+}
+
+function wireApplyModalInputs() {
+  var price = document.getElementById('offerPrice');
+  var msg = document.getElementById('offerMsg');
+  var avail = document.getElementById('offerAvail');
+  var sendBtn = document.getElementById('applySubmitBtn');
+  function onChange() {
+    updateOfferFeeLine();
+    refreshApplySubmitEnabled();
+  }
+  if (price && !price._qgApplyBound) {
+    price._qgApplyBound = true;
+    price.addEventListener('input', onChange);
+    price.addEventListener('change', onChange);
+  }
+  if (msg && !msg._qgApplyBound) {
+    msg._qgApplyBound = true;
+    msg.addEventListener('input', onChange);
+  }
+  if (avail && !avail._qgApplyBound) {
+    avail._qgApplyBound = true;
+    avail.addEventListener('input', onChange);
+  }
+  // Prefer addEventListener ? bind pointerup + click so iOS/Android taps always fire.
+  // (Some WebViews delay/suppress click after keyboard blur; pointerup is reliable.)
+  if (sendBtn && !sendBtn._qgApplyClickBound) {
+    sendBtn._qgApplyClickBound = true;
+    var lastTapTs = 0;
+    function onSendTap(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      var now = Date.now();
+      if (now - lastTapTs < 500) return; // debounce ghost click after touch
+      lastTapTs = now;
+
+      // Close keyboard so toasts/footer stay in the visual viewport
+      try {
+        var ae = document.activeElement;
+        if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) ae.blur();
+      } catch (blurErr) {}
+
+      if (typeof qgDebugLog === 'function') qgDebugLog('[QuickGigs apply] Send tap fired', {
+        type: e && e.type,
+        ready: !!sendBtn._qgApplyReady,
+        inFlight: !!_applySubmitInFlight,
+        taskId: activeTask && activeTask.id,
+        hasBrowseFn: typeof window.submitBrowseApplication === 'function',
+        hasDbFn: typeof getDbSubmitApplication() === 'function'
+      });
+
+      // Immediate loading affordance ? even before validation awaits
+      if (!_applySubmitInFlight && sendBtn) {
+        sendBtn.textContent = 'Sending…';
+      }
+
+      if (typeof window.submitBrowseApplication === 'function') {
+        window.submitBrowseApplication();
+      } else {
+        applyNotify('Apply handler missing — hard-refresh the page and try again.', '#ef4444');
+        if (sendBtn) sendBtn.textContent = 'Apply with an offer';
+      }
+    }
+    sendBtn.addEventListener('click', onSendTap);
+    sendBtn.addEventListener('pointerup', function (e) {
+      if (e.pointerType === 'mouse') return; // click handles mouse
+      onSendTap(e);
+    });
+    // iOS Safari fallback when Pointer Events are flaky
+    sendBtn.addEventListener('touchend', function (e) {
+      if (window.PointerEvent) return;
+      onSendTap(e);
+    }, { passive: false });
+  }
+  if (!_applyModalEscBound) {
+    _applyModalEscBound = true;
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      var overlay = document.getElementById('modalOverlay');
+      if (overlay && overlay.classList.contains('open')) {
+        e.preventDefault();
+        closeModal();
+      }
+    });
+  }
+}
+
+window.openModal=async function(id,e){
+  if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+  if (typeof getMode === 'function' && getMode() === 'poster') {
+    var taskerAllowed = typeof QG_canUseRole === 'function' ? QG_canUseRole('tasker') : null;
+    if (taskerAllowed === false) {
+      if (typeof QG_offerRoleOptIn === 'function') QG_offerRoleOptIn('tasker');
+      return;
+    }
+    if (!confirm('You are in Poster mode. Switch to Tasker mode to apply for tasks?')) return;
+    if (typeof QG_setActiveRoleMode === 'function') {
+      var switched = await QG_setActiveRoleMode('tasker');
+      if (!switched.success) return;
+    } else {
+      return;
+    }
+  }
+  activeTask=allTasks.find(function(t){return String(t.id)===String(id);});
+  if(!activeTask){
+    // May be filtered out after apply ? try unfiltered cache by id for already-applied message
+    var cached = typeof readTasksCache === 'function' ? readTasksCache(true) : null;
+    if (cached && cached.length) {
+      var raw = cached.find(function(r){
+        var tid = r.id || r.TASK_ID || r.task_id;
+        return String(tid) === String(id);
+      });
+      if (raw) activeTask = normaliseTask(raw);
+    }
+  }
+  if(!activeTask)return;
+  if (typeof qgTrackTaskView === 'function') qgTrackTaskView(activeTask);
+  if (typeof haptic === 'function') haptic(10);
+  if(isOwnPostedTask(activeTask)){
+    showToast('This is your own posting. Switch to Poster mode → My Tasks to manage applicants.', '#f59e0b');
+    return;
+  }
+  if (typeof QG_loadVerification === 'function') {
+    var verification = await QG_loadVerification();
+    if (!verification || verification.tasker_verified !== true) {
+      if (typeof QG_openVerificationPrompt === 'function') {
+        QG_openVerificationPrompt('tasker');
+      } else {
+        window.location.href = 'profile.html?verification=tasker';
+      }
+      return;
+    }
+  }
+
+  var userId = getCurrentUserId();
+  if (userId && !appliedTaskIds[String(activeTask.id)]) {
+    await loadMyAppliedTaskIds(userId);
+  }
+  var alreadyApplied = !!appliedTaskIds[String(activeTask.id)];
+
+  if (!alreadyApplied && typeof ensureTaskerProfilePhoto === 'function') {
+    var photoCheck = await ensureTaskerProfilePhoto();
+    if (!photoCheck.ok) {
+      if (confirm('Taskers need a profile photo before applying. Add your photo now?')) {
+        window.location.href = 'profile.html?setup=photo&required=1&return=browsetask.html';
+      }
+      return;
+    }
+  }
+
+  wireApplyModalInputs();
+  _applySubmitInFlight = false;
+  document.getElementById('modalTitle').textContent = activeTask.title;
+  var detail = document.getElementById('taskDetailPanel');
+  var distLbl = (activeTask._distanceKm != null && typeof formatDistanceKm === 'function')
+    ? formatDistanceKm(activeTask._distanceKm)
+    : '';
+  var metaBits = [activeTask.catLabel, activeTask.location];
+  if (distLbl) metaBits.push(distLbl);
+  if (activeTask.when) metaBits.push(activeTask.when);
+  var negoTag = activeTask.budgetNegotiable
+    ? '<span class="tc-badge badge-negotiable">Negotiable</span>'
+    : '';
+  var safePhotos = (activeTask.photoUrls || []).map(function(url){
+    return typeof safeMediaUrl === 'function' ? safeMediaUrl(url)
+      : (typeof safeUrl === 'function' ? safeUrl(url) : '');
+  }).filter(Boolean).slice(0, 3);
+  var photosHtml = safePhotos.length
+    ? '<div class="qg-td-photos">' + safePhotos.map(function(url, i){
+        return '<img class="qg-modal-photo-tap" src="'+esc(url)+'" alt="Task photo" data-photos="'+esc(JSON.stringify(safePhotos))+'" data-photo-index="'+i+'" data-photo-caption="'+esc(activeTask.title)+'">';
+      }).join('') + '</div>'
+    : '';
+  var noteHtml = activeTask.requiresPhotos
+    ? '<div class="qg-td-note">Before &amp; after photo updates requested for this task</div>'
+    : '';
+  var posterInitial = String(activeTask.posterName || 'P').trim().charAt(0).toUpperCase() || 'P';
+  if (detail) {
+    detail.hidden = false;
+    detail.innerHTML =
+      '<div class="qg-td-meta">' + esc(metaBits.join(' · ')) + '</div>' +
+      '<div class="qg-td-price">$' + esc(String(activeTask.price)) + (activeTask.mode === 'recurring' ? '/hr' : '') + ' CAD ' + negoTag + '</div>' +
+      photosHtml +
+      (activeTask.desc ? '<div class="qg-td-desc">' + esc(activeTask.desc) + '</div>' : '') +
+      noteHtml +
+      '<div class="qg-poster-card" id="qgPosterCard">' +
+        '<div class="qg-poster-avatar" id="qgPosterAvatar">' + esc(posterInitial) + '</div>' +
+        '<div class="qg-poster-info">' +
+          '<div class="qg-poster-name">' + esc(activeTask.posterName || 'SwiftGigs member') +
+            '<span class="qg-poster-verified" id="qgPosterVerified" hidden>' + (typeof qgIcon==='function'?qgIcon('checkCircle',{size:14}):'✓') + '</span>' +
+          '</div>' +
+          '<div class="qg-poster-meta" id="qgPosterMeta">Poster</div>' +
+          '<div class="qg-poster-pay" id="qgPosterPay" hidden>Payment verified</div>' +
+        '</div>' +
+      '</div>';
+  }
+  var modalSub = document.getElementById('modalSub');
+  if (modalSub) { modalSub.hidden = true; modalSub.textContent = ''; }
+
+  if (activeTask.posterId) {
+    (async function loadPosterCard(posterId) {
+      try {
+        var user = typeof getUserByFirebaseUid === 'function' ? await getUserByFirebaseUid(posterId) : null;
+        var verifiedEl = document.getElementById('qgPosterVerified');
+        var payEl = document.getElementById('qgPosterPay');
+        var metaEl = document.getElementById('qgPosterMeta');
+        var avEl = document.getElementById('qgPosterAvatar');
+        if (user && (user.poster_verified === true || user.POSTER_VERIFIED === true)) {
+          if (verifiedEl) verifiedEl.hidden = false;
+          if (payEl) payEl.hidden = false;
+        }
+        var avatarUrl = user && (user.avatar_url || user.AVATAR_URL);
+        if (avEl && avatarUrl && typeof safeMediaUrl === 'function') {
+          var safeAv = safeMediaUrl(avatarUrl);
+          if (safeAv) avEl.innerHTML = '<img src="'+esc(safeAv)+'" alt="">';
+        }
+        var rep = typeof getReviewsForUser === 'function' ? await getReviewsForUser(posterId) : null;
+        var ratings = Array.isArray(rep) ? rep.map(function(r){ return Number(r.rating)||0; }).filter(Boolean) : [];
+        var avg = ratings.length ? (ratings.reduce(function(a,b){return a+b;},0) / ratings.length) : null;
+        if (metaEl) {
+          var parts = [];
+          if (avg != null) {
+            var star = typeof qgIcon === 'function' ? qgIcon('star', { size: 12, className: 'qg-trust-ico' }) : '';
+            parts.push('<span class="qg-poster-rating">' + star + avg.toFixed(1) + '</span>');
+          }
+          if (ratings.length) parts.push(ratings.length + ' review' + (ratings.length === 1 ? '' : 's'));
+          metaEl.innerHTML = parts.length ? parts.join(' · ') : 'Poster on SwiftGigs';
+        }
+      } catch (_e) {}
+    })(activeTask.posterId);
+  }
+
+  setApplyModalAlreadyApplied(alreadyApplied);
+  if (alreadyApplied) {
+    document.getElementById('modalOverlay').classList.add('open');
+    document.body.style.overflow='hidden';
+    document.body.classList.add('qg-apply-open');
+    return;
+  }
+
+  var offerInput = document.getElementById('offerPrice');
+  offerInput.value=activeTask.price;
+  offerInput.readOnly = !activeTask.budgetNegotiable;
+  offerInput.style.opacity = activeTask.budgetNegotiable ? '1' : '0.75';
+  var negoHint = document.getElementById('modalNegoHint');
+  if (negoHint) {
+    if (activeTask.budgetNegotiable) {
+      negoHint.style.display = 'block';
+      negoHint.textContent = 'Negotiate your offer here — use chat later for schedule and details, not price.';
+    } else {
+      negoHint.style.display = 'block';
+      negoHint.textContent = 'Fixed budget — your offer matches the poster\'s price. Chat is for schedule and details.';
+    }
+  }
+  var teenBanner = document.getElementById('teenMeetupBanner');
+  if (teenBanner) {
+    var meetupHtml = (typeof QGTeenSafety !== 'undefined' && typeof QGTeenSafety.meetupBannerHtml === 'function')
+      ? QGTeenSafety.meetupBannerHtml(activeTask)
+      : '';
+    if (meetupHtml) {
+      teenBanner.hidden = false;
+      teenBanner.innerHTML = meetupHtml;
+    } else {
+      teenBanner.hidden = true;
+      teenBanner.innerHTML = '';
+    }
+  }
+  document.getElementById('offerMsg').value='';
+  document.getElementById('offerAvail').value='';
+  document.getElementById('offerFraudError').style.display='none';
+  var photoWrap = document.getElementById('modalPhotoWrap');
+  if (photoWrap) { photoWrap.style.display = 'none'; photoWrap.innerHTML = ''; }
+  updateOfferFeeLine();
+  refreshApplySubmitEnabled();
+  clearApplyInlineAlert();
+  var applyBtn = document.getElementById('applySubmitBtn');
+  if (applyBtn && !applyBtn.classList.contains('is-apply-blocked')) {
+    applyBtn.textContent = 'Apply with an offer';
+  } else if (applyBtn) {
+    applyBtn.textContent = applyBtn.textContent.indexOf('Verify') >= 0 ? applyBtn.textContent : 'Apply with an offer';
+  }
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  document.body.classList.add('qg-apply-open');
+  setTimeout(function(){
+    var scroll = document.querySelector('#modalOverlay .modal-scroll');
+    if (scroll) scroll.scrollTop = 0;
+  }, 50);
+};
+window.closeModal=function(){
+  var overlay = document.getElementById('modalOverlay');
+  if (!overlay || !overlay.classList.contains('open')) return;
+  var already = document.getElementById('applyAlreadyState');
+  var showingForm = !(already && already.classList.contains('is-visible'));
+  if (showingForm && hasTypedApplyDraft()) {
+    if (!confirm('Discard your application?')) return;
+  }
+  overlay.classList.remove('open');
+  document.body.style.overflow='';
+  document.body.classList.remove('qg-apply-open');
+  clearApplyInlineAlert();
+  _applySubmitInFlight = false;
+};
+window.handleOverlayClick=function(e){if(e.target===document.getElementById('modalOverlay'))closeModal();};
+
+window.submitBrowseApplication=async function(){
+  if (typeof qgDebugLog === 'function') qgDebugLog('[QuickGigs apply] submitBrowseApplication entered');
+  if (_applySubmitInFlight) {
+    applyNotify('Still sending your application…', '#f59e0b');
+    return;
+  }
+  var btn = document.getElementById('applySubmitBtn');
+  var unlockApplyBtn = function () {
+    _applySubmitInFlight = false;
+    if (btn) {
+      btn.textContent = 'Apply with an offer';
+      btn.disabled = false;
+      btn.removeAttribute('disabled');
+    }
+    refreshApplySubmitEnabled();
+  };
+
+  // Immediate loading state on tap (before validation / network)
+  _applySubmitInFlight = true;
+  if (btn) {
+    btn.textContent = 'Sending…';
+    btn.disabled = true;
+  }
+  clearApplyInlineAlert();
+
+  try {
+  if (typeof getMode === 'function' && getMode() === 'poster') {
+      if (!confirm('You are in Poster mode. Switch to Tasker mode to apply for tasks?')) {
+        applyNotify('Switch to Tasker mode to send an application.', '#f59e0b');
+        unlockApplyBtn();
+        return;
+      }
+    if (typeof setMode === 'function') setMode('tasker');
+    else if (typeof setSessionMode === 'function') setSessionMode('worker');
+    if (typeof applyRoleTheme === 'function') applyRoleTheme();
+    else localStorage.setItem('qg-mode', 'tasker');
+  }
+    if (!activeTask || !activeTask.id) {
+      applyNotify('Pick a task first, then send your application.', '#f59e0b');
+      unlockApplyBtn();
+      return;
+    }
+    if (appliedTaskIds[String(activeTask.id)]) {
+      setApplyModalAlreadyApplied(true);
+      applyNotify("You've already applied to this task.", '#f59e0b');
+      unlockApplyBtn();
+      return;
+    }
+
+    // Payout setup is required before applying, so an accepted application can
+    // always be paid out — see AGENTS.md blocker #5.
+    if (getCurrentUserId() && typeof getUserByFirebaseUid === 'function') {
+      try {
+        var payoutUser = await getUserByFirebaseUid(getCurrentUserId());
+        var payoutsReady = !!(payoutUser && (
+          payoutUser.stripe_payouts_enabled === true ||
+          payoutUser.stripe_payouts_enabled === 'true' ||
+          payoutUser.stripe_payouts_enabled === 1
+        ));
+        if (!payoutsReady) {
+          var payoutInline = document.getElementById('applyInlineAlert');
+          var payoutOverlay = document.getElementById('modalOverlay');
+          if (payoutInline && payoutOverlay && payoutOverlay.classList.contains('open')) {
+            payoutInline.innerHTML = 'Set up your payout details before applying, so you can get paid when a task completes. ' +
+              '<a href="profile.html#payouts" style="color:inherit;text-decoration:underline;font-weight:600">Set up payouts</a>';
+            payoutInline.className = 'apply-inline-alert is-visible is-warn';
+            try { payoutInline.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (eScroll) {}
+          } else {
+            applyNotify('Set up your payout details in Profile before applying.', '#f59e0b');
+          }
+          unlockApplyBtn();
+          return;
+        }
+      } catch (ePayout) {
+        // Lookup failure shouldn't hard-block an applicant on a network hiccup —
+        // the poster-side payout gate at task completion is the backstop.
+        if (typeof qgDebugLog === 'function') qgDebugLog('[QuickGigs apply] payout status check failed', ePayout);
+      }
+    }
+
+    refreshApplySubmitEnabled();
+    var priceEl = document.getElementById('offerPrice');
+    var msgEl = document.getElementById('offerMsg');
+    var availEl = document.getElementById('offerAvail');
+    if (!priceEl || !msgEl) {
+      applyNotify('Apply form failed to load — refresh and try again.', '#ef4444');
+      unlockApplyBtn();
+      return;
+    }
+    var sanitize = typeof window.sanitizeInput === 'function'
+      ? window.sanitizeInput
+      : function (t) { return String(t == null ? '' : t).trim(); };
+    var price = priceEl.value;
+    var msg = sanitize(msgEl.value, 1000);
+    var avail = sanitize(availEl ? availEl.value : '', 120);
+  var fraudErr = document.getElementById('offerFraudError');
+    var priceNum = parseFloat(price);
+
+    if (!price || isNaN(priceNum) || priceNum < 20) {
+      applyNotify('Please enter an offer of at least $20', '#ef4444');
+      unlockApplyBtn();
+    return;
+  }
+    if (!msg || msg.length < APPLY_MSG_MIN) {
+      applyNotify('Please write a message of at least ' + APPLY_MSG_MIN + ' characters.', '#ef4444');
+      unlockApplyBtn();
+      return;
+    }
+
+    if (typeof QGTeenSafety !== 'undefined' && typeof QGTeenSafety.meetupPolicyForTask === 'function' &&
+        typeof QGTeenSafety.isTeen === 'function' && QGTeenSafety.isTeen()) {
+      var meetupPolicy = QGTeenSafety.meetupPolicyForTask(activeTask);
+      if (meetupPolicy && meetupPolicy.blocked) {
+        applyNotify(meetupPolicy.warning || 'This category is restricted for under-18 taskers.', '#ef4444');
+        unlockApplyBtn();
+        return;
+      }
+      if (meetupPolicy && meetupPolicy.flagged && meetupPolicy.warning) {
+        if (!confirm(meetupPolicy.warning + '\n\nContinue with this application? Your guardian still reviews each apply.')) {
+          unlockApplyBtn();
+          return;
+        }
+      }
+    }
+
+    var contactCheck = typeof analyzeOffPlatformContact === 'function'
+      ? analyzeOffPlatformContact(msg + (avail ? ' ' + avail : ''))
+      : (typeof containsOffPlatformContact === 'function' && containsOffPlatformContact(msg + ' ' + avail)
+        ? { blocked: true, message: typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : '' }
+        : { blocked: false });
+    if (contactCheck.blocked) {
+      var cMsg = contactCheck.message || (typeof getOffPlatformWarning === 'function' ? getOffPlatformWarning() : 'Remove contact details from your message.');
+      if (fraudErr) { fraudErr.textContent = cMsg; fraudErr.style.display = 'block'; }
+      if (typeof logFraudContactEvent === 'function') {
+        logFraudContactEvent({
+          userId: getCurrentUserId(),
+          reason: contactCheck.reason || 'contact',
+          preview: msg,
+          violation: 1
+        });
+      }
+      applyNotify(cMsg, '#ef4444');
+      unlockApplyBtn();
+      return;
+    }
+    if (typeof moderateText === 'function') {
+      var modCheck = moderateText(msg);
+      if (modCheck.blocked) {
+        var mMsg = modCheck.message || (typeof QG_CONTENT_MOD_MESSAGE === 'string' ? QG_CONTENT_MOD_MESSAGE : 'Message not allowed.');
+        if (fraudErr) { fraudErr.textContent = mMsg; fraudErr.style.display = 'block'; }
+        if (typeof logModerationAttempt === 'function') {
+          logModerationAttempt({
+            userId: getCurrentUserId(),
+            source: 'application',
+            targetType: 'task',
+            targetId: activeTask.id,
+            field: 'message',
+            flags: modCheck.flags || [],
+            preview: msg,
+            message: mMsg
+          });
+        }
+        applyNotify(mMsg, '#ef4444');
+        unlockApplyBtn();
+        return;
+      }
+    }
+    if (fraudErr) fraudErr.style.display = 'none';
+
+    // applications.worker_id = Firebase Auth uid (TEXT). Never users.user_id (UUID PK).
+    var userId = window._currentUser ? String(window._currentUser.uid) : '';
+    if (!userId) {
+      applyNotify('Log in again to apply.', '#ef4444');
+      unlockApplyBtn();
+      setTimeout(function(){ window.location.href = 'login.html'; }, 1200);
+      return;
+    }
+    if (typeof getAccountActionPermission === 'function') {
+      var applyPermission = await getAccountActionPermission(userId, 'apply');
+      if (!applyPermission.allowed) {
+        if (applyPermission.reason === 'tasker_role_required' &&
+            typeof QG_offerRoleOptIn === 'function') {
+          closeModal();
+          QG_offerRoleOptIn('tasker');
+        }
+        applyNotify(applyPermission.message, '#f59e0b');
+        unlockApplyBtn();
+        return;
+      }
+    }
+  if (activeTask && isOwnPostedTask(activeTask)) {
+      applyNotify('You cannot apply to your own task.', '#ef4444');
+      unlockApplyBtn();
+    return;
+  }
+
+    var taskId = String(activeTask.id);
+    // Live DB: applications.task_id is UUID (FK ? tasks.task_id)
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(taskId)) {
+      applyNotify('This task has an invalid id — refresh Browse and try again.', '#ef4444');
+      console.error('[QuickGigs apply] non-UUID task_id', taskId, activeTask);
+      unlockApplyBtn();
+      return;
+    }
+
+    var workerName = window._currentUser.displayName ||
+      (window._currentUser.email && window._currentUser.email.split('@')[0]) ||
+      'Tasker';
+    if (typeof formatPersonName === 'function' && workerName) workerName = formatPersonName(workerName);
+
+    // Do NOT await full profile sync here ? it slowed/blocked apply with no UI feedback.
+  if (typeof ensureTaskerProfilePhoto === 'function') {
+    var photoGate = await ensureTaskerProfilePhoto();
+    if (!photoGate.ok) {
+        applyNotify('Add a profile photo before applying. Posters need to see who they\'re hiring.', '#f59e0b');
+        unlockApplyBtn();
+      window.location.href = 'profile.html?setup=photo&required=1&return=browsetask.html';
+      return;
+    }
+  }
+
+    bindBrowseSubmitApplication();
+    var dbSubmitApplication = getDbSubmitApplication();
+    if (typeof dbSubmitApplication !== 'function') {
+      applyNotify('Still loading — wait a second and try again.', '#f59e0b');
+      unlockApplyBtn();
+      return;
+    }
+
+    var payload = {
+      task_id: taskId,
+      worker_id: userId,
+      worker_name: workerName,
+      message: msg + (avail ? ' · Available: ' + avail : ''),
+      price: priceNum
+    };
+    if (typeof qgDebugLog === 'function') qgDebugLog('[QuickGigs apply] inserting applications row', {
+      task_id: payload.task_id,
+      worker_id: payload.worker_id,
+      price: payload.price
+    });
+
+    var chatNote = '';
+    var chatUnlocked = typeof resolveChatUnlockedOnCreate === 'function' && resolveChatUnlockedOnCreate('application');
+    var createdRow = null;
+    var guardianPending = false;
+    try {
+      var result = await dbSubmitApplication(payload);
+      if (typeof qgDebugLog === 'function') qgDebugLog('[QuickGigs apply] insert result', result && result.success);
+      if (!result || !result.success) {
+        if (result && result.error === 'cannot_apply_own_task') throw new Error('own_task');
+        if (result && result.error === 'profile_photo_required') throw new Error('photo_required');
+        if (result && result.error === 'already_applied') throw new Error('already_applied');
+        var errText = (result && result.error) ? String(result.error) : 'save failed';
+        throw new Error(errText);
+      }
+      createdRow = result.data || null;
+      guardianPending = result.guardian_status === 'pending_guardian' ||
+        (createdRow && createdRow.guardian_status === 'pending_guardian');
+    } catch (err) {
+      console.warn('Application save error:', err);
+      if (err && err.message === 'photo_required') {
+        unlockApplyBtn();
+        window.location.href = 'profile.html?setup=photo&required=1&return=browsetask.html';
+        return;
+      }
+      if (err && err.message === 'already_applied') {
+        appliedTaskIds[String(activeTask.id)] = true;
+        setApplyModalAlreadyApplied(true);
+        applyNotify("You've already applied to this task.", '#f59e0b');
+      } else if (err && err.message === 'tasker_identity_verification_required') {
+        if (typeof QG_openVerificationPrompt === 'function') QG_openVerificationPrompt('tasker');
+        applyNotify('Verify your email to start working.', '#f59e0b');
+      } else if (err && err.message === 'tasker_role_required') {
+        if (typeof QG_offerRoleOptIn === 'function') QG_offerRoleOptIn('tasker');
+        applyNotify('Enable Tasker mode before applying to gigs.', '#f59e0b');
+      } else {
+        var failMsg = (err && err.message === 'own_task')
+          ? 'You cannot apply to your own task.'
+          : (typeof formatSupabaseActionError === 'function'
+            ? formatSupabaseActionError('send application', err && err.message)
+            : ('Could not send application: ' + (err && err.message ? err.message : 'try again')));
+        applyNotify(failMsg, '#ef4444');
+      }
+      unlockApplyBtn();
+      return;
+    }
+
+    try {
+      if (!guardianPending && activeTask.posterId && userId) {
+      var posterName = activeTask.posterName || 'Poster';
+      if (typeof getUserNameByFirebaseUid === 'function') {
+        var fetchedPoster = await getUserNameByFirebaseUid(activeTask.posterId);
+        if (fetchedPoster) posterName = fetchedPoster;
+      }
+        if (typeof createConversation === 'function') {
+      var convResult = await createConversation({
+            task_id: taskId,
+        poster_id: activeTask.posterId,
+        worker_id: userId,
+        poster_name: posterName,
+        worker_name: workerName,
+        task_title: activeTask.title,
+        task_category: activeTask.cat,
+        status: 'application'
+      });
+          if (convResult.success && convResult.data && convResult.data.conv_id && chatUnlocked && typeof sendChatMessage === 'function') {
+            var offerMsg = msg + (avail ? ' · Available: ' + avail : '') + ' · My offer: $' + priceNum;
+        var msgResult = await sendChatMessage(convResult.data.conv_id, userId, offerMsg);
+            if (msgResult && msgResult.blocked) {
+          chatNote = ' Application saved — chat stays locked until payment.';
+        } else {
+          chatNote = ' Open Messages to chat with the poster.';
+        }
+      } else if (convResult.success) {
+        chatNote = ' Application saved — chat opens after acceptance and payment.';
+          } else {
+        console.warn('Chat setup failed:', convResult.error);
+        chatNote = ' Open Messages to track your application.';
+      }
+    }
+      }
+    } catch (chatErr) {
+      console.warn('Chat setup after apply skipped:', chatErr);
+      chatNote = ' Application saved. Open Messages if chat does not appear yet.';
+    }
+
+  if (typeof qgMicroConfirm === 'function') qgMicroConfirm(btn);
+    if (typeof qgTrackEvent === 'function') qgTrackEvent('apply_task', { task_id: taskId });
+    appliedTaskIds[taskId] = true;
+    allTasks = allTasks.filter(function(t) { return String(t.id) !== taskId; });
+    renderCards();
+    document.getElementById('modalOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+    document.body.classList.remove('qg-apply-open');
+    _applySubmitInFlight = false;
+    if (btn) { btn.textContent = 'Apply with an offer'; btn.disabled = true; }
+    var okMsg = guardianPending
+      ? 'Sent to your guardian for approval. The poster cannot see it yet.'
+      : ('Application sent.' + (chatNote || ''));
+    if (createdRow && createdRow.app_id) {
+      if (typeof qgDebugLog === 'function') {
+        qgDebugLog('[QuickGigs apply] created app_id=', createdRow.app_id,
+          'task_id=', createdRow.task_id, 'worker_id=', createdRow.worker_id);
+      }
+    }
+    applyNotify(okMsg, '#4ade80');
+    var toast = document.getElementById('toast');
+    if (toast) {
+      toast.innerHTML = okMsg + ' <a href="messages.html" style="color:inherit;text-decoration:underline;margin-left:6px">Messages</a>';
+      toast.style.background = '#4ade80';
+      toast.style.color = '#0B0A14';
+      toast.style.display = 'block';
+      setTimeout(function(){ toast.style.display = 'none'; }, 5000);
+    }
+  } catch (fatalErr) {
+    console.error('Send application failed:', fatalErr);
+    applyNotify(
+      typeof formatSupabaseActionError === 'function'
+        ? formatSupabaseActionError('send application', fatalErr && fatalErr.message)
+        : ('Could not send application: ' + (fatalErr && fatalErr.message ? fatalErr.message : 'try again')),
+      '#ef4444'
+    );
+    unlockApplyBtn();
+  }
+};
+window.submitApplication = window.submitBrowseApplication;
+bindBrowseSubmitApplication();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function () {
+    wireApplyModalInputs();
+    bindBrowseSubmitApplication();
+  });
+} else {
+  wireApplyModalInputs();
+}
+
+window.reloadBrowseTasks = loadTasks;
+window.toggleMode=function(){
+  isDark=!isDark;
+  if (typeof QG_setThemeDark === 'function') QG_setThemeDark(isDark);
+  else localStorage.setItem('qg-theme', isDark ? 'dark' : 'light');
+  applyTheme();
+};
+function applyTheme(){
+  if (typeof window.QG_applyTheme === 'function') window.QG_applyTheme(isDark,'modeBtn',false);
+  else {
+    document.body.classList.toggle('light', !isDark);
+    var btn = document.getElementById('modeBtn');
+    if (btn) btn.textContent = isDark ? 'Light' : 'Dark';
+    if (typeof QG_setThemeDark === 'function') QG_setThemeDark(isDark);
+    else localStorage.setItem('qg-theme', isDark ? 'dark' : 'light');
+  }
+}
+applyTheme();
+initUserLocation().then(function(){
+  renderCards();
+}).catch(function(){ renderCards(); });
+
+(function applyBrowseUrlParams(){
+  var params = new URLSearchParams(window.location.search);
+  var cat = params.get('cat');
+  if (cat) {
+    activeCat = cat.toLowerCase();
+    document.querySelectorAll('.cpill').forEach(function(p){
+      p.classList.remove('cat-active');
+      if ((p.getAttribute('onclick')||'').indexOf("'"+activeCat+"'")>=0) p.classList.add('cat-active');
+    });
+  }
+  var taskId = params.get('task');
+  if (taskId) {
+    var tryOpen = function(){
+      var t = allTasks.find(function(x){ return String(x.id)===String(taskId); });
+      if (t) openModal(t.id, { stopPropagation: function(){} });
+    };
+    setTimeout(tryOpen, 800);
+  }
+  if (params.get('saved') === '1') {
+    activeMode = 'saved';
+    document.querySelectorAll('#modeRow .mpill').forEach(function(p){
+      p.className = 'mpill';
+      if ((p.getAttribute('onclick')||'').indexOf("'saved'")>=0) p.className = 'mpill active-saved';
+    });
+  }
+})();
+
+loadTasks();
+</script>
+<script defer src="qg-help.js?v=20260726seo"></script>
+</body>
+</html>

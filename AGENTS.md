@@ -12,13 +12,13 @@ Stay inside your zone. If a task needs a file you do not own, **stop and flag it
 rather than editing it — the other agent may have that file open with unsaved
 context, and a write from you will silently destroy its work.
 
-> **HTML is Claude's again. `dashboard.html` was rebuilt by Cursor and handed
-> back; the rest of the wiring pass is Claude's.**
-> Claude is rebuilding `browsetask.html`, `posttask.html`, `messages.html`,
-> `profile.html` and `mytasks.html` from `Claude outputs/sg-design/templates/`.
-> **Cursor must not edit those five files, or `dashboard.html`, until Claude
-> says it is done.** Cursor continues on CSS, JS, scripts and docs, including
-> `sg-app.css` and any helper extracted out of an injector.
+> **The six app screens are Cursor's, by Morolake's instruction on 8 Oct.**
+> `browsetask.html`, `posttask.html`, `messages.html`, `profile.html` and
+> `mytasks.html` were handed to Claude on 7 Oct and no commit ever touched them,
+> so all five were still the old injector pages. Cursor is rebuilding them from
+> `Claude outputs/sg-design/templates/`, in that order. **Claude must not edit
+> those five, or `dashboard.html`, while this is in progress.** Every other HTML
+> file at the repo root is still Claude's.
 >
 > `dashboard.html` is finished and pushed. `dashboard-legacy.html` is its
 > rollback copy and is not linked from anywhere. Follow the same pattern for
@@ -26,7 +26,8 @@ context, and a write from you will silently destroy its work.
 
 | Zone | Owner |
 | --- | --- |
-| `*.html` (33 files at repo root) | Claude desktop |
+| `dashboard/browsetask/posttask/messages/profile/mytasks.html` | Cursor (rebuild in progress) |
+| every other `*.html` at repo root | Claude desktop |
 | `sg-app.css`, `qg-streak.js` | Cursor (new, see below) |
 | `qg-icons.js` | Claude desktop (append-only, see below) |
 | `*.css` (38 files at repo root) | Cursor |

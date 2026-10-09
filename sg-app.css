@@ -276,3 +276,22 @@ div.sg-inline-load{display:flex;justify-content:center;padding:22px 0;}
 @media (prefers-reduced-motion: reduce){
   .sg-skel-sq,.sg-skel-line,.sg-spinner{animation:none;}
 }
+
+/* ── Toast ─────────────────────────────────────────────────────────────── */
+/* Sits above .sg-sheet (z-index 60) so a confirmation stays readable while a
+   sheet is still closing. */
+.sg-toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));z-index:70;width:calc(100% - 40px);max-width:440px;padding:13px 16px;border-radius:14px;background:var(--surface);border:1px solid var(--border);box-shadow:0 10px 30px rgba(0,0,0,.28);font-size:14px;color:var(--text);}
+.sg-toast.is-ok{border-color:var(--green);}
+.sg-toast.is-error{border-color:var(--danger);}
+
+/* ── Multi-line field ──────────────────────────────────────────────────── */
+/* .sg-input is a flex row built for a single input; a textarea needs the row
+   to grow and the caret to start at the top. */
+.sg-input.is-area,.sg-input:has(textarea){align-items:flex-start;}
+.sg-input textarea{flex:1;border:none;background:transparent;font:inherit;color:var(--text);outline:none;resize:vertical;min-height:88px;line-height:1.5;}
+
+/* ── Map pins ──────────────────────────────────────────────────────────── */
+/* Leaflet divIcon: the price itself is the pin, as on the design's map view. */
+.sg-pin{background:none;border:none;}
+.sg-pin span{display:inline-block;padding:5px 10px;border-radius:100px;background:var(--teal);color:var(--teal-text);font-size:12.5px;font-weight:700;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.leaflet-container{background:var(--surface-alt);font:inherit;}
