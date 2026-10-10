@@ -420,9 +420,14 @@ onAuthStateChanged(auth, (user) => {
       content.innerHTML = '<div class="sg-gigs">' + open.map(function (t) {
         var apps = applicantsFor(getField(t, 'TASK_ID'));
         var pending = apps.filter(function (a) { return appStatus(a) === 'pending'; });
+        var lowest = pending.length ? pending.reduce(function (min, a) {
+          var n = appOfferAmount(a, t);
+          return n < min ? n : min;
+        }, Infinity) : 0;
         return gigRow(t, {
           note: pending.length
-            ? pending.length + ' applicant' + (pending.length === 1 ? '' : 's') + ' — tap to review'
+            ? pending.length + ' applicant' + (pending.length === 1 ? '' : 's') +
+              ' · lowest ' + money(lowest) + ' — tap to review'
             : 'No applicants yet — tap to share'
         });
       }).join('') + '</div>';
@@ -483,6 +488,10 @@ onAuthStateChanged(auth, (user) => {
   }
 
   function appStatus(a) { return String(getField(a, 'STATUS') || 'pending').toLowerCase(); }
+  function appOfferAmount(a, t) {
+    var n = Number(getField(a, 'COUNTER_PRICE') || getField(a, 'PRICE') || (t ? getField(t, 'BUDGET') : 0));
+    return isFinite(n) ? n : 0;
+  }
   function applicantsFor(taskId) {
     return allApplications.filter(function (a) {
       return String(getField(a, 'TASK_ID')) === String(taskId) &&
@@ -567,8 +576,8 @@ onAuthStateChanged(auth, (user) => {
     var badge = st === 'expired' ? 'Expired' : st === 'cancelled' ? 'Cancelled' : 'Done';
 
     var actions = '<div class="sg-sheet-foot" style="flex-wrap:wrap;margin-top:12px">';
-    if (st === 'expired' && mineAsPoster) {
-      actions += '<button class="sg-btn teal" data-repost="' + esc(taskId) + '">Repost gig</button>';
+    if ((st === 'expired' || st === 'cancelled') && mineAsPoster) {
+      actions += '<button class="sg-btn teal" data-repost="' + esc(taskId) + '">Relist gig</button>';
     } else if (st === 'completed') {
       actions += '<a class="sg-btn teal" href="' + esc(reviewHref(t, app)) + '">Leave a review</a>';
       if (mineAsPoster) actions += '<button class="sg-btn sg-btn-quiet" data-post-again="' + esc(taskId) + '">Post again</button>';
@@ -609,18 +618,28 @@ onAuthStateChanged(auth, (user) => {
     var apps = applicantsFor(sheetTaskId);
     var accepted = apps.filter(function (a) { return appStatus(a) === 'accepted'; });
     var shown = accepted.length ? apps : apps.filter(function (a) { return appStatus(a) === 'pending'; });
+    shown = shown.slice().sort(function (a, b) {
+      return appOfferAmount(a, t) - appOfferAmount(b, t);
+    });
     if (!shown.length) {
-      list.innerHTML = emptyState('No applicants yet', 'Share your posting so more taskers see it.', null);
+      list.innerHTML = emptyState('No applicants yet',
+        'Share the posting, or relist it for free. You are only charged when you hire and fund a tasker.',
+        null) +
+        '<div class="sg-sheet-foot" style="flex-wrap:wrap;margin-top:8px">' +
+        '<button class="sg-btn teal" data-repost="' + esc(sheetTaskId) + '">Relist gig</button>' +
+        '<a class="sg-btn sg-btn-quiet" href="posttask.html?from=' + encodeURIComponent(sheetTaskId) + '">Edit and post again</a>' +
+        '</div>';
       return;
     }
-    list.innerHTML = shown.map(function (a) {
+    list.innerHTML = shown.map(function (a, i) {
       var workerId = String(getField(a, 'WORKER_ID'));
       var name = displayName(workerId, a);
       var st = appStatus(a);
       var avatar = userAvatars[workerId];
-      var offer = getField(a, 'COUNTER_PRICE') || getField(a, 'PRICE') || (t ? getField(t, 'BUDGET') : 0);
+      var offer = appOfferAmount(a, t);
       var msg = getField(a, 'MESSAGE');
       var counterBy = String(getField(a, 'COUNTER_BY') || '').toLowerCase();
+      var cheapest = i === 0 && shown.length > 1 && st === 'pending';
 
       var actions = '';
       if (st === 'pending') {
@@ -640,13 +659,20 @@ onAuthStateChanged(auth, (user) => {
         '<div style="display:flex;align-items:flex-start;gap:12px">' +
         '<a class="sg-avatar" href="' + esc(profileHref(workerId)) + '">' +
         (avatar ? '<img src="' + esc(avatar) + '" alt="">' : esc(name.charAt(0).toUpperCase())) + '</a>' +
-        '<span style="flex:1;min-width:0"><b style="display:block;font-size:15px">' + esc(name) + '</b>' +
+        '<span style="flex:1;min-width:0"><b style="display:block;font-size:15px">' + esc(name) +
+        (cheapest ? ' · lowest offer' : '') + '</b>' +
         (msg ? '<span class="sg-meta">' + esc(msg) + '</span>' : '') + '</span>' +
         '<span class="sg-money">' + money(offer) + '</span></div>' +
         '<div class="sg-sheet-foot" style="flex-wrap:wrap;margin-top:12px">' + actions +
         '<button class="sg-btn sg-btn-quiet" data-report-user="' + esc(workerId) + '" data-report-name="' + esc(name) + '">Report</button>' +
         '</div></div>';
-    }).join('');
+    }).join('') +
+      (taskStatusOf(t) === 'open'
+        ? '<div class="sg-sheet-foot" style="flex-wrap:wrap;margin-top:4px">' +
+          '<button class="sg-btn sg-btn-quiet" data-repost="' + esc(sheetTaskId) + '">Relist gig</button>' +
+          '<p class="sg-muted" style="width:100%;font-size:13px;margin:6px 0 0">Relisting is free. The old listing comes down and a fresh one goes on browse. You only pay when you hire.</p>' +
+          '</div>'
+        : '');
   }
   function profileHref(uid) {
     return typeof getProfileUrl === 'function' ? getProfileUrl(uid)
@@ -1283,15 +1309,22 @@ onAuthStateChanged(auth, (user) => {
       el = e.target.closest('[data-repost]');
       if (el) {
         var rid = el.getAttribute('data-repost');
-        confirmThen('Repost this gig?', 'It goes back on browse as a new open listing with the same details.',
-          'Repost now', false, async function () {
+        confirmThen('Relist this gig?',
+          'A new listing goes on browse with the same details. Relisting is free — you only pay when you hire and fund a tasker. If this one is still open, it comes down first.',
+          'Relist now', false, async function () {
             if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
             var res = await repostTask(rid, currentUserId);
             if (!res.success) {
-              toast(res.error === 'not_expired' ? 'Only expired gigs can be reposted.' : 'Could not repost — try again.', false);
+              var why = res.error === 'already_funded'
+                ? 'This gig is already funded. Cancel it first if you need a new listing.'
+                : (res.error === 'not_relistable'
+                  ? 'In-progress and completed gigs cannot be relisted. Use Post again.'
+                  : 'Could not relist — try again.');
+              toast(why, false);
               return;
             }
-            toast('Reposted — live on browse again');
+            toast('Relisted — live on browse again. No extra charge.');
+            closeSheet($('sgAppsSheet'));
             await loadData();
             showTab('posted');
           });

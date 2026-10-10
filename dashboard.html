@@ -33,6 +33,7 @@
 <script defer src="qg-categories.js"></script>
 <!-- Visit streak, extracted from qg-wave2.js so the injector stays unloaded. -->
 <script src="qg-streak.js"></script>
+<script defer src="qg-mode.js"></script>
 <script defer src="qg-location.js"></script>
 <script defer src="qg-age.js"></script>
 <script defer src="qg-notifications.js"></script>
@@ -56,7 +57,7 @@
     </section>
     <div class="sg-tiles">
       <a class="sg-card sg-tile" href="posttask.html"><span class="sg-isq"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><b>Post a Task</b><span>Get help fast</span></a>
-      <a class="sg-card sg-tile" href="browsetask.html"><span class="sg-isq teal"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9-9-9z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span><b>Earn Money</b><span>Find gigs nearby</span></a>
+      <a class="sg-card sg-tile" id="sgEarnTile" href="browsetask.html"><span class="sg-isq teal"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9-9-9z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span><b>Earn Money</b><span>Find gigs nearby</span></a>
     </div>
     <section id="sgCurrentTaskSection">
       <div class="sg-label">Current task</div>
@@ -66,11 +67,8 @@
       <div class="sg-label">This week</div>
       <a class="sg-card sg-rowcard" id="sgWeek" href="profile.html"><span class="sg-isq teal"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9-9-9z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span><span class="t"><b class="sg-money" id="sgWeekEarned">$145 earned</b><span id="sgWeekCount">3 gigs completed</span></span><span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></a>
     </section>
-    <div class="sg-section-head"><h2 class="sg-h2">Nearby gigs</h2><a class="sg-link" href="browsetask.html">See all</a></div>
-    <div class="sg-list" id="sgNearbyList">
-      <a class="sg-li" href="browsetask.html"><span class="sg-isq sm"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4 2.6-2.6z"/></svg></span><span class="t"><b>Furniture Assembly</b><span>2.1 km · Tomorrow · 10:00 AM</span></span><span class="sg-money">$55</span></a>
-      <a class="sg-li" href="browsetask.html"><span class="sg-isq sm"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 14H7L6 7z"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg></span><span class="t"><b>Grocery Pickup</b><span>1.3 km · Today · 6:30 PM</span></span><span class="sg-money">$25</span></a>
-    </div>
+    <div class="sg-section-head" id="sgNearbyHead" hidden><h2 class="sg-h2">Nearby gigs</h2><a class="sg-link" href="browsetask.html">See all</a></div>
+    <div class="sg-list" id="sgNearbyList" hidden></div>
   </main>
   <nav class="sg-tabs" id="sgTabs" aria-label="Main">
   <a href="dashboard.html" class="on" aria-current="page"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11L12 3.5 20.5 11"/><path d="M5.5 9.5V20h5v-6h3v6h5V9.5"/></svg>Home</a>
@@ -154,7 +152,10 @@
 
   function isPoster() {
     if (typeof window.getMode === 'function') return window.getMode() === 'poster';
-    return localStorage.getItem('qg-mode') === 'poster';
+    var m = '';
+    try { m = String(localStorage.getItem('qg-mode') || ''); } catch (e) {}
+    if (m === 'tasker' || m === 'worker') return false;
+    return true;
   }
 
   /* Field readers kept from the previous page: Supabase rows come back in
@@ -413,8 +414,17 @@
 
   function renderNearby() {
     var list = document.getElementById('sgNearbyList');
-    var head = document.querySelector('.sg-section-head');
+    var head = document.getElementById('sgNearbyHead');
+    var earn = document.getElementById('sgEarnTile');
+    if (earn) earn.hidden = isPoster();
     if (!list) return;
+
+    // Nearby gigs are a Tasker surface. Poster Home is current task + this week.
+    if (isPoster()) {
+      list.hidden = true;
+      if (head) head.hidden = true;
+      return;
+    }
 
     var userId = String(dashData.userId || '');
     var open = (dashData.open || []).filter(function (t) {
@@ -449,7 +459,13 @@
     if (head) head.hidden = false;
   }
 
+  function paintRoleChrome() {
+    var earn = document.getElementById('sgEarnTile');
+    if (earn) earn.hidden = isPoster();
+  }
+
   function renderAll() {
+    paintRoleChrome();
     renderCity();
     renderCurrentTask();
     renderWeek();
@@ -591,6 +607,7 @@
       if (beta) beta.hidden = true;
       try { sessionStorage.setItem('sg-beta-hidden', '1'); } catch (e) {}
     });
+    paintRoleChrome();
   }
 
   /* The template's greeting script reads this when it runs, a few lines below.

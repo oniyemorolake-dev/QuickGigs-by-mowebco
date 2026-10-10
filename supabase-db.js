@@ -1551,7 +1551,22 @@ async function repostTask(sourceTaskId, posterId) {
     return { success: false, error: 'not_owner' };
   }
   var st = String(task.status || task.STATUS || '').toLowerCase();
-  if (st !== 'expired') return { success: false, error: 'not_expired' };
+  if (st === 'in_progress' || st === 'completed') {
+    return { success: false, error: 'not_relistable' };
+  }
+  if (st === 'open') {
+    if (typeof getPaymentByTask === 'function') {
+      try {
+        var pay = await getPaymentByTask(sourceTaskId);
+        var pst = String((pay && (pay.status || pay.STATUS)) || '').toLowerCase();
+        if (pst === 'held' || pst === 'paid') return { success: false, error: 'already_funded' };
+      } catch (ePay) {}
+    }
+    var closed = await cancelTask(sourceTaskId, { actorId: posterId, refundHeld: true });
+    if (!closed || !closed.success) {
+      return { success: false, error: (closed && closed.error) || 'could_not_close' };
+    }
+  }
   return await postTask({
     title: task.title || task.TITLE,
     description: task.description || task.DESCRIPTION || '',

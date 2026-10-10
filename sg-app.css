@@ -87,6 +87,10 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .sg-chip.teal-soft-on{background:var(--teal-tint);border-color:var(--teal);color:var(--text);font-weight:600;}
 .sg-chips.equal{display:grid;grid-template-columns:repeat(3,1fr);}
 .sg-chips.equal .sg-chip{text-align:center;padding:10px 6px;}
+.sg-chips.pair{display:grid;grid-template-columns:1fr 1fr;}
+.sg-chips.pair .sg-chip{text-align:center;padding:10px 6px;}
+.sg-mode-block{margin:22px 0 4px;}
+.sg-mode-block .sg-section-title{margin-top:0;}
 
 /* ── Gig cards (Browse) ── */
 .sg-gigs{display:flex;flex-direction:column;gap:14px;margin-top:18px;}

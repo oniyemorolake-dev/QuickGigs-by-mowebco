@@ -130,6 +130,10 @@
         if ((intent === 'poster' && state && state.is_poster) || (intent === 'tasker' && state && state.is_tasker)) {
           call('set_mode', { mode: intent }).catch(function () {});
         }
+      } else if (previous === 'tasker' && state && state.is_tasker) {
+        chosen = 'tasker';
+      } else if (previous === 'poster' && state && state.is_poster) {
+        chosen = 'poster';
       }
       if (chosen && typeof setMode === 'function') setMode(chosen);
       state = writeCache(state);
@@ -160,7 +164,12 @@
     var result = await call('set_mode', { mode: mode });
     if (!result.success) {
       console.error('[QuickGigs role-access] set_mode failed', { mode: mode, error: result.error });
-      return result;
+      // Keep the tap. Home and Gigs read localStorage; a server hiccup
+      // should not leave the switch looking broken.
+      if (typeof setMode === 'function') setMode(mode);
+      if (typeof applyRoleTheme === 'function') applyRoleTheme();
+      document.dispatchEvent(new CustomEvent('qg-mode-changed', { detail: { mode: mode } }));
+      return { success: true, state: state, mode: mode, synced: false };
     }
     if (typeof setMode === 'function') setMode(mode);
     state = writeCache(result);

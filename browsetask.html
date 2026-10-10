@@ -246,6 +246,8 @@ onAuthStateChanged(auth, (user) => {
       price: budget,
       budgetNegotiable: !!(row.budget_negotiable || row.BUDGET_NEGOTIABLE),
       location: row.LOCATION || row.location || '',
+      location_type: row.location_type || row.LOCATION_TYPE || '',
+      LOCATION_TYPE: row.location_type || row.LOCATION_TYPE || '',
       preciseAddress: row.precise_address || row.PRECISE_ADDRESS || '',
       lat: row.lat != null ? Number(row.lat) : (row.LAT != null ? Number(row.LAT) : null),
       lng: row.lng != null ? Number(row.lng) : (row.LNG != null ? Number(row.LNG) : null),
@@ -324,7 +326,7 @@ onAuthStateChanged(auth, (user) => {
   }
   function browseable(list) {
     return (list || []).filter(function (t) {
-      return t.status === 'open' && !isOwnPostedTask(t) && !appliedTaskIds[String(t.id)];
+      return t.status === 'open';
     });
   }
 
@@ -366,10 +368,13 @@ onAuthStateChanged(auth, (user) => {
       return hay.indexOf(search) >= 0;
     });
 
-    var radius = filters.dist ? Number(filters.dist) : (filters.nearby ? 25 : Infinity);
+    var radius = filters.dist ? Number(filters.dist)
+      : (filters.nearby
+        ? (typeof getNearRadiusKm === 'function' ? getNearRadiusKm() : 50)
+        : Infinity);
     var pos = typeof getGeoFilterPos === 'function' ? getGeoFilterPos() : null;
     if (pos && isFinite(radius) && typeof filterTasksByDistance === 'function') {
-      list = filterTasksByDistance(list, { pos: pos, radiusKm: radius });
+      list = filterTasksByDistance(list, { pos: pos, radiusKm: radius, includeUnknown: true });
     }
 
     var sort = filters.sort;
@@ -631,11 +636,6 @@ onAuthStateChanged(auth, (user) => {
     if (typeof qgTrackTaskView === 'function') qgTrackTaskView(t);
     if (typeof haptic === 'function') haptic(10);
 
-    if (isOwnPostedTask(t)) {
-      toast('This is your own posting. Switch to Poster mode to manage applicants.');
-      return;
-    }
-
     byId('sgGigIcon').innerHTML = catSvg(t.cat);
     byId('sgGigTitle').textContent = t.title;
     byId('sgGigPrice').textContent = '$' + t.price;
@@ -653,6 +653,17 @@ onAuthStateChanged(auth, (user) => {
     byId('sgGigPosterName').textContent = 'Posted by ' + t.posterName;
     byId('sgGigPosterAv').textContent = String(t.posterName || 'P').trim().charAt(0).toUpperCase() || 'P';
     byId('sgGigPosterMeta').textContent = 'SwiftGigs member';
+
+    var applyBtn = byId('sgApplyBtn');
+    if (isOwnPostedTask(t)) {
+      applyBtn.textContent = 'Manage gig';
+      applyBtn.onclick = function () {
+        window.location.href = 'mytasks.html?task=' + encodeURIComponent(t.id);
+      };
+    } else {
+      applyBtn.textContent = 'Accept Gig';
+      applyBtn.onclick = openApply;
+    }
 
     openSheet('sgGigSheet');
     loadPosterCard(t.posterId);
@@ -710,7 +721,10 @@ onAuthStateChanged(auth, (user) => {
       if (!confirm('You are in Poster mode. Switch to Tasker mode to apply for gigs?')) return;
       if (typeof QG_setActiveRoleMode === 'function') {
         var switched = await QG_setActiveRoleMode('tasker');
-        if (!switched.success) return;
+        if (!switched || !switched.success) {
+          if (typeof QG_offerRoleOptIn === 'function') QG_offerRoleOptIn('tasker');
+          return;
+        }
       } else if (typeof setMode === 'function') {
         setMode('tasker');
       }
@@ -743,10 +757,11 @@ onAuthStateChanged(auth, (user) => {
 
     var priceEl = byId('sgOfferPrice');
     priceEl.value = activeTask.price;
-    priceEl.readOnly = !activeTask.budgetNegotiable;
+    priceEl.readOnly = false;
+    priceEl.removeAttribute('readonly');
     byId('sgOfferNego').textContent = activeTask.budgetNegotiable
-      ? 'Open to offers — name your price here. Chat is for schedule and details, not price.'
-      : "Fixed budget — your offer matches the poster's price.";
+      ? 'Open to offers — name your price. Lower offers show first for the poster.'
+      : 'Posted at $' + activeTask.price + '. You can send a different offer — the poster sees every price and can pick the lowest.';
     byId('sgOfferMsg').value = '';
     byId('sgOfferAvail').value = '';
     showApplyError('');

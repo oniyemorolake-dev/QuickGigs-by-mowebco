@@ -50,6 +50,10 @@
   <div class="sg-beta" id="sgVerifyStrip" hidden><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span class="sg-beta-text">Confirm your email — check your inbox for the link</span><a href="#" id="sgVerifyLink">Confirm email</a></div>
   <main class="sg-body">
     <div class="sg-profile-head"><span class="sg-avatar lg" id="sgAvatar">JB</span><span><b id="sgName">Jordan Blake</b><span id="sgMeta">Calgary, AB · Member since 2025</span><a href="#" id="sgEditProfile">Edit profile</a></span></div>
+    <div class="sg-mode-block" id="sgModeBlock">
+      <h2 class="sg-section-title">Mode</h2>
+      <div id="sgModeMount"></div>
+    </div>
     <h2 class="sg-section-title" id="sgSettingsHead">Settings</h2>
     <button class="sg-set" id="sgSetActivity">Recent activity<span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>
     <button class="sg-set" id="sgSetPayments">Payment methods<span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>
@@ -687,78 +691,102 @@ window.SG_signOut = async function () {
      whose styling lives in a legacy stylesheet this page does not load, and when
      role access is not cached yet it re-renders itself on every resolve, which
      leaves the sheet repainting forever. Same primitives, same storage. */
-  function renderRoleSwitch() {
-    var box = $('sgRoleMount');
-    var access = typeof QG_getRoleAccess === 'function' ? QG_getRoleAccess() : null;
+  var roleAccessTried = false;
 
-    /* Fetch at most once. A load that resolves without filling the cache used
-       to send this straight back round, repainting the sheet forever. */
-    if (!access) {
-      if (box._tried || typeof QG_loadRoleAccess !== 'function') {
-        box.innerHTML = '<p class="sg-muted" style="font-size:14px">Could not load your account modes. Close this and open it again to retry.</p>';
-        box._tried = false;
+  async function flipMode(next) {
+    if (typeof setQuickGigsMode === 'function') {
+      var flipped = await setQuickGigsMode(next, { toast: true });
+      if (flipped && flipped.error === next + '_role_required' && typeof QG_offerRoleOptIn === 'function') {
+        QG_offerRoleOptIn(next);
         return;
       }
-      box._tried = true;
-      box.innerHTML = '<p class="sg-muted" style="font-size:14px">Checking your account…</p>';
+      if (flipped && flipped.error) {
+        var can = typeof QG_canUseRole === 'function' ? QG_canUseRole(next) : null;
+        if (can && typeof setMode === 'function') {
+          setMode(next);
+          if (typeof QG_applyRoleMode === 'function') QG_applyRoleMode();
+          window.location.href = 'dashboard.html?mode=' + encodeURIComponent(next);
+          return;
+        }
+        toast('Could not switch to ' + (next === 'tasker' ? 'Tasker' : 'Poster') + ' — try again.', false);
+        return;
+      }
+    } else {
+      if (typeof QG_setActiveRoleMode === 'function') {
+        var roleRes = await QG_setActiveRoleMode(next);
+        if (roleRes && !roleRes.success) {
+          if (roleRes.error === next + '_role_required' && typeof QG_offerRoleOptIn === 'function') {
+            QG_offerRoleOptIn(next);
+            return;
+          }
+          toast('Could not switch — try again.', false);
+          return;
+        }
+      }
+      if (typeof setMode === 'function') setMode(next);
+    }
+    if (typeof QG_applyRoleMode === 'function') QG_applyRoleMode();
+    window.location.href = 'dashboard.html?mode=' + encodeURIComponent(next);
+  }
+
+  function bindModeSwitch(box, access) {
+    box.querySelectorAll('[data-rolemode]').forEach(function (b) {
+      b.onclick = function () { flipMode(b.getAttribute('data-rolemode')); };
+    });
+    box.querySelectorAll('[data-add-role]').forEach(function (b) {
+      b.onclick = function () {
+        var add = b.getAttribute('data-add-role');
+        if (typeof QG_offerRoleOptIn === 'function') QG_offerRoleOptIn(add);
+        else toast('Could not open setup — refresh and try again.', false);
+      };
+    });
+  }
+
+  function modeSwitchHtml(access) {
+    var worker = typeof isWorkerMode === 'function' ? isWorkerMode() : false;
+    if (access.is_tasker && access.is_poster) {
+      return '<div class="sg-chips pair">' +
+        '<button class="sg-chip' + (worker ? ' teal-on' : '') + '" data-rolemode="tasker">Tasker</button>' +
+        '<button class="sg-chip' + (worker ? '' : ' purple-on') + '" data-rolemode="poster">Poster</button>' +
+        '</div><p class="sg-muted" style="font-size:13px;margin-top:10px">Tasker finds work. Poster hires.</p>';
+    }
+    var add = access.is_tasker ? 'poster' : 'tasker';
+    if (access.is_teen && add === 'poster') {
+      return '<p class="sg-muted" style="font-size:14px">You are set up as a Tasker. Poster mode becomes available when you turn 18.</p>';
+    }
+    return '<p class="sg-muted" style="font-size:14px">' +
+      (add === 'poster' ? 'Turn on Poster mode to publish gigs and hire taskers.'
+        : 'Turn on Tasker mode to browse gigs, apply and earn.') + '</p>' +
+      '<div class="sg-sheet-foot"><button class="sg-btn teal" data-add-role="' + add + '">' +
+      (add === 'poster' ? 'Become a Poster' : 'Start finding work') + '</button></div>';
+  }
+
+  function renderRoleSwitch() {
+    var boxes = ['sgModeMount', 'sgRoleMount'].map($).filter(Boolean);
+    if (!boxes.length) return;
+    var access = typeof QG_getRoleAccess === 'function' ? QG_getRoleAccess() : null;
+
+    if (!access) {
+      if (roleAccessTried || typeof QG_loadRoleAccess !== 'function') {
+        boxes.forEach(function (box) {
+          box.innerHTML = '<p class="sg-muted" style="font-size:14px">Could not load your account modes. Close this and open it again to retry.</p>';
+        });
+        roleAccessTried = false;
+        return;
+      }
+      roleAccessTried = true;
+      boxes.forEach(function (box) {
+        box.innerHTML = '<p class="sg-muted" style="font-size:14px">Checking your account…</p>';
+      });
       QG_loadRoleAccess(true).then(renderRoleSwitch).catch(renderRoleSwitch);
       return;
     }
 
-    var worker = typeof isWorkerMode === 'function' ? isWorkerMode() : false;
-    if (access.is_tasker && access.is_poster) {
-      box.innerHTML = '<div class="sg-chips equal" id="sgModeChips">' +
-        '<button class="sg-chip' + (worker ? ' teal-on' : '') + '" data-rolemode="tasker">Tasker</button>' +
-        '<button class="sg-chip' + (worker ? '' : ' purple-on') + '" data-rolemode="poster">Poster</button>' +
-        '</div><p class="sg-muted" style="font-size:13px;margin-top:10px">Tasker finds work. Poster hires. The accent colour follows your mode.</p>';
-      box.querySelectorAll('[data-rolemode]').forEach(function (b) {
-        b.onclick = async function () {
-          var next = b.getAttribute('data-rolemode');
-          if (typeof setQuickGigsMode === 'function') {
-            var flipped = await setQuickGigsMode(next, { toast: true });
-            if (flipped && flipped.error === next + '_role_required' && typeof QG_offerRoleOptIn === 'function') {
-              QG_offerRoleOptIn(next);
-              return;
-            }
-            if (flipped && flipped.error) {
-              toast('Could not switch to ' + (next === 'tasker' ? 'Tasker' : 'Poster') + ' — try again.', false);
-              return;
-            }
-          } else {
-            if (typeof QG_setActiveRoleMode === 'function') {
-              var roleRes = await QG_setActiveRoleMode(next);
-              if (roleRes && !roleRes.success) {
-                toast('Could not switch — try again.', false);
-                return;
-              }
-            }
-            if (typeof setMode === 'function') setMode(next);
-          }
-          if (typeof QG_applyRoleMode === 'function') QG_applyRoleMode();
-          renderRoleSwitch();
-        };
-      });
-      return;
-    }
-
-    // Only one mode is enabled. Offer the other one, unless age rules forbid it.
-    var add = access.is_tasker ? 'poster' : 'tasker';
-    if (access.is_teen && add === 'poster') {
-      box.innerHTML = '<p class="sg-muted" style="font-size:14px">You are set up as a Tasker. Poster mode becomes available when you turn 18.</p>';
-      return;
-    }
-    box.innerHTML = '<p class="sg-muted" style="font-size:14px">' +
-      (add === 'poster' ? 'Turn on Poster mode to publish gigs and hire taskers.'
-        : 'Turn on Tasker mode to browse gigs, apply and earn.') + '</p>' +
-      '<div class="sg-sheet-foot"><button class="sg-btn teal" id="sgAddRole">' +
-      (add === 'poster' ? 'Become a Poster' : 'Start finding work') + '</button></div>';
-    $('sgAddRole').onclick = function () {
-      if (typeof QG_offerRoleOptIn === 'function') {
-        QG_offerRoleOptIn(add);
-        return;
-      }
-      toast('Could not open Tasker setup — refresh and try again.', false);
-    };
+    var html = modeSwitchHtml(access);
+    boxes.forEach(function (box) {
+      box.innerHTML = html;
+      bindModeSwitch(box, access);
+    });
   }
 
   function renderVerification() {
@@ -856,7 +884,7 @@ window.SG_signOut = async function () {
 
     // Someone else's profile is read-only: no settings, no logout, no editing.
     if (!isOwnProfile) {
-      ['sgSetPayments', 'sgSetNotifications', 'sgSetAccount', 'sgLogout'].forEach(function (id) {
+      ['sgSetPayments', 'sgSetNotifications', 'sgSetAccount', 'sgLogout', 'sgModeBlock'].forEach(function (id) {
         var el = $(id);
         if (el) el.hidden = true;
       });
@@ -918,6 +946,7 @@ window.SG_signOut = async function () {
     paintHead();
     paintThemeRow();
     loadActivity();
+    if (isOwnProfile) renderRoleSwitch();
 
     if (!isOwnProfile) return;
 
@@ -959,6 +988,7 @@ window.SG_signOut = async function () {
       paintAvail();
     });
 
+    renderRoleSwitch();
     $('sgSetActivity').onclick = function () { openSheet('sgActivitySheet'); };
     $('sgSetPayments').onclick = function () { openSheet('sgPaySheet'); };
     $('sgSetNotifications').onclick = openNotifs;

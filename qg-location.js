@@ -39,7 +39,8 @@
 
   window.isRemoteTask = function (task) {
     if (!task) return false;
-    return String(task.location_type || task.LOCATION_TYPE || '').toLowerCase() === 'remote';
+    if (String(task.location_type || task.LOCATION_TYPE || '').toLowerCase() === 'remote') return true;
+    return /^remote\b/i.test(String(task.location || task.LOCATION || '').trim());
   };
 
   function writeUserLocationPos(lat, lng) {
@@ -336,14 +337,16 @@
   };
 
   /**
-   * Haversine radius filter. Remote tasks always pass. In-person tasks without coords are excluded
-   * when a viewer position is set (they need backfill / re-post with geocode).
+   * Haversine radius filter. Remote tasks always pass. Tasks without coords stay
+   * visible unless includeUnknown is explicitly false — Nearby should not empty
+   * the list just because a gig was posted with a city name and no pin.
    */
   window.filterTasksByDistance = function (tasks, opts) {
     opts = opts || {};
     var pos = opts.pos || window.getGeoFilterPos();
     var radiusKm = opts.radiusKm != null ? Number(opts.radiusKm) : getNearRadiusKm();
     if (!pos || !isFinite(radiusKm)) return tasks || [];
+    var keepUnknown = opts.includeUnknown !== false;
     return (tasks || []).filter(function (t) {
       if (window.isRemoteTask(t)) {
         t._distanceKm = null;
@@ -356,7 +359,7 @@
         return d <= radiusKm;
       }
       t._distanceKm = null;
-      return false;
+      return keepUnknown;
     });
   };
 
