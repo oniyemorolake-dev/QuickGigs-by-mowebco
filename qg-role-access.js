@@ -122,7 +122,16 @@
         });
       }
       var previous = typeof getMode === 'function' ? getMode() : '';
-      if (state && typeof setMode === 'function') setMode(state.last_active_mode);
+      var intent = typeof qgPeekLoginModeIntent === 'function' ? qgPeekLoginModeIntent() : '';
+      var chosen = state && state.last_active_mode;
+      if (intent === 'tasker' || intent === 'poster') {
+        chosen = intent;
+        try { sessionStorage.removeItem('qg-login-intent-mode'); } catch (eIntent) {}
+        if ((intent === 'poster' && state && state.is_poster) || (intent === 'tasker' && state && state.is_tasker)) {
+          call('set_mode', { mode: intent }).catch(function () {});
+        }
+      }
+      if (chosen && typeof setMode === 'function') setMode(chosen);
       state = writeCache(state);
       if (typeof applyRoleTheme === 'function') applyRoleTheme();
       if (state && previous && previous !== state.last_active_mode) {

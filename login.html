@@ -135,11 +135,33 @@ document.addEventListener('DOMContentLoaded', function () {
   };
 
   applyAuthTheme();
+
+  var modeParam = '';
+  try {
+    var qs = new URLSearchParams(window.location.search);
+    modeParam = String(qs.get('mode') || qs.get('role') || '').toLowerCase();
+  } catch (eMode) {}
+  var loginMode = (modeParam === 'worker' || modeParam === 'tasker')
+    ? 'tasker'
+    : (modeParam === 'poster' ? 'poster' : '');
+  if (loginMode && typeof qgRememberLoginMode === 'function') qgRememberLoginMode(loginMode);
+  if (loginMode) {
+    var title = document.querySelector('.signup-title');
+    var sub = document.querySelector('.signup-subtitle');
+    if (title) title.textContent = loginMode === 'tasker' ? 'Log in as a Tasker' : 'Log in as a Poster';
+    if (sub) {
+      sub.textContent = loginMode === 'tasker'
+        ? 'Find gigs and earn. You can switch to Poster later.'
+        : 'Post tasks and hire. You can switch to Tasker later.';
+    }
+    var signupLink = document.querySelector('.signup-login a');
+    if (signupLink) signupLink.href = loginMode === 'tasker' ? 'signup.html?role=worker' : 'signup.html?role=poster';
+  }
 });
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { initializeAuth, browserLocalPersistence, browserPopupRedirectResolver, signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { initializeAuth, browserLocalPersistence, browserPopupRedirectResolver, onAuthStateChanged, signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
@@ -157,6 +179,17 @@ const auth = initializeAuth(app, {
   popupRedirectResolver: browserPopupRedirectResolver
 });
 window._auth = auth;
+var loginInFlight = false;
+
+onAuthStateChanged(auth, function (user) {
+  if (!user || loginInFlight) return;
+  if (typeof qgApplyLoginModeIntent === 'function') qgApplyLoginModeIntent();
+  showLoginProgress('Opening dashboard…');
+  var dest = typeof qgGetDashboardRedirect === 'function'
+    ? qgGetDashboardRedirect()
+    : 'dashboard.html';
+  window.location.replace(dest);
+});
 
 /** Drop previous Auth session + user caches before new credentials (capped wait for mobile). */
 async function beginFreshCredentialLogin() {
@@ -288,6 +321,7 @@ async function routeAfterAuthGate(user, method) {
     if (typeof qgTrackEvent === 'function') qgTrackEvent('login', { method: method });
     showLoginProgress('Opening dashboard…');
     await runGraduationCheck(user);
+    if (typeof qgApplyLoginModeIntent === 'function') qgApplyLoginModeIntent();
     var dest = typeof qgGetDashboardRedirect === 'function'
       ? qgGetDashboardRedirect()
       : (typeof getDashboardUrl === 'function' ? getDashboardUrl() : 'dashboard.html');
@@ -353,6 +387,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
 
   submitBtn.textContent = 'Logging in…';
   submitBtn.disabled = true;
+  loginInFlight = true;
 
   try {
     await beginFreshCredentialLogin();
@@ -379,6 +414,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     errorMsg.style.display = 'block';
     submitBtn.textContent = 'Log in →';
     submitBtn.disabled = false;
+    loginInFlight = false;
   }
 });
 
@@ -416,6 +452,7 @@ document.getElementById('googleLoginBtn').addEventListener('click', async functi
   okMsg.style.display = 'none';
   btn.disabled = true;
   btn.textContent = 'Connecting…';
+  loginInFlight = true;
 
   var provider = typeof qgBuildGoogleProvider === 'function'
     ? qgBuildGoogleProvider(GoogleAuthProvider)
@@ -436,6 +473,7 @@ document.getElementById('googleLoginBtn').addEventListener('click', async functi
       var rMsg = typeof qgGoogleAuthErrorMessage === 'function' ? qgGoogleAuthErrorMessage(redirectErr) : '';
       if (rMsg) { errorMsg.textContent = rMsg; errorMsg.style.display = 'block'; }
       if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+      loginInFlight = false;
     }
     return;
   }
@@ -449,12 +487,14 @@ document.getElementById('googleLoginBtn').addEventListener('click', async functi
     if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
       if (popupMsg) { errorMsg.textContent = popupMsg; errorMsg.style.display = 'block'; }
       if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+      loginInFlight = false;
       return;
     }
-    if (popupMsg && error.code !== 'auth/popup-blocked') {
+      if (popupMsg && error.code !== 'auth/popup-blocked') {
       errorMsg.textContent = popupMsg;
       errorMsg.style.display = 'block';
       if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+      loginInFlight = false;
       return;
     }
     // Popup blocked or unknown — fall back to redirect
@@ -467,6 +507,7 @@ document.getElementById('googleLoginBtn').addEventListener('click', async functi
       errorMsg.textContent = message;
       errorMsg.style.display = 'block';
       if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+      loginInFlight = false;
     }
   }
 });

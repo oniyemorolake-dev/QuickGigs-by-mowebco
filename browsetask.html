@@ -155,21 +155,13 @@
 <div id="sgToast" class="sg-toast" role="status" aria-live="polite" hidden></div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
-const firebaseConfig = {
-  apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
-  authDomain: "quickgigs-7b12d.firebaseapp.com",
-  projectId: "quickgigs-7b12d",
-  storageBucket: "quickgigs-7b12d.firebasestorage.app",
-  messagingSenderId: "698985399366",
-  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
-};
-const auth = getAuth(initializeApp(firebaseConfig));
+import { qgInitAuth } from './qg-firebase-auth.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+const auth = qgInitAuth();
 let authChecked = false;
 const redirectTimeout = setTimeout(() => {
   if (!authChecked) window.location.href = 'login.html';
-}, 3000);
+}, 8000);
 onAuthStateChanged(auth, (user) => {
   authChecked = true;
   clearTimeout(redirectTimeout);

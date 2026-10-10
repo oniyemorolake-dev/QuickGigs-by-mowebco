@@ -309,6 +309,18 @@ main{
   background:var(--surface);
   border-color:var(--line-strong);
 }
+.qg-hero-login{
+  margin:14px 0 0;
+  font-size:13.5px;
+  color:var(--text-muted);
+  line-height:1.55;
+}
+.qg-hero-login a{
+  color:var(--text);
+  font-weight:600;
+  text-decoration:none;
+}
+.qg-hero-login a:hover{color:var(--qg-link);}
 .qg-fine{
   font-size:13px;
   color:var(--text-muted);
@@ -726,7 +738,8 @@ html:not(.light) body:not(.light) .qg-btn-primary{background:color-mix(in srgb,v
   <div class="qg-topnav-end">
     <nav class="qg-topnav-links" aria-label="Primary">
       <a href="browsetask.html">Browse tasks</a>
-      <a class="qg-nav-login" href="login.html">Log in</a>
+      <a class="qg-nav-login" id="qgNavPoster" href="login.html?mode=poster">Log in as poster</a>
+      <a class="qg-nav-login" id="qgNavTasker" href="login.html?mode=tasker">Log in as tasker</a>
     </nav>
     <div class="qg-topnav-divider" aria-hidden="true"></div>
     <div class="qg-topnav-menu" id="qgTopnavMenu"></div>
@@ -753,6 +766,11 @@ html:not(.light) body:not(.light) .qg-btn-primary{background:color-mix(in srgb,v
           </div>
         </form>
 
+        <p class="qg-hero-login" id="qgHeroLogin">Already have an account?
+          <a id="qgHeroPoster" href="login.html?mode=poster">Log in as a poster</a>
+          <span aria-hidden="true"> · </span>
+          <a id="qgHeroTasker" href="login.html?mode=tasker">Log in as a tasker</a>
+        </p>
         <p class="qg-fine">No fee to post · $20 minimum · Money held in escrow</p>
   </div>
 
@@ -1041,5 +1059,40 @@ html:not(.light) body:not(.light) .qg-btn-primary{background:color-mix(in srgb,v
 <script src="qg-cookies.js?v=32e06f4-1787866369"></script>
 <script src="qg-site.js?v=d12e08d-1787871217"></script>
 <script defer src="qg-pwa.js?v=947d37a-1789577525"></script>
+<script type="module">
+import { qgInitAuth } from './qg-firebase-auth.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js';
+
+function paintSignedInLinks() {
+  var posterNav = document.getElementById('qgNavPoster');
+  var taskerNav = document.getElementById('qgNavTasker');
+  var posterHero = document.getElementById('qgHeroPoster');
+  var taskerHero = document.getElementById('qgHeroTasker');
+  var heroLine = document.getElementById('qgHeroLogin');
+  if (posterNav) {
+    posterNav.textContent = 'Continue as poster';
+    posterNav.href = 'dashboard.html?mode=poster';
+  }
+  if (taskerNav) {
+    taskerNav.textContent = 'Continue as tasker';
+    taskerNav.href = 'dashboard.html?mode=tasker';
+  }
+  if (posterHero) {
+    posterHero.textContent = 'Continue as a poster';
+    posterHero.href = 'dashboard.html?mode=poster';
+  }
+  if (taskerHero) {
+    taskerHero.textContent = 'Continue as a tasker';
+    taskerHero.href = 'dashboard.html?mode=tasker';
+  }
+  if (heroLine) {
+    heroLine.childNodes[0].textContent = 'You are signed in. ';
+  }
+}
+
+onAuthStateChanged(qgInitAuth(), function (user) {
+  if (user) paintSignedInLinks();
+});
+</script>
 </body>
 </html>

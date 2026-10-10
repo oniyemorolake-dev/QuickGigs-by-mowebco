@@ -130,6 +130,20 @@
 (function () {
   'use strict';
 
+  try {
+    var want = String(new URLSearchParams(window.location.search).get('mode') || '').toLowerCase();
+    if (want === 'worker') want = 'tasker';
+    if (want === 'tasker' || want === 'poster') {
+      localStorage.setItem('qg-mode', want);
+      localStorage.setItem('qg-session-mode', want === 'tasker' ? 'worker' : 'poster');
+      localStorage.setItem('qg-role', want === 'tasker' ? 'worker' : 'poster');
+      if (typeof setMode === 'function') setMode(want);
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState({}, '', 'dashboard.html');
+      }
+    }
+  } catch (eMode) {}
+
   var dashData = { userId: '', posted: [], apps: [], payments: [], open: [] };
 
   function esc(s) {
@@ -649,21 +663,10 @@
 </script>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { qgInitAuth } from './qg-firebase-auth.js';
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
-  authDomain: "quickgigs-7b12d.firebaseapp.com",
-  projectId: "quickgigs-7b12d",
-  storageBucket: "quickgigs-7b12d.firebasestorage.app",
-  messagingSenderId: "698985399366",
-  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-window._auth = auth;
+const auth = qgInitAuth();
 
 /* qgLogout lives in qg-menu.js, which this page deliberately does not load, so
    the direct signOut path is the only one here. */
@@ -677,7 +680,7 @@ window.doLogout = function () {
 let authChecked = false;
 const redirectTimeout = setTimeout(() => {
   if (!authChecked) window.location.href = 'login.html';
-}, 3000);
+}, 8000);
 
 onAuthStateChanged(auth, async (user) => {
   authChecked = true;

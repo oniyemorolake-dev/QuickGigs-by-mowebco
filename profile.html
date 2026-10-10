@@ -33,6 +33,7 @@
 <script defer src="qg-categories.js"></script>
 <script defer src="qg-mode.js"></script>
 <script defer src="qg-role-access.js"></script>
+<script defer src="qg-role-switch.js"></script>
 <script defer src="qg-states.js"></script>
 <script defer src="qg-page-bits.js"></script>
 <script defer src="qg-stats.js"></script>
@@ -179,22 +180,13 @@
 <div id="sgToast" class="sg-toast" role="status" aria-live="polite" hidden></div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
-const firebaseConfig = {
-  apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
-  authDomain: "quickgigs-7b12d.firebaseapp.com",
-  projectId: "quickgigs-7b12d",
-  storageBucket: "quickgigs-7b12d.firebasestorage.app",
-  messagingSenderId: "698985399366",
-  appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
-};
-const auth = getAuth(initializeApp(firebaseConfig));
-window._auth = auth;
+import { qgInitAuth } from './qg-firebase-auth.js';
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+const auth = qgInitAuth();
 let authChecked = false;
 const redirectTimeout = setTimeout(() => {
   if (!authChecked) window.location.href = 'login.html';
-}, 3000);
+}, 8000);
 onAuthStateChanged(auth, (user) => {
   authChecked = true;
   clearTimeout(redirectTimeout);
@@ -717,11 +709,28 @@ window.SG_signOut = async function () {
       box.querySelectorAll('[data-rolemode]').forEach(function (b) {
         b.onclick = async function () {
           var next = b.getAttribute('data-rolemode');
-          if (typeof QG_setActiveRoleMode === 'function') await QG_setActiveRoleMode(next);
-          if (typeof setMode === 'function') setMode(next);
+          if (typeof setQuickGigsMode === 'function') {
+            var flipped = await setQuickGigsMode(next, { toast: true });
+            if (flipped && flipped.error === next + '_role_required' && typeof QG_offerRoleOptIn === 'function') {
+              QG_offerRoleOptIn(next);
+              return;
+            }
+            if (flipped && flipped.error) {
+              toast('Could not switch to ' + (next === 'tasker' ? 'Tasker' : 'Poster') + ' — try again.', false);
+              return;
+            }
+          } else {
+            if (typeof QG_setActiveRoleMode === 'function') {
+              var roleRes = await QG_setActiveRoleMode(next);
+              if (roleRes && !roleRes.success) {
+                toast('Could not switch — try again.', false);
+                return;
+              }
+            }
+            if (typeof setMode === 'function') setMode(next);
+          }
           if (typeof QG_applyRoleMode === 'function') QG_applyRoleMode();
           renderRoleSwitch();
-          toast(next === 'tasker' ? 'Tasker mode' : 'Poster mode');
         };
       });
       return;
@@ -738,15 +747,12 @@ window.SG_signOut = async function () {
         : 'Turn on Tasker mode to browse gigs, apply and earn.') + '</p>' +
       '<div class="sg-sheet-foot"><button class="sg-btn teal" id="sgAddRole">' +
       (add === 'poster' ? 'Become a Poster' : 'Start finding work') + '</button></div>';
-    $('sgAddRole').onclick = async function () {
-      this.disabled = true;
-      try {
-        if (typeof QG_enableRole === 'function') await QG_enableRole(add);
-        if (typeof QG_loadRoleAccess === 'function') await QG_loadRoleAccess(true);
-      } catch (e) {
-        toast('Could not switch that on — try again.', false);
+    $('sgAddRole').onclick = function () {
+      if (typeof QG_offerRoleOptIn === 'function') {
+        QG_offerRoleOptIn(add);
+        return;
       }
-      renderRoleSwitch();
+      toast('Could not open Tasker setup — refresh and try again.', false);
     };
   }
 

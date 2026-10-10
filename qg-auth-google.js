@@ -73,6 +73,49 @@
       : 'dashboard.html';
   };
 
+  function normalizeLoginMode(raw) {
+    var m = String(raw || '').toLowerCase();
+    if (m === 'worker' || m === 'tasker') return 'tasker';
+    if (m === 'poster') return 'poster';
+    return '';
+  }
+
+  window.qgRememberLoginMode = function (mode) {
+    mode = normalizeLoginMode(mode);
+    try {
+      if (mode) sessionStorage.setItem('qg-login-intent-mode', mode);
+      else sessionStorage.removeItem('qg-login-intent-mode');
+    } catch (e) {}
+    return mode;
+  };
+
+  window.qgPeekLoginModeIntent = function () {
+    try {
+      return normalizeLoginMode(sessionStorage.getItem('qg-login-intent-mode'));
+    } catch (e) {
+      return '';
+    }
+  };
+
+  window.qgApplyLoginModeIntent = function () {
+    var mode = '';
+    try { mode = normalizeLoginMode(sessionStorage.getItem('qg-login-intent-mode')); } catch (e) {}
+    if (!mode) {
+      try {
+        var params = new URLSearchParams(window.location.search);
+        mode = normalizeLoginMode(params.get('mode') || params.get('role'));
+      } catch (e2) {}
+    }
+    if (!mode) return '';
+    try {
+      localStorage.setItem('qg-mode', mode);
+      localStorage.setItem('qg-session-mode', mode === 'tasker' ? 'worker' : 'poster');
+      localStorage.setItem('qg-role', mode === 'tasker' ? 'worker' : 'poster');
+    } catch (e3) {}
+    if (typeof setMode === 'function') setMode(mode);
+    return mode;
+  };
+
   /**
    * True only when there is NO users row for this Firebase uid.
    * Missing date_of_birth on an existing row must NOT count as "new" —
