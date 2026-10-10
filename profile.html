@@ -50,10 +50,8 @@
   <div class="sg-beta" id="sgVerifyStrip" hidden><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span class="sg-beta-text">Confirm your email — check your inbox for the link</span><a href="#" id="sgVerifyLink">Confirm email</a></div>
   <main class="sg-body">
     <div class="sg-profile-head"><span class="sg-avatar lg" id="sgAvatar">JB</span><span><b id="sgName">Jordan Blake</b><span id="sgMeta">Calgary, AB · Member since 2025</span><a href="#" id="sgEditProfile">Edit profile</a></span></div>
-    <h2 class="sg-section-title">Recent activity</h2>
-    <div id="sgActivity">
-    </div>
-    <h2 class="sg-section-title">Settings</h2>
+    <h2 class="sg-section-title" id="sgSettingsHead">Settings</h2>
+    <button class="sg-set" id="sgSetActivity">Recent activity<span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>
     <button class="sg-set" id="sgSetPayments">Payment methods<span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>
     <button class="sg-set" id="sgSetNotifications">Notifications<span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>
     <button class="sg-set" id="sgSetAccount">Account settings<span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>
@@ -114,6 +112,15 @@
     <label class="sg-input"><input type="text" id="sgEditLangs" maxlength="80" placeholder="English, French"></label>
 
     <div class="sg-sheet-foot"><button class="sg-btn purple" id="sgEditSave">Save profile</button></div>
+  </div>
+</div>
+
+<!-- Recent activity: posted, applied, and completed gigs. -->
+<div class="sg-sheet" id="sgActivitySheet" aria-hidden="true">
+  <div class="sg-sheet-scrim" data-close></div>
+  <div class="sg-sheet-panel full" role="dialog" aria-modal="true" aria-labelledby="sgActivityTitle">
+    <div class="sg-sheet-head"><h2 id="sgActivityTitle">Recent activity</h2><button class="sg-x" data-close aria-label="Close"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div id="sgActivity"></div>
   </div>
 </div>
 
@@ -330,7 +337,6 @@ window.SG_signOut = async function () {
   }
 
   async function loadActivity() {
-    var head = document.querySelector('.sg-section-title');
     var list = $('sgActivity');
     var rows = [];
 
@@ -374,17 +380,16 @@ window.SG_signOut = async function () {
       var a = toDate(x.at), b = toDate(y.at);
       return (b ? b.getTime() : 0) - (a ? a.getTime() : 0);
     });
-    rows = rows.slice(0, 6);
+    rows = rows.slice(0, 30);
 
-    // Hide the section rather than swapping in a different block.
     if (!rows.length) {
-      list.innerHTML = '';
-      list.hidden = true;
-      if (head) head.hidden = true;
+      list.innerHTML = '<p class="sg-muted" style="margin:18px 0">No activity yet.</p>';
+      if (!isOwnProfile) {
+        var row = $('sgSetActivity');
+        if (row) row.hidden = true;
+      }
       return;
     }
-    if (head) head.hidden = false;
-    list.hidden = false;
     list.innerHTML = rows.map(activityRow).join('');
   }
 
@@ -855,7 +860,7 @@ window.SG_signOut = async function () {
         var el = $(id);
         if (el) el.hidden = true;
       });
-      var settingsHead = document.querySelectorAll('.sg-section-title')[1];
+      var settingsHead = $('sgSettingsHead');
       if (settingsHead) settingsHead.hidden = true;
     }
 
@@ -954,6 +959,7 @@ window.SG_signOut = async function () {
       paintAvail();
     });
 
+    $('sgSetActivity').onclick = function () { openSheet('sgActivitySheet'); };
     $('sgSetPayments').onclick = function () { openSheet('sgPaySheet'); };
     $('sgSetNotifications').onclick = openNotifs;
     $('sgSetAccount').onclick = function () {

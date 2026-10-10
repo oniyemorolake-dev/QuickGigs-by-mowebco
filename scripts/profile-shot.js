@@ -1,6 +1,6 @@
 /**
- * Screenshot the rebuilt Profile beside its template, plus the four sheets the
- * design folds behind its three Settings rows and the Edit profile link.
+ * Screenshot the rebuilt Profile beside its template, plus the sheets behind
+ * Settings (activity, payments, notifications, account) and Edit profile.
  *
  *   node scripts/profile-shot.js
  *
@@ -113,6 +113,7 @@ async function shoot(browser, theme) {
     shots[key] = path.join(OUT, `prof-${theme}-${key}.png`);
     await page.screenshot({ path: shots[key], animations: 'disabled' });
   };
+  await sheet('activity', '#sgSetActivity');
   await sheet('edit', '#sgEditProfile');
   await sheet('pay', '#sgSetPayments');
   await sheet('notif', '#sgSetNotifications');
@@ -155,6 +156,7 @@ async function shoot(browser, theme) {
     fig('TEMPLATE', tplShot, '#8f8') +
     fig('LIGHT', light.main, '#9cf') +
     fig('DARK', dark.main, '#9cf') +
+    fig('Recent activity', light.activity, '#fc9') +
     fig('Edit profile', light.edit, '#fc9') +
     fig('Payment methods', light.pay, '#fc9') +
     fig('Notifications', light.notif, '#fc9') +
