@@ -45,7 +45,7 @@
   <!-- Only while the user's email is unverified: same strip style. -->
   <div class="sg-beta" id="sgVerifyStrip" hidden><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span class="sg-beta-text">Confirm your email — check your inbox for the link</span><a href="#" id="sgVerifyLink">Confirm email</a></div>
   <header class="sg-home-head">
-    <div><div class="sg-wordmark">SwiftGigs</div><div class="sg-city" id="sgCity">Calgary, AB</div></div>
+    <div><div class="sg-wordmark">SwiftGigs</div><div class="sg-city" id="sgCity"></div></div>
     <button class="sg-round" id="sgPersonBtn" aria-label="Account menu"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/></svg></button>
   </header>
   <main class="sg-body">
@@ -59,13 +59,13 @@
       <a class="sg-card sg-tile" href="posttask.html"><span class="sg-isq"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><b>Post a Task</b><span>Get help fast</span></a>
       <a class="sg-card sg-tile" id="sgEarnTile" href="browsetask.html"><span class="sg-isq teal"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9-9-9z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span><b>Earn Money</b><span>Find gigs nearby</span></a>
     </div>
-    <section id="sgCurrentTaskSection">
+    <section id="sgCurrentTaskSection" hidden>
       <div class="sg-label">Current task</div>
-      <a class="sg-card sg-rowcard" id="sgCurrentTask" href="mytasks.html"><span class="sg-isq"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.1 8.1L20 20M14.5 9.5L20 4M8.1 15.9l3.4-3.4"/></svg></span><span class="t"><b>Hair Braiding</b><span>Today · 4:00 PM · Accepted</span></span><span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></a>
+      <a class="sg-card sg-rowcard" id="sgCurrentTask" href="mytasks.html"><span class="sg-isq"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.1 8.1L20 20M14.5 9.5L20 4M8.1 15.9l3.4-3.4"/></svg></span><span class="t"><b></b><span></span></span><span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></a>
     </section>
-    <section id="sgWeekSection">
+    <section id="sgWeekSection" hidden>
       <div class="sg-label">This week</div>
-      <a class="sg-card sg-rowcard" id="sgWeek" href="profile.html"><span class="sg-isq teal"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9-9-9z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span><span class="t"><b class="sg-money" id="sgWeekEarned">$145 earned</b><span id="sgWeekCount">3 gigs completed</span></span><span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></a>
+      <a class="sg-card sg-rowcard" id="sgWeek" href="profile.html"><span class="sg-isq teal"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9-9-9z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span><span class="t"><b class="sg-money" id="sgWeekEarned"></b><span id="sgWeekCount"></span></span><span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></a>
     </section>
     <div class="sg-section-head" id="sgNearbyHead" hidden><h2 class="sg-h2">Nearby gigs</h2><a class="sg-link" href="browsetask.html">See all</a></div>
     <div class="sg-list" id="sgNearbyList" hidden></div>
@@ -674,7 +674,7 @@
     set('sg-greet-hidden', today());
     document.getElementById('sgGreetBlock').hidden = true;
   });
-  var u = window.SG_USER || { firstName: 'Morolake', streakDays: 3 };
+  var u = window.SG_USER || { firstName: '', streakDays: 0 };
   SG_renderGreeting(u.firstName, u.streakDays);
 })();
 </script>

@@ -145,10 +145,14 @@ Deno.serve(async (req) => {
         });
       } catch (createErr) {
         console.error('stripe.accounts.create failed:', createErr);
+        const details = stripeErrMessage(createErr);
         return json({
           ok: false,
           error: 'stripe_account_create_failed',
-          details: stripeErrMessage(createErr),
+          details: details,
+          message: /signed up for Connect/i.test(details)
+            ? 'Stripe Connect is not turned on for this platform yet. Open dashboard.stripe.com/connect, start Express, then try Set up payouts again.'
+            : details,
         }, 502);
       }
       accountId = account.id;

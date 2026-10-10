@@ -188,7 +188,9 @@ function withSelect(filters, selectCols) {
 }
 
 var TASKS_CACHE_KEY = 'qg-tasks-cache-v1';
+var TASKS_CACHE_OWNER_KEY = 'qg-tasks-cache-owner';
 var APPS_CACHE_KEY = 'qg-apps-cache-v1';
+var APPS_CACHE_OWNER_KEY = 'qg-apps-cache-owner';
 var CONVS_CACHE_PREFIX = 'qg-convs-cache-v1-';
 var TASKS_CACHE_MS = 60000;
 var STALE_CACHE_MS = 1000 * 60 * 60 * 24; // keep up to 24h as offline fallback
@@ -213,12 +215,37 @@ function writeJsonCache(key, items) {
   } catch (err) {}
 }
 
+function cacheActorId() {
+  if (typeof currentActorId === 'function') {
+    var id = currentActorId();
+    if (id) return String(id);
+  }
+  return window._currentUser && window._currentUser.uid ? String(window._currentUser.uid) : '';
+}
+
+function cacheMatchesOwner(ownerKey) {
+  var uid = cacheActorId();
+  var owner = '';
+  try { owner = sessionStorage.getItem(ownerKey) || ''; } catch (e) {}
+  if (!owner) return !uid;
+  if (!uid) return false;
+  return owner === uid;
+}
+
+function stampCacheOwner(ownerKey) {
+  var uid = cacheActorId();
+  if (!uid) return;
+  try { sessionStorage.setItem(ownerKey, uid); } catch (e) {}
+}
+
 function readTasksCache(allowStale) {
+  if (!cacheMatchesOwner(TASKS_CACHE_OWNER_KEY)) return null;
   return readJsonCache(TASKS_CACHE_KEY, allowStale);
 }
 
 function writeTasksCache(items) {
   writeJsonCache(TASKS_CACHE_KEY, items);
+  stampCacheOwner(TASKS_CACHE_OWNER_KEY);
   // Alias key used by UX cache-first helpers (same payload; does not change fetch queries)
   try {
     sessionStorage.setItem('qg-tasks-cache', JSON.stringify({ at: Date.now(), items: items || [] }));
@@ -226,11 +253,13 @@ function writeTasksCache(items) {
 }
 
 function readAppsCache(allowStale) {
+  if (!cacheMatchesOwner(APPS_CACHE_OWNER_KEY)) return null;
   return readJsonCache(APPS_CACHE_KEY, allowStale);
 }
 
 function writeAppsCache(items) {
   writeJsonCache(APPS_CACHE_KEY, items);
+  stampCacheOwner(APPS_CACHE_OWNER_KEY);
 }
 
 function readConversationsCache(userId, allowStale) {
@@ -244,11 +273,18 @@ function writeConversationsCache(userId, items) {
 }
 
 function invalidateTasksCache() {
-  try { sessionStorage.removeItem(TASKS_CACHE_KEY); } catch (err) {}
+  try {
+    sessionStorage.removeItem(TASKS_CACHE_KEY);
+    sessionStorage.removeItem(TASKS_CACHE_OWNER_KEY);
+    sessionStorage.removeItem('qg-tasks-cache');
+  } catch (err) {}
 }
 
 function invalidateAppsCache() {
-  try { sessionStorage.removeItem(APPS_CACHE_KEY); } catch (err) {}
+  try {
+    sessionStorage.removeItem(APPS_CACHE_KEY);
+    sessionStorage.removeItem(APPS_CACHE_OWNER_KEY);
+  } catch (err) {}
 }
 
 function getTaskRowId(row) {
