@@ -57,7 +57,7 @@
      The design draws no screen for this, so it is assembled from the same
      primitives the other screens use: .sg-seg for the tabs, .sg-gig rows. -->
 <div class="sg-screen has-tabs" id="sgListScreen">
-  <div class="sg-topbar"><a class="sg-sq" href="dashboard.html" aria-label="Back"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></a></div>
+  <div class="sg-topbar"><a class="sg-sq" href="dashboard.html" aria-label="Back"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></a><span class="sg-mode-tag" role="status"><svg class="i sg-mode-ic-poster" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="7" width="17" height="12.5" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/></svg><svg class="i sg-mode-ic-tasker" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 6v12M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.2 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/></svg><span class="sg-mode-lab-poster">Poster</span><span class="sg-mode-lab-tasker">Tasker</span></span></div>
   <main class="sg-body">
     <h1 class="sg-h1 bold">My gigs</h1>
     <p class="sg-sub" id="sgListSub">Everything you have posted, applied to and worked on.</p>
@@ -76,7 +76,7 @@
      Claude outputs/sg-design/templates/active-gig.html, with the map preview
      box holding a real Leaflet map. -->
 <div class="sg-screen has-actionbar" id="sgActiveScreen" hidden>
-  <div class="sg-topbar"><button class="sg-sq" id="sgActiveBack" aria-label="Back"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><span class="sg-chip-status" id="sgActiveStatus">In Progress</span></div>
+  <div class="sg-topbar"><button class="sg-sq" id="sgActiveBack" aria-label="Back"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><span class="sg-mode-tag" role="status"><svg class="i sg-mode-ic-poster" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="7" width="17" height="12.5" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/></svg><svg class="i sg-mode-ic-tasker" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 6v12M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.2 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/></svg><span class="sg-mode-lab-poster">Poster</span><span class="sg-mode-lab-tasker">Tasker</span></span><span class="sg-chip-status" id="sgActiveStatus">In Progress</span></div>
   <main class="sg-body">
     <div class="sg-map" id="sgActiveMap"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5a7 7 0 0 0-14 0C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Map preview</div>
     <h1 class="sg-h1 bold" style="font-size:24px;margin-top:22px" id="sgActiveTitle">Gig</h1>
