@@ -82,7 +82,36 @@ Deno.serve(async (req) => {
       }, 502);
     }
 
-    const ready = connectAccountReady(account);
+    let v2: Record<string, unknown> = {};
+    try {
+      const v2Res = await fetch(
+        'https://api.stripe.com/v2/core/accounts/' + encodeURIComponent(connectId)
+          + '?include=configuration.recipient&include=requirements&include=identity',
+        {
+          headers: {
+            Authorization: 'Bearer ' + stripeKey,
+            'Stripe-Version': '2026-09-30.preview',
+          },
+        },
+      );
+      if (v2Res.ok) v2 = await v2Res.json() as Record<string, unknown>;
+    } catch (v2Err) {
+      console.warn('Accounts v2 retrieve skipped:', v2Err);
+    }
+
+    const ready = connectAccountReady({
+      ...account,
+      configuration: v2.configuration as {
+        recipient?: {
+          capabilities?: {
+            stripe_balance?: { stripe_transfers?: { status?: string } };
+          };
+        };
+      } | undefined,
+      requirements: (v2.requirements || account.requirements) as {
+        currently_due?: unknown[] | null;
+      },
+    });
     const age = ageFromDateOfBirth(userRow?.date_of_birth);
     const graduatedAdult = age != null && age >= 18 && Boolean(userRow?.graduated_at);
     const userPatch: Record<string, unknown> = {

@@ -70,6 +70,17 @@
       document.documentElement.setAttribute('data-qg-mode', mode);
       document.documentElement.setAttribute('data-mode', mode === 'worker' ? 'tasker' : 'poster');
     }
+    var tagMode = mode === 'worker' ? 'tasker' : 'poster';
+    document.querySelectorAll('.sg-mode-tag').forEach(function (el) {
+      el.setAttribute('data-mode', tagMode);
+      el.setAttribute('aria-label', tagMode === 'tasker' ? 'Tasker' : 'Poster');
+      el.querySelectorAll('.sg-mode-ic-poster, .sg-mode-lab-poster').forEach(function (n) {
+        n.hidden = tagMode === 'tasker';
+      });
+      el.querySelectorAll('.sg-mode-ic-tasker, .sg-mode-lab-tasker').forEach(function (n) {
+        n.hidden = tagMode !== 'tasker';
+      });
+    });
     return mode;
   }
 

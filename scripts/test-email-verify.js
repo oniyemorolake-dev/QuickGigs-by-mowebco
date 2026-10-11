@@ -18,7 +18,7 @@ const BASE = process.env.SG_BASE || 'http://localhost:8099';
   const dashSrc = fs.readFileSync(path.join(ROOT, 'dashboard.html'), 'utf8');
   const dashLoads = /qg-verification\.js/.test(dashSrc)
     && /QG_paintEmailVerifyStrip/.test(dashSrc)
-    && /id="sgVerifyLink">Confirm email/.test(dashSrc);
+    && /id="sgVerifyLink">How to confirm/.test(dashSrc);
 
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
@@ -51,27 +51,33 @@ const BASE = process.env.SG_BASE || 'http://localhost:8099';
     window._auth = { currentUser: user };
 
     var sendRes = await window.QG_sendEmailVerification();
+    var again = await window.QG_sendEmailVerification();
     window.QG_paintEmailVerifyStrip(user);
     var strip = document.getElementById('sgVerifyStrip');
     document.getElementById('sgVerifyLink').click();
     var overlay = document.getElementById('qgVerificationOverlay');
     var title = overlay && overlay.querySelector('#qgVerifyEmailTitle');
     var body = overlay ? overlay.textContent : '';
+    var sendBtn = overlay && overlay.querySelector('#qgVerifyEmailBtn');
     return {
       sent: sendRes && sendRes.sent === true,
       sendOk: sendRes && sendRes.ok === true,
+      secondBlocked: again && again.sent === false,
       callCount: sentCalls.length,
       continueUrl: sentCalls[0] && sentCalls[0].url,
       stripVisible: strip && strip.hidden === false,
       overlayTitle: title ? title.textContent : '',
       bodyHasConfirmEmail: /confirm your email/i.test(body),
-      bodyHasInbox: /verify@example\.com/.test(body)
+      bodyHasInbox: /verify@example\.com/.test(body),
+      sendLocked: !!(sendBtn && (sendBtn.disabled || /already sent/i.test(sendBtn.textContent || '')))
     };
   });
 
   console.log(JSON.stringify({ signupSends, dashLoads, result }, null, 2));
   const ok = signupSends && dashLoads
-    && result.sent && result.sendOk && result.callCount >= 1
+    && result.sent && result.sendOk && result.callCount === 1
+    && result.secondBlocked && result.sendLocked
+    && result.continueUrl === 'https://quickgigs.ca/dashboard.html'
     && result.stripVisible
     && /confirm your email/i.test(result.overlayTitle)
     && result.bodyHasConfirmEmail && result.bodyHasInbox;

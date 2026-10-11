@@ -15,6 +15,14 @@
           (p.link || 'https://quickgigs.ca/mytasks.html?tab=posted');
       }
     },
+    application_declined: {
+      subject: function (p) { return 'Update on “' + (p.taskTitle || 'a task') + '”'; },
+      body: function (p) {
+        return 'Your application for “' + (p.taskTitle || 'a task') +
+          '” was not accepted.\n\nBrowse other gigs:\n' +
+          (p.link || 'https://quickgigs.ca/browsetask.html');
+      }
+    },
     application_accepted: {
       subject: function (p) { return 'You were hired for “' + (p.taskTitle || 'a task') + '” 🎉'; },
       body: function (p) {
@@ -202,6 +210,7 @@
     var inAppTypes = {
       application_received: 1,
       application_accepted: 1,
+      application_declined: 1,
       task_completed: 1,
       task_funded: 1,
       chat_unlocked: 1,

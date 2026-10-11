@@ -245,6 +245,115 @@ html[data-qg-page="messages"] .help-fab {
   font-size: 12px; font-weight: 500; color: var(--accent); text-decoration: none;
 }
 
+/* Playfair's italic "ft" ligature makes SwiftGigs read as SwieftGigs. */
+.qg-brand-name,
+.qg-auth-name,
+.sg-wordmark,
+.nav-brand .nav-logo {
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "clig" 0, "dlig" 0;
+}
+
+/* Signed-in landing nav: "Continue as poster/tasker" is too wide for one
+   row next to the wordmark. Put the two links on their own row on phones.
+   Keep .qg-topnav-end in the box tree — display:contents drops those
+   children from Safari/iOS hit-testing, so Log in / Continue taps miss.
+   After sign-in, qg-site.js marks the stored role .is-current and the other
+   .is-other so the phone shows one pill, not both generic chips. */
+body.page-landing.qg-landing-in #qgHeroLogin a.is-other,
+body.page-landing.qg-landing-in #qgHeroLogin span[aria-hidden] {
+  display: none;
+}
+body.page-landing.qg-landing-in .qg-topnav-links a.qg-nav-login.is-current {
+  font-weight: 600;
+  color: var(--primary);
+}
+body.page-landing.qg-landing-mode-tasker .qg-topnav-links a.qg-nav-login.is-current {
+  color: var(--teal);
+}
+@media (max-width: 719px) {
+  body.page-landing .qg-topnav {
+    flex-wrap: wrap;
+    row-gap: 8px;
+    padding-right: 58px;
+  }
+  body.page-landing .qg-brand {
+    flex: 1 1 auto;
+    min-width: 0;
+    position: relative;
+    z-index: 1;
+  }
+  body.page-landing .qg-topnav-end {
+    flex: 1 1 100%;
+    width: 100%;
+    margin-left: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: stretch;
+    gap: 8px;
+  }
+  body.page-landing .qg-topnav-menu {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    margin-left: 0;
+    z-index: 3;
+  }
+  body.page-landing .qg-topnav-links {
+    flex: 1 1 100%;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: stretch;
+    gap: 8px;
+    min-width: 0;
+    position: relative;
+    z-index: 2;
+  }
+  /* Browse was collapsing to 0 width next to the two login pills. */
+  body.page-landing .qg-topnav-links a:not(.qg-nav-login) {
+    flex: 1 1 100%;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  body.page-landing .qg-topnav-links a.qg-nav-login {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 12.5px;
+    padding: 8px 10px;
+    border: 1px solid var(--qg-border, var(--border));
+    border-radius: 100px;
+    pointer-events: auto;
+  }
+  body.page-landing.qg-landing-in .qg-topnav-links a.qg-nav-login.is-other {
+    display: none;
+  }
+  body.page-landing.qg-landing-in .qg-topnav-links a.qg-nav-login.is-current {
+    flex: 1 1 100%;
+    min-height: 44px;
+    border: none;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 600;
+    background: var(--primary);
+    color: var(--primary-text, #fff);
+  }
+  body.page-landing.qg-landing-mode-tasker .qg-topnav-links a.qg-nav-login.is-current {
+    background: var(--teal);
+    color: var(--teal-text, #062824);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   body, .qg-stagger-in, .qg-help-panel, .modal, .bottom-sheet, .modal-overlay {
     animation: none !important;

@@ -1301,3 +1301,88 @@ window.formatCadAmount = formatCadAmount;
 window.formatFeeCommitmentLine = formatFeeCommitmentLine;
 window.formatTaskerPayoutLine = formatTaskerPayoutLine;
 window.formatFeeBreakdownHtml = formatFeeBreakdownHtml;
+
+// Hard stop for Firebase confirmation-email floods. Signup and Home used to
+// call sendEmailVerification twice (bare, then continue URL). Intercept the
+// Identity Toolkit request so a second VERIFY_EMAIL in 24h never leaves.
+(function qgBrakeVerifyEmail() {
+  if (window.__qgVerifyEmailBrake) return;
+  window.__qgVerifyEmailBrake = true;
+  var KEY = 'qg-email-verify-sent:';
+  var WINDOW_MS = 24 * 60 * 60 * 1000;
+  var inflight = false;
+
+  function currentUid() {
+    try {
+      var a = window._auth || window.auth;
+      return (a && a.currentUser && a.currentUser.uid) || '';
+    } catch (_e) {
+      return '';
+    }
+  }
+
+  function recently(uid) {
+    uid = uid || currentUid();
+    if (!uid) return false;
+    try {
+      var at = parseInt(localStorage.getItem(KEY + uid) || '0', 10);
+      return !!(at && (Date.now() - at) < WINDOW_MS);
+    } catch (_e2) {
+      return false;
+    }
+  }
+
+  function remember(uid) {
+    uid = uid || currentUid();
+    if (!uid) return;
+    try { localStorage.setItem(KEY + uid, String(Date.now())); } catch (_e3) {}
+  }
+
+  function isOobUrl(url) {
+    return /sendOobCode|getOobConfirmationCode/i.test(String(url || ''));
+  }
+
+  function isVerifyEmailBody(raw) {
+    if (!raw) return false;
+    if (typeof raw === 'object' && typeof raw.requestType === 'string') {
+      return raw.requestType === 'VERIFY_EMAIL';
+    }
+    var s = typeof raw === 'string' ? raw : '';
+    if (!s) return false;
+    try {
+      var parsed = JSON.parse(s);
+      return !!(parsed && parsed.requestType === 'VERIFY_EMAIL');
+    } catch (_e4) {
+      return /"requestType"\s*:\s*"VERIFY_EMAIL"/.test(s);
+    }
+  }
+
+  function blockedResponse() {
+    return new Response(JSON.stringify({
+      error: { code: 400, message: 'TOO_MANY_ATTEMPTS_TRY_LATER', status: 'INVALID_ARGUMENT' }
+    }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+  }
+
+  var nativeFetch = window.fetch;
+  if (typeof nativeFetch !== 'function') return;
+  window.fetch = function (input, init) {
+    try {
+      var url = typeof input === 'string' ? input : (input && input.url) || '';
+      var body = init && init.body;
+      if (isOobUrl(url) && isVerifyEmailBody(body)) {
+        var uid = currentUid();
+        if ((uid && recently(uid)) || inflight) return Promise.resolve(blockedResponse());
+        inflight = true;
+        return nativeFetch.apply(this, arguments).then(function (res) {
+          inflight = false;
+          if (res && res.ok) remember(uid);
+          return res;
+        }).catch(function (err) {
+          inflight = false;
+          throw err;
+        });
+      }
+    } catch (_e5) {}
+    return nativeFetch.apply(this, arguments);
+  };
+})();

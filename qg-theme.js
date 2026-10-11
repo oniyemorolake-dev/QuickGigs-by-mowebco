@@ -15,6 +15,31 @@
   }
   ensureTokensStylesheet();
 
+  /* App screens already ship system-ui as fallback. Load DM Sans + Playfair
+     after first paint so Google Fonts never block the stylesheet waterfall.
+     Only pages that use sg-app.css (the rebuilt screens) opt in. */
+  function ensureAppFonts() {
+    try {
+      if (document.getElementById('qg-app-fonts')) return;
+      if (!document.querySelector('link[href*="sg-app.css"]')) return;
+      if (!document.querySelector('link[rel="preconnect"][href*="fonts.gstatic"]')) {
+        var pre = document.createElement('link');
+        pre.rel = 'preconnect';
+        pre.href = 'https://fonts.gstatic.com';
+        pre.crossOrigin = 'anonymous';
+        document.head.appendChild(pre);
+      }
+      var link = document.createElement('link');
+      link.id = 'qg-app-fonts';
+      link.rel = 'stylesheet';
+      link.href = 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Playfair+Display:ital,wght@1,700&display=swap';
+      link.media = 'print';
+      link.onload = function () { link.media = 'all'; };
+      document.head.appendChild(link);
+    } catch (e) {}
+  }
+  ensureAppFonts();
+
   function migrateThemeFromLegacy() {
     try {
       var theme = localStorage.getItem('qg-theme');

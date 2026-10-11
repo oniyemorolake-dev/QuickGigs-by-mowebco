@@ -407,7 +407,7 @@ async function sbGetOrThrow(table, filters, order, limit, opts) {
     if (opts.count) {
       extra.Prefer = 'count=exact';
     }
-    var headers = await getSupabaseHeaders(extra);
+    var headers = await getSupabaseHeaders(extra, opts);
     var res = await fetch(url, { method: 'GET', headers: headers, signal: controller.signal });
     if (!res.ok) {
       var errText = await res.text();
@@ -2228,35 +2228,73 @@ async function syncCurrentUserProfile(firebaseUser, opts) {
   return result;
 }
 
-/** One-shot login gate: status + routing fields. Lookup is ALWAYS by firebase_uid. */
-async function getUserLoginGate(firebaseUid) {
-  if (!firebaseUid) return null;
+async function fetchLoginGateByUid(firebaseUid, forceRefresh) {
   var filter = 'firebase_uid=eq.' + encodeURIComponent(String(firebaseUid));
   try {
     var rows = await sbGetOrThrow(
       'users',
       withSelect(filter, SELECT_USERS_LOGIN_GATE),
       null,
-      1
+      1,
+      forceRefresh ? { forceRefresh: true } : undefined
     );
     return (rows && rows[0]) || null;
   } catch (err) {
-    // Optional columns (guardian_*, date_of_birth) missing → still detect existing users.
+    if (err && err.code === 'supabase_firebase_auth_required') throw err;
     console.warn('getUserLoginGate full select failed, using minimal:', err && err.message);
-    try {
-      var minimal = await sbGet(
-        'users',
-        withSelect(filter, 'firebase_uid,status,role,account_status'),
-        null,
-        1
-      );
-      return (minimal && minimal[0]) || null;
-    } catch (err2) {
-      console.warn('getUserLoginGate failed:', err2);
-      // Lookup failed (JWT/network) — not the same as "no users row".
-      throw err2;
-    }
+    var minimal = await sbGet(
+      'users',
+      withSelect(filter, 'firebase_uid,status,role,account_status'),
+      null,
+      1
+    );
+    return (minimal && minimal[0]) || null;
   }
+}
+
+async function fetchLoginGateResolveRpc() {
+  var headers = await getSupabaseHeaders();
+  var res = await fetch(SUPABASE_URL + '/rest/v1/rpc/qg_login_resolve', {
+    method: 'POST',
+    headers: headers,
+    body: '{}'
+  });
+  if (!res.ok) return null;
+  var data = await res.json();
+  return data && data.firebase_uid ? data : null;
+}
+
+/**
+ * Login gate: status + routing fields.
+ * Empty result means "no users row" only after a signed-in JWT lookup.
+ * A missing token / network error throws — callers must not treat that as signup.
+ */
+async function getUserLoginGate(firebaseUid) {
+  if (!firebaseUid) return null;
+  var live = (window._auth && window._auth.currentUser) || window._currentUser || null;
+  if (!live || typeof live.getIdToken !== 'function') {
+    var authErr = new Error('login_gate_needs_auth');
+    authErr.code = 'login_gate_needs_auth';
+    throw authErr;
+  }
+
+  var row = await fetchLoginGateByUid(firebaseUid, false);
+  if (!row) {
+    await new Promise(function (r) { setTimeout(r, 350); });
+    row = await fetchLoginGateByUid(firebaseUid, true);
+  }
+  if (!row) {
+    try { row = await fetchLoginGateResolveRpc(); } catch (eRpc) { row = null; }
+  }
+  if (!row && typeof qgIsOnboardingDoneCached === 'function' && qgIsOnboardingDoneCached(firebaseUid)) {
+    return {
+      firebase_uid: String(firebaseUid),
+      status: 'active',
+      account_status: 'active',
+      _gate_cached: true
+    };
+  }
+  return row;
 }
 
 function invalidateUserProfileCache(firebaseUid) {
@@ -3200,6 +3238,27 @@ async function patchApplicationFields(appId, patch, opts) {
   return result;
 }
 
+async function callApplyCounterRpc(appId, action, amount) {
+  var headers = await getSupabaseHeaders();
+  var res = await fetch(SUPABASE_URL + '/rest/v1/rpc/qg_apply_counter', {
+    method: 'POST',
+    headers: headers,
+    body: JSON.stringify({
+      p_app_id: String(appId || ''),
+      p_action: String(action || ''),
+      p_amount: amount == null || amount === '' ? null : Number(amount)
+    })
+  });
+  var data = null;
+  try { data = await res.json(); } catch (e) { data = null; }
+  if (!res.ok) {
+    var err = (data && (data.message || data.code)) || ('HTTP ' + res.status);
+    return { success: false, error: err };
+  }
+  if (data && data.success) return { success: true, data: data };
+  return { success: false, error: (data && data.error) || 'counter_failed' };
+}
+
 async function posterSendCounterOffer(appId, posterId, amount, opts) {
   opts = opts || {};
   amount = Math.round(Number(amount));
@@ -3212,7 +3271,6 @@ async function posterSendCounterOffer(appId, posterId, amount, opts) {
   if (!task || String(task.posted_by || task.POSTED_BY) !== String(posterId)) {
     return { success: false, error: 'not_owner' };
   }
-  if (!isTaskBudgetNegotiable(task)) return { success: false, error: 'not_negotiable' };
   var st = String(app.status || app.STATUS || 'pending').toLowerCase();
   if (st !== 'pending') return { success: false, error: 'not_pending' };
   var neg = parseNegotiationFields(app);
@@ -3220,13 +3278,22 @@ async function posterSendCounterOffer(appId, posterId, amount, opts) {
   if (neg.counterBy === 'worker') return { success: false, error: 'respond_to_counter' };
   if (neg.counterRound >= 1) return { success: false, error: 'max_rounds' };
 
-  var patch = {
-    counter_price: amount,
-    counter_by: 'poster',
-    counter_round: neg.counterRound + 1,
-    last_counter_at: new Date().toISOString()
-  };
-  var result = await patchApplicationFields(appId, patch, { taskId: taskId, workerId: workerId });
+  var result = await callApplyCounterRpc(appId, 'send', amount);
+  if (!result.success && /PGRST202|does not exist|404/i.test(String(result.error || ''))) {
+    result = await patchApplicationFields(appId, {
+      counter_price: amount,
+      counter_by: 'poster',
+      counter_round: neg.counterRound + 1,
+      last_counter_at: new Date().toISOString()
+    }, { taskId: taskId, workerId: workerId });
+  }
+  if (result.success) {
+    mergeApplicationInCache(appId, taskId, workerId, applicationPatchToCache({
+      counter_price: amount,
+      counter_by: 'poster',
+      counter_round: neg.counterRound + 1
+    }));
+  }
   if (result.success && typeof notifyWorkerCounterOffer === 'function') {
     try {
       var posterName = task.poster_name || task.POSTER_NAME || 'The poster';
@@ -3282,7 +3349,13 @@ async function workerRespondToCounter(appId, workerId, action, amount, opts) {
     return { success: false, error: 'invalid_action' };
   }
 
-  var result = await patchApplicationFields(appId, patch, { taskId: taskId, workerId: workerId });
+  var result = await callApplyCounterRpc(appId, action, amount);
+  if (!result.success && /PGRST202|does not exist|404/i.test(String(result.error || ''))) {
+    result = await patchApplicationFields(appId, patch, { taskId: taskId, workerId: workerId });
+  }
+  if (result.success) {
+    mergeApplicationInCache(appId, taskId, workerId, applicationPatchToCache(patch));
+  }
   if (!result.success) return result;
 
   if (action === 'counter' && typeof notifyPosterCounterReply === 'function') {
@@ -3338,7 +3411,10 @@ async function posterRespondToCounter(appId, posterId, action, opts) {
   var patch = action === 'accept'
     ? { price: neg.counterPrice, counter_price: null, counter_by: null }
     : { counter_price: null, counter_by: null };
-  var result = await patchApplicationFields(appId, patch, { taskId: taskId, workerId: workerId });
+  var result = await callApplyCounterRpc(appId, action, opts.amount);
+  if (!result.success && /PGRST202|does not exist|404/i.test(String(result.error || ''))) {
+    result = await patchApplicationFields(appId, patch, { taskId: taskId, workerId: workerId });
+  }
   if (result.success && action === 'accept' && typeof notifyWorkerCounterOffer === 'function') {
     try {
       await notifyWorkerCounterOffer(workerId, '', task, {
@@ -3616,6 +3692,30 @@ function formatSupabaseActionError(action, err) {
   }
   if (lower.indexOf('teen_poster_unavailable') >= 0) {
     return 'Poster mode becomes available when you turn 18.';
+  }
+  if (lower.indexOf('invalid_amount') >= 0) {
+    return 'Counter must be at least $20.';
+  }
+  if (lower.indexOf('invalid_action') >= 0) {
+    return 'Could not send that counter. Refresh and try again.';
+  }
+  if (lower.indexOf('not_negotiable') >= 0) {
+    return 'This gig was posted as a fixed price.';
+  }
+  if (lower.indexOf('max_rounds') >= 0) {
+    return 'This offer already had its one counter.';
+  }
+  if (lower.indexOf('counter_pending') >= 0) {
+    return 'Your counter is already with the tasker.';
+  }
+  if (lower.indexOf('respond_to_counter') >= 0) {
+    return 'Respond to their counter first — accept or decline it.';
+  }
+  if (lower.indexOf('no_counter') >= 0) {
+    return 'There is no open counter to respond to.';
+  }
+  if (lower.indexOf('not_pending') >= 0) {
+    return 'This application is no longer open.';
   }
   if (lower.indexOf('location_geocode_failed') >= 0) {
     return 'Choose a valid Canadian city or area.';
@@ -4693,6 +4793,9 @@ var INAPP_BODY = {
   application_accepted: function (p) {
     return (p.posterName || 'The poster') + ' accepted you for “' + (p.taskTitle || 'a task') + '”.';
   },
+  application_declined: function (p) {
+    return 'Your application for “' + (p.taskTitle || 'a task') + '” was not accepted.';
+  },
   task_completed: function (p) {
     var role = String(p.role || '');
     if (role === 'worker') {
@@ -4745,6 +4848,7 @@ var INAPP_BODY = {
 var INAPP_TITLE = {
   application_received: function () { return 'New application'; },
   application_accepted: function () { return 'Application accepted'; },
+  application_declined: function () { return 'Application declined'; },
   task_completed: function () { return 'Task complete'; },
   task_funded: function () { return 'Chat unlocked'; },
   chat_unlocked: function () { return 'Chat unlocked'; },

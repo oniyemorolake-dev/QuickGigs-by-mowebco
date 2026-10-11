@@ -114,6 +114,30 @@
 
   def('defaultMyTasksTab', function () { return isWorker() ? 'applied' : 'posted'; });
 
+  window.QG_ensureLeaflet = window.QG_ensureLeaflet || function () {
+    if (window.L) return Promise.resolve(window.L);
+    if (window._qgLeafletP) return window._qgLeafletP;
+    window._qgLeafletP = new Promise(function (resolve, reject) {
+      if (!document.querySelector('link[data-qg-leaflet]')) {
+        var css = document.createElement('link');
+        css.rel = 'stylesheet';
+        css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        css.setAttribute('integrity', 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=');
+        css.crossOrigin = '';
+        css.setAttribute('data-qg-leaflet', '1');
+        document.head.appendChild(css);
+      }
+      var s = document.createElement('script');
+      s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      s.setAttribute('integrity', 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=');
+      s.crossOrigin = '';
+      s.onload = function () { resolve(window.L); };
+      s.onerror = function () { reject(new Error('leaflet_load_failed')); };
+      document.head.appendChild(s);
+    });
+    return window._qgLeafletP;
+  };
+
   def('normalizeMyTasksTab', function (tab) {
     var allowed = isWorker()
       ? { applied: 1, inprogress: 1, completed: 1 }

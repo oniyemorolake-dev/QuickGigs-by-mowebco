@@ -12,9 +12,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="SwiftGigs">
 <meta name="theme-color" content="#0B0A14">
-<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://nuyfqsxstsrbloztzgau.supabase.co" crossorigin>
 
 <!-- Layout is qg-tokens.css + sg-app.css only. No legacy visual sheet and no
      UI-injector script loads here: the injectors are what kept putting streak
@@ -24,6 +23,16 @@
 
 <!-- Theme must settle before first paint, so this one is not deferred. -->
 <script src="qg-theme.js"></script>
+<script>
+(function () {
+  try {
+    var p = new URLSearchParams(location.search);
+    if (p.get('mode') === 'verifyEmail' && p.get('oobCode')) {
+      sessionStorage.setItem('qg-email-oob', p.get('oobCode'));
+    }
+  } catch (e) {}
+})();
+</script>
 
 <!-- Data, auth and logic only. -->
 <script defer src="qg-utils.js"></script>
@@ -32,7 +41,7 @@
 <script defer src="supabase-db.js"></script>
 <script defer src="qg-categories.js"></script>
 <!-- Visit streak, extracted from qg-wave2.js so the injector stays unloaded. -->
-<script src="qg-streak.js"></script>
+<script defer src="qg-streak.js"></script>
 <script defer src="qg-mode.js"></script>
 <script defer src="qg-location.js"></script>
 <script defer src="qg-age.js"></script>
@@ -43,10 +52,10 @@
 <div class="sg-screen has-tabs">
   <div class="sg-beta" id="sgBeta"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15 9.5a3.5 3.5 0 0 1 0 5"/><path d="M17.5 7a7 7 0 0 1 0 10"/></svg><span class="sg-beta-text">SwiftGigs beta is live — payments live via Stripe.</span><a href="feedback.html">Feedback</a><button class="sg-x" id="sgBetaClose" aria-label="Dismiss"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
   <!-- Only while the user's email is unverified: same strip style. -->
-  <div class="sg-beta" id="sgVerifyStrip" hidden><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span class="sg-beta-text">Confirm your email — check your inbox for the link</span><a href="#" id="sgVerifyLink">Confirm email</a></div>
+  <div class="sg-beta" id="sgVerifyStrip" hidden><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span class="sg-beta-text">Check inbox and spam for the confirmation link</span><a href="#" id="sgVerifyLink">How to confirm</a></div>
   <header class="sg-home-head">
-    <div><div class="sg-wm-row"><span class="sg-wordmark">SwiftGigs</span><span class="sg-mode-tag" role="status"><svg class="i sg-mode-ic-poster" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="7" width="17" height="12.5" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/></svg><svg class="i sg-mode-ic-tasker" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 6v12M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.2 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/></svg><span class="sg-mode-lab-poster">Poster</span><span class="sg-mode-lab-tasker">Tasker</span></span></div><div class="sg-city" id="sgCity"></div></div>
-    <button class="sg-round" id="sgPersonBtn" aria-label="Account menu"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/></svg></button>
+    <div><div class="sg-wm-row"><span class="sg-wordmark">SwiftGigs</span><span class="sg-mode-tag" role="status" data-mode="poster"><svg class="i sg-mode-ic-poster" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="7" width="17" height="12.5" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/></svg><svg class="i sg-mode-ic-tasker" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 6v12M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.2 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/></svg><span class="sg-mode-lab-poster">Poster</span><span class="sg-mode-lab-tasker">Tasker</span></span></div><div class="sg-city" id="sgCity"></div></div>
+    <button class="sg-round" id="sgPersonBtn" aria-label="Account menu"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/></svg><span class="sg-badge" id="sgPersonNotifBadge" hidden>0</span></button>
   </header>
   <main class="sg-body">
     <!-- Greeting block: time-of-day greeting + a light-hearted line + streak. The x hides it until tomorrow. -->
@@ -497,11 +506,13 @@
           if (role === 'poster') dashData.posted = Array.isArray(boot.tasks) ? boot.tasks : [];
           else dashData.open = Array.isArray(boot.tasks) ? boot.tasks : [];
           renderAll();
+          refreshNotifBadge();
           loadNearby(role);
         })
         .catch(function (err) {
           console.warn('Dashboard load failed:', err);
           renderAll();
+          refreshNotifBadge();
         });
     }
 
@@ -559,28 +570,67 @@
     badge.hidden = pending === 0;
   }
 
+  function paintNotifBadge(count) {
+    var n = Math.max(0, Number(count) || 0);
+    var menu = document.getElementById('sgNotifCount');
+    var head = document.getElementById('sgPersonNotifBadge');
+    if (menu) {
+      menu.textContent = String(n);
+      menu.hidden = n === 0;
+    }
+    if (head) {
+      head.textContent = n > 9 ? '9+' : String(n);
+      head.hidden = n === 0;
+    }
+    var person = document.getElementById('sgPersonBtn');
+    if (person) {
+      person.setAttribute('aria-label', n
+        ? 'Account menu, ' + n + ' unread notification' + (n === 1 ? '' : 's')
+        : 'Account menu');
+    }
+  }
+
+  function refreshNotifBadge() {
+    if (typeof window.getUnreadNotificationCount !== 'function' || !dashData.userId) {
+      paintNotifBadge(0);
+      return;
+    }
+    window.getUnreadNotificationCount(dashData.userId).then(paintNotifBadge).catch(function () {});
+  }
+
   function renderNotifications() {
     var host = document.getElementById('sgNotifList');
     if (!host) return;
     if (typeof window.fetchUserNotifications !== 'function' || !dashData.userId) {
       host.innerHTML = '<p class="sg-muted" style="padding:10px 0">No notifications yet.</p>';
+      paintNotifBadge(0);
       return;
     }
     window.fetchUserNotifications(dashData.userId, 40).then(function (rows) {
       rows = Array.isArray(rows) ? rows : [];
+      paintNotifBadge(rows.filter(function (n) { return !n.read_at; }).length);
       if (!rows.length) {
         host.innerHTML = '<p class="sg-muted" style="padding:10px 0">No notifications yet.</p>';
         return;
       }
       host.innerHTML = rows.map(function (n) {
-        var body = n.body || n.message || n.title || '';
+        var title = n.title || '';
+        var body = n.body || n.message || title || '';
         var link = n.link || n.url || '';
+        if (link && link.indexOf('quickgigs.ca/') >= 0) {
+          link = link.replace(/^https?:\/\/(www\.)?quickgigs\.ca\//i, '');
+        }
         var when = payDate(n);
         var time = when ? when.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
+        var unread = !n.read_at ? ' is-unread' : '';
         var tag = link ? 'a' : 'div';
-        return '<' + tag + ' class="sg-menu-row"' + (link ? ' href="' + esc(link) + '"' : '') + '>' +
-          '<span class="t">' + esc(body) + (time ? '<small>' + esc(time) + '</small>' : '') + '</span></' + tag + '>';
+        return '<' + tag + ' class="sg-menu-row' + unread + '"' + (link ? ' href="' + esc(link) + '"' : '') + '>' +
+          '<span class="t">' + (title && title !== body ? '<b>' + esc(title) + '</b>' : '') +
+          esc(body) + (time ? '<small>' + esc(time) + '</small>' : '') + '</span></' + tag + '>';
       }).join('');
+      if (typeof window.markAllNotificationsRead === 'function') {
+        window.markAllNotificationsRead(dashData.userId).then(function () { paintNotifBadge(0); }).catch(function () {});
+      }
     }).catch(function () {
       host.innerHTML = '<p class="sg-muted" style="padding:10px 0">Could not load notifications.</p>';
     });
@@ -694,9 +744,18 @@ window.doLogout = function () {
     .catch(function () { window.location.href = 'login.html'; });
 };
 
+function qgHasEmailAction() {
+  try {
+    if (typeof QG_hasPendingEmailAction === 'function' && QG_hasPendingEmailAction()) return true;
+    if (sessionStorage.getItem('qg-email-oob')) return true;
+    var q = new URLSearchParams(location.search);
+    return q.get('mode') === 'verifyEmail' && !!q.get('oobCode');
+  } catch (e) { return false; }
+}
+
 let authChecked = false;
 const redirectTimeout = setTimeout(() => {
-  if (!authChecked) window.location.href = 'login.html';
+  if (!authChecked && !qgHasEmailAction()) window.location.href = 'login.html';
 }, 8000);
 
 onAuthStateChanged(auth, async (user) => {
@@ -704,6 +763,7 @@ onAuthStateChanged(auth, async (user) => {
   clearTimeout(redirectTimeout);
   if (!user) {
     if (typeof setCurrentUser === 'function') setCurrentUser(null);
+    if (qgHasEmailAction()) return;
     window.location.href = 'login.html';
     return;
   }
@@ -719,8 +779,8 @@ onAuthStateChanged(auth, async (user) => {
   // the only place the streak appears; the old streak card is gone.
   if (window.SG_paintGreeting) window.SG_paintGreeting();
 
-  // Unverified email gets the strip the design reserves for it, and a
-  // confirmation email is sent if one has not gone out recently.
+  // Unverified email gets the strip. We do not send mail from here —
+  // that used to fire on every visit and cancel the last link.
   if (typeof QG_paintEmailVerifyStrip === 'function') QG_paintEmailVerifyStrip(live);
   else if (live.emailVerified === false) {
     var strip = document.getElementById('sgVerifyStrip');
@@ -773,20 +833,33 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   // Ban-only gate, in parallel with the dashboard fetch. Never bounce an
-  // existing user to signup for missing profile fields.
+  // existing user to signup for missing profile fields, a slow JWT, or a
+  // Google sign-in that reused an existing email.
   function runEarlyLoginGate() {
     var run = function () {
       if (typeof getUserLoginGate !== 'function') return;
       getUserLoginGate(live.uid).then(function (gateUser) {
-        if (!gateUser) {
-          return getUserLoginGate(live.uid).then(function (retryUser) {
-            if (!retryUser) { window.location.replace('signup.html?oauth=continue'); return; }
+        if (gateUser) {
+          if (typeof qgMarkOnboardingDone === 'function') qgMarkOnboardingDone(live.uid);
+          applyDbUserAfterLogin(gateUser);
+          return;
+        }
+        if (typeof qgIsOnboardingDoneCached === 'function' && qgIsOnboardingDoneCached(live.uid)) {
+          return;
+        }
+        return new Promise(function (r) { setTimeout(r, 600); }).then(function () {
+          return getUserLoginGate(live.uid);
+        }).then(function (retryUser) {
+          if (retryUser) {
             if (typeof qgMarkOnboardingDone === 'function') qgMarkOnboardingDone(live.uid);
             applyDbUserAfterLogin(retryUser);
-          });
-        }
-        if (typeof qgMarkOnboardingDone === 'function') qgMarkOnboardingDone(live.uid);
-        applyDbUserAfterLogin(gateUser);
+            return;
+          }
+          if (typeof qgIsOnboardingDoneCached === 'function' && qgIsOnboardingDoneCached(live.uid)) {
+            return;
+          }
+          window.location.replace('signup.html?oauth=continue');
+        });
       }).catch(function (gateErr) {
         console.warn('dashboard login gate failed:', gateErr && gateErr.message ? gateErr.message : gateErr);
       });

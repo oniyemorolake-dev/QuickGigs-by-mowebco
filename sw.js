@@ -9,7 +9,10 @@ var OFFLINE_FALLBACK = '/dashboard.html';
 
 var STATIC_ASSETS = [
   '/QuickGigsLogo.png',
-  '/manifest.json'
+  '/manifest.json',
+  '/qg-tokens.css',
+  '/sg-app.css',
+  '/qg-theme.js'
 ];
 
 function isHtmlRequest(url) {

@@ -2,11 +2,9 @@
  * Colours come ONLY from qg-tokens.css (load it first). This file is layout + type.
  * Every screen is a phone-width column, centred on desktop.
  */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@1,700&display=swap');
-
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{background:var(--bg);color:var(--text);}
-body.sg-app{font-family:'Inter','DM Sans',system-ui,sans-serif;font-size:15px;line-height:1.4;-webkit-font-smoothing:antialiased;}
+body.sg-app{font-family:'DM Sans',system-ui,sans-serif;font-size:15px;line-height:1.4;-webkit-font-smoothing:antialiased;}
 a{color:inherit;text-decoration:none;}
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;}
 svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
@@ -30,23 +28,33 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .sg-wm-row{display:flex;align-items:center;gap:8px;min-width:0;flex:1;}
 .sg-wm-row .sg-h1{min-width:0;}
 .sg-wordmark{font-family:'Playfair Display',Georgia,serif;font-style:italic;font-weight:700;font-size:25px;line-height:1.1;
+  font-variant-ligatures:none;font-feature-settings:"liga" 0,"clig" 0,"dlig" 0;
   background:var(--grad-wordmark);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;}
 @supports not ((-webkit-background-clip:text) or (background-clip:text)){.sg-wordmark{color:var(--primary);-webkit-text-fill-color:var(--primary);}}
 .sg-city{font-size:13px;color:var(--text-muted);margin-top:3px;}
-/* Option A from mode-indicator.html — display only. Colour follows html[data-qg-mode]. */
+/* Option A from the mode mockup: one tiny pill, one word. Never both. */
 .sg-mode-tag{--m:var(--primary);display:inline-flex;align-items:center;gap:4px;padding:3px 8px 3px 6px;border-radius:100px;
   font-size:11px;font-weight:600;line-height:1.3;letter-spacing:.01em;white-space:nowrap;flex-shrink:0;
+  background:rgba(107,63,160,.13);color:var(--primary);
   background:color-mix(in srgb,var(--m) 13%,transparent);color:color-mix(in srgb,var(--m) 72%,var(--text));
   pointer-events:none;user-select:none;-webkit-user-select:none;cursor:default;}
-html[data-qg-mode="worker"] .sg-mode-tag{--m:var(--teal);}
-html:not([data-qg-mode]) .sg-mode-tag{opacity:0;}
+html[data-qg-mode="worker"] .sg-mode-tag,
+.sg-mode-tag[data-mode="tasker"]{--m:var(--teal);background:rgba(20,184,166,.13);color:var(--teal);
+  background:color-mix(in srgb,var(--m) 13%,transparent);color:color-mix(in srgb,var(--m) 72%,var(--text));}
 .sg-mode-tag svg.i{width:12px;height:12px;stroke-width:2;color:var(--m);}
-html[data-qg-mode="worker"] .sg-mode-ic-poster,
-html[data-qg-mode="worker"] .sg-mode-lab-poster,
-html:not([data-qg-mode="worker"]) .sg-mode-ic-tasker,
-html:not([data-qg-mode="worker"]) .sg-mode-lab-tasker{display:none;}
+.sg-mode-tag .sg-mode-ic-tasker,
+.sg-mode-tag .sg-mode-lab-tasker{display:none !important;}
+html[data-qg-mode="worker"] .sg-mode-tag .sg-mode-ic-poster,
+html[data-qg-mode="worker"] .sg-mode-tag .sg-mode-lab-poster,
+.sg-mode-tag[data-mode="tasker"] .sg-mode-ic-poster,
+.sg-mode-tag[data-mode="tasker"] .sg-mode-lab-poster{display:none !important;}
+html[data-qg-mode="worker"] .sg-mode-tag .sg-mode-ic-tasker,
+html[data-qg-mode="worker"] .sg-mode-tag .sg-mode-lab-tasker,
+.sg-mode-tag[data-mode="tasker"] .sg-mode-ic-tasker,
+.sg-mode-tag[data-mode="tasker"] .sg-mode-lab-tasker{display:inline-flex !important;}
 .sg-mode-head{display:flex;justify-content:flex-end;padding-top:18px;}
-.sg-round{width:44px;height:44px;border-radius:50%;background:var(--surface-alt);color:var(--primary);display:inline-flex;align-items:center;justify-content:center;}
+.sg-round{width:44px;height:44px;border-radius:50%;background:var(--surface-alt);color:var(--primary);display:inline-flex;align-items:center;justify-content:center;position:relative;}
+html[data-qg-mode="worker"] .sg-round{color:var(--teal);}
 .sg-topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 10px;min-height:68px;}
 .sg-sq{width:42px;height:42px;border-radius:12px;background:var(--surface-alt);color:var(--text);display:inline-flex;align-items:center;justify-content:center;position:relative;}
 .sg-sq.teal{color:var(--teal);}
@@ -112,6 +120,28 @@ html:not([data-qg-mode="worker"]) .sg-mode-lab-tasker{display:none;}
 .sg-gig{display:flex;align-items:flex-start;gap:12px;padding:15px 16px;}
 .sg-gig .t{flex:1;min-width:0;}
 .sg-gig .t b{display:block;font-size:15.5px;font-weight:600;margin-top:2px;}
+.sg-gig-head{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;margin-top:2px;}
+.sg-gig .t .sg-gig-head b{display:inline;margin-top:0;}
+.sg-applied{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding:3px 8px;
+  border-radius:100px;
+  background:color-mix(in srgb,var(--teal) 16%,transparent);
+  color:var(--teal);
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:0.02em;
+  line-height:1.2;
+  white-space:nowrap;
+}
+.sg-applied svg.i{width:12px;height:12px;}
+.sg-title-row + .sg-applied{margin-top:10px;}
+.sg-btn.teal.is-applied{
+  background:color-mix(in srgb,var(--teal) 16%,var(--surface));
+  color:var(--teal);
+}
 .sg-meta{display:flex;align-items:flex-start;gap:6px;font-size:12.5px;color:var(--text-muted);margin-top:6px;}
 .sg-meta svg.i{width:15px;height:15px;margin-top:2px;}
 .sg-gig .sg-money{font-size:18px;}
@@ -283,7 +313,9 @@ html:not([data-qg-mode="worker"]) .sg-mode-lab-tasker{display:none;}
 .sg-menu-row:last-child{border-bottom:none;}
 .sg-menu-row svg.i{width:20px;height:20px;color:var(--text-muted);flex-shrink:0;}
 .sg-menu-row .t{flex:1;min-width:0;}
+.sg-menu-row .t b{display:block;font-size:14.5px;font-weight:600;margin-bottom:2px;}
 .sg-menu-row .t small{display:block;font-size:13px;color:var(--text-muted);margin-top:2px;}
+.sg-menu-row.is-unread .t{font-weight:500;}
 .sg-menu-row .sg-chev{margin-left:auto;}
 .sg-menu-row .count{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--primary);color:var(--primary-text);font-size:12px;font-weight:700;display:grid;place-items:center;}
 /* ── Empty, error, skeleton and spinner ──

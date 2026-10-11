@@ -75,7 +75,12 @@
     };
   };
 
-  (function loadAnalytics() {
+  function whenIdle(fn) {
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(fn, { timeout: 1800 });
+    else setTimeout(fn, 1);
+  }
+
+  function loadAnalytics() {
     if (document.getElementById('qg-analytics-loader')) return;
     if (!document.querySelector('script[src*="qg-config.js"]')) {
       var cfg = document.createElement('script');
@@ -87,9 +92,9 @@
     s.src = 'qg-analytics.js?v=1';
     s.defer = true;
     document.head.appendChild(s);
-  })();
+  }
 
-  (function loadMenu() {
+  function loadMenu() {
     if (document.getElementById('qg-menu-loader')) return;
     if (!document.getElementById('qg-overlay-critical')) {
       var critical = document.createElement('style');
@@ -104,7 +109,10 @@
     s.src = 'qg-menu.js?v=d12e08d-1787871217';
     s.defer = true;
     document.head.appendChild(s);
-  })();
+  }
+
+  whenIdle(loadAnalytics);
+  whenIdle(loadMenu);
 
   document.addEventListener('DOMContentLoaded', function () {
     if (document.getElementById('siteFooter')) renderQuickGigsFooter('siteFooter');
@@ -122,5 +130,85 @@
       };
     });
     initTrustPageTheme();
+    paintLandingSignedInMode();
   });
+  paintLandingSignedInMode();
+})();
+
+/* Landing nav: when signed in, show the stored Poster/Tasker role — not both
+   generic "Continue as poster / Continue as tasker" chips. index.html owns the
+   auth text swap; this only restyles after that fires. */
+function paintLandingSignedInMode() {
+  var posterNav = document.getElementById('qgNavPoster');
+  var taskerNav = document.getElementById('qgNavTasker');
+  if (!posterNav || !taskerNav || !document.body || !document.body.classList.contains('page-landing')) return;
+
+  function readMode() {
+    if (typeof getMode === 'function') return getMode() === 'tasker' ? 'tasker' : 'poster';
+    try {
+      var raw = localStorage.getItem('qg-mode') || '';
+      if (raw === 'tasker' || raw === 'worker') return 'tasker';
+      var legacy = localStorage.getItem('qg-session-mode') || localStorage.getItem('qg-role') || '';
+      if (legacy === 'worker' || legacy === 'tasker') return 'tasker';
+    } catch (e) {}
+    return 'poster';
+  }
+
+  function signedInFrom(el) {
+    var href = (el && el.getAttribute('href')) || '';
+    if (/dashboard\.html/i.test(href)) return true;
+    return /continue as|signed in/i.test((el && el.textContent) || '');
+  }
+
+  var heroPoster = document.getElementById('qgHeroPoster');
+  var heroTasker = document.getElementById('qgHeroTasker');
+  var heroLine = document.getElementById('qgHeroLogin');
+  var signedIn = signedInFrom(posterNav) || signedInFrom(taskerNav) ||
+    signedInFrom(heroPoster) || signedInFrom(heroTasker) || signedInFrom(heroLine);
+
+  document.body.classList.toggle('qg-landing-in', signedIn);
+  document.body.classList.toggle('qg-landing-mode-tasker', signedIn && readMode() === 'tasker');
+  document.body.classList.toggle('qg-landing-mode-poster', signedIn && readMode() === 'poster');
+
+  function mark(el, current, currentText, otherText) {
+    if (!el) return;
+    el.classList.toggle('is-current', signedIn && current);
+    el.classList.toggle('is-other', signedIn && !current);
+    if (!signedIn) return;
+    var next = current ? currentText : otherText;
+    if (el.textContent !== next) el.textContent = next;
+  }
+
+  if (!signedIn) {
+    posterNav.classList.remove('is-current', 'is-other');
+    taskerNav.classList.remove('is-current', 'is-other');
+    if (heroPoster) heroPoster.classList.remove('is-current', 'is-other');
+    if (heroTasker) heroTasker.classList.remove('is-current', 'is-other');
+    return;
+  }
+
+  var mode = readMode();
+  mark(posterNav, mode === 'poster', 'Continue as Poster', 'Switch to Poster');
+  mark(taskerNav, mode === 'tasker', 'Continue as Tasker', 'Switch to Tasker');
+  mark(heroPoster, mode === 'poster', 'Continue as a Poster', 'Switch to Poster');
+  mark(heroTasker, mode === 'tasker', 'Continue as a Tasker', 'Switch to Tasker');
+}
+
+(function watchLandingSignedInMode() {
+  if (!document.getElementById('qgNavPoster')) return;
+  var painting = false;
+  var timer = null;
+  function run() {
+    if (painting || timer) return;
+    timer = setTimeout(function () {
+      timer = null;
+      painting = true;
+      try { paintLandingSignedInMode(); } finally { painting = false; }
+    }, 40);
+  }
+  var root = document.querySelector('.qg-topnav') || document.body;
+  var obs = new MutationObserver(run);
+  obs.observe(root, { childList: true, characterData: true, subtree: true });
+  var hero = document.getElementById('qgHeroLogin');
+  if (hero && hero !== root) obs.observe(hero, { childList: true, characterData: true, subtree: true });
 })();

@@ -12,16 +12,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="SwiftGigs">
 <meta name="theme-color" content="#0B0A14">
-<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://nuyfqsxstsrbloztzgau.supabase.co" crossorigin>
 
 <!-- Layout is qg-tokens.css + sg-app.css only. No legacy visual sheet and no
      UI-injector script loads here. -->
 <link rel="stylesheet" href="qg-tokens.css">
 <link rel="stylesheet" href="sg-app.css">
-<!-- Leaflet, for the Active Gig map. Not a legacy sheet of ours. -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 
 <!-- Theme must settle before first paint, so this one is not deferred. -->
 <script src="qg-theme.js"></script>
@@ -49,7 +46,6 @@
 <script defer src="qg-teen-safety.js"></script>
 <script defer src="qg-age.js"></script>
 <script defer src="qg-confetti.js"></script>
-<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 </head>
 <body class="sg-app">
 
@@ -57,7 +53,7 @@
      The design draws no screen for this, so it is assembled from the same
      primitives the other screens use: .sg-seg for the tabs, .sg-gig rows. -->
 <div class="sg-screen has-tabs" id="sgListScreen">
-  <div class="sg-topbar"><a class="sg-sq" href="dashboard.html" aria-label="Back"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></a><span class="sg-mode-tag" role="status"><svg class="i sg-mode-ic-poster" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="7" width="17" height="12.5" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/></svg><svg class="i sg-mode-ic-tasker" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 6v12M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.2 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/></svg><span class="sg-mode-lab-poster">Poster</span><span class="sg-mode-lab-tasker">Tasker</span></span></div>
+  <div class="sg-topbar"><a class="sg-sq" href="dashboard.html" aria-label="Back"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></a><span class="sg-mode-tag" role="status" data-mode="poster"><svg class="i sg-mode-ic-poster" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="7" width="17" height="12.5" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/></svg><svg class="i sg-mode-ic-tasker" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 6v12M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.2 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/></svg><span class="sg-mode-lab-poster">Poster</span><span class="sg-mode-lab-tasker">Tasker</span></span></div>
   <main class="sg-body">
     <h1 class="sg-h1 bold">My gigs</h1>
     <p class="sg-sub" id="sgListSub">Everything you have posted, applied to and worked on.</p>
@@ -76,7 +72,7 @@
      Claude outputs/sg-design/templates/active-gig.html, with the map preview
      box holding a real Leaflet map. -->
 <div class="sg-screen has-actionbar" id="sgActiveScreen" hidden>
-  <div class="sg-topbar"><button class="sg-sq" id="sgActiveBack" aria-label="Back"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><span class="sg-mode-tag" role="status"><svg class="i sg-mode-ic-poster" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="7" width="17" height="12.5" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/></svg><svg class="i sg-mode-ic-tasker" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 6v12M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.2 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/></svg><span class="sg-mode-lab-poster">Poster</span><span class="sg-mode-lab-tasker">Tasker</span></span><span class="sg-chip-status" id="sgActiveStatus">In Progress</span></div>
+  <div class="sg-topbar"><button class="sg-sq" id="sgActiveBack" aria-label="Back"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><span class="sg-mode-tag" role="status" data-mode="poster"><svg class="i sg-mode-ic-poster" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="7" width="17" height="12.5" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/></svg><svg class="i sg-mode-ic-tasker" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 6v12M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.2 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/></svg><span class="sg-mode-lab-poster">Poster</span><span class="sg-mode-lab-tasker">Tasker</span></span><span class="sg-chip-status" id="sgActiveStatus">In Progress</span></div>
   <main class="sg-body">
     <div class="sg-map" id="sgActiveMap"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5a7 7 0 0 0-14 0C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Map preview</div>
     <h1 class="sg-h1 bold" style="font-size:24px;margin-top:22px" id="sgActiveTitle">Gig</h1>
@@ -115,7 +111,7 @@
     <div class="sg-sheet-grip"></div>
     <div class="sg-sheet-head"><h2 id="sgCounterTitle">Counter-offer</h2><button class="sg-x" data-close aria-label="Close"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <p class="sg-sub" id="sgCounterSub" style="margin-top:0"></p>
-    <label class="sg-input"><span class="cur">$</span><input type="number" id="sgCounterAmount" inputmode="decimal" min="5" step="1" placeholder="0"></label>
+    <label class="sg-input"><span class="cur">$</span><input type="number" id="sgCounterAmount" inputmode="decimal" min="20" step="1" placeholder="20"></label>
     <div class="sg-err" id="sgCounterErr" hidden></div>
     <div class="sg-sheet-foot"><button class="sg-btn teal" id="sgCounterSend">Send counter</button></div>
   </div>
@@ -745,8 +741,14 @@ onAuthStateChanged(auth, (user) => {
   function paintMap(t) {
     var box = $('sgActiveMap');
     var lat = Number(getField(t, 'LAT')), lng = Number(getField(t, 'LNG'));
-    if (typeof L === 'undefined' || !isFinite(lat) || !isFinite(lng) || (!lat && !lng)) {
+    if (!isFinite(lat) || !isFinite(lng) || (!lat && !lng)) {
       // No coordinates on the row: the template's flat preview box stands in.
+      return;
+    }
+    if (typeof L === 'undefined') {
+      if (typeof QG_ensureLeaflet === 'function') {
+        QG_ensureLeaflet().then(function () { paintMap(t); }).catch(function () {});
+      }
       return;
     }
     box.innerHTML = '';
@@ -1037,8 +1039,14 @@ onAuthStateChanged(auth, (user) => {
   }
 
   async function runPosterCounter(appId, taskId, workerId, action, amount) {
-    if (typeof posterRespondToCounter !== 'function') return;
-    var res = await posterRespondToCounter(appId, currentUserId, action, { taskId: taskId, workerId: workerId, amount: amount });
+    var res;
+    if (action === 'counter') {
+      if (typeof posterSendCounterOffer !== 'function') return;
+      res = await posterSendCounterOffer(appId, currentUserId, amount, { taskId: taskId, workerId: workerId });
+    } else {
+      if (typeof posterRespondToCounter !== 'function') return;
+      res = await posterRespondToCounter(appId, currentUserId, action, { taskId: taskId, workerId: workerId, amount: amount });
+    }
     if (!res.success) {
       toast(typeof formatSupabaseActionError === 'function'
         ? formatSupabaseActionError('update counter', res.error) : 'Could not update the counter.', false);
@@ -1209,8 +1217,8 @@ onAuthStateChanged(auth, (user) => {
     };
     $('sgCounterSend').onclick = function () {
       var amount = Number($('sgCounterAmount').value);
-      if (!isFinite(amount) || amount < 5) {
-        $('sgCounterErr').textContent = 'Enter an amount of $5 or more.';
+      if (!isFinite(amount) || amount < 20) {
+        $('sgCounterErr').textContent = 'Enter an amount of $20 or more.';
         $('sgCounterErr').hidden = false;
         return;
       }

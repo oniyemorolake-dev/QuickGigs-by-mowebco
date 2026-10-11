@@ -163,6 +163,26 @@ function buildSpec(type: string, payload: NotifPayload, fallbackSubject: string,
         ctaHref: linkOr(payload, `${SITE}/mytasks.html?tab=posted`),
       };
 
+    case 'application_declined':
+    case 'decline':
+      return {
+        subject: fallbackSubject || `Update on “${taskTitle}”`,
+        title: 'Application update',
+        preheader: `Your application for “${taskTitle}” was not accepted`,
+        paragraphs: [
+          esc(`Your application for “${taskTitle}” was not accepted.`),
+          'Browse other gigs — a better fit may already be up.',
+        ],
+        textLines: [
+          `Your application for “${taskTitle}” was not accepted.`,
+          '',
+          'Browse gigs:',
+          linkOr(payload, `${SITE}/browsetask.html`),
+        ],
+        ctaLabel: 'Browse gigs',
+        ctaHref: linkOr(payload, `${SITE}/browsetask.html`),
+      };
+
     case 'application_accepted':
     case 'accept':
       return {

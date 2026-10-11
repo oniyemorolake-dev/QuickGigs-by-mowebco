@@ -95,6 +95,8 @@ body.qg-auth-page .qg-auth-name {
   font-style: italic;
   font-size: 18px;
   font-weight: 700;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "clig" 0, "dlig" 0;
   background: var(--grad-wordmark, linear-gradient(100deg, #8B5CF6 0%, #2DD4BF 100%));
   -webkit-background-clip: text;
   background-clip: text;
@@ -726,4 +728,43 @@ body.qg-auth-page button:focus-visible {
   body.qg-auth-page .signup-card {
     padding: 1.25rem 1rem;
   }
+}
+
+/* Phone login: keep the wordmark off the theme toggle, and keep Log in /
+   Google as real 44px tap targets. The polish layer's button:active scale
+   made the submit button jump under a thumb. */
+@media (max-width: 480px) {
+  body.qg-auth-page .signup-top-row {
+    gap: 8px;
+    position: relative;
+    z-index: 2;
+  }
+  body.qg-auth-page .qg-auth-brand {
+    min-width: 0;
+    max-width: calc(100% - 72px);
+  }
+  body.qg-auth-page .qg-auth-name {
+    font-size: 16px;
+  }
+  body.qg-auth-page .signup-theme-btn {
+    flex-shrink: 0;
+    min-height: 36px;
+  }
+  body.qg-auth-page .signup-card {
+    overflow: visible;
+  }
+  body.qg-auth-page .signup-btn,
+  body.qg-auth-page .signup-google-btn {
+    min-height: 48px;
+    position: relative;
+    z-index: 1;
+    touch-action: manipulation;
+  }
+}
+
+body.qg-auth-page .signup-btn:active,
+body.qg-auth-page .signup-google-btn:active,
+body.qg-auth-page .signup-theme-btn:active {
+  transform: none;
+  opacity: 1;
 }

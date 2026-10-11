@@ -81,27 +81,23 @@
     return 'https://quickgigs.ca/dashboard.html';
   }
 
+  var sendInFlight = {};
+
+  function rememberVerifySent(uid) {
+    if (!uid) return;
+    try { localStorage.setItem('qg-email-verify-sent:' + uid, String(Date.now())); } catch (_e) {}
+  }
+
   async function invokeSendEmailVerification(user) {
-    var sendFn;
+    // One Firebase send only. A bare send plus a continue-URL retry used to
+    // deliver two confirmation emails and cancel the first link.
+    var settings = { url: continueUrl(), handleCodeInApp: false };
     if (typeof user.sendEmailVerification === 'function') {
-      sendFn = function (settings) {
-        return settings ? user.sendEmailVerification(settings) : user.sendEmailVerification();
-      };
-    } else {
-      var mod = await import(FB_AUTH_MOD);
-      sendFn = function (settings) {
-        return settings ? mod.sendEmailVerification(user, settings) : mod.sendEmailVerification(user);
-      };
+      await user.sendEmailVerification(settings);
+      return;
     }
-    // Never pass localhost as the continue URL — Firebase rejects it and the
-    // mail never leaves. Default template first; production URL as fallback.
-    try {
-      await sendFn();
-    } catch (err) {
-      var code = err && err.code ? String(err.code) : '';
-      if (code === 'auth/too-many-requests') throw err;
-      await sendFn({ url: continueUrl(), handleCodeInApp: false });
-    }
+    var mod = await import(FB_AUTH_MOD);
+    await mod.sendEmailVerification(user, settings);
   }
 
   function emailAlreadyConfirmed(user) {
@@ -135,41 +131,41 @@
     if (recentlySentVerification(user.uid)) {
       return {
         ok: false,
+        sent: false,
         error: 'too_many_requests',
         message: 'A confirmation email was already sent. Check inbox and spam. A new email cancels the last link.'
       };
     }
-    try {
-      await invokeSendEmailVerification(user);
-      rememberVerifySent(user.uid);
-      var inbox = user.email || 'your inbox';
-      return {
-        ok: true,
-        sent: true,
-        message: 'We sent a confirmation email to ' + inbox + '. Open it, tap the link, then come back and tap Refresh status.'
-      };
-    } catch (err) {
-      var code = err && err.code ? String(err.code) : '';
-      if (code === 'auth/too-many-requests') {
+    if (sendInFlight[user.uid]) return sendInFlight[user.uid];
+    rememberVerifySent(user.uid);
+    sendInFlight[user.uid] = (async function () {
+      try {
+        await invokeSendEmailVerification(user);
+        var inbox = user.email || 'your inbox';
+        return {
+          ok: true,
+          sent: true,
+          message: 'We sent a confirmation email to ' + inbox + '. Open it, tap the link, then come back and tap Refresh status.'
+        };
+      } catch (err) {
+        var code = err && err.code ? String(err.code) : '';
+        if (code === 'auth/too-many-requests') {
+          return {
+            ok: false,
+            error: 'too_many_requests',
+            message: 'A confirmation email was already sent. Check inbox and spam. Do not request another — a new email cancels the last link.'
+          };
+        }
         return {
           ok: false,
-          error: 'too_many_requests',
-          message: 'A confirmation email was already sent. Check inbox and spam, then wait a minute before asking again.'
+          error: (err && err.message) || 'email_send_failed',
+          message: 'Could not send the confirmation email. Check inbox and spam for the last one before asking again.'
         };
+      } finally {
+        delete sendInFlight[user.uid];
       }
-      return {
-        ok: false,
-        error: (err && err.message) || 'email_send_failed',
-        message: 'Could not send the confirmation email. Try again in a minute.'
-      };
-    }
-  }
-
-  var sendInFlight = {};
-
-  function rememberVerifySent(uid) {
-    if (!uid) return;
-    try { localStorage.setItem('qg-email-verify-sent:' + uid, String(Date.now())); } catch (_e) {}
+    })();
+    return sendInFlight[user.uid];
   }
 
   function recentlyCreated(user) {
@@ -479,7 +475,12 @@
 
     var emailBtn = overlay.querySelector('#qgVerifyEmailBtn');
     var refreshBtn = overlay.querySelector('#qgVerifyEmailRefresh');
-    if (emailBtn && !emailOk) {
+    var alreadyQueued = !!(authUser && authUser.uid && recentlySentVerification(authUser.uid));
+    if (emailBtn && !emailOk && alreadyQueued) {
+      emailBtn.disabled = true;
+      emailBtn.textContent = 'Already sent';
+      setStatus('A confirmation email is already on its way to ' + inbox + '. Check inbox and spam. Do not request another — a new email cancels the last link.');
+    } else if (emailBtn && !emailOk) {
       emailBtn.onclick = async function () {
         emailBtn.disabled = true;
         setStatus('Sending a confirmation email to ' + inbox + '…');
@@ -487,17 +488,19 @@
         if (res && (res.already || res.email_verified)) {
           res = await request('sync_tasker_contacts').then(publish) || res;
         }
-        if (res && res.sent) setStatus(res.message || 'Confirmation email sent.');
-        else if (res && (res.email_verified || res.tasker_verified)) {
+        if (res && res.sent) {
+          setStatus(res.message || 'Confirmation email sent.');
+          emailBtn.textContent = 'Already sent';
+        } else if (res && (res.email_verified || res.tasker_verified)) {
           setStatus('Email confirmed.');
           emailBtn.textContent = 'Email confirmed';
           if (res.tasker_verified) overlay.remove();
         } else {
-          setStatus((res && (res.message || res.error)) || 'Could not send email. Try again.');
-          emailBtn.disabled = false;
+          setStatus((res && (res.message || res.error)) || 'Check inbox and spam for the last confirmation email.');
+          emailBtn.textContent = 'Already sent';
         }
       };
-      setStatus('Check inbox and spam for the confirmation email. Tap Send confirmation email only if you need a new one — a new email cancels the last link.');
+      setStatus('Check inbox and spam first. Tap Send confirmation email only if you never got one — a new email cancels the last link.');
     }
     if (refreshBtn) {
       refreshBtn.onclick = async function () {

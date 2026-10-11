@@ -12,9 +12,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="SwiftGigs">
 <meta name="theme-color" content="#0B0A14">
-<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://nuyfqsxstsrbloztzgau.supabase.co" crossorigin>
 
 <!-- Layout is qg-tokens.css + sg-app.css only. No legacy visual sheet and no
      UI-injector script loads here. -->
@@ -23,6 +22,16 @@
 
 <!-- Theme must settle before first paint, so this one is not deferred. -->
 <script src="qg-theme.js"></script>
+<script>
+(function () {
+  try {
+    var p = new URLSearchParams(location.search);
+    if (p.get('mode') === 'verifyEmail' && p.get('oobCode')) {
+      sessionStorage.setItem('qg-email-oob', p.get('oobCode'));
+    }
+  } catch (e) {}
+})();
+</script>
 
 <!-- Data, auth and logic only. -->
 <script defer src="qg-utils.js"></script>
@@ -47,9 +56,9 @@
 </head>
 <body class="sg-app">
 <div class="sg-screen has-tabs">
-  <div class="sg-beta" id="sgVerifyStrip" hidden><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span class="sg-beta-text">Confirm your email — check your inbox for the link</span><a href="#" id="sgVerifyLink">Confirm email</a></div>
+  <div class="sg-beta" id="sgVerifyStrip" hidden><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span class="sg-beta-text">Check inbox and spam for the confirmation link</span><a href="#" id="sgVerifyLink">How to confirm</a></div>
   <main class="sg-body">
-    <div class="sg-mode-head"><span class="sg-mode-tag" role="status"><svg class="i sg-mode-ic-poster" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="7" width="17" height="12.5" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/></svg><svg class="i sg-mode-ic-tasker" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 6v12M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.2 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/></svg><span class="sg-mode-lab-poster">Poster</span><span class="sg-mode-lab-tasker">Tasker</span></span></div>
+    <div class="sg-mode-head"><span class="sg-mode-tag" role="status" data-mode="poster"><svg class="i sg-mode-ic-poster" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="7" width="17" height="12.5" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/></svg><svg class="i sg-mode-ic-tasker" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 6v12M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.2 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/></svg><span class="sg-mode-lab-poster">Poster</span><span class="sg-mode-lab-tasker">Tasker</span></span></div>
     <div class="sg-profile-head"><span class="sg-avatar lg" id="sgAvatar"></span><span><b id="sgName"></b><span id="sgMeta"></span><a href="#" id="sgEditProfile" hidden>Edit profile</a></span></div>
     <div class="sg-mode-block" id="sgModeBlock">
       <h2 class="sg-section-title">Mode</h2>
@@ -195,14 +204,26 @@
 import { qgInitAuth } from './qg-firebase-auth.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 const auth = qgInitAuth();
+function qgHasEmailAction() {
+  try {
+    if (typeof QG_hasPendingEmailAction === 'function' && QG_hasPendingEmailAction()) return true;
+    if (sessionStorage.getItem('qg-email-oob')) return true;
+    var q = new URLSearchParams(location.search);
+    return q.get('mode') === 'verifyEmail' && !!q.get('oobCode');
+  } catch (e) { return false; }
+}
 let authChecked = false;
 const redirectTimeout = setTimeout(() => {
-  if (!authChecked) window.location.href = 'login.html';
+  if (!authChecked && !qgHasEmailAction()) window.location.href = 'login.html';
 }, 8000);
 onAuthStateChanged(auth, (user) => {
   authChecked = true;
   clearTimeout(redirectTimeout);
-  if (!user) { window.location.href = 'login.html'; return; }
+  if (!user) {
+    if (qgHasEmailAction()) return;
+    window.location.href = 'login.html';
+    return;
+  }
   window._currentUser = user;
   if (typeof enforceBanOnLogin === 'function') enforceBanOnLogin(user);
   if (typeof window.SG_onUser === 'function') window.SG_onUser(user);
@@ -607,10 +628,7 @@ window.SG_signOut = async function () {
       if (result.error === 'minor_requires_guardian_payout') {
         msg = result.message || 'Stripe requires account holders to be 18+. Ask your parent or guardian to set up payouts from their consent link.';
       } else if (result.error === 'stripe_account_create_failed') {
-        var detail = String(result.details || result.message || '');
-        msg = /connect/i.test(detail)
-          ? 'Stripe Connect is not turned on yet. In the Stripe Dashboard open Connect, start Express, then tap Set up payouts again.'
-          : (detail || 'Stripe could not create a payout account. Turn on Connect in the Stripe Dashboard and try again.');
+        msg = result.message || result.details || 'Stripe could not create a payout account. Try Set up payouts again in a minute.';
       }
       toast(msg, false);
     };
@@ -900,6 +918,14 @@ window.SG_signOut = async function () {
 
     if (typeof getUserByFirebaseUid === 'function') {
       try { dbUser = await getUserByFirebaseUid(targetId); } catch (e) {}
+    }
+    if (isOwnProfile && dbUser && dbUser.stripe_connect_id && typeof window.QG_syncConnectStatus === 'function') {
+      try {
+        await window.QG_syncConnectStatus(user.uid);
+        if (typeof getUserByFirebaseUid === 'function') {
+          dbUser = await getUserByFirebaseUid(targetId) || dbUser;
+        }
+      } catch (e) {}
     }
 
     var dbProfile = {};
