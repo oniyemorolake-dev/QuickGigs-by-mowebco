@@ -104,6 +104,24 @@
     }
   }
 
+  function emailAlreadyConfirmed(user) {
+    user = user || currentAuthUser();
+    if (user && user.emailVerified) return true;
+    var st = window.QG_verificationState;
+    return !!(st && (st.email_verified === true || st.tasker_verified === true));
+  }
+
+  function recentlySentVerification(uid) {
+    if (!uid) return false;
+    try {
+      var raw = localStorage.getItem('qg-email-verify-sent:' + uid);
+      var at = raw ? parseInt(raw, 10) : 0;
+      return !!(at && (Date.now() - at) < (24 * 60 * 60 * 1000));
+    } catch (_e) {
+      return false;
+    }
+  }
+
   async function sendVerificationEmail(user) {
     user = user || currentAuthUser();
     if (!user) {
@@ -111,11 +129,19 @@
     }
     try { await user.reload(); } catch (_e) {}
     user = currentAuthUser() || user;
-    if (user.emailVerified) {
+    if (emailAlreadyConfirmed(user)) {
       return { ok: true, sent: false, already: true, email_verified: true, message: 'Your email is already confirmed.' };
+    }
+    if (recentlySentVerification(user.uid)) {
+      return {
+        ok: false,
+        error: 'too_many_requests',
+        message: 'A confirmation email was already sent. Check inbox and spam. A new email cancels the last link.'
+      };
     }
     try {
       await invokeSendEmailVerification(user);
+      rememberVerifySent(user.uid);
       var inbox = user.email || 'your inbox';
       return {
         ok: true,
@@ -141,27 +167,137 @@
 
   var sendInFlight = {};
 
+  function rememberVerifySent(uid) {
+    if (!uid) return;
+    try { localStorage.setItem('qg-email-verify-sent:' + uid, String(Date.now())); } catch (_e) {}
+  }
+
+  function recentlyCreated(user) {
+    var raw = user && user.metadata && user.metadata.creationTime;
+    if (!raw) return false;
+    var created = new Date(raw).getTime();
+    return !!(created && (Date.now() - created) < VERIFY_SENT_MS);
+  }
+
   async function ensureVerificationEmailSent(user) {
     user = user || currentAuthUser();
-    if (!user || user.emailVerified) return { ok: true, sent: false };
-    var uid = user.uid;
-    if (sendInFlight[uid]) return sendInFlight[uid];
-    var key = 'qg-email-verify-sent:' + uid;
+    if (user && user.uid) rememberVerifySent(user.uid);
+    // Never send from here. Home/Profile used to auto-mail on every visit,
+    // which cancelled the last link and flooded the inbox. Send only when
+    // the user taps "Send confirmation email".
+    return { ok: true, sent: false, throttled: true };
+  }
+
+  function pendingEmailActionCode() {
     try {
-      var last = Number(localStorage.getItem(key) || 0);
-      if (last && (Date.now() - last) < VERIFY_SENT_MS) {
-        return { ok: true, sent: false, throttled: true };
+      var q = new URLSearchParams(window.location.search || '');
+      if (q.get('mode') === 'verifyEmail' && q.get('oobCode')) return q.get('oobCode');
+      return sessionStorage.getItem('qg-email-oob') || '';
+    } catch (_e) {
+      return '';
+    }
+  }
+
+  function hasPendingEmailAction() {
+    return !!pendingEmailActionCode();
+  }
+
+  function stashEmailActionFromUrl() {
+    try {
+      var q = new URLSearchParams(window.location.search || '');
+      if (q.get('mode') === 'verifyEmail' && q.get('oobCode')) {
+        sessionStorage.setItem('qg-email-oob', q.get('oobCode'));
+        return q.get('oobCode');
       }
     } catch (_e) {}
-    sendInFlight[uid] = sendVerificationEmail(user).then(function (res) {
-      if (res && res.ok && res.sent) {
-        try { localStorage.setItem(key, String(Date.now())); } catch (_e2) {}
+    return pendingEmailActionCode();
+  }
+
+  function clearEmailActionFromUrl() {
+    try { sessionStorage.removeItem('qg-email-oob'); } catch (_e) {}
+    try {
+      var params = new URLSearchParams(window.location.search || '');
+      if (!params.get('oobCode') && params.get('mode') !== 'verifyEmail') return;
+      params.delete('mode');
+      params.delete('oobCode');
+      params.delete('apiKey');
+      params.delete('lang');
+      var next = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
+      if (window.history && window.history.replaceState) window.history.replaceState({}, '', next);
+    } catch (_e2) {}
+  }
+
+  async function applyEmailActionCode(code) {
+    var auth = authInstance();
+    var started = Date.now();
+    while (!auth && Date.now() - started < 4000) {
+      await new Promise(function (r) { setTimeout(r, 80); });
+      auth = authInstance();
+    }
+    if (!auth) throw new Error('auth_not_ready');
+    var mod = await import(FB_AUTH_MOD);
+    await mod.applyActionCode(auth, code);
+    var user = currentAuthUser();
+    try { if (user) await user.reload(); } catch (_e) {}
+    return { ok: true };
+  }
+
+  function openEmailActionPanel() {
+    var code = stashEmailActionFromUrl();
+    if (!code) return false;
+    ensureStyles();
+    var old = document.getElementById('qgVerificationOverlay');
+    if (old) old.remove();
+    var overlay = document.createElement('div');
+    overlay.id = 'qgVerificationOverlay';
+    overlay.className = 'qg-verify-overlay';
+    overlay.innerHTML =
+      '<div class="qg-verify-card is-tasker" role="dialog" aria-modal="true" aria-labelledby="qgVerifyActionTitle">' +
+        '<div class="qg-verify-icon" style="background:var(--accent-soft);color:var(--accent)" aria-hidden="true">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>' +
+        '</div>' +
+        '<h2 id="qgVerifyActionTitle">Confirm your email</h2>' +
+        '<p>This page is from your SwiftGigs confirmation email. Tap the button to finish — we wait for your tap so mail apps cannot use the link first.</p>' +
+        '<div class="qg-verify-status" id="qgVerifyActionStatus"></div>' +
+        '<div class="qg-verify-actions">' +
+          '<button type="button" class="qg-verify-primary" id="qgVerifyActionBtn">Confirm my email</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    var status = overlay.querySelector('#qgVerifyActionStatus');
+    var btn = overlay.querySelector('#qgVerifyActionBtn');
+    btn.onclick = async function () {
+      btn.disabled = true;
+      btn.textContent = 'Confirming…';
+      if (status) status.textContent = '';
+      try {
+        await applyEmailActionCode(code);
+        clearEmailActionFromUrl();
+        if (status) status.textContent = 'Email confirmed. You can use SwiftGigs.';
+        btn.textContent = 'Continue';
+        btn.disabled = false;
+        btn.onclick = function () {
+          overlay.remove();
+          if (!currentAuthUser()) window.location.href = 'login.html';
+          else if (typeof paintEmailVerifyStrip === 'function') paintEmailVerifyStrip(currentAuthUser());
+        };
+      } catch (err) {
+        var raw = err && err.code ? String(err.code) : '';
+        clearEmailActionFromUrl();
+        btn.textContent = 'Close';
+        btn.disabled = false;
+        if (status) {
+          status.textContent = (raw === 'auth/expired-action-code' || raw === 'auth/invalid-action-code')
+            ? 'This confirmation link is no longer valid. Sign in, then tap Confirm email to get a new one.'
+            : 'Could not confirm this email. Sign in and request a new confirmation email.';
+        }
+        btn.onclick = function () {
+          overlay.remove();
+          if (!currentAuthUser()) window.location.href = 'login.html';
+        };
       }
-      return res;
-    }).finally(function () {
-      delete sendInFlight[uid];
-    });
-    return sendInFlight[uid];
+    };
+    return true;
   }
 
   async function start(role) {
@@ -186,12 +322,8 @@
   }
 
   async function syncFirebaseEmail() {
-    var sent = await sendVerificationEmail();
-    if (sent && sent.already) {
-      return await request('sync_tasker_contacts').then(publish);
-    }
-    if (sent && sent.ok && sent.sent) return sent;
-    if (sent && !sent.ok) return sent;
+    // Sync only. Sending mail from here cancelled the last link every time
+    // Home or the verify panel opened.
     return await request('sync_tasker_contacts').then(publish);
   }
 
@@ -199,6 +331,13 @@
     var strip = document.getElementById('sgVerifyStrip');
     if (!strip) return;
     user = user || currentAuthUser();
+    if (emailAlreadyConfirmed(user)) {
+      strip.hidden = true;
+      return;
+    }
+    load().then(function () {
+      if (emailAlreadyConfirmed(user) && strip) strip.hidden = true;
+    });
     var unverified = !!(user && user.emailVerified === false);
     strip.hidden = !unverified;
     if (!unverified) return;
@@ -210,7 +349,6 @@
         openEmailLaunchPanel({ email_verified: false });
       });
     }
-    ensureVerificationEmailSent(user);
   }
 
   function ensureStyles() {
@@ -345,7 +483,10 @@
       emailBtn.onclick = async function () {
         emailBtn.disabled = true;
         setStatus('Sending a confirmation email to ' + inbox + '…');
-        var res = await syncFirebaseEmail();
+        var res = await sendVerificationEmail();
+        if (res && (res.already || res.email_verified)) {
+          res = await request('sync_tasker_contacts').then(publish) || res;
+        }
         if (res && res.sent) setStatus(res.message || 'Confirmation email sent.');
         else if (res && (res.email_verified || res.tasker_verified)) {
           setStatus('Email confirmed.');
@@ -356,15 +497,7 @@
           emailBtn.disabled = false;
         }
       };
-      setStatus('Sending a confirmation email to ' + inbox + '…');
-      ensureVerificationEmailSent(authUser).then(function (res) {
-        if (res && res.sent) setStatus(res.message);
-        else if (res && res.throttled) {
-          setStatus('We already sent a confirmation email to ' + inbox + '. Check inbox and spam, then tap Refresh status.');
-        } else if (res && res.already) setStatus('Your email is already confirmed.');
-        else if (res && !res.ok) setStatus(res.message || 'Could not send the confirmation email.');
-        else setStatus('If you do not see a confirmation email, tap Send confirmation email.');
-      });
+      setStatus('Check inbox and spam for the confirmation email. Tap Send confirmation email only if you need a new one — a new email cancels the last link.');
     }
     if (refreshBtn) {
       refreshBtn.onclick = async function () {
@@ -471,4 +604,11 @@
   window.QG_paintEmailVerifyStrip = paintEmailVerifyStrip;
   window.QG_posterPaymentVerificationEnabled = posterPmEnabled;
   window.QG_hideVerificationPrompt = hideVerificationPrompt;
+  window.QG_hasPendingEmailAction = hasPendingEmailAction;
+  stashEmailActionFromUrl();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { openEmailActionPanel(); });
+  } else {
+    openEmailActionPanel();
+  }
 })();
