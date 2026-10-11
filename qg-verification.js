@@ -91,7 +91,9 @@
   async function invokeSendEmailVerification(user) {
     // One Firebase send only. A bare send plus a continue-URL retry used to
     // deliver two confirmation emails and cancel the first link.
-    var settings = { url: continueUrl(), handleCodeInApp: false };
+    // handleCodeInApp must be true: Firebase's hosted action page otherwise
+    // spends the code, then Home tries applyActionCode and says "expired".
+    var settings = { url: continueUrl(), handleCodeInApp: true };
     if (typeof user.sendEmailVerification === 'function') {
       await user.sendEmailVerification(settings);
       return;
@@ -232,9 +234,26 @@
     }
     if (!auth) throw new Error('auth_not_ready');
     var mod = await import(FB_AUTH_MOD);
-    await mod.applyActionCode(auth, code);
-    var user = currentAuthUser();
-    try { if (user) await user.reload(); } catch (_e) {}
+    try {
+      await mod.applyActionCode(auth, code);
+    } catch (err) {
+      var raw = err && err.code ? String(err.code) : '';
+      if (raw !== 'auth/expired-action-code' && raw !== 'auth/invalid-action-code') throw err;
+      var user = currentAuthUser();
+      try { if (user) await user.reload(); } catch (_e) {}
+      user = currentAuthUser();
+      if (user && user.emailVerified) return { ok: true, already: true };
+      try {
+        var synced = await request('sync_tasker_contacts').then(publish);
+        if (synced && (synced.email_verified || synced.tasker_verified)) {
+          return { ok: true, already: true };
+        }
+      } catch (_e2) {}
+      err.used = true;
+      throw err;
+    }
+    var live = currentAuthUser();
+    try { if (live) await live.reload(); } catch (_e3) {}
     return { ok: true };
   }
 
@@ -268,6 +287,7 @@
       if (status) status.textContent = '';
       try {
         await applyEmailActionCode(code);
+        try { await request('sync_tasker_contacts').then(publish); } catch (_sync) {}
         clearEmailActionFromUrl();
         if (status) status.textContent = 'Email confirmed. You can use SwiftGigs.';
         btn.textContent = 'Continue';
@@ -280,12 +300,31 @@
       } catch (err) {
         var raw = err && err.code ? String(err.code) : '';
         clearEmailActionFromUrl();
-        btn.textContent = 'Close';
         btn.disabled = false;
+        if (err && err.used) {
+          if (currentAuthUser()) {
+            if (status) {
+              status.textContent = 'This link was already used. If the confirm strip is gone, you are done. Do not request another email.';
+            }
+            btn.textContent = 'Continue';
+            btn.onclick = function () {
+              overlay.remove();
+              if (typeof paintEmailVerifyStrip === 'function') paintEmailVerifyStrip(currentAuthUser());
+            };
+          } else {
+            if (status) {
+              status.textContent = 'Sign in. If you opened the newest confirmation email, your address is often already confirmed.';
+            }
+            btn.textContent = 'Sign in';
+            btn.onclick = function () { window.location.href = 'login.html'; };
+          }
+          return;
+        }
+        btn.textContent = 'Close';
         if (status) {
           status.textContent = (raw === 'auth/expired-action-code' || raw === 'auth/invalid-action-code')
-            ? 'This confirmation link is no longer valid. Sign in, then tap Confirm email to get a new one.'
-            : 'Could not confirm this email. Sign in and request a new confirmation email.';
+            ? 'This confirmation link is no longer valid. Sign in and check Home — do not request another email unless the confirm strip is still there.'
+            : 'Could not confirm this email. Sign in and check Home before asking for a new link.';
         }
         btn.onclick = function () {
           overlay.remove();

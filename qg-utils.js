@@ -1372,6 +1372,16 @@ window.formatFeeBreakdownHtml = formatFeeBreakdownHtml;
       if (isOobUrl(url) && isVerifyEmailBody(body)) {
         var uid = currentUid();
         if ((uid && recently(uid)) || inflight) return Promise.resolve(blockedResponse());
+        var parsedBody = null;
+        try { parsedBody = typeof body === 'string' ? JSON.parse(body) : body; } catch (_e6) { parsedBody = null; }
+        if (parsedBody && typeof parsedBody === 'object') {
+          parsedBody.canHandleCodeInApp = true;
+          if (!parsedBody.continueUrl && !parsedBody.continueUri) {
+            parsedBody.continueUrl = 'https://quickgigs.ca/dashboard.html';
+          }
+          init = Object.assign({}, init || {}, { body: JSON.stringify(parsedBody) });
+          arguments[1] = init;
+        }
         inflight = true;
         return nativeFetch.apply(this, arguments).then(function (res) {
           inflight = false;

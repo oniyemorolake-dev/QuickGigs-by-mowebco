@@ -65,6 +65,7 @@ const BASE = process.env.SG_BASE || 'http://localhost:8099';
       secondBlocked: again && again.sent === false,
       callCount: sentCalls.length,
       continueUrl: sentCalls[0] && sentCalls[0].url,
+      handleInApp: sentCalls[0] && sentCalls[0].handleCodeInApp === true,
       stripVisible: strip && strip.hidden === false,
       overlayTitle: title ? title.textContent : '',
       bodyHasConfirmEmail: /confirm your email/i.test(body),
@@ -78,6 +79,7 @@ const BASE = process.env.SG_BASE || 'http://localhost:8099';
     && result.sent && result.sendOk && result.callCount === 1
     && result.secondBlocked && result.sendLocked
     && result.continueUrl === 'https://quickgigs.ca/dashboard.html'
+    && result.handleInApp
     && result.stripVisible
     && /confirm your email/i.test(result.overlayTitle)
     && result.bodyHasConfirmEmail && result.bodyHasInbox;
