@@ -250,9 +250,9 @@ onAuthStateChanged(auth, (user) => {
     return name || 'A SwiftGigs member';
   }
   function isPaymentGatedChat() {
-    if (typeof QG_paymentsLive === 'function' && !QG_paymentsLive()) return false;
-    var rule = window.QG_CONFIG && window.QG_CONFIG.chatUnlockRule;
-    return String(rule || 'accept') === 'payment';
+    if (typeof window.isChatPaymentGated === 'function') return window.isChatPaymentGated();
+    var c = window.QG_CONFIG || {};
+    return !!(c.paymentsEnabled && c.chatUnlockAfter === 'payment');
   }
   function isTaskPaid(taskId) {
     var p = paymentByTaskId[String(taskId)];
@@ -546,8 +546,8 @@ onAuthStateChanged(auth, (user) => {
     }
 
     var actions = '<div class="sg-sheet-foot" style="flex-wrap:wrap;margin-top:12px">';
-    if (st === 'pending' || st === 'accepted') {
-      actions += '<button class="sg-btn sg-btn-quiet" data-chat-task="' + esc(String(getField(a, 'TASK_ID'))) + '">Message poster</button>';
+    if (st === 'accepted') {
+      actions += '<button type="button" class="sg-btn sg-btn-quiet" data-chat-task="' + esc(String(getField(a, 'TASK_ID'))) + '">Message poster</button>';
     }
     if (st === 'pending') {
       actions += '<button class="sg-btn sg-btn-quiet" style="color:var(--danger)" data-withdraw="' + esc(String(getField(a, 'APP_ID'))) + '">Withdraw</button>';
@@ -991,7 +991,6 @@ onAuthStateChanged(auth, (user) => {
     showTab('inprogress');
 
     if (isPaymentGatedChat()) {
-      if (convId && typeof window.QG_markJustPaidConv === 'function') window.QG_markJustPaidConv(taskId, convId);
       payTask(task);
     }
     loadData();

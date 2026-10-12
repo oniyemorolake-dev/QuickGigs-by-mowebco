@@ -35,6 +35,8 @@
 <script defer src="contentModeration.js"></script>
 <script defer src="qg-lightbox.js"></script>
 <script defer src="qg-report.js"></script>
+<script defer src="feeBreakdown.js"></script>
+<script defer src="qg-stripe.js"></script>
 </head>
 <body class="sg-app">
 <div class="sg-screen has-tabs">
@@ -63,6 +65,7 @@
     <div class="sg-chat" id="sgChatScroll"></div>
     <div class="sg-chat-note" id="sgChatSafety" hidden></div>
     <div class="sg-chat-note" id="sgChatLocked" hidden></div>
+    <div class="sg-sheet-foot" id="sgChatLockedActions" hidden style="margin:0 20px 12px;flex-wrap:wrap"></div>
     <div class="sg-chat-note is-error" id="sgChatError" hidden></div>
     <div class="sg-composer" id="sgComposer">
       <button class="sg-sq" id="sgAttach" aria-label="Send a photo"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-5 4 4 2-2 5 5"/></svg></button>
@@ -327,9 +330,15 @@ onAuthStateChanged(auth, (user) => {
           String(c.workerId) === String(peer);
       })[0];
       if (hit) return await openConversation(hit.id);
-      if (taskId && peer && typeof getConversationForTask === 'function') {
-        var resolved = await getConversationForTask(taskId, currentUserId, peer);
-        if (!resolved) resolved = await getConversationForTask(taskId, peer, currentUserId);
+      if (taskId && typeof getConversationForTask === 'function') {
+        var resolved = peer
+          ? (await getConversationForTask(taskId, currentUserId, peer)) ||
+            (await getConversationForTask(taskId, peer, currentUserId))
+          : null;
+        if (!resolved && conversations.length) {
+          resolved = conversations.filter(function (c) { return String(c.taskId) === String(taskId); })[0];
+          if (resolved && resolved.id) return await openConversation(resolved.id);
+        }
         if (resolved && resolved.conv_id) await openConversation(String(resolved.conv_id));
       }
     } catch (err) {
@@ -408,6 +417,56 @@ onAuthStateChanged(auth, (user) => {
     };
   }
 
+  function isPaymentGatedChat() {
+    if (typeof window.isChatPaymentGated === 'function') return window.isChatPaymentGated();
+    var c = window.QG_CONFIG || {};
+    return !!(c.paymentsEnabled && c.chatUnlockAfter === 'payment');
+  }
+
+  function paintChatGate(conv) {
+    var paymentGated = isPaymentGatedChat();
+    var unlocked = !paymentGated && String(conv.status || '').toLowerCase() !== 'application';
+    if (typeof parseConversationUnlocked === 'function' && parseConversationUnlocked(conv)) unlocked = true;
+    currentUnlocked = unlocked;
+    $('sgComposer').hidden = !unlocked;
+    $('sgChatLocked').hidden = unlocked;
+    var actions = $('sgChatLockedActions');
+    if (actions) { actions.hidden = true; actions.innerHTML = ''; }
+    if (unlocked) return;
+    var isPoster = String(conv.poster_id) === String(currentUserId);
+    var note = $('sgChatLocked');
+    if (paymentGated) {
+      if (isPoster) {
+        if (note) note.textContent = 'Fund this gig in escrow to unlock chat. You cannot message until you pay.';
+        if (actions) {
+          actions.hidden = false;
+          actions.innerHTML = '<button type="button" class="sg-btn purple" id="sgChatPay" style="width:100%">Pay & fund escrow</button>';
+          var pay = $('sgChatPay');
+          if (pay) pay.onclick = function () { payFromChat(conv); };
+        }
+      } else if (note) {
+        note.textContent = 'Chat opens after the poster funds this gig. You cannot message until then.';
+      }
+    } else if (note) {
+      note.textContent = 'Chat unlocks after the poster accepts this application.';
+    }
+  }
+
+  function payFromChat(conv) {
+    if (typeof window.QG_openPayModal !== 'function') {
+      toast('Payments are still loading — try again.', false);
+      return;
+    }
+    var taskId = String(conv.task_id || conv.TASK_ID || '');
+    window.QG_openPayModal(taskId, currentUserId, {
+      returnPage: 'messages',
+      returnConv: conv.conv_id || selectedId,
+      amount: conv.amount || conv.price || '',
+      title: conv.task_title || 'Gig',
+      subtitle: 'Held securely until the gig is marked complete'
+    }).catch(function () { toast('Could not open payment — try again.', false); });
+  }
+
   async function openConversation(convId) {
     if (!convId) return;
     try {
@@ -422,6 +481,8 @@ onAuthStateChanged(auth, (user) => {
       $('sgChatScroll').innerHTML = typeof QG_spinnerHtml === 'function'
         ? QG_spinnerHtml({ label: 'Loading messages…' }) : '';
       $('sgChatLocked').hidden = true;
+      var lockActions = $('sgChatLockedActions');
+      if (lockActions) { lockActions.hidden = true; lockActions.innerHTML = ''; }
       $('sgComposer').hidden = false;
 
       if (typeof getConversation !== 'function') {
@@ -456,16 +517,7 @@ onAuthStateChanged(auth, (user) => {
       updateUrl(selectedId, currentConv.task_id, currentPeer.uid);
       showSafetyBanner();
 
-      var paymentGated = typeof window.isChatPaymentGated === 'function'
-        ? window.isChatPaymentGated()
-        : !!(window.QG_CONFIG && window.QG_CONFIG.paymentsEnabled && window.QG_CONFIG.chatUnlockAfter === 'payment');
-      var unlocked = !paymentGated && String(currentConv.status || '').toLowerCase() !== 'application';
-      if (typeof parseConversationUnlocked === 'function' && parseConversationUnlocked(currentConv)) unlocked = true;
-      currentUnlocked = unlocked;
-
-      $('sgComposer').hidden = !unlocked;
-      $('sgChatLocked').hidden = unlocked;
-      if (!unlocked) $('sgChatLocked').textContent = 'Chat unlocks after the application is accepted.';
+      paintChatGate(currentConv);
 
       await refreshMessages({ forceScroll: true });
       startPolling();
