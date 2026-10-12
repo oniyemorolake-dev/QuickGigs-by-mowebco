@@ -534,10 +534,12 @@ onAuthStateChanged(auth, (user) => {
     if (st === 'pending' && counterBy === 'poster') {
       var amt = getField(a, 'COUNTER_PRICE');
       var round = Number(getField(a, 'COUNTER_ROUND') || 0);
+      var gig = esc(String(getField(a, 'TASK_ID')));
+      var aid = esc(String(getField(a, 'APP_ID')));
       neg = '<div class="sg-sheet-foot" style="flex-wrap:wrap;margin-top:12px">' +
-        '<button class="sg-btn teal" data-counter-accept="' + esc(String(getField(a, 'APP_ID'))) + '" data-task="' + esc(String(getField(a, 'TASK_ID'))) + '">Accept ' + money(amt) + '</button>' +
-        (round === 1 ? '<button class="sg-btn sg-btn-quiet" data-counter-back="' + esc(String(getField(a, 'APP_ID'))) + '" data-task="' + esc(String(getField(a, 'TASK_ID'))) + '">Counter again</button>' : '') +
-        '<button class="sg-btn sg-btn-quiet" data-counter-decline="' + esc(String(getField(a, 'APP_ID'))) + '" data-task="' + esc(String(getField(a, 'TASK_ID'))) + '">Decline</button>' +
+        '<button type="button" class="sg-btn teal" data-counter-accept="' + aid + '" data-gig="' + gig + '">Accept ' + money(amt) + '</button>' +
+        (round === 1 ? '<button type="button" class="sg-btn sg-btn-quiet" data-counter-back="' + aid + '" data-gig="' + gig + '">Counter again</button>' : '') +
+        '<button type="button" class="sg-btn sg-btn-quiet" data-counter-decline="' + aid + '" data-gig="' + gig + '">Decline</button>' +
         '</div>';
     } else if (st === 'pending' && counterBy === 'worker') {
       neg = '<p class="sg-muted" style="font-size:13px;margin-top:10px">Your counter of ' + money(getField(a, 'COUNTER_PRICE')) + ' is with the poster.</p>';
@@ -640,12 +642,16 @@ onAuthStateChanged(auth, (user) => {
       var actions = '';
       if (st === 'pending') {
         if (counterBy === 'worker') {
-          actions = '<button class="sg-btn teal" data-poster-counter-accept="' + esc(String(getField(a, 'APP_ID'))) + '">Accept ' + money(getField(a, 'COUNTER_PRICE')) + '</button>' +
-            '<button class="sg-btn sg-btn-quiet" data-poster-counter-decline="' + esc(String(getField(a, 'APP_ID'))) + '">Decline counter</button>';
+          actions = '<button type="button" class="sg-btn teal" data-poster-counter-accept="' + esc(String(getField(a, 'APP_ID'))) + '">Accept ' + money(getField(a, 'COUNTER_PRICE')) + '</button>' +
+            '<button type="button" class="sg-btn sg-btn-quiet" data-poster-counter-decline="' + esc(String(getField(a, 'APP_ID'))) + '">Decline counter</button>';
+        } else if (counterBy === 'poster') {
+          actions = '<p class="sg-muted" style="width:100%;font-size:13px;margin:0 0 8px">Waiting on them to accept ' + money(getField(a, 'COUNTER_PRICE')) + '. You can still hire at that price.</p>' +
+            '<button type="button" class="sg-btn teal" data-accept-app="' + esc(String(getField(a, 'APP_ID'))) + '">Hire at ' + money(getField(a, 'COUNTER_PRICE')) + '</button>' +
+            '<button type="button" class="sg-btn sg-btn-quiet" style="color:var(--danger)" data-decline-app="' + esc(String(getField(a, 'APP_ID'))) + '">Decline</button>';
         } else {
-          actions = '<button class="sg-btn teal" data-accept-app="' + esc(String(getField(a, 'APP_ID'))) + '">Accept</button>' +
-            '<button class="sg-btn sg-btn-quiet" data-counter-app="' + esc(String(getField(a, 'APP_ID'))) + '">Counter</button>' +
-            '<button class="sg-btn sg-btn-quiet" style="color:var(--danger)" data-decline-app="' + esc(String(getField(a, 'APP_ID'))) + '">Decline</button>';
+          actions = '<button type="button" class="sg-btn teal" data-accept-app="' + esc(String(getField(a, 'APP_ID'))) + '">Accept</button>' +
+            '<button type="button" class="sg-btn sg-btn-quiet" data-counter-app="' + esc(String(getField(a, 'APP_ID'))) + '">Counter</button>' +
+            '<button type="button" class="sg-btn sg-btn-quiet" style="color:var(--danger)" data-decline-app="' + esc(String(getField(a, 'APP_ID'))) + '">Decline</button>';
         }
       } else {
         actions = '<span class="sg-chip-status">' + esc(st.charAt(0).toUpperCase() + st.slice(1)) + '</span>';
@@ -885,17 +891,32 @@ onAuthStateChanged(auth, (user) => {
 
     var workerId = String(getField(app, 'WORKER_ID'));
     if (workerId === String(currentUserId)) { toast('You cannot accept yourself on your own gig.', false); return; }
+    var prevLabel = (btn && btn.textContent) || 'Accept';
+    if (btn) { btn.disabled = true; btn.textContent = 'Accepting…'; }
     if (typeof hasPendingApplicationCounter === 'function' && hasPendingApplicationCounter(app)) {
-      toast('Resolve the counter-offer before accepting.', false);
-      return;
+      var cby = String(getField(app, 'COUNTER_BY') || '').toLowerCase();
+      if (cby === 'worker') {
+        if (btn) { btn.disabled = false; btn.textContent = prevLabel; }
+        toast('Accept or decline their counter first.', false);
+        return;
+      }
+      var lockAmt = Math.round(Number(getField(app, 'COUNTER_PRICE')));
+      if (lockAmt >= 20 && typeof patchApplicationFields === 'function') {
+        var locked = await patchApplicationFields(appId, {
+          price: lockAmt, counter_price: null, counter_by: null
+        }, { taskId: taskId, workerId: workerId });
+        if (!locked || !locked.success) {
+          if (btn) { btn.disabled = false; btn.textContent = prevLabel; }
+          toast('Could not lock in ' + money(lockAmt) + ' — try again.', false);
+          return;
+        }
+      }
     }
-    btn.disabled = true;
-    btn.textContent = 'Accepting…';
 
     // Both gates the legacy page applied before an accept could go through.
     var workerUser = typeof getUserByFirebaseUid === 'function' ? await getUserByFirebaseUid(workerId) : null;
     if (!workerUser || workerUser.tasker_verified !== true) {
-      btn.disabled = false; btn.textContent = 'Accept';
+      btn.disabled = false; btn.textContent = prevLabel;
       toast('This tasker must verify their identity before they can be accepted.', false);
       return;
     }
@@ -908,7 +929,7 @@ onAuthStateChanged(auth, (user) => {
         : (workerUser.stripe_payouts_enabled === true || workerUser.stripe_payouts_enabled === 1 ||
           workerUser.guardian_stripe_payouts_enabled === true || workerUser.guardian_stripe_payouts_enabled === 1);
       if (!ready) {
-        btn.disabled = false; btn.textContent = 'Accept';
+        btn.disabled = false; btn.textContent = prevLabel;
         toast(guardianOwns
           ? 'This teen tasker needs a parent or guardian to finish payout setup first.'
           : 'This tasker must finish payout setup before they can take paid gigs.', false);
@@ -925,13 +946,13 @@ onAuthStateChanged(auth, (user) => {
 
     var res = await updateApplicationStatus(appId, 'accepted', { taskId: taskId, workerId: workerId });
     if (!res.success) {
-      btn.disabled = false; btn.textContent = 'Accept';
+      btn.disabled = false; btn.textContent = prevLabel;
       toast('Could not accept: ' + String(res.error || 'unknown error'), false);
       return;
     }
     var ts = await updateTaskStatus(taskId, 'in_progress');
     if (!ts.success) {
-      btn.disabled = false; btn.textContent = 'Accept';
+      btn.disabled = false; btn.textContent = prevLabel;
       toast('Accepted, but the gig did not move to In progress — refresh and try again.', false);
       return;
     }
@@ -1256,7 +1277,7 @@ onAuthStateChanged(auth, (user) => {
       var el;
 
       el = e.target.closest('[data-task]');
-      if (el && el.closest('#sgTabContent')) {
+      if (el && el.closest('#sgTabContent') && !e.target.closest('button')) {
         e.preventDefault();
         var id = el.getAttribute('data-task');
         if (activeTab === 'inprogress') openActive(id);
@@ -1294,9 +1315,9 @@ onAuthStateChanged(auth, (user) => {
         return;
       }
       el = e.target.closest('[data-counter-accept]');
-      if (el) { runWorkerCounter(el.getAttribute('data-counter-accept'), el.getAttribute('data-task'), 'accept'); return; }
+      if (el) { runWorkerCounter(el.getAttribute('data-counter-accept'), el.getAttribute('data-gig'), 'accept'); return; }
       el = e.target.closest('[data-counter-decline]');
-      if (el) { runWorkerCounter(el.getAttribute('data-counter-decline'), el.getAttribute('data-task'), 'decline'); return; }
+      if (el) { runWorkerCounter(el.getAttribute('data-counter-decline'), el.getAttribute('data-gig'), 'decline'); return; }
       el = e.target.closest('[data-counter-back]');
       if (el) { openCounter(el.getAttribute('data-counter-back'), 'worker'); return; }
       el = e.target.closest('[data-chat-task]');
