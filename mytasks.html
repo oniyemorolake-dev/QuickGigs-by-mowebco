@@ -19,6 +19,7 @@
      UI-injector script loads here. -->
 <link rel="stylesheet" href="qg-tokens.css">
 <link rel="stylesheet" href="sg-app.css">
+<link rel="stylesheet" href="qg-stripe.css">
 
 <!-- Theme must settle before first paint, so this one is not deferred. -->
 <script src="qg-theme.js"></script>
@@ -84,7 +85,7 @@
     <div id="sgActiveExtras"></div>
   </main>
   <div class="sg-actionbar">
-    <button class="sg-btn teal" id="sgActivePrimary">Mark as Arrived</button>
+    <button type="button" class="sg-btn teal" id="sgActivePrimary">Mark as Arrived</button>
     <div class="sg-subactions"><a href="#" id="sgActiveChat">Message client</a><a href="faq.html">Need help?</a></div>
   </div>
 </div>
@@ -798,6 +799,7 @@ onAuthStateChanged(auth, (user) => {
     var btn = $('sgActivePrimary');
     btn.textContent = next.label;
     btn.disabled = !next.action;
+    btn.className = next.pay ? 'sg-btn purple' : 'sg-btn teal';
     btn.onclick = next.action || null;
     $('sgActiveStatus').textContent = finished ? 'Completed' : 'In Progress';
   }
@@ -811,7 +813,7 @@ onAuthStateChanged(auth, (user) => {
     }
     if (mineAsPoster) {
       if (isPaymentGatedChat() && !isTaskPaid(taskId)) {
-        return { label: 'Pay & fund escrow', next: 'Fund the gig so chat unlocks', action: function () { payTask(t); } };
+        return { label: 'Pay & fund escrow', next: 'Fund the gig so chat unlocks', pay: true, action: function () { payTask(t); } };
       }
       return { label: 'Mark complete', next: 'Confirm the work is done', action: function () { markComplete(taskId, $('sgActivePrimary')); } };
     }
@@ -867,12 +869,20 @@ onAuthStateChanged(auth, (user) => {
   }
 
   function payTask(t) {
-    var taskId = String(getField(t, 'TASK_ID'));
-    if (typeof window.QG_openPayModal !== 'function') { toast('Payments are still loading — try again.', false); return; }
+    var taskId = String(getField(t, 'TASK_ID') || '');
+    if (!taskId) { toast('That gig is missing.', false); return; }
+    if (typeof window.QG_openPayModal !== 'function') {
+      toast('Payments are still loading — wait a second and tap again.', false);
+      return;
+    }
+    var posterId = currentUserId || (window._currentUser && window._currentUser.uid) || '';
+    if (!posterId) { toast('Sign in again to pay.', false); return; }
     var app = findAcceptedApplication(taskId);
     var convId = '';
     try { convId = sessionStorage.getItem('qg-task-conv-' + taskId) || ''; } catch (e) {}
-    window.QG_openPayModal(taskId, currentUserId, {
+    var btn = $('sgActivePrimary');
+    if (btn) btn.disabled = true;
+    window.QG_openPayModal(taskId, posterId, {
       returnPage: 'mytasks',
       returnConv: convId,
       amount: (app && getField(app, 'PRICE')) || getField(t, 'BUDGET'),
@@ -880,7 +890,17 @@ onAuthStateChanged(auth, (user) => {
       subtitle: 'Held securely until you mark the gig complete',
       task: t,
       feeOpts: typeof feeOptsFromTask === 'function' ? feeOptsFromTask(t) : undefined
-    }).catch(function () { toast('Could not open payment — try again.', false); });
+    }).then(function (res) {
+      if (res && res.ok) return;
+      var err = res && res.error;
+      if (err === 'cannot_pay_self') toast('Use a second account as the tasker — you cannot pay yourself.', false);
+      else if (err === 'payments_not_live') toast('Payments are not available right now.', false);
+      else if (err === 'missing_task_or_poster') toast('Could not open payment — sign in again and try.', false);
+    }).catch(function () {
+      toast('Could not open payment — try again.', false);
+    }).finally(function () {
+      if (btn && /pay/i.test(btn.textContent || '')) btn.disabled = false;
+    });
   }
 
   async function acceptApplicant(appId, btn) {

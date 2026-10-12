@@ -19,6 +19,7 @@
      UI-injector script loads here. -->
 <link rel="stylesheet" href="qg-tokens.css">
 <link rel="stylesheet" href="sg-app.css">
+<link rel="stylesheet" href="qg-stripe.css">
 
 <!-- Theme must settle before first paint, so this one is not deferred. -->
 <script src="qg-theme.js"></script>
@@ -442,7 +443,13 @@ onAuthStateChanged(auth, (user) => {
           actions.hidden = false;
           actions.innerHTML = '<button type="button" class="sg-btn purple" id="sgChatPay" style="width:100%">Pay & fund escrow</button>';
           var pay = $('sgChatPay');
-          if (pay) pay.onclick = function () { payFromChat(conv); };
+          if (pay) {
+            pay.addEventListener('click', function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              payFromChat(conv);
+            });
+          }
         }
       } else if (note) {
         note.textContent = 'Chat opens after the poster funds this gig. You cannot message until then.';
@@ -454,16 +461,25 @@ onAuthStateChanged(auth, (user) => {
 
   function payFromChat(conv) {
     if (typeof window.QG_openPayModal !== 'function') {
-      toast('Payments are still loading — try again.', false);
+      toast('Payments are still loading — wait a second and tap again.', false);
       return;
     }
-    var taskId = String(conv.task_id || conv.TASK_ID || '');
-    window.QG_openPayModal(taskId, currentUserId, {
+    var taskId = String((conv && (conv.task_id || conv.TASK_ID)) || '');
+    if (!taskId) { toast('That gig is missing.', false); return; }
+    var posterId = currentUserId || (window._currentUser && window._currentUser.uid) || '';
+    if (!posterId) { toast('Sign in again to pay.', false); return; }
+    window.QG_openPayModal(taskId, posterId, {
       returnPage: 'messages',
-      returnConv: conv.conv_id || selectedId,
-      amount: conv.amount || conv.price || '',
-      title: conv.task_title || 'Gig',
+      returnConv: (conv && conv.conv_id) || selectedId,
+      amount: conv && (conv.amount || conv.price) || '',
+      title: (conv && conv.task_title) || 'Gig',
       subtitle: 'Held securely until the gig is marked complete'
+    }).then(function (res) {
+      if (res && res.ok) return;
+      var err = res && res.error;
+      if (err === 'cannot_pay_self') toast('Use a second account as the tasker — you cannot pay yourself.', false);
+      else if (err === 'payments_not_live') toast('Payments are not available right now.', false);
+      else if (err === 'missing_task_or_poster') toast('Could not open payment — sign in again and try.', false);
     }).catch(function () { toast('Could not open payment — try again.', false); });
   }
 

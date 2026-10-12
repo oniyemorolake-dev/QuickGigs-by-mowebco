@@ -20,6 +20,38 @@
     return !!(c.paymentsEnabled && c.stripePublishableKey);
   }
 
+  function payNotify(msg, color) {
+    if (!msg) return;
+    if (typeof qgNotify === 'function') qgNotify(msg, color);
+    else if (typeof showToast === 'function') showToast(msg, color);
+    else if (typeof window.showToast === 'function') window.showToast(msg, color);
+  }
+
+  /* Rebuilt app screens load qg-stripe.js without qg-stripe.css. Without these
+     rules the overlay sits in document flow behind .sg-sheet (z-index 60), so
+     Pay & fund escrow looks like a dead tap. */
+  function ensureStripeCss() {
+    if (!document.getElementById('qg-stripe-critical')) {
+      var critical = document.createElement('style');
+      critical.id = 'qg-stripe-critical';
+      critical.textContent =
+        '.qg-stripe-overlay{position:fixed;inset:0;z-index:12000;display:flex;align-items:flex-end;justify-content:center;' +
+        'background:rgba(0,0,0,.72);opacity:0;visibility:hidden;pointer-events:none}' +
+        '.qg-stripe-overlay.open{opacity:1;visibility:visible;pointer-events:auto}' +
+        '.qg-stripe-sheet{width:100%;max-width:480px;max-height:96dvh;overflow:auto;' +
+        'background:var(--surface-1,var(--surface,#16151f));color:var(--text-primary,var(--text,#fff));' +
+        'border-radius:20px 20px 0 0}';
+      document.head.appendChild(critical);
+    }
+    if (document.getElementById('qg-stripe-css') || document.querySelector('link[href*="qg-stripe.css"]')) return;
+    var link = document.createElement('link');
+    link.id = 'qg-stripe-css';
+    link.rel = 'stylesheet';
+    link.href = 'qg-stripe.css';
+    document.head.appendChild(link);
+  }
+  ensureStripeCss();
+
   function loadStripeJs() {
     if (window.Stripe) return Promise.resolve(window.Stripe);
     if (_stripePromise) return _stripePromise;
@@ -42,6 +74,7 @@
   }
 
   function ensurePayModalDom() {
+    ensureStripeCss();
     if (_overlayEl) return _overlayEl;
     var overlay = document.createElement('div');
     overlay.id = 'qg-stripe-overlay';
@@ -801,22 +834,17 @@
     posterId = String(posterId || '');
 
     if (!paymentsLive()) {
-      if (typeof qgNotify === 'function') {
-        qgNotify('Payments not configured — see STRIPE-SETUP.md', '#f59e0b');
-      } else if (typeof showToast === 'function') {
-        showToast('Payments not configured — see STRIPE-SETUP.md', '#f59e0b');
-      }
+      payNotify('Payments are not available right now.', '#f59e0b');
       return { ok: false, error: 'payments_not_live' };
     }
 
     if (!taskId || !posterId) {
+      payNotify('Could not open payment — sign in again and try.', '#ef4444');
       return { ok: false, error: 'missing_task_or_poster' };
     }
 
     if (await isSelfPayTask(taskId, posterId)) {
-      if (typeof showToast === 'function') {
-        showToast('Use a second account as tasker — cancel this task and repost', '#ef4444');
-      }
+      payNotify('Use a second account as the tasker — you cannot pay yourself.', '#ef4444');
       return { ok: false, error: 'cannot_pay_self' };
     }
 
@@ -853,6 +881,8 @@
     destroyCheckout();
     setModalLoading('Processing payment…');
     _overlayEl.classList.add('open');
+    _overlayEl.style.zIndex = '12000';
+    _overlayEl.style.position = 'fixed';
     document.body.style.overflow = 'hidden';
 
     var workerHint = options.workerId || '';
@@ -1018,8 +1048,11 @@
     if (!btn || btn.disabled) return;
     e.preventDefault();
     var taskId = btn.getAttribute('data-pay-task');
-    var userId = window._currentUser && window._currentUser.uid;
-    if (!taskId || !userId) return;
+    var userId = (window._currentUser && window._currentUser.uid) || '';
+    if (!taskId || !userId) {
+      payNotify('Sign in again to pay.', '#ef4444');
+      return;
+    }
     var returnPage = btn.getAttribute('data-pay-return') || 'mytasks';
     var returnConv = btn.getAttribute('data-pay-conv') || '';
     var amount = btn.getAttribute('data-pay-amount');
