@@ -23,6 +23,7 @@
 
 <!-- Theme must settle before first paint, so this one is not deferred. -->
 <script src="qg-theme.js"></script>
+<script src="qg-mode.js"></script>
 
 <!-- Data, auth and logic only. -->
 <script defer src="qg-utils.js"></script>
@@ -31,7 +32,6 @@
 <script defer src="supabase-db.js"></script>
 <script defer src="qg-categories.js"></script>
 <script defer src="qg-icons.js"></script>
-<script defer src="qg-mode.js"></script>
 <script defer src="qg-role-access.js"></script>
 <script defer src="qg-role-switch.js"></script>
 <script defer src="qg-states.js"></script>
@@ -157,7 +157,10 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/f
 const auth = qgInitAuth();
 let authChecked = false;
 const redirectTimeout = setTimeout(() => {
-  if (!authChecked) window.location.href = 'login.html';
+  if (authChecked) return;
+  var remembered = '';
+  try { remembered = localStorage.getItem('qg-auth-uid') || ''; } catch (e) {}
+  if (!remembered) window.location.href = 'login.html';
 }, 8000);
 onAuthStateChanged(auth, (user) => {
   authChecked = true;

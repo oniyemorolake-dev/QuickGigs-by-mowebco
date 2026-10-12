@@ -13,12 +13,40 @@
     return 'qg-role-access:' + String(uid || '');
   }
 
-  function readCache() {
+  function currentUid() {
     var user = currentUser();
-    var uid = user && user.uid;
-    if (!uid) {
-      try { uid = localStorage.getItem('qg-auth-uid') || ''; } catch (e) {}
-    }
+    if (user && user.uid) return String(user.uid);
+    try { return String(localStorage.getItem('qg-auth-uid') || sessionStorage.getItem('qg-auth-uid') || ''); } catch (e) { return ''; }
+  }
+
+  function readLocalMode() {
+    if (typeof getMode === 'function') return getMode() === 'tasker' ? 'tasker' : 'poster';
+    try {
+      var raw = localStorage.getItem('qg-mode') || '';
+      if (raw === 'tasker' || raw === 'worker') return 'tasker';
+      var legacy = localStorage.getItem('qg-session-mode') || localStorage.getItem('qg-role') || '';
+      if (legacy === 'worker' || legacy === 'tasker') return 'tasker';
+    } catch (e) {}
+    return 'poster';
+  }
+
+  /* Phone Home/Profile used to sit on "Could not load your account modes"
+     until role-access returned. The stored Poster/Tasker choice is enough
+     to paint immediately; the server call still corrects teens and opt-in. */
+  function inferLocalState() {
+    var mode = readLocalMode();
+    return {
+      is_tasker: true,
+      is_poster: true,
+      last_active_mode: mode,
+      is_teen: false,
+      roles_updated_at: null,
+      _local: true
+    };
+  }
+
+  function readCache() {
+    var uid = currentUid();
     if (!uid) return null;
     if (memory && memoryUid === String(uid)) return memory;
     if (memoryUid && memoryUid !== String(uid)) memory = null;
@@ -33,6 +61,11 @@
       }
     } catch (e2) {
       memory = null;
+    }
+    if (!memory) {
+      memory = inferLocalState();
+      memoryUid = String(uid);
+      window._qgRoleAccessState = memory;
     }
     return memory;
   }
@@ -104,7 +137,7 @@
 
   async function load(force) {
     var cached = readCache();
-    if (!force && cached) return cached;
+    if (!force && cached && !cached._local) return cached;
     if (loading) return loading;
     loading = call('status').then(function (result) {
       loading = null;

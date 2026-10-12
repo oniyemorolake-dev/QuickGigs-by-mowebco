@@ -100,8 +100,7 @@
 
     var key = pageKey();
     if (key === 'index') {
-      var slot = document.getElementById('qgTopnavMenu');
-      if (slot) slot.appendChild(menuBtn = createMenuButton());
+      syncLandingMenu(landingLooksSignedIn());
       return;
     }
 
@@ -227,52 +226,54 @@
     return sections;
   }
 
-  function publicMenuSections() {
-    var getStarted = [
-      { type: 'link', href: 'posttask.html', icon: 'plus', label: 'Post a task' },
-      { type: 'link', href: 'signup.html?role=worker', icon: 'briefcase', label: 'Earn as a tasker' },
-      { type: 'link', href: 'login.html', icon: 'lock', label: 'Log in' }
-    ];
-    if (localStorage.getItem('qg-mode') || localStorage.getItem('qg-role') || localStorage.getItem('qg-session-mode')) {
-      getStarted.unshift({
-        type: 'link',
-        href: 'dashboard.html',
-        icon: 'home',
-        label: 'Dashboard'
-      });
-    }
-    var sections = [
-      {
-        label: 'Get started',
-        items: getStarted
-      },
-      {
-        label: 'Learn',
-        items: [
-          { type: 'link', href: 'how-it-works.html', icon: 'sparkles', label: 'How it works' },
-          { type: 'link', href: 'faq.html', icon: 'helpCircle', label: 'FAQ' },
-          { type: 'link', href: 'safety.html', icon: 'alert', label: 'Safety' },
-          { type: 'link', href: 'guidelines.html', icon: 'list', label: 'Guidelines' },
-          { type: 'link', href: 'dispute-resolution.html', icon: 'alert', label: 'Disputes' }
-        ]
-      },
-      {
-        label: 'Legal',
-        items: [
-          { type: 'link', href: 'terms.html', icon: 'clipboard', label: 'Terms of Service' },
-          { type: 'link', href: 'privacy.html', icon: 'lock', label: 'Privacy Policy' }
-        ]
-      },
-      {
-        label: 'Settings',
-        items: [
-          { type: 'action', action: 'theme', icon: 'eye', label: themeLabel() },
-          { type: 'action', action: 'safetySettings', icon: 'shield', label: 'Emergency contact' }
-        ]
-      }
-    ];
+  function landingLooksSignedIn() {
+    try {
+      if (window._auth && window._auth.currentUser) return true;
+      if (window._currentUser && window._currentUser.uid) return true;
+      if (localStorage.getItem('qg-auth-uid') || sessionStorage.getItem('qg-auth-uid')) return true;
+    } catch (e) {}
+    var poster = document.getElementById('qgNavPoster');
+    var href = poster && poster.getAttribute('href') || '';
+    return /dashboard\.html/i.test(href);
+  }
 
-    return sections;
+  function syncLandingMenu(signedIn) {
+    var slot = document.getElementById('qgTopnavMenu');
+    if (!slot) return;
+    if (signedIn) {
+      if (!document.getElementById('qgMenuBtn')) {
+        slot.appendChild(menuBtn = createMenuButton());
+      }
+      return;
+    }
+    var btn = document.getElementById('qgMenuBtn');
+    if (btn) btn.remove();
+    menuBtn = null;
+    if (open) closeMenu();
+  }
+
+  function publicMenuSections() {
+    if (landingLooksSignedIn()) {
+      return [{
+        label: '',
+        items: [
+          { type: 'link', href: 'dashboard.html', icon: 'home', label: 'Home' },
+          { type: 'link', href: 'profile.html', icon: 'users', label: 'Profile' },
+          { type: 'action', action: 'theme', icon: 'eye', label: themeLabel() },
+          { type: 'action', action: 'logout', icon: 'x', label: 'Log out', danger: true }
+        ]
+      }];
+    }
+    return [{
+      label: '',
+      items: [
+        { type: 'link', href: 'login.html', icon: 'lock', label: 'Log in' },
+        { type: 'link', href: 'signup.html', icon: 'sparkles', label: 'Sign up' },
+        { type: 'link', href: 'how-it-works.html', icon: 'sparkles', label: 'How it works' },
+        { type: 'link', href: 'terms.html', icon: 'clipboard', label: 'Terms' },
+        { type: 'link', href: 'privacy.html', icon: 'lock', label: 'Privacy' }
+      ]
+    }];
   }
 
   function renderMenuIcon(name) {
@@ -361,7 +362,11 @@
     var sections = isAppPage() ? appMenuSections() : publicMenuSections();
     body.innerHTML = renderSections(sections);
     var roleEl = overlay.querySelector('.qg-menu-role');
-    if (roleEl) roleEl.textContent = isAppPage() ? roleLabel() + ' mode' : 'Canada-wide tasks';
+    if (roleEl) {
+      roleEl.textContent = isAppPage()
+        ? roleLabel() + ' mode'
+        : (landingLooksSignedIn() ? roleLabel() + ' mode' : 'Canada-wide');
+    }
     /* innerHTML above discards any previously mounted toggle, so ask qg-nav.js
        to render a fresh one into the host. */
     if (typeof window.QG_renderHeaderRoleToggle === 'function') {
@@ -492,4 +497,5 @@
 
   window.QG_openMenu = openMenu;
   window.QG_closeMenu = closeMenu;
+  window.QG_syncLandingMenu = syncLandingMenu;
 })();

@@ -22,6 +22,7 @@
 
 <!-- Theme must settle before first paint, so this one is not deferred. -->
 <script src="qg-theme.js"></script>
+<script src="qg-mode.js"></script>
 <script>
 (function () {
   try {
@@ -40,7 +41,6 @@
 <script defer src="supabase-db.js"></script>
 <script defer src="qg-icons.js"></script>
 <script defer src="qg-categories.js"></script>
-<script defer src="qg-mode.js"></script>
 <script defer src="qg-role-access.js"></script>
 <script defer src="qg-role-switch.js"></script>
 <script defer src="qg-states.js"></script>
@@ -785,25 +785,34 @@ window.SG_signOut = async function () {
       (add === 'poster' ? 'Become a Poster' : 'Start finding work') + '</button></div>';
   }
 
+  function accessFromProfile() {
+    var access = typeof QG_getRoleAccess === 'function' ? QG_getRoleAccess() : null;
+    var u = dbUser || {};
+    if (u.is_tasker === true || u.is_poster === true) {
+      return {
+        is_tasker: u.is_tasker === true,
+        is_poster: u.is_poster === true,
+        is_teen: u.is_teen === true || u.account_status === 'pending_guardian',
+        last_active_mode: (typeof getMode === 'function' && getMode() === 'tasker') ? 'tasker' : 'poster'
+      };
+    }
+    if (access) return access;
+    return {
+      is_tasker: true,
+      is_poster: true,
+      is_teen: false,
+      last_active_mode: (typeof getMode === 'function' && getMode() === 'tasker') ? 'tasker' : 'poster'
+    };
+  }
+
   function renderRoleSwitch() {
     var boxes = ['sgModeMount', 'sgRoleMount'].map($).filter(Boolean);
     if (!boxes.length) return;
-    var access = typeof QG_getRoleAccess === 'function' ? QG_getRoleAccess() : null;
+    var access = accessFromProfile();
 
-    if (!access) {
-      if (roleAccessTried || typeof QG_loadRoleAccess !== 'function') {
-        boxes.forEach(function (box) {
-          box.innerHTML = '<p class="sg-muted" style="font-size:14px">Could not load your account modes. Close this and open it again to retry.</p>';
-        });
-        roleAccessTried = false;
-        return;
-      }
+    if (!roleAccessTried && typeof QG_loadRoleAccess === 'function') {
       roleAccessTried = true;
-      boxes.forEach(function (box) {
-        box.innerHTML = '<p class="sg-muted" style="font-size:14px">Checking your account…</p>';
-      });
-      QG_loadRoleAccess(true).then(renderRoleSwitch).catch(renderRoleSwitch);
-      return;
+      QG_loadRoleAccess(true).then(renderRoleSwitch).catch(function () {});
     }
 
     var html = modeSwitchHtml(access);

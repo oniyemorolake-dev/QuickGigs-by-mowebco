@@ -261,8 +261,11 @@ html[data-qg-page="messages"] .help-fab {
    After sign-in, qg-site.js marks the stored role .is-current and the other
    .is-other so the phone shows one pill, not both generic chips. */
 body.page-landing.qg-landing-in #qgHeroLogin a.is-other,
-body.page-landing.qg-landing-in #qgHeroLogin span[aria-hidden] {
-  display: none;
+body.page-landing.qg-landing-in #qgHeroLogin span[aria-hidden],
+body.page-landing.qg-landing-in .qg-topnav-links a:not(.qg-nav-login),
+body.page-landing.qg-landing-in #qgNavTasker,
+body.page-landing.qg-landing-in #qgEarnTasker {
+  display: none !important;
 }
 body.page-landing.qg-landing-in .qg-topnav-links a.qg-nav-login.is-current {
   font-weight: 600;
@@ -275,6 +278,9 @@ body.page-landing.qg-landing-mode-tasker .qg-topnav-links a.qg-nav-login.is-curr
   body.page-landing .qg-topnav {
     flex-wrap: wrap;
     row-gap: 8px;
+    padding-right: 16px;
+  }
+  body.page-landing.qg-landing-in .qg-topnav {
     padding-right: 58px;
   }
   body.page-landing .qg-brand {

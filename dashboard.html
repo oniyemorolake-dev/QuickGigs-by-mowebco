@@ -23,6 +23,7 @@
 
 <!-- Theme must settle before first paint, so this one is not deferred. -->
 <script src="qg-theme.js"></script>
+<script src="qg-mode.js"></script>
 <script>
 (function () {
   try {
@@ -42,7 +43,6 @@
 <script defer src="qg-categories.js"></script>
 <!-- Visit streak, extracted from qg-wave2.js so the injector stays unloaded. -->
 <script defer src="qg-streak.js"></script>
-<script defer src="qg-mode.js"></script>
 <script defer src="qg-location.js"></script>
 <script defer src="qg-age.js"></script>
 <script defer src="qg-notifications.js"></script>
@@ -755,7 +755,10 @@ function qgHasEmailAction() {
 
 let authChecked = false;
 const redirectTimeout = setTimeout(() => {
-  if (!authChecked && !qgHasEmailAction()) window.location.href = 'login.html';
+  if (authChecked || qgHasEmailAction()) return;
+  var remembered = '';
+  try { remembered = localStorage.getItem('qg-auth-uid') || ''; } catch (e) {}
+  if (!remembered) window.location.href = 'login.html';
 }, 8000);
 
 onAuthStateChanged(auth, async (user) => {
@@ -858,7 +861,9 @@ onAuthStateChanged(auth, async (user) => {
           if (typeof qgIsOnboardingDoneCached === 'function' && qgIsOnboardingDoneCached(live.uid)) {
             return;
           }
-          window.location.replace('signup.html?oauth=continue');
+          /* A slow phone JWT used to look like "no users row" and dump
+             signed-in people onto signup. Stay on Home; they can finish
+             signup themselves if they really are new. */
         });
       }).catch(function (gateErr) {
         console.warn('dashboard login gate failed:', gateErr && gateErr.message ? gateErr.message : gateErr);

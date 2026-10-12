@@ -135,9 +135,9 @@
   paintLandingSignedInMode();
 })();
 
-/* Landing nav: when signed in, show the stored Poster/Tasker role — not both
-   generic "Continue as poster / Continue as tasker" chips. index.html owns the
-   auth text swap; this only restyles after that fires. */
+/* Landing nav: when signed in, one Home control — not Browse tasks plus
+   Continue as poster/tasker. index.html may still write the old continue
+   copy first; this overwrites it. */
 function paintLandingSignedInMode() {
   var posterNav = document.getElementById('qgNavPoster');
   var taskerNav = document.getElementById('qgNavTasker');
@@ -157,7 +157,7 @@ function paintLandingSignedInMode() {
   function signedInFrom(el) {
     var href = (el && el.getAttribute('href')) || '';
     if (/dashboard\.html/i.test(href)) return true;
-    return /continue as|signed in/i.test((el && el.textContent) || '');
+    return /continue as|signed in|^home$|go to home/i.test((el && el.textContent) || '');
   }
 
   var heroPoster = document.getElementById('qgHeroPoster');
@@ -182,16 +182,52 @@ function paintLandingSignedInMode() {
   if (!signedIn) {
     posterNav.classList.remove('is-current', 'is-other');
     taskerNav.classList.remove('is-current', 'is-other');
+    taskerNav.removeAttribute('hidden');
     if (heroPoster) heroPoster.classList.remove('is-current', 'is-other');
-    if (heroTasker) heroTasker.classList.remove('is-current', 'is-other');
+    if (heroTasker) {
+      heroTasker.classList.remove('is-current', 'is-other');
+      heroTasker.removeAttribute('hidden');
+    }
+    var earnOut = document.getElementById('qgEarnTasker');
+    if (earnOut) earnOut.removeAttribute('hidden');
+    var postOut = document.getElementById('qgPostTask');
+    if (postOut && /dashboard\.html/i.test(postOut.getAttribute('href') || '')) {
+      postOut.textContent = 'Post a task';
+      postOut.href = 'posttask.html';
+    }
+    if (typeof window.QG_syncLandingMenu === 'function') window.QG_syncLandingMenu(false);
     return;
   }
 
-  var mode = readMode();
-  mark(posterNav, mode === 'poster', 'Continue as Poster', 'Switch to Poster');
-  mark(taskerNav, mode === 'tasker', 'Continue as Tasker', 'Switch to Tasker');
-  mark(heroPoster, mode === 'poster', 'Continue as a Poster', 'Switch to Poster');
-  mark(heroTasker, mode === 'tasker', 'Continue as a Tasker', 'Switch to Tasker');
+  /* One Home control — not "Browse tasks" plus "Continue as tasker". */
+  mark(posterNav, true, 'Home', 'Home');
+  posterNav.href = 'dashboard.html';
+  posterNav.classList.add('is-current');
+  posterNav.classList.remove('is-other');
+  taskerNav.classList.add('is-other');
+  taskerNav.classList.remove('is-current');
+  taskerNav.setAttribute('hidden', '');
+  if (heroPoster) {
+    heroPoster.textContent = 'Go to Home';
+    heroPoster.href = 'dashboard.html';
+    heroPoster.classList.add('is-current');
+    heroPoster.classList.remove('is-other');
+  }
+  if (heroTasker) {
+    heroTasker.classList.add('is-other');
+    heroTasker.setAttribute('hidden', '');
+  }
+  if (heroLine && heroLine.firstChild && heroLine.firstChild.nodeType === 3) {
+    heroLine.firstChild.textContent = 'Signed in. ';
+  }
+  var post = document.getElementById('qgPostTask');
+  if (post) {
+    post.textContent = 'Home';
+    post.href = 'dashboard.html';
+  }
+  var earn = document.getElementById('qgEarnTasker');
+  if (earn) earn.setAttribute('hidden', '');
+  if (typeof window.QG_syncLandingMenu === 'function') window.QG_syncLandingMenu(true);
 }
 
 (function watchLandingSignedInMode() {

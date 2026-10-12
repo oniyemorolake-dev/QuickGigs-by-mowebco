@@ -1070,24 +1070,28 @@ function paintSignedInLinks() {
   var taskerHero = document.getElementById('qgHeroTasker');
   var heroLine = document.getElementById('qgHeroLogin');
   if (posterNav) {
-    posterNav.textContent = 'Continue as poster';
-    posterNav.href = 'dashboard.html?mode=poster';
+    posterNav.textContent = 'Home';
+    posterNav.href = 'dashboard.html';
   }
   if (taskerNav) {
-    taskerNav.textContent = 'Continue as tasker';
-    taskerNav.href = 'dashboard.html?mode=tasker';
+    taskerNav.hidden = true;
+    taskerNav.href = 'dashboard.html';
   }
   if (posterHero) {
-    posterHero.textContent = 'Continue as a poster';
-    posterHero.href = 'dashboard.html?mode=poster';
+    posterHero.textContent = 'Go to Home';
+    posterHero.href = 'dashboard.html';
   }
-  if (taskerHero) {
-    taskerHero.textContent = 'Continue as a tasker';
-    taskerHero.href = 'dashboard.html?mode=tasker';
+  if (taskerHero) taskerHero.hidden = true;
+  if (heroLine && heroLine.firstChild) {
+    heroLine.firstChild.textContent = 'Signed in. ';
   }
-  if (heroLine) {
-    heroLine.childNodes[0].textContent = 'You are signed in. ';
+  var post = document.getElementById('qgPostTask');
+  if (post) {
+    post.textContent = 'Home';
+    post.href = 'dashboard.html';
   }
+  var earn = document.getElementById('qgEarnTasker');
+  if (earn) earn.hidden = true;
 }
 
 onAuthStateChanged(qgInitAuth(), function (user) {
