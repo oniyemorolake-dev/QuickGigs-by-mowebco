@@ -164,8 +164,9 @@ onAuthStateChanged(auth, (user) => {
   'use strict';
 
   var allTasks = [], allApplications = [], userNames = {}, userAvatars = {};
-  var paymentByTaskId = {};
+var paymentByTaskId = {};
   var activeTab = 'posted';
+  var historyFilter = 'all';
   var activeTaskId = '';
   var currentUserId = null;
   var map = null, mapMarker = null;
@@ -208,6 +209,7 @@ onAuthStateChanged(auth, (user) => {
     COUNTER_ROUND: ['COUNTER_ROUND', 'counter_round'],
     GUARDIAN_STATUS: ['GUARDIAN_STATUS', 'guardian_status'],
     LAT: ['LAT', 'lat', 'latitude'], LNG: ['LNG', 'lng', 'longitude'],
+    LOCATION_TYPE: ['LOCATION_TYPE', 'location_type'],
     PRECISE_ADDRESS: ['PRECISE_ADDRESS', 'precise_address']
   };
   function getField(row, f) {
@@ -259,7 +261,18 @@ onAuthStateChanged(auth, (user) => {
     var p = paymentByTaskId[String(taskId)];
     if (!p) return false;
     var s = String(p.status || '').toLowerCase();
-    return s === 'paid' || s === 'held' || s === 'escrow' || s === 'released' || s === 'completed';
+    return s === 'paid' || s === 'held' || s === 'escrow' || s === 'released' || s === 'completed' || s === 'disputed';
+  }
+  function notePaidRows(rows) {
+    (rows || []).forEach(function (p) {
+      if (!p || p.task_id == null || p.task_id === '') return;
+      if (!isTaskPaidStatus(p.status)) return;
+      paymentByTaskId[String(p.task_id)] = p;
+    });
+  }
+  function isTaskPaidStatus(status) {
+    var s = String(status || '').toLowerCase();
+    return s === 'paid' || s === 'held' || s === 'escrow' || s === 'released' || s === 'completed' || s === 'disputed';
   }
   function money(v) { return '$' + esc(String(v == null ? 0 : v)); }
   function toDate(v) {
@@ -277,6 +290,16 @@ onAuthStateChanged(auth, (user) => {
     var day = sameDay(d, today) ? 'Today' : sameDay(d, tom) ? 'Tomorrow'
       : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     return day + ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  }
+  function shortDate(v) {
+    if (!v) return '';
+    var d = new Date(v);
+    if (isNaN(d.getTime())) return '';
+    try {
+      return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch (e) {
+      return '';
+    }
   }
   function locLabel(t) {
     /* A precise address is shown as the poster typed it. formatLocationDisplay
@@ -340,8 +363,8 @@ onAuthStateChanged(auth, (user) => {
      Applied and a tasker never needs Posted, so the tab simply is not there. */
   function tabsForMode() {
     return isWorker()
-      ? [['applied', 'Applied'], ['inprogress', 'In progress'], ['completed', 'Done']]
-      : [['posted', 'Posted'], ['inprogress', 'In progress'], ['completed', 'Done']];
+      ? [['applied', 'Applied'], ['inprogress', 'In progress'], ['completed', 'Past']]
+      : [['posted', 'Posted'], ['inprogress', 'In progress'], ['completed', 'Past']];
   }
   function normalizeTab(tab) {
     var ids = tabsForMode().map(function (p) { return p[0]; });
@@ -473,14 +496,31 @@ onAuthStateChanged(auth, (user) => {
     }
 
     if (activeTab === 'completed') {
-      var done = completedTasks(userId);
-      if (!done.length) {
-        content.innerHTML = emptyState('Nothing finished yet',
-          'Completed and cancelled gigs land here.',
+      var filters = [
+        ['all', 'All'],
+        ['completed', 'Completed'],
+        ['cancelled', 'Cancelled'],
+        ['expired', 'Expired']
+      ];
+      var chips = '<div class="sg-seg" role="tablist" aria-label="Past gig status" style="margin-bottom:14px">' +
+        filters.map(function (f) {
+          return '<button type="button" data-history="' + f[0] + '" aria-selected="' + (historyFilter === f[0]) + '"' +
+            (historyFilter === f[0] ? ' class="on"' : '') + '>' + f[1] + '</button>';
+        }).join('') + '</div>';
+      var done = completedTasks(userId).filter(function (t) {
+        return historyFilter === 'all' || taskStatusOf(t) === historyFilter;
+      });
+      if (!completedTasks(userId).length) {
+        content.innerHTML = emptyState('Nothing in the past yet',
+          'Completed, cancelled, and expired gigs land here.',
           isWorker() ? { label: 'Browse gigs', href: 'browsetask.html' } : { label: 'Post a gig', href: 'posttask.html' });
         return;
       }
-      content.innerHTML = '<div class="sg-gigs">' + done.map(completedCard).join('') + '</div>';
+      if (!done.length) {
+        content.innerHTML = chips + emptyState('None in this filter', 'Try All to see every past gig.');
+        return;
+      }
+      content.innerHTML = chips + '<div class="sg-gigs">' + done.map(completedCard).join('') + '</div>';
     }
   }
 
@@ -572,7 +612,16 @@ onAuthStateChanged(auth, (user) => {
     var mineAsPoster = taskBelongsToPoster(t, currentUserId);
     var otherId = mineAsPoster ? (app ? getField(app, 'WORKER_ID') : '') : getField(t, 'POSTED_BY');
     var otherName = displayName(otherId, mineAsPoster ? app : t);
-    var badge = st === 'expired' ? 'Expired' : st === 'cancelled' ? 'Cancelled' : 'Done';
+    var badge = st === 'expired' ? 'Expired' : st === 'cancelled' ? 'Cancelled' : 'Completed';
+    var pay = paymentByTaskId[taskId];
+    var agreed = app
+      ? (getField(app, 'COUNTER_PRICE') || getField(app, 'PRICE') || getField(t, 'BUDGET'))
+      : getField(t, 'BUDGET');
+    var shown = pay
+      ? (mineAsPoster ? (pay.amount != null ? pay.amount : agreed) : (pay.worker_payout != null ? pay.worker_payout : (pay.amount != null ? pay.amount : agreed)))
+      : agreed;
+    var moneyWord = pay ? (mineAsPoster ? 'Paid' : 'Earned') : 'Agreed';
+    var when = shortDate(getField(t, 'CREATED_AT'));
 
     var actions = '<div class="sg-sheet-foot" style="flex-wrap:wrap;margin-top:12px">';
     if ((st === 'expired' || st === 'cancelled') && mineAsPoster) {
@@ -588,8 +637,9 @@ onAuthStateChanged(auth, (user) => {
       '<span class="sg-isq teal">' + catSvg(getField(t, 'CATEGORY')) + '</span>' +
       '<span style="flex:1;min-width:0"><b style="display:block;font-size:15.5px">' + esc(titleOf(t)) + '</b>' +
       '<span class="sg-meta">' + esc((mineAsPoster ? 'Tasker: ' : 'Poster: ') + otherName) + '</span>' +
-      '<span class="sg-meta">' + esc(badge + ' · ' + locLabel(t)) + '</span></span>' +
-      '<span class="sg-money">' + money(getField(t, 'BUDGET')) + '</span></div>' + actions + '</div>';
+      '<span class="sg-meta">' + esc(badge + (when ? ' · ' + when : '') + (locLabel(t) ? ' · ' + locLabel(t) : '')) + '</span>' +
+      '<span class="sg-meta">' + esc(moneyWord) + '</span></span>' +
+      '<span class="sg-money">' + money(shown) + '</span></div>' + actions + '</div>';
   }
 
   function reviewHref(task, app) {
@@ -725,16 +775,63 @@ onAuthStateChanged(auth, (user) => {
     paintMap(t);
     paintExtras(t, mineAsPoster, otherId, otherName);
     paintSteps(t, mineAsPoster);
-
+    await refreshActivePayment(activeTaskId);
     if (typeof QG_getTaskEvidence === 'function') {
       try {
-        evidenceByTask[activeTaskId] = await QG_getTaskEvidence(activeTaskId);
-        if ($('sgActiveScreen').hidden === false && activeTaskId === String(taskId)) paintSteps(t, mineAsPoster);
+        applyEvidence(activeTaskId, await QG_getTaskEvidence(activeTaskId));
       } catch (e) {}
+    }
+    if ($('sgActiveScreen').hidden === false && activeTaskId === String(taskId)) {
+      paintExtras(findTask(taskId) || t, mineAsPoster, otherId, otherName);
+      paintSteps(findTask(taskId) || t, mineAsPoster);
+      watchActiveEvidence(String(taskId), mineAsPoster);
     }
   }
 
+  function applyEvidence(taskId, ev) {
+    if (!ev) return;
+    evidenceByTask[String(taskId)] = ev;
+    if (ev.payments) notePaidRows(ev.payments);
+  }
+
+  async function refreshActivePayment(taskId) {
+    if (typeof getPaymentByTask !== 'function') return;
+    try {
+      var row = await getPaymentByTask(taskId, { actorId: currentUserId });
+      if (row) notePaidRows([row]);
+    } catch (e) {}
+  }
+
+  var evidenceTimer = null;
+  function stopEvidenceWatch() {
+    if (evidenceTimer) { clearInterval(evidenceTimer); evidenceTimer = null; }
+  }
+  function watchActiveEvidence(taskId, mineAsPoster) {
+    stopEvidenceWatch();
+    evidenceTimer = setInterval(function () {
+      if (!$('sgActiveScreen') || $('sgActiveScreen').hidden || activeTaskId !== String(taskId)) {
+        stopEvidenceWatch();
+        return;
+      }
+      var jobs = [refreshActivePayment(taskId)];
+      if (typeof QG_getTaskEvidence === 'function') {
+        jobs.push(QG_getTaskEvidence(taskId).then(function (ev) { applyEvidence(taskId, ev); }));
+      }
+      Promise.all(jobs).then(function () {
+        if (activeTaskId !== String(taskId)) return;
+        var live = findTask(taskId);
+        if (!live) return;
+        var app = findAcceptedApplication(taskId);
+        var otherId = mineAsPoster ? (app ? getField(app, 'WORKER_ID') : '') : getField(live, 'POSTED_BY');
+        var otherName = displayName(otherId, mineAsPoster ? app : live);
+        paintExtras(live, mineAsPoster, otherId, otherName);
+        paintSteps(live, mineAsPoster);
+      }).catch(function () {});
+    }, 8000);
+  }
+
   function closeActive() {
+    stopEvidenceWatch();
     $('sgActiveScreen').hidden = true;
     $('sgListScreen').hidden = false;
     activeTaskId = '';
@@ -745,26 +842,27 @@ onAuthStateChanged(auth, (user) => {
     }
   }
 
-  function paintMap(t) {
-    var box = $('sgActiveMap');
-    var lat = Number(getField(t, 'LAT')), lng = Number(getField(t, 'LNG'));
-    if (!isFinite(lat) || !isFinite(lng) || (!lat && !lng)) {
-      // No coordinates on the row: the template's flat preview box stands in.
-      return;
-    }
+  function mapPinSvg() {
+    return '<svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5a7 7 0 0 0-14 0C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
+  }
+  function showMapNote(box, label) {
+    if (map) { try { map.remove(); } catch (e) {} map = null; mapMarker = null; }
+    box.classList.remove('is-live');
+    box.innerHTML = mapPinSvg() + esc(label);
+  }
+  function mountLiveMap(box, lat, lng) {
     if (typeof L === 'undefined') {
       if (typeof QG_ensureLeaflet === 'function') {
-        QG_ensureLeaflet().then(function () { paintMap(t); }).catch(function () {});
-      }
+        QG_ensureLeaflet().then(function () { mountLiveMap(box, lat, lng); }).catch(function () {
+          showMapNote(box, 'Map could not load');
+        });
+      } else showMapNote(box, 'Map could not load');
       return;
     }
+    box.classList.add('is-live');
     box.innerHTML = '';
-    box.style.padding = '0';
     if (!map) {
       map = L.map(box, { zoomControl: false, attributionControl: true, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: false, keyboard: false });
-      /* OpenStreetMap, not cartocdn: carto answers 200 with an "API key
-         required" placeholder tile now. OSM's tile policy requires the
-         attribution line, hence attributionControl above. */
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -775,7 +873,38 @@ onAuthStateChanged(auth, (user) => {
     mapMarker = L.marker([lat, lng], {
       icon: L.divIcon({ className: '', html: '<span class="sg-pin"></span>', iconSize: [18, 18], iconAnchor: [9, 9] })
     }).addTo(map);
-    setTimeout(function () { try { map.invalidateSize(); } catch (e) {} }, 60);
+    setTimeout(function () { try { map.invalidateSize(); } catch (e) {} }, 80);
+  }
+  function paintMap(t) {
+    var box = $('sgActiveMap');
+    var where = String(getField(t, 'LOCATION') || '');
+    var type = String(getField(t, 'LOCATION_TYPE') || '').toLowerCase();
+    var remote = type === 'remote' || /remote|online/i.test(where);
+    var lat = Number(getField(t, 'LAT')), lng = Number(getField(t, 'LNG'));
+    var hasCoords = isFinite(lat) && isFinite(lng) && !(lat === 0 && lng === 0);
+    if (remote) {
+      showMapNote(box, 'Remote gig — no meetup map');
+      return;
+    }
+    if (hasCoords) {
+      mountLiveMap(box, lat, lng);
+      return;
+    }
+    if (!where || typeof geocodeCanadaLocation !== 'function') {
+      showMapNote(box, where || 'No location on this gig');
+      return;
+    }
+    showMapNote(box, 'Finding the map…');
+    geocodeCanadaLocation(where).then(function (res) {
+      if ($('sgActiveMap') !== box) return;
+      if (!res || !res.success || res.lat == null || res.lng == null) {
+        showMapNote(box, where);
+        return;
+      }
+      mountLiveMap(box, Number(res.lat), Number(res.lng));
+    }).catch(function () {
+      showMapNote(box, where || 'Map could not load');
+    });
   }
 
   function paintSteps(t, mineAsPoster) {
@@ -815,7 +944,16 @@ onAuthStateChanged(auth, (user) => {
       if (isPaymentGatedChat() && !isTaskPaid(taskId)) {
         return { label: 'Pay & fund escrow', next: 'Fund the gig so chat unlocks', pay: true, action: function () { payTask(t); } };
       }
-      return { label: 'Mark complete', next: 'Confirm the work is done', action: function () { markComplete(taskId, $('sgActivePrimary')); } };
+      if (done.on_my_way && !done.arrived && !done.started) {
+        return { label: 'On the way', next: 'The tasker is heading over', action: null };
+      }
+      if (done.arrived && !done.started) {
+        return { label: 'Arrived', next: 'The tasker has arrived', action: null };
+      }
+      if (!done.on_my_way && !done.arrived && !done.started) {
+        return { label: 'Waiting on tasker', next: 'Paid. Waiting for them to set off', action: null };
+      }
+      return { label: 'Mark complete', next: 'The tasker has started. Confirm when the work is done', action: function () { markComplete(taskId, $('sgActivePrimary')); } };
     }
     if (!done.on_my_way) return { label: 'I am on my way', next: 'Set off and let the client know', action: function () { stamp(taskId, 'on_my_way'); } };
     if (!done.arrived) return { label: 'Mark as Arrived', next: 'Arrive and confirm with client', action: function () { stamp(taskId, 'arrived'); } };
@@ -825,16 +963,16 @@ onAuthStateChanged(auth, (user) => {
 
   async function stamp(taskId, type) {
     var btn = $('sgActivePrimary');
-    btn.disabled = true;
+  btn.disabled = true;
     if (typeof QG_stampTask !== 'function') { toast('Check-in is not available right now.', false); btn.disabled = false; return; }
     var res = await QG_stampTask(taskId, type);
     if (!res || res.ok === false) {
-      btn.disabled = false;
+  btn.disabled = false;
       toast((res && (res.message || res.error)) || 'Could not check in — try again.', false);
-      return;
-    }
+    return;
+  }
     if (typeof QG_getTaskEvidence === 'function') {
-      try { evidenceByTask[String(taskId)] = await QG_getTaskEvidence(taskId); } catch (e) {}
+      try { applyEvidence(taskId, await QG_getTaskEvidence(taskId)); } catch (e) {}
     }
     var t = findTask(taskId);
     paintSteps(t, taskBelongsToPoster(t, currentUserId));
@@ -873,8 +1011,8 @@ onAuthStateChanged(auth, (user) => {
     if (!taskId) { toast('That gig is missing.', false); return; }
     if (typeof window.QG_openPayModal !== 'function') {
       toast('Payments are still loading — wait a second and tap again.', false);
-      return;
-    }
+    return;
+  }
     var posterId = currentUserId || (window._currentUser && window._currentUser.uid) || '';
     if (!posterId) { toast('Sign in again to pay.', false); return; }
     var app = findAcceptedApplication(taskId);
@@ -918,8 +1056,8 @@ onAuthStateChanged(auth, (user) => {
       if (cby === 'worker') {
         if (btn) { btn.disabled = false; btn.textContent = prevLabel; }
         toast('Accept or decline their counter first.', false);
-        return;
-      }
+      return;
+    }
       var lockAmt = Math.round(Number(getField(app, 'COUNTER_PRICE')));
       if (lockAmt >= 20 && typeof patchApplicationFields === 'function') {
         var locked = await patchApplicationFields(appId, {
@@ -928,8 +1066,8 @@ onAuthStateChanged(auth, (user) => {
         if (!locked || !locked.success) {
           if (btn) { btn.disabled = false; btn.textContent = prevLabel; }
           toast('Could not lock in ' + money(lockAmt) + ' — try again.', false);
-          return;
-        }
+      return;
+    }
       }
     }
 
@@ -938,8 +1076,8 @@ onAuthStateChanged(auth, (user) => {
     if (!workerUser || workerUser.tasker_verified !== true) {
       btn.disabled = false; btn.textContent = prevLabel;
       toast('This tasker must verify their identity before they can be accepted.', false);
-      return;
-    }
+    return;
+  }
     var paymentsOn = typeof QG_paymentsLive === 'function' ? QG_paymentsLive()
       : !!(window.QG_CONFIG && window.QG_CONFIG.paymentsEnabled);
     if (paymentsOn) {
@@ -953,33 +1091,33 @@ onAuthStateChanged(auth, (user) => {
         toast(guardianOwns
           ? 'This teen tasker needs a parent or guardian to finish payout setup first.'
           : 'This tasker must finish payout setup before they can take paid gigs.', false);
-        return;
-      }
-    }
+    return;
+  }
+  }
 
-    var workerName = displayName(workerId, app);
+  var workerName = displayName(workerId, app);
     if (workerUser.name && typeof isGenericDisplayName === 'function' && !isGenericDisplayName(workerUser.name)) {
-      workerName = workerUser.name;
-    }
+    workerName = workerUser.name;
+  }
     var posterName = window._currentUser.displayName || String(window._currentUser.email || '').split('@')[0];
-    if (typeof formatPersonName === 'function') posterName = formatPersonName(posterName);
+  if (typeof formatPersonName === 'function') posterName = formatPersonName(posterName);
 
     var res = await updateApplicationStatus(appId, 'accepted', { taskId: taskId, workerId: workerId });
     if (!res.success) {
       btn.disabled = false; btn.textContent = prevLabel;
       toast('Could not accept: ' + String(res.error || 'unknown error'), false);
-      return;
-    }
+    return;
+  }
     var ts = await updateTaskStatus(taskId, 'in_progress');
     if (!ts.success) {
       btn.disabled = false; btn.textContent = prevLabel;
       toast('Accepted, but the gig did not move to In progress — refresh and try again.', false);
-      return;
-    }
-    if (typeof notifyWorkerAccepted === 'function') {
+    return;
+  }
+  if (typeof notifyWorkerAccepted === 'function') {
       try { await notifyWorkerAccepted(workerId, '', { title: getField(task, 'TITLE'), TASK_ID: taskId }, posterName); } catch (e) {}
     }
-    if (typeof declinePendingApplicationsForTask === 'function') {
+  if (typeof declinePendingApplicationsForTask === 'function') {
       try { await declinePendingApplicationsForTask(taskId, appId); } catch (e) {}
     }
 
@@ -1047,7 +1185,7 @@ onAuthStateChanged(auth, (user) => {
     counterHandler = async function (amount) {
       if (who === 'poster') {
         await runPosterCounter(appId, getField(app, 'TASK_ID'), getField(app, 'WORKER_ID'), 'counter', amount);
-      } else {
+    } else {
         await runWorkerCounter(appId, getField(app, 'TASK_ID'), 'counter', amount);
       }
     };
@@ -1064,8 +1202,8 @@ onAuthStateChanged(auth, (user) => {
         } else {
           toast(perm.message || 'Verification is required.', false);
         }
-        return;
-      }
+    return;
+  }
     }
     var res = await workerRespondToCounter(appId, currentUserId, action, amount, { taskId: taskId });
     if (!res.success) {
@@ -1090,8 +1228,8 @@ onAuthStateChanged(auth, (user) => {
     if (!res.success) {
       toast(typeof formatSupabaseActionError === 'function'
         ? formatSupabaseActionError('update counter', res.error) : 'Could not update the counter.', false);
-      return;
-    }
+        return;
+      }
     toast(action === 'accept' ? 'Counter accepted — price updated' : action === 'counter' ? 'Counter sent' : 'Counter declined');
     await reloadApplications();
     renderApplicants();
@@ -1105,7 +1243,7 @@ onAuthStateChanged(auth, (user) => {
   }
 
   async function markComplete(taskId, btn) {
-    taskId = String(taskId);
+  taskId = String(taskId);
     var task = findTask(taskId);
     var app = findAcceptedApplication(taskId);
     var posterId = task ? getField(task, 'POSTED_BY') : currentUserId;
@@ -1134,8 +1272,8 @@ onAuthStateChanged(auth, (user) => {
       var msg = String((result && (result.message || result.error)) || 'Could not mark complete. Try again.');
       if (typeof formatSupabaseActionError === 'function') msg = formatSupabaseActionError('mark complete', msg);
       toast(msg, false);
-      return;
-    }
+    return;
+  }
 
     if (task) setRowStatus(task, 'completed');
     if (app) setRowStatus(app, 'completed');
@@ -1173,11 +1311,14 @@ onAuthStateChanged(auth, (user) => {
   async function refreshPaymentMap(userId) {
     if (typeof getPaymentsForUser !== 'function') return;
     try {
-      var rows = await getPaymentsForUser(userId, 'poster') || [];
+      var posterRows = await getPaymentsForUser(userId, 'poster', { limit: 100 }) || [];
+      var workerRows = await getPaymentsForUser(userId, 'worker', { limit: 100 }) || [];
       paymentByTaskId = {};
-      rows.forEach(function (p) {
-        if (p && p.task_id) paymentByTaskId[String(p.task_id)] = p;
-      });
+      notePaidRows(posterRows.concat(workerRows));
+      if (activeTaskId && $('sgActiveScreen') && !$('sgActiveScreen').hidden) {
+        var live = findTask(activeTaskId);
+        if (live) paintSteps(live, taskBelongsToPoster(live, userId));
+      }
     } catch (e) {}
   }
 
@@ -1189,7 +1330,7 @@ onAuthStateChanged(auth, (user) => {
     if (cached && cached.length) {
       allTasks = cached;
       if (typeof readAppsCache === 'function') allApplications = readAppsCache(true) || [];
-      renderTab();
+    renderTab();
     }
 
     // Payment return and pending-payment sync must never block the list.
@@ -1222,8 +1363,8 @@ onAuthStateChanged(auth, (user) => {
         $('sgTabContent').innerHTML = typeof QG_errorStateHtml === 'function'
           ? QG_errorStateHtml({ title: 'Could not load your gigs', sub: 'Check your connection, then try again.' })
           : '<div class="sg-state"><div class="sg-state-title">Could not load your gigs</div></div>';
-        return;
-      }
+    return;
+  }
     }
 
     renderTab();
@@ -1260,8 +1401,8 @@ onAuthStateChanged(auth, (user) => {
       if (!isFinite(amount) || amount < 20) {
         $('sgCounterErr').textContent = 'Enter an amount of $20 or more.';
         $('sgCounterErr').hidden = false;
-        return;
-      }
+    return;
+  }
       $('sgCounterErr').hidden = true;
       var fn = counterHandler;
       counterHandler = null;
@@ -1295,14 +1436,20 @@ onAuthStateChanged(auth, (user) => {
     document.addEventListener('click', function (e) {
       var el;
 
+      el = e.target.closest('[data-history]');
+      if (el) {
+        historyFilter = el.getAttribute('data-history') || 'all';
+        renderTab();
+        return;
+      }
       el = e.target.closest('[data-task]');
       if (el && el.closest('#sgTabContent') && !e.target.closest('button')) {
         e.preventDefault();
         var id = el.getAttribute('data-task');
         if (activeTab === 'inprogress') openActive(id);
         else openApplicants(id);
-        return;
-      }
+          return;
+        }
       el = e.target.closest('[data-switch-mode]');
       if (el) {
         var next = el.getAttribute('data-switch-mode') === 'poster' ? 'poster' : 'tasker';
@@ -1310,7 +1457,7 @@ onAuthStateChanged(auth, (user) => {
         if (typeof QG_applyRoleMode === 'function') QG_applyRoleMode();
         activeTab = normalizeTab(activeTab);
         paintSeg();
-        renderTab();
+          renderTab();
         return;
       }
       el = e.target.closest('[data-accept-app]');
@@ -1360,7 +1507,7 @@ onAuthStateChanged(auth, (user) => {
         confirmThen('Relist this gig?',
           'A new listing goes on browse with the same details. Relisting is free — you only pay when you hire and fund a tasker. If this one is still open, it comes down first.',
           'Relist now', false, async function () {
-            if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
+      if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
             var res = await repostTask(rid, currentUserId);
             if (!res.success) {
               var why = res.error === 'already_funded'
@@ -1369,11 +1516,11 @@ onAuthStateChanged(auth, (user) => {
                   ? 'In-progress and completed gigs cannot be relisted. Use Post again.'
                   : 'Could not relist — try again.');
               toast(why, false);
-              return;
-            }
+        return;
+      }
             toast('Relisted — live on browse again. No extra charge.');
             closeSheet($('sgAppsSheet'));
-            await loadData();
+      await loadData();
             showTab('posted');
           });
         return;
@@ -1384,7 +1531,7 @@ onAuthStateChanged(auth, (user) => {
       if (el) {
         var cid = el.getAttribute('data-cancel-task');
         confirmThen('Cancel this gig?', 'The tasker is told and any held funds are returned.', 'Cancel gig', true, async function () {
-          if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
+        if (typeof invalidateTasksCache === 'function') invalidateTasksCache();
           var res = await cancelTask(cid);
           if (!res.success) { toast('Could not cancel: ' + String(res.error || 'unknown error'), false); return; }
           var ct = findTask(cid);
@@ -1393,8 +1540,8 @@ onAuthStateChanged(auth, (user) => {
           showTab('completed');
           toast('Gig cancelled');
         });
-        return;
-      }
+          return;
+        }
       el = e.target.closest('[data-change-tasker]');
       if (el) {
         var chid = el.getAttribute('data-change-tasker');
@@ -1420,15 +1567,15 @@ onAuthStateChanged(auth, (user) => {
           if (t) paintSteps(t, taskBelongsToPoster(t, currentUserId));
           toast(isTaskPaid(el.getAttribute('data-sync-pay')) ? 'Payment found' : 'No payment found yet', isTaskPaid(el.getAttribute('data-sync-pay')));
         })();
-        return;
-      }
+    return;
+  }
       el = e.target.closest('[data-dispute-task]');
       if (el && typeof openDisputeModal === 'function') {
         var dt = findTask(el.getAttribute('data-dispute-task'));
         openDisputeModal(el.getAttribute('data-dispute-task'), dt ? titleOf(dt) : '',
           el.getAttribute('data-other'), el.getAttribute('data-other-name'));
-        return;
-      }
+    return;
+  }
       el = e.target.closest('[data-report-user]');
       if (el && typeof openReportModal === 'function') {
         openReportModal('user', el.getAttribute('data-report-user'), el.getAttribute('data-report-name'));
@@ -1446,7 +1593,7 @@ onAuthStateChanged(auth, (user) => {
   document.addEventListener('qg-mode-changed', function () {
     activeTab = normalizeTab(activeTab);
     paintSeg();
-    renderTab();
+      renderTab();
   });
 
   window.QG_refreshPaymentState = async function () {
@@ -1455,7 +1602,7 @@ onAuthStateChanged(auth, (user) => {
       var t = findTask(activeTaskId);
       if (t) paintSteps(t, taskBelongsToPoster(t, currentUserId));
     }
-    renderTab();
+        renderTab();
   };
 })();
 </script>

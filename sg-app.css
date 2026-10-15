@@ -170,8 +170,10 @@ html[data-qg-mode="worker"] .sg-round{color:var(--teal);}
 
 /* ── Active gig ── */
 .sg-chip-status{padding:7px 14px;border-radius:100px;background:var(--accent-soft, color-mix(in srgb,var(--teal) 16%,transparent));background:color-mix(in srgb,var(--teal) 16%,transparent);color:var(--teal);font-size:13px;font-weight:600;}
-.sg-map{height:200px;border-radius:18px;background:var(--surface-alt);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--text-muted);font-size:13px;margin-top:4px;}
+.sg-map{height:200px;border-radius:18px;background:var(--surface-alt);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--text-muted);font-size:13px;margin-top:4px;overflow:hidden;}
 .sg-map svg.i{color:var(--teal);width:24px;height:24px;}
+.sg-map.is-live{display:block;padding:0;}
+.sg-map.is-live .leaflet-container{width:100%;height:100%;border-radius:18px;background:var(--surface-alt);}
 .sg-next{background:var(--surface-alt);border-radius:14px;padding:14px 16px;margin-top:16px;}
 .sg-next small{display:block;font-size:11.5px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--teal);}
 .sg-next b{display:block;font-size:16px;font-weight:600;margin-top:3px;}
