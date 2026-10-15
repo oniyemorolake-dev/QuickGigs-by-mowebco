@@ -2720,8 +2720,10 @@ async function getConversationsForUser(userId) {
 }
 
 function normalizeTaskId(taskId) {
-  var n = parseInt(taskId, 10);
-  return isNaN(n) ? taskId : n;
+  if (taskId == null || taskId === '') return '';
+  // Never parseInt a UUID. parseInt('8c1c2ff2-…', 10) === 8 and wrote
+  // conversations.task_id as a bigint that no longer matches tasks.
+  return String(taskId);
 }
 
 async function getConversation(convId, opts) {
@@ -2748,8 +2750,7 @@ function userIsConversationParty(conv, userId) {
 async function getConversationForTask(taskId, posterId, workerId) {
   var ids = [];
   if (taskId != null && taskId !== '') ids.push(String(taskId));
-  var n = parseInt(taskId, 10);
-  if (!isNaN(n)) ids.push(String(n));
+  if (/^\d+$/.test(String(taskId))) ids.push(String(parseInt(taskId, 10)));
   var seen = {};
   for (var i = 0; i < ids.length; i++) {
     if (seen[ids[i]]) continue;
@@ -2778,7 +2779,7 @@ async function getConversationForTask(taskId, posterId, workerId) {
   if (byPosterWorker && byPosterWorker.length) {
     var tid = String(taskId);
     var match = byPosterWorker.find(function(c) {
-      return String(c.task_id) === tid || String(c.task_id) === String(n);
+      return String(c.task_id) === tid;
     });
     if (match) return match;
   }
