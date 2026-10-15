@@ -71,7 +71,7 @@
     <div class="sg-composer" id="sgComposer">
       <button class="sg-sq" id="sgAttach" aria-label="Send a photo"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-5 4 4 2-2 5 5"/></svg></button>
       <textarea id="sgMsgInput" rows="1" placeholder="Message" aria-label="Message"></textarea>
-      <button class="sg-sq purple" id="sgSend" aria-label="Send"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l16-8-6 8 6 8-16-8z"/></svg></button>
+      <button type="button" class="sg-sq purple" id="sgSend" aria-label="Send"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l16-8-6 8 6 8-16-8z"/></svg></button>
       <input type="file" id="sgChatImage" accept="image/jpeg,image/png,image/webp" hidden>
     </div>
   </div>
@@ -114,7 +114,7 @@ onAuthStateChanged(auth, (user) => {
   var allConversations = [], conversations = [], filtered = [], messages = [];
   var currentUserId = null, selectedId = '', currentConv = null;
   var currentPeer = { uid: '', name: '' };
-  var currentUnlocked = false, fraudDetected = false, isUploading = false;
+  var currentUnlocked = false, fraudDetected = false, isUploading = false, sending = false;
   var userAvatars = {}, pollTimer = null, lastMarkedReadId = '', lightboxBound = false;
 
   function $(id) { return document.getElementById(id); }
@@ -132,6 +132,13 @@ onAuthStateChanged(auth, (user) => {
     clearTimeout(el._t);
     el._t = setTimeout(function () { el.hidden = true; }, 5000);
   }
+  function syncSendBtn() {
+    var input = $('sgMsgInput');
+    var sendBtn = $('sgSend');
+    if (!sendBtn) return;
+    sendBtn.disabled = sending || fraudDetected || !currentUnlocked || !((input && input.value.trim()));
+  }
+
   function setChatError(msg) {
     var el = $('sgChatError');
     if (!el) return;
@@ -433,6 +440,7 @@ onAuthStateChanged(auth, (user) => {
     $('sgChatLocked').hidden = unlocked;
     var actions = $('sgChatLockedActions');
     if (actions) { actions.hidden = true; actions.innerHTML = ''; }
+    syncSendBtn();
     if (unlocked) return;
     var isPoster = String(conv.poster_id) === String(currentUserId);
     var note = $('sgChatLocked');
@@ -574,6 +582,7 @@ onAuthStateChanged(auth, (user) => {
     if (!selectedId || typeof getMessagesForConversation !== 'function') return;
     try {
       var rows = await getMessagesForConversation(selectedId, { actorId: currentUserId, trusted: true });
+      if ((!rows || !rows.length) && messages.length) return;
       messages = (rows || []).map(mapMessageRow);
       if (typeof hydrateChatImageSignedUrls === 'function') await hydrateChatImageSignedUrls(messages);
       var near = isNearBottom();
@@ -695,20 +704,34 @@ onAuthStateChanged(auth, (user) => {
 
   async function sendMessage() {
     var input = $('sgMsgInput');
-    var sendBtn = $('sgSend');
-    if (!input || !selectedId || !currentUserId || !currentUnlocked) return;
+    if (sending) return;
+    if (!input) return;
+    if (!selectedId || !currentUserId) {
+      toast('Could not send — sign in again.', false);
+      return;
+    }
+    if (!currentUnlocked) {
+      toast('Chat is still opening — tap send again in a second.', false);
+      return;
+    }
     var raw = input.value.trim();
     var text = typeof sanitizeInput === 'function' ? sanitizeInput(raw, 2000) : raw;
-    if (!text || fraudDetected) return;
+    if (!text) return;
+    if (fraudDetected) {
+      setChatError('This message cannot be sent. Keep conversations on SwiftGigs.');
+      return;
+    }
 
     var check = analyzeFraudLocal(text);
     if (check.blocked) {
       fraudDetected = true;
       setChatError(check.message || 'This message cannot be sent. Keep conversations on SwiftGigs.');
-      sendBtn.disabled = true;
+      syncSendBtn();
       return;
     }
 
+    sending = true;
+    syncSendBtn();
     messages.push({
       id: 'pending-' + Date.now(), senderId: currentUserId, from: 'me', text: text, isImage: false,
       senderIsPoster: !!(currentConv && String(currentConv.poster_id) === String(currentUserId)),
@@ -718,25 +741,25 @@ onAuthStateChanged(auth, (user) => {
     scrollToBottom();
     input.value = '';
     input.style.height = 'auto';
-    sendBtn.disabled = true;
 
     var recent = messages.filter(function (m) { return m.from === 'me'; }).slice(-5).map(function (m) { return m.text; });
     var result = typeof sendChatMessage === 'function'
       ? await sendChatMessage(selectedId, currentUserId, text, recent, { convId: selectedId, senderId: currentUserId })
       : { success: false };
+    sending = false;
     if (!result || !result.success) {
       if (result && (result.blocked || result.error === 'off_platform_contact')) {
         setChatError((result && result.message) || 'Message blocked.');
       } else {
-        toast('Could not send. Try again.');
+        toast('Could not send. Try again.', false);
       }
       await refreshMessages({ forceScroll: true });
-      sendBtn.disabled = false;
+      syncSendBtn();
       return;
     }
     setChatError('');
     fraudDetected = false;
-    sendBtn.disabled = false;
+    syncSendBtn();
     await refreshMessages({ forceScroll: true });
     scrollToBottom();
   }
@@ -808,7 +831,7 @@ onAuthStateChanged(auth, (user) => {
     input.addEventListener('input', function () {
       this.style.height = 'auto';
       this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-      $('sgSend').disabled = !this.value.trim() || fraudDetected;
+      syncSendBtn();
     });
     input.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -839,7 +862,7 @@ onAuthStateChanged(auth, (user) => {
 
   function boot() {
     wire();
-    $('sgSend').disabled = true;
+    syncSendBtn();
     if (window._currentUser) window.SG_onUser(window._currentUser);
   }
 

@@ -411,9 +411,12 @@ div.sg-inline-load{display:flex;justify-content:center;padding:22px 0;}
 .sg-chat-note{margin:0 20px 10px;padding:11px 14px;border-radius:12px;background:var(--surface-alt);font-size:13.5px;color:var(--text-muted);}
 .sg-chat-note.is-error{background:var(--danger-soft);color:var(--danger);}
 .sg-composer{display:flex;align-items:flex-end;gap:9px;padding:10px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--border);background:var(--surface);}
-.sg-composer textarea{flex:1;min-height:42px;max-height:120px;padding:10px 14px;border-radius:21px;border:1px solid var(--border);background:var(--surface-alt);font:inherit;font-size:15px;color:var(--text);outline:none;resize:none;line-height:1.4;}
+.sg-composer textarea{flex:1;min-height:42px;max-height:120px;padding:10px 14px;border-radius:21px;border:1px solid var(--border);background:var(--surface-alt);font:inherit;font-size:15px;color:var(--text);outline:none;resize:none;line-height:1.4;overflow-y:hidden;scrollbar-width:none;}
+.sg-composer textarea::-webkit-scrollbar{display:none;}
 .sg-composer textarea:focus{border-color:var(--accent);}
 .sg-composer .sg-sq{flex:0 0 42px;height:42px;}
+.sg-composer #sgSend{background:var(--primary);color:var(--primary-text);}
+.sg-composer #sgSend:disabled{opacity:.45;}
 
 /* ── Sheet footer ──────────────────────────────────────────────────────── */
 /* Not .sg-actionbar: that one is fixed to the viewport and centred with a
