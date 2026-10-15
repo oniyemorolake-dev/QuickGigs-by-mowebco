@@ -723,6 +723,29 @@ main{
 /* Primary CTA: a slightly deeper purple in dark mode so the white label clears
    AA (4.2:1 on the flat token, about 5.6:1 here). Light mode is already 8.7:1. */
 html:not(.light) body:not(.light) .qg-btn-primary{background:color-mix(in srgb,var(--primary) 82%,#000);}
+
+/* Waitlist — scoped so it does not restyle the rest of the page. */
+.qg-waitlist{width:100%;max-width:1000px;margin:0 auto 64px;}
+.qg-waitlist-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 16px;}
+.qg-waitlist h2{font-size:28px;line-height:1.15;letter-spacing:-0.02em;font-weight:700;margin:0 0 8px;color:var(--text);}
+.qg-waitlist-lead{margin:0 0 18px;font-size:15px;line-height:1.5;color:color-mix(in srgb,var(--text) 72%,var(--text-muted));}
+.qg-waitlist-field{display:block;margin:14px 0 6px;font-size:13px;font-weight:600;color:var(--text);}
+.qg-waitlist input[type="text"],
+.qg-waitlist input[type="email"]{display:block;width:100%;height:48px;margin:0;padding:0 14px;border:1px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);font:16px/1 'DM Sans',system-ui,sans-serif;}
+.qg-waitlist input:focus{border-color:var(--primary);outline:2px solid color-mix(in srgb,var(--primary) 30%,transparent);outline-offset:0;}
+.qg-waitlist-options{display:grid;gap:8px;}
+.qg-waitlist-opt{display:flex;align-items:center;gap:12px;min-height:48px;padding:10px 14px;border:1px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);font-size:15px;font-weight:600;cursor:pointer;}
+.qg-waitlist-opt input{width:20px;height:20px;margin:0;flex:none;accent-color:var(--primary);}
+.qg-waitlist-opt:has(input:checked){border-color:var(--primary);background:color-mix(in srgb,var(--primary) 14%,var(--surface));}
+.qg-waitlist .qg-btn-primary{width:100%;margin-top:18px;flex:none;border:0;font:inherit;font-weight:700;font-size:16px;}
+.qg-waitlist .qg-btn-primary:disabled{opacity:.55;cursor:default;}
+.qg-waitlist-status{min-height:1.4em;margin:12px 0 0;font-size:15px;line-height:1.45;}
+.qg-waitlist-status.is-ok{color:var(--green);}
+.qg-waitlist-status.is-err{color:var(--danger);}
+@media(min-width:720px){
+  .qg-waitlist-card{padding:28px 28px;}
+  #qgWaitlistForm .qg-waitlist-options:first-of-type{grid-template-columns:1fr 1fr 1fr;}
+}
 </style>
 <link rel="stylesheet" href="qg-polish.css?v=32e06f4-1787866369">
 <link rel="stylesheet" href="qg-tokens.css?v=32e06f4-1787866369" id="qg-tokens-css">
@@ -792,6 +815,34 @@ html:not(.light) body:not(.light) .qg-btn-primary{background:color-mix(in srgb,v
       <span class="qg-trust-sep" aria-hidden="true">·</span>
       <span>Canadian owned</span>
   </div>
+  </section>
+
+  <section class="qg-waitlist" id="waitlist" aria-labelledby="qgWaitlistTitle">
+    <div class="qg-waitlist-card">
+      <p class="how-title" style="text-align:left;margin-bottom:8px">Waitlist</p>
+      <h2 id="qgWaitlistTitle">Join the waitlist</h2>
+      <p class="qg-waitlist-lead">Leave your email and we’ll write when SwiftGigs is ready in your city.</p>
+      <form id="qgWaitlistForm" novalidate>
+        <label class="qg-waitlist-field" for="qgWaitName">Name</label>
+        <input id="qgWaitName" name="name" type="text" autocomplete="name" maxlength="80" required>
+        <label class="qg-waitlist-field" for="qgWaitEmail">Email</label>
+        <input id="qgWaitEmail" name="email" type="email" autocomplete="email" inputmode="email" maxlength="200" required>
+        <p class="qg-waitlist-field" id="qgWaitInterestLabel">I want to...</p>
+        <div class="qg-waitlist-options" role="radiogroup" aria-labelledby="qgWaitInterestLabel">
+          <label class="qg-waitlist-opt"><input type="radio" name="interest" value="post" required> <span>Post gigs</span></label>
+          <label class="qg-waitlist-opt"><input type="radio" name="interest" value="earn"> <span>Earn doing gigs</span></label>
+          <label class="qg-waitlist-opt"><input type="radio" name="interest" value="both"> <span>Both</span></label>
+        </div>
+        <p class="qg-waitlist-field" id="qgWaitCityLabel">City</p>
+        <div class="qg-waitlist-options" role="radiogroup" aria-labelledby="qgWaitCityLabel">
+          <label class="qg-waitlist-opt"><input type="radio" name="city" value="calgary" required> <span>Calgary</span></label>
+          <label class="qg-waitlist-opt"><input type="radio" name="city" value="edmonton"> <span>Edmonton</span></label>
+          <label class="qg-waitlist-opt"><input type="radio" name="city" value="other"> <span>Somewhere else in Canada</span></label>
+        </div>
+        <button class="qg-btn-primary" type="submit" id="qgWaitlistSubmit">Join the waitlist</button>
+        <p class="qg-waitlist-status" id="qgWaitlistStatus" role="status" aria-live="polite"></p>
+      </form>
+    </div>
   </section>
 
   <p class="how-title">How it works</p>
@@ -889,6 +940,80 @@ html:not(.light) body:not(.light) .qg-btn-primary{background:color-mix(in srgb,v
 <script src="qg-utils.js?v=32e06f4-1787866369"></script>
 <script src="qg-config.js?v=32e06f4-1787866369"></script>
 <script src="supabase-db.js?v=20260827chat1"></script>
+<script>
+(function () {
+  var form = document.getElementById('qgWaitlistForm');
+  var status = document.getElementById('qgWaitlistStatus');
+  var submit = document.getElementById('qgWaitlistSubmit');
+  if (!form || !status || !submit) return;
+
+  function say(message, kind) {
+    status.textContent = message;
+    status.className = 'qg-waitlist-status' + (kind ? ' is-' + kind : '');
+  }
+  function emailOk(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+  }
+  function picked(name) {
+    var el = form.querySelector('input[name="' + name + '"]:checked');
+    return el ? el.value : '';
+  }
+
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    var name = document.getElementById('qgWaitName').value.trim();
+    var email = document.getElementById('qgWaitEmail').value.trim();
+    var interest = picked('interest');
+    var city = picked('city');
+    if (!name) { say('Enter your name.', 'err'); document.getElementById('qgWaitName').focus(); return; }
+    if (!emailOk(email)) { say('Enter a valid email address.', 'err'); document.getElementById('qgWaitEmail').focus(); return; }
+    if (!interest) { say('Choose what you want to do.', 'err'); return; }
+    if (!city) { say('Choose a city.', 'err'); return; }
+    if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+      say('We couldn’t add you just now. Try again in a moment.', 'err');
+      return;
+    }
+    submit.disabled = true;
+    say('Adding you to the list…', '');
+    fetch(window.SUPABASE_URL + '/rest/v1/rpc/join_waitlist', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: window.SUPABASE_ANON_KEY,
+        Authorization: 'Bearer ' + window.SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({
+        p_name: name,
+        p_email: email,
+        p_interest: interest,
+        p_city: city
+      })
+    }).then(function (res) {
+      return res.json().then(function (data) { return { ok: res.ok, data: data || {} }; });
+    }).then(function (result) {
+      var data = result.data;
+      if (!result.ok || !data.ok) {
+        if (data.error === 'invalid_email') say('Enter a valid email address.', 'err');
+        else if (data.error === 'name_required') say('Enter your name.', 'err');
+        else say('We couldn’t add you just now. Try again in a moment.', 'err');
+        return;
+      }
+      var place = Number(data.position);
+      var line = place > 0 ? ' You’re #' + place + ' in line.' : '';
+      if (data.already) {
+        say('This email is already on the list. We saved your latest details.' + line, 'ok');
+      } else {
+        say('You’re on the list! We’ll email you at launch.' + line, 'ok');
+      }
+      form.reset();
+    }).catch(function () {
+      say('We couldn’t add you just now. Try again in a moment.', 'err');
+    }).then(function () {
+      submit.disabled = false;
+    });
+  });
+})();
+</script>
 <script src="qg-announcement.js?v=32e06f4-1787866369"></script>
 <script src="qg-analytics.js?v=32e06f4-1787866369"></script>
 <script>

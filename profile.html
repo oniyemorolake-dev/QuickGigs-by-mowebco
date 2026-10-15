@@ -51,6 +51,7 @@
 <script defer src="qg-verification.js"></script>
 <script defer src="qg-payments-ui.js"></script>
 <script defer src="qg-stripe.js"></script>
+<script defer src="qg-wallet.js"></script>
 <script defer src="qg-location.js"></script>
 <script defer src="qg-report.js"></script>
 <script defer src="qg-share.js"></script>
@@ -67,6 +68,7 @@
     </div>
     <h2 class="sg-section-title" id="sgSettingsHead">Settings</h2>
     <button class="sg-set" id="sgSetActivity">Recent activity<span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>
+    <button class="sg-set" id="sgSetEarnings">Earnings<span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>
     <button class="sg-set" id="sgSetPayments">Payment methods<span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>
     <button class="sg-set" id="sgSetNotifications">Notifications<span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>
     <button class="sg-set" id="sgSetAccount">Account settings<span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>
@@ -136,6 +138,15 @@
   <div class="sg-sheet-panel full" role="dialog" aria-modal="true" aria-labelledby="sgActivityTitle">
     <div class="sg-sheet-head"><h2 id="sgActivityTitle">Recent activity</h2><button class="sg-x" data-close aria-label="Close"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div id="sgActivity"></div>
+  </div>
+</div>
+
+<!-- Earnings: available, pending, and withdrawals. The server owns the numbers. -->
+<div class="sg-sheet" id="sgEarnSheet" aria-hidden="true">
+  <div class="sg-sheet-scrim" data-close></div>
+  <div class="sg-sheet-panel full" role="dialog" aria-modal="true" aria-labelledby="sgEarnTitle">
+    <div class="sg-sheet-head"><h2 id="sgEarnTitle">Earnings</h2><button class="sg-x" data-close aria-label="Close"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div id="sgEarnRoot"></div>
   </div>
 </div>
 
@@ -918,7 +929,7 @@ window.SG_signOut = async function () {
 
     // Someone else's profile is read-only: no settings, no logout, no editing.
     if (!isOwnProfile) {
-      ['sgSetPayments', 'sgSetNotifications', 'sgSetAccount', 'sgLogout', 'sgModeBlock'].forEach(function (id) {
+      ['sgSetEarnings', 'sgSetPayments', 'sgSetNotifications', 'sgSetAccount', 'sgLogout', 'sgModeBlock'].forEach(function (id) {
         var el = $(id);
         if (el) el.hidden = true;
       });
@@ -1005,7 +1016,13 @@ window.SG_signOut = async function () {
 
     // Landed here from the photo gate — open the sheet straight away.
     if (photoSetupMode || (photoRequired && !profileData.avatar_url)) openEdit();
+    if (isOwnProfile && (location.hash === '#earnings' || location.hash === '#payouts')) openEarnings();
   };
+
+  function openEarnings() {
+    openSheet('sgEarnSheet');
+    if (typeof window.QG_renderWallet === 'function') window.QG_renderWallet($('sgEarnRoot'), currentUser);
+  }
 
   /* ── Wiring ────────────────────────────────────────────────────────────── */
   document.addEventListener('DOMContentLoaded', function () {
@@ -1032,6 +1049,7 @@ window.SG_signOut = async function () {
 
     renderRoleSwitch();
     $('sgSetActivity').onclick = function () { openSheet('sgActivitySheet'); };
+    $('sgSetEarnings').onclick = function () { openEarnings(); };
     $('sgSetPayments').onclick = function () { openSheet('sgPaySheet'); };
     $('sgSetNotifications').onclick = openNotifs;
     $('sgSetAccount').onclick = function () {

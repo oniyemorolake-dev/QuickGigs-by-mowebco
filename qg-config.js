@@ -49,6 +49,9 @@ window.QG_CONFIG = {
   syncConnectUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/sync-connect-status',
   connectLinkUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-connect-link',
   releasePayoutUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/release-payout',
+  walletUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/request-payout',
+  // Withdrawal floor. The server enforces 2000 cents and ignores this value.
+  minWithdrawal: 20,
   completeTaskUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/complete-task',
   // Role-enable legal versions — must match role-access TERMS constants.
   termsVersions: {
