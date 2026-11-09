@@ -3,6 +3,7 @@ import { authErrorStatus, requireFirebaseUser } from '../_shared/firebase-auth.t
 import { ageFromDateOfBirth, isTeenDateOfBirth } from '../_shared/age.ts';
 import { signGuardianToken } from '../_shared/guardian-token.ts';
 import { checkRateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
+import { analyzeListingContact } from '../_shared/off-platform.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -180,6 +181,20 @@ Deno.serve(async (req) => {
       guardian_distance_km: distanceKm,
     };
     if (!row.message || row.price < 1) return json({ success: false, error: 'invalid_application' }, 400);
+
+    // Application messages are visible to the poster before escrow, so contact
+    // details here bypass the fee. The browser runs a check too, but only this
+    // one is enforced.
+    const contact = analyzeListingContact(row.message);
+    if (contact.blocked) {
+      return json({
+        success: false,
+        error: 'off_platform_contact',
+        blocked: true,
+        reason: contact.reason,
+        message: contact.message,
+      }, 422);
+    }
 
     const { data, error } = await supabase.from('applications').insert(row).select('*').single();
     if (error) {

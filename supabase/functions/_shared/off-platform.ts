@@ -205,3 +205,44 @@ export function isExemptBody(body: string): boolean {
 export function isForgedSystemBody(body: string): boolean {
   return String(body ?? '').startsWith(QG_SYS_PREFIX);
 }
+
+// ── Listings: task text and application messages ────────────────────────────
+//
+// Task titles/descriptions and application messages are visible BEFORE escrow,
+// so contact details there are the cheapest way to take a job off-platform and
+// skip the fee. The chat filter above is tuned for short messages and is too
+// aggressive for a task description (it would reject "set up WhatsApp for my
+// mum" or a date like 2026-11-12 10:00), so listings get this narrower check:
+// only things that are unambiguously a way to reach someone directly.
+//
+// Mirrored in SQL by public.qg_text_has_contact()
+// (migration 20261109210000_contact_filter_listings.sql), which backstops
+// direct table writes. Keep the two in sync.
+
+const LISTING_EMAIL_RE = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)*\.[a-zA-Z]{2,}/;
+const LISTING_LINK_RE = /(?:https?:\/\/|\bwww\.|\bwa\.me\/|\bt\.me\/)\S+/i;
+// North American number: optional +1, then 3-3-4 with at most one separator
+// between groups. Deliberately does not match ISO dates or prices.
+const LISTING_PHONE_RE = /(?:^|[^\d])(?:\+?1[\s.\-]?)?\(?[2-9]\d{2}\)?[\s.\-]?[2-9]\d{2}[\s.\-]?\d{4}(?!\d)/;
+const LISTING_HANDLE_RE = /(?:^|\s)@[a-zA-Z0-9._]{3,}/;
+
+export function listingContactWarning(): string {
+  return 'Remove phone numbers, emails, links and social handles. Contact details are shared in chat after payment is secured.';
+}
+
+export function analyzeListingContact(...parts: unknown[]): FraudVerdict {
+  const text = parts
+    .map((p) => String(p ?? '').trim())
+    .filter(Boolean)
+    .join('\n');
+  if (!text) return { blocked: false };
+
+  let reason = '';
+  if (LISTING_EMAIL_RE.test(text)) reason = 'email';
+  else if (LISTING_LINK_RE.test(text)) reason = 'link';
+  else if (LISTING_PHONE_RE.test(text)) reason = 'phone';
+  else if (LISTING_HANDLE_RE.test(text)) reason = 'handle';
+
+  if (!reason) return { blocked: false };
+  return { blocked: true, reason, message: listingContactWarning() };
+}

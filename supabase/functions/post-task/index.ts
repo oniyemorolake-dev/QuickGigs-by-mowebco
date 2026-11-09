@@ -4,6 +4,7 @@ import { authErrorStatus, requireFirebaseUser } from '../_shared/firebase-auth.t
 import { haversineKm, isCanadianCoordinate, roundCoord } from '../_shared/geo.ts';
 import { geocodeCanada } from '../_shared/geocode-canada.ts';
 import { checkRateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
+import { analyzeListingContact } from '../_shared/off-platform.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -302,6 +303,18 @@ Deno.serve(async (req) => {
     ];
     for (const key of optional) {
       if (task[key] != null && task[key] !== '') row[key] = task[key];
+    }
+    // Contact details in a listing let people skip escrow. Server-side because
+    // the browser check never runs for a crafted request.
+    const contact = analyzeListingContact(row.title, row.description, task.scheduled_label);
+    if (contact.blocked) {
+      return json({
+        success: false,
+        error: 'off_platform_contact',
+        blocked: true,
+        reason: contact.reason,
+        message: contact.message,
+      }, 422);
     }
     if (!row.title || Number(row.budget) < 20) {
       return json({

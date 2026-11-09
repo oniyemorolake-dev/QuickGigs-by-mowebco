@@ -20,8 +20,9 @@ How each decision was made and how each feature is secured:
 | Escrow-gated chat | Done (server-enforced) |
 | RLS on all public tables | Done (verified 16 Sep) |
 | Rate limits (post / apply / message / report) | Done (server) |
-| Contact-info filter | Chat: done (server). Task text and application messages: **client only** |
-| Minor privacy in public profiles | Fix written, **not yet applied** (step 2) |
+| Contact-info filter | Done in code for chat, task text and application messages (server + DB trigger). Tasks/applications part needs step 1 |
+| Minor privacy in public profiles | Fix written, **not yet applied** (step 1) |
+| Precise task addresses | Fix written, **not yet applied** (step 1) |
 | Money loop (pay → release) | **Never run end to end** |
 | Stripe | Test mode (`pk_test_`) |
 | Emails (Resend) | Code ready. Domain and secrets **(you)** |
@@ -30,12 +31,16 @@ How each decision was made and how each feature is secured:
 
 ## 1. Blockers (do these before anyone pays real money)
 
-- [ ] **Apply the minor-privacy fix.** Paste
-      `supabase/migrations/20261109200000_public_profiles_hide_minor_markers.sql`
-      into the Supabase SQL Editor and run it. Then run the verify query at the
-      bottom of that file, which should return `0`.
-      *Why:* before this fix, anyone holding the public anon key could list every teen
-      on the platform with their name, photo and area.
+- [ ] **Run the launch SQL (you).** Paste all of `supabase/launch-2026-11-09.sql` into
+      the Supabase SQL Editor and run it. The last result should show four zeros.
+      It does three things:
+      1. Stops the public profile view from showing which accounts are minors. Before
+         this, anyone with the public site key could list every teen with name, photo and area.
+      2. Blocks phone numbers, emails, links and @handles in task text and application
+         messages at the database level.
+      3. Moves precise street addresses out of the public `tasks` table. Before this,
+         any address saved on an open task was readable by anyone.
+      Then post one test task to confirm posting still works.
 - [ ] **Run the money loop in Stripe Test mode** using two accounts (poster + tasker):
       post → apply → accept → **Pay & unlock chat** (card `4242 4242 4242 4242`) →
       message → **Mark complete** → tasker sees the payout in their wallet.
@@ -54,15 +59,8 @@ How each decision was made and how each feature is secured:
       until you redeploy. JWT verify stays **off**, because the functions check Firebase
       tokens themselves.
 
-## 2. Decide: fix or accept the risk
+## 2. Decide
 
-- [ ] **Contact filter on task text and application messages.** Chat messages are
-      filtered server-side (`secure-messaging` → `_shared/off-platform.ts`). Task
-      titles and descriptions (`post-task`) and application messages
-      (`submit-application`) are only filtered in the browser. Someone calling the API
-      directly could put a phone number in a task or bid, which is the easiest way to
-      dodge the fee before escrow.
-      *Fix:* about 20 lines per function, reusing the existing helper.
 - [ ] **Legal agreement versions.** The Contractor and Poster agreements still show
       version `2026-08-03`. I updated the fee wording in them but left the version
       number alone, because bumping it (in `qg-config.js` + `role-access`) makes every
@@ -92,6 +90,7 @@ How each decision was made and how each feature is secured:
 - Server fee math only: `create-checkout` reads the amount from the DB task/application,
   never from the browser. `release-payout` uses the stored split
 - Direct inserts into `messages` are closed, so all chat goes through `secure-messaging`
+- `post-task` and `submit-application` reject contact details server-side (live once redeployed)
 - `search_path` pinned on `qg_uid()` / `qg_is_signed_in()` (migration `20260916200000`)
 - No secret keys in frontend files (the two JWTs in the repo are `role=anon`)
 - Terms / Poster terms / Contractor agreement describe the live fee model (updated 9 Nov)

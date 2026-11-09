@@ -3691,6 +3691,9 @@ function formatSupabaseActionError(action, err) {
   if (lower.indexOf('tasker_role_required') >= 0) {
     return 'Enable Tasker mode before applying to gigs.';
   }
+  if (lower.indexOf('off_platform_contact') >= 0 || lower.indexOf('contact_info_not_allowed') >= 0) {
+    return 'Remove phone numbers, emails, links and social handles. Contact details are shared in chat after payment is secured.';
+  }
   if (lower.indexOf('teen_poster_unavailable') >= 0) {
     return 'Poster mode becomes available when you turn 18.';
   }

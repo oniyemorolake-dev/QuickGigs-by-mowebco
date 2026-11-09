@@ -79,7 +79,14 @@ matching agreement (Contractor agreement for taskers, Poster & Payment terms for
   blocks teens from posting, applies the age preference, and geocodes inside Canada only.
 - `tasks_protect_transaction_ownership` / `tasks_require_active_actor`: you can only change
   your own tasks, and banned or blocked accounts can't act.
-- **Known gap:** task title and description are only checked for contact info in the browser.
+- Contact details (email, link, phone number, @handle) in the title or description are
+  rejected by `post-task` (`analyzeListingContact`) and, for any other write path, by the
+  `tasks_block_listing_contact` trigger. The rule is narrower than the chat filter so
+  normal descriptions (dates, sizes, "set up WhatsApp") aren't blocked.
+- Precise street addresses never sit in the public `tasks` table: a trigger moves them to
+  `task_private` (service-role only). The poster and the accepted tasker read them through
+  the `qg_task_precise_address()` RPC. The current post form doesn't collect a precise
+  address, and the pages aren't wired to the RPC yet.
 
 ## 6. Applications & bidding
 
@@ -89,7 +96,8 @@ counter-offer (negotiation); posters accept one applicant.
 **Secured by** `submit-application` (rate limit 30/hour, verification + teen gates),
 the `apply_counter` RPC, and triggers that protect application status, guardian fields
 and ownership. One application per tasker per task (unique index).
-**Known gap:** application messages are only contact-filtered in the browser.
+Application messages get the same server-side contact check as task text
+(`submit-application` + `applications_block_listing_contact` trigger).
 
 ## 7. Payments & escrow (Stripe Connect Express)
 
@@ -196,8 +204,9 @@ Clear error messages come from `formatUploadError()`.
 
 ## 16. Known gaps (as of 9 Nov)
 
-1. Contact filter isn't enforced server-side on task text or application messages (§5, §6).
-2. Minor-privacy migration written but not yet applied (§10).
-3. Money loop never exercised end to end, even in test mode.
-4. Agreement version still `2026-08-03` even though the fee wording changed (re-consent decision).
-5. Subscription ($9.99) exists as a business rule but currently gives no fee discount.
+1. `supabase/launch-2026-11-09.sql` (minor privacy, listing contact filter, private
+   addresses) is written and tested locally but must be run on the live database.
+2. Money loop never exercised end to end, even in test mode.
+3. Agreement version still `2026-08-03` even though the fee wording changed (re-consent decision).
+4. Subscription ($9.99) exists as a business rule but currently gives no fee discount.
+5. Pages don't yet read precise addresses through `qg_task_precise_address()`.

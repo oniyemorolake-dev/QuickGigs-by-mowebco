@@ -1,0 +1,20 @@
+[
+  ["Need help moving a couch this Saturday", false],
+  ["Clean 3 rooms on 2026-11-12 10:00-14:00, about 1500 sqft", false],
+  ["Budget $120, 2 hours, postal code T2P 1J9, unit 1204", false],
+  ["Set up WhatsApp on my mum's phone and show her how to text me", false],
+  ["Order #20261109 pickup at 10:30, 4 boxes, 25 lbs each", false],
+  ["Available: weekdays after 5pm · 3 years experience · 100% reliable", false],
+  ["Dog walking 7 days a week for 30-45 min @ the park", false],
+  ["Assemble IKEA PAX 236x100x58 cm", false],
+  ["call 403-555-0199", true],
+  ["text (587) 555 0142 anytime", true],
+  ["4035550199", true],
+  ["+1 403 555 0199", true],
+  ["1.403.555.0199", true],
+  ["email me jane.doe@example.co.uk", true],
+  ["see www.myhandyman.ca for rates", true],
+  ["https://wa.me/14035550199", true],
+  ["find me on insta @calgary_cleaner", true],
+  ["msg t.me/fastmover", true]
+]
