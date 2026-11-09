@@ -111,6 +111,8 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
+    // sg-sw-register.js (loaded on every page) owns registration and updates.
+    if (window.__sgSwRegister) return;
 
     // When a new SW takes control, one normal reload is enough to pick up fresh HTML/JS.
     var refreshing = false;
