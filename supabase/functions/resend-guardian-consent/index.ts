@@ -73,10 +73,10 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json; charset=utf-8',
       },
       body: JSON.stringify({
-        from: Deno.env.get('FROM_EMAIL') || 'QuickGigs <notify@quickgigs.ca>',
+        from: Deno.env.get('FROM_EMAIL') || 'SwiftGigs <notify@quickgigs.ca>',
         to: [teen.guardian_email],
-        subject: `Approve ${teen.name || 'your teen'}'s QuickGigs account`,
-        text: `${teen.name || 'Your teen'} needs your approval to use QuickGigs.\n\n${consentUrl}\n\nThis one-time link expires in 7 days.`,
+        subject: `Approve ${teen.name || 'your teen'}'s SwiftGigs account`,
+        text: `${teen.name || 'Your teen'} needs your approval to use SwiftGigs.\n\n${consentUrl}\n\nThis one-time link expires in 7 days.`,
       }),
     });
     if (!response.ok) {

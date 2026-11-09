@@ -1,5 +1,5 @@
 /**
- * QuickGigs — Resend email content for send-notification.
+ * SwiftGigs — Resend email content for send-notification.
  * Builds subject + plain text + on-brand HTML from notification type + payload.
  * Privacy: never include payment instrument details or private chat message bodies.
  */
@@ -88,7 +88,7 @@ function wrapHtml(opts: {
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:16px;border:1px solid #e8e2f4;overflow:hidden;">
           <tr>
             <td style="padding:20px 24px;background:${BRAND_SOFT};border-bottom:1px solid #e8e2f4;">
-              <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:22px;color:${BRAND};">QuickGigs</p>
+              <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:22px;color:${BRAND};">SwiftGigs</p>
             </td>
           </tr>
           <tr>
@@ -102,7 +102,7 @@ function wrapHtml(opts: {
           <tr>
             <td style="padding:16px 24px 22px;border-top:1px solid #f0eef8;">
               <p style="margin:0;font-size:11px;line-height:1.5;color:#9a91b8;font-family:Arial,Helvetica,sans-serif;text-align:center;">
-                QuickGigs · Canada · <a href="${SITE}" style="color:${BRAND};text-decoration:none;">quickgigs.ca</a>
+                SwiftGigs · Canada · <a href="${SITE}" style="color:${BRAND};text-decoration:none;">quickgigs.ca</a>
               </p>
             </td>
           </tr>
@@ -151,7 +151,7 @@ function buildSpec(type: string, payload: NotifPayload, fallbackSubject: string,
         paragraphs: [
           esc(`${workerName} applied to your task “${taskTitle}”`) +
             (amount ? ` with an offer of <strong style="color:${TEXT}">${esc(amount)}</strong>` : '') + '.',
-          'Open QuickGigs to review applicants and accept the best fit.',
+          'Open SwiftGigs to review applicants and accept the best fit.',
         ],
         textLines: [
           `${workerName} applied to your task “${taskTitle}”` + (amount ? ` with an offer of ${amount}` : '') + '.',
@@ -210,11 +210,11 @@ function buildSpec(type: string, payload: NotifPayload, fallbackSubject: string,
         title: 'Task marked complete',
         preheader: `“${taskTitle}” was marked complete`,
         paragraphs: [
-          esc(`“${taskTitle}” was marked complete on QuickGigs.`),
+          esc(`“${taskTitle}” was marked complete on SwiftGigs.`),
           'Please leave a review to help the community.',
         ],
         textLines: [
-          `“${taskTitle}” was marked complete on QuickGigs.`,
+          `“${taskTitle}” was marked complete on SwiftGigs.`,
           '',
           'Leave a review:',
           linkOr(payload, `${SITE}/mytasks.html?tab=completed`),
@@ -230,11 +230,11 @@ function buildSpec(type: string, payload: NotifPayload, fallbackSubject: string,
       return {
         subject: fallbackSubject || `New message from ${senderName}`,
         title: 'You have a new message',
-        preheader: `${senderName} sent you a message on QuickGigs`,
+        preheader: `${senderName} sent you a message on SwiftGigs`,
         paragraphs: [
           esc(`${senderName} sent you a message`) +
             (taskTitle !== 'a task' ? esc(` about “${taskTitle}”`) : '') + '.',
-          'Open QuickGigs to read and reply securely on the platform.',
+          'Open SwiftGigs to read and reply securely on the platform.',
         ],
         textLines: [
           `${senderName} sent you a message` + (taskTitle !== 'a task' ? ` about “${taskTitle}”` : '') + '.',
@@ -298,7 +298,7 @@ function buildSpec(type: string, payload: NotifPayload, fallbackSubject: string,
           esc(`${partyName} accepted`) +
             (amount ? ` <strong style="color:${TEXT}">${esc(amount)}</strong>` : ' the agreed price') +
             esc(` for “${taskTitle}”.`),
-          'Open QuickGigs to continue.',
+          'Open SwiftGigs to continue.',
         ],
         textLines: [
           `${partyName} accepted` + (amount ? ` ${amount}` : ' the agreed price') + ` for “${taskTitle}”.`,
@@ -306,22 +306,22 @@ function buildSpec(type: string, payload: NotifPayload, fallbackSubject: string,
           'Continue:',
           linkOr(payload, `${SITE}/mytasks.html`),
         ],
-        ctaLabel: 'Open QuickGigs',
+        ctaLabel: 'Open SwiftGigs',
         ctaHref: linkOr(payload, `${SITE}/mytasks.html`),
       };
 
     case 'guardian_consent':
       return {
-        subject: fallbackSubject || `Approve ${teenName}'s QuickGigs account`,
+        subject: fallbackSubject || `Approve ${teenName}'s SwiftGigs account`,
         title: 'Guardian approval needed',
-        preheader: `${teenName} needs your approval to use QuickGigs`,
+        preheader: `${teenName} needs your approval to use SwiftGigs`,
         paragraphs: [
-          esc(`${teenName} signed up for QuickGigs and listed you as their parent/guardian.`),
+          esc(`${teenName} signed up for SwiftGigs and listed you as their parent/guardian.`),
           'Because they are 16 or 17, we need your approval before they can post or apply to tasks.',
           'If you did not authorize this, ignore this email or contact support.',
         ],
         textLines: [
-          `${teenName} signed up for QuickGigs and listed you as their parent/guardian.`,
+          `${teenName} signed up for SwiftGigs and listed you as their parent/guardian.`,
           '',
           'Approve their account:',
           linkOr(payload, `${SITE}/parent-consent.html`),
@@ -337,12 +337,12 @@ function buildSpec(type: string, payload: NotifPayload, fallbackSubject: string,
       return {
         subject: fallbackSubject || 'Waiting for guardian approval',
         title: 'Waiting for guardian approval',
-        preheader: 'Your QuickGigs account needs guardian approval',
+        preheader: 'Your SwiftGigs account needs guardian approval',
         paragraphs: [
-          esc(`Ask ${guardianName} to approve your QuickGigs account before you can apply or post.`),
+          esc(`Ask ${guardianName} to approve your SwiftGigs account before you can apply or post.`),
         ],
         textLines: [
-          `Ask ${guardianName} to approve your QuickGigs account before you can apply or post.`,
+          `Ask ${guardianName} to approve your SwiftGigs account before you can apply or post.`,
           '',
           linkOr(payload, `${SITE}/dashboard.html`),
         ],
@@ -352,9 +352,9 @@ function buildSpec(type: string, payload: NotifPayload, fallbackSubject: string,
 
     case 'guardian_approved':
       return {
-        subject: fallbackSubject || 'Your QuickGigs account was approved',
+        subject: fallbackSubject || 'Your SwiftGigs account was approved',
         title: 'Account approved',
-        preheader: 'Your parent/guardian approved your QuickGigs account',
+        preheader: 'Your parent/guardian approved your SwiftGigs account',
         paragraphs: [
           'Great news — your parent/guardian approved your account. You can apply to gigs now.',
         ],
@@ -383,23 +383,23 @@ function buildSpec(type: string, payload: NotifPayload, fallbackSubject: string,
       };
       const title = titles[type] || 'Guardian safety update';
       const paragraphs = [
-        esc(fallbackText || `${teenName} sent a QuickGigs safety update.`),
+        esc(fallbackText || `${teenName} sent a SwiftGigs safety update.`),
       ];
       if (loc) paragraphs.push(`Location: <a href="${esc(loc)}" style="color:${BRAND}">${esc(loc)}</a>`);
       if (stamp) paragraphs.push(esc(`Stamp: ${stamp.replace(/_/g, ' ')}`));
-      paragraphs.push('Open the guardian portal for live status. QuickGigs is not an emergency responder.');
+      paragraphs.push('Open the guardian portal for live status. SwiftGigs is not an emergency responder.');
       return {
         subject: fallbackSubject || title,
         title,
         preheader: title,
         paragraphs,
         textLines: [
-          fallbackText || `${teenName} sent a QuickGigs safety update.`,
+          fallbackText || `${teenName} sent a SwiftGigs safety update.`,
           loc ? `Location: ${loc}` : '',
           stamp ? `Stamp: ${stamp.replace(/_/g, ' ')}` : '',
           '',
           'Open the guardian portal for live status.',
-          'QuickGigs is not an emergency responder.',
+          'SwiftGigs is not an emergency responder.',
         ].filter(Boolean),
         ctaLabel: 'Open guardian portal',
         ctaHref: linkOr(payload, `${SITE}/guardian-portal.html`),
@@ -409,15 +409,15 @@ function buildSpec(type: string, payload: NotifPayload, fallbackSubject: string,
 
     case 'waitlist_invite':
       return {
-        subject: fallbackSubject || "You're invited to QuickGigs beta",
+        subject: fallbackSubject || "You're invited to SwiftGigs beta",
         title: "You're invited to the beta",
-        preheader: 'Your QuickGigs waitlist invite is ready',
+        preheader: 'Your SwiftGigs waitlist invite is ready',
         paragraphs: [
-          "You're on the QuickGigs waitlist — we're ready for you to join the beta.",
-          "QuickGigs is Canada's marketplace for everyday tasks. Post a gig or earn helping others in your community.",
+          "You're on the SwiftGigs waitlist — we're ready for you to join the beta.",
+          "SwiftGigs is Canada's marketplace for everyday tasks. Post a gig or earn helping others in your community.",
         ],
         textLines: [
-          "You're on the QuickGigs waitlist — we're ready for you to join the beta.",
+          "You're on the SwiftGigs waitlist — we're ready for you to join the beta.",
           '',
           'Create your free account:',
           linkOr(payload, `${SITE}/signup.html`),
@@ -428,15 +428,15 @@ function buildSpec(type: string, payload: NotifPayload, fallbackSubject: string,
 
     case 'waitlist_reminder':
       return {
-        subject: fallbackSubject || 'Reminder: your QuickGigs beta invite is waiting',
+        subject: fallbackSubject || 'Reminder: your SwiftGigs beta invite is waiting',
         title: 'Your beta invite is waiting',
-        preheader: 'Reminder — your QuickGigs invite is still open',
+        preheader: 'Reminder — your SwiftGigs invite is still open',
         paragraphs: [
-          'Just a friendly reminder — your QuickGigs beta invite is still open.',
+          'Just a friendly reminder — your SwiftGigs beta invite is still open.',
           'Sign up free and start posting tasks or browsing gigs.',
         ],
         textLines: [
-          'Just a friendly reminder — your QuickGigs beta invite is still open.',
+          'Just a friendly reminder — your SwiftGigs beta invite is still open.',
           '',
           'Sign up:',
           linkOr(payload, `${SITE}/signup.html`),
@@ -474,11 +474,11 @@ function buildSpec(type: string, payload: NotifPayload, fallbackSubject: string,
         title: 'Task removed',
         preheader: `Your task “${taskTitle}” was removed`,
         paragraphs: [
-          esc(`Your task “${taskTitle}” was removed by a QuickGigs moderator.`),
+          esc(`Your task “${taskTitle}” was removed by a SwiftGigs moderator.`),
           `Reason: ${esc(reason)}`,
         ],
         textLines: [
-          `Your task “${taskTitle}” was removed by a QuickGigs moderator.`,
+          `Your task “${taskTitle}” was removed by a SwiftGigs moderator.`,
           '',
           `Reason: ${reason}`,
           '',
@@ -494,7 +494,7 @@ function buildSpec(type: string, payload: NotifPayload, fallbackSubject: string,
         title: 'Task no longer available',
         preheader: 'A task you applied to was removed',
         paragraphs: [
-          esc(`A task you applied to (“${taskTitle}”) was removed by QuickGigs moderation.`),
+          esc(`A task you applied to (“${taskTitle}”) was removed by SwiftGigs moderation.`),
           `Reason: ${esc(reason)}`,
         ],
         textLines: [
@@ -514,11 +514,11 @@ function buildSpec(type: string, payload: NotifPayload, fallbackSubject: string,
         title: 'New gig near you',
         preheader: `A new task matches your alerts: “${taskTitle}”`,
         paragraphs: [
-          esc(`A new QuickGigs task matches your alerts: “${taskTitle}”.`),
+          esc(`A new SwiftGigs task matches your alerts: “${taskTitle}”.`),
           esc(location) + (amount ? ` · ${esc(amount)}` : ''),
         ],
         textLines: [
-          `A new QuickGigs task matches your alerts: “${taskTitle}”.`,
+          `A new SwiftGigs task matches your alerts: “${taskTitle}”.`,
           location + (amount ? ` · ${amount}` : ''),
           '',
           linkOr(payload, `${SITE}/browsetask.html`),
@@ -528,15 +528,15 @@ function buildSpec(type: string, payload: NotifPayload, fallbackSubject: string,
       };
 
     default: {
-      const text = str(fallbackText, 'You have an update on QuickGigs.');
-      const subject = str(fallbackSubject, 'QuickGigs update');
+      const text = str(fallbackText, 'You have an update on SwiftGigs.');
+      const subject = str(fallbackSubject, 'SwiftGigs update');
       return {
         subject,
         title: subject,
         preheader: text.slice(0, 120),
         paragraphs: text.split(/\n+/).filter(Boolean).map((line) => esc(line)),
         textLines: text.split(/\n/),
-        ctaLabel: 'Open QuickGigs',
+        ctaLabel: 'Open SwiftGigs',
         ctaHref: linkOr(payload, SITE),
       };
     }
@@ -547,15 +547,15 @@ function buildSpec(type: string, payload: NotifPayload, fallbackSubject: string,
 export function buildNotificationEmail(
   type: string,
   payload: NotifPayload | null | undefined,
-  fallbackSubject = 'QuickGigs update',
+  fallbackSubject = 'SwiftGigs update',
   fallbackText = '',
 ): BuiltEmail {
   const p = (payload && typeof payload === 'object') ? payload as NotifPayload : {};
   const spec = buildSpec(String(type || '').trim() || 'generic', p, fallbackSubject, fallbackText);
   const text = spec.textLines.join('\n') +
     (spec.showPrefs === false
-      ? `\n\n— QuickGigs\n${SITE}`
-      : `\n\nManage email preferences: ${PREFS_URL}\n— QuickGigs\n${SITE}`);
+      ? `\n\n— SwiftGigs\n${SITE}`
+      : `\n\nManage email preferences: ${PREFS_URL}\n— SwiftGigs\n${SITE}`);
   const html = wrapHtml({
     preheader: spec.preheader,
     title: spec.title,
@@ -567,4 +567,4 @@ export function buildNotificationEmail(
   return { subject: spec.subject, text, html };
 }
 
-export const DEFAULT_FROM = 'QuickGigs <notifications@quickgigs.ca>';
+export const DEFAULT_FROM = 'SwiftGigs <notifications@quickgigs.ca>';

@@ -149,7 +149,7 @@ async function notifyMatchingTaskers(supabase: SupabaseClient, task: TaskRow) {
 
   // Optional email (best-effort, capped)
   const resendKey = Deno.env.get('RESEND_API_KEY') || '';
-  const from = Deno.env.get('FROM_EMAIL') || 'QuickGigs <notify@quickgigs.ca>';
+  const from = Deno.env.get('FROM_EMAIL') || 'SwiftGigs <notify@quickgigs.ca>';
   let emailed = 0;
   if (resendKey) {
     for (const { user, km } of winners) {
@@ -160,12 +160,12 @@ async function notifyMatchingTaskers(supabase: SupabaseClient, task: TaskRow) {
       try {
         const subject = `New gig near you: “${title}”`;
         const text =
-          `A new QuickGigs task matches your alerts:\n\n` +
+          `A new SwiftGigs task matches your alerts:\n\n` +
           `“${title}”\n` +
           `${location || 'Near you'}${budget ? ' · $' + budget : ''}\n` +
           `About ${km < 10 ? km.toFixed(1) : Math.round(km)} km away\n\n` +
           `Open the gig:\n${link}\n\n` +
-          `Manage alerts in your Tasker profile settings.\n\n— QuickGigs`;
+          `Manage alerts in your Tasker profile settings.\n\n— SwiftGigs`;
         const res = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {

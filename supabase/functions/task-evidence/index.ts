@@ -1,4 +1,4 @@
-// QuickGigs — task evidence stamps + photos
+// SwiftGigs — task evidence stamps + photos
 // Deploy: supabase functions deploy task-evidence --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';

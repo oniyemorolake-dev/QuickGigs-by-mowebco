@@ -1,4 +1,4 @@
-// QuickGigs — Stripe Checkout for accepted task (poster pays)
+// SwiftGigs — Stripe Checkout for accepted task (poster pays)
 // Deploy: supabase functions deploy create-checkout --no-verify-jwt
 // Secrets: STRIPE_SECRET_KEY, SITE_URL (https://quickgigs.ca), SUPABASE_SERVICE_ROLE_KEY
 
@@ -450,7 +450,7 @@ Deno.serve(async (req) => {
     const amountCents = Math.round(breakdown.total * 100);
     const platformFeeCents = Math.round(breakdown.fee * 100);
     const workerPayoutCents = Math.round(breakdown.payout * 100);
-    const title = String(getField(task, 'title') || 'QuickGigs task');
+    const title = String(getField(task, 'title') || 'SwiftGigs task');
 
     const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
 
@@ -468,7 +468,7 @@ Deno.serve(async (req) => {
               currency: 'cad',
               product_data: {
                 name: title.substring(0, 120),
-                description: 'QuickGigs task payment (CAD)',
+                description: 'SwiftGigs task payment (CAD)',
               },
               unit_amount: amountCents,
             },

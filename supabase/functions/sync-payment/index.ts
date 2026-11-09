@@ -1,4 +1,4 @@
-// QuickGigs — Recover paid Stripe checkouts → held payments + unlock chat
+// SwiftGigs — Recover paid Stripe checkouts → held payments + unlock chat
 // Deploy: supabase functions deploy sync-payment --no-verify-jwt
 // Use when UI says "no completed payment" after a real Stripe pay.
 
@@ -347,7 +347,7 @@ Deno.serve(async (req) => {
         ok: false,
         success: false,
         error: 'no_paid_session_found',
-        details: 'No Stripe-paid QuickGigs checkout found for this poster. Do not pay again until you check Stripe Dashboard → Payments.',
+        details: 'No Stripe-paid SwiftGigs checkout found for this poster. Do not pay again until you check Stripe Dashboard → Payments.',
         recovered: recovered.length,
       }, 200);
     }

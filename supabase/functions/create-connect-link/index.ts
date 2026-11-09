@@ -1,4 +1,4 @@
-// QuickGigs — Stripe Connect Express onboarding for taskers
+// SwiftGigs — Stripe Connect Express onboarding for taskers
 // Deploy: supabase functions deploy create-connect-link --no-verify-jwt
 // Secrets: STRIPE_SECRET_KEY, SITE_URL
 //

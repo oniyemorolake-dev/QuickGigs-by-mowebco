@@ -1,4 +1,4 @@
-// QuickGigs — admin console API (reads + mutations via service role)
+// SwiftGigs — admin console API (reads + mutations via service role)
 // Deploy: supabase functions deploy admin-console --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';

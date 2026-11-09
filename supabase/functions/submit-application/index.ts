@@ -37,9 +37,9 @@ async function emailGuardian(
     method: 'POST',
     headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json; charset=utf-8' },
     body: JSON.stringify({
-      from: Deno.env.get('FROM_EMAIL') || 'QuickGigs <notify@quickgigs.ca>',
+      from: Deno.env.get('FROM_EMAIL') || 'SwiftGigs <notify@quickgigs.ca>',
       to: [guardianEmail],
-      subject: `Review ${teenName}'s QuickGigs application`,
+      subject: `Review ${teenName}'s SwiftGigs application`,
       text: `${teenName} wants to apply for “${taskTitle}”. Review the task and approve or reject the request:\n\n${queueUrl}\n\nThis secure link expires in 7 days.`,
     }),
   });

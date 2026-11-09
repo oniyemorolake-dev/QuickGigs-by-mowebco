@@ -1,4 +1,4 @@
-// QuickGigs — Confirm Stripe checkout session (instant unlock; backup for webhook delay)
+// SwiftGigs — Confirm Stripe checkout session (instant unlock; backup for webhook delay)
 // Also: sync unlock by conv_id (tasker side after poster pays)
 // Deploy: supabase functions deploy confirm-checkout --no-verify-jwt
 

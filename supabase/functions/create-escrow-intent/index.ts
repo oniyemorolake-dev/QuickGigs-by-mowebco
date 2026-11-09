@@ -1,4 +1,4 @@
-// QuickGigs — Create PaymentIntent escrow (funds stay on platform; no transfer_data)
+// SwiftGigs — Create PaymentIntent escrow (funds stay on platform; no transfer_data)
 // Deploy: supabase functions deploy create-escrow-intent --no-verify-jwt
 // Secrets: STRIPE_SECRET_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 //
@@ -242,7 +242,7 @@ Deno.serve(async (req) => {
       platform_fee: breakdown.fee,
       worker_payout: breakdown.payout,
       currency: 'cad',
-      // Card/bank data never touches QuickGigs — confirm via Stripe.js client_secret.
+      // Card/bank data never touches SwiftGigs — confirm via Stripe.js client_secret.
     });
   } catch (err) {
     console.error('create-escrow-intent error:', err);

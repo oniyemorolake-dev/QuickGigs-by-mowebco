@@ -1,4 +1,4 @@
-// QuickGigs — Sync Stripe Connect account status to users row
+// SwiftGigs — Sync Stripe Connect account status to users row
 // Deploy: supabase functions deploy sync-connect-status --no-verify-jwt
 // Readiness: charges_enabled && payouts_enabled → stripe_payouts_enabled
 

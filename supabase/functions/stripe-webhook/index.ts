@@ -1,4 +1,4 @@
-// QuickGigs — Stripe payments + Connect + role-verification webhook.
+// SwiftGigs — Stripe payments + Connect + role-verification webhook.
 // Deploy: supabase functions deploy stripe-webhook --no-verify-jwt
 // Secrets: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
 // Stripe Dashboard → Webhooks → endpoint URL = .../functions/v1/stripe-webhook

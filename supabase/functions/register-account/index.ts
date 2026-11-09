@@ -29,9 +29,9 @@ function ageOn(dateOfBirth: string): number {
 async function sendGuardianEmail(email: string, teenName: string, consentUrl: string) {
   const resendKey = Deno.env.get('RESEND_API_KEY') || '';
   if (!resendKey) throw new Error('resend_not_configured');
-  const from = Deno.env.get('FROM_EMAIL') || 'QuickGigs <notify@quickgigs.ca>';
+  const from = Deno.env.get('FROM_EMAIL') || 'SwiftGigs <notify@quickgigs.ca>';
   const body = [
-    `${teenName} created a QuickGigs account and needs your approval.`,
+    `${teenName} created a SwiftGigs account and needs your approval.`,
     '',
     'Review their details and accept or decline:',
     consentUrl,
@@ -47,7 +47,7 @@ async function sendGuardianEmail(email: string, teenName: string, consentUrl: st
     body: JSON.stringify({
       from,
       to: [email],
-      subject: `Approve ${teenName}'s QuickGigs account`,
+      subject: `Approve ${teenName}'s SwiftGigs account`,
       text: body,
     }),
   });
@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
     const age = ageOn(dateOfBirth);
     if (age < 0) return json({ ok: false, error: 'invalid_date_of_birth' }, 400);
     if (age < 16) {
-      return json({ ok: false, error: 'underage', message: 'You must be at least 16 to join QuickGigs' }, 403);
+      return json({ ok: false, error: 'underage', message: 'You must be at least 16 to join SwiftGigs' }, 403);
     }
 
     const isTeen = age < 18;

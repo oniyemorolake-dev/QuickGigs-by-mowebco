@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
           return json({
             success: false,
             error: 'tasker_consent_required',
-            message: 'Agree to the QuickGigs Terms and Independent Contractor Agreement to enable Tasker mode.',
+            message: 'Agree to the SwiftGigs Terms and Independent Contractor Agreement to enable Tasker mode.',
             terms_versions: TERMS,
           }, 400);
         }
@@ -190,7 +190,7 @@ Deno.serve(async (req) => {
           return json({
             success: false,
             error: 'poster_consent_required',
-            message: 'Agree to the QuickGigs Terms and Poster & Payment Terms to enable Poster mode.',
+            message: 'Agree to the SwiftGigs Terms and Poster & Payment Terms to enable Poster mode.',
             terms_versions: TERMS,
           }, 400);
         }

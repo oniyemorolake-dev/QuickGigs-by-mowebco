@@ -5,7 +5,7 @@
 // Auth: requires header x-qg-notification-secret matching NOTIFICATION_SEND_SECRET
 // (or GRADUATION_CRON_SECRET as fallback). Prefers notification_id from notification_queue.
 //
-// Recipient email: for normal QuickGigs user_ids, ALWAYS resolved server-side from
+// Recipient email: for normal SwiftGigs user_ids, ALWAYS resolved server-side from
 // public.users (firebase_uid / user_id) via service role. Clients must not supply
 // another user's email. Waitlist + guardian rows keep the explicit email on the queue.
 //
@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
     let email = String(body.email || '').trim();
     let userId = String(body.user_id || body.userId || '').trim();
     let type = String(body.type || '').trim();
-    let subject = String(body.subject || 'QuickGigs update');
+    let subject = String(body.subject || 'SwiftGigs update');
     let text = String(body.body || body.body_text || '');
     let payload: NotifPayload = parsePayload(body.payload);
 

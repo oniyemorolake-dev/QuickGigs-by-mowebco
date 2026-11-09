@@ -1,4 +1,4 @@
-// QuickGigs — Release worker payout when task is marked complete (escrow → 85/15 split)
+// SwiftGigs — Release worker payout when task is marked complete (escrow → 85/15 split)
 // Deploy: supabase functions deploy release-payout --no-verify-jwt
 // Secrets: STRIPE_SECRET_KEY
 // Transfer uses transfer_group = task_<taskId>; idempotent via transfer_id + Stripe idempotency key.

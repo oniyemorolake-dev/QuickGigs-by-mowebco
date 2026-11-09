@@ -1,4 +1,4 @@
-// QuickGigs — auto-release / no-show flag timers (paused while disputed)
+// SwiftGigs — auto-release / no-show flag timers (paused while disputed)
 // Deploy: supabase functions deploy dispute-auto-rules --no-verify-jwt
 // Cron: POST with header x-cron-secret = DISPUTE_CRON_SECRET (or GRADUATION_CRON_SECRET)
 
@@ -231,7 +231,7 @@ Deno.serve(async (req) => {
             to_email: Deno.env.get('ADMIN_NOTIFY_EMAIL') || 'mowebsiteco@gmail.com',
             payload: {
               task_id: taskId,
-              subject: `[QuickGigs] No-show flag — consider refund for task ${taskId}`,
+              subject: `[SwiftGigs] No-show flag — consider refund for task ${taskId}`,
             },
             status: 'pending',
           });

@@ -50,7 +50,7 @@ async function sendLifecycleEmail(
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json; charset=utf-8' },
     body: JSON.stringify({
-      from: Deno.env.get('FROM_EMAIL') || 'QuickGigs <notify@quickgigs.ca>',
+      from: Deno.env.get('FROM_EMAIL') || 'SwiftGigs <notify@quickgigs.ca>',
       to: [email],
       subject,
       text,
@@ -95,13 +95,13 @@ async function graduateUser(
 
     await sendLifecycleEmail(
       supabase, uid, String(user.email || ''), 'account_graduated',
-      'Your QuickGigs account now has full adult access',
-      `Hi ${name},\n\nYou are now 18, so guardian approval no longer applies to new gigs. Teen filters and restrictions have been removed.\n\nBefore any completed-gig payout can be released, add your own payout details in QuickGigs. Existing guardian payout information will not be used for new transfers.`,
+      'Your SwiftGigs account now has full adult access',
+      `Hi ${name},\n\nYou are now 18, so guardian approval no longer applies to new gigs. Teen filters and restrictions have been removed.\n\nBefore any completed-gig payout can be released, add your own payout details in SwiftGigs. Existing guardian payout information will not be used for new transfers.`,
     );
     await sendLifecycleEmail(
       supabase, uid, String(user.guardian_email || ''), 'guardian_role_ended',
       `${name} has turned 18 — guardian role ended`,
-      `${name} has turned 18. Guardian approval and payout authority for this QuickGigs account have ended. Guardian details remain stored only as account history.`,
+      `${name} has turned 18. Guardian approval and payout authority for this SwiftGigs account have ended. Guardian details remain stored only as account history.`,
     );
   }
   return {
@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
       if (birthdayInDays(user.date_of_birth, 7)) {
         const sent = await sendLifecycleEmail(
           supabase, String(user.firebase_uid), String(user.email || ''), 'turning_18_soon',
-          'You’ll soon have full QuickGigs access',
+          'You’ll soon have full SwiftGigs access',
           `Hi ${user.name || 'there'},\n\nYou turn 18 in seven days. Guardian approval will stop applying to new gigs, teen-only filters will be removed, and you’ll need to add your own payout details before completed-gig payouts can be released.`,
         );
         if (sent) warned += 1;

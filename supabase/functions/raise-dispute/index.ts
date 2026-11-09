@@ -1,4 +1,4 @@
-// QuickGigs — raise dispute + freeze escrow
+// SwiftGigs — raise dispute + freeze escrow
 // Deploy: supabase functions deploy raise-dispute --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -171,7 +171,7 @@ Deno.serve(async (req) => {
           dispute_id: disputeId,
           reason,
           raised_by: identity.uid,
-          subject: `[QuickGigs] Dispute opened — task ${taskId}`,
+          subject: `[SwiftGigs] Dispute opened — task ${taskId}`,
         },
         status: 'pending',
       });

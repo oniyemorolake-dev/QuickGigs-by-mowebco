@@ -1,4 +1,4 @@
-// QuickGigs — admin resolve dispute (release / refund / split) via Stripe
+// SwiftGigs — admin resolve dispute (release / refund / split) via Stripe
 // Deploy: supabase functions deploy resolve-dispute --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';

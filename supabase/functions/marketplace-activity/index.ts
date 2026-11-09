@@ -1,4 +1,4 @@
-// QuickGigs — anonymized public marketplace activity for the "Happening now" ticker.
+// SwiftGigs — anonymized public marketplace activity for the "Happening now" ticker.
 // Deploy: supabase functions deploy marketplace-activity --no-verify-jwt
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 

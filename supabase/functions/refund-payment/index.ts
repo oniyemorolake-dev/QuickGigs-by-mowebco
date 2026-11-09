@@ -1,4 +1,4 @@
-// QuickGigs — Refund escrow payment when task cancelled before completion
+// SwiftGigs — Refund escrow payment when task cancelled before completion
 // Deploy: supabase functions deploy refund-payment --no-verify-jwt
 // Auth: Firebase JWT required. actor_id from token only — never trust body.
 

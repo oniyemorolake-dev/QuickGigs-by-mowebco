@@ -1,4 +1,4 @@
-// QuickGigs — Mark task complete (service role; UUID + legacy id safe)
+// SwiftGigs — Mark task complete (service role; UUID + legacy id safe)
 // Deploy: supabase functions deploy complete-task --no-verify-jwt
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';

@@ -1,5 +1,5 @@
 /**
- * QuickGigs — Stripe Connect readiness helpers.
+ * SwiftGigs — Stripe Connect readiness helpers.
  * Recipient / Express accounts can take transfers after hosted onboarding
  * without charges_enabled (the platform is the merchant).
  */

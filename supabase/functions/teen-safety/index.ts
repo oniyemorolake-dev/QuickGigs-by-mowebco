@@ -1,4 +1,4 @@
-// QuickGigs — teen live job safety (check-ins, location share, guardian alerts)
+// SwiftGigs — teen live job safety (check-ins, location share, guardian alerts)
 // Deploy: supabase functions deploy teen-safety --no-verify-jwt
 // Auth: Firebase JWT for teen actions; guardian_queue JWT for guardian actions.
 
@@ -60,7 +60,7 @@ async function queueGuardianEmail(
     payload,
   }).select('notification_id').maybeSingle();
 
-  // In-app if guardian also has a QuickGigs account (matched by email).
+  // In-app if guardian also has a SwiftGigs account (matched by email).
   const { data: guardianUser } = await supabase
     .from('users')
     .select('firebase_uid')
@@ -88,10 +88,10 @@ async function queueGuardianEmail(
           'Content-Type': 'application/json; charset=utf-8',
         },
         body: JSON.stringify({
-          from: Deno.env.get('FROM_EMAIL') || 'QuickGigs <notifications@quickgigs.ca>',
+          from: Deno.env.get('FROM_EMAIL') || 'SwiftGigs <notifications@quickgigs.ca>',
           to: [email],
           subject: opts.subject,
-          text: opts.body + '\n\n— QuickGigs\nhttps://quickgigs.ca',
+          text: opts.body + '\n\n— SwiftGigs\nhttps://quickgigs.ca',
         }),
       });
       await supabase
@@ -213,10 +213,10 @@ Deno.serve(async (req) => {
             type: 'guardian_teen_missed_checkin',
             subject: `Missed check-in — ${teen.name || 'your teen'}`,
             body:
-              `${teen.name || 'Your teen'} missed a safety check-in on an active QuickGigs job.\n\n` +
+              `${teen.name || 'Your teen'} missed a safety check-in on an active SwiftGigs job.\n\n` +
               (loc ? `Last shared location:\n${loc}\n\n` : '') +
               `Open the guardian portal to review or end the job.\n\n` +
-              `QuickGigs is not an emergency responder. Call local emergency services if someone is in immediate danger.`,
+              `SwiftGigs is not an emergency responder. Call local emergency services if someone is in immediate danger.`,
             payload: { task_id: s.task_id, session_id: s.session_id, link: loc },
           });
           alerted += 1;
@@ -419,14 +419,14 @@ Deno.serve(async (req) => {
           type: 'guardian_teen_job_start',
           subject: `Job started — ${teen?.name || 'your teen'}`,
           body:
-            `${teen?.name || 'Your teen'} started an in-person QuickGigs job.\n\n` +
+            `${teen?.name || 'Your teen'} started an in-person SwiftGigs job.\n\n` +
             `Task: ${task.title || 'Gig'}\n` +
             `Poster: ${poster?.name || task.poster_name || 'Poster'}` +
             `${poster?.poster_verified ? ' (verified)' : ''}\n` +
             (row.home_distance_km != null ? `Distance from home (approx): ${row.home_distance_km} km\n` : '') +
             `Time: ${new Date().toLocaleString()}\n\n` +
             `Open your guardian portal link to monitor check-ins and location during this job only.\n\n` +
-            `QuickGigs is not an emergency responder.`,
+            `SwiftGigs is not an emergency responder.`,
           payload: { task_id: taskId, session_id: session?.session_id },
         });
       }
@@ -467,11 +467,11 @@ Deno.serve(async (req) => {
           type: 'guardian_teen_need_help',
           subject: `Need help — ${teen?.name || 'your teen'}`,
           body:
-            `${teen?.name || 'Your teen'} tapped “Need help” on an active QuickGigs job.\n\n` +
+            `${teen?.name || 'Your teen'} tapped “Need help” on an active SwiftGigs job.\n\n` +
             `Task: ${task.title || 'Gig'}\n` +
             (loc ? `Live location:\n${loc}\n\n` : 'Location was not available.\n\n') +
             `Call them and consider ending the job from the guardian portal. If someone is in immediate danger, call local emergency services.\n\n` +
-            `QuickGigs is not an emergency responder.`,
+            `SwiftGigs is not an emergency responder.`,
           payload: { task_id: taskId, link: loc },
         });
         return json({ ok: true, check_in_state: 'need_help' });
@@ -519,11 +519,11 @@ Deno.serve(async (req) => {
         type: 'guardian_teen_safety_alert',
         subject: `Safety alert — ${teen?.name || 'your teen'}`,
         body:
-          `${teen?.name || 'Your teen'} triggered a Safety alert on an active QuickGigs job (may also be calling emergency services).\n\n` +
+          `${teen?.name || 'Your teen'} triggered a Safety alert on an active SwiftGigs job (may also be calling emergency services).\n\n` +
           `Task: ${task.title || 'Gig'}\n` +
           (loc ? `Live location:\n${loc}\n\n` : 'Location was not available.\n\n') +
           `Contact them immediately. If needed, call local emergency services.\n\n` +
-          `QuickGigs is not an emergency responder and does not dispatch help.`,
+          `SwiftGigs is not an emergency responder and does not dispatch help.`,
         payload: { task_id: taskId, link: loc },
       });
       return json({ ok: true, check_in_state: 'safety_alert', locationLink: loc });
@@ -595,11 +595,11 @@ Deno.serve(async (req) => {
         type: 'guardian_teen_missed_checkin',
         subject: `Missed check-in — ${teen?.name || 'your teen'}`,
         body:
-          `${teen?.name || 'Your teen'} missed a safety check-in on an active QuickGigs job.\n\n` +
+          `${teen?.name || 'Your teen'} missed a safety check-in on an active SwiftGigs job.\n\n` +
           `Task: ${task.title || 'Gig'}\n` +
           (loc ? `Last shared location:\n${loc}\n\n` : '') +
           `Open the guardian portal to review or end the job.\n\n` +
-          `QuickGigs is not an emergency responder. Call local emergency services if someone is in immediate danger.`,
+          `SwiftGigs is not an emergency responder. Call local emergency services if someone is in immediate danger.`,
         payload: { task_id: taskId, link: loc },
       });
       return json({ ok: true, check_in_state: 'overdue' });

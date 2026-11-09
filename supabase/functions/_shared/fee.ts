@@ -1,5 +1,5 @@
 /**
- * QuickGigs — platform fee math (server). Keep in sync with /feeBreakdown.js + qg-config.js
+ * SwiftGigs — platform fee math (server). Keep in sync with /feeBreakdown.js + qg-config.js
  *
  * Model: poster funds agreed task amount into escrow (no fee on top).
  * Tasker pays platform fee deducted from payout.

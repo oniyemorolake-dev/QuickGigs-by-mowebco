@@ -155,7 +155,7 @@ async function fetchFromNominatim(query: string): Promise<Omit<GeocodeResult, 'l
       headers: {
         Accept: 'application/json',
         'Accept-Language': 'en-CA,en',
-        'User-Agent': 'QuickGigs/1.0 (https://quickgigs.ca)',
+        'User-Agent': 'SwiftGigs/1.0 (https://quickgigs.ca)',
       },
       signal: AbortSignal.timeout(8000),
     });
