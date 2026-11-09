@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
   if (!stripeKey || !webhookSecret) {
     return new Response('Stripe not configured', { status: 503 });
   }
-  if (stripeKey.startsWith('sk_live_')) {
+  if (stripeKey.startsWith('sk_live_') && Deno.env.get('STRIPE_LIVE_MODE') !== 'true') {
     return new Response('Live Stripe keys blocked — TEST mode only', { status: 503 });
   }
 

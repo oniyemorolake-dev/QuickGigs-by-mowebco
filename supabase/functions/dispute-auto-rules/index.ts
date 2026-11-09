@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
 
   const autoReleaseDays = Number(Deno.env.get('DISPUTE_AUTO_RELEASE_DAYS') || '3');
   const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
-  if (!stripeKey || stripeKey.startsWith('sk_live_')) {
+  if (!stripeKey || stripeKey.startsWith('sk_live_') && Deno.env.get('STRIPE_LIVE_MODE') !== 'true') {
     return json({ ok: false, error: 'stripe_not_configured_or_live_blocked' }, 503);
   }
 

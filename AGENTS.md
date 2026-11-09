@@ -16,7 +16,7 @@ context, and a write from you will silently destroy its work.
 > `browsetask.html`, `posttask.html`, `messages.html`, `profile.html` and
 > `mytasks.html` were handed to Claude on 7 Oct and no commit ever touched them,
 > so all five were still the old injector pages. Cursor is rebuilding them from
-> `Claude outputs/sg-design/templates/`, in that order. **Claude must not edit
+> `docs/design/sg-design/templates/`, in that order. **Claude must not edit
 > those five, or `dashboard.html`, while this is in progress.** Every other HTML
 > file at the repo root is still Claude's.
 >
@@ -32,7 +32,7 @@ context, and a write from you will silently destroy its work.
 | `qg-icons.js` | Claude desktop (append-only, see below) |
 | `*.css` (38 files at repo root) | Cursor |
 | `*.js` at root, except `qg-icons.js` | Cursor |
-| `*.md` at root (`AGENTS.md`, `sweep.md`, …) | Cursor |
+| `AGENTS.md`, `README.md` at root; everything in `docs/` | Cursor |
 | `supabase/`, `sql/`, `scripts/`, `docs/`, `.github/`, `.githooks/` | Cursor |
 
 Notes:

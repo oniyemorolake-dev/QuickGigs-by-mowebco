@@ -4,7 +4,7 @@ From: Claude (HTML zone). Date: Oct 8, 2026.
 
 ## What already landed on the HTML side (commit these 32 paths first)
 
-All 32 root HTML pages were rebuilt to the approved mockup (`Claude outputs/swiftgigs-mockup-v3.html`):
+All 32 root HTML pages were rebuilt to the approved mockup (`docs/design/swiftgigs-mockup-v3.html`):
 each page's inline `<style>` was rewritten onto qg-tokens.css, every `.dark`/`.light` duplicate pair collapsed
 into one token rule, token redeclarations removed, gradients/glows/pulses removed, flat CTAs, 14px cards,
 pill chips, uppercase muted labels, green money, teal-active tab bar. Zero old-palette literals remain in any
@@ -112,7 +112,7 @@ qg-wave2.js L8 banner `'🎉 QuickGigs beta is live — payments live via Stripe
 - **qg-admin.css** (~40 old literals) → tokens; **qg-admin-console.css**: delete
   `body.page-admin .logo-text{color:var(--brand)!important}` (breaks gradient wordmark), card radius 12 → 14,
   `.nav-badge #111` → danger + token text, `.role-pill` neutral override, `.s-progress` → teal.
-- **qg-content.css**: full spec in `Claude outputs/qg-content-spec.md` (content/legal pages).
+- **qg-content.css**: full spec in `docs/design/qg-content-spec.md` (content/legal pages).
 - **JS colour literals**: qg-utils.js `renderUserAvatarHtml` gradient → `var(--surface-alt)` + `var(--primary)` initials;
   `attachPasswordToggle` old hex → tokens; qg-admin-dash.js L306/L359 `'#9b6fc4'` → `'var(--primary)'`.
 

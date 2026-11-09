@@ -14,7 +14,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const DESIGN = path.join(ROOT, 'Claude outputs', 'sg-design');
+const DESIGN = path.join(ROOT, 'docs/design', 'sg-design');
 const BASE = process.env.SG_BASE || 'http://localhost:8099';
 
 const [pageName, designPng, outName] = process.argv.slice(2);

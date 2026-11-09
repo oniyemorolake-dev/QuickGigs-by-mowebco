@@ -8,7 +8,7 @@ const path = require('path');
 const { harness } = require('./shell-harness');
 
 const BASE = 'http://localhost:8099';
-/* Scratch output, deliberately outside "Claude outputs" — that folder is
+/* Scratch output, deliberately outside "docs/design" — that folder is
    Claude's deliverable, not a place for throwaway verification shots. */
 const OUT = process.argv[2] || path.resolve(__dirname, '..', '.verify');
 

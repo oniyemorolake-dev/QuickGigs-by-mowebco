@@ -150,7 +150,7 @@
         return 'Only the authenticated task poster can pay for this task.';
       }
       if (err === 'stripe_not_configured') {
-        return 'Stripe secret not set in Supabase — redeploy create-checkout (see STRIPE-SETUP.md)';
+        return 'Stripe secret not set in Supabase — redeploy create-checkout (see docs/STRIPE-SETUP.md)';
       }
       if (err === 'supabase_service_role_not_configured') {
         return 'Payments server not configured — set SUPABASE_SERVICE_ROLE_KEY on create-checkout Edge Function';

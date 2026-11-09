@@ -280,7 +280,7 @@ Deno.serve(async (req) => {
     }
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeKey) return json({ ok: false, error: 'stripe_not_configured' }, 503);
-    if (stripeKey.startsWith('sk_live_')) {
+    if (stripeKey.startsWith('sk_live_') && Deno.env.get('STRIPE_LIVE_MODE') !== 'true') {
       return json({
         ok: false,
         error: 'live_keys_blocked',

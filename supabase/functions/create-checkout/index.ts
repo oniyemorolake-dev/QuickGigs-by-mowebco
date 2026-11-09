@@ -300,8 +300,8 @@ Deno.serve(async (req) => {
   try {
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeKey) return json({ ok: false, error: 'stripe_not_configured' }, 503);
-    // Hard-block live keys until public launch — escrow is TEST mode only.
-    if (stripeKey.startsWith('sk_live_')) {
+    // Live keys are refused unless the STRIPE_LIVE_MODE secret is 'true' (launch switch).
+    if (stripeKey.startsWith('sk_live_') && Deno.env.get('STRIPE_LIVE_MODE') !== 'true') {
       return json({
         ok: false,
         error: 'live_keys_blocked',

@@ -258,6 +258,17 @@ async function markTaskCompleted(supabase: Sb, task: Record<string, unknown>) {
   if (!tid) return { ok: false as const, error: 'task_id_missing' };
 
   if (String(getField(task, 'status') || '').toLowerCase() === 'completed') {
+    // Completed through a path that never recorded the poster's confirmation
+    // (older direct table write). Only the poster reaches this function, so
+    // record it now — without it release-payout refuses and the tasker is
+    // never paid.
+    if (!getField(task, 'poster_confirmed_at')) {
+      await supabase
+        .from('tasks')
+        .update({ poster_confirmed_at: new Date().toISOString() })
+        .eq('task_id', tid)
+        .is('poster_confirmed_at', null);
+    }
     return { ok: true as const, task_id: tid, already: true };
   }
 

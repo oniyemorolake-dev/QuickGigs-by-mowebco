@@ -1,6 +1,6 @@
 # Cursor → Claude: redesign handoff reply
 
-Reply to `Claude outputs/CURSOR-HANDOFF-redesign.md`. Covers what the CSS/JS side
+Reply to `docs/design/CURSOR-HANDOFF-redesign.md`. Covers what the CSS/JS side
 finished, what that makes redundant in the HTML, and three things that need a
 decision or a fix on the HTML side.
 

@@ -12,7 +12,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const TPL = path.join(ROOT, 'Claude outputs', 'sg-design', 'templates');
+const TPL = path.join(ROOT, 'docs/design', 'sg-design', 'templates');
 const BASE = process.env.SG_BASE || 'http://localhost:8099';
 
 const PAGES = [

@@ -202,11 +202,40 @@ Clear error messages come from `formatUploadError()`.
 | `NOTIFICATION_SEND_SECRET`, `GUARDIAN_CONSENT_SECRET` | `DISPUTE_AUTO_RELEASE_DAYS` |
 | `GRADUATION_CRON_SECRET`, `DISPUTE_CRON_SECRET` | |
 
-## 16. Known gaps (as of 9 Nov)
+## 16. App updates (PWA)
 
-1. `supabase/launch-2026-11-09.sql` (minor privacy, listing contact filter, private
-   addresses) is written and tested locally but must be run on the live database.
-2. Money loop never exercised end to end, even in test mode.
-3. Agreement version still `2026-08-03` even though the fee wording changed (re-consent decision).
-4. Subscription ($9.99) exists as a business rule but currently gives no fee discount.
+- `sg-sw-register.js` is loaded on every page. It registers the service worker and looks
+  for a new version when the app comes to the front, comes back online, and every 20
+  minutes. Before 9 Nov only four pages did this and the installed app (which opens on
+  the dashboard) never checked.
+- `sw.js` serves CSS/JS/images from cache instantly and re-checks them in the background
+  (stale-while-revalidate, at most every 5 minutes per file). HTML is network-first with a
+  3.5 s fallback to the cached copy.
+- When something changed: a background app reloads quietly; a foreground app shows a
+  "New version ready" pill and never reloads under someone who is typing.
+
+## 17. Database guards added 9 Nov
+
+| Guard | Stops |
+|---|---|
+| `users_protect_server_fields` | Users editing their own rating, subscriber flag, phone-verified flag, payment-method fields |
+| `applications_lock_accepted_price` | A poster lowering the agreed price after accepting |
+| `tasks_stamp_poster_confirmation` | Completed tasks with no recorded confirmation (payout could never release) |
+| `tasks_block_listing_contact`, `applications_block_listing_contact` | Contact details in listings |
+| `tasks_move_precise_address` | Street addresses in the public tasks table |
+
+All of them let the service role and admins through; they apply to a signed-in user who
+is not an admin.
+
+## 18. Known gaps (as of 9 Nov)
+
+1. Money loop: one test payment exists and its payout never released. Needs a clean
+   end-to-end pass after the redeploy.
+2. Live fee secret appears to be 25% (the one payment on record), while the site says 15%.
+3. Agreement version still `2026-08-03` even though the fee wording changed.
+4. Subscription ($9.99) exists as a business rule but gives no fee discount.
 5. Pages don't yet read precise addresses through `qg_task_precise_address()`.
+6. Browser-side address search uses the free Nominatim service (rate-limited).
+7. The repository and everything in `docs/` are public.
+8. A poster can still edit other fields of their own task (for example the budget) after
+   accepting; payment uses the accepted application's price, so the amount is safe.
