@@ -141,7 +141,7 @@ body{
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { getAuth, initializeAuth, browserLocalPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
@@ -153,7 +153,9 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+// Same storage as login/signup (localStorage). Plain getAuth() looks in IndexedDB, so a fresh sign-in looked logged out on first load.
+let auth;
+try { auth = initializeAuth(app, { persistence: browserLocalPersistence }); } catch (e) { auth = getAuth(app); }
 let authChecked = false;
 const redirectTimeout = setTimeout(() => {
   if (!authChecked) window.location.href = 'login.html';

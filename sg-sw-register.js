@@ -35,6 +35,11 @@
 
   function showUpdateReady() {
     if (document.getElementById('sg-update-ready') || !document.body) return;
+    // Just refreshed for an update: give the new files a minute to settle.
+    try {
+      var applied = Number(sessionStorage.getItem('sg-update-applied') || 0);
+      if (applied && Date.now() - applied < 60 * 1000) return;
+    } catch (e) {}
     var pill = document.createElement('button');
     pill.id = 'sg-update-ready';
     pill.type = 'button';
@@ -45,7 +50,10 @@
       'padding:10px 16px;border:0;border-radius:999px;font:600 14px/1.2 inherit;' +
       'background:var(--primary,#8B5CF6);color:#fff;box-shadow:0 6px 24px rgba(0,0,0,.35);' +
       'cursor:pointer;max-width:calc(100vw - 32px);white-space:nowrap';
-    pill.addEventListener('click', reloadOnce);
+    pill.addEventListener('click', function () {
+      try { sessionStorage.setItem('sg-update-applied', String(Date.now())); } catch (e) {}
+      reloadOnce();
+    });
     document.body.appendChild(pill);
   }
 
@@ -107,7 +115,11 @@
       window.addEventListener('online', function () { check(true); });
       window.addEventListener('pageshow', function (ev) { if (ev.persisted) check(true); });
       setInterval(function () { check(false); }, 20 * 60 * 1000);
-      check(true);
+      // On page load just ask for a new worker; the page's own requests already
+      // refresh its files, so forcing a full re-check here only re-announced
+      // the update that was just applied.
+      lastCheck = Date.now();
+      try { reg.update(); } catch (e) {}
     }).catch(function (err) {
       console.warn('Service worker registration failed:', err);
     });

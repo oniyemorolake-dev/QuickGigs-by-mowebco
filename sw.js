@@ -49,11 +49,23 @@ function cacheable(response) {
   return response && response.ok && response.type === 'basic';
 }
 
-function fingerprint(response) {
-  if (!response) return '';
-  return (response.headers.get('etag') || '') + '|' +
-    (response.headers.get('last-modified') || '') + '|' +
-    (response.headers.get('content-length') || '');
+/** SHA-256 of the body. Headers (ETag, Last-Modified) differ between GitHub's
+ *  CDN servers for the same file, so comparing them reported phantom updates. */
+function bodyHash(response) {
+  if (!response) return Promise.resolve('');
+  return response.clone().arrayBuffer().then(function (buf) {
+    return crypto.subtle.digest('SHA-256', buf);
+  }).then(function (d) {
+    return Array.prototype.map.call(new Uint8Array(d), function (b) {
+      return ('0' + b.toString(16)).slice(-2);
+    }).join('');
+  }).catch(function () { return ''; });
+}
+
+/** Only code and styles justify asking people to refresh. */
+function worthAnnouncing(url) {
+  var path = new URL(url).pathname;
+  return /\.(js|css)$/.test(path);
 }
 
 function notifyClientsSoon() {
@@ -73,10 +85,15 @@ function refresh(request, cache, cached) {
   // 'no-cache' = always revalidate with the server; unchanged files cost a 304.
   return fetch(request.url, { cache: 'no-cache', credentials: 'same-origin' }).then(function (response) {
     if (!cacheable(response)) return response;
-    var changed = cached && fingerprint(cached) !== fingerprint(response);
-    return cache.put(request, response.clone()).then(function () {
-      if (changed) notifyClientsSoon();
-      return response;
+    var check = (cached && worthAnnouncing(request.url))
+      ? Promise.all([bodyHash(cached), bodyHash(response)])
+      : Promise.resolve(null);
+    return check.then(function (hashes) {
+      var changed = !!(hashes && hashes[0] && hashes[1] && hashes[0] !== hashes[1]);
+      return cache.put(request, response.clone()).then(function () {
+        if (changed) notifyClientsSoon();
+        return response;
+      });
     });
   });
 }
@@ -91,7 +108,9 @@ function staleWhileRevalidate(event) {
       var last = lastChecked[request.url] || 0;
       if (now - last > REVALIDATE_EVERY_MS) {
         lastChecked[request.url] = now;
-        event.waitUntil(refresh(request, cache, cached).catch(function () {}));
+        // Clone before handing `cached` to the page: once the page reads it,
+        // its body can no longer be copied for the comparison.
+        event.waitUntil(refresh(request, cache, cached.clone()).catch(function () {}));
       }
       return cached;
     });

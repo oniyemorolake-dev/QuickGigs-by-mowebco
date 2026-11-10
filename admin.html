@@ -671,7 +671,7 @@ body.page-admin .health-item-val .hv-empty{font-size:13px;font-weight:500;color:
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { getAuth, initializeAuth, browserLocalPersistence, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 /**
  * Admin console gate.
@@ -688,7 +688,9 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+// Same storage as login/signup (localStorage). Plain getAuth() looks in IndexedDB, so a fresh sign-in looked logged out on first load.
+let auth;
+try { auth = initializeAuth(app, { persistence: browserLocalPersistence }); } catch (e) { auth = getAuth(app); }
 window._auth = auth;
 
 function denyAdminAccess(message) {

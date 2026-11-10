@@ -104,7 +104,7 @@ body.light .qg-worker-card .qg-trust-badge{font-size:10.5px;font-weight:600;padd
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { getAuth, initializeAuth, browserLocalPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 const firebaseConfig = {
   apiKey: "AIzaSyBbYJxU-3r7qVMqwzXHiC-qRkZNtmGobm0",
   authDomain: "quickgigs-7b12d.firebaseapp.com",
@@ -114,7 +114,9 @@ const firebaseConfig = {
   appId: "1:698985399366:web:8a3ca60c5f3ffac84bb647"
 };
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+// Same storage as login/signup (localStorage). Plain getAuth() looks in IndexedDB, so a fresh sign-in looked logged out on first load.
+let auth;
+try { auth = initializeAuth(app, { persistence: browserLocalPersistence }); } catch (e) { auth = getAuth(app); }
 onAuthStateChanged(auth, function (user) {
   if (!user) { window.location.href = 'login.html'; return; }
   window._currentUser = user;
