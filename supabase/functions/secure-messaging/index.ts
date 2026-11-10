@@ -168,6 +168,9 @@ Deno.serve(async (req) => {
     if (action === 'send') {
       const conv = await getConversation(String(body.conv_id || ''));
       if (!conv) return json({ success: false, error: 'conversation_not_found' }, 404);
+      if (['completed', 'closed', 'cancelled'].includes(String(conv.status || '').toLowerCase())) {
+        return json({ success: false, error: 'gig_ended', message: 'This gig has ended, so the chat is closed.' }, 403);
+      }
       if (conv.is_unlocked !== true) return json({ success: false, error: 'conversation_locked' }, 403);
       const text = String(body.body || '').trim();
       if (!text || text.length > 2000) return json({ success: false, error: 'invalid_message' }, 400);

@@ -309,35 +309,31 @@ async function completeApps(
   }
 }
 
-async function lockChats(supabase: Sb, posterId: string, workerId: string, inputTaskId: string) {
-  if (posterId && workerId) {
-    const { data: byPair } = await supabase
+/** Close this gig's chat. Other active gigs between the same two people keep theirs. */
+async function lockChats(supabase: Sb, posterId: string, workerId: string, taskId: string) {
+  const tid = String(taskId || '').trim();
+  if (tid && !isNumericId(tid)) {
+    await supabase
       .from('conversations')
-      .select('conv_id')
-      .eq('poster_id', posterId)
-      .eq('worker_id', workerId);
-    for (const conv of byPair || []) {
-      if (conv?.conv_id) {
-        await supabase
-          .from('conversations')
-          .update({ is_unlocked: false, status: 'completed' })
-          .eq('conv_id', conv.conv_id);
-      }
-    }
+      .update({ is_unlocked: false, status: 'completed' })
+      .eq('task_id', tid);
+    return;
   }
-  if (isNumericId(inputTaskId)) {
-    const { data: byLegacy } = await supabase
+  if (isNumericId(tid)) {
+    await supabase
       .from('conversations')
-      .select('conv_id')
-      .eq('task_id', parseInt(inputTaskId, 10));
-    for (const conv of byLegacy || []) {
-      if (conv?.conv_id) {
-        await supabase
-          .from('conversations')
-          .update({ is_unlocked: false, status: 'completed' })
-          .eq('conv_id', conv.conv_id);
-      }
-    }
+      .update({ is_unlocked: false, status: 'completed' })
+      .eq('task_id', parseInt(tid, 10));
+    return;
+  }
+  // No task id at all (very old rows): fall back to the pair's chats that have no task.
+  if (posterId && workerId) {
+    await supabase
+      .from('conversations')
+      .update({ is_unlocked: false, status: 'completed' })
+      .eq('poster_id', posterId)
+      .eq('worker_id', workerId)
+      .is('task_id', null);
   }
 }
 
@@ -452,7 +448,7 @@ Deno.serve(async (req) => {
     }
 
     await completeApps(supabase, task, inputTaskId, workerId);
-    await lockChats(supabase, posterId, workerId, inputTaskId);
+    await lockChats(supabase, posterId, workerId, String(updated.task_id || canonicalTaskId(task) || inputTaskId));
 
     // Poster-confirmed → immediately attempt escrow release (same JWT; release-payout enforces gates)
     let payout: Record<string, unknown> | null = null;

@@ -432,7 +432,47 @@ onAuthStateChanged(auth, (user) => {
     return !!(c.paymentsEnabled && c.chatUnlockAfter === 'payment');
   }
 
+  function gigHasEnded(conv) {
+    var st = String((conv && conv.status) || '').toLowerCase();
+    return st === 'completed' || st === 'closed' || st === 'cancelled';
+  }
+
+  /* Gig over: like a finished ride, the chat closes for good. History stays
+     readable; follow-ups go through a review or a dispute, not messages. */
+  function paintGigEnded(conv) {
+    currentUnlocked = false;
+    $('sgComposer').hidden = true;
+    var note = $('sgChatLocked');
+    var actions = $('sgChatLockedActions');
+    var cancelled = String(conv.status || '').toLowerCase() !== 'completed';
+    if (note) {
+      note.hidden = false;
+      note.textContent = cancelled
+        ? 'This gig was cancelled, so the chat is closed.'
+        : 'This gig is complete, so the chat is closed. Messages above stay here for your records.';
+    }
+    syncSendBtn();
+    if (!actions || cancelled) { if (actions) { actions.hidden = true; actions.innerHTML = ''; } return; }
+    var isPoster = String(conv.poster_id) === String(currentUserId);
+    var other = isPoster ? conv.worker_id : conv.poster_id;
+    var taskId = String(conv.task_id || '');
+    var reviewHref = 'review.html?task=' + encodeURIComponent(taskId) +
+      (other ? '&user=' + encodeURIComponent(String(other)) : '');
+    actions.hidden = false;
+    actions.innerHTML =
+      '<a class="sg-btn ' + (isPoster ? 'purple' : 'teal') + '" style="flex:1 1 160px;text-align:center" href="' + esc(reviewHref) + '">Leave a review</a>' +
+      (typeof window.openDisputeModal === 'function'
+        ? '<button type="button" class="sg-btn icon" style="flex:1 1 160px" id="sgChatReport">Report a problem</button>'
+        : '<a class="sg-btn icon" style="flex:1 1 160px;text-align:center" href="dispute-resolution.html">Report a problem</a>');
+    var rep = $('sgChatReport');
+    if (rep) rep.addEventListener('click', function (e) {
+      e.preventDefault();
+      try { window.openDisputeModal({ taskId: taskId, taskTitle: conv.task_title || '', otherUserId: other, otherName: isPoster ? conv.worker_name : conv.poster_name }); } catch (err) { window.location.href = 'dispute-resolution.html'; }
+    });
+  }
+
   function paintChatGate(conv) {
+    if (gigHasEnded(conv)) { paintGigEnded(conv); return; }
     var paymentGated = isPaymentGatedChat();
     var unlocked = !paymentGated && String(conv.status || '').toLowerCase() !== 'application';
     if (typeof parseConversationUnlocked === 'function' && parseConversationUnlocked(conv)) unlocked = true;
