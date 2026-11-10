@@ -26,6 +26,16 @@
     if (!endpoint() || typeof callVerifiedFunction !== 'function') {
       return { ok: false, success: false, error: 'verification_unavailable' };
     }
+    // The server reads "email confirmed" from the Firebase ID token. A token
+    // issued before the user tapped the email link still says false for up
+    // to an hour, so confirming looked like it did nothing. Reload the user
+    // and force a fresh token before any check or sync.
+    var live = currentAuthUser();
+    if (live) {
+      try { await live.reload(); } catch (_r) {}
+      live = currentAuthUser() || live;
+      try { await live.getIdToken(true); } catch (_t) {}
+    }
     return await callVerifiedFunction(endpoint(), Object.assign({ action: action }, extra || {}));
   }
 
