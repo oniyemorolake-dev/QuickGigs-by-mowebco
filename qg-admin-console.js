@@ -63,7 +63,10 @@
   function isTeenUser(u) {
     if (!u) return false;
     if (String(u.account_status || '').toLowerCase() === 'pending_guardian') return true;
-    if (u.guardian_consent_status) return true;
+    if (String(u.payout_owner || '').toLowerCase() === 'guardian') return true;
+    // Adults are stored as 'not_required', so only real guardian states count.
+    var gcs = String(u.guardian_consent_status || '').toLowerCase();
+    if (gcs === 'pending' || gcs === 'approved' || gcs === 'declined' || gcs === 'rejected') return true;
     var dob = u.date_of_birth;
     if (!dob) return false;
     var d = new Date(String(dob) + 'T00:00:00Z');

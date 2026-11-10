@@ -320,6 +320,13 @@ body.page-admin .mini-card.admin-danger-card{border-color:color-mix(in srgb,var(
   .search-bar{width:100%;}
   .admin-drawer{border-top:1px solid var(--border);border-left:none;border-radius:14px 14px 0 0;}
 }
+/* Admin fixes 9 Nov: app-wide poster-mode CSS (qg-refine/qg-role-theme) turned
+   .stat-card into a squashed flex row here, and the layout-edit buttons ignored
+   [hidden] and sat on top of every card title. */
+body.page-admin .stat-card{display:block !important;}
+body.page-admin .dash-edit-controls[hidden]{display:none !important;}
+body.page-admin .dash-edit-mode .dash-card .mc-title{padding-right:120px;}
+body.page-admin .health-item-val .hv-empty{font-size:13px;font-weight:500;color:var(--text-muted);}
 </style>
 <script defer src="sg-sw-register.js"></script>
 </head>
@@ -411,12 +418,12 @@ body.page-admin .mini-card.admin-danger-card{border-color:color-mix(in srgb,var(
         </div>
       </div>
       <div class="dash-card mini-card" data-dash-id="health" data-dash-span="full">
-        <div class="mc-title">Platform health breakdown <span class="mc-sub">Updated live</span></div>
+        <div class="mc-title">Platform health breakdown <span class="mc-sub">From live data</span></div>
         <div class="health-grid">
-          <div class="health-item"><div class="health-item-label">Task completion rate</div><div class="health-item-val" style="color:var(--green)">78%</div><div class="health-item-bar"><div class="health-item-fill" style="width:78%;background:var(--green)"></div></div></div>
-          <div class="health-item"><div class="health-item-label">User satisfaction</div><div class="health-item-val" style="color:var(--primary)">4.8<span data-qg-ico="star" data-qg-ico-size="12"></span></div><div class="health-item-bar"><div class="health-item-fill" style="width:96%;background:var(--primary)"></div></div></div>
-          <div class="health-item"><div class="health-item-label">Dispute rate</div><div class="health-item-val" style="color:var(--attention)">5.1%</div><div class="health-item-bar"><div class="health-item-fill" style="width:5%;background:var(--attention)"></div></div></div>
-          <div class="health-item"><div class="health-item-label">Worker acceptance rate</div><div class="health-item-val" style="color:var(--green)">91%</div><div class="health-item-bar"><div class="health-item-fill" style="width:91%;background:var(--green)"></div></div></div>
+          <div class="health-item"><div class="health-item-label">Task completion rate</div><div class="health-item-val" id="hCompletion" style="color:var(--green)">—</div><div class="health-item-bar"><div class="health-item-fill" id="hCompletionBar" style="width:0%;background:var(--green)"></div></div></div>
+          <div class="health-item"><div class="health-item-label">Average rating</div><div class="health-item-val" id="hRating" style="color:var(--primary)">—</div><div class="health-item-bar"><div class="health-item-fill" id="hRatingBar" style="width:0%;background:var(--primary)"></div></div></div>
+          <div class="health-item"><div class="health-item-label">Dispute rate</div><div class="health-item-val" id="hDisputes" style="color:var(--attention)">—</div><div class="health-item-bar"><div class="health-item-fill" id="hDisputesBar" style="width:0%;background:var(--attention)"></div></div></div>
+          <div class="health-item"><div class="health-item-label">Application acceptance rate</div><div class="health-item-val" id="hAcceptance" style="color:var(--green)">—</div><div class="health-item-bar"><div class="health-item-fill" id="hAcceptanceBar" style="width:0%;background:var(--green)"></div></div></div>
         </div>
       </div>
       <div class="dash-card mini-card" data-dash-id="insights" data-dash-span="full">
@@ -609,10 +616,10 @@ body.page-admin .mini-card.admin-danger-card{border-color:color-mix(in srgb,var(
     </div>
     <div class="mini-card" style="margin-bottom:14px">
       <div class="mc-title">Platform fees</div>
-      <div style="display:grid;gap:12px;grid-template-columns:1fr 1fr 1fr">
-        <div style="background:var(--surface-alt);border-radius:12px;padding:12px 14px"><div style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px">Standard fee</div><div style="font-size:22px;font-weight:700;color:var(--primary)">25%</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">All standard users</div></div>
-        <div style="background:var(--surface-alt);border-radius:12px;padding:12px 14px"><div style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px">Subscriber fee</div><div style="font-size:22px;font-weight:700;color:var(--green)">20%</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">$9.99/month plan</div></div>
-        <div style="background:var(--surface-alt);border-radius:12px;padding:12px 14px"><div style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px">Top-rated fee</div><div style="font-size:22px;font-weight:700;color:var(--attention)">15%</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">4.8<span data-qg-ico="star" data-qg-ico-size="11"></span>+ rating</div></div>
+      <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+        <div style="background:var(--surface-alt);border-radius:12px;padding:12px 14px"><div style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px">Tasker fee</div><div id="adminTaskerFeePct" style="font-size:22px;font-weight:700;color:var(--primary)">15%</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">Deducted from the tasker's payout</div></div>
+        <div style="background:var(--surface-alt);border-radius:12px;padding:12px 14px"><div style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px">Poster fee</div><div style="font-size:22px;font-weight:700;color:var(--green)">0%</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">Posters pay the agreed amount only</div></div>
+        <div style="background:var(--surface-alt);border-radius:12px;padding:12px 14px"><div style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px">Subscription</div><div style="font-size:22px;font-weight:700;color:var(--attention)">$9.99/mo</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">No fee discount yet</div></div>
       </div>
     </div>
     <div class="mini-card">
@@ -877,12 +884,22 @@ function adminPaymentStats(rows) {
   return { held: held, paidFees: paidFees, gmv: gmv, refunded: refunded };
 }
 
+function adminTaskerFeePct(){
+  var c = window.QG_CONFIG || {};
+  var p = Number(c.taskerFeePercent);
+  return isFinite(p) ? p : 15;
+}
+document.addEventListener('DOMContentLoaded', function(){
+  var el = document.getElementById('adminTaskerFeePct');
+  if (el) el.textContent = adminTaskerFeePct() + '%';
+});
+
 function renderRevenue(){
   var stats = adminPaymentStats(payments);
   var grid = document.getElementById('revenueStatsGrid');
   if (grid) {
     grid.innerHTML = [
-      { val: '$' + stats.paidFees.toFixed(2), lbl: 'Platform fees (paid out)', sub: '25% on completed tasks' },
+      { val: '$' + stats.paidFees.toFixed(2), lbl: 'Platform fees (paid out)', sub: adminTaskerFeePct() + '% from the tasker on completed tasks' },
       { val: '$' + stats.held.toFixed(2), lbl: 'In escrow', sub: 'Held until task complete' },
       { val: '$' + stats.gmv.toFixed(2), lbl: 'Gross volume', sub: 'All held + paid payments' },
       { val: '$' + stats.refunded.toFixed(2), lbl: 'Refunded', sub: 'Cancelled before completion' }
@@ -926,6 +943,27 @@ function renderRevenue(){
   }).join('');
 }
 
+function renderHealth(){
+  function set(id, pct, text){
+    var v=document.getElementById(id), b=document.getElementById(id+'Bar');
+    if(!v) return;
+    if(pct==null){ v.innerHTML='<span class="hv-empty">Not enough data yet</span>'; if(b) b.style.width='0%'; return; }
+    v.textContent=text; if(b) b.style.width=Math.max(0,Math.min(100,pct))+'%';
+  }
+  function st(x){return String((x&&x.status)||'').toLowerCase();}
+  var finished=tasks.filter(function(t){return ['completed','cancelled'].indexOf(st(t))>=0;});
+  var done=finished.filter(function(t){return st(t)==='completed';}).length;
+  set('hCompletion', finished.length? done/finished.length*100 : null, finished.length? Math.round(done/finished.length*100)+'%' : '');
+  var rv=(window.reviews||[]).map(function(r){return Number(r.rating);}).filter(function(n){return n>0;});
+  var avg=rv.length? rv.reduce(function(a,b){return a+b;},0)/rv.length : null;
+  set('hRating', avg==null? null : avg/5*100, avg==null? '' : avg.toFixed(1)+' / 5');
+  var paidTasks=payments.length;
+  set('hDisputes', paidTasks? disputes.length/paidTasks*100 : null, paidTasks? (disputes.length/paidTasks*100).toFixed(1)+'%' : '');
+  var decided=applications.filter(function(a){return ['accepted','completed','rejected','declined'].indexOf(st(a))>=0;});
+  var acc=decided.filter(function(a){return ['accepted','completed'].indexOf(st(a))>=0;}).length;
+  set('hAcceptance', decided.length? acc/decided.length*100 : null, decided.length? Math.round(acc/decided.length*100)+'%' : '');
+}
+
 function renderOverview(){
   var active=users.filter(function(u){return u.status==='active';}).length;
   var warned=users.filter(function(u){return u.status==='warned';}).length;
@@ -957,6 +995,7 @@ function renderOverview(){
   if (revEl) revEl.textContent = '$' + platformFeesPaid.toFixed(2);
   if (revSub) revSub.textContent = escrowHeld.toFixed(2) + ' CAD in escrow · ' + payments.length + ' payments';
   renderActivity();renderCategories();renderRecentSignups();
+  try { renderHealth(); } catch (e) { console.warn('renderHealth failed', e); }
 }
 
 function renderMiniChart(id,data,color){
