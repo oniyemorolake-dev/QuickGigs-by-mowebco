@@ -158,7 +158,10 @@ Deno.serve(async (req) => {
 
     const write = existing?.user_id
       ? await supabase.from('users').update(row).eq('user_id', existing.user_id).select('*').single()
-      : await supabase.from('users').insert({ ...row, user_id: identity.uid }).select('*').single();
+      // user_id is a UUID with its own default; the Firebase UID lives in
+      // firebase_uid. Passing the Firebase UID here failed every new signup
+      // with 22P02 (invalid input syntax for type uuid).
+      : await supabase.from('users').insert({ ...row, firebase_uid: identity.uid }).select('*').single();
     if (write.error) throw write.error;
 
     let consentUrl = '';
