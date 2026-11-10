@@ -3,7 +3,7 @@ import { isTeenDateOfBirth } from '../_shared/age.ts';
 import { authErrorStatus, requireFirebaseUser } from '../_shared/firebase-auth.ts';
 import { haversineKm, isCanadianCoordinate, roundCoord } from '../_shared/geo.ts';
 import { geocodeCanada } from '../_shared/geocode-canada.ts';
-import { isCanadianCoordinate, roundCoord } from '../_shared/geo.ts';
+import { haversineKm, isCanadianCoordinate, roundCoord } from '../_shared/geo.ts';
 import { checkRateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
 import { analyzeListingContact } from '../_shared/off-platform.ts';
 
@@ -278,6 +278,20 @@ Deno.serve(async (req) => {
             lat: roundCoord(cLat, 2),
             lng: roundCoord(cLng, 2),
           } as Awaited<ReturnType<typeof geocodeCanada>>;
+        }
+      }
+      // The geocoder returns the city's centre point, which made a gig posted
+      // from the suburbs show as "3 km away" to someone standing next to it.
+      // When the poster used their device location and it is within that
+      // city's area, keep their real spot, rounded to ~1 km for privacy.
+      if (geocoded && task.lat != null && task.lng != null) {
+        const dLat = Number(task.lat);
+        const dLng = Number(task.lng);
+        if (
+          isCanadianCoordinate(dLat, dLng) &&
+          haversineKm(dLat, dLng, Number(geocoded.lat), Number(geocoded.lng)) <= 50
+        ) {
+          geocoded = { ...geocoded, lat: roundCoord(dLat, 2), lng: roundCoord(dLng, 2) };
         }
       }
       if (!geocoded) {
