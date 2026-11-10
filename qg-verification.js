@@ -29,7 +29,28 @@
     return await callVerifiedFunction(endpoint(), Object.assign({ action: action }, extra || {}));
   }
 
+  function showFinishProfile() {
+    if (document.getElementById('qgFinishProfile') || !document.body) return;
+    var bar = document.createElement('div');
+    bar.id = 'qgFinishProfile';
+    bar.setAttribute('role', 'alert');
+    bar.style.cssText = 'position:fixed;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top,0px));' +
+      'z-index:2147483001;padding:14px 16px;border-radius:14px;background:var(--surface,#1b1726);' +
+      'color:var(--text,#fff);border:1px solid var(--primary,#8B5CF6);box-shadow:0 8px 28px rgba(0,0,0,.4);' +
+      'font:500 14px/1.4 inherit;display:flex;gap:12px;align-items:center;flex-wrap:wrap';
+    bar.innerHTML = '<span style="flex:1 1 200px">Finish setting up your account to confirm your email and accept gigs.</span>' +
+      '<a href="signup.html?oauth=continue" style="padding:9px 14px;border-radius:999px;background:var(--primary,#8B5CF6);' +
+      'color:#fff;text-decoration:none;font-weight:600">Finish setup</a>';
+    document.body.appendChild(bar);
+  }
+  window.QG_showFinishProfile = showFinishProfile;
+
   function publish(result) {
+    if (result && String(result.error || '') === 'user_not_found') {
+      // Signed in to Firebase but no SwiftGigs profile (signup never finished).
+      showFinishProfile();
+      return result;
+    }
     if (!result || result.ok === false || result.success === false) return result;
     cached = Object.assign({}, cached || {}, result);
     window.QG_verificationState = cached;
@@ -67,6 +88,7 @@
 
   var FB_AUTH_MOD = 'https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js';
   var VERIFY_SENT_MS = 10 * 60 * 1000;
+  var RESEND_COOLDOWN_MS = 60 * 1000;
 
   function authInstance() {
     return window._auth || window.auth || null;
@@ -114,7 +136,9 @@
     try {
       var raw = localStorage.getItem('qg-email-verify-sent:' + uid);
       var at = raw ? parseInt(raw, 10) : 0;
-      return !!(at && (Date.now() - at) < (24 * 60 * 60 * 1000));
+      // Short cooldown only. This used to be 24 hours, so one email that went
+      // to spam (or a link that failed) left the button dead for a whole day.
+      return !!(at && (Date.now() - at) < RESEND_COOLDOWN_MS);
     } catch (_e) {
       return false;
     }
@@ -135,7 +159,7 @@
         ok: false,
         sent: false,
         error: 'too_many_requests',
-        message: 'A confirmation email was already sent. Check inbox and spam. A new email cancels the last link.'
+        message: 'Just sent — check inbox and spam. You can send another in a minute.'
       };
     }
     if (sendInFlight[user.uid]) return sendInFlight[user.uid];
@@ -179,8 +203,8 @@
 
   async function ensureVerificationEmailSent(user) {
     user = user || currentAuthUser();
-    if (user && user.uid) rememberVerifySent(user.uid);
-    // Never send from here. Home/Profile used to auto-mail on every visit,
+    // Never send from here, and never mark anything as sent: that blocked the
+    // real "Send confirmation email" button. Home/Profile used to auto-mail on every visit,
     // which cancelled the last link and flooded the inbox. Send only when
     // the user taps "Send confirmation email".
     return { ok: true, sent: false, throttled: true };
@@ -515,11 +539,21 @@
     var emailBtn = overlay.querySelector('#qgVerifyEmailBtn');
     var refreshBtn = overlay.querySelector('#qgVerifyEmailRefresh');
     var alreadyQueued = !!(authUser && authUser.uid && recentlySentVerification(authUser.uid));
+    function reenableSoon() {
+      if (!emailBtn) return;
+      setTimeout(function () {
+        if (!document.body.contains(emailBtn)) return;
+        emailBtn.disabled = false;
+        emailBtn.textContent = 'Send again';
+      }, RESEND_COOLDOWN_MS);
+    }
     if (emailBtn && !emailOk && alreadyQueued) {
       emailBtn.disabled = true;
-      emailBtn.textContent = 'Already sent';
-      setStatus('A confirmation email is already on its way to ' + inbox + '. Check inbox and spam. Do not request another — a new email cancels the last link.');
-    } else if (emailBtn && !emailOk) {
+      emailBtn.textContent = 'Sent';
+      setStatus('A confirmation email was just sent to ' + inbox + '. Check inbox and spam (from noreply@quickgigs-7b12d.firebaseapp.com).');
+      reenableSoon();
+    }
+    if (emailBtn && !emailOk) {
       emailBtn.onclick = async function () {
         emailBtn.disabled = true;
         setStatus('Sending a confirmation email to ' + inbox + '…');
@@ -529,14 +563,16 @@
         }
         if (res && res.sent) {
           setStatus(res.message || 'Confirmation email sent.');
-          emailBtn.textContent = 'Already sent';
+          emailBtn.textContent = 'Sent';
+          reenableSoon();
         } else if (res && (res.email_verified || res.tasker_verified)) {
           setStatus('Email confirmed.');
           emailBtn.textContent = 'Email confirmed';
           if (res.tasker_verified) overlay.remove();
         } else {
           setStatus((res && (res.message || res.error)) || 'Check inbox and spam for the last confirmation email.');
-          emailBtn.textContent = 'Already sent';
+          emailBtn.textContent = 'Sent';
+          reenableSoon();
         }
       };
       setStatus('Check inbox and spam first. Tap Send confirmation email only if you never got one — a new email cancels the last link.');
