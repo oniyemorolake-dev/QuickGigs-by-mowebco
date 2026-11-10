@@ -385,17 +385,61 @@
     return city ? city + (province ? ', ' + province : '') : String(fallback || '').trim();
   }
 
+  // Instant answer for the cities we serve most. Task locations are only
+  // ever shown at city level (coords are rounded to ~1 km), so when the device
+  // is inside one of these metros there is no need to wait on a network lookup.
+  var NEAR_CITIES = [
+    ['Calgary, AB', 51.045, -114.06, 30], ['Edmonton, AB', 53.546, -113.49, 30],
+    ['Airdrie, AB', 51.29, -114.01, 8], ['Cochrane, AB', 51.19, -114.47, 8],
+    ['Chestermere, AB', 51.05, -113.82, 6], ['Okotoks, AB', 50.73, -113.98, 8],
+    ['St. Albert, AB', 53.63, -113.63, 7], ['Sherwood Park, AB', 53.54, -113.30, 8],
+    ['Spruce Grove, AB', 53.54, -113.91, 7], ['Leduc, AB', 53.26, -113.55, 7],
+    ['Red Deer, AB', 52.27, -113.81, 15], ['Lethbridge, AB', 49.69, -112.84, 15],
+    ['Medicine Hat, AB', 50.04, -110.68, 12], ['Grande Prairie, AB', 55.17, -118.79, 12],
+    ['Fort McMurray, AB', 56.73, -111.38, 15], ['Canmore, AB', 51.09, -115.35, 8],
+    ['Vancouver, BC', 49.28, -123.12, 20], ['Victoria, BC', 48.43, -123.37, 15],
+    ['Kelowna, BC', 49.89, -119.50, 15], ['Saskatoon, SK', 52.13, -106.67, 18],
+    ['Regina, SK', 50.45, -104.61, 18], ['Winnipeg, MB', 49.90, -97.14, 22],
+    ['Toronto, ON', 43.65, -79.38, 25], ['Ottawa, ON', 45.42, -75.70, 22],
+    ['Montreal, QC', 45.50, -73.57, 22], ['Halifax, NS', 44.65, -63.58, 18]
+  ];
+  function kmBetween(lat1, lng1, lat2, lng2) {
+    var r = Math.PI / 180, dLat = (lat2 - lat1) * r, dLng = (lng2 - lng1) * r;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return 12742 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+  /** Nearest served city within its radius, checking the small suburbs first. */
+  function nearestKnownCity(lat, lng) {
+    var best = null;
+    NEAR_CITIES.forEach(function (c) {
+      var d = kmBetween(lat, lng, c[1], c[2]);
+      if (d <= c[3] && (!best || d / c[3] < best.score)) best = { name: c[0], score: d / c[3] };
+    });
+    return best ? best.name : '';
+  }
+  window.nearestKnownCity = nearestKnownCity;
+
+  /** City-level name for a coordinate: "Calgary, AB". Neighbourhoods are left
+   *  out on purpose: they read as an exact address and the server geocoder
+   *  often could not match them, which produced "choose a valid city". */
   window.reverseGeocodeCity = function (lat, lng) {
+    var quick = nearestKnownCity(lat, lng);
+    if (quick) {
+      return Promise.resolve({ location: quick, lat: roundCoord(lat, 2), lng: roundCoord(lng, 2), raw: null });
+    }
+    var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 5000) : null;
     return fetch(
       NOMINATIM + '/reverse?lat=' + encodeURIComponent(lat) +
-      '&lon=' + encodeURIComponent(lng) + '&format=json',
-      { headers: nominatimHeaders() }
+      '&lon=' + encodeURIComponent(lng) + '&format=json&zoom=10',
+      { headers: nominatimHeaders(), signal: ctrl ? ctrl.signal : undefined }
     )
       .then(function (r) { return r.json(); })
       .then(function (data) {
+        if (timer) clearTimeout(timer);
         var a = data.address || {};
-        var city = a.city || a.town || a.municipality || a.suburb || a.county || '';
-        var neighbourhood = a.neighbourhood || a.suburb || '';
+        var city = a.city || a.town || a.village || a.municipality || a.county || '';
         var province = (a.state || a.province || '').replace(/^CA-/i, '');
         var provinceMap = {
           Alberta: 'AB', 'British Columbia': 'BC', Manitoba: 'MB', 'New Brunswick': 'NB',
@@ -404,17 +448,13 @@
           'Northwest Territories': 'NT', Nunavut: 'NU', Yukon: 'YT'
         };
         var shortProv = provinceMap[province] || province;
-        var area = neighbourhood && city && neighbourhood.toLowerCase() !== city.toLowerCase()
-          ? neighbourhood + ', ' + city
-          : (city || neighbourhood || '');
-        var loc = area ? area + ', ' + shortProv : '';
         return {
-          location: loc,
+          location: city ? city + (shortProv ? ', ' + shortProv : '') : '',
           lat: roundCoord(lat, 2),
           lng: roundCoord(lng, 2),
           raw: data
         };
-      });
+      }, function (err) { if (timer) clearTimeout(timer); throw err; });
   };
 
   window.geocodeDisplayLocation = function (query) {
@@ -489,10 +529,13 @@
         function (err) {
           resolve({ ok: false, error: err && err.code === 1 ? 'denied' : 'failed' });
         },
+        // City-level is all we store (coords are rounded to ~1 km), so ask for
+        // the fast network/Wi-Fi fix and accept one from the last 10 minutes.
+        // High-accuracy GPS with maximumAge 0 took 5-12 s from a cold start.
         {
-          enableHighAccuracy: !!opts.enableHighAccuracy,
-          timeout: opts.enableHighAccuracy ? 12000 : 8000,
-          maximumAge: opts.enableHighAccuracy ? 0 : 60000
+          enableHighAccuracy: false,
+          timeout: 7000,
+          maximumAge: 10 * 60 * 1000
         }
       );
     });

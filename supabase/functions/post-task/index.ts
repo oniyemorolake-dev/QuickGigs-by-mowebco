@@ -3,6 +3,7 @@ import { isTeenDateOfBirth } from '../_shared/age.ts';
 import { authErrorStatus, requireFirebaseUser } from '../_shared/firebase-auth.ts';
 import { haversineKm, isCanadianCoordinate, roundCoord } from '../_shared/geo.ts';
 import { geocodeCanada } from '../_shared/geocode-canada.ts';
+import { isCanadianCoordinate, roundCoord } from '../_shared/geo.ts';
 import { checkRateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
 import { analyzeListingContact } from '../_shared/off-platform.ts';
 
@@ -260,6 +261,25 @@ Deno.serve(async (req) => {
         }, 422);
       }
       geocoded = await geocodeCanadianLocation(supabase, publicLocation);
+      // "Beltline, Calgary, AB" style names: retry with just the city part.
+      if (!geocoded) {
+        const parts = publicLocation.split(',').map((p) => p.trim()).filter(Boolean);
+        if (parts.length >= 3) geocoded = await geocodeCanadianLocation(supabase, parts.slice(-2).join(', '));
+      }
+      // "Use my location" sends coordinates. If the place name can't be looked
+      // up but the coordinates are inside Canada, use them rather than
+      // rejecting a real location. Rounded to ~1 km, same as everything else.
+      if (!geocoded) {
+        const cLat = Number(task.lat);
+        const cLng = Number(task.lng);
+        if (task.lat != null && task.lng != null && isCanadianCoordinate(cLat, cLng)) {
+          geocoded = {
+            location: publicLocation,
+            lat: roundCoord(cLat, 2),
+            lng: roundCoord(cLng, 2),
+          } as Awaited<ReturnType<typeof geocodeCanada>>;
+        }
+      }
       if (!geocoded) {
         return json({
           success: false,
