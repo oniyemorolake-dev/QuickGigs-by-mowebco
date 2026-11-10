@@ -3,12 +3,7 @@
   'use strict';
 
   // ── 16. Announcement bar (JS constant) ──
-  var QG_ANNOUNCE = {
-    id: 'beta-live-2026',
-    message: 'SwiftGigs beta is live — payments live via Stripe.',
-    link: 'feedback.html',
-    linkLabel: 'Feedback'
-  };
+  var QG_ANNOUNCE = null;
 
   var PAGE = (window.location.pathname || '').split('/').pop() || '';
   var RECENT_KEY = 'qg-recently-viewed';
@@ -228,6 +223,9 @@
 
   /* ── Announcement bar ── */
   function initAnnounceBar() {
+    // Retired 9 Nov 2026: the "beta is live" bar is no longer shown. Site-wide
+    // notices come from platform_banner (Admin → Announcements) instead.
+    if (!QG_ANNOUNCE || !QG_ANNOUNCE.message) return;
     var dismissed = readJson(DISMISS_KEY, []);
     if (!Array.isArray(dismissed)) dismissed = [];
     if (dismissed.indexOf(QG_ANNOUNCE.id) >= 0) return;
@@ -263,6 +261,7 @@
   function initPageBetaStrip() {
     var strip = document.getElementById('sgBetaBanner');
     if (!strip) return;
+    if (!QG_ANNOUNCE) { strip.style.display = 'none'; return; }
     var dismissed = readJson(DISMISS_KEY, []);
     if (!Array.isArray(dismissed)) dismissed = [];
     if (dismissed.indexOf(QG_ANNOUNCE.id) >= 0) {
