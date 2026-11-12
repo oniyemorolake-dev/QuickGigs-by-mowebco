@@ -24,6 +24,7 @@ window.QG_CONFIG = {
   myApplicationsUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/my-applications',
   graduateAccountUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/graduate-account',
   roleVerificationUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/role-verification',
+  emailCodeUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/email-code',
   roleAccessUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/role-access',
   secureMessagingUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/secure-messaging',
   postTaskUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/post-task',

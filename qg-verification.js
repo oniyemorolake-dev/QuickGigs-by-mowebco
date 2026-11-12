@@ -14,6 +14,22 @@
       : { from: 'var(--accent-tasker)', to: 'var(--accent-tasker)', soft: 'var(--accent-soft)', text: 'var(--accent)' };
   }
 
+  // Email codes live in their own small function (email-code).
+  function emailCodeEndpoint() {
+    var c = window.QG_CONFIG || {};
+    if (c.emailCodeUrl) return c.emailCodeUrl;
+    return c.roleVerificationUrl
+      ? String(c.roleVerificationUrl).replace(/role-verification\/?$/, 'email-code')
+      : '';
+  }
+
+  async function requestEmailCode(action, extra) {
+    if (!emailCodeEndpoint() || typeof callVerifiedFunction !== 'function') {
+      return { ok: false, success: false, error: 'verification_unavailable' };
+    }
+    return await callVerifiedFunction(emailCodeEndpoint(), Object.assign({ action: action }, extra || {}));
+  }
+
   function posterPmEnabled() {
     var c = window.QG_CONFIG || {};
     // Poster payment-method verification reuses existing Stripe Setup flow.
@@ -512,20 +528,24 @@
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>' +
         '</div>' +
         '<h2 id="qgVerifyEmailTitle">Confirm your email</h2>' +
-        '<p>We send a confirmation link to <strong>' + String(inbox).replace(/</g, '') + '</strong>. Open that email, tap the link, then tap Refresh status here. Check spam if you do not see it.</p>' +
+        '<p>We email a 6-digit code to <strong>' + String(inbox).replace(/</g, '') + '</strong>. Enter it here to confirm your email. Check spam if you do not see it.</p>' +
         '<div class="qg-verify-steps">' +
           '<div class="qg-verify-step">' +
             '<strong>Confirm email' + (emailOk ? ' — done' : '') + '</strong>' +
             '<div class="qg-verify-step-actions">' +
               '<button type="button" class="qg-verify-mini" id="qgVerifyEmailBtn">' +
-                (emailOk ? 'Email confirmed' : 'Send confirmation email') +
+                (emailOk ? 'Email confirmed' : 'Send code') +
               '</button>' +
-              '<button type="button" class="qg-verify-mini" id="qgVerifyEmailRefresh">Refresh status</button>' +
             '</div>' +
-            '<div class="qg-verify-status" id="qgVerifyEmailStatus"></div>' +
+            '<div class="qg-verify-step-actions" id="qgVerifyCodeRow" style="margin-top:8px"' + (emailOk ? ' hidden' : '') + '>' +
+              '<input id="qgVerifyCodeInput" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code" aria-label="6-digit code" ' +
+                'style="flex:1;min-width:120px;padding:10px;border-radius:10px;border:1px solid var(--line-strong);background:var(--surface-1);color:var(--text-primary);font:600 16px DM Sans,sans-serif;letter-spacing:4px;text-align:center">' +
+              '<button type="button" class="qg-verify-mini" id="qgVerifyCodeBtn">Confirm</button>' +
+            '</div>' +
+            '<div class="qg-verify-status" id="qgVerifyEmailStatus" role="status"></div>' +
           '</div>' +
         '</div>' +
-        '<p class="qg-verify-note">Teens still need a parent or guardian to approve the account after this. Later we can add phone or ID checks without rebuilding this gate.</p>' +
+        '<p class="qg-verify-note">Teens still need a parent or guardian to approve the account after this.</p>' +
         '<div class="qg-verify-actions">' +
           '<button type="button" class="qg-verify-primary" id="qgVerifyDone">Done</button>' +
           '<button type="button" class="qg-verify-later" id="qgVerifyLaterEmail">Close</button>' +
@@ -538,71 +558,90 @@
       if (el) el.textContent = msg || '';
     }
 
+    var emailBtn = overlay.querySelector('#qgVerifyEmailBtn');
+    var codeInput = overlay.querySelector('#qgVerifyCodeInput');
+    var codeBtn = overlay.querySelector('#qgVerifyCodeBtn');
+    var codeKey = 'qg-email-code-sent:' + ((authUser && authUser.uid) || '');
+
+    function confirmed(res) {
+      setStatus('Email confirmed.');
+      if (emailBtn) { emailBtn.disabled = true; emailBtn.textContent = 'Email confirmed'; }
+      var row = document.getElementById('qgVerifyCodeRow');
+      if (row) row.hidden = true;
+      var strip = document.getElementById('sgVerifyStrip');
+      if (strip) strip.hidden = true;
+      if (res && res.tasker_verified) setTimeout(function () { overlay.remove(); }, 900);
+    }
+
     overlay.querySelector('#qgVerifyLaterEmail').onclick = function () { overlay.remove(); };
     overlay.querySelector('#qgVerifyDone').onclick = async function () {
-      var latest = await load(true);
-      if (latest && latest.tasker_verified) overlay.remove();
-      else setStatus('Confirm your email from the inbox link, then tap Refresh status.');
+      // Also picks up anyone who confirmed through an older emailed link.
+      var latest = await request('sync_tasker_contacts').then(publish);
+      if (latest && (latest.email_verified || latest.tasker_verified)) overlay.remove();
+      else setStatus('Not confirmed yet. Tap Send code, then enter the 6-digit code from the email.');
     };
     overlay.onclick = function (event) { if (event.target === overlay) overlay.remove(); };
 
-    var emailBtn = overlay.querySelector('#qgVerifyEmailBtn');
-    var refreshBtn = overlay.querySelector('#qgVerifyEmailRefresh');
-    var alreadyQueued = !!(authUser && authUser.uid && recentlySentVerification(authUser.uid));
-    function reenableSoon() {
+    function cooldownLeft() {
+      try {
+        var at = parseInt(localStorage.getItem(codeKey) || '0', 10);
+        return Math.max(0, RESEND_COOLDOWN_MS - (Date.now() - at));
+      } catch (_e) { return 0; }
+    }
+    function holdSendButton(ms) {
       if (!emailBtn) return;
-      setTimeout(function () {
-        if (!document.body.contains(emailBtn)) return;
-        emailBtn.disabled = false;
-        emailBtn.textContent = 'Send again';
-      }, RESEND_COOLDOWN_MS);
-    }
-    if (emailBtn && !emailOk && alreadyQueued) {
       emailBtn.disabled = true;
-      emailBtn.textContent = 'Sent';
-      setStatus('A confirmation email was just sent to ' + inbox + '. Check inbox and spam (from noreply@quickgigs-7b12d.firebaseapp.com).');
-      reenableSoon();
+      emailBtn.textContent = 'Code sent';
+      setTimeout(function () {
+        if (!document.body.contains(emailBtn) || emailBtn.textContent === 'Email confirmed') return;
+        emailBtn.disabled = false;
+        emailBtn.textContent = 'Send a new code';
+      }, ms);
     }
+
+    if (emailBtn && emailOk) emailBtn.disabled = true;
     if (emailBtn && !emailOk) {
+      var left = cooldownLeft();
+      if (left > 0) {
+        holdSendButton(left);
+        setStatus('We sent a code to ' + inbox + '. Enter it above, or check spam.');
+      } else {
+        setStatus('Tap Send code and we will email you a 6-digit code.');
+      }
       emailBtn.onclick = async function () {
         emailBtn.disabled = true;
-        setStatus('Sending a confirmation email to ' + inbox + '…');
-        var res = await sendVerificationEmail();
-        if (res && (res.already || res.email_verified)) {
-          res = await request('sync_tasker_contacts').then(publish) || res;
-        }
+        setStatus('Sending a code to ' + inbox + '…');
+        var res = await requestEmailCode('send_email_code').then(publish);
+        if (res && (res.already || res.email_verified)) { confirmed(res); return; }
         if (res && res.sent) {
-          setStatus(res.message || 'Confirmation email sent.');
-          emailBtn.textContent = 'Sent';
-          reenableSoon();
-        } else if (res && (res.email_verified || res.tasker_verified)) {
-          setStatus('Email confirmed.');
-          emailBtn.textContent = 'Email confirmed';
-          if (res.tasker_verified) overlay.remove();
+          try { localStorage.setItem(codeKey, String(Date.now())); } catch (_e) {}
+          holdSendButton(RESEND_COOLDOWN_MS);
+          setStatus('Code sent to ' + inbox + ' from SwiftGigs. It can take a minute. Check spam too.');
+          if (codeInput) codeInput.focus();
         } else {
-          setStatus((res && (res.message || res.error)) || 'Check inbox and spam for the last confirmation email.');
-          emailBtn.textContent = 'Sent';
-          reenableSoon();
+          emailBtn.disabled = false;
+          emailBtn.textContent = 'Send code';
+          setStatus((res && res.message) || 'We could not send the code. Check your connection and try again.');
         }
       };
-      setStatus('Check inbox and spam first. Tap Send confirmation email only if you never got one — a new email cancels the last link.');
     }
-    if (refreshBtn) {
-      refreshBtn.onclick = async function () {
-        refreshBtn.disabled = true;
-        setStatus('Checking…');
-        var live = currentAuthUser();
-        try { if (live) await live.reload(); } catch (_e) {}
-        var res = await request('sync_tasker_contacts').then(publish);
-        if (res && (res.email_verified || res.tasker_verified)) {
-          setStatus('Email confirmed.');
-          if (emailBtn) emailBtn.textContent = 'Email confirmed';
-          if (res.tasker_verified) overlay.remove();
-        } else {
-          setStatus('Not confirmed yet — open the Confirm your email link in your inbox, then refresh.');
-        }
-        refreshBtn.disabled = false;
-      };
+
+    async function submitCode() {
+      var code = String((codeInput && codeInput.value) || '').replace(/\D/g, '');
+      if (code.length !== 6) { setStatus('Enter the 6-digit code from the email.'); return; }
+      codeBtn.disabled = true;
+      setStatus('Checking…');
+      var res = await requestEmailCode('confirm_email_code', { code: code }).then(publish);
+      codeBtn.disabled = false;
+      if (res && (res.confirmed || res.already || res.email_verified)) { confirmed(res); return; }
+      setStatus((res && res.message) || 'That code did not work. Check the latest email or send a new code.');
+    }
+    if (codeBtn) codeBtn.onclick = submitCode;
+    if (codeInput) {
+      codeInput.addEventListener('input', function () {
+        codeInput.value = codeInput.value.replace(/\D/g, '').slice(0, 6);
+      });
+      codeInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') submitCode(); });
     }
   }
 

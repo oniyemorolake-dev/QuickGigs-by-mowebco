@@ -54,11 +54,38 @@ const BASE = process.env.SG_BASE || 'http://localhost:8099';
     var again = await window.QG_sendEmailVerification();
     window.QG_paintEmailVerifyStrip(user);
     var strip = document.getElementById('sgVerifyStrip');
+    var stripWasVisible = strip && strip.hidden === false;
     document.getElementById('sgVerifyLink').click();
     var overlay = document.getElementById('qgVerificationOverlay');
     var title = overlay && overlay.querySelector('#qgVerifyEmailTitle');
     var body = overlay ? overlay.textContent : '';
     var sendBtn = overlay && overlay.querySelector('#qgVerifyEmailBtn');
+    // Code flow: Send code -> enter code -> confirmed (server stubbed).
+    var calls = [];
+    window.QG_CONFIG = { roleVerificationUrl: 'https://example.invalid/role-verification' };
+    window.callVerifiedFunction = async function (_url, body) {
+      calls.push(body.action);
+      if (body.action === 'send_email_code') return { ok: true, sent: true };
+      if (body.action === 'confirm_email_code') {
+        return body.code === '123456'
+          ? { ok: true, confirmed: true, email_verified: true, tasker_verified: true }
+          : { ok: false, error: 'wrong_code', message: 'That code is not right' };
+      }
+      return { ok: true, email_verified: false };
+    };
+    user.getIdToken = async function () { return 't'; };
+    sendBtn.click();
+    await new Promise(function (r) { setTimeout(r, 150); });
+    var afterSend = sendBtn.textContent;
+    var input = overlay.querySelector('#qgVerifyCodeInput');
+    input.value = '000000';
+    overlay.querySelector('#qgVerifyCodeBtn').click();
+    await new Promise(function (r) { setTimeout(r, 150); });
+    var wrongMsg = document.getElementById('qgVerifyEmailStatus').textContent;
+    input.value = '123456';
+    overlay.querySelector('#qgVerifyCodeBtn').click();
+    await new Promise(function (r) { setTimeout(r, 150); });
+    var okMsg = document.getElementById('qgVerifyEmailStatus').textContent;
     return {
       sent: sendRes && sendRes.sent === true,
       sendOk: sendRes && sendRes.ok === true,
@@ -66,11 +93,14 @@ const BASE = process.env.SG_BASE || 'http://localhost:8099';
       callCount: sentCalls.length,
       continueUrl: sentCalls[0] && sentCalls[0].url,
       handleInApp: sentCalls[0] && sentCalls[0].handleCodeInApp === true,
-      stripVisible: strip && strip.hidden === false,
+      stripVisible: stripWasVisible,
       overlayTitle: title ? title.textContent : '',
       bodyHasConfirmEmail: /confirm your email/i.test(body),
       bodyHasInbox: /verify@example\.com/.test(body),
-      sendLocked: !!(sendBtn && (sendBtn.disabled || /already sent/i.test(sendBtn.textContent || '')))
+      sendLocked: /code sent/i.test(afterSend) && sendBtn.disabled,
+      codeCalls: calls.join(','),
+      wrongRejected: /not right/i.test(wrongMsg),
+      codeConfirmed: /email confirmed/i.test(okMsg) && strip.hidden === true
     };
   });
 
@@ -78,6 +108,7 @@ const BASE = process.env.SG_BASE || 'http://localhost:8099';
   const ok = signupSends && dashLoads
     && result.sent && result.sendOk && result.callCount === 1
     && result.secondBlocked && result.sendLocked
+    && result.wrongRejected && result.codeConfirmed
     && result.continueUrl === 'https://quickgigs.ca/dashboard.html'
     && result.handleInApp
     && result.stripVisible

@@ -16,6 +16,9 @@ verify_jwt = false
 [functions.role-verification]
 verify_jwt = false
 
+[functions.email-code]
+verify_jwt = false
+
 [functions.role-access]
 verify_jwt = false
 
