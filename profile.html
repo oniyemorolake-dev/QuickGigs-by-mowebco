@@ -1018,6 +1018,8 @@ window.SG_signOut = async function () {
     // Landed here from the photo gate — open the sheet straight away.
     if (photoSetupMode || (photoRequired && !profileData.avatar_url)) openEdit();
     if (isOwnProfile && (location.hash === '#earnings' || location.hash === '#payouts')) openEarnings();
+    // Sent here from the apply sheet: open payout setup straight away.
+    if (isOwnProfile && location.hash === '#payout-setup') openSheet('sgPaySheet');
   };
 
   function openEarnings() {

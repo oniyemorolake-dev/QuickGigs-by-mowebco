@@ -714,6 +714,33 @@ onAuthStateChanged(auth, (user) => {
   }
 
   // ── Apply ─────────────────────────────────────────────────────────────────
+  /* Payout setup comes before applying, so an accepted gig can always be paid.
+     Returns true when ready; otherwise shows why, with a button straight to
+     payout setup. A lookup failure never blocks: the server gates acceptance. */
+  async function ensurePayoutReady() {
+    var userId = currentUserId();
+    if (!userId || typeof getUserByFirebaseUid !== 'function') return true;
+    var payoutUser;
+    try { payoutUser = await getUserByFirebaseUid(userId); } catch (e) { return true; }
+    if (!payoutUser) return true;
+    var truthy = function (v) { return v === true || v === 'true' || v === 1; };
+    // Teens are paid through their guardian's account.
+    if (truthy(payoutUser.stripe_payouts_enabled) || truthy(payoutUser.guardian_stripe_payouts_enabled)) return true;
+    var guardianPays = String(payoutUser.payout_owner || '').toLowerCase() === 'guardian';
+    showApplyError(guardianPays
+      ? 'Your parent or guardian needs to finish payout setup before you can apply. Ask them to use the link in their approval email.'
+      : 'Set up your payout details before applying, so you can get paid when a gig completes. It takes a few minutes.');
+    if (!guardianPays) {
+      var go = document.createElement('a');
+      go.href = 'profile.html#payout-setup';
+      go.className = 'sg-btn teal';
+      go.textContent = 'Set up payouts';
+      go.style.cssText = 'display:block;text-align:center;margin-top:12px;text-decoration:none';
+      byId('sgOfferError').appendChild(go);
+    }
+    return false;
+  }
+
   function showApplyError(msg) {
     var el = byId('sgOfferError');
     el.textContent = msg;
@@ -798,6 +825,8 @@ onAuthStateChanged(auth, (user) => {
     teen.hidden = !meetupHtml;
 
     openSheet('sgApplySheet');
+    // Say so up front, before they write an offer.
+    ensurePayoutReady();
   }
 
   async function sendApplication() {
@@ -830,23 +859,7 @@ onAuthStateChanged(auth, (user) => {
         return;
       }
 
-      // Payout setup is required before applying, so an accepted application can
-      // always be paid out.
-      if (typeof getUserByFirebaseUid === 'function') {
-        try {
-          var payoutUser = await getUserByFirebaseUid(userId);
-          var ready = !!(payoutUser && (payoutUser.stripe_payouts_enabled === true ||
-            payoutUser.stripe_payouts_enabled === 'true' || payoutUser.stripe_payouts_enabled === 1));
-          if (!ready) {
-            showApplyError('Set up your payout details before applying, so you can get paid when a gig completes. Open Profile → Payouts.');
-            unlock();
-            return;
-          }
-        } catch (e) {
-          // A network hiccup shouldn't hard-block the applicant; the poster-side
-          // payout gate at completion is the backstop.
-        }
-      }
+      if (!(await ensurePayoutReady())) { unlock(); return; }
 
       var sanitize = typeof window.sanitizeInput === 'function'
         ? window.sanitizeInput
