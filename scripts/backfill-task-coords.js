@@ -107,7 +107,7 @@ async function geocodeQuery(query) {
   var nomRes = await fetch(nomUrl, {
     headers: {
       Accept: 'application/json',
-      'User-Agent': 'QuickGigs-backfill/1.0 (https://quickgigs.ca)'
+      'User-Agent': 'SwiftGigs-backfill/1.0 (https://quickgigs.ca)'
     }
   });
   if (!nomRes.ok) return null;

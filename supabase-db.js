@@ -2944,13 +2944,13 @@ async function getMessagesForConversation(convId, opts) {
   // getConversation that can fail and silently return [] (blank thread).
   var trusted = !!(opts.trusted || opts.skipPartyCheck);
   if (!me && !trusted) {
-    console.warn('[QuickGigs] getMessagesForConversation: no actor id');
+    console.warn('[SwiftGigs] getMessagesForConversation: no actor id');
     return [];
   }
   if (!trusted) {
     var conv = await getConversation(convId, { actorId: me });
     if (!conv || !userIsConversationParty(conv, me)) {
-      console.error('[QuickGigs] getMessagesForConversation: party check failed', {
+      console.error('[SwiftGigs] getMessagesForConversation: party check failed', {
         convId: convId,
         actorId: me
       });
@@ -3577,7 +3577,7 @@ async function submitApplication(appData) {
   var result = await callVerifiedFunction(secureApplyUrl, { application: secureApplication });
   if (result.success && result.data) {
     if (typeof qgDebugLog === 'function') {
-      qgDebugLog('[QuickGigs apply] applications row created', {
+      qgDebugLog('[SwiftGigs apply] applications row created', {
         app_id: result.data.app_id,
         task_id: result.data.task_id,
         worker_id: result.data.worker_id,
@@ -3586,7 +3586,7 @@ async function submitApplication(appData) {
       });
     }
   } else if (!result.success) {
-    console.error('[QuickGigs apply] applications insert failed');
+    console.error('[SwiftGigs apply] applications insert failed');
   }
 
   if (result.success && result.guardian_status !== 'pending_guardian' &&

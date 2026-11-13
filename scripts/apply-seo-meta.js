@@ -5,98 +5,98 @@
 var fs = require('fs');
 var path = require('path');
 var root = path.join(__dirname, '..');
-var OG_IMAGE = 'https://quickgigs.ca/QuickGigsLogo.png';
+var OG_IMAGE = 'https://quickgigs.ca/SwiftGigsLogo.png';
 var BASE = 'https://quickgigs.ca';
 
 var PAGES = {
   'index.html': {
-    title: 'QuickGigs — Get everyday tasks done across Canada',
+    title: 'SwiftGigs — Get everyday tasks done across Canada',
     description: 'Canadian task marketplace to hire local help or earn money doing tasks. Live in Calgary, Edmonton, and across Canada.',
     path: '/',
     robots: 'index,follow',
     isHome: true
   },
   'browsetask.html': {
-    title: 'Browse tasks — QuickGigs',
-    description: 'Browse open tasks near you on QuickGigs — Canada\'s marketplace to earn money doing errands, home help, and more.',
+    title: 'Browse tasks — SwiftGigs',
+    description: 'Browse open tasks near you on SwiftGigs — Canada\'s marketplace to earn money doing errands, home help, and more.',
     path: '/browsetask.html',
     robots: 'index,follow'
   },
   'posttask.html': {
-    title: 'Post a task — QuickGigs',
-    description: 'Post a task in minutes on QuickGigs. Hire local taskers for errands, cleaning, tutoring, and more across Canada.',
+    title: 'Post a task — SwiftGigs',
+    description: 'Post a task in minutes on SwiftGigs. Hire local taskers for errands, cleaning, tutoring, and more across Canada.',
     path: '/posttask.html',
     robots: 'index,follow'
   },
   'login.html': {
-    title: 'Log in — QuickGigs',
-    description: 'Log in to QuickGigs to post tasks, apply as a tasker, and manage your work across Canada.',
+    title: 'Log in — SwiftGigs',
+    description: 'Log in to SwiftGigs to post tasks, apply as a tasker, and manage your work across Canada.',
     path: '/login.html',
     robots: 'index,follow'
   },
   'signup.html': {
-    title: 'Sign up — QuickGigs',
-    description: 'Create a free QuickGigs account to hire local help or earn money doing tasks in Calgary, Edmonton, and beyond.',
+    title: 'Sign up — SwiftGigs',
+    description: 'Create a free SwiftGigs account to hire local help or earn money doing tasks in Calgary, Edmonton, and beyond.',
     path: '/signup.html',
     robots: 'index,follow'
   },
   'modeselector.html': {
-    title: 'Choose how you will use QuickGigs',
-    description: 'Start as a poster or tasker on QuickGigs — Canada\'s marketplace for everyday tasks.',
+    title: 'Choose how you will use SwiftGigs',
+    description: 'Start as a poster or tasker on SwiftGigs — Canada\'s marketplace for everyday tasks.',
     path: '/modeselector.html',
     robots: 'index,follow'
   },
   'feedback.html': {
-    title: 'Feedback — QuickGigs',
-    description: 'Share beta feedback with the QuickGigs team. Help improve Canada’s task marketplace.',
+    title: 'Feedback — SwiftGigs',
+    description: 'Share beta feedback with the SwiftGigs team. Help improve Canada’s task marketplace.',
     path: '/feedback.html',
     robots: 'index,follow'
   },
   'terms.html': {
-    title: 'Terms of service — QuickGigs',
-    description: 'Terms of service for QuickGigs, the Canadian marketplace connecting posters and taskers.',
+    title: 'Terms of service — SwiftGigs',
+    description: 'Terms of service for SwiftGigs, the Canadian marketplace connecting posters and taskers.',
     path: '/terms.html',
     robots: 'index,follow'
   },
   'privacy.html': {
-    title: 'Privacy policy — QuickGigs',
-    description: 'How QuickGigs collects and uses personal information under Canadian privacy expectations.',
+    title: 'Privacy policy — SwiftGigs',
+    description: 'How SwiftGigs collects and uses personal information under Canadian privacy expectations.',
     path: '/privacy.html',
     robots: 'index,follow'
   },
   'dashboard.html': {
-    title: 'Dashboard — QuickGigs',
-    description: 'Your QuickGigs dashboard for posting tasks and finding work as a tasker.',
+    title: 'Dashboard — SwiftGigs',
+    description: 'Your SwiftGigs dashboard for posting tasks and finding work as a tasker.',
     path: '/dashboard.html',
     robots: 'noindex,nofollow'
   },
   'mytasks.html': {
-    title: 'My tasks — QuickGigs',
-    description: 'Manage posted tasks and applications on QuickGigs.',
+    title: 'My tasks — SwiftGigs',
+    description: 'Manage posted tasks and applications on SwiftGigs.',
     path: '/mytasks.html',
     robots: 'noindex,nofollow'
   },
   'messages.html': {
-    title: 'Messages — QuickGigs',
-    description: 'Your QuickGigs message inbox.',
+    title: 'Messages — SwiftGigs',
+    description: 'Your SwiftGigs message inbox.',
     path: '/messages.html',
     robots: 'noindex,nofollow'
   },
   'chat.html': {
-    title: 'Chat — QuickGigs',
-    description: 'Chat with your poster or tasker on QuickGigs.',
+    title: 'Chat — SwiftGigs',
+    description: 'Chat with your poster or tasker on SwiftGigs.',
     path: '/chat.html',
     robots: 'noindex,nofollow'
   },
   'review.html': {
-    title: 'Leave a review — QuickGigs',
-    description: 'Leave a review after a completed QuickGigs task.',
+    title: 'Leave a review — SwiftGigs',
+    description: 'Leave a review after a completed SwiftGigs task.',
     path: '/review.html',
     robots: 'noindex,nofollow'
   },
   'profile.html': {
-    title: 'Profile — QuickGigs',
-    description: 'Your QuickGigs profile, skills, and reviews.',
+    title: 'Profile — SwiftGigs',
+    description: 'Your SwiftGigs profile, skills, and reviews.',
     path: '/profile.html',
     robots: 'noindex,nofollow'
   }

@@ -113,7 +113,7 @@
     var state = typeof window.QG_loadRoleAccess === 'function'
       ? await window.QG_loadRoleAccess(true)
       : (typeof window.QG_getRoleAccess === 'function' ? window.QG_getRoleAccess() : null);
-    console.info('[QuickGigs mode toggle] account roles', {
+    console.info('[SwiftGigs mode toggle] account roles', {
       is_tasker: !!(state && state.is_tasker),
       is_poster: !!(state && state.is_poster),
       requested_mode: next,
@@ -221,7 +221,7 @@
           try {
             await switchToRoleMode(target);
           } catch (err) {
-            console.error('[QuickGigs mode toggle] click failed', err);
+            console.error('[SwiftGigs mode toggle] click failed', err);
             showModeFeedback('Mode switching failed. Please refresh and try again.', true);
           } finally {
             if (btn && btn.isConnected) {

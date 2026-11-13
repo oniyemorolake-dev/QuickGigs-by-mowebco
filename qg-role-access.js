@@ -113,7 +113,7 @@
     }
     var payload = Object.assign({ action: action }, extra || {});
     if (typeof qgDebugInfo === 'function') {
-      qgDebugInfo('[QuickGigs role-access] request', {
+      qgDebugInfo('[SwiftGigs role-access] request', {
         url: endpoint(),
         method: 'POST',
         uid: user.uid,
@@ -126,7 +126,7 @@
       user
     );
     if (typeof qgDebugInfo === 'function') {
-      qgDebugInfo('[QuickGigs role-access] response', {
+      qgDebugInfo('[SwiftGigs role-access] response', {
         status: result.http_status == null ? 'unknown' : result.http_status,
         success: !!result.success,
         error: result.error || null
@@ -142,12 +142,12 @@
     loading = call('status').then(function (result) {
       loading = null;
       if (!result.success) {
-        console.error('[QuickGigs role-access] status failed');
+        console.error('[SwiftGigs role-access] status failed');
         return cached;
       }
       var state = normalize(result);
       if (typeof qgDebugInfo === 'function') {
-        qgDebugInfo('[QuickGigs role-access] current account state', {
+        qgDebugInfo('[SwiftGigs role-access] current account state', {
           is_tasker: !!(state && state.is_tasker),
           is_poster: !!(state && state.is_poster),
           is_teen: !!(state && state.is_teen),
@@ -182,7 +182,7 @@
       return state;
     }).catch(function (err) {
       loading = null;
-      console.error('[QuickGigs role-access] status request failed', err);
+      console.error('[SwiftGigs role-access] status request failed', err);
       return cached;
     });
     return loading;
@@ -196,7 +196,7 @@
     }
     var result = await call('set_mode', { mode: mode });
     if (!result.success) {
-      console.error('[QuickGigs role-access] set_mode failed', { mode: mode, error: result.error });
+      console.error('[SwiftGigs role-access] set_mode failed', { mode: mode, error: result.error });
       // Keep the tap. Home and Gigs read localStorage; a server hiccup
       // should not leave the switch looking broken.
       if (typeof setMode === 'function') setMode(mode);
@@ -229,7 +229,7 @@
       consent
     );
     if (!result.success) {
-      console.error('[QuickGigs role-access] enable role failed', { mode: mode, error: result.error });
+      console.error('[SwiftGigs role-access] enable role failed', { mode: mode, error: result.error });
       return result;
     }
     if (typeof setMode === 'function') setMode(mode);
