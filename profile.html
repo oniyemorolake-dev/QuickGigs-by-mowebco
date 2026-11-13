@@ -274,6 +274,7 @@ window.SG_signOut = async function () {
 
   var profileData = {};
   var dbUser = null;
+  var payoutStatus = null;
   var currentUser = null;
   var targetId = '';
   var isOwnProfile = true;
@@ -622,9 +623,19 @@ window.SG_signOut = async function () {
         ? 'You started Stripe setup — finish verification so we can pay you when gigs complete.'
         : 'Connect Stripe to receive your share when posters mark gigs complete. Required before your first payout.');
     var label = payoutsOk ? 'Update payout details' : (connectId ? 'Continue Stripe setup' : 'Set up payouts');
+    var dest = payoutStatus && payoutStatus.payout_destination;
+    var destLine = '';
+    if (dest && dest.last4) {
+      destLine = '<p style="font-size:14px;font-weight:600;margin-top:10px">' +
+        esc((dest.label || 'Bank account') + ' ending in ' + dest.last4) + '</p>';
+    }
+    if (!payoutsOk && connectId && payoutStatus && payoutStatus.details_submitted) {
+      desc = 'Stripe has your details and is checking them. This usually takes a few minutes. Nothing more to do right now.';
+      title = 'Payout setup under review';
+    }
 
     box.innerHTML = '<div class="sg-card" style="padding:16px">' +
-      '<b style="display:block;font-size:15px">' + esc(title) + '</b>' +
+      '<b style="display:block;font-size:15px">' + esc(title) + '</b>' + destLine +
       '<p class="sg-muted" style="font-size:13.5px;line-height:1.55;margin-top:6px">' + esc(desc) + '</p>' +
       '</div><div class="sg-sheet-foot">' +
       '<button class="sg-btn teal" id="sgConnect">' + esc(label) + '</button></div>';
@@ -938,14 +949,17 @@ window.SG_signOut = async function () {
       if (settingsHead) settingsHead.hidden = true;
     }
 
+    // Own profile always reads fresh: a cached row from before Stripe setup
+    // would hide the payout account and leave the card on "Set up payouts".
+    var backFromStripe = /[?&]stripe=(done|refresh)/.test(location.search);
     if (typeof getUserByFirebaseUid === 'function') {
-      try { dbUser = await getUserByFirebaseUid(targetId); } catch (e) {}
+      try { dbUser = await getUserByFirebaseUid(targetId, isOwnProfile ? { fresh: true } : undefined); } catch (e) {}
     }
-    if (isOwnProfile && dbUser && dbUser.stripe_connect_id && typeof window.QG_syncConnectStatus === 'function') {
+    if (isOwnProfile && dbUser && (dbUser.stripe_connect_id || backFromStripe) && typeof window.QG_syncConnectStatus === 'function') {
       try {
-        await window.QG_syncConnectStatus(user.uid);
+        payoutStatus = await window.QG_syncConnectStatus(user.uid);
         if (typeof getUserByFirebaseUid === 'function') {
-          dbUser = await getUserByFirebaseUid(targetId) || dbUser;
+          dbUser = await getUserByFirebaseUid(targetId, { fresh: true }) || dbUser;
         }
       } catch (e) {}
     }
@@ -1019,7 +1033,11 @@ window.SG_signOut = async function () {
     if (photoSetupMode || (photoRequired && !profileData.avatar_url)) openEdit();
     if (isOwnProfile && (location.hash === '#earnings' || location.hash === '#payouts')) openEarnings();
     // Sent here from the apply sheet: open payout setup straight away.
-    if (isOwnProfile && location.hash === '#payout-setup') openSheet('sgPaySheet');
+    if (isOwnProfile && (location.hash === '#payout-setup' || backFromStripe)) openSheet('sgPaySheet');
+    if (isOwnProfile && backFromStripe) {
+      // Drop ?stripe=done so a refresh does not reopen the sheet.
+      try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    }
   };
 
   function openEarnings() {

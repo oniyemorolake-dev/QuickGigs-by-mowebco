@@ -132,6 +132,26 @@ Deno.serve(async (req) => {
       }, 500);
     }
 
+    // Where the money goes, so the app can show "TD ending in 6789".
+    let payoutDestination: { label: string; last4: string } | null = null;
+    try {
+      type Ext = { object?: string; bank_name?: string | null; brand?: string | null; last4?: string | null };
+      let ext = ((account as unknown as { external_accounts?: { data?: Ext[] } })
+        .external_accounts?.data || [])[0];
+      if (!ext) {
+        const list = await stripe.accounts.listExternalAccounts(connectId, { limit: 1 });
+        ext = (list.data || [])[0] as unknown as Ext;
+      }
+      if (ext && ext.last4) {
+        payoutDestination = {
+          label: String(ext.bank_name || ext.brand || (ext.object === 'card' ? 'Debit card' : 'Bank account')),
+          last4: String(ext.last4),
+        };
+      }
+    } catch (extErr) {
+      console.warn('payout destination lookup skipped:', extErr instanceof Error ? extErr.message : String(extErr));
+    }
+
     let released = 0;
     // Workers cannot self-release. Held payouts for completed tasks wait for poster
     // complete-task → release-payout. Count eligible held rows for UI only.
@@ -156,6 +176,7 @@ Deno.serve(async (req) => {
       charges_enabled: ready.charges_enabled,
       stripe_payouts_enabled_flag: ready.payouts_enabled,
       details_submitted: ready.details_submitted,
+      payout_destination: payoutDestination,
       payout_owner: graduatedAdult && ready.ready ? 'self' : userRow?.payout_owner,
       held_completed_awaiting_poster_release: released,
       held_payouts_released: 0,
