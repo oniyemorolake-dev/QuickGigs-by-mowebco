@@ -56,7 +56,22 @@ Deno.serve(async (req) => {
     if (!task) return json({ ok: false, error: 'task_not_found' }, 404);
 
     const posterId = String(task.posted_by || '');
-    if (actorId !== posterId) return json({ ok: false, error: 'not_authorized' }, 403);
+    let actingAdmin = false;
+    if (actorId !== posterId) {
+      // An admin may refund a stuck payment from the Admin console.
+      const { data: adminRow } = await supabase.from('admins').select('user_id').eq('user_id', actorId).maybeSingle();
+      actingAdmin = !!adminRow;
+      if (!actingAdmin) return json({ ok: false, error: 'not_authorized' }, 403);
+      try {
+        await supabase.from('admin_actions').insert({
+          admin_email: identity.email || '',
+          action_type: 'payment_refund',
+          target_type: 'task',
+          target_id: taskId,
+          detail: { via: 'admin_console' },
+        });
+      } catch (_auditErr) { /* audit is best effort */ }
+    }
 
     const { data: payments } = await supabase
       .from('payments')

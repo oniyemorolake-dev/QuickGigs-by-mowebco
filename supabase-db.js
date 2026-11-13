@@ -66,6 +66,32 @@ async function refreshSupabaseAuth() {
   return await getSupabaseHeaders();
 }
 
+/** Record a failed server call for the Admin "Failed actions" feed. Never throws, never waits. */
+function qgReportFunctionError(url, status, code, message, token) {
+  try {
+    var fn = String(url || '').split('/functions/v1/')[1] || String(url || '');
+    fn = fn.split('?')[0].split('/')[0];
+    if (!fn) return;
+    var page = (location.pathname || '').split('/').pop() || 'index.html';
+    fetch(SUPABASE_URL + '/rest/v1/rpc/qg_log_client_error', {
+      method: 'POST',
+      keepalive: true,
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + (token || SUPABASE_ANON_KEY)
+      },
+      body: JSON.stringify({
+        p_fn: fn,
+        p_status: Number(status) || 0,
+        p_code: String(code || '').slice(0, 80),
+        p_message: String(message || '').slice(0, 300),
+        p_page: page
+      })
+    }).catch(function () {});
+  } catch (e) {}
+}
+
 /** Call a security-sensitive Edge Function with a verified Firebase ID token. */
 async function callVerifiedFunction(url, body, firebaseUser) {
   var user = firebaseUser || window._currentUser;
@@ -87,6 +113,7 @@ async function callVerifiedFunction(url, body, firebaseUser) {
     var data = await res.json().catch(function () { return {}; });
     data.http_status = res.status;
     if (!res.ok) {
+      qgReportFunctionError(url, res.status, data.error || ('http_' + res.status), data.message || data.details || '', token);
       return Object.assign({
         success: false,
         ok: false,
@@ -97,6 +124,7 @@ async function callVerifiedFunction(url, body, firebaseUser) {
     if (data.success == null) data.success = data.ok !== false;
     return data;
   } catch (err) {
+    qgReportFunctionError(url, 0, 'network_error', err && err.message ? err.message : String(err), null);
     return { success: false, ok: false, http_status: 0, error: err && err.message ? err.message : String(err) };
   }
 }

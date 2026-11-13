@@ -157,6 +157,7 @@ async function handleFetchDashboard(supabase: ReturnType<typeof createClient>) {
   const [
     users, tasks, disputes, reports, applications, waitlist, payments,
     adminActions, adminNotes, reviews, userWarnings, platformBanner,
+    notificationQueue, errorLog,
   ] = await Promise.all([
     supabase.from('users').select('*').order('created_at', { ascending: false }).limit(2000),
     supabase.from('tasks').select('*').order('created_at', { ascending: false }).limit(2000),
@@ -170,6 +171,12 @@ async function handleFetchDashboard(supabase: ReturnType<typeof createClient>) {
     supabase.from('reviews').select('*').order('created_at', { ascending: false }).limit(300),
     supabase.from('user_warnings').select('warning_id,user_id,reason,source,report_id,created_at').order('created_at', { ascending: false }).limit(1000),
     supabase.from('platform_banner').select('*').eq('id', 1).maybeSingle(),
+    supabase.from('notification_queue')
+      .select('notification_id,user_id,email,type,sent_at,error_message,created_at')
+      .order('created_at', { ascending: false }).limit(200),
+    supabase.from('error_log').select('*')
+      .gte('created_at', new Date(Date.now() - 86400000).toISOString())
+      .order('created_at', { ascending: false }).limit(500),
   ]);
 
   return json({
@@ -187,6 +194,8 @@ async function handleFetchDashboard(supabase: ReturnType<typeof createClient>) {
     reviews: reviews.data || [],
     user_warnings: userWarnings.data || [],
     platform_banner: platformBanner.data || null,
+    notification_queue: notificationQueue.data || [],
+    error_log: errorLog.data || [],
   });
 }
 
@@ -448,6 +457,43 @@ Deno.serve(async (req) => {
         }
         await logAction(supabase, adminEmail, 'waitlist_import', 'waitlist', String(added), { count: added });
         return json({ success: true, ok: true, added });
+      }
+
+      case 'waitlist_invite': {
+        const email = String(body.email || '').trim().toLowerCase();
+        const name = String(body.name || '').trim().slice(0, 80);
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 200) {
+          return json({ success: false, error: 'invalid_email' }, 400);
+        }
+        const now = new Date().toISOString();
+        const { data: existing } = await supabase
+          .from('waitlist').select('waitlist_id').eq('email', email).maybeSingle();
+        const patch: Record<string, unknown> = { invited_at: now };
+        if (name) patch.name = name;
+        const saved = existing
+          ? await supabase.from('waitlist').update(patch).eq('waitlist_id', existing.waitlist_id).select().maybeSingle()
+          : await supabase.from('waitlist').insert({ email, ...patch }).select().maybeSingle();
+        if (saved.error || !saved.data) return json({ success: false, error: 'save_failed' }, 500);
+
+        const siteUrl = (Deno.env.get('SITE_URL') || 'https://quickgigs.ca').replace(/\/$/, '');
+        const link = siteUrl + '/signup.html?ref=waitlist';
+        const queued = await supabase.from('notification_queue').insert({
+          user_id: 'waitlist:' + email,
+          email,
+          type: 'waitlist_invite',
+          subject: 'Your SwiftGigs invite is ready',
+          body_text: 'You are invited to join SwiftGigs. Sign up with this email address: ' + link,
+          payload: { link },
+        });
+        let emailQueued = !queued.error;
+        if (emailQueued) {
+          // Send it now instead of waiting for the next scheduled run.
+          try { await supabase.rpc('qg_drain_notification_queue'); } catch (_drainErr) { /* scheduler will pick it up */ }
+        } else {
+          console.error('waitlist_invite queue failed:', queued.error);
+        }
+        await logAction(supabase, adminEmail, 'waitlist_invite', 'waitlist', email, { email_queued: emailQueued });
+        return json({ success: true, ok: true, row: saved.data, email_queued: emailQueued });
       }
 
       case 'waitlist_patch': {

@@ -99,6 +99,27 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;padd
 /* ── Panels ── */
 .bottom-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;}
 .mini-card{border-radius:14px;padding:16px;background:var(--surface);border:1px solid var(--border);}
+.ops-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,1fr);gap:14px;align-items:start;}
+@media(max-width:900px){.ops-grid{grid-template-columns:1fr;}}
+.ops-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 16px;border-bottom:1px solid var(--border);}
+.ops-row:last-child{border-bottom:0;}
+.ops-row-main{min-width:0;flex:1;}
+.ops-row-text{font-size:13.5px;font-weight:600;color:var(--text);margin-top:5px;line-height:1.4;}
+.ops-row-main>.ops-row-text:first-child{margin-top:0;}
+.ops-row-sub{font-size:12px;color:var(--text-muted);margin-top:2px;line-height:1.45;overflow-wrap:anywhere;}
+.ops-row .act-btns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;flex:none;}
+.ops-empty{padding:18px 16px;font-size:13px;color:var(--text-muted);line-height:1.5;}
+.ops-help{font-size:12px;color:var(--text-muted);margin:0 0 10px;line-height:1.5;}
+.ops-label{display:block;font-size:12px;font-weight:600;color:var(--text);margin:10px 0 5px;}
+.ops-input{display:block;width:100%;height:40px;padding:0 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font:inherit;font-size:14px;}
+.ops-input:focus{border-color:var(--primary);outline:2px solid color-mix(in srgb,var(--primary) 30%,transparent);}
+.ops-send{margin-top:14px;}
+.ops-progress{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:none;}
+.ops-steps{display:flex;gap:4px;}
+.ops-step{width:18px;height:6px;border-radius:3px;background:var(--border);}
+.ops-step.is-on{background:var(--teal);}
+.ops-stage{font-size:11.5px;font-weight:600;color:var(--text-muted);}
+@media(max-width:600px){.ops-row{flex-direction:column;align-items:stretch;}.ops-progress{align-items:flex-start;}.ops-row .act-btns{justify-content:flex-start;}}
 .mc-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .mc-sub{font-size:11px;font-weight:500;color:var(--text-muted);}
 .activity-item{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
@@ -340,6 +361,7 @@ body.page-admin .health-item-val .hv-empty{font-size:13px;font-weight:500;color:
   <nav class="sidebar-nav">
     <div class="nav-section">Overview</div>
     <button class="nav-item active" onclick="showSection('overview',this)"><span class="nav-icon" data-qg-ico="chart" data-qg-ico-size="16"></span>Dashboard</button>
+    <button class="nav-item" onclick="showSection('ops',this)"><span class="nav-icon" data-qg-ico="shield" data-qg-ico-size="16"></span>Launch control <span class="nav-badge" id="opsBadge" style="display:none">0</span></button>
     <button class="nav-item" onclick="showSection('analytics',this)"><span class="nav-icon" data-qg-ico="trendingUp" data-qg-ico-size="16"></span>Analytics</button>
     <div class="nav-section">Management</div>
     <button class="nav-item" onclick="showSection('users',this)"><span class="nav-icon" data-qg-ico="users" data-qg-ico-size="16"></span>Users</button>
@@ -543,6 +565,33 @@ body.page-admin .health-item-val .hv-empty{font-size:13px;font-weight:500;color:
       <div class="table-header"><div><span class="table-title">Waitlist</span><span class="table-count" id="waitlistCount"></span></div><div class="table-actions"><button type="button" class="action-pill pill-export" onclick="adminInviteWaiting(25)">Invite 25</button><button class="action-pill pill-export" onclick="exportWaitlistCSV()">↓ Export CSV</button></div></div>
       <div class="col-row g-disputes"><div class="col-h">Email</div><div class="col-h">Name</div><div class="col-h">Status</div><div class="col-h">Invited</div><div class="col-h">Joined</div><div class="col-h" style="text-align:right">Actions</div></div>
       <div id="waitlistBody"></div>
+    </div>
+  </div>
+
+  <!-- LAUNCH CONTROL -->
+  <div id="section-ops" style="display:none">
+    <div class="ops-grid">
+      <div class="table-card">
+        <div class="table-header"><div><span class="table-title">Needs attention</span><span class="table-count" id="opsAttentionCount"></span></div><div class="table-actions"><button type="button" class="action-pill pill-export" id="opsRefresh">Refresh</button></div></div>
+        <div id="opsAttention"></div>
+      </div>
+      <div class="mini-card">
+        <div class="mc-title">Invite a tester</div>
+        <p class="ops-help">They get an email with a sign-up link. While sign-ups are closed, only invited emails can create an account, and they must sign up with this exact address.</p>
+        <label class="ops-label" for="opsInviteEmail">Email</label>
+        <input class="ops-input" id="opsInviteEmail" type="email" inputmode="email" autocomplete="off" placeholder="friend@example.com">
+        <label class="ops-label" for="opsInviteName">Name (optional)</label>
+        <input class="ops-input" id="opsInviteName" type="text" autocomplete="off" maxlength="80">
+        <button type="button" class="action-pill pill-export ops-send" id="opsInviteBtn">Send invite</button>
+      </div>
+    </div>
+    <div class="table-card" style="margin-top:14px">
+      <div class="table-header"><div><span class="table-title">Testers</span><span class="table-count" id="opsTesterCount"></span></div></div>
+      <div id="opsTesters"></div>
+    </div>
+    <div class="table-card" style="margin-top:14px">
+      <div class="table-header"><div><span class="table-title">Failed actions</span><span class="table-count" id="opsErrorCount"></span></div></div>
+      <div id="opsErrors"></div>
     </div>
   </div>
 
@@ -849,6 +898,8 @@ async function loadData(){
     if(Array.isArray(data.reviews)) window.reviews=data.reviews;
     window.userWarnings=data.user_warnings||[];
     window.platformBanner=data.platform_banner||null;
+    window.notificationQueue=Array.isArray(data.notification_queue)?data.notification_queue:[];
+    window.errorLog=Array.isArray(data.error_log)?data.error_log:[];
     window.users = users;
     window.tasks = tasks;
     window.payments = payments;
@@ -1243,5 +1294,6 @@ window.currentSection=currentSection;
 </script>
 <script src="qg-admin-power.js?v=1"></script>
 <script src="qg-admin-dash.js?v=1"></script>
+<script src="qg-admin-ops.js?v=1"></script>
 </body>
 </html>

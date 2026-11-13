@@ -342,7 +342,23 @@ Deno.serve(async (req) => {
 
     // Only the poster (or service auto-release after confirmation) may trigger release.
     // Workers cannot self-release while / after in_progress.
-    const isPoster = actorId === posterId;
+    let isPoster = actorId === posterId;
+    if (!isPoster) {
+      // An admin may release a stuck payout from the Admin console.
+      const { data: adminRow } = await supabase.from('admins').select('user_id').eq('user_id', actorId).maybeSingle();
+      if (adminRow) {
+        isPoster = true;
+        try {
+          await supabase.from('admin_actions').insert({
+            admin_email: identity.email || '',
+            action_type: 'payment_release',
+            target_type: 'task',
+            target_id: inputTaskId,
+            detail: { via: 'admin_console', worker_id: workerId },
+          });
+        } catch (_auditErr) { /* audit is best effort */ }
+      }
+    }
     if (!isPoster) {
       return json({
         ok: false,

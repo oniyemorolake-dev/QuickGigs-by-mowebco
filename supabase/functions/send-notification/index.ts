@@ -119,11 +119,22 @@ Deno.serve(async (req) => {
       Deno.env.get('NOTIFICATION_SEND_SECRET') ||
       Deno.env.get('GRADUATION_CRON_SECRET') ||
       '';
-    if (!expected || expected.length < 16) {
-      return json({ ok: false, error: 'notification_secret_not_configured' }, 503);
-    }
     const provided = req.headers.get('x-qg-notification-secret') || '';
-    if (!provided || !timingSafeEqual(provided, expected)) {
+    let authorised = !!(expected && expected.length >= 16 && provided && timingSafeEqual(provided, expected));
+    if (!authorised && provided.length >= 32) {
+      // The database scheduler signs its calls with a secret kept in the vault.
+      try {
+        const gate = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+        );
+        const { data: okSecret } = await gate.rpc('qg_check_notification_secret', { p: provided });
+        authorised = okSecret === true;
+      } catch (gateErr) {
+        console.warn('send-notification: vault secret check failed', gateErr);
+      }
+    }
+    if (!authorised) {
       return json({ ok: false, error: 'unauthorized' }, 401);
     }
 

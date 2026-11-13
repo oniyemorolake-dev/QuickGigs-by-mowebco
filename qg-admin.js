@@ -1510,18 +1510,17 @@
     if (!requireAdmin()) return;
     var w = (window.waitlist || []).find(function (x) { return String(x.waitlist_id) === String(id); });
     if (!w) return;
-    if (typeof sendWaitlistEmail === 'function') {
-      var sent = await sendWaitlistEmail(w.email, 'waitlist_invite');
-      if (!sent.success && !sent.skipped) {
-        showToast('Could not send invite — deploy send-notification Edge Function + Resend API key', 'red');
-        return;
-      }
+    // The server marks them invited and sends the email. The browser cannot
+    // queue email itself, so the old path never delivered anything.
+    var invited = await adminMutate('waitlist_invite', { email: w.email, name: w.name || '' });
+    if (!invited || !invited.success) {
+      showToast('Could not send invite: ' + ((invited && invited.error) || 'unknown error'), 'red');
+      return;
     }
-    var now = new Date().toISOString();
-    await adminMutate('waitlist_patch', { waitlist_id: String(id), patch: { invited_at: now } });
-    w.invited_at = now;
-    await logAdminAction('waitlist_invite', 'waitlist', w.email, {});
-    showToast('Invite email sent to ' + w.email, 'green');
+    w.invited_at = (invited.row && invited.row.invited_at) || new Date().toISOString();
+    showToast(invited.email_queued === false
+      ? w.email + ' can sign up now, but the invite email did not queue'
+      : 'Invite email sent to ' + w.email, invited.email_queued === false ? 'amber' : 'green');
     renderWaitlist();
   }
 
