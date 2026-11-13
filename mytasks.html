@@ -14,6 +14,10 @@
 <meta name="theme-color" content="#0B0A14">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://nuyfqsxstsrbloztzgau.supabase.co" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js">
+<link rel="modulepreload" href="qg-firebase-auth.js">
 
 <!-- Layout is qg-tokens.css + sg-app.css only. No legacy visual sheet and no
      UI-injector script loads here. -->
@@ -1322,8 +1326,12 @@ var paymentByTaskId = {};
   async function refreshPaymentMap(userId) {
     if (typeof getPaymentsForUser !== 'function') return;
     try {
-      var posterRows = await getPaymentsForUser(userId, 'poster', { limit: 100 }) || [];
-      var workerRows = await getPaymentsForUser(userId, 'worker', { limit: 100 }) || [];
+      var both = await Promise.all([
+        getPaymentsForUser(userId, 'poster', { limit: 100 }),
+        getPaymentsForUser(userId, 'worker', { limit: 100 })
+      ]);
+      var posterRows = both[0] || [];
+      var workerRows = both[1] || [];
       paymentByTaskId = {};
       notePaidRows(posterRows.concat(workerRows));
       if (activeTaskId && $('sgActiveScreen') && !$('sgActiveScreen').hidden) {
@@ -1337,11 +1345,18 @@ var paymentByTaskId = {};
     var userId = currentUserId;
     if (!userId) return;
 
-    var cached = typeof readTasksCache === 'function' ? readTasksCache(true) : null;
+    // Paint a saved copy only if it is from the last minute. Older copies showed
+    // gigs in a stage they had already left, then jumped when the real list came.
+    var cached = typeof readTasksCache === 'function' ? readTasksCache(false) : null;
     if (cached && cached.length) {
       allTasks = cached;
-      if (typeof readAppsCache === 'function') allApplications = readAppsCache(true) || [];
-    renderTab();
+      if (typeof readAppsCache === 'function') allApplications = readAppsCache(false) || [];
+      renderTab();
+    } else {
+      var skel = $('sgTabContent');
+      if (skel && typeof QG_listSkeletonHtml === 'function') {
+        skel.innerHTML = QG_listSkeletonHtml({ rows: 3, label: 'Loading your gigs…' });
+      }
     }
 
     // Payment return and pending-payment sync must never block the list.
@@ -1366,9 +1381,12 @@ var paymentByTaskId = {};
       if (typeof writeTasksCache === 'function') writeTasksCache(allTasks);
       if (typeof writeAppsCache === 'function') writeAppsCache(allApplications);
 
-      if (typeof getUsersNameMap === 'function') { try { userNames = await getUsersNameMap() || {}; } catch (e) {} }
-      if (typeof getUsersAvatarMap === 'function') { try { userAvatars = await getUsersAvatarMap() || {}; } catch (e) {} }
-      await refreshPaymentMap(userId);
+      renderTab();   // gigs on screen now; names, photos and payment badges follow together
+      await Promise.all([
+        (async function () { if (typeof getUsersNameMap === 'function') { try { userNames = await getUsersNameMap() || {}; } catch (e) {} } })(),
+        (async function () { if (typeof getUsersAvatarMap === 'function') { try { userAvatars = await getUsersAvatarMap() || {}; } catch (e) {} } })(),
+        refreshPaymentMap(userId)
+      ]);
     } catch (err) {
       if (!allTasks.length) {
         $('sgTabContent').innerHTML = typeof QG_errorStateHtml === 'function'

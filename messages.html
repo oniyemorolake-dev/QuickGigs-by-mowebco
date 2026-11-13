@@ -14,6 +14,10 @@
 <meta name="theme-color" content="#0B0A14">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://nuyfqsxstsrbloztzgau.supabase.co" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js">
+<link rel="modulepreload" href="qg-firebase-auth.js">
 
 <!-- Layout is qg-tokens.css + sg-app.css only. No legacy visual sheet and no
      UI-injector script loads here. -->
@@ -286,23 +290,29 @@ onAuthStateChanged(auth, (user) => {
       return;
     }
     try {
+      // Profile sync and photos run alongside the inbox fetch instead of ahead of it.
       if (typeof syncCurrentUserProfile === 'function' && window._currentUser) {
-        await syncCurrentUserProfile(window._currentUser).catch(function () {});
+        syncCurrentUserProfile(window._currentUser).catch(function () {});
       }
+      var avatarsJob = typeof getUsersAvatarMap === 'function'
+        ? getUsersAvatarMap().catch(function () { return {}; })
+        : Promise.resolve({});
       var rows = await getConversationsForUser(currentUserId);
       var rule = typeof window.getChatUnlockRule === 'function'
         ? window.getChatUnlockRule()
         : ((window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept');
       if (rule === 'accept' && typeof forceUnlockConversationForTask === 'function') {
-        await Promise.all((rows || []).map(function (c) {
-          if (c.is_unlocked && String(c.status || '').toLowerCase() !== 'application') return Promise.resolve();
-          return forceUnlockConversationForTask(c, 'in_progress').catch(function () {});
-        }));
-        rows = await getConversationsForUser(currentUserId);
+        var needUnlock = (rows || []).filter(function (c) {
+          return !(c.is_unlocked && String(c.status || '').toLowerCase() !== 'application');
+        });
+        if (needUnlock.length) {
+          await Promise.all(needUnlock.map(function (c) {
+            return forceUnlockConversationForTask(c, 'in_progress').catch(function () {});
+          }));
+          rows = await getConversationsForUser(currentUserId);   // only re-read when something could have changed
+        }
       }
-      if (typeof getUsersAvatarMap === 'function') {
-        userAvatars = await getUsersAvatarMap().catch(function () { return {}; });
-      }
+      userAvatars = await avatarsJob;
       var enriched = typeof enrichConversationNames === 'function'
         ? await Promise.all((rows || []).map(function (c) { return enrichConversationNames(c); }))
         : (rows || []);

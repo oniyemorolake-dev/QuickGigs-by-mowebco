@@ -14,6 +14,10 @@
 <meta name="theme-color" content="#0B0A14">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://nuyfqsxstsrbloztzgau.supabase.co" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js">
+<link rel="modulepreload" href="qg-firebase-auth.js">
 
 <!-- Layout is qg-tokens.css + sg-app.css only. No legacy visual sheet and no
      UI-injector script loads here: the injectors are what kept putting the
@@ -450,6 +454,7 @@ onAuthStateChanged(auth, (user) => {
   function setCount(list) {
     var el = byId('sgGigCount');
     if (!el) return;
+    if (!tasksLoaded || !tierReady) { el.textContent = 'Finding gigs near you…'; return; }
     var n = list.length;
     var base = n + ' gig' + (n === 1 ? '' : 's');
     var city = scopeCity(list);
@@ -491,6 +496,14 @@ onAuthStateChanged(auth, (user) => {
 
   function renderList(list) {
     var host = byId('sgGigList');
+    // Nothing is painted until the gigs AND the viewer's age tier are known:
+    // no "No gigs" flash, and no adult-only gig shown to a teen for a moment.
+    if (!tasksLoaded || !tierReady) {
+      host.innerHTML = typeof QG_listSkeletonHtml === 'function'
+        ? QG_listSkeletonHtml({ rows: 4, label: 'Finding gigs near you…' })
+        : '<div class="sg-inline-load">Loading…</div>';
+      return;
+    }
     if (window._qgAgeTier === 'loading') {
       host.innerHTML = typeof QG_listSkeletonHtml === 'function'
         ? QG_listSkeletonHtml({ rows: 3, label: 'Checking gig eligibility…' })
@@ -589,15 +602,49 @@ onAuthStateChanged(auth, (user) => {
     } catch (e) {}
   }
 
-  async function loadTasks() {
-    var cached = typeof readTasksCache === 'function' ? readTasksCache(true) : null;
+  var tasksLoaded = false;   // first gig list has arrived
+  var tierReady = false;     // viewer's age tier is known
+  var earlyTasks = null;     // fetch started at page boot, before sign-in settles
+  var loadInFlight = null;
+
+  // Open gigs are public, so the request can leave while Firebase is still
+  // restoring the session. That overlap is the biggest saving on a phone.
+  function prefetchTasks() {
+    if (earlyTasks || typeof getTasks !== 'function') return;
+    earlyTasks = getTasks().catch(function () { return null; });
+  }
+
+  async function loadUserBits() {
+    var uid = currentUserId();
+    var jobs = [hydratePosterNames()];
+    if (uid) {
+      if (typeof loadSavedTaskIds === 'function') jobs.push(loadSavedTaskIds(uid));
+      jobs.push(loadMyAppliedTaskIds(uid));
+    }
+    await Promise.all(jobs.map(function (j) { return Promise.resolve(j).catch(function () {}); }));
+    allTasks = browseable(allTasks);
+  }
+
+  function loadTasks() {
+    if (loadInFlight) return loadInFlight;
+    loadInFlight = doLoadTasks().finally(function () { loadInFlight = null; });
+    return loadInFlight;
+  }
+
+  async function doLoadTasks() {
+    // Only a copy from the last minute is painted first. Older copies showed
+    // gigs that were already taken or closed before the real list replaced them.
+    var cached = typeof readTasksCache === 'function' ? readTasksCache(false) : null;
     if (cached && cached.length) {
       allTasks = browseable(cached.map(normaliseTask));
+      tasksLoaded = true;
       render();
     }
     try {
-      var items = typeof getTasks === 'function' ? await getTasks() : [];
-      if (items && items.length) allTasks = browseable(items.map(normaliseTask));
+      var items = null;
+      if (earlyTasks) { items = await earlyTasks; earlyTasks = null; }
+      if (!items) items = typeof getTasks === 'function' ? await getTasks() : [];
+      allTasks = browseable((items || []).map(normaliseTask));
     } catch (err) {
       console.warn('Supabase unreachable:', err);
       if ((!cached || !cached.length) && typeof QG_errorStateHtml === 'function') {
@@ -608,12 +655,9 @@ onAuthStateChanged(auth, (user) => {
         return;
       }
     }
-    await hydratePosterNames();
-    if (currentUserId()) {
-      if (typeof loadSavedTaskIds === 'function') await loadSavedTaskIds(currentUserId());
-      await loadMyAppliedTaskIds(currentUserId());
-      allTasks = browseable(allTasks);
-    }
+    tasksLoaded = true;
+    render();                       // gigs on screen now
+    await loadUserBits();           // names, saved and applied marks follow
     render();
 
     // Second pass on the detail select, so scheduled_at and coordinates are present.
@@ -621,7 +665,7 @@ onAuthStateChanged(auth, (user) => {
       fetchAllTasksFresh().then(function (fresh) {
         if (!fresh || !fresh.length) return;
         allTasks = browseable(fresh.map(normaliseTask));
-        return hydratePosterNames();
+        return loadUserBits();
       }).then(render).catch(function (err) {
         console.warn('Background task refresh failed:', err);
       });
@@ -1209,10 +1253,12 @@ onAuthStateChanged(auth, (user) => {
     if (typeof QG_loadAgeTier === 'function' && window._currentUser) {
       QG_loadAgeTier(window._currentUser.uid).then(function (result) {
         window._qgAgeTier = (result && result.tier) || 'adult';
+        tierReady = true;
         render();
-      }).catch(function () { window._qgAgeTier = 'adult'; render(); });
+      }).catch(function () { window._qgAgeTier = 'adult'; tierReady = true; render(); });
     } else {
       window._qgAgeTier = 'adult';
+      tierReady = true;
     }
     if (typeof QG_loadVerification === 'function') QG_loadVerification().then(render).catch(function () {});
     if (typeof QG_applyRoleMode === 'function') QG_applyRoleMode();
@@ -1221,6 +1267,7 @@ onAuthStateChanged(auth, (user) => {
 
   function boot() {
     wire();
+    prefetchTasks();
     render();
     if (typeof initUserLocation === 'function') {
       initUserLocation().then(render).catch(function () {});
