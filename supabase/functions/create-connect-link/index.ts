@@ -46,45 +46,96 @@ function publicCreateAccountMessage(details: string): string {
   return details;
 }
 
+/** What SwiftGigs already knows about the payout owner, so Stripe does not ask again. */
+type Prefill = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  dob: { day: number; month: number; year: number } | null;
+};
+
+function buildPrefill(name: unknown, email: string, phone: unknown, dob: unknown): Prefill {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  const hasFullName = parts.length >= 2;
+  const rawPhone = String(phone || '').trim();
+  let dobParts: Prefill['dob'] = null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(dob || ''));
+  if (m) dobParts = { year: Number(m[1]), month: Number(m[2]), day: Number(m[3]) };
+  return {
+    firstName: hasFullName ? parts[0] : '',
+    lastName: hasFullName ? parts.slice(1).join(' ') : '',
+    email: email || '',
+    phone: /^\+[1-9]\d{7,14}$/.test(rawPhone) ? rawPhone : '',
+    dob: dobParts,
+  };
+}
+
+// Stripe category for "miscellaneous personal services" — fits local gig work.
+const TASKER_MCC = '7299';
+
 /** New Connect platforms are on Accounts v2. v1 type=express then 400s. */
 async function createAccountV2(stripeKey: string, opts: {
   email: string;
   workerId: string;
   guardianMode: boolean;
+  prefill: Prefill;
 }): Promise<string> {
-  const display = opts.email ? opts.email.split('@')[0] : 'SwiftGigs tasker';
-  const res = await fetch('https://api.stripe.com/v2/core/accounts', {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + stripeKey,
-      'Stripe-Version': '2026-09-30.preview',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      contact_email: opts.email || undefined,
-      display_name: display,
-      dashboard: 'express',
-      identity: { country: 'ca', entity_type: 'individual' },
-      defaults: {
-        currency: 'cad',
-        responsibilities: {
-          fees_collector: 'application',
-          losses_collector: 'application',
-        },
+  const p = opts.prefill;
+  const display = (p.firstName ? (p.firstName + ' ' + p.lastName).trim() : '') ||
+    (opts.email ? opts.email.split('@')[0] : 'SwiftGigs tasker');
+  const individual: Record<string, unknown> = {};
+  if (p.firstName) { individual.given_name = p.firstName; individual.surname = p.lastName; }
+  if (p.email) individual.email = p.email;
+  if (p.phone) individual.phone = p.phone;
+  if (p.dob) individual.date_of_birth = p.dob;
+
+  const post = async (withPrefill: boolean) => {
+    const identity: Record<string, unknown> = { country: 'ca', entity_type: 'individual' };
+    if (withPrefill && Object.keys(individual).length) identity.individual = individual;
+    const res = await fetch('https://api.stripe.com/v2/core/accounts', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + stripeKey,
+        'Stripe-Version': '2026-09-30.preview',
+        'Content-Type': 'application/json',
       },
-      configuration: {
-        recipient: {
-          capabilities: {
-            stripe_balance: {
-              stripe_transfers: { requested: true },
+      body: JSON.stringify({
+        contact_email: opts.email || undefined,
+        display_name: display,
+        dashboard: 'express',
+        identity,
+        defaults: {
+          currency: 'cad',
+          responsibilities: {
+            fees_collector: 'application',
+            losses_collector: 'application',
+          },
+        },
+        configuration: {
+          recipient: {
+            capabilities: {
+              stripe_balance: {
+                stripe_transfers: { requested: true },
+              },
             },
           },
         },
-      },
-      include: ['identity', 'requirements'],
-    }),
-  });
-  const data = await res.json() as { id?: string; error?: { message?: string } };
+        include: ['identity', 'requirements'],
+      }),
+    });
+    const data = await res.json() as { id?: string; error?: { message?: string } };
+    return { res, data };
+  };
+
+  let { res, data } = await post(true);
+  const firstMsg = (data.error && data.error.message) || '';
+  // A rejected prefill value must never block payout setup: retry bare.
+  if ((!res.ok || !data.id) && !/Accounts v2 is not enabled/i.test(firstMsg) &&
+      Object.keys(individual).length) {
+    console.warn('Accounts v2 rejected prefill, retrying without it:', firstMsg);
+    ({ res, data } = await post(false));
+  }
   if (!res.ok || !data.id) {
     throw new Error((data.error && data.error.message) || ('accounts_v2_failed_' + res.status));
   }
@@ -141,7 +192,7 @@ Deno.serve(async (req) => {
 
     const { data: userRow, error: userErr } = await supabase
       .from('users')
-      .select('date_of_birth,account_status,guardian_consent_status,guardian_email,guardian_stripe_connect_id,stripe_connect_id,email,is_tasker')
+      .select('date_of_birth,account_status,guardian_consent_status,guardian_email,guardian_name,guardian_phone,guardian_stripe_connect_id,stripe_connect_id,email,is_tasker,name,phone,phone_e164')
       .eq('firebase_uid', workerId)
       .maybeSingle();
 
@@ -176,6 +227,11 @@ Deno.serve(async (req) => {
       ? String(userRow.guardian_email || '')
       : String(body.email || userRow.email || '');
 
+    // Guardians hold the account for a teen, so never send the teen's birth date.
+    const prefill = guardianMode
+      ? buildPrefill(userRow.guardian_name, email, userRow.guardian_phone, null)
+      : buildPrefill(userRow.name, email, userRow.phone_e164 || userRow.phone, userRow.date_of_birth);
+
     const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
     let accountId = guardianMode
       ? (userRow.guardian_stripe_connect_id || '')
@@ -189,6 +245,7 @@ Deno.serve(async (req) => {
             email,
             workerId,
             guardianMode,
+            prefill,
           });
         } catch (v2Err) {
           const v2Msg = stripeErrMessage(v2Err);
@@ -199,6 +256,10 @@ Deno.serve(async (req) => {
             country: 'CA',
             email: email || undefined,
             business_type: 'individual',
+            business_profile: {
+              mcc: TASKER_MCC,
+              product_description: 'On-demand local gig work arranged through SwiftGigs.',
+            },
             capabilities: {
               transfers: { requested: true },
             },
@@ -238,15 +299,35 @@ Deno.serve(async (req) => {
     }
 
     const siteUrl = (Deno.env.get('SITE_URL') || 'https://quickgigs.ca').replace(/\/$/, '');
+    // Answer Stripe's "business details" screen for the tasker (industry, website,
+    // product description) so they only see identity + bank questions.
     try {
       await stripe.accounts.update(accountId, {
         business_profile: {
+          mcc: TASKER_MCC,
           url: siteUrl,
           product_description: 'On-demand local gig work arranged through SwiftGigs.',
         },
       });
     } catch (profileErr) {
-      console.warn('Could not prefill Stripe business profile url:', stripeErrMessage(profileErr));
+      console.warn('Could not prefill Stripe business profile:', stripeErrMessage(profileErr));
+    }
+    // Hand over what the tasker already gave us. Stripe refuses this once the
+    // person has finished onboarding, which is fine.
+    const individual: Record<string, unknown> = {};
+    if (prefill.firstName) {
+      individual.first_name = prefill.firstName;
+      individual.last_name = prefill.lastName;
+    }
+    if (prefill.email) individual.email = prefill.email;
+    if (prefill.phone) individual.phone = prefill.phone;
+    if (prefill.dob) individual.dob = prefill.dob;
+    if (Object.keys(individual).length) {
+      try {
+        await stripe.accounts.update(accountId, { individual } as Stripe.AccountUpdateParams);
+      } catch (indErr) {
+        console.warn('Could not prefill Stripe personal details:', stripeErrMessage(indErr));
+      }
     }
     let link: Stripe.AccountLink;
     try {
