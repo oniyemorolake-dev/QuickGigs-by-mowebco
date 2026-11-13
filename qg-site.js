@@ -222,7 +222,7 @@ function paintLandingSignedInMode() {
   }
   var post = document.getElementById('qgPostTask');
   if (post) {
-    post.textContent = 'Home';
+    post.textContent = 'Open the app';
     post.href = 'dashboard.html';
   }
   var earn = document.getElementById('qgEarnTasker');

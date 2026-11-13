@@ -786,6 +786,28 @@ html:not(.light) body:not(.light) .qg-btn-primary{background:color-mix(in srgb,v
 <link rel="stylesheet" href="qg-polish.css?v=32e06f4-1787866369">
 <link rel="stylesheet" href="qg-tokens.css?v=32e06f4-1787866369" id="qg-tokens-css">
 <script defer src="sg-sw-register.js"></script>
+<script>
+/* Signed-in people belong in the app, not on the marketing page. If this
+   browser remembers a sign-in, hold the paint briefly so the landing page
+   never flashes before the jump to the dashboard. */
+(function () {
+  try {
+    var wantsLanding = /[?&]landing=1/.test(location.search) || location.hash === '#waitlist';
+    window.__qgWantsLanding = wantsLanding;
+    var uid = sessionStorage.getItem('qg-auth-uid') || localStorage.getItem('qg-auth-uid');
+    if (uid && !wantsLanding) {
+      document.documentElement.classList.add('qg-going-in');
+      setTimeout(function () { document.documentElement.classList.remove('qg-going-in'); }, 3000);
+    }
+  } catch (e) {}
+})();
+</script>
+<style>
+html.qg-going-in body{visibility:hidden;}
+/* Signed in but chose to view this page: no postal box, and a normal-sized Home link. */
+body.qg-landing-in #qgPostal{display:none;}
+html body.page-landing.qg-landing-in .qg-topnav-links a.qg-nav-login.is-current{flex:0 0 auto;min-height:40px;padding:0 20px;}
+</style>
 </head>
 <body class="page-landing" data-qg-page="index">
 <header class="qg-topnav" role="banner">
@@ -1266,7 +1288,7 @@ function paintSignedInLinks() {
   }
   var post = document.getElementById('qgPostTask');
   if (post) {
-    post.textContent = 'Home';
+    post.textContent = 'Open the app';
     post.href = 'dashboard.html';
   }
   var earn = document.getElementById('qgEarnTasker');
@@ -1274,6 +1296,11 @@ function paintSignedInLinks() {
 }
 
 onAuthStateChanged(qgInitAuth(), function (user) {
+  if (user && !window.__qgWantsLanding) {
+    location.replace('dashboard.html');
+    return;
+  }
+  document.documentElement.classList.remove('qg-going-in');
   if (user) paintSignedInLinks();
 });
 </script>
