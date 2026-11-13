@@ -1270,7 +1270,10 @@
     }).join('') || '<div>No payment</div>';
 
     function attrUrl(u) {
-      return String(u || '').replace(/"/g, '&quot;');
+      // Only real web links; anything else (for example a javascript: address) becomes a dead link.
+      var v = String(u || '');
+      if (!/^https?:\/\//i.test(v)) return '#';
+      return esc(v);
     }
 
     openModal(

@@ -628,6 +628,8 @@
         var time = when ? when.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
         var unread = !n.read_at ? ' is-unread' : '';
         var tag = link ? 'a' : 'div';
+        // Notification links stay inside the site or on https; never a script address.
+        if (link && !/^(https:\/\/|\/|[a-z0-9_-]+\.html)/i.test(String(link))) link = '';
         return '<' + tag + ' class="sg-menu-row' + unread + '"' + (link ? ' href="' + esc(link) + '"' : '') + '>' +
           '<span class="t">' + (title && title !== body ? '<b>' + esc(title) + '</b>' : '') +
           esc(body) + (time ? '<small>' + esc(time) + '</small>' : '') + '</span></' + tag + '>';

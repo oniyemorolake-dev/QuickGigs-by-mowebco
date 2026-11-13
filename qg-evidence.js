@@ -217,9 +217,17 @@
       return;
     }
     el.innerHTML = '<div class="qg-evidence-photo-grid">' + list.map(function (p) {
-      return '<a href="' + String(p.url) + '" target="_blank" rel="noopener" class="qg-evidence-thumb">' +
-        '<img src="' + String(p.url) + '" alt="' + String(p.kind || 'proof') + '">' +
-        '<span>' + String(p.kind || 'proof') + '</span></a>';
+      // Photo details come from the database: escape them and only link to real web addresses.
+      var safe = function (v) {
+        return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      };
+      var url = /^https:\/\//i.test(String(p.url || '')) ? safe(p.url) : '';
+      if (!url) return '';
+      var kind = safe(p.kind || 'proof');
+      return '<a href="' + url + '" target="_blank" rel="noopener noreferrer" class="qg-evidence-thumb">' +
+        '<img src="' + url + '" alt="' + kind + '">' +
+        '<span>' + kind + '</span></a>';
     }).join('') + '</div>';
   }
 
