@@ -83,6 +83,7 @@
   }
 
   function applyIndexSoftClose(banner) {
+    document.body.classList.add('qg-soft-closed');
     var wrap = document.getElementById('ctaWrap');
     var badge = document.querySelector('.beta-badge');
     if (badge) {
@@ -119,7 +120,7 @@
     notice.className = 'qg-soft-close-block';
     notice.style.marginBottom = '16px';
     notice.innerHTML = '<p><strong>Heads up</strong></p><p>' + esc(msg) + '</p>' +
-      '<p style="margin-top:10px;font-size:12px">You can still sign up with Google or email below for testing. To fully reopen sign-ups, turn off soft close in Admin → Settings.</p>';
+      '<p style="margin-top:10px;font-size:12px">If you were sent an invite, sign up below with the same email. Otherwise <a href="index.html#waitlist">join the waitlist</a> and we will email you.</p>';
     card.insertBefore(notice, card.firstChild);
   }
 

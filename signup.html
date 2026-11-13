@@ -835,6 +835,13 @@ document.getElementById('submitBtn').onclick = async function() {
         resumeExistingAccount(userCredential.user);
         return;
       }
+      if (failCode === 'signups_closed') {
+        // Remove the half-made login so the email is free when their invite arrives.
+        try { await deleteUser(userCredential.user); } catch (closedErr) {}
+        var closedError = new Error(saveResult.message || 'SwiftGigs is invite-only right now. Join the waitlist and we will email you when your spot opens.');
+        closedError.code = failCode;
+        throw closedError;
+      }
       if (!oauthSignupMode) {
         try { await deleteUser(userCredential.user); } catch (deleteErr) {}
       }
@@ -943,6 +950,7 @@ document.getElementById('submitBtn').onclick = async function() {
     var message = 'Something went wrong. Try again.';
     if (error.code === 'auth/email-already-in-use') message = 'This email is already registered. Try logging in.';
     if (error.code === 'account_already_registered') message = 'This email is already registered. Try logging in.';
+    if (error.code === 'signups_closed') message = 'SwiftGigs is invite-only right now. Join the waitlist on the home page and we will email you when your spot opens.';
     if (error.code === 'account_blocked') message = 'This account was not approved by its parent or guardian.';
     if (error.code === 'firebase_auth_required') message = 'Your session expired. Log in again, then finish signup.';
     if (error.code && String(error.code).indexOf('duplicate key') !== -1) {

@@ -156,6 +156,41 @@ Deno.serve(async (req) => {
       return json({ ok: false, error: 'account_already_registered' }, 409);
     }
 
+    // Invite-only while soft close is on: the closed sign on the sign-up page
+    // is not enough, so the server refuses anyone who has not been invited.
+    const tokenEmail = String(identity.email || '').trim().toLowerCase();
+    const { data: gate } = await supabase
+      .from('platform_banner')
+      .select('active,soft_close')
+      .eq('id', 1)
+      .maybeSingle();
+    if (gate?.active && gate?.soft_close && !existing?.user_id) {
+      let allowed = false;
+      if (tokenEmail) {
+        const { data: invite } = await supabase
+          .from('waitlist')
+          .select('invited_at')
+          .eq('email', tokenEmail)
+          .maybeSingle();
+        allowed = !!invite?.invited_at;
+      }
+      if (!allowed) {
+        const { data: adminRow } = await supabase
+          .from('admins')
+          .select('user_id')
+          .eq('user_id', identity.uid)
+          .maybeSingle();
+        allowed = !!adminRow;
+      }
+      if (!allowed) {
+        return json({
+          ok: false,
+          error: 'signups_closed',
+          message: 'SwiftGigs is invite-only right now. Join the waitlist and we will email you when your spot opens.',
+        }, 403);
+      }
+    }
+
     const write = existing?.user_id
       ? await supabase.from('users').update(row).eq('user_id', existing.user_id).select('*').single()
       // user_id is a UUID with its own default; the Firebase UID lives in
@@ -163,6 +198,16 @@ Deno.serve(async (req) => {
       // with 22P02 (invalid input syntax for type uuid).
       : await supabase.from('users').insert({ ...row, firebase_uid: identity.uid }).select('*').single();
     if (write.error) throw write.error;
+
+    if (tokenEmail) {
+      // Best effort: tick the waitlist entry so Admin shows who joined.
+      try {
+        await supabase
+          .from('waitlist')
+          .update({ signed_up: true, signed_up_at: now })
+          .eq('email', tokenEmail);
+      } catch (_wlErr) { /* not critical */ }
+    }
 
     let consentUrl = '';
     let emailQueued = false;

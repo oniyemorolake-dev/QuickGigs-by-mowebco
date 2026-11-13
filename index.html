@@ -706,6 +706,12 @@ main{
 .qg-preview-steps b{display:block;font-size:14.5px;font-weight:600;color:var(--text);line-height:1.35;margin-top:3px;}
 .qg-preview-steps p{margin:2px 0 0;font-size:13px;line-height:1.45;color:var(--text-muted);}
 .qg-preview-amt{font-size:15px;font-weight:700;color:var(--text);margin-top:3px;font-variant-numeric:tabular-nums;}
+/* Invite-only (soft close): signed-out visitors get one clear action. */
+#qgJoinWaitlist{display:none;}
+body.qg-soft-closed:not(.qg-landing-in) #qgJoinWaitlist{display:inline-flex;}
+body.qg-soft-closed:not(.qg-landing-in) #qgPostTask,
+body.qg-soft-closed:not(.qg-landing-in) #qgEarnTasker,
+body.qg-soft-closed:not(.qg-landing-in) #qgPostal{display:none;}
 /* The header already carries both log-in links and the trust row repeats the fine print. */
 .qg-hero-login,.qg-hero .qg-fine{display:none;}
 @media(min-width:860px){
@@ -815,6 +821,7 @@ html:not(.light) body:not(.light) .qg-btn-primary{background:color-mix(in srgb,v
           <label class="visually-hidden" for="qgPostal" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Postal code</label>
           <input class="qg-postal" id="qgPostal" name="postal" type="text" placeholder="Postal code" maxlength="7" autocomplete="postal-code">
           <div class="qg-hero-actions">
+            <a class="qg-btn-primary" id="qgJoinWaitlist" href="#waitlist">Join the waitlist</a>
             <a class="qg-btn-primary" id="qgPostTask" href="posttask.html">Post a task</a>
             <a class="qg-btn-outline" id="qgEarnTasker" href="signup.html?role=worker">Earn as a tasker</a>
           </div>
