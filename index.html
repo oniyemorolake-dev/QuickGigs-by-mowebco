@@ -692,15 +692,43 @@ main{
   .qg-btn-primary,.qg-btn-outline{flex:0 0 auto;}
   main{padding:48px 28px 80px;}
 }
+/* Hero preview: fills the right column until there are live gigs to show. */
+.qg-hero-preview{display:none;}
+.qg-preview-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;}
+.qg-preview-title{margin:0;font-size:15px;font-weight:700;color:var(--text);letter-spacing:-0.01em;}
+.qg-preview-tag{font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);border:1px solid var(--border);border-radius:100px;padding:3px 10px;}
+.qg-preview-steps{list-style:none;margin:0;padding:0;display:grid;gap:0;}
+.qg-preview-steps li{position:relative;display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:14px;align-items:start;padding-bottom:20px;}
+.qg-preview-steps li:last-child{padding-bottom:0;}
+.qg-preview-steps li:not(:last-child)::before{content:"";position:absolute;left:13.5px;top:30px;bottom:2px;width:1px;background:var(--border);}
+.qg-preview-num{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;color:var(--primary);background:color-mix(in srgb,var(--primary) 16%,var(--surface));}
+.qg-preview-num.is-done{color:var(--teal);background:var(--teal-tint);}
+.qg-preview-steps b{display:block;font-size:14.5px;font-weight:600;color:var(--text);line-height:1.35;margin-top:3px;}
+.qg-preview-steps p{margin:2px 0 0;font-size:13px;line-height:1.45;color:var(--text-muted);}
+.qg-preview-amt{font-size:15px;font-weight:700;color:var(--text);margin-top:3px;font-variant-numeric:tabular-nums;}
+/* The header already carries both log-in links and the trust row repeats the fine print. */
+.qg-hero-login,.qg-hero .qg-fine{display:none;}
 @media(min-width:860px){
-  .qg-hero{margin-bottom:88px;}
+  .qg-hero{margin-bottom:56px;}
+  .qg-sentence-wrap{min-height:158px;} /* two headline lines + tagline, so the rotating phrase never shifts the form */
+  .qg-hero-preview{
+    display:block;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:22px;
+    max-width:400px;
+    width:100%;
+    justify-self:end;
+    box-shadow:0 12px 32px rgba(0,0,0,0.28);
+  }
+  .qg-live-feed:not([hidden]) ~ .qg-hero-preview{display:none;}
   .qg-hero-grid{
     display:grid;
     grid-template-columns:minmax(0,1.1fr) minmax(300px,0.9fr);
     gap:48px;
     align-items:center;
   }
-  .qg-hero-grid:has(> .qg-live-feed[hidden]){grid-template-columns:minmax(0,1fr);}
   .qg-sentence{font-size:46px;line-height:1.08;}
   .qg-live-feed{max-width:400px;justify-self:end;width:100%;}
 }
@@ -806,6 +834,32 @@ html:not(.light) body:not(.light) .qg-btn-primary{background:color-mix(in srgb,v
           <h2 class="qg-live-title">Live near you</h2>
   </div>
         <div class="qg-live-list" id="qgLiveList" role="list"></div>
+      </aside>
+
+      <aside class="qg-hero-preview" aria-label="How a gig goes, an example">
+        <div class="qg-preview-head">
+          <h2 class="qg-preview-title">How a gig goes</h2>
+          <span class="qg-preview-tag">Example</span>
+        </div>
+        <ol class="qg-preview-steps">
+          <li>
+            <span class="qg-preview-num" aria-hidden="true">1</span>
+            <div><b>You post it</b><p>Box braids, Saturday afternoon</p></div>
+            <span class="qg-preview-amt">$120</span>
+          </li>
+          <li>
+            <span class="qg-preview-num" aria-hidden="true">2</span>
+            <div><b>Taskers send offers</b><p>Compare prices, profiles and reviews</p></div>
+          </li>
+          <li>
+            <span class="qg-preview-num" aria-hidden="true">3</span>
+            <div><b>You pick one and pay</b><p>Your money is held safely, not sent yet</p></div>
+          </li>
+          <li>
+            <span class="qg-preview-num is-done" aria-hidden="true">4</span>
+            <div><b>Job done, tasker paid</b><p>Released when you mark it complete</p></div>
+          </li>
+        </ol>
       </aside>
     </div>
 
