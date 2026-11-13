@@ -465,6 +465,12 @@ document.getElementById('googleLoginBtn').addEventListener('click', async functi
         return p;
       })();
 
+  if (typeof qgInAppBrowser === 'function' && qgInAppBrowser()) {
+    errorMsg.textContent = window.qgInAppBrowserMessage || 'Open this page in Safari or Chrome to use Google sign-in.';
+    errorMsg.style.display = 'block';
+    if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');
+    return;
+  }
   var useRedirect = typeof qgGooglePreferRedirect === 'function' && qgGooglePreferRedirect();
   if (useRedirect) {
     try {
@@ -480,7 +486,10 @@ document.getElementById('googleLoginBtn').addEventListener('click', async functi
   }
 
   try {
-    await beginFreshCredentialLogin();
+    // The popup must open in the same instant as the tap or Safari blocks it,
+    // so the clean-up starts without being waited on.
+    var cleanUp = beginFreshCredentialLogin();
+    if (cleanUp && cleanUp.catch) cleanUp.catch(function () {});
     var result = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
     await finishGoogleLogin(result.user);
   } catch (error) {
@@ -491,7 +500,7 @@ document.getElementById('googleLoginBtn').addEventListener('click', async functi
       loginInFlight = false;
       return;
     }
-      if (popupMsg && error.code !== 'auth/popup-blocked') {
+      if (popupMsg) {
       errorMsg.textContent = popupMsg;
       errorMsg.style.display = 'block';
       if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleLoginBtn');

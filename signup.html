@@ -400,6 +400,12 @@ async function handleGoogleSignupClick() {
         return p;
       })();
 
+  if (typeof qgInAppBrowser === 'function' && qgInAppBrowser()) {
+    errorMsg.textContent = window.qgInAppBrowserMessage || 'Open this page in Safari or Chrome to use Google sign-in.';
+    errorMsg.style.display = 'block';
+    if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleSignupBtn');
+    return;
+  }
   var useRedirect = typeof qgGooglePreferRedirect === 'function' && qgGooglePreferRedirect();
   if (useRedirect) {
     try {
@@ -419,7 +425,10 @@ async function handleGoogleSignupClick() {
   }
 
   try {
-    await beginFreshCredentialSignup();
+    // The popup must open in the same instant as the tap or Safari blocks it,
+    // so the clean-up starts without being waited on.
+    var cleanUp = beginFreshCredentialSignup();
+    if (cleanUp && cleanUp.catch) cleanUp.catch(function () {});
     var result = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
     await finishGoogleSignup(result.user);
   } catch (error) {
@@ -431,7 +440,7 @@ async function handleGoogleSignupClick() {
       if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleSignupBtn');
       return;
     }
-    if (popupMsg && error.code !== 'auth/popup-blocked') {
+    if (popupMsg) {
       errorMsg.textContent = popupMsg;
       errorMsg.style.display = 'block';
       if (typeof qgResetGoogleBtn === 'function') qgResetGoogleBtn('googleSignupBtn');

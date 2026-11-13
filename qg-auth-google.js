@@ -7,7 +7,7 @@
       return 'Google sign-in was cancelled. Tap Continue with Google to try again.';
     }
     if (code === 'auth/popup-blocked') {
-      return 'Your browser blocked the Google window. Allow popups for quickgigs.ca, or try again on mobile.';
+      return 'Your browser blocked the Google window. Tap Continue with Google once more, or allow pop-ups for quickgigs.ca.';
     }
     if (code === 'auth/account-exists-with-different-credential') {
       return 'This email already has a password account. Log in with email and password instead.';
@@ -56,16 +56,26 @@
     btn.innerHTML = '<span class="signup-google-icon" aria-hidden="true">G</span> Continue with Google';
   };
 
-  /** Prefer redirect on phones — popups are unreliable on iOS Safari / in-app browsers. */
+  /**
+   * Redirect sign-in is off. The Firebase sign-in page lives on a different
+   * site (firebaseapp.com) from quickgigs.ca, and Safari, every iPhone/iPad
+   * browser and current Chrome block the storage it relies on. The redirect came
+   * back with nobody signed in. A popup does not have that problem.
+   */
   window.qgGooglePreferRedirect = function () {
+    return false;
+  };
+
+  /** Google refuses to sign people in inside app-embedded browsers (Instagram, Facebook, TikTok…). */
+  window.qgInAppBrowser = function () {
     try {
-      if (window.matchMedia('(max-width:768px)').matches) return true;
       var ua = String(navigator.userAgent || '');
-      if (/iPhone|iPad|iPod/i.test(ua)) return true;
-      if (/Android/i.test(ua) && /wv\)|; wv/i.test(ua)) return true;
+      return /FBAN|FBAV|FB_IAB|Instagram|Line\/|TikTok|BytedanceWebview|Snapchat|Pinterest|LinkedInApp|; wv\)|\bwv\b/i.test(ua);
     } catch (e) {}
     return false;
   };
+  window.qgInAppBrowserMessage =
+    'Google sign-in does not work inside this app\'s built-in browser. Open quickgigs.ca in Safari or Chrome, or use your email and password here.';
 
   window.qgGetDashboardRedirect = function () {
     return typeof getDashboardUrl === 'function'
