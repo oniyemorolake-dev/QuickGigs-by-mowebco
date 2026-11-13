@@ -341,6 +341,15 @@ body.page-landing.qg-landing-mode-tasker .qg-topnav-links a.qg-nav-login.is-curr
     border-radius: 100px;
     pointer-events: auto;
   }
+  /* Signed out: Browse sits on the wordmark row, so the header is two rows, not three. */
+  body.page-landing:not(.qg-landing-in) .qg-topnav-links a:not(.qg-nav-login) {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding: 0 4px;
+  }
   body.page-landing.qg-landing-in .qg-topnav-links a.qg-nav-login.is-other {
     display: none;
   }
