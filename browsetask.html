@@ -726,6 +726,25 @@ onAuthStateChanged(auth, (user) => {
     var truthy = function (v) { return v === true || v === 'true' || v === 1; };
     // Teens are paid through their guardian's account.
     if (truthy(payoutUser.stripe_payouts_enabled) || truthy(payoutUser.guardian_stripe_payouts_enabled)) return true;
+    // The saved flag can lag behind Stripe (setup just finished, or a cached
+    // profile). Ask Stripe directly before turning anyone away.
+    try {
+      if (typeof callVerifiedFunction === 'function') {
+        var cfg = window.QG_CONFIG || {};
+        var live = await callVerifiedFunction(
+          cfg.syncConnectUrl || 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/sync-connect-status',
+          { worker_id: String(userId) }
+        );
+        if (live && (live.ready === true || live.payouts_enabled === true)) {
+          try { await getUserByFirebaseUid(userId, { fresh: true }); } catch (e2) {}
+          return true;
+        }
+        if (live && live.connected && live.details_submitted) {
+          showApplyError('Stripe is still checking your payout details. This usually takes a few minutes, then you can apply.');
+          return false;
+        }
+      }
+    } catch (e) {}
     var guardianPays = String(payoutUser.payout_owner || '').toLowerCase() === 'guardian';
     showApplyError(guardianPays
       ? 'Your parent or guardian needs to finish payout setup before you can apply. Ask them to use the link in their approval email.'
