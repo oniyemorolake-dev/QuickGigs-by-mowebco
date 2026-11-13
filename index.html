@@ -743,8 +743,10 @@ html:not(.light) body:not(.light) .qg-btn-primary{background:color-mix(in srgb,v
 .qg-waitlist-status.is-ok{color:var(--green);}
 .qg-waitlist-status.is-err{color:var(--danger);}
 @media(min-width:720px){
-  .qg-waitlist-card{padding:28px 28px;}
-  #qgWaitlistForm .qg-waitlist-options:first-of-type{grid-template-columns:1fr 1fr 1fr;}
+  .qg-waitlist-card{padding:32px;}
+  .qg-waitlist-pair{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;}
+  .qg-waitlist-options{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+  .qg-waitlist .qg-btn-primary{width:auto;min-width:240px;margin-top:24px;padding-left:32px;padding-right:32px;}
 }
 </style>
 <link rel="stylesheet" href="qg-polish.css?v=32e06f4-1787866369">
@@ -824,10 +826,16 @@ html:not(.light) body:not(.light) .qg-btn-primary{background:color-mix(in srgb,v
       <h2 id="qgWaitlistTitle">Join the waitlist</h2>
       <p class="qg-waitlist-lead">Leave your email and we’ll write when SwiftGigs is ready in your city.</p>
       <form id="qgWaitlistForm" novalidate>
-        <label class="qg-waitlist-field" for="qgWaitName">Name</label>
-        <input id="qgWaitName" name="name" type="text" autocomplete="name" maxlength="80" required>
-        <label class="qg-waitlist-field" for="qgWaitEmail">Email</label>
-        <input id="qgWaitEmail" name="email" type="email" autocomplete="email" inputmode="email" maxlength="200" required>
+        <div class="qg-waitlist-pair">
+          <div>
+            <label class="qg-waitlist-field" for="qgWaitName">Name</label>
+            <input id="qgWaitName" name="name" type="text" autocomplete="name" maxlength="80" required>
+          </div>
+          <div>
+            <label class="qg-waitlist-field" for="qgWaitEmail">Email</label>
+            <input id="qgWaitEmail" name="email" type="email" autocomplete="email" inputmode="email" maxlength="200" required>
+          </div>
+        </div>
         <p class="qg-waitlist-field" id="qgWaitInterestLabel">I want to...</p>
         <div class="qg-waitlist-options" role="radiogroup" aria-labelledby="qgWaitInterestLabel">
           <label class="qg-waitlist-opt"><input type="radio" name="interest" value="post" required> <span>Post gigs</span></label>
