@@ -306,7 +306,7 @@ var paymentByTaskId = {};
   }
   function shortDate(v) {
     if (!v) return '';
-    var d = new Date(v);
+    var d = toDate(v) || new Date(v);   // toDate reads a zoneless stamp as UTC
     if (isNaN(d.getTime())) return '';
     try {
       return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });

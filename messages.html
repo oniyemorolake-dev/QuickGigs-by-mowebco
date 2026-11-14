@@ -122,6 +122,7 @@ onAuthStateChanged(auth, (user) => {
   var currentPeer = { uid: '', name: '' };
   var currentUnlocked = false, fraudDetected = false, isUploading = false, sending = false;
   var userAvatars = {}, pollTimer = null, lastMarkedReadId = '', lightboxBound = false;
+  var refreshing = false, lastMsgSig = '';
 
   function $(id) { return document.getElementById(id); }
   function esc(s) {
@@ -161,9 +162,18 @@ onAuthStateChanged(auth, (user) => {
   function imagePreview(body) {
     return (typeof isChatImageBody === 'function' && isChatImageBody(body)) ? 'Photo' : String(body || '');
   }
+  /* One parser for every stamp on this page. It reads a stamp with no
+     timezone as UTC, which is what the database means by it. */
+  function toMs(v) {
+    if (!v) return 0;
+    var t = typeof parseQgTimestamp === 'function' ? parseQgTimestamp(v) : Date.parse(v);
+    return isFinite(t) ? t : 0;
+  }
   function relTime(iso) {
-    if (!iso) return '';
-    var mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+    var at = toMs(iso);
+    if (!at) return '';
+    iso = at;
+    var mins = Math.floor((Date.now() - at) / 60000);
     if (mins < 1) return 'Now';
     if (mins < 60) return mins + 'm';
     var hrs = Math.floor(mins / 60);
@@ -175,12 +185,12 @@ onAuthStateChanged(auth, (user) => {
   }
   function formatClock(iso) {
     // en-US to match the rest of the app: "4:00 PM", not "16:00" or "4:00 p.m.".
-    try { return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }); }
+    try { return new Date(toMs(iso) || iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }); }
     catch (e) { return ''; }
   }
   function formatDateLabel(iso) {
     try {
-      var d = new Date(iso), today = new Date();
+      var d = new Date(toMs(iso) || iso), today = new Date();
       if (d.toDateString() === today.toDateString()) return 'Today';
       var y = new Date(today);
       y.setDate(today.getDate() - 1);
@@ -193,7 +203,7 @@ onAuthStateChanged(auth, (user) => {
     if (!conv.last_message_at) return 0;
     if (conv.last_sender_id && String(conv.last_sender_id) === String(userId)) return 0;
     if (!lastRead) return conv.last_message && conv.last_message_at ? 1 : 0;
-    return new Date(conv.last_message_at) > new Date(lastRead) ? 1 : 0;
+    return toMs(conv.last_message_at) > toMs(lastRead) ? 1 : 0;
   }
   function initials(name) {
     var parts = String(name || 'U').trim().split(/\s+/).slice(0, 2);
@@ -546,7 +556,16 @@ onAuthStateChanged(auth, (user) => {
   async function openConversation(convId) {
     if (!convId) return;
     try {
-      if (String(selectedId) !== String(convId)) lastMarkedReadId = '';
+      if (String(selectedId) !== String(convId)) {
+        lastMarkedReadId = '';
+        // Never show the previous chat's bubbles while this one loads.
+        messages = [];
+        lastMsgSig = '';
+        fraudDetected = false;
+        var sc = $('sgChatScroll');
+        if (sc) sc.innerHTML = typeof QG_spinnerHtml === 'function' ? QG_spinnerHtml() : '';
+        setChatError('');
+      }
       selectedId = String(convId);
       renderList();
       setChatOpen(true);
@@ -623,7 +642,7 @@ onAuthStateChanged(auth, (user) => {
       isImage: isImage,
       senderIsPoster: !!(currentConv && String(sender) === String(currentConv.poster_id)),
       isSystem: isSystem,
-      ts: created ? new Date(created).getTime() : 0,
+      ts: toMs(created),
       date: formatDateLabel(created),
       clock: formatClock(created)
     };
@@ -632,9 +651,19 @@ onAuthStateChanged(auth, (user) => {
   async function refreshMessages(opts) {
     opts = opts || {};
     if (!selectedId || typeof getMessagesForConversation !== 'function') return;
+    // A background check must not run on top of another one, or wipe the
+    // bubble of a message that is still being sent.
+    if (opts.background && (refreshing || sending || isUploading)) return;
+    var forConv = selectedId;
+    refreshing = true;
     try {
-      var rows = await getMessagesForConversation(selectedId, { actorId: currentUserId, trusted: true });
+      var rows = await getMessagesForConversation(forConv, { actorId: currentUserId, trusted: true });
+      if (forConv !== selectedId) return;                  // they opened another chat meanwhile
       if ((!rows || !rows.length) && messages.length) return;
+      var sig = (rows || []).length + ':' + ((rows && rows.length)
+        ? String(rows[rows.length - 1].message_id || rows[rows.length - 1].MESSAGE_ID || rows[rows.length - 1].id || '') : '');
+      if (opts.background && sig === lastMsgSig) return;   // nothing new: leave the screen alone
+      lastMsgSig = sig;
       messages = (rows || []).map(mapMessageRow);
       if (typeof hydrateChatImageSignedUrls === 'function') await hydrateChatImageSignedUrls(messages);
       var near = isNearBottom();
@@ -649,7 +678,7 @@ onAuthStateChanged(auth, (user) => {
         conversations.forEach(function (c) {
           if (String(c.id) === String(selectedId)) {
             c.lastMessage = imagePreview(last.text);
-            c.time = 'Now';
+            c.time = relTime(last.ts);
             c.unread = 0;
           }
         });
@@ -664,7 +693,11 @@ onAuthStateChanged(auth, (user) => {
       setChatError('');
     } catch (err) {
       console.error('[SwiftGigs messages] refresh failed', err);
-      setChatError('Messages could not refresh.');
+      // A missed background check is retried in a few seconds; only say so
+      // when the person was actually waiting on it.
+      if (!opts.background) setChatError('Messages could not refresh.');
+    } finally {
+      refreshing = false;
     }
   }
 
@@ -736,9 +769,35 @@ onAuthStateChanged(auth, (user) => {
   function startPolling() {
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = setInterval(function () {
-      if (selectedId) refreshMessages().catch(function () {});
-    }, 4000);
+      if (document.hidden) return;                 // no checking while the app is in the background
+      if (selectedId) refreshMessages({ background: true }).catch(function () {});
+    }, 5000);
   }
+  /* The inbox keeps itself current too: new chats and unread dots used to
+     appear only after a manual reload. */
+  var listRefreshing = false;
+  async function refreshInbox() {
+    if (listRefreshing || selectedId || document.hidden || !currentUserId) return;
+    if (typeof getConversationsForUser !== 'function') return;
+    listRefreshing = true;
+    try {
+      var rows = await getConversationsForUser(currentUserId);
+      var enriched = typeof enrichConversationNames === 'function'
+        ? await Promise.all((rows || []).map(function (c) { return enrichConversationNames(c); }))
+        : (rows || []);
+      if (selectedId) return;
+      allConversations = enriched.map(function (c) { return mapConversation(c, currentUserId); })
+        .filter(function (c) { return !!c.side; });
+      conversations = allConversations.slice();
+      filterList();
+    } catch (e) {} finally { listRefreshing = false; }
+  }
+  setInterval(refreshInbox, 20000);
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) return;
+    if (selectedId) refreshMessages({ background: true }).catch(function () {});
+    else refreshInbox();
+  });
 
   function analyzeFraudLocal(text) {
     var recent = messages.filter(function (m) { return !m.isSystem && !m.isImage; })
@@ -883,6 +942,8 @@ onAuthStateChanged(auth, (user) => {
     input.addEventListener('input', function () {
       this.style.height = 'auto';
       this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+      // One blocked draft used to lock the send button until a reload.
+      if (fraudDetected) { fraudDetected = false; setChatError(''); }
       syncSendBtn();
     });
     input.addEventListener('keydown', function (e) {
