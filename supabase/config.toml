@@ -57,3 +57,6 @@ verify_jwt = false
 
 [functions.teen-safety]
 verify_jwt = false
+
+[functions.tip]
+verify_jwt = false

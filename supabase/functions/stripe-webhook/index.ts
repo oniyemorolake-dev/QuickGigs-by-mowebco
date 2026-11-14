@@ -14,6 +14,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { connectAccountReady } from '../_shared/connect-ready.ts';
 import { feeBreakdown } from '../_shared/fee.ts';
+import { settleTip, TIP_PROJECT } from '../_shared/tips.ts';
 
 /** Amount, fee and payout from what Stripe says was actually paid. */
 function realAmounts(amountTotal?: number) {
@@ -326,6 +327,22 @@ Deno.serve(async (req) => {
   }
 
   const session = event.data.object as Stripe.Checkout.Session;
+  // A tip: send it on to the tasker even if the poster closed the app.
+  if (session.metadata?.project === TIP_PROJECT && session.metadata?.tip_id) {
+    try {
+      const { data: tip } = await supabase
+        .from('tips')
+        .select('*')
+        .eq('tip_id', String(session.metadata.tip_id))
+        .maybeSingle();
+      if (tip) await settleTip(supabase, stripe, tip);
+    } catch (tipErr) {
+      console.error('stripe-webhook: tip settle failed', tipErr);
+    }
+    return new Response(JSON.stringify({ received: true, tip: true }), {
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    });
+  }
   if (session.metadata?.project !== 'quickgigs') {
     return new Response(JSON.stringify({ ignored: true }), {
       headers: { 'Content-Type': 'application/json; charset=utf-8' },

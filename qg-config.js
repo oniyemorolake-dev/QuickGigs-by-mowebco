@@ -51,6 +51,7 @@ window.QG_CONFIG = {
   connectLinkUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/create-connect-link',
   releasePayoutUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/release-payout',
   walletUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/request-payout',
+  tipUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/tip',
   // Withdrawal floor. The server enforces 2000 cents and ignores this value.
   minWithdrawal: 20,
   completeTaskUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/complete-task',

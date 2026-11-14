@@ -326,7 +326,7 @@
     'refund-payment': 'Refund', 'request-payout': 'Cash-out request', 'secure-messaging': 'Messages',
     'raise-dispute': 'Opening a dispute', 'task-evidence': 'Gig photos', 'guardian-consent': 'Parent approval',
     'teen-safety': 'Teen safety check', 'geocode-canada': 'Address lookup', 'admin-console': 'Admin console',
-    'page-error': 'Screen error'
+    'page-error': 'Screen error', 'tip': 'Tip'
   };
   function errorWords(e) {
     var code = String(f(e, 'code') || '');

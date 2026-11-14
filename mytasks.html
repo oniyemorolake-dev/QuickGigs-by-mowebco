@@ -43,6 +43,7 @@
 <script defer src="qg-verification.js"></script>
 <script defer src="feeBreakdown.js"></script>
 <script defer src="qg-stripe.js"></script>
+<script defer src="qg-tips.js?v=1"></script>
 <script defer src="qg-evidence.js"></script>
 <script defer src="qg-disputes.js"></script>
 <script defer src="qg-report.js"></script>
@@ -562,6 +563,7 @@ var paymentByTaskId = {};
     }
 
     if (activeTab === 'completed') {
+      loadTips(false);
       var filters = [
         ['all', 'All'],
         ['completed', 'Completed'],
@@ -671,6 +673,34 @@ var paymentByTaskId = {};
       neg + actions + '</div>';
   }
 
+  /* Tips on finished gigs, loaded after the list is on screen. */
+  var tipsByTaskId = {}, tipsLoadedFor = '';
+  function tipLine(taskId, asPoster) {
+    var list = tipsByTaskId[taskId];
+    if (!list || !list.length) return '';
+    var cents = list.reduce(function (sum, t) { return sum + (Number(t.amount_cents) || 0); }, 0);
+    var waiting = list.some(function (t) { return t.status !== 'paid'; });
+    var amount = '$' + (cents / 100).toFixed(2);
+    var words = asPoster ? 'You tipped ' + amount
+      : waiting ? 'Tip ' + amount + ', on its way to you'
+      : 'Tip ' + amount + ', in your balance';
+    return '<span class="sg-meta" style="color:var(--green);font-weight:700">' + esc(words) + '</span>';
+  }
+  async function loadTips(force) {
+    if (typeof window.QG_loadTips !== 'function' || !currentUserId) return;
+    var ids = completedTasks(currentUserId)
+      .filter(function (t) { return taskStatusOf(t) === 'completed'; })
+      .map(function (t) { return String(getField(t, 'TASK_ID')); });
+    var key = ids.join(',');
+    if (!ids.length || (!force && key === tipsLoadedFor)) return;
+    tipsLoadedFor = key;
+    try {
+      tipsByTaskId = await window.QG_loadTips(ids);
+      if (activeTab === 'completed') renderTab();
+      if (Object.keys(tipsByTaskId).length) loadMoney(true);
+    } catch (e) { tipsLoadedFor = ''; }
+  }
+
   function completedCard(t) {
     var st = taskStatusOf(t);
     var taskId = String(getField(t, 'TASK_ID'));
@@ -702,7 +732,12 @@ var paymentByTaskId = {};
       actions += '<button class="sg-btn teal" data-repost="' + esc(taskId) + '">Relist gig</button>';
     } else if (st === 'completed') {
       actions += '<a class="sg-btn teal" href="' + esc(reviewHref(t, app)) + '">Leave a review</a>';
-      if (mineAsPoster) actions += '<button class="sg-btn sg-btn-quiet" data-post-again="' + esc(taskId) + '">Post again</button>';
+      // Tip: poster only, on a gig that was actually paid for.
+      if (mineAsPoster && pay && payState !== 'refunded' && payState !== 'disputed' && typeof window.QG_openTip === 'function') {
+        actions += '<button class="sg-btn sg-btn-quiet" data-tip-task="' + esc(taskId) + '" data-tip-name="' + esc(otherName) + '" data-tip-title="' + esc(titleOf(t)) + '">' +
+          (tipsByTaskId[taskId] && tipsByTaskId[taskId].length ? 'Tip again' : 'Add a tip') + '</button>';
+      }
+      if (mineAsPoster) actions += '<button class="sg-btn sg-btn-quiet" data-post-again=""' + esc(taskId) + '">Post again</button>';
     }
     actions += '<button class="sg-btn sg-btn-quiet" data-report-task="' + esc(taskId) + '">Report a problem</button></div>';
 
@@ -712,7 +747,7 @@ var paymentByTaskId = {};
       '<span style="flex:1;min-width:0"><b style="display:block;font-size:15.5px">' + esc(titleOf(t)) + '</b>' +
       '<span class="sg-meta">' + esc((mineAsPoster ? 'Tasker: ' : 'Poster: ') + otherName) + '</span>' +
       '<span class="sg-meta">' + esc(badge + (when ? ' · ' + when : '') + (locLabel(t) ? ' · ' + locLabel(t) : '')) + '</span>' +
-      '<span class="sg-meta">' + esc(moneyWord) + '</span></span>' +
+      '<span class="sg-meta">' + esc(moneyWord) + '</span>' + tipLine(taskId, mineAsPoster) + '</span>' +
       '<span class="sg-money">' + money(shown) + '</span></div>' + actions + '</div>';
   }
 
@@ -1654,6 +1689,15 @@ var paymentByTaskId = {};
       await loadData();
             showTab('posted');
           });
+        return;
+      }
+      el = e.target.closest('[data-tip-task]');
+      if (el && typeof window.QG_openTip === 'function') {
+        window.QG_openTip(el.getAttribute('data-tip-task'), {
+          taskerName: el.getAttribute('data-tip-name') || '',
+          title: el.getAttribute('data-tip-title') || '',
+          onDone: function () { loadTips(true); }
+        });
         return;
       }
       el = e.target.closest('[data-post-again]');
