@@ -1142,12 +1142,16 @@ var paymentByTaskId = {};
       toast('Accepted, but the gig did not move to In progress — refresh and try again.', false);
     return;
   }
-  if (typeof notifyWorkerAccepted === 'function') {
-      try { await notifyWorkerAccepted(workerId, '', { title: getField(task, 'TITLE'), TASK_ID: taskId }, posterName); } catch (e) {}
-    }
-  if (typeof declinePendingApplicationsForTask === 'function') {
-      try { await declinePendingApplicationsForTask(taskId, appId); } catch (e) {}
-    }
+    // The accept is saved. The email to the tasker and declining the other
+    // applicants run in the background so the poster is not kept waiting.
+    (async function () {
+      if (typeof notifyWorkerAccepted === 'function') {
+        try { await notifyWorkerAccepted(workerId, '', { title: getField(task, 'TITLE'), TASK_ID: taskId }, posterName); } catch (e) {}
+      }
+      if (typeof declinePendingApplicationsForTask === 'function') {
+        try { await declinePendingApplicationsForTask(taskId, appId); } catch (e) {}
+      }
+    })();
 
     setRowStatus(app, 'accepted');
     setRowStatus(task, 'in_progress');

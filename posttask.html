@@ -276,6 +276,11 @@ onAuthStateChanged(auth, (user) => {
     if (target.getTime() === tomorrow.getTime()) return 'Tomorrow';
     return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   }
+  /* Saved labels must not say "Today": the label is read days later. */
+  function fullDate(isoDate) {
+    if (!isoDate) return '';
+    return new Date(isoDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  }
   function friendlyTime(timeVal) {
     if (!timeVal) return '';
     var parts = String(timeVal).split(':');
@@ -343,12 +348,18 @@ onAuthStateChanged(auth, (user) => {
     if (!dateVal) return { error: 'date' };
     if (selectedTimeSlot === 'exact') {
       if (!timeVal) return { error: 'time' };
+      // The poster picks a wall-clock time where they are. Send the real
+      // instant (with its timezone); a bare "2026-11-09T10:00:00" was stored
+      // as UTC and showed up hours off for everyone.
+      var when = new Date(dateVal + 'T' + timeVal + ':00');
+      if (isNaN(when.getTime())) return { error: 'time' };
+      if (when.getTime() < Date.now() - 5 * 60000) return { error: 'past' };
       return {
-        scheduled_at: dateVal + 'T' + timeVal + ':00',
-        scheduled_label: friendlyDate(dateVal) + ' · ' + friendlyTime(timeVal)
+        scheduled_at: when.toISOString(),
+        scheduled_label: fullDate(dateVal) + ' · ' + friendlyTime(timeVal)
       };
     }
-    return { scheduled_at: null, scheduled_label: friendlyDate(dateVal) + ' · ' + slotLabel };
+    return { scheduled_at: null, scheduled_label: fullDate(dateVal) + ' · ' + slotLabel };
   }
 
   // ── Photos ────────────────────────────────────────────────────────────────
@@ -413,7 +424,8 @@ onAuthStateChanged(auth, (user) => {
       }
       var schedule = buildSchedule();
       if (schedule.error === 'date') { setErr('sgDateError', true); ok = false; }
-      if (schedule.error === 'time') { setErr('sgTimeError', true); ok = false; }
+      if (schedule.error === 'time') { setErr('sgTimeError', true, 'Pick a time.'); ok = false; }
+      if (schedule.error === 'past') { setErr('sgTimeError', true, 'That time has already passed. Pick a later time.'); ok = false; }
     }
     if (!ok) {
       var firstErr = document.querySelector('[data-step="' + n + '"] .sg-err:not([hidden])');

@@ -359,7 +359,33 @@
         return d <= radiusKm;
       }
       t._distanceKm = null;
+      // No pin on the gig: fall back to the city name, so a Toronto tasker is
+      // not shown a pinless Calgary gig as "nearby".
+      var myCity = window.getUserCityLabel ? window.getUserCityLabel() : '';
+      if (myCity) return taskInCity(t, myCity);
       return keepUnknown;
+    });
+  };
+
+  function cityKey(label) {
+    return String(label || '').split(',')[0].trim().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+  /** True when the gig's public location names this city. */
+  function taskInCity(task, city) {
+    var want = cityKey(city);
+    if (!want) return true;
+    var loc = String((task && (task.location || task.LOCATION)) || '').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return loc.split(',').some(function (part) { return part.trim() === want; });
+  }
+  window.taskInCity = taskInCity;
+
+  /** City-name filter for when there is a chosen city but no coordinates. Remote gigs always pass. */
+  window.filterTasksByCity = function (tasks, city) {
+    if (!cityKey(city)) return tasks || [];
+    return (tasks || []).filter(function (t) {
+      return window.isRemoteTask(t) || taskInCity(t, city);
     });
   };
 
@@ -461,8 +487,80 @@
     return geocodeQuery(query);
   };
 
+  /* A saved city used to be kept forever, so someone who signed up in Calgary
+     and opened the app in Toronto still got Calgary gigs. When location
+     permission is already granted this re-reads the device position quietly
+     (no prompt) and moves the saved city if they are somewhere else. A city
+     the person typed in themselves is left alone. */
+  var refreshStarted = false;
+  function refreshUserLocation() {
+    if (refreshStarted || !navigator.geolocation) return;
+    refreshStarted = true;
+    try { if (localStorage.getItem('qg-user-location-manual') === '1') return; } catch (e) {}
+    var go = function () {
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        var lat = pos.coords.latitude, lng = pos.coords.longitude;
+        if (!isCanadianCoordinate(lat, lng)) return;
+        writeGeoFilterPos(lat, lng);
+        var saved = readUserLocationPos();
+        if (saved && haversineKm(saved.lat, saved.lng, lat, lng) < 15) {
+          document.dispatchEvent(new CustomEvent('qg-location-changed'));
+          return;
+        }
+        reverseGeocodeCity(lat, lng).then(function (res) {
+          if (res && res.location) {
+            saveLocation(res.location);
+            writeUserLocationPos(res.lat, res.lng);
+            try { localStorage.removeItem(RADIUS_KEY); } catch (e) {}
+            suggestNearRadiusKm(res.lat, res.lng);
+          }
+          document.dispatchEvent(new CustomEvent('qg-location-changed'));
+        }).catch(function () {});
+      }, function () {}, { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 });
+    };
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'geolocation' }).then(function (st) {
+        if (st && st.state === 'granted') go();
+      }).catch(function () {});
+    }
+  }
+  window.refreshUserLocation = refreshUserLocation;
+
+  /** The person picked this city by hand: it wins over the device position. */
+  window.chooseUserCity = function (city) {
+    return window.setUserLocation(city).then(function (res) {
+      if (res) {
+        try {
+          localStorage.setItem('qg-user-location-manual', '1');
+          localStorage.removeItem(RADIUS_KEY);
+        } catch (e) {}
+        suggestNearRadiusKm(res.lat, res.lng);
+        document.dispatchEvent(new CustomEvent('qg-location-changed'));
+      }
+      return res;
+    });
+  };
+  /** Back to following the device. */
+  window.useDeviceLocation = function () {
+    try { localStorage.removeItem('qg-user-location-manual'); } catch (e) {}
+    return window.requestGeoForFilter({ keepPrevious: true }).then(function (pos) {
+      if (!pos) return null;
+      return reverseGeocodeCity(pos.lat, pos.lng).then(function (res) {
+        if (res && res.location) {
+          saveLocation(res.location);
+          writeUserLocationPos(res.lat, res.lng);
+          try { localStorage.removeItem(RADIUS_KEY); } catch (e) {}
+          suggestNearRadiusKm(res.lat, res.lng);
+        }
+        document.dispatchEvent(new CustomEvent('qg-location-changed'));
+        return res;
+      });
+    });
+  };
+
   window.initUserLocation = function () {
     if (localStorage.getItem('qg-user-location')) {
+      refreshUserLocation();
       return Promise.resolve(getUserLocation());
     }
     return new Promise(function (resolve) {

@@ -57,6 +57,15 @@
   <main class="sg-body" style="padding-top:28px">
     <div class="sg-title-row"><div class="sg-wm-row"><h1 class="sg-h1 bold">Available Gigs</h1><span class="sg-mode-tag" role="status" data-mode="poster"><svg class="i sg-mode-ic-poster" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="7" width="17" height="12.5" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/></svg><svg class="i sg-mode-ic-tasker" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 6v12M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.2 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/></svg><span class="sg-mode-lab-poster">Poster</span><span class="sg-mode-lab-tasker">Tasker</span></span></div><button class="sg-sq teal" id="sgFilterBtn" aria-label="Filters and search"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18l-7 8.5V20l-4-2v-4.5L3 5z"/></svg></button></div>
     <p class="sg-sub" id="sgGigCount">Loading gigs…</p>
+    <div id="sgCityBox" hidden style="margin-top:10px">
+      <div style="display:flex;gap:8px">
+        <input id="sgCityInput" list="sgCityOptions" type="text" autocomplete="off" placeholder="Your city, e.g. Toronto" aria-label="Your city" style="flex:1;min-width:0;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font:inherit;font-size:16px">
+        <datalist id="sgCityOptions"></datalist>
+        <button type="button" class="sg-btn teal" id="sgCityGo" style="width:auto;padding:0 18px;margin:0">Save</button>
+      </div>
+      <button type="button" class="sg-link" id="sgCityDevice" style="background:none;border:0;padding:0;margin-top:8px;font:inherit;font-weight:600;cursor:pointer">Use my current location</button>
+      <p id="sgCityErr" role="alert" style="color:var(--danger,#c0392b);font-size:13px;margin-top:6px"></p>
+    </div>
     <div class="sg-seg-row">
       <div class="sg-seg" role="tablist" id="sgViewSeg"><button class="on" role="tab" data-view="list" aria-selected="true">List</button><button role="tab" data-view="map" aria-selected="false">Map</button><button role="tab" data-view="spotlight" aria-selected="false">Spotlight</button></div>
       <button class="sg-sq" id="sgSortBtn" aria-label="Sort and filters"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M7 12h10M10 17h4"/></svg><span class="sg-badge" id="sgFilterCount" hidden>0</span></button>
@@ -388,6 +397,9 @@ onAuthStateChanged(auth, (user) => {
     var pos = typeof getGeoFilterPos === 'function' ? getGeoFilterPos() : null;
     if (pos && isFinite(radius) && typeof filterTasksByDistance === 'function') {
       list = filterTasksByDistance(list, { pos: pos, radiusKm: radius, includeUnknown: true });
+    } else if (!pos && isFinite(radius) && typeof filterTasksByCity === 'function' && typeof getUserCityLabel === 'function') {
+      // City chosen but no coordinates for it: match on the city name.
+      list = filterTasksByCity(list, getUserCityLabel());
     }
 
     var sort = filters.sort;
@@ -458,8 +470,58 @@ onAuthStateChanged(auth, (user) => {
     if (!tasksLoaded || !tierReady) { el.textContent = 'Finding gigs near you…'; return; }
     var n = list.length;
     var base = n + ' gig' + (n === 1 ? '' : 's');
-    var city = scopeCity(list);
-    el.textContent = city ? base + ' near ' + city : base + ' available';
+    // Only ever name the person's own city. Naming the busiest city told a
+    // Toronto tasker they were looking at gigs "near Calgary".
+    var city = typeof getUserCityLabel === 'function' ? getUserCityLabel() : '';
+    var scoped = city && filters.nearby;
+    el.innerHTML = esc(scoped ? base + ' near ' + city : base + ' across Canada') +
+      ' · <button type="button" class="sg-link" id="sgCityChange" style="background:none;border:0;padding:0;font:inherit;font-weight:600;cursor:pointer">' +
+      (city ? 'Change city' : 'Set your city') + '</button>';
+  }
+
+  /* City picker: type a Canadian city, or go back to the device location. */
+  function openCityPicker() {
+    var box = byId('sgCityBox');
+    if (!box) return;
+    box.hidden = !box.hidden;
+    if (!box.hidden) {
+      var input = byId('sgCityInput');
+      input.value = '';
+      byId('sgCityErr').textContent = '';
+      fillCityOptions('');
+      input.focus();
+    }
+  }
+  function fillCityOptions(q) {
+    var list = typeof suggestCanadianCities === 'function' ? suggestCanadianCities(q, 8) : [];
+    byId('sgCityOptions').innerHTML = list.map(function (c) { return '<option value="' + esc(c) + '">'; }).join('');
+  }
+  async function saveCity(useDevice) {
+    var err = byId('sgCityErr'), go = byId('sgCityGo');
+    err.textContent = '';
+    go.disabled = true;
+    try {
+      var res = null;
+      if (useDevice) {
+        res = typeof useDeviceLocation === 'function' ? await useDeviceLocation() : null;
+        if (!res) { err.textContent = 'Could not read your location. Allow location for this site, or type your city.'; return; }
+      } else {
+        var val = byId('sgCityInput').value.trim();
+        if (!val) { err.textContent = 'Type a city, for example Toronto.'; return; }
+        res = typeof chooseUserCity === 'function' ? await chooseUserCity(val) : null;
+        if (!res) { err.textContent = 'We could not find that city in Canada. Check the spelling.'; return; }
+      }
+      filters.nearby = true;
+      filters.dist = '';
+      var chip = document.querySelector('#sgQuickChips [data-quick="nearby"]');
+      if (chip) chip.classList.add('teal-on');
+      byId('sgCityBox').hidden = true;
+      render();
+    } catch (e) {
+      err.textContent = 'Something went wrong. Try again.';
+    } finally {
+      go.disabled = false;
+    }
   }
 
   function render() {
@@ -1067,38 +1129,44 @@ onAuthStateChanged(auth, (user) => {
         return;
       }
 
-      var chatNote = '';
-      try {
-        var chatUnlocked = typeof resolveChatUnlockedOnCreate === 'function' && resolveChatUnlockedOnCreate('application');
-        if (!guardianPending && activeTask.posterId && typeof createConversation === 'function') {
-          var posterName = activeTask.posterName || 'Poster';
-          if (typeof getUserNameByFirebaseUid === 'function') {
-            var fetched = await getUserNameByFirebaseUid(activeTask.posterId);
-            if (fetched) posterName = fetched;
+      // The application is saved. Close the sheet now; the chat thread is set
+      // up in the background so the tasker is not left watching a spinner.
+      var gig = activeTask;
+      (async function () {
+        var chatNote = '';
+        try {
+          var chatUnlocked = typeof resolveChatUnlockedOnCreate === 'function' && resolveChatUnlockedOnCreate('application');
+          if (!guardianPending && gig.posterId && typeof createConversation === 'function') {
+            var posterName = gig.posterName || 'Poster';
+            if (typeof getUserNameByFirebaseUid === 'function') {
+              var fetched = await getUserNameByFirebaseUid(gig.posterId);
+              if (fetched) posterName = fetched;
+            }
+            var conv = await createConversation({
+              task_id: taskId,
+              poster_id: gig.posterId,
+              worker_id: userId,
+              poster_name: posterName,
+              worker_name: workerName,
+              task_title: gig.title,
+              task_category: gig.cat,
+              status: 'application'
+            });
+            if (conv.success && conv.data && conv.data.conv_id && chatUnlocked && typeof sendChatMessage === 'function') {
+              var sent = await sendChatMessage(conv.data.conv_id, userId,
+                msg + (avail ? ' · Available: ' + avail : '') + ' · My offer: $' + priceNum);
+              chatNote = (sent && sent.blocked)
+                ? ' Chat stays locked until payment.'
+                : ' Open Messages to chat with the poster.';
+            } else if (conv.success) {
+              chatNote = ' Chat opens after acceptance and payment.';
+            }
           }
-          var conv = await createConversation({
-            task_id: taskId,
-            poster_id: activeTask.posterId,
-            worker_id: userId,
-            poster_name: posterName,
-            worker_name: workerName,
-            task_title: activeTask.title,
-            task_category: activeTask.cat,
-            status: 'application'
-          });
-          if (conv.success && conv.data && conv.data.conv_id && chatUnlocked && typeof sendChatMessage === 'function') {
-            var sent = await sendChatMessage(conv.data.conv_id, userId,
-              msg + (avail ? ' · Available: ' + avail : '') + ' · My offer: $' + priceNum);
-            chatNote = (sent && sent.blocked)
-              ? ' Chat stays locked until payment.'
-              : ' Open Messages to chat with the poster.';
-          } else if (conv.success) {
-            chatNote = ' Chat opens after acceptance and payment.';
-          }
+        } catch (chatErr) {
+          chatNote = ' Open Messages if chat does not appear yet.';
         }
-      } catch (chatErr) {
-        chatNote = ' Open Messages if chat does not appear yet.';
-      }
+
+      })();
 
       if (typeof qgTrackEvent === 'function') qgTrackEvent('apply_task', { task_id: taskId });
       appliedTaskIds[taskId] = true;
@@ -1107,7 +1175,7 @@ onAuthStateChanged(auth, (user) => {
       render();
       toast(guardianPending
         ? 'Sent to your guardian for approval. The poster cannot see it yet.'
-        : 'Application sent.' + chatNote, true);
+        : 'Application sent. The poster has been notified.', true);
       unlock();
     } catch (fatal) {
       console.error('Send application failed:', fatal);
@@ -1188,6 +1256,15 @@ onAuthStateChanged(auth, (user) => {
     chipGroup('sgDateChips', 'date', function (v) { filters.date = v; render(); });
     chipGroup('sgDistChips', 'dist', function (v) { filters.dist = v; render(); });
     chipGroup('sgSortChips', 'sort', function (v) { filters.sort = v; render(); });
+
+    byId('sgGigCount').addEventListener('click', function (e) {
+      if (e.target.closest('#sgCityChange')) openCityPicker();
+    });
+    byId('sgCityGo').addEventListener('click', function () { saveCity(false); });
+    byId('sgCityDevice').addEventListener('click', function () { saveCity(true); });
+    byId('sgCityInput').addEventListener('input', function () { fillCityOptions(this.value); });
+    byId('sgCityInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); saveCity(false); } });
+    document.addEventListener('qg-location-changed', function () { render(); });
 
     byId('sgQuickChips').addEventListener('click', function (e) {
       var btn = e.target.closest('[data-quick]');

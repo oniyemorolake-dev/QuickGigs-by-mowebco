@@ -101,15 +101,30 @@ async function callVerifiedFunction(url, body, firebaseUser) {
   }
   try {
     var token = await user.getIdToken(false);
-    var res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + token
-      },
-      body: JSON.stringify(body || {})
-    });
+    // Nothing may spin forever: give up after 30 s and say so.
+    var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 30000) : null;
+    var res;
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify(body || {}),
+        signal: ctrl ? ctrl.signal : undefined
+      });
+    } catch (fetchErr) {
+      if (fetchErr && fetchErr.name === 'AbortError') {
+        qgReportFunctionError(url, 0, 'timeout', 'No answer after 30 seconds', null);
+        return { success: false, ok: false, http_status: 0, error: 'timeout', message: 'That took too long. Check your connection and try again.' };
+      }
+      throw fetchErr;
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
     var data = await res.json().catch(function () { return {}; });
     data.http_status = res.status;
     if (!res.ok) {
@@ -3484,74 +3499,10 @@ async function submitApplication(appData) {
     return { success: false, error: 'missing_worker_id' };
   }
 
-  var task = await getTaskById(taskId);
-  var posterId = task && (task.posted_by || task.POSTED_BY);
-  if (posterId && String(posterId) === workerFirebaseUid) {
-    return { success: false, error: 'cannot_apply_own_task' };
-  }
-
-  // Duplicate guard — one application per Firebase uid + task_id (fail closed).
-  // Do NOT swallow errors: a failed check must not allow another insert.
-  var already = false;
-  var composite = buildApplicationCompositeFilters(taskId, workerFirebaseUid);
-  if (!composite.length) {
-    return { success: false, error: 'invalid_duplicate_check' };
-  }
-  for (var ci = 0; ci < composite.length && !already; ci++) {
-    var existingRows;
-    try {
-      existingRows = typeof sbGetOrThrow === 'function'
-        ? await sbGetOrThrow(
-            'applications',
-            withSelect(composite[ci], SELECT_APPLICATIONS),
-            null,
-            20
-          )
-        : await sbGet(
-            'applications',
-            withSelect(composite[ci], SELECT_APPLICATIONS),
-            null,
-            20
-          );
-    } catch (dupGetErr) {
-      console.error('Duplicate application check failed:', dupGetErr);
-      return {
-        success: false,
-        error: 'Could not verify existing applications — try again. (' +
-          (dupGetErr && dupGetErr.message ? dupGetErr.message : 'check_failed') + ')'
-      };
-    }
-    already = (existingRows || []).some(function (a) {
-      var tid = a.task_id || a.TASK_ID;
-      var wid = a.worker_id || a.WORKER_ID;
-      if (tid == null || tid === '' || !wid) return false;
-      return String(tid) === String(taskId) && String(wid) === String(workerFirebaseUid);
-    });
-  }
-  if (!already) {
-    try {
-      var existingApps = await getApplicationsByWorker(workerFirebaseUid);
-      already = (existingApps || []).some(function (a) {
-        var tid = a.task_id || a.TASK_ID;
-        if (tid == null || tid === '') return false;
-        return String(tid) === String(taskId);
-      });
-    } catch (workerDupErr) {
-      console.warn('Worker-apps duplicate fallback skipped:', workerDupErr);
-    }
-  }
-  if (already) return { success: false, error: 'already_applied' };
-
-  var workerPhoto = await resolveUserAvatarUrl(workerFirebaseUid);
-  if (!hasProfilePhotoUrl(workerPhoto)) {
-    return { success: false, error: 'profile_photo_required' };
-  }
-  if (window._currentUser && window._currentUser.uid === workerFirebaseUid) {
-    var existing = await getUserByFirebaseUid(workerFirebaseUid);
-    if (!existing || !hasProfilePhotoUrl(existing.avatar_url)) {
-      await syncProfilePhotoToDb(window._currentUser, workerPhoto);
-    }
-  }
+  // The submit-application function checks own-gig, duplicates, profile photo,
+  // payout setup and gig status itself. Repeating them here cost five or more
+  // round trips before the real request even left the phone.
+  var task = null;
 
   var row = {
     task_id:   taskId,
@@ -3575,6 +3526,17 @@ async function submitApplication(appData) {
     }
   } catch (geoErr) {}
   var result = await callVerifiedFunction(secureApplyUrl, { application: secureApplication });
+  // Photo exists on the account but never reached the database: sync, retry once.
+  if (!result.success && result.error === 'profile_photo_required' &&
+      window._currentUser && window._currentUser.uid === workerFirebaseUid) {
+    try {
+      var workerPhoto = await resolveUserAvatarUrl(workerFirebaseUid);
+      if (hasProfilePhotoUrl(workerPhoto)) {
+        await syncProfilePhotoToDb(window._currentUser, workerPhoto);
+        result = await callVerifiedFunction(secureApplyUrl, { application: secureApplication });
+      }
+    } catch (photoErr) {}
+  }
   if (result.success && result.data) {
     if (typeof qgDebugLog === 'function') {
       qgDebugLog('[SwiftGigs apply] applications row created', {
@@ -3591,18 +3553,21 @@ async function submitApplication(appData) {
 
   if (result.success && result.guardian_status !== 'pending_guardian' &&
       taskId && typeof notifyPosterNewApplication === 'function') {
-    try {
-      var notifyTask = task || await getTaskById(taskId);
-      var notifyPosterId = notifyTask && (notifyTask.posted_by || notifyTask.POSTED_BY);
-      await notifyPosterNewApplication(
-        notifyPosterId,
-        '',
-        notifyTask,
-        { worker_name: appData.worker_name, price: appData.price }
-      );
-    } catch (notifyErr) {
-      console.warn('Application notification skipped:', notifyErr);
-    }
+    // Not awaited: the email to the poster must not hold up the tasker.
+    (async function () {
+      try {
+        var notifyTask = task || await getTaskById(taskId);
+        var notifyPosterId = notifyTask && (notifyTask.posted_by || notifyTask.POSTED_BY);
+        await notifyPosterNewApplication(
+          notifyPosterId,
+          '',
+          notifyTask,
+          { worker_name: appData.worker_name, price: appData.price }
+        );
+      } catch (notifyErr) {
+        console.warn('Application notification skipped:', notifyErr);
+      }
+    })();
   }
 
   return result;
