@@ -55,6 +55,25 @@ Deno.serve(async (req) => {
     };
     if (action === 'preview') return json({ ok: true, teen: publicTeen });
 
+    const ip = String(req.headers.get('x-forwarded-for') || '').split(',')[0].trim().slice(0, 64);
+    const userAgent = String(req.headers.get('user-agent') || '').slice(0, 300);
+    const record = async (decision: 'approved' | 'declined', signedName: string, adult: boolean) => {
+      try {
+        await supabase.from('guardian_consents').insert({
+          teen_uid: claims.uid,
+          decision,
+          guardian_email: teen.guardian_email,
+          guardian_name_given: teen.guardian_name,
+          signed_name: signedName || null,
+          confirmed_adult: adult,
+          ip: ip || null,
+          user_agent: userAgent || null,
+        });
+      } catch (recErr) {
+        console.error('guardian-consent: could not save the consent record', recErr);
+      }
+    };
+
     if (action === 'decline') {
       const { data: declined, error: declineError } = await supabase
         .from('users')
@@ -71,12 +90,29 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (declineError) throw declineError;
       if (!declined) return json({ ok: false, error: 'invalid_or_used_token' }, 410);
+      await record('declined', '', false);
       return json({ ok: true, declined: true });
     }
 
     if (action !== 'approve') return json({ ok: false, error: 'invalid_action' }, 400);
     if (body.terms_accepted !== true) {
       return json({ ok: false, error: 'terms_required' }, 400);
+    }
+    // The guardian signs with their own full name and confirms they are an adult.
+    const signedName = String(body.signed_name || '').trim().replace(/\s+/g, ' ').slice(0, 120);
+    if (signedName.split(' ').filter((w: string) => w.length > 1).length < 2) {
+      return json({ ok: false, error: 'signed_name_required', message: 'Type your full legal name.' }, 400);
+    }
+    if (body.confirmed_adult !== true) {
+      return json({ ok: false, error: 'adult_confirmation_required' }, 400);
+    }
+    const norm = (v: string) => v.toLowerCase().replace(/[^a-z ]/g, '').trim();
+    if (norm(signedName) === norm(String(teen.name || ''))) {
+      return json({
+        ok: false,
+        error: 'signed_name_is_teen',
+        message: 'This must be signed by the parent or guardian, in their own name.',
+      }, 400);
     }
 
     const acceptedAt = new Date().toISOString();
@@ -97,6 +133,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (approveError) throw approveError;
     if (!approvedRow) return json({ ok: false, error: 'invalid_or_used_token' }, 410);
+    await record('approved', signedName, true);
 
     const payoutToken = await signGuardianToken(claims.uid, 'guardian_payout', '24h');
     return json({

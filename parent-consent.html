@@ -140,7 +140,11 @@ body.page-parent-consent .info-box a{color:var(--accent) !important;font-weight:
         '<li>Your teen can browse and apply as a Tasker. You approve each job application before the poster sees it.</li>' +
         '<li>Completed-gig payouts route to your guardian Stripe account — not directly to the teen.</li>' +
       '</ul>' +
+      '<label style="display:block;font-weight:600;font-size:14px;margin:14px 0 6px" for="signedName">Your full legal name</label>' +
+      '<input type="text" id="signedName" autocomplete="name" maxlength="120" placeholder="Parent or guardian name" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font:inherit;font-size:16px">' +
+      '<label class="consent-check"><input type="checkbox" id="adultConfirmed"> <span>I am 18 or older.</span></label>' +
       '<label class="consent-check"><input type="checkbox" id="termsAccepted"> <span>I am this teen’s parent or legal guardian and accept the <a href="terms.html" target="_blank" rel="noopener">SwiftGigs Terms of Service</a>.</span></label>' +
+      '<p class="consent-payout-note">Before your teen can take any paid gig, you will verify your own identity with Stripe (government ID) so payouts go to you.</p>' +
       '<button type="button" class="consent-btn" id="approveBtn" disabled>Approve account</button><br>' +
       '<button type="button" class="consent-decline" id="declineBtn">Decline</button>' +
       '<p id="consentMsg" style="margin-top:12px"></p>';
@@ -152,7 +156,15 @@ body.page-parent-consent .info-box a{color:var(--accent) !important;font-weight:
     if (dobWrap) dobWrap.textContent = user.date_of_birth ? (' · Date of birth: ' + String(user.date_of_birth)) : '';
     var terms = document.getElementById('termsAccepted');
     var approve = document.getElementById('approveBtn');
-    if (terms && approve) terms.onchange = function () { approve.disabled = !terms.checked; };
+    var adult = document.getElementById('adultConfirmed');
+    var signed = document.getElementById('signedName');
+    function syncApprove() {
+      var nameOk = signed && signed.value.trim().split(/\s+/).filter(function (w) { return w.length > 1; }).length >= 2;
+      approve.disabled = !(terms.checked && adult.checked && nameOk);
+    }
+    if (terms && approve && adult && signed) {
+      terms.onchange = syncApprove; adult.onchange = syncApprove; signed.oninput = syncApprove;
+    }
 
     if (approve) approve.onclick = async function () {
       var btn = document.getElementById('approveBtn');
@@ -160,7 +172,11 @@ body.page-parent-consent .info-box a{color:var(--accent) !important;font-weight:
       btn.textContent = 'Approving…';
       var msg = document.getElementById('consentMsg');
       try {
-        var approved = await consentRequest('approve', { terms_accepted: true });
+        var approved = await consentRequest('approve', {
+          terms_accepted: true,
+          confirmed_adult: true,
+          signed_name: document.getElementById('signedName').value.trim()
+        });
         card.innerHTML = '<p class="consent-ok">Approved. <strong></strong> can now apply as a Tasker (you still approve each gig).</p>' +
           '<div class="consent-verify-step"><strong>Next: guardian payouts</strong>Completed-gig payouts for this teen must go to your Stripe account.</div>' +
           '<button type="button" class="consent-btn" id="payoutBtn">Set up guardian payouts</button>' +
@@ -190,7 +206,10 @@ body.page-parent-consent .info-box a{color:var(--accent) !important;font-weight:
         };
       } catch (approveErr) {
         msg.className = 'consent-err';
-        msg.textContent = 'Could not approve — the link may be expired or already used.';
+        var why = String((approveErr && approveErr.message) || '');
+        msg.textContent = why === 'signed_name_is_teen' ? 'This must be signed by the parent or guardian, in their own name.'
+          : why === 'signed_name_required' ? 'Type your full legal name (first and last).'
+          : 'Could not approve. The link may be expired or already used.';
         btn.disabled = false;
         btn.textContent = 'Approve account';
       }

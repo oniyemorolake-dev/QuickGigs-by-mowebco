@@ -26,6 +26,23 @@ function ageOn(dateOfBirth: string): number {
   return age;
 }
 
+/** Same inbox, different spelling: lower-case, drop "+tag", and for Gmail
+ *  drop dots, so teen+mum@gmail.com and t.e.e.n@gmail.com count as teen@gmail.com. */
+function inboxKey(email: string): string {
+  const e = String(email || '').trim().toLowerCase();
+  const at = e.lastIndexOf('@');
+  if (at < 1) return e;
+  let local = e.slice(0, at).split('+')[0];
+  let domain = e.slice(at + 1);
+  if (domain === 'googlemail.com') domain = 'gmail.com';
+  if (domain === 'gmail.com') local = local.replace(/\./g, '');
+  return local + '@' + domain;
+}
+function phoneKey(phone: string): string {
+  const d = String(phone || '').replace(/\D/g, '');
+  return d.length > 10 ? d.slice(-10) : d;
+}
+
 async function sendGuardianEmail(email: string, teenName: string, consentUrl: string) {
   const resendKey = Deno.env.get('RESEND_API_KEY') || '';
   if (!resendKey) throw new Error('resend_not_configured');
@@ -99,6 +116,60 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_URL') || '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '',
     );
+    // The guardian has to be a different, adult person. An email cannot prove
+    // that on its own (Stripe's ID check on the guardian is the real proof),
+    // but the obvious dodges are refused here.
+    if (isTeen) {
+      const teenEmail = String(identity.email || body.email || '').trim().toLowerCase();
+      if (inboxKey(guardianEmail) === inboxKey(teenEmail)) {
+        return json({
+          ok: false,
+          error: 'guardian_email_same_as_teen',
+          message: 'Use your parent or guardian\'s own email address, not yours.',
+        }, 400);
+      }
+      if (phoneKey(guardianPhone).length < 10) {
+        return json({
+          ok: false,
+          error: 'guardian_phone_required',
+          message: 'Add your parent or guardian\'s phone number.',
+        }, 400);
+      }
+      if (phoneKey(guardianPhone) === phoneKey(String(body.phone || ''))) {
+        return json({
+          ok: false,
+          error: 'guardian_phone_same_as_teen',
+          message: 'Use your parent or guardian\'s own phone number, not yours.',
+        }, 400);
+      }
+      // The guardian address must not belong to another under-18 account.
+      const { data: sameInbox } = await supabase
+        .from('users')
+        .select('firebase_uid,date_of_birth,email')
+        .ilike('email', guardianEmail)
+        .limit(5);
+      const minorOwnsIt = (sameInbox || []).some((u) =>
+        u.firebase_uid !== identity.uid && u.date_of_birth && ageOn(String(u.date_of_birth)) < 18
+      );
+      if (minorOwnsIt) {
+        return json({
+          ok: false,
+          error: 'guardian_email_is_minor',
+          message: 'That email belongs to an under-18 account. A parent or guardian must be an adult.',
+        }, 400);
+      }
+      if ((Deno.env.get('GUARDIAN_CONSENT_SECRET') || '').length < 32) {
+        // Without the signing secret no approval link can be made, so say so
+        // instead of creating an account nobody can approve.
+        console.error('register-account: GUARDIAN_CONSENT_SECRET is not set');
+        return json({
+          ok: false,
+          error: 'teen_signup_unavailable',
+          message: 'Sign-up for ages 16 and 17 is not open yet. Please try again soon.',
+        }, 503);
+      }
+    }
+
     const now = new Date().toISOString();
     let consentToken = '';
     let tokenHash: string | null = null;

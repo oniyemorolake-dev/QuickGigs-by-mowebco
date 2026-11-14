@@ -176,7 +176,7 @@
           <div class="qg-guardian-note"><span data-qg-ico="mail" data-qg-ico-size="14"></span> We'll email them a one-click consent link. Until approved, you can browse but not post or apply.</div>
           <div class="signup-field"><label>Guardian full name <span class="req">*</span></label><input type="text" id="guardianName" placeholder="Parent or guardian name" required></div>
           <div class="signup-field"><label>Guardian email <span class="req">*</span></label><input type="email" id="guardianEmail" placeholder="parent@example.com" required></div>
-          <div class="signup-field"><label>Guardian phone (optional)</label><input type="tel" id="guardianPhone" placeholder="+1 (403) 000-0000"></div>
+          <div class="signup-field"><label>Guardian phone <span class="req">*</span></label><input type="tel" id="guardianPhone" placeholder="+1 (403) 000-0000" required></div>
           <div class="qg-wizard-nav">
             <button type="button" class="signup-btn signup-btn-secondary" data-qg-back>← Back</button>
             <button type="button" class="signup-btn" data-qg-next>Continue →</button>
@@ -969,6 +969,11 @@ document.getElementById('submitBtn').onclick = async function() {
     if (error.code === 'auth/weak-password') message = 'Password is too weak. Use at least 8 characters.';
     if (error.code === 'underage') message = 'You must be at least 16 to join SwiftGigs';
     if (error.code === 'invalid_date_of_birth') message = 'Enter a valid date of birth.';
+    if (error.code === 'guardian_email_same_as_teen') message = 'Use your parent or guardian\'s own email address, not yours.';
+    if (error.code === 'guardian_phone_required') message = 'Add your parent or guardian\'s phone number.';
+    if (error.code === 'guardian_phone_same_as_teen') message = 'Use your parent or guardian\'s own phone number, not yours.';
+    if (error.code === 'guardian_email_is_minor') message = 'That email belongs to an under-18 account. A parent or guardian must be an adult.';
+    if (error.code === 'teen_signup_unavailable') message = 'Sign-up for ages 16 and 17 is not open yet. Please try again soon.';
     if (error.code === 'guardian_name_required' || error.code === 'guardian_email_required') {
       message = 'Parent/guardian name and email are required for ages 16–17.';
     }
