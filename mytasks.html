@@ -963,7 +963,7 @@ var paymentByTaskId = {};
     if (!done.on_my_way) return { label: 'I am on my way', next: 'Set off and let the client know', action: function () { stamp(taskId, 'on_my_way'); } };
     if (!done.arrived) return { label: 'Mark as Arrived', next: 'Arrive and confirm with client', action: function () { stamp(taskId, 'arrived'); } };
     if (!done.started) return { label: 'Start gig', next: 'Start the work', action: function () { stamp(taskId, 'started'); } };
-    return { label: 'Mark complete', next: 'Finish up and mark it done', action: function () { markComplete(taskId, $('sgActivePrimary')); } };
+    return { label: 'Waiting for poster', next: 'The poster confirms when the work is done. You are paid after that', action: null };
   }
 
   async function stamp(taskId, type) {
@@ -1266,6 +1266,15 @@ var paymentByTaskId = {};
         var server = await completeTaskViaServer(taskId, currentUserId, { posterId: opts.posterId, workerId: workerId });
         if (server && server.success) result = { success: true, task_id: server.task_id || taskId };
         else if (server) result = server;
+        // Definitive answers from the server stop here. Retrying through client
+        // writes would only repeat the refusal, or worse, bypass it.
+        var definitive = server && ['not_authorized', 'task_not_in_progress', 'task_not_found', 'poster_missing', 'missing_task'].indexOf(String(server.error || '').split(' ')[0]) !== -1;
+        if (definitive) {
+          if (btn) { btn.disabled = false; btn.textContent = 'Mark complete'; }
+          var refusal = server.message || (server.error === 'not_authorized' ? 'Only the poster can mark this gig complete.' : 'This gig cannot be marked complete right now.');
+          toast(refusal, false);
+          return;
+        }
       }
       if ((!result || !result.success) && typeof completeTask === 'function') {
         result = await completeTask(taskId, currentUserId, opts);
