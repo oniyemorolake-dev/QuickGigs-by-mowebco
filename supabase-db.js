@@ -92,6 +92,36 @@ function qgReportFunctionError(url, status, code, message, token) {
   } catch (e) {}
 }
 
+/* Code errors on any screen are reported too, so a broken page shows up in
+   Launch control instead of only on someone's phone. At most 5 a page view. */
+(function () {
+  var sent = 0, seen = {};
+  function report(kind, msg, where) {
+    msg = String(msg || '').slice(0, 220);
+    if (!msg || sent >= 5 || seen[msg]) return;
+    // Noise from extensions and cross-origin scripts carries no detail.
+    if (/^Script error\.?$/i.test(msg) || /ResizeObserver loop|extension:\/\//i.test(msg + ' ' + (where || ''))) return;
+    seen[msg] = true; sent++;
+    var token = null;
+    try {
+      var u = window._currentUser;
+      var p = u && typeof u.getIdToken === 'function' ? u.getIdToken(false) : Promise.resolve(null);
+      p.then(function (t) { token = t; }).catch(function () {}).then(function () {
+        qgReportFunctionError('page-error', 0, kind, msg + (where ? ' @ ' + where : ''), token);
+      });
+    } catch (e) {}
+  }
+  window.addEventListener('error', function (ev) {
+    if (!ev || !ev.message) return;
+    var file = String(ev.filename || '').split('/').pop().split('?')[0];
+    report('js_error', ev.message, file ? file + ':' + (ev.lineno || 0) : '');
+  });
+  window.addEventListener('unhandledrejection', function (ev) {
+    var r = ev && ev.reason;
+    report('promise_error', (r && (r.message || r.error)) || String(r || ''), '');
+  });
+})();
+
 /** Call a security-sensitive Edge Function with a verified Firebase ID token. */
 async function callVerifiedFunction(url, body, firebaseUser) {
   var user = firebaseUser || window._currentUser;

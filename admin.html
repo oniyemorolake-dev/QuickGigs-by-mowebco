@@ -119,6 +119,22 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;padd
 .ops-step{width:18px;height:6px;border-radius:3px;background:var(--border);}
 .ops-step.is-on{background:var(--teal);}
 .ops-stage{font-size:11.5px;font-weight:600;color:var(--text-muted);}
+.ops-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;vertical-align:1px;}
+.ops-dot.is-ok{background:var(--green);}
+.ops-dot.is-bad{background:var(--danger,#e5484d);}
+.ops-tog{height:30px;padding:0 12px;border-radius:15px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font:inherit;font-size:12px;font-weight:600;cursor:pointer;}
+.ops-tog.is-on{background:var(--primary);border-color:var(--primary);color:#fff;}
+.ops-err{border-bottom:1px solid var(--border);}
+.ops-err:last-child{border-bottom:0;}
+.ops-err>summary{cursor:pointer;list-style:none;border-bottom:0;}
+.ops-err>summary::-webkit-details-marker{display:none;}
+.ops-err-more{font-size:12px;font-weight:600;color:var(--primary);flex:none;}
+.ops-err[open] .ops-err-more{opacity:.5;}
+.ops-err-body{padding:0 16px 14px;}
+.ops-err-fix{font-size:13px;line-height:1.5;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+.ops-err-code{font-size:11.5px;color:var(--text-muted);margin:8px 0 4px;font-family:ui-monospace,Menlo,monospace;overflow-wrap:anywhere;}
+.ops-err-line{font-size:12px;color:var(--text-muted);padding:5px 0;border-top:1px dashed var(--border);line-height:1.45;overflow-wrap:anywhere;}
+.ops-err-msg{color:var(--text);}
 @media(max-width:600px){.ops-row{flex-direction:column;align-items:stretch;}.ops-progress{align-items:flex-start;}.ops-row .act-btns{justify-content:flex-start;}}
 .mc-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .mc-sub{font-size:11px;font-weight:500;color:var(--text-muted);}
@@ -590,7 +606,11 @@ body.page-admin .health-item-val .hv-empty{font-size:13px;font-weight:500;color:
       <div id="opsTesters"></div>
     </div>
     <div class="table-card" style="margin-top:14px">
-      <div class="table-header"><div><span class="table-title">Failed actions</span><span class="table-count" id="opsErrorCount"></span></div></div>
+      <div class="table-header"><div><span class="table-title">System health</span><span class="table-count" id="opsHealthCount"></span></div></div>
+      <div id="opsHealth"></div>
+    </div>
+    <div class="table-card" style="margin-top:14px">
+      <div class="table-header"><div><span class="table-title">Failed actions</span><span class="table-count" id="opsErrorCount"></span></div><div class="table-actions"><button type="button" class="ops-tog is-on" data-err-window="24">24 h</button><button type="button" class="ops-tog" data-err-window="168">7 days</button><button type="button" class="ops-tog" id="opsErrSerious">Serious only</button></div></div>
       <div id="opsErrors"></div>
     </div>
   </div>
@@ -1294,6 +1314,6 @@ window.currentSection=currentSection;
 </script>
 <script src="qg-admin-power.js?v=1"></script>
 <script src="qg-admin-dash.js?v=1"></script>
-<script src="qg-admin-ops.js?v=1"></script>
+<script src="qg-admin-ops.js?v=2"></script>
 </body>
 </html>

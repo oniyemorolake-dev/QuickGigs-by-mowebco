@@ -325,7 +325,8 @@
     'sync-payment': 'Payment check', 'complete-task': 'Marking a gig complete', 'release-payout': 'Paying the tasker',
     'refund-payment': 'Refund', 'request-payout': 'Cash-out request', 'secure-messaging': 'Messages',
     'raise-dispute': 'Opening a dispute', 'task-evidence': 'Gig photos', 'guardian-consent': 'Parent approval',
-    'teen-safety': 'Teen safety check', 'geocode-canada': 'Address lookup', 'admin-console': 'Admin console'
+    'teen-safety': 'Teen safety check', 'geocode-canada': 'Address lookup', 'admin-console': 'Admin console',
+    'page-error': 'Screen error'
   };
   function errorWords(e) {
     var code = String(f(e, 'code') || '');
@@ -347,53 +348,218 @@
       completion_is_server_managed: 'Gig could not be completed from the app'
     };
     if (map[code]) return map[code];
+    if (f(e, 'fn') === 'page-error') return 'A screen broke: ' + (f(e, 'message') || 'code error');
+    if (code === 'timeout') return 'The server took too long to answer';
     if (status === 0) return 'Could not reach the server (their connection, or an outage)';
     if (status === 429) return 'They were doing it too fast and got rate-limited';
     if (status >= 500) return 'Server error' + (code ? ' (' + code + ')' : '');
     return f(e, 'message') || code || ('Refused with code ' + status);
   }
 
+  /* What to do about each kind of failure, in plain words. */
+  function errorFix(e) {
+    var code = String(f(e, 'code') || '');
+    var fn = String(f(e, 'fn') || '');
+    var status = Number(f(e, 'status')) || 0;
+    var fixes = {
+      timeout: 'The server took over 30 seconds. If it repeats for the same action, that function is slow or down: check its logs in Supabase.',
+      network_error: 'Usually the person\'s own connection. Worry only if several people get it in the same few minutes.',
+      firebase_auth_required: 'Nothing to fix. They need to sign in again.',
+      unauthorized: 'Nothing to fix unless it repeats for one person. Ask them to sign out and back in.',
+      not_authorized: 'Normal: someone tapped a button that is not theirs to use.',
+      forbidden: 'Normal: someone without access tried an admin or restricted page.',
+      signups_closed: 'Someone without an invite tried to sign up. Invite them above if you want them in.',
+      worker_payout_setup_required: 'Normal: they need to finish payout setup in Profile first.',
+      guardian_payout_setup_required: 'The teen\'s parent has not finished payout setup. Resend the parent email from Users.',
+      stripe_account_create_failed: 'Stripe refused the payout account. Open Stripe, Connect, and look at the latest failed request.',
+      stripe_account_link_failed: 'Stripe could not open payout setup. Check the Stripe dashboard for an outage or a restricted account.',
+      user_not_found: 'They signed in but their profile row is missing. Ask them to sign up again with the same email.',
+      task_not_found: 'The gig was deleted or the link is old. Nothing to fix unless it is a live gig.',
+      task_not_open: 'Normal: the gig was already taken or closed.',
+      already_applied: 'Normal: they had already applied.',
+      accepted_task_relationship_required: 'Normal: chat opens only after the poster accepts and pays.',
+      service_role_missing: 'A server secret is missing. In Supabase, Edge Functions, Secrets, check SUPABASE_SERVICE_ROLE_KEY.',
+      live_keys_blocked: 'Expected while Stripe is in test mode.'
+    };
+    if (fixes[code]) return fixes[code];
+    if (fn === 'page-error') return 'A screen hit a code error. Copy the message and page name below to Claude or Cursor to get it fixed.';
+    if (status === 0) return fixes.network_error;
+    if (status === 429) return 'Rate limit. Fine unless a real person is being blocked from normal use.';
+    if (status >= 500) return 'A server function crashed. Open Supabase, Edge Functions, ' + (fn || 'the function') + ', Logs, and copy the red line to Claude or Cursor.';
+    if (status === 401 || status === 403) return 'A permission refusal. Normal unless the same person keeps hitting it.';
+    return 'Refused request. Usually a normal rule doing its job; look closer only if it repeats.';
+  }
+  function isSerious(e) {
+    var status = Number(f(e, 'status')) || 0;
+    var code = String(f(e, 'code') || '');
+    return status >= 500 || code === 'timeout' || f(e, 'fn') === 'page-error' ||
+      /^stripe_|service_role_missing/.test(code);
+  }
+
+  var errWindowH = 24;
+  var errOnlySerious = false;
+  function allErrors() {
+    var h = window.adminHealth;
+    return (h && Array.isArray(h.errors) && h.errors.length) ? h.errors : (window.errorLog || []);
+  }
+
   function renderErrors() {
     var host = document.getElementById('opsErrors');
     if (!host) return;
-    var cutoff = Date.now() - 86400000;
-    var rows = (window.errorLog || []).filter(function (e) { return ms(f(e, 'created_at')) >= cutoff; });
+    var cutoff = Date.now() - errWindowH * 3600000;
+    var rows = allErrors().filter(function (e) {
+      return ms(f(e, 'created_at')) >= cutoff && (!errOnlySerious || isSerious(e));
+    });
     var groups = {};
     rows.forEach(function (e) {
       var key = f(e, 'fn') + '|' + f(e, 'code') + '|' + f(e, 'status');
-      var g = groups[key] || (groups[key] = { sample: e, n: 0, last: 0, people: {} });
+      var g = groups[key] || (groups[key] = { sample: e, n: 0, last: 0, people: {}, rows: [] });
       g.n++;
+      g.rows.push(e);
       g.last = Math.max(g.last, ms(f(e, 'created_at')));
       if (f(e, 'user_id')) g.people[f(e, 'user_id')] = true;
     });
     var list = Object.keys(groups).map(function (k) { return groups[k]; })
-      .sort(function (a, b) { return b.last - a.last; });
+      .sort(function (a, b) { return (isSerious(b.sample) - isSerious(a.sample)) || (b.last - a.last); });
+    var label = errWindowH === 24 ? '24 h' : '7 days';
     var count = document.getElementById('opsErrorCount');
-    if (count) count.textContent = rows.length ? '· ' + rows.length + ' in 24 h' : '· none in 24 h';
+    if (count) count.textContent = rows.length ? '· ' + rows.length + ' in ' + label : '· none in ' + label;
+    document.querySelectorAll('[data-err-window]').forEach(function (b) {
+      b.classList.toggle('is-on', Number(b.getAttribute('data-err-window')) === errWindowH);
+    });
+    var ser = document.getElementById('opsErrSerious');
+    if (ser) ser.classList.toggle('is-on', errOnlySerious);
     if (!list.length) {
-      host.innerHTML = '<div class="ops-empty">No failed actions in the last 24 hours.</div>';
+      host.innerHTML = '<div class="ops-empty">No ' + (errOnlySerious ? 'serious ' : '') + 'failed actions in the last ' + label + '.</div>';
       return;
     }
     host.innerHTML = list.map(function (g) {
       var e = g.sample;
       var people = Object.keys(g.people).length;
-      var serious = (Number(f(e, 'status')) || 0) >= 500 || Number(f(e, 'status')) === 0;
-      return '<div class="ops-row">' +
-        '<div class="ops-row-main">' +
+      var serious = isSerious(e);
+      var detail = g.rows.slice(0, 12).map(function (r) {
+        var who = f(r, 'user_name') || (f(r, 'user_id') ? 'user ' + String(f(r, 'user_id')).slice(0, 6) : 'not signed in');
+        var when = new Date(ms(f(r, 'created_at'))).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        return '<div class="ops-err-line">' + esc(when) + ' · ' + esc(who) + ' · ' + esc(f(r, 'page') || '') +
+          (f(r, 'message') ? '<br><span class="ops-err-msg">' + esc(f(r, 'message')) + '</span>' : '') + '</div>';
+      }).join('') + (g.rows.length > 12 ? '<div class="ops-err-line">and ' + (g.rows.length - 12) + ' more</div>' : '');
+      return '<details class="ops-err">' +
+        '<summary class="ops-row"><div class="ops-row-main">' +
           '<span class="status-pill ' + (serious ? 's-open' : 's-posted') + '">' + esc(FN_WORDS[f(e, 'fn')] || f(e, 'fn')) + '</span>' +
           '<div class="ops-row-text">' + esc(errorWords(e)) + '</div>' +
           '<div class="ops-row-sub">' + g.n + (g.n === 1 ? ' time' : ' times') +
             (people ? ' · ' + people + (people === 1 ? ' person' : ' people') : '') +
-            ' · last ' + esc(ago(new Date(g.last).toISOString())) + '</div>' +
-        '</div>' +
-      '</div>';
+            ' · last ' + esc(ago(new Date(g.last).toISOString())) +
+            ' · ' + (serious ? 'needs a look' : 'usually normal') + '</div>' +
+        '</div><span class="ops-err-more">Details</span></summary>' +
+        '<div class="ops-err-body"><div class="ops-err-fix"><b>What to do:</b> ' + esc(errorFix(e)) + '</div>' +
+          '<div class="ops-err-code">' + esc(f(e, 'fn')) + ' · ' + esc(f(e, 'code') || 'no code') + ' · HTTP ' + esc(String(f(e, 'status'))) + '</div>' +
+          detail + '</div>' +
+      '</details>';
     }).join('');
+  }
+
+  /* ── 6. System health ───────────────────────────────────────────────── */
+  var JOB_WORDS = {
+    'swiftgigs-send-queued-emails': 'Email sender',
+    'swiftgigs-admin-alert-check': 'Alert emails to you',
+    'quickgigs-daily-account-graduation': 'Teen turns 18 job'
+  };
+  async function loadHealth() {
+    try {
+      var user = window._currentUser;
+      if (!user || typeof user.getIdToken !== 'function') return;
+      var token = await user.getIdToken(false);
+      var base = window.SUPABASE_URL || 'https://nuyfqsxstsrbloztzgau.supabase.co';
+      var res = await fetch(base + '/rest/v1/rpc/qg_admin_health', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': window.SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
+        body: '{}'
+      });
+      if (!res.ok) { window.adminHealthError = 'HTTP ' + res.status; return; }
+      window.adminHealth = await res.json();
+      window.adminHealthError = '';
+    } catch (e) {
+      window.adminHealthError = String((e && e.message) || e);
+    }
+  }
+  function healthChecks() {
+    var h = window.adminHealth;
+    if (!h) return null;
+    var out = [];
+    var errs = (h.errors || []).filter(function (e) { return ms(f(e, 'created_at')) >= Date.now() - 3600000; });
+    var seriousNow = errs.filter(isSerious).length;
+    out.push({ ok: seriousNow === 0, name: 'App errors',
+      text: seriousNow ? seriousNow + ' serious in the last hour. See Failed actions below.' : 'No serious errors in the last hour' + (errs.length ? ' (' + errs.length + ' minor)' : '') });
+    (h.jobs || []).forEach(function (j) {
+      var name = JOB_WORDS[j.name] || j.name;
+      var never = !j.last_run;
+      var failed = j.last_status === 'failed';
+      var stale = j.name === 'swiftgigs-send-queued-emails' && j.last_run && (Date.now() - ms(j.last_run)) > 5 * 60000;
+      var ok = j.active && !failed && !stale;
+      var text = !j.active ? 'Switched off'
+        : never ? 'Has not run yet'
+        : failed ? 'Last run failed ' + ago(j.last_run) + (j.name === 'quickgigs-daily-account-graduation' ? '. Its web address and secret were never saved. Only matters once teen accounts turn 18.' : '. ' + String(j.last_message || '').slice(0, 120))
+        : stale ? 'Has not run for ' + ago(j.last_run).replace(' ago', '') + '. Emails are not going out.'
+        : 'Working, last ran ' + ago(j.last_run);
+      out.push({ ok: ok, name: name, text: text });
+    });
+    var em = h.emails || {};
+    var waitingLong = em.waiting > 0 && em.oldest_waiting && (Date.now() - ms(em.oldest_waiting)) > 10 * 60000;
+    out.push({ ok: !waitingLong && !em.failed_3d, name: 'Emails',
+      text: (em.failed_3d ? em.failed_3d + ' failed in 3 days. ' : '') +
+        (waitingLong ? em.waiting + ' stuck waiting since ' + ago(em.oldest_waiting) + '. ' : '') +
+        (em.sent_24h || 0) + ' sent in 24 h' });
+    var mo = h.money || {};
+    out.push({ ok: !mo.unpaid_after_complete, name: 'Payments',
+      text: mo.unpaid_after_complete
+        ? mo.unpaid_after_complete + ' finished gig' + (mo.unpaid_after_complete === 1 ? '' : 's') + ' where the tasker is not paid yet. Use Pay the tasker above.'
+        : (mo.held || 0) + ' held in escrow, none overdue' });
+    var ac = h.activity || {};
+    out.push({ ok: true, name: 'Last 24 hours',
+      text: (ac.signups_24h || 0) + ' sign-ups · ' + (ac.gigs_24h || 0) + ' gigs posted · ' + (ac.applications_24h || 0) + ' applications' });
+    return out;
+  }
+  function renderHealth() {
+    var host = document.getElementById('opsHealth');
+    if (!host) return;
+    var checks = healthChecks();
+    var count = document.getElementById('opsHealthCount');
+    if (!checks) {
+      host.innerHTML = '<div class="ops-empty">' + (window.adminHealthError
+        ? 'Could not load the health check (' + esc(window.adminHealthError) + '). Tap Refresh.'
+        : 'Checking…') + '</div>';
+      if (count) count.textContent = '';
+      return;
+    }
+    var bad = checks.filter(function (c) { return !c.ok; }).length;
+    if (count) count.textContent = bad ? '· ' + bad + ' to look at' : '· all working';
+    host.innerHTML = checks.map(function (c) {
+      return '<div class="ops-row"><div class="ops-row-main">' +
+        '<div class="ops-row-text"><span class="ops-dot ' + (c.ok ? 'is-ok' : 'is-bad') + '"></span>' + esc(c.name) + '</div>' +
+        '<div class="ops-row-sub">' + esc(c.text) + '</div></div></div>';
+    }).join('') + '<div class="ops-empty">Checked ' + esc(ago(window.adminHealth.checked_at)) +
+      '. You also get an email when errors spike, emails stop sending, or a tasker is left unpaid.</div>';
+    // Health problems count toward the nav badge too.
+    var badge = document.getElementById('opsBadge');
+    if (badge) {
+      var total = attentionItems().length + bad;
+      badge.textContent = String(total);
+      badge.style.display = total ? '' : 'none';
+    }
   }
 
   function renderAll() {
     renderAttention();
     renderTesters();
     renderErrors();
+    renderHealth();
+  }
+  var healthLoading = null;
+  function refreshHealth() {
+    if (healthLoading) return healthLoading;
+    healthLoading = loadHealth().then(function () { healthLoading = null; renderErrors(); renderHealth(); });
+    return healthLoading;
   }
   window.QG_renderOps = renderAll;
 
@@ -407,9 +573,17 @@
     if (refresh) refresh.onclick = async function () {
       refresh.disabled = true;
       if (typeof window.loadData === 'function') await window.loadData();
+      await refreshHealth();
       refresh.disabled = false;
       renderAll();
     };
+    document.addEventListener('click', function (e) {
+      var w = e.target.closest('[data-err-window]');
+      if (w) { errWindowH = Number(w.getAttribute('data-err-window')) || 24; renderErrors(); return; }
+      if (e.target.closest('#opsErrSerious')) { errOnlySerious = !errOnlySerious; renderErrors(); }
+    });
+    // Keep the health check fresh while the console is open.
+    setInterval(function () { if (!document.hidden) refreshHealth(); }, 120000);
 
     var prev = window.showSection;
     window.showSection = function (section, navBtn) {
@@ -427,6 +601,7 @@
       if ((window.users && window.users.length) || tries > 40) {
         clearInterval(timer);
         renderAll();
+        refreshHealth();
       }
     }, 500);
   }
