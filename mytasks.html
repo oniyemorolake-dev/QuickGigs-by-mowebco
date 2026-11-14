@@ -64,11 +64,18 @@
     <h1 class="sg-h1 bold">My gigs</h1>
     <p class="sg-sub" id="sgListSub">Everything you have posted, applied to and worked on.</p>
     <div class="sg-seg-row"><div class="sg-seg" id="sgSeg" role="tablist"></div></div>
+    <style>
+      .sg-live-banner{width:100%;display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:var(--surface);color:var(--text);font:inherit;font-size:14px;font-weight:600;text-align:left;cursor:pointer;}
+      .sg-live-dot{width:9px;height:9px;border-radius:50%;background:var(--green);flex:none;}
+      .sg-live-go{margin-left:auto;color:var(--primary);font-weight:600;}
+    </style>
+    <div id="sgLive" style="margin-top:14px"></div>
     <div id="sgTabContent" style="margin-top:18px"></div>
   </main>
   <nav class="sg-tabs" aria-label="Main">
   <a href="dashboard.html"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11L12 3.5 20.5 11"/><path d="M5.5 9.5V20h5v-6h3v6h5V9.5"/></svg>Home</a>
-  <a href="browsetask.html"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Gigs</a>
+  <a href="browsetask.html"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Browse</a>
+  <a href="mytasks.html" class="on" aria-current="page"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="17.5" r="1"/></svg>My gigs</a>
   <a href="messages.html"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8 8H6l-3 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8z"/></svg>Messages</a>
   <a href="profile.html"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/></svg>Profile</a>
 </nav>
@@ -171,6 +178,7 @@ onAuthStateChanged(auth, (user) => {
   var allTasks = [], allApplications = [], userNames = {}, userAvatars = {};
 var paymentByTaskId = {};
   var activeTab = 'posted';
+  var autoTabDone = false;
   var historyFilter = 'all';
   var activeTaskId = '';
   var currentUserId = null;
@@ -422,10 +430,25 @@ var paymentByTaskId = {};
       (targetMode === 'poster' ? 'Switch to Poster' : 'Switch to Tasker') + '</button></div></div>';
   }
 
+  /* Live gigs stay one tap away from every tab, so an in-progress gig is never
+     buried under Posted or Past. */
+  function paintLive() {
+    var box = $('sgLive');
+    if (!box || !currentUserId) return;
+    var live = inProgressTasks(currentUserId);
+    if (!live.length || activeTab === 'inprogress') { box.innerHTML = ''; return; }
+    var n = live.length;
+    box.innerHTML = '<button type="button" class="sg-live-banner" data-live-open>' +
+      '<span class="sg-live-dot" aria-hidden="true"></span>' +
+      '<span>' + n + (n === 1 ? ' gig' : ' gigs') + ' in progress</span>' +
+      '<span class="sg-live-go">View</span></button>';
+  }
+
   function renderTab() {
     var content = $('sgTabContent');
     if (!content || !currentUserId) return;
     var userId = currentUserId;
+    paintLive();
 
     if (activeTab === 'posted') {
       if (isWorker()) {
@@ -1390,6 +1413,12 @@ var paymentByTaskId = {};
       if (typeof writeTasksCache === 'function') writeTasksCache(allTasks);
       if (typeof writeAppsCache === 'function') writeAppsCache(allApplications);
 
+      // First load with no tab asked for: open on In progress when a gig is live.
+      if (!autoTabDone && !params.get('tab') && !params.get('paid') && inProgressTasks(userId).length) {
+        activeTab = 'inprogress';
+        paintSeg();
+      }
+      autoTabDone = true;
       renderTab();   // gigs on screen now; names, photos and payment badges follow together
       await Promise.all([
         (async function () { if (typeof getUsersNameMap === 'function') { try { userNames = await getUsersNameMap() || {}; } catch (e) {} } })(),
@@ -1425,6 +1454,9 @@ var paymentByTaskId = {};
     $('sgSeg').addEventListener('click', function (e) {
       var b = e.target.closest('[data-tab]');
       if (b) showTab(b.getAttribute('data-tab'));
+    });
+    $('sgLive').addEventListener('click', function (e) {
+      if (e.target.closest('[data-live-open]')) showTab('inprogress');
     });
     $('sgActiveBack').onclick = closeActive;
 
