@@ -311,35 +311,56 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 2) Scan recent Stripe checkout sessions for this poster (recovers missing DB rows)
-    try {
-      const listed = await stripe.checkout.sessions.list({ limit: 100 });
-      for (const session of listed.data || []) {
-        const metaPoster = String(session.metadata?.poster_id || '');
-        if (metaPoster !== posterId) continue;
-        if (workerIdHint && String(session.metadata?.worker_id || '') !== workerIdHint) continue;
-        const marked = await markSessionHeld(supabase, stripe, session);
-        if (marked) recovered.push(marked);
+    // 2) What the database already knows. This is the normal, fast answer.
+    const loadHeld = async () => {
+      const { data } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('poster_id', posterId)
+        .in('status', ['held', 'paid', 'completed'])
+        .order('created_at', { ascending: false })
+        .limit(20);
+      return (data || []) as Record<string, unknown>[];
+    };
+    const pickBest = (rows: Record<string, unknown>[]) => {
+      let found = null as Record<string, unknown> | null;
+      for (const row of rows) {
+        if (workerIdHint && String(row.worker_id || '') !== workerIdHint) continue;
+        if (taskIdHint && !isNumericId(taskIdHint) && String(row.task_id || '') !== taskIdHint) continue;
+        if (!found || paymentRank(row.status) > paymentRank(found.status)) found = row;
       }
-    } catch (listErr) {
-      console.warn('sync-payment session list failed:', listErr);
-    }
+      return found;
+    };
 
-    // 3) Return best held payment for this poster (+ optional worker)
-    const { data: heldRows } = await supabase
-      .from('payments')
-      .select('*')
-      .eq('poster_id', posterId)
-      .in('status', ['held', 'paid', 'completed'])
-      .order('created_at', { ascending: false })
-      .limit(20);
+    let heldRows = await loadHeld();
+    let best = pickBest(heldRows);
 
-    let best = null as Record<string, unknown> | null;
-    for (const row of heldRows || []) {
-      if (workerIdHint && String(row.worker_id || '') !== workerIdHint) continue;
-      if (!best || paymentRank(row.status) > paymentRank(best.status)) best = row as Record<string, unknown>;
+    // 3) Recovery only: page through Stripe's recent checkouts when the database
+    //    has no matching payment. This used to run on every call and cost 5-9 seconds.
+    if (!best || body.deep === true) {
+      try {
+        const known = new Set(heldRows.map((r) => String(r.stripe_id || '')));
+        const listed = await stripe.checkout.sessions.list({ limit: 100 });
+        for (const session of listed.data || []) {
+          const metaPoster = String(session.metadata?.poster_id || '');
+          if (metaPoster !== posterId) continue;
+          if (workerIdHint && String(session.metadata?.worker_id || '') !== workerIdHint) continue;
+          const pi = typeof session.payment_intent === 'string'
+            ? session.payment_intent
+            : session.payment_intent?.id || '';
+          if ((pi && known.has(pi)) || known.has(session.id)) continue;
+          const marked = await markSessionHeld(supabase, stripe, session);
+          if (marked) recovered.push(marked);
+        }
+      } catch (listErr) {
+        console.warn('sync-payment session list failed:', listErr);
+      }
+      if (recovered.length) {
+        heldRows = await loadHeld();
+        best = pickBest(heldRows);
+      }
     }
-    if (!best && heldRows && heldRows.length) best = heldRows[0] as Record<string, unknown>;
+    if (!best && !taskIdHint && heldRows.length) best = heldRows[0];
 
     if (!best) {
       // Use 200 so browsers don't log a scary "Failed to load resource" 404
