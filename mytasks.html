@@ -888,7 +888,15 @@ var paymentByTaskId = {};
       return;
     }
     box.classList.add('is-live');
-    box.innerHTML = '';
+    // Emptying the box under a live map left a dead, blank map the second
+    // time a gig was opened. Keep the map if it is still mounted here;
+    // otherwise throw it away properly and build a new one.
+    var alive = map && map.getContainer && map.getContainer() === box && box.querySelector('.leaflet-pane');
+    if (!alive) {
+      if (map) { try { map.remove(); } catch (e) {} }
+      map = null; mapMarker = null;
+      box.innerHTML = '';
+    }
     if (!map) {
       map = L.map(box, { zoomControl: false, attributionControl: true, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: false, keyboard: false });
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -901,7 +909,10 @@ var paymentByTaskId = {};
     mapMarker = L.marker([lat, lng], {
       icon: L.divIcon({ className: '', html: '<span class="sg-pin"></span>', iconSize: [18, 18], iconAnchor: [9, 9] })
     }).addTo(map);
-    setTimeout(function () { try { map.invalidateSize(); } catch (e) {} }, 80);
+    // The screen may still be sliding in: measure again, then re-centre.
+    [80, 400].forEach(function (ms) {
+      setTimeout(function () { try { map.invalidateSize(); map.setView([lat, lng], 14, { animate: false }); } catch (e) {} }, ms);
+    });
   }
   function paintMap(t) {
     var box = $('sgActiveMap');

@@ -577,9 +577,14 @@ onAuthStateChanged(auth, (user) => {
   }
 
   // ── Map segment ───────────────────────────────────────────────────────────
-  var map = null, layer = null;
+  var map = null, layer = null, youMarker = null, lastPinSig = '';
+  function hasPin(t) {
+    // isFinite(null) is true, so a remote gig (no coordinates) used to reach
+    // the map as [null, null] and crash it. That is why it stopped updating.
+    return t.lat != null && t.lng != null && isFinite(t.lat) && isFinite(t.lng) && !(t.lat === 0 && t.lng === 0);
+  }
   function renderMap(list) {
-    var withCoords = list.filter(function (t) { return isFinite(t.lat) && isFinite(t.lng); });
+    var withCoords = list.filter(hasPin);
     byId('sgMapList').innerHTML = list.length ? list.slice(0, 20).map(gigRowHtml).join('') : emptyHtml();
     if (typeof L === 'undefined') {
       if (typeof QG_ensureLeaflet === 'function') {
@@ -587,8 +592,9 @@ onAuthStateChanged(auth, (user) => {
       }
       return;
     }
+    var me = typeof getGeoFilterPos === 'function' ? getGeoFilterPos() : null;
     if (!map) {
-      map = L.map('sgMap', { zoomControl: false, attributionControl: true });
+      map = L.map('sgMap', { zoomControl: true, attributionControl: true });
       /* OpenStreetMap, not cartocdn: carto answers 200 with an "API key
          required" placeholder tile now, so the map rendered blank. OSM's tile
          policy requires the attribution line, hence attributionControl above. */
@@ -596,19 +602,57 @@ onAuthStateChanged(auth, (user) => {
         maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       }).addTo(map);
-      map.setView([51.0447, -114.0719], 11);
+      // Start on the person's own area, not always Calgary.
+      map.setView(me ? [me.lat, me.lng] : [56.1, -106.3], me ? 11 : 4);
     }
+    // The map was sized while hidden; measure before placing anything.
+    map.invalidateSize();
+
     if (layer) layer.remove();
     layer = L.layerGroup().addTo(map);
+    // Gigs are pinned to an approximate spot, so several share one point and
+    // sat on top of each other with only the newest-drawn visible. Fan them out.
+    var stacks = {};
     withCoords.forEach(function (t) {
-      L.marker([t.lat, t.lng], {
-        icon: L.divIcon({ className: 'sg-pin', html: '<span>$' + esc(String(t.price)) + '</span>', iconSize: null })
-      }).addTo(layer).on('click', function () { openGig(t.id); });
+      var key = t.lat.toFixed(3) + ',' + t.lng.toFixed(3);
+      (stacks[key] || (stacks[key] = [])).push(t);
     });
-    if (withCoords.length) {
-      map.fitBounds(L.latLngBounds(withCoords.map(function (t) { return [t.lat, t.lng]; })).pad(0.25));
+    Object.keys(stacks).forEach(function (key) {
+      var group = stacks[key];
+      group.forEach(function (t, i) {
+        var lat = t.lat, lng = t.lng;
+        if (group.length > 1) {
+          var angle = (2 * Math.PI * i) / group.length;
+          var r = 0.004 + 0.0012 * Math.floor(i / 8);            // roughly 400 m
+          lat += r * Math.sin(angle);
+          lng += (r * Math.cos(angle)) / Math.max(0.2, Math.cos(t.lat * Math.PI / 180));
+        }
+        L.marker([lat, lng], {
+          icon: L.divIcon({ className: 'sg-pin', html: '<span>$' + esc(String(t.price)) + '</span>', iconSize: null })
+        }).addTo(layer).on('click', function () { openGig(t.id); });
+      });
+    });
+
+    if (youMarker) { youMarker.remove(); youMarker = null; }
+    if (me) {
+      youMarker = L.circleMarker([me.lat, me.lng], {
+        radius: 7, color: '#fff', weight: 3, fillColor: '#2563eb', fillOpacity: 1, interactive: false
+      }).addTo(map);
     }
-    setTimeout(function () { map.invalidateSize(); }, 60);
+
+    // Re-frame only when the set of pins (or the person's spot) changed, so a
+    // background refresh does not yank the map back while they are looking around.
+    var sig = withCoords.map(function (t) { return t.id; }).sort().join(',') + '|' +
+      (me ? me.lat.toFixed(2) + ',' + me.lng.toFixed(2) : '');
+    if (sig !== lastPinSig) {
+      lastPinSig = sig;
+      var pts = withCoords.map(function (t) { return [t.lat, t.lng]; });
+      if (me && pts.length) pts.push([me.lat, me.lng]);
+      if (pts.length > 1) map.fitBounds(L.latLngBounds(pts).pad(0.3), { maxZoom: 13, animate: false });
+      else if (pts.length === 1) map.setView(pts[0], 12, { animate: false });
+      else if (me) map.setView([me.lat, me.lng], 11, { animate: false });
+    }
+    setTimeout(function () { try { map.invalidateSize(); } catch (e) {} }, 250);
   }
 
   // ── Spotlight segment ─────────────────────────────────────────────────────
