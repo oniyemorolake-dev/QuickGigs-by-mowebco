@@ -68,7 +68,14 @@
       .sg-live-banner{width:100%;display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:var(--surface);color:var(--text);font:inherit;font-size:14px;font-weight:600;text-align:left;cursor:pointer;}
       .sg-live-dot{width:9px;height:9px;border-radius:50%;background:var(--green);flex:none;}
       .sg-live-go{margin-left:auto;color:var(--primary);font-weight:600;}
+      .sg-money-strip{display:flex;align-items:stretch;gap:0;border:1px solid var(--border);border-radius:14px;background:var(--surface);color:var(--text);text-decoration:none;overflow:hidden;}
+      .sg-money-strip>span{flex:1;padding:11px 12px;min-width:0;}
+      .sg-money-strip>span+span{border-left:1px solid var(--border);}
+      .sg-money-strip small{display:block;font-size:11.5px;color:var(--text-muted);}
+      .sg-money-strip b{display:block;font-size:16px;font-weight:700;color:var(--green);margin-top:2px;}
+      .sg-money-strip .go{flex:none;display:flex;align-items:center;color:var(--primary);font-size:13px;font-weight:600;}
     </style>
+    <div id="sgMoney" style="margin-top:14px"></div>
     <div id="sgLive" style="margin-top:14px"></div>
     <div id="sgTabContent" style="margin-top:18px"></div>
   </main>
@@ -430,6 +437,36 @@ var paymentByTaskId = {};
       (targetMode === 'poster' ? 'Switch to Poster' : 'Switch to Tasker') + '</button></div></div>';
   }
 
+  /* Tasker's money, always on screen: what can be withdrawn, what is still
+     held, and the way to the withdraw screen. The server owns the numbers. */
+  var walletSnap = null, walletAt = 0, walletLoading = false;
+  function centsText(c) { var n = Math.max(0, Number(c) || 0); return '$' + (n / 100).toFixed(2); }
+  function paintMoney() {
+    var box = $('sgMoney');
+    if (!box) return;
+    if (!isWorker()) { box.innerHTML = ''; return; }
+    if (!walletSnap) {
+      box.innerHTML = '<a class="sg-money-strip" href="profile.html#earnings"><span><small>Earnings</small><b>…</b></span><span class="go">Open</span></a>';
+      return;
+    }
+    box.innerHTML = '<a class="sg-money-strip" href="profile.html#earnings" aria-label="Open earnings and withdraw">' +
+      '<span><small>Available</small><b>' + esc(centsText(walletSnap.available_cents)) + '</b></span>' +
+      '<span><small>Pending</small><b>' + esc(centsText(walletSnap.pending_cents)) + '</b></span>' +
+      '<span><small>Total earned</small><b>' + esc(centsText(walletSnap.earned_cents)) + '</b></span>' +
+      '<span class="go">Withdraw</span></a>';
+  }
+  async function loadMoney(force) {
+    if (!isWorker() || walletLoading || typeof callVerifiedFunction !== 'function') { paintMoney(); return; }
+    if (!force && walletSnap && Date.now() - walletAt < 30000) { paintMoney(); return; }
+    walletLoading = true;
+    paintMoney();
+    try {
+      var url = (window.QG_CONFIG && window.QG_CONFIG.walletUrl) || 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/request-payout';
+      var res = await callVerifiedFunction(url, { action: 'snapshot' });
+      if (res && res.ok !== false && res.available_cents != null) { walletSnap = res; walletAt = Date.now(); }
+    } catch (e) {} finally { walletLoading = false; paintMoney(); }
+  }
+
   /* Live gigs stay one tap away from every tab, so an in-progress gig is never
      buried under Posted or Past. */
   function paintLive() {
@@ -449,6 +486,7 @@ var paymentByTaskId = {};
     if (!content || !currentUserId) return;
     var userId = currentUserId;
     paintLive();
+    loadMoney(false);
 
     if (activeTab === 'posted') {
       if (isWorker()) {
@@ -648,7 +686,15 @@ var paymentByTaskId = {};
     var shown = pay
       ? (mineAsPoster ? (pay.amount != null ? pay.amount : agreed) : (pay.worker_payout != null ? pay.worker_payout : (pay.amount != null ? pay.amount : agreed)))
       : agreed;
-    var moneyWord = pay ? (mineAsPoster ? 'Paid' : 'Earned') : 'Agreed';
+    var payState = pay ? String(pay.status || '').toLowerCase() : '';
+    // "Earned" only once the money has actually been released to the tasker.
+    var moneyWord = !pay ? 'Agreed'
+      : mineAsPoster ? (payState === 'refunded' ? 'Refunded' : 'Paid')
+      : (payState === 'paid' || payState === 'completed' || payState === 'released') ? 'Earned, in your balance'
+      : payState === 'refunded' ? 'Refunded to poster'
+      : payState === 'disputed' ? 'On hold, dispute open'
+      : st === 'completed' ? 'Your share, being released'
+      : 'Your share, held until the gig is done';
     var when = shortDate(getField(t, 'CREATED_AT'));
 
     var actions = '<div class="sg-sheet-foot" style="flex-wrap:wrap;margin-top:12px">';

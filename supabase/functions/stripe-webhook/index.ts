@@ -13,6 +13,14 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { connectAccountReady } from '../_shared/connect-ready.ts';
+import { feeBreakdown } from '../_shared/fee.ts';
+
+/** Amount, fee and payout from what Stripe says was actually paid. */
+function realAmounts(amountTotal?: number) {
+  if (amountTotal == null || !(amountTotal > 0)) return {};
+  const b = feeBreakdown(amountTotal);
+  return { amount: b.total, platform_fee: b.fee, worker_payout: b.payout };
+}
 
 async function markPaymentHeld(
   supabase: ReturnType<typeof createClient>,
@@ -24,10 +32,14 @@ async function markPaymentHeld(
     amountTotal?: number;
   },
 ) {
+  // The paid amount is written every time. A row can be matched by gig rather
+  // than by payment id (the poster paid an earlier intent), and keeping the
+  // row's own amount then recorded $70 against a $35 charge.
   const heldPatch = {
     status: 'held',
     stripe_id: opts.stripeRef,
     completed_at: new Date().toISOString(),
+    ...realAmounts(opts.amountTotal),
   };
 
   const { data: byStripe } = await supabase
@@ -64,8 +76,9 @@ async function markPaymentHeld(
   const amountTotal = opts.amountTotal != null
     ? opts.amountTotal
     : Number(pendingPair?.[0]?.amount || 0);
-  const platformFee = Number(pendingPair?.[0]?.platform_fee);
-  const workerPayout = Number(pendingPair?.[0]?.worker_payout);
+  const realSplit = realAmounts(amountTotal) as { platform_fee?: number; worker_payout?: number };
+  const platformFee = realSplit.platform_fee != null ? realSplit.platform_fee : Number(pendingPair?.[0]?.platform_fee);
+  const workerPayout = realSplit.worker_payout != null ? realSplit.worker_payout : Number(pendingPair?.[0]?.worker_payout);
 
   await supabase.from('payments').insert({
     task_id: opts.taskId,
@@ -359,6 +372,7 @@ Deno.serve(async (req) => {
     status: 'held',
     stripe_id: paymentIntentId,
     completed_at: new Date().toISOString(),
+    ...realAmounts(session.amount_total != null ? session.amount_total / 100 : undefined),
   };
   const { data: bySession } = await supabase
     .from('payments')

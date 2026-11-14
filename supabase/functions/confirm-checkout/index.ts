@@ -5,6 +5,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { authErrorStatus, requireFirebaseUser } from '../_shared/firebase-auth.ts';
+import { feeBreakdown } from '../_shared/fee.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -240,10 +241,14 @@ Deno.serve(async (req) => {
       return json({ ok: false, error: 'not_authorized' }, 403);
     }
 
+    // Always record what Stripe says was paid, not what the row expected.
+    const paidTotal = session.amount_total != null ? session.amount_total / 100 : 0;
+    const paidSplit = paidTotal > 0 ? feeBreakdown(paidTotal) : null;
     const heldPatch = {
       status: 'held',
       stripe_id: paymentIntentId,
       completed_at: new Date().toISOString(),
+      ...(paidSplit ? { amount: paidSplit.total, platform_fee: paidSplit.fee, worker_payout: paidSplit.payout } : {}),
     };
 
     const { data: bySession } = await supabase
@@ -280,8 +285,8 @@ Deno.serve(async (req) => {
         const amountTotal = session.amount_total != null
           ? session.amount_total / 100
           : Number(pendingPair?.[0]?.amount || 0);
-        const platformFee = Number(pendingPair?.[0]?.platform_fee);
-        const workerPayout = Number(pendingPair?.[0]?.worker_payout);
+        const platformFee = paidSplit ? paidSplit.fee : Number(pendingPair?.[0]?.platform_fee);
+        const workerPayout = paidSplit ? paidSplit.payout : Number(pendingPair?.[0]?.worker_payout);
         await supabase.from('payments').insert({
           task_id: taskId,
           poster_id: posterId,

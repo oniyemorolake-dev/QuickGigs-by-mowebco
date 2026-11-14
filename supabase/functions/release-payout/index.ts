@@ -450,7 +450,7 @@ Deno.serve(async (req) => {
       }, 400);
     }
 
-    const paymentAmount = Number(getField(payment, 'amount') || 0);
+    let paymentAmount = Number(getField(payment, 'amount') || 0);
     let workerPayout = Number(getField(payment, 'worker_payout') || 0);
     let platformFee = Number(getField(payment, 'platform_fee') || 0);
     // If fee fields missing, apply configured tasker fee (PLATFORM_FEE_PERCENT / fee.ts).
@@ -459,7 +459,7 @@ Deno.serve(async (req) => {
       workerPayout = split.payout;
       platformFee = split.fee;
     }
-    const workerPayoutCents = Math.round(workerPayout * 100);
+    let workerPayoutCents = Math.round(workerPayout * 100);
     if (!workerPayoutCents || workerPayoutCents <= 0) {
       return json({ ok: false, error: 'invalid_payout_amount' }, 400);
     }
@@ -513,6 +513,36 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Stripe is the source of truth for what the poster actually paid. If the
+    // recorded amount is higher than the charge (an older, cheaper payment got
+    // matched to this gig), pay the tasker their share of the real charge
+    // instead of failing forever with "must not exceed the source amount".
+    let amountCorrected = false;
+    if (sourceTransaction) {
+      try {
+        const charge = await stripe.charges.retrieve(sourceTransaction);
+        const chargedNet = ((charge.amount || 0) - (charge.amount_refunded || 0)) / 100;
+        if (!(chargedNet > 0)) {
+          return json({
+            ok: false,
+            error: 'charge_fully_refunded',
+            message: 'This payment was refunded, so there is nothing to pay out.',
+          }, 409);
+        }
+        if (chargedNet + 0.005 < paymentAmount) {
+          console.warn('release-payout: recorded amount', paymentAmount, 'exceeds real charge', chargedNet);
+          const real = feeBreakdown(chargedNet);
+          paymentAmount = real.total;
+          workerPayout = real.payout;
+          platformFee = real.fee;
+          workerPayoutCents = Math.round(workerPayout * 100);
+          amountCorrected = true;
+        }
+      } catch (chargeErr) {
+        console.warn('Could not read the charge amount:', chargeErr);
+      }
+    }
+
     const paymentId = String(getField(payment, 'payment_id') || '');
     let transfer: Stripe.Transfer;
     try {
@@ -534,8 +564,10 @@ Deno.serve(async (req) => {
           },
         },
         {
-          // Prevent double-pay on retries
-          idempotencyKey: paymentId ? `qg-release-${paymentId}` : `qg-release-task-${releaseTaskKey}`,
+          // Prevent double-pay on retries. A corrected amount needs its own key:
+          // Stripe replays the old failure for a key it has already seen.
+          idempotencyKey: (paymentId ? `qg-release-${paymentId}` : `qg-release-task-${releaseTaskKey}`) +
+            (amountCorrected ? `-c${workerPayoutCents}` : ''),
         },
       );
     } catch (xferErr) {
@@ -554,6 +586,7 @@ Deno.serve(async (req) => {
         status: 'paid',
         transfer_id: transfer.id,
         completed_at: now,
+        amount: paymentAmount,
         worker_payout: workerPayout,
         platform_fee: platformFee,
       })
@@ -582,6 +615,7 @@ Deno.serve(async (req) => {
       payout_owner: guardianOwnsPayout ? 'guardian' : 'self',
       platform_fee: platformFee,
       amount: paymentAmount,
+      amount_corrected: amountCorrected,
       transfer_group: transferGroup,
     });
   } catch (err) {

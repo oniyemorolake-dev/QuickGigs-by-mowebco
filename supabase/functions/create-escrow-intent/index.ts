@@ -170,6 +170,46 @@ Deno.serve(async (req) => {
     const transferGroup = taskTransferGroup(paymentTaskId);
     const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
 
+    // One live payment per gig. If the price changed after the pay sheet was
+    // first opened, the old intent used to stay payable at the old price, and
+    // paying it funded the gig for less than was agreed.
+    const { data: earlier } = await supabase
+      .from('payments')
+      .select('payment_id,stripe_id')
+      .eq('task_id', paymentTaskId)
+      .eq('poster_id', posterId)
+      .eq('status', 'pending')
+      .limit(5);
+    for (const row of earlier || []) {
+      const oldId = String((row as Record<string, unknown>).stripe_id || '');
+      if (!oldId.startsWith('pi_')) continue;
+      try {
+        const old = await stripe.paymentIntents.retrieve(oldId);
+        if (old.status === 'succeeded' || old.status === 'processing') {
+          return json({ ok: false, error: 'already_paid' }, 409);
+        }
+        if (old.amount === amountCents && old.currency === 'cad' &&
+            String(old.metadata?.worker_id || '') === workerId &&
+            ['requires_payment_method', 'requires_confirmation', 'requires_action'].includes(old.status)) {
+          // Same price: hand back the same intent instead of making another.
+          return json({
+            ok: true,
+            payment_intent_id: old.id,
+            client_secret: old.client_secret,
+            transfer_group: transferGroup,
+            amount: breakdown.total,
+            platform_fee: breakdown.fee,
+            worker_payout: breakdown.payout,
+            currency: 'cad',
+            reused: true,
+          });
+        }
+        if (old.status !== 'canceled') await stripe.paymentIntents.cancel(oldId);
+      } catch (oldErr) {
+        console.warn('create-escrow-intent: could not retire earlier intent', oldId, oldErr);
+      }
+    }
+
     let paymentIntent: Stripe.PaymentIntent;
     try {
       // No transfer_data / on_behalf_of — funds held on the platform (escrow).
@@ -199,6 +239,7 @@ Deno.serve(async (req) => {
       }, 502);
     }
 
+    // (the earlier intent, if any, was reused or cancelled above)
     const paymentRow = {
       task_id: paymentTaskId,
       poster_id: posterId,

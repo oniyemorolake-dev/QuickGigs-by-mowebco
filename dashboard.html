@@ -431,6 +431,9 @@
     var head = document.getElementById('sgNearbyHead');
     var earn = document.getElementById('sgEarnTile');
     if (earn) earn.hidden = isPoster();
+    // Tasker's "This week" card opens Earnings (balance and withdraw) directly.
+    var week = document.getElementById('sgWeek');
+    if (week) week.setAttribute('href', isPoster() ? 'mytasks.html?tab=completed' : 'profile.html#earnings');
     if (!list) return;
 
     // Nearby gigs are a Tasker surface. Poster Home is current task + this week.

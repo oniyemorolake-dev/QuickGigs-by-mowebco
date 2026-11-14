@@ -5,6 +5,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 import { authErrorStatus, requireFirebaseUser } from '../_shared/firebase-auth.ts';
+import { feeBreakdown } from '../_shared/fee.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -96,10 +97,14 @@ async function upsertHeldPayment(
     sessionId: string;
   },
 ) {
+  // opts.amount is what Stripe says was paid. It is written on every match so
+  // the row can never claim more than the charge behind it.
+  const paid = opts.amount > 0 ? feeBreakdown(opts.amount) : null;
   const heldPatch = {
     status: 'held',
     stripe_id: opts.stripeId,
     completed_at: new Date().toISOString(),
+    ...(paid ? { amount: paid.total, platform_fee: paid.fee, worker_payout: paid.payout } : {}),
   };
 
   // Update by checkout session id (pending rows store cs_…)
@@ -118,15 +123,8 @@ async function upsertHeldPayment(
     .select('payment_id,task_id,status');
   if (byPi && byPi.length) return byPi[0];
 
-  // Update pending by poster+worker
-  const { data: byPair } = await supabase
-    .from('payments')
-    .update(heldPatch)
-    .eq('poster_id', opts.posterId)
-    .eq('worker_id', opts.workerId)
-    .eq('status', 'pending')
-    .select('payment_id,task_id,status');
-  if (byPair && byPair.length) return byPair[0];
+  // (Removed: matching any pending row for the same two people. That let a
+  // payment for one gig fund a different gig between the same poster and tasker.)
 
   // Update pending by UUID task
   if (isUuidLike(opts.taskId)) {
@@ -146,6 +144,7 @@ async function upsertHeldPayment(
     .select('payment_id,task_id,status')
     .eq('poster_id', opts.posterId)
     .eq('worker_id', opts.workerId)
+    .eq('task_id', isUuidLike(opts.taskId) ? opts.taskId : '00000000-0000-0000-0000-000000000000')
     .in('status', ['held', 'paid', 'completed'])
     .order('created_at', { ascending: false })
     .limit(1);
@@ -162,8 +161,8 @@ async function upsertHeldPayment(
       poster_id: opts.posterId,
       worker_id: opts.workerId,
       amount: opts.amount,
-      platform_fee: 0,
-      worker_payout: 0,
+      platform_fee: paid ? paid.fee : 0,
+      worker_payout: paid ? paid.payout : 0,
       stripe_id: opts.stripeId,
       status: 'held',
       completed_at: new Date().toISOString(),
@@ -282,7 +281,7 @@ Deno.serve(async (req) => {
                 taskId,
                 posterId,
                 workerId,
-                amount: Number(row.amount || 0),
+                amount: (pi.amount_received != null ? pi.amount_received : pi.amount) / 100,
                 stripeId: sid,
                 sessionId: sid,
               });
