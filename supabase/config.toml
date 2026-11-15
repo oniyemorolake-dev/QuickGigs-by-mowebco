@@ -63,3 +63,6 @@ verify_jwt = false
 
 [functions.translate]
 verify_jwt = false
+
+[functions.push]
+verify_jwt = false

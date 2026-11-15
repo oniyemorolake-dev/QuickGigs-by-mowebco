@@ -173,6 +173,7 @@
   <div class="sg-sheet-scrim" data-close></div>
   <div class="sg-sheet-panel full" role="dialog" aria-modal="true" aria-labelledby="sgNotifTitle">
     <div class="sg-sheet-head"><h2 id="sgNotifTitle">Notifications</h2><button class="sg-x" data-close aria-label="Close"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <button class="sg-set is-row" type="button" data-qg-push><span>Phone notifications<small data-qg-push-label>Sound and banner on your phone, even when the app is closed.</small></span><span class="sg-switch" role="switch" aria-checked="false"></span></button>
     <button class="sg-set is-row" id="sgAlertsOn"><span>New gigs near me<small>Tell me when a gig is posted in my area.</small></span><span class="sg-switch" role="switch" aria-checked="false"></span></button>
     <button class="sg-set is-row" id="sgAlertsEmail"><span>Also email me<small>Otherwise alerts only appear in the app.</small></span><span class="sg-switch" role="switch" aria-checked="false"></span></button>
     <div id="sgAlertFields" hidden>
@@ -1125,6 +1126,7 @@ window.SG_signOut = async function () {
   });
 })();
 </script>
+<script defer src="qg-push.js?v=2"></script>
 <script defer src="qg-lang.js?v=1"></script>
 </body>
 </html>

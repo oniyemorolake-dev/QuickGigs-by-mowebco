@@ -18,6 +18,30 @@ import {
   DEFAULT_FROM,
   type NotifPayload,
 } from '../_shared/notification-email.ts';
+import { pushToUser } from '../_shared/webpush.ts';
+
+/** Where tapping the phone notification should land. Same-site paths only. */
+function pushUrl(type: string, payload: NotifPayload): string {
+  const link = String((payload as Record<string, unknown>).link || '');
+  try {
+    if (link) {
+      const u = new URL(link, 'https://quickgigs.ca');
+      if (u.hostname === 'quickgigs.ca' || u.hostname === 'www.quickgigs.ca') return u.pathname + u.search + u.hash;
+    }
+  } catch { /* fall through to the default */ }
+  const byType: Record<string, string> = {
+    new_message: '/messages.html',
+    chat_unlocked: '/messages.html',
+    application_received: '/mytasks.html',
+    counter_offer_received: '/mytasks.html',
+    application_accepted: '/mytasks.html?tab=inprogress',
+    task_funded: '/mytasks.html?tab=inprogress',
+    task_completed: '/mytasks.html?tab=completed',
+    tip_received: '/profile.html#earnings',
+    admin_alert: '/admin.html',
+  };
+  return byType[type] || '/dashboard.html';
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -152,6 +176,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
+    let alreadyPushed = false;
     // Prefer queue row — prevents arbitrary email content from becoming the primary path
     if (notificationId) {
       const { data: row, error } = await supabase
@@ -161,12 +186,36 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (error || !row) return json({ ok: false, error: 'notification_not_found' }, 404);
       if (row.sent_at) return json({ ok: true, already: true, delivered: true });
+      alreadyPushed = !!row.pushed_at;
       email = String(row.email || email || '').trim();
       userId = String(row.user_id || userId || '').trim();
       type = String(row.type || type || '').trim();
       subject = String(row.subject || subject);
       text = String(row.body_text || row.body || text);
       payload = { ...parsePayload(row.payload), ...payload };
+    }
+
+    // Phone notification first: it does not depend on the email going out.
+    // Only for real accounts (not waitlist or guardian addresses), once per row.
+    const pushable = notificationId && userId && !alreadyPushed &&
+      !userId.startsWith('waitlist:') && userId !== 'guardian' && !userId.startsWith('guardian:') &&
+      type !== 'waitlist_invite';
+    if (pushable) {
+      try {
+        const head = buildNotificationEmail(type || 'generic', payload, subject, text);
+        const firstLine = String(text || '').split('\n').map((l) => l.trim()).filter(Boolean)[0] || '';
+        await supabase.from('notification_queue')
+          .update({ pushed_at: new Date().toISOString() })
+          .eq('notification_id', notificationId);
+        await pushToUser(supabase, userId, {
+          title: String(head.subject || subject || 'SwiftGigs').slice(0, 80),
+          body: firstLine.slice(0, 160),
+          url: pushUrl(type, payload),
+          tag: 'qg-' + (type || 'update'),
+        });
+      } catch (pushErr) {
+        console.warn('send-notification: push skipped', pushErr);
+      }
     }
 
     const resolved = await resolveRecipientEmail(supabase, userId, email);

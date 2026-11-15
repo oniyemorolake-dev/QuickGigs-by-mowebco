@@ -205,6 +205,54 @@ self.addEventListener('message', function (event) {
   }
 });
 
+/* ── Phone notifications ─────────────────────────────────────────────
+   The server sends {title, body, url, tag}. Every push must show a
+   notification (iOS withdraws permission from apps that receive silently). */
+self.addEventListener('push', function (event) {
+  var data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (e) {
+    try { data = { body: event.data.text() }; } catch (e2) {}
+  }
+  var title = String(data.title || 'SwiftGigs');
+  var url = String(data.url || '/dashboard.html');
+  event.waitUntil(Promise.all([
+    self.registration.showNotification(title, {
+      body: String(data.body || ''),
+      icon: '/QuickGigsLogo.png',
+      badge: '/QuickGigsLogo.png',
+      tag: String(data.tag || 'qg-update'),
+      renotify: true,
+      data: { url: url }
+    }),
+    // An open app also gets told, so it can chime and refresh.
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
+      list.forEach(function (c) { c.postMessage({ type: 'QG_PUSH', title: title, body: String(data.body || ''), url: url }); });
+    })
+  ]));
+});
+
+self.addEventListener('notificationclick', function (event) {
+  event.notification.close();
+  var raw = (event.notification.data && event.notification.data.url) || '/dashboard.html';
+  var target;
+  try {
+    target = new URL(raw, self.location.origin);
+    if (target.origin !== self.location.origin) target = new URL('/dashboard.html', self.location.origin);
+  } catch (e) { target = new URL('/dashboard.html', self.location.origin); }
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
+      for (var i = 0; i < list.length; i++) {
+        var c = list[i];
+        if ('focus' in c) {
+          if ('navigate' in c) { try { c.navigate(target.href); } catch (e) {} }
+          return c.focus();
+        }
+      }
+      return self.clients.openWindow(target.href);
+    })
+  );
+});
+
 self.addEventListener('fetch', function (event) {
   if (event.request.method !== 'GET') return;
 
