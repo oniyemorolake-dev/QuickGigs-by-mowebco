@@ -76,6 +76,7 @@
     <button class="sg-set" id="sgSetEarnings">Earnings<span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>
     <button class="sg-set" id="sgSetPayments">Payment methods<span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>
     <button class="sg-set" id="sgSetNotifications">Notifications<span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>
+    <button class="sg-set" id="sgSetLanguage" data-qg-language hidden>Language<span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>
     <button class="sg-set" id="sgSetAccount">Account settings<span class="sg-chev"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>
     <!-- Account settings opens a sub-view holding everything else that used to be on this page:
          role switcher, theme, verification, gig alerts, skills, about, reviews, stats, delete account. -->
@@ -952,6 +953,8 @@ window.SG_signOut = async function () {
       });
       var settingsHead = $('sgSettingsHead');
       if (settingsHead) settingsHead.hidden = true;
+      var langRow = $('sgSetLanguage');
+      if (langRow) langRow.remove();
     }
 
     // Own profile always reads fresh: a cached row from before Stripe setup
@@ -1122,5 +1125,6 @@ window.SG_signOut = async function () {
   });
 })();
 </script>
+<script defer src="qg-lang.js?v=1"></script>
 </body>
 </html>

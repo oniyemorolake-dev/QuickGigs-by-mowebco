@@ -101,6 +101,8 @@ function qgReportFunctionError(url, status, code, message, token) {
     if (!msg || sent >= 5 || seen[msg]) return;
     // Noise from extensions and cross-origin scripts carries no detail.
     if (/^Script error\.?$/i.test(msg) || /ResizeObserver loop|extension:\/\//i.test(msg + ' ' + (where || ''))) return;
+    // Lost connection, not a bug: the browser could not reach a server.
+    if (/auth\/network-request-failed|Failed to update a ServiceWorker|Load failed|Failed to fetch|NetworkError/i.test(msg)) return;
     seen[msg] = true; sent++;
     var token = null;
     try {

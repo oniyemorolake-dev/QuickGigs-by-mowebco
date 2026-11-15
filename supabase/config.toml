@@ -60,3 +60,6 @@ verify_jwt = false
 
 [functions.tip]
 verify_jwt = false
+
+[functions.translate]
+verify_jwt = false

@@ -983,7 +983,7 @@ html body.page-landing.qg-landing-in .qg-topnav-links a.qg-nav-login.is-current{
   </section>
 </main>
 <footer class="legal-footer site-footer" id="siteFooter">
-  <a href="terms.html">Terms of Service</a> · <a href="privacy.html">Privacy Policy</a>
+  <a href="terms.html">Terms of Service</a> · <a href="privacy.html">Privacy Policy</a><span data-qg-language hidden> · <a href="#" role="button">Language</a></span>
 </footer>
 <script type="application/ld+json">
 {
@@ -1304,5 +1304,6 @@ onAuthStateChanged(qgInitAuth(), function (user) {
   if (user) paintSignedInLinks();
 });
 </script>
+<script defer src="qg-lang.js?v=1"></script>
 </body>
 </html>
