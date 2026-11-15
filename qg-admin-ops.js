@@ -113,6 +113,9 @@
       if (paid) return;
       var since = f(a, 'updated_at') || f(a, 'created_at');
       if (now - ms(since) < 3600000) return; // give the poster an hour to pay
+      if (now - ms(since) > 14 * 86400000) return; // abandoned long ago: nothing to chase
+      var st0 = taskById(tid);
+      if (st0 && /^(removed|cancelled|completed)$/.test(lower(f(st0, 'status')))) return;
       var t = taskById(tid);
       items.push({
         kind: 'unpaid', tone: 's-progress', label: 'Accepted, not paid',
@@ -228,7 +231,16 @@
       if (typeof window.loadData === 'function') { await window.loadData(); }
       renderAll();
     } else {
-      var why = (res && (res.message || res.reason || res.error)) || 'unknown error';
+      var raw = String((res && (res.details || res.message || res.reason || res.error)) || 'unknown error');
+      var why = /insufficient available funds/i.test(raw)
+          ? 'Stripe says the platform balance cannot cover it. Usually the charge behind this gig was already refunded or used. Refund the poster instead, or check the payment in Stripe.'
+        : /must not exceed the source amount/i.test(raw)
+          ? 'the amount recorded is more than the poster was really charged. Check the payment in Stripe.'
+        : /charge_fully_refunded|refunded, so there is nothing/i.test(raw)
+          ? 'this payment was already refunded.'
+        : /worker_payout_setup_required|guardian_payout_setup_required/i.test(raw)
+          ? 'the tasker has not finished payout setup.'
+        : raw.slice(0, 180);
       toast('Could not ' + (kind === 'release' ? 'pay the tasker' : 'refund') + ': ' + why, 'red');
     }
   }
@@ -343,6 +355,7 @@
       minor_requires_guardian_payout: 'Teen tried to set up their own payouts',
       stripe_account_create_failed: 'Stripe could not create a payout account',
       stripe_account_link_failed: 'Stripe could not open payout setup',
+      stripe_transfer_failed: 'Paying the tasker failed at Stripe',
       user_not_found: 'Signed in but never finished their profile',
       live_keys_blocked: 'Blocked because Stripe is in test mode',
       completion_is_server_managed: 'Gig could not be completed from the app'
@@ -373,6 +386,7 @@
       guardian_payout_setup_required: 'The teen\'s parent has not finished payout setup. Resend the parent email from Users.',
       stripe_account_create_failed: 'Stripe refused the payout account. Open Stripe, Connect, and look at the latest failed request.',
       stripe_account_link_failed: 'Stripe could not open payout setup. Check the Stripe dashboard for an outage or a restricted account.',
+      stripe_transfer_failed: 'Stripe refused to send the tasker their money. Read the message below. "Insufficient available funds" means the charge behind the gig was already refunded or used: refund the poster from Needs attention, or look the payment up in Stripe. If it happens on a fresh gig, tell Claude or Cursor.',
       user_not_found: 'They signed in but their profile row is missing. Ask them to sign up again with the same email.',
       task_not_found: 'The gig was deleted or the link is old. Nothing to fix unless it is a live gig.',
       task_not_open: 'Normal: the gig was already taken or closed.',
@@ -489,7 +503,7 @@
     var out = [];
     var errs = (h.errors || []).filter(function (e) { return ms(f(e, 'created_at')) >= Date.now() - 3600000; });
     var seriousNow = errs.filter(isSerious).length;
-    out.push({ ok: seriousNow === 0, name: 'App errors',
+    out.push({ ok: seriousNow === 0, name: 'App errors', go: 'errors',
       text: seriousNow ? seriousNow + ' serious in the last hour. See Failed actions below.' : 'No serious errors in the last hour' + (errs.length ? ' (' + errs.length + ' minor)' : '') });
     (h.jobs || []).forEach(function (j) {
       var name = JOB_WORDS[j.name] || j.name;
@@ -502,16 +516,16 @@
         : failed ? 'Last run failed ' + ago(j.last_run) + (j.name === 'quickgigs-daily-account-graduation' ? '. Its web address and secret were never saved. Only matters once teen accounts turn 18.' : '. ' + String(j.last_message || '').slice(0, 120))
         : stale ? 'Has not run for ' + ago(j.last_run).replace(' ago', '') + '. Emails are not going out.'
         : 'Working, last ran ' + ago(j.last_run);
-      out.push({ ok: ok, name: name, text: text });
+      out.push({ ok: ok, name: name, text: text, go: failed || stale ? 'job' : '', more: failed ? String(j.last_message || '') : '' });
     });
     var em = h.emails || {};
     var waitingLong = em.waiting > 0 && em.oldest_waiting && (Date.now() - ms(em.oldest_waiting)) > 10 * 60000;
-    out.push({ ok: !waitingLong && !em.failed_3d, name: 'Emails',
+    out.push({ ok: !waitingLong && !em.failed_3d, name: 'Emails', go: (waitingLong || em.failed_3d) ? 'attention' : '',
       text: (em.failed_3d ? em.failed_3d + ' failed in 3 days. ' : '') +
         (waitingLong ? em.waiting + ' stuck waiting since ' + ago(em.oldest_waiting) + '. ' : '') +
         (em.sent_24h || 0) + ' sent in 24 h' });
     var mo = h.money || {};
-    out.push({ ok: !mo.unpaid_after_complete, name: 'Payments',
+    out.push({ ok: !mo.unpaid_after_complete, name: 'Payments', go: mo.unpaid_after_complete ? 'attention' : '',
       text: mo.unpaid_after_complete
         ? mo.unpaid_after_complete + ' finished gig' + (mo.unpaid_after_complete === 1 ? '' : 's') + ' where the tasker is not paid yet. Use Pay the tasker above.'
         : (mo.held || 0) + ' held in escrow, none overdue' });
@@ -535,9 +549,14 @@
     var bad = checks.filter(function (c) { return !c.ok; }).length;
     if (count) count.textContent = bad ? '· ' + bad + ' to look at' : '· all working';
     host.innerHTML = checks.map(function (c) {
-      return '<div class="ops-row"><div class="ops-row-main">' +
+      var inner = '<div class="ops-row-main">' +
         '<div class="ops-row-text"><span class="ops-dot ' + (c.ok ? 'is-ok' : 'is-bad') + '"></span>' + esc(c.name) + '</div>' +
-        '<div class="ops-row-sub">' + esc(c.text) + '</div></div></div>';
+        '<div class="ops-row-sub">' + esc(c.text) + '</div>' +
+        (c.go === 'job' && c.more ? '<div class="ops-row-sub ops-health-more" hidden>' + esc(c.more) + '</div>' : '') +
+        '</div>';
+      if (!c.go) return '<div class="ops-row">' + inner + '</div>';
+      return '<button type="button" class="ops-row ops-health-go" data-health-go="' + c.go + '">' + inner +
+        '<span class="ops-err-more">' + (c.go === 'job' ? 'Details' : 'Show') + '</span></button>';
     }).join('') + '<div class="ops-empty">Checked ' + esc(ago(window.adminHealth.checked_at)) +
       '. You also get an email when errors spike, emails stop sending, or a tasker is left unpaid.</div>';
     // Health problems count toward the nav badge too.
@@ -578,6 +597,24 @@
       renderAll();
     };
     document.addEventListener('click', function (e) {
+      var hg = e.target.closest('[data-health-go]');
+      if (hg) {
+        var where = hg.getAttribute('data-health-go');
+        if (where === 'job') {
+          var more = hg.querySelector('.ops-health-more');
+          if (more) more.hidden = !more.hidden;
+          return;
+        }
+        if (where === 'errors') { errOnlySerious = true; errWindowH = 24; renderErrors(); }
+        var target = document.getElementById(where === 'errors' ? 'opsErrors' : 'opsAttention');
+        var card = target && (target.closest('.table-card') || target);
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (where === 'errors' && target) {
+          var first = target.querySelector('details.ops-err');
+          if (first) first.open = true;
+        }
+        return;
+      }
       var w = e.target.closest('[data-err-window]');
       if (w) { errWindowH = Number(w.getAttribute('data-err-window')) || 24; renderErrors(); return; }
       if (e.target.closest('#opsErrSerious')) { errOnlySerious = !errOnlySerious; renderErrors(); }
