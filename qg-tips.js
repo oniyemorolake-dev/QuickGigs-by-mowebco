@@ -88,7 +88,8 @@
     opts = opts || {};
     ensureDom();
     var sheet = document.getElementById('qgTipSheet');
-    var cents = 500;
+    var preset = Math.round(Number(opts.amountCents) || 0);
+    var cents = preset >= MIN && preset <= MAX ? preset : 500;
     var who = opts.taskerName ? opts.taskerName : 'your tasker';
     sheet.innerHTML = head('Add a tip') +
       '<p class="qg-tip-sub">A thank-you for ' + esc(who) + (opts.title ? ' on "' + esc(opts.title) + '"' : '') +
@@ -127,6 +128,8 @@
       if (!v) cents = 500;
       paint();
     };
+    // Amount already chosen on the review sheet: go straight to payment.
+    if (preset >= MIN && preset <= MAX) setTimeout(function () { if (!go.disabled) go.click(); }, 0);
     go.onclick = async function () {
       go.disabled = true;
       go.textContent = 'One moment…';

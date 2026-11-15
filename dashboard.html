@@ -42,6 +42,8 @@
 <!-- Data, auth and logic only. -->
 <script defer src="qg-utils.js"></script>
 <script defer src="qg-config.js"></script>
+<script defer src="qg-tips.js?v=2"></script>
+<script defer src="qg-review.js?v=1"></script>
 <script defer src="supabaseClient.js"></script>
 <script defer src="supabase-db.js"></script>
 <script defer src="qg-categories.js"></script>
@@ -788,6 +790,11 @@ onAuthStateChanged(auth, async (user) => {
 
   const name = live.displayName || (live.email ? live.email.split('@')[0] : 'there');
   window._userName = name.split(' ')[0];
+
+  // Opening the app after a finished gig: offer to rate it (and tip). Skippable.
+  setTimeout(function () {
+    if (typeof window.QG_promptPendingReview === 'function') window.QG_promptPendingReview();
+  }, 2500);
 
   // Redraw the greeting now the real first name is known. The streak pill is
   // the only place the streak appears; the old streak card is gone.

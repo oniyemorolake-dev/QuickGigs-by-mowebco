@@ -162,8 +162,8 @@ body.page-review nav.tab-bar .tab-item.active .tab-lbl{color:var(--teal)!importa
     <div class="tc-row">
       <div class="tc-icon" id="taskIcon" style="background:var(--surface-alt)" data-qg-ico="clipboard" data-qg-ico-size="22"></div>
       <div class="tc-info">
-        <div class="tc-title" id="taskTitle">Deep clean 2 bedroom apartment</div>
-        <div class="tc-meta" id="taskMeta">$120 · Completed Jun 21, 2026</div>
+        <div class="tc-title" id="taskTitle" translate="no">Your gig</div>
+        <div class="tc-meta" id="taskMeta">Completed</div>
       </div>
     </div>
     <span class="completed-badge"><span data-qg-ico="checkCircle" data-qg-ico-size="12"></span> Task completed</span>
@@ -173,7 +173,7 @@ body.page-review nav.tab-bar .tab-item.active .tab-lbl{color:var(--teal)!importa
   <div class="reviewer-section">
     <div class="rev-avatar" id="revieweeAvatar">S</div>
     <div class="rev-label" id="revLabel">How was your experience with</div>
-    <div class="rev-name" id="revieweeName">Sarah K.</div>
+    <div class="rev-name" id="revieweeName" translate="no"></div>
   </div>
 
   <!-- Star rating -->
@@ -212,12 +212,12 @@ body.page-review nav.tab-bar .tab-item.active .tab-lbl{color:var(--teal)!importa
   <div class="success-icon" data-qg-ico="party" data-qg-ico-size="32"></div>
   <div class="success-title">Review submitted</div>
   <div class="success-stars" id="successStars"></div>
-  <div class="success-sub">Thanks for reviewing <span id="successName">Sarah K.</span> — your feedback helps build trust on SwiftGigs.</div>
+  <div class="success-sub">Thanks for reviewing <span id="successName" translate="no"></span> — your feedback helps build trust on SwiftGigs.</div>
   <div class="success-rating-card">
     <div class="src-label">Your review for</div>
-    <div class="src-name" id="successCardName">Sarah K.</div>
+    <div class="src-name" id="successCardName" translate="no"></div>
     <div class="src-stars" id="successCardStars"></div>
-    <div class="src-tags" id="successCardTags">On time · Great work · Professional</div>
+    <div class="src-tags" id="successCardTags"></div>
   </div>
   <button class="home-btn" onclick="window.location.href='dashboard.html'">Back to dashboard</button>
   <button class="browse-btn" onclick="window.location.href='browsetask.html'">Browse more tasks</button>
@@ -308,15 +308,21 @@ function reviewErrorMessage(err) {
 // ── URL PARAMS ─────────────────────────────────────────
 // Usage: review.html?task=Deep clean&price=120&date=Jun 21&reviewee=Sarah K.&role=poster
 var params      = new URLSearchParams(window.location.search);
-var taskTitle   = params.get('task')     || 'Deep clean 2 bedroom apartment';
-var taskPrice   = params.get('price')    || '120';
-var taskDate    = params.get('date')     || 'Jun 21, 2026';
-var reviewee    = params.get('reviewee') || 'Sarah K.';
+// Links carry ids (review.html?task=<gig id>&user=<person id>); the real
+// title, amount, date and name are loaded below. No sample data, ever.
+var UUID_RE     = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+var rawTask     = params.get('task') || '';
+var linkTaskId  = params.get('taskId') || (UUID_RE.test(rawTask) ? rawTask : '');
+var linkUserId  = params.get('revieweeId') || params.get('user') || '';
+var taskTitle   = (!UUID_RE.test(rawTask) && rawTask) || 'Your gig';
+var taskPrice   = params.get('price')    || '';
+var taskDate    = params.get('date')     || '';
+var reviewee    = params.get('reviewee') || 'this member';
 var reviewerRole= params.get('role')     || 'poster'; // poster reviews worker, worker reviews poster
 
 // Populate page
 document.getElementById('taskTitle').textContent    = taskTitle;
-document.getElementById('taskMeta').textContent     = '$' + taskPrice + ' · Completed ' + taskDate;
+document.getElementById('taskMeta').textContent     = (taskPrice ? '$' + taskPrice + ' · ' : '') + 'Completed' + (taskDate ? ' ' + taskDate : '');
 document.getElementById('revieweeName').textContent = reviewee;
 document.getElementById('revieweeAvatar').textContent = (reviewee || 'U').charAt(0).toUpperCase();
 document.getElementById('successName').textContent  = reviewee;
@@ -406,8 +412,8 @@ window.submitReviewForm = async function(){
     return;
   }
 
-  var revieweeId = params.get('revieweeId');
-  var taskId = params.get('taskId');
+  var revieweeId = linkUserId;
+  var taskId = linkTaskId;
   if (!taskId || !revieweeId) {
     showToast('Missing task info — open review from My Tasks → Completed', '#f59e0b');
     return;
@@ -465,14 +471,55 @@ window.submitReviewForm = async function(){
   window.scrollTo(0, 0);
 };
 
-window.addEventListener('DOMContentLoaded', function () {
+function paintReviewee() {
+  ['revieweeName', 'successName', 'successCardName'].forEach(function (id) {
+    var n = document.getElementById(id);
+    if (n) n.textContent = reviewee;
+  });
   var el = document.getElementById('revieweeAvatar');
   if (!el) return;
   el.textContent = (reviewee || 'U').charAt(0).toUpperCase();
   if (typeof avatarGradientForName === 'function') {
     el.style.background = avatarGradientForName(reviewee);
   }
-});
+}
+/* Fill the page from the real gig and the real person. */
+async function loadReviewContext() {
+  paintReviewee();
+  if (!linkTaskId) return;
+  for (var i = 0; i < 40 && !(window._currentUser && window._currentUser.uid); i++) {
+    await new Promise(function (r) { setTimeout(r, 150); });
+  }
+  var uid = window._currentUser && window._currentUser.uid;
+  try {
+    var task = typeof getTaskById === 'function' ? await getTaskById(linkTaskId) : null;
+    if (task) {
+      taskTitle = String(task.title || task.TITLE || taskTitle);
+      document.getElementById('taskTitle').textContent = taskTitle;
+      var posterId = String(task.posted_by || task.POSTED_BY || '');
+      var iAmPoster = uid && posterId === uid;
+      reviewerRole = iAmPoster ? 'poster' : 'worker';
+      document.getElementById('revLabel').textContent = iAmPoster ? 'Rate your tasker' : 'Rate the poster';
+      if (!linkUserId && !iAmPoster) linkUserId = posterId;
+      var done = task.poster_confirmed_at || task.POSTER_CONFIRMED_AT;
+      var doneMs = done && typeof parseQgTimestamp === 'function' ? parseQgTimestamp(done) : Date.parse(done || '');
+      var when = isFinite(doneMs) && doneMs ? new Date(doneMs).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+      var amount = '';
+      try {
+        var pays = await sbGet('payments', withSelect('task_id=eq.' + encodeURIComponent(linkTaskId), 'amount,worker_payout,status'), 'created_at.desc', 1);
+        if (pays && pays[0]) amount = '$' + Number(iAmPoster ? pays[0].amount : (pays[0].worker_payout || pays[0].amount)).toFixed(2);
+      } catch (e) {}
+      document.getElementById('taskMeta').textContent = (amount ? amount + ' · ' : '') + 'Completed' + (when ? ' ' + when : '');
+      if (!iAmPoster && (task.poster_name || task.POSTER_NAME)) reviewee = String(task.poster_name || task.POSTER_NAME);
+    }
+    if (linkUserId && typeof getUserNameByFirebaseUid === 'function') {
+      var name = await getUserNameByFirebaseUid(linkUserId);
+      if (name) reviewee = name;
+    }
+  } catch (e) {}
+  paintReviewee();
+}
+window.addEventListener('DOMContentLoaded', loadReviewContext);
 </script>
 <script src="qg-menu.js?v=1" defer></script>
 <script defer src="qg-help.js?v=20260726seo"></script>

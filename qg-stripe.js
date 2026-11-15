@@ -86,7 +86,7 @@
         '<div class="qg-stripe-head">' +
           '<div class="qg-stripe-head-text">' +
             '<div class="qg-stripe-title" id="qgStripeTitle">Pay &amp; fund escrow</div>' +
-            '<div class="qg-stripe-sub" id="qgStripeSub">Held securely until you mark the task complete</div>' +
+            '<div class="qg-stripe-sub" id="qgStripeSub">Held securely until you mark the gig complete. You can add a tip afterwards; 100% of tips go to your tasker.</div>' +
             '<div class="qg-stripe-amount" id="qgStripeAmount"></div>' +
             '<div class="qg-stripe-fee" id="qgStripeFee" style="display:none"></div>' +
             '<div class="qg-stripe-trust-inline" aria-hidden="true">' +
@@ -854,7 +854,7 @@
     var amountEl = document.getElementById('qgStripeAmount');
     var feeEl = document.getElementById('qgStripeFee');
     if (titleEl) titleEl.textContent = options.title || 'Pay & fund escrow';
-    if (subEl) subEl.textContent = options.subtitle || 'Held securely until you mark the task complete';
+    if (subEl) subEl.textContent = (options.subtitle || 'Held securely until you mark the gig complete') + '. You can add a tip afterwards; 100% of tips go to your tasker.';
     if (amountEl) {
       if (options.amount != null && options.amount !== '') {
         amountEl.textContent = '$' + Number(options.amount).toFixed(2) + ' CAD';

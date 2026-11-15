@@ -43,7 +43,8 @@
 <script defer src="qg-verification.js"></script>
 <script defer src="feeBreakdown.js"></script>
 <script defer src="qg-stripe.js"></script>
-<script defer src="qg-tips.js?v=1"></script>
+<script defer src="qg-tips.js?v=2"></script>
+<script defer src="qg-review.js?v=1"></script>
 <script defer src="qg-evidence.js"></script>
 <script defer src="qg-disputes.js"></script>
 <script defer src="qg-report.js"></script>
@@ -564,6 +565,7 @@ var paymentByTaskId = {};
 
     if (activeTab === 'completed') {
       loadTips(false);
+      loadReviewed(false);
       var filters = [
         ['all', 'All'],
         ['completed', 'Completed'],
@@ -673,6 +675,21 @@ var paymentByTaskId = {};
       neg + actions + '</div>';
   }
 
+  /* Which finished gigs this person has already reviewed. */
+  var reviewedTaskIds = {}, reviewsLoaded = false;
+  async function loadReviewed(force) {
+    if ((reviewsLoaded && !force) || typeof window.QG_reviewedTaskIds !== 'function' || !currentUserId) return;
+    reviewsLoaded = true;
+    try {
+      reviewedTaskIds = await window.QG_reviewedTaskIds(currentUserId);
+      if (activeTab === 'completed') renderTab();
+    } catch (e) { reviewsLoaded = false; }
+  }
+  function afterReview(taskId) {
+    reviewedTaskIds[String(taskId)] = true;
+    if (activeTab === 'completed') renderTab();
+  }
+
   /* Tips on finished gigs, loaded after the list is on screen. */
   var tipsByTaskId = {}, tipsLoadedFor = '';
   function tipLine(taskId, asPoster) {
@@ -731,7 +748,12 @@ var paymentByTaskId = {};
     if ((st === 'expired' || st === 'cancelled') && mineAsPoster) {
       actions += '<button class="sg-btn teal" data-repost="' + esc(taskId) + '">Relist gig</button>';
     } else if (st === 'completed') {
-      actions += '<a class="sg-btn teal" href="' + esc(reviewHref(t, app)) + '">Leave a review</a>';
+      // Opens the review pop-up. The link stays as a fallback if the script is missing.
+      if (reviewedTaskIds[taskId]) {
+        actions += '<span class="sg-btn sg-btn-quiet" style="pointer-events:none;opacity:.7">Reviewed</span>';
+      } else {
+        actions += '<a class="sg-btn teal" href="' + esc(reviewHref(t, app)) + '" data-review-task="' + esc(taskId) + '" data-review-user="' + esc(String(otherId || '')) + '" data-review-name="' + esc(otherName) + '" data-review-title="' + esc(titleOf(t)) + '" data-review-role="' + (mineAsPoster ? 'poster' : 'worker') + '" data-review-tip="' + (pay && payState !== 'refunded' && payState !== 'disputed' ? '1' : '0') + '">Leave a review</a>';
+      }
       // Tip: poster only, on a gig that was actually paid for.
       if (mineAsPoster && pay && payState !== 'refunded' && payState !== 'disputed' && typeof window.QG_openTip === 'function') {
         actions += '<button class="sg-btn sg-btn-quiet" data-tip-task="' + esc(taskId) + '" data-tip-name="' + esc(otherName) + '" data-tip-title="' + esc(titleOf(t)) + '">' +
@@ -1447,7 +1469,21 @@ var paymentByTaskId = {};
 
     closeActive();
     showTab('completed');
-    toast('Gig complete. Leave a review when you can.');
+    // Straight into rate-and-tip, the way a ride ends. "Not now" skips it.
+    if (typeof window.QG_openReview === 'function' && workerId) {
+      window.QG_openReview({
+        taskId: String(result.task_id || taskId),
+        revieweeId: String(workerId),
+        revieweeName: displayName(workerId, app),
+        title: titleOf(task),
+        role: 'poster',
+        canTip: true,
+        onDone: function () { afterReview(String(result.task_id || taskId)); },
+        onTip: function () { loadTips(true); }
+      });
+    } else {
+      toast('Gig complete. Leave a review when you can.');
+    }
   }
 
   /* ── Load ──────────────────────────────────────────────────────────────── */
@@ -1516,6 +1552,12 @@ var paymentByTaskId = {};
       }
       autoTabDone = true;
       renderTab();   // gigs on screen now; names, photos and payment badges follow together
+      // A finished gig nobody has rated yet: offer it once, a moment after load.
+      if (typeof window.QG_promptPendingReview === 'function' && !params.get('paid')) {
+        setTimeout(function () {
+          window.QG_promptPendingReview({ onDone: function () { loadReviewed(true); }, onTip: function () { loadTips(true); } });
+        }, 1500);
+      }
       await Promise.all([
         (async function () { if (typeof getUsersNameMap === 'function') { try { userNames = await getUsersNameMap() || {}; } catch (e) {} } })(),
         (async function () { if (typeof getUsersAvatarMap === 'function') { try { userAvatars = await getUsersAvatarMap() || {}; } catch (e) {} } })(),
@@ -1689,6 +1731,22 @@ var paymentByTaskId = {};
       await loadData();
             showTab('posted');
           });
+        return;
+      }
+      el = e.target.closest('[data-review-task]');
+      if (el && typeof window.QG_openReview === 'function' && el.getAttribute('data-review-user')) {
+        e.preventDefault();
+        var rvTask = el.getAttribute('data-review-task');
+        window.QG_openReview({
+          taskId: rvTask,
+          revieweeId: el.getAttribute('data-review-user'),
+          revieweeName: el.getAttribute('data-review-name') || '',
+          title: el.getAttribute('data-review-title') || '',
+          role: el.getAttribute('data-review-role'),
+          canTip: el.getAttribute('data-review-tip') === '1',
+          onDone: function () { afterReview(rvTask); },
+          onTip: function () { loadTips(true); }
+        });
         return;
       }
       el = e.target.closest('[data-tip-task]');
