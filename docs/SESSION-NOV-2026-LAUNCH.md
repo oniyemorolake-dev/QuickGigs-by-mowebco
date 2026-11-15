@@ -43,12 +43,10 @@ have not been since 13 November: `create-connect-link`, `sync-connect-status`,
 
 Optional: `TRANSLATE_MONTHLY_CHAR_CAP` (default 400000).
 
-### 1.3 Approve one database change
+### 1.3 Database
 
-`supabase/migrations/20261115031500_reviews_integrity.sql` is written but NOT
-applied. Supabase asked for confirmation twice and the prompt timed out. It
-limits reviews to one per person per gig and to the other person on that gig.
-Reviews work without it; it closes a loophole.
+Nothing waiting. Every migration in section 3 is applied (reviews integrity was
+applied on 14 November, evening).
 
 ### 1.4 Stripe dashboard
 
@@ -215,7 +213,7 @@ $20 gig, turn off soft close, email the waitlist.
 
 ## 3. Database migrations from this session
 
-Applied unless marked.
+All applied.
 
 | File | What |
 | --- | --- |
@@ -227,7 +225,7 @@ Applied unless marked.
 | `20261114021000_guardian_consent_records.sql` | `guardian_consents` |
 | `20261114150000_tips.sql` | `tips`, wallet counts tips |
 | `20261115021500_translations.sql` | `translations`, `translate_usage` |
-| `20261115031500_reviews_integrity.sql` | **NOT APPLIED.** One review per gig, right person only |
+| `20261115031500_reviews_integrity.sql` | One review per person per gig, right person only |
 
 One data fix was run directly: `scheduled_at` on 7 gigs shifted from UTC wall
 time to America/Edmonton.
