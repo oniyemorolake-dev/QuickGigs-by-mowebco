@@ -112,6 +112,7 @@ async function upsertHeldPayment(
     .from('payments')
     .update(heldPatch)
     .eq('stripe_id', opts.sessionId)
+    .eq('status', 'pending')
     .select('payment_id,task_id,status');
   if (bySession && bySession.length) return bySession[0];
 
@@ -120,7 +121,17 @@ async function upsertHeldPayment(
     .from('payments')
     .update(heldPatch)
     .eq('stripe_id', opts.stripeId)
+    .eq('status', 'pending')
     .select('payment_id,task_id,status');
+
+  // This exact Stripe payment is already recorded (held, paid out or refunded):
+  // leave it as it is. A refunded payment must never come back as held.
+  const { data: settled } = await supabase
+    .from('payments')
+    .select('payment_id,task_id,status')
+    .in('stripe_id', [opts.stripeId, opts.sessionId].filter(Boolean))
+    .limit(1);
+  if (settled && settled.length && !(byPi && byPi.length)) return settled[0];
   if (byPi && byPi.length) return byPi[0];
 
   // (Removed: matching any pending row for the same two people. That let a
@@ -145,7 +156,7 @@ async function upsertHeldPayment(
     .eq('poster_id', opts.posterId)
     .eq('worker_id', opts.workerId)
     .eq('task_id', isUuidLike(opts.taskId) ? opts.taskId : '00000000-0000-0000-0000-000000000000')
-    .in('status', ['held', 'paid', 'completed'])
+    .in('status', ['held', 'paid', 'completed', 'refunded', 'disputed'])
     .order('created_at', { ascending: false })
     .limit(1);
   if (existing && existing.length) return existing[0];

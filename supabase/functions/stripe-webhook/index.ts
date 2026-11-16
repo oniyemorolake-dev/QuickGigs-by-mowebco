@@ -47,9 +47,15 @@ async function markPaymentHeld(
     .from('payments')
     .update(heldPatch)
     .eq('stripe_id', opts.stripeRef)
+    .eq('status', 'pending')
     .select('payment_id');
 
   if (byStripe && byStripe.length) return { updated: true };
+
+  // Already recorded (held, paid out or refunded): never re-open it.
+  const { data: settled } = await supabase
+    .from('payments').select('payment_id').eq('stripe_id', opts.stripeRef).limit(1);
+  if (settled && settled.length) return { updated: false };
 
   // Also match pending checkout session ids that will be rewritten to pi_
   if (opts.taskId && opts.posterId) {
@@ -395,6 +401,7 @@ Deno.serve(async (req) => {
     .from('payments')
     .update(heldPatch)
     .eq('stripe_id', session.id)
+    .eq('status', 'pending')
     .select('payment_id');
 
   if (!bySession || !bySession.length) {

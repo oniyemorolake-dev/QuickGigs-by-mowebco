@@ -52,8 +52,9 @@
     });
   }
 
-  async function stampTask(taskId, stampType) {
+  async function stampTask(taskId, stampType, extra) {
     var payload = { task_id: String(taskId), stamp_type: stampType };
+    if (extra && extra.pin) payload.pin = String(extra.pin);
     if (stampType === 'arrived') {
       var geo = await getPosition();
       if (geo.denied) {

@@ -760,6 +760,7 @@ window.SG_signOut = async function () {
         if (can && typeof setMode === 'function') {
           setMode(next);
           if (typeof QG_applyRoleMode === 'function') QG_applyRoleMode();
+          if (typeof window.QG_modeSwitchScreen === 'function') await window.QG_modeSwitchScreen(next, { navigate: true });
           window.location.href = 'dashboard.html?mode=' + encodeURIComponent(next);
           return;
         }
@@ -781,6 +782,8 @@ window.SG_signOut = async function () {
       if (typeof setMode === 'function') setMode(next);
     }
     if (typeof QG_applyRoleMode === 'function') QG_applyRoleMode();
+    // The switching card stays up across the page change, so the move is obvious.
+    if (typeof window.QG_modeSwitchScreen === 'function') await window.QG_modeSwitchScreen(next, { navigate: true });
     window.location.href = 'dashboard.html?mode=' + encodeURIComponent(next);
   }
 
@@ -1126,6 +1129,7 @@ window.SG_signOut = async function () {
   });
 })();
 </script>
+<script defer src="qg-switch.js?v=1"></script>
 <script defer src="qg-push.js?v=2"></script>
 <script defer src="qg-lang.js?v=1"></script>
 </body>

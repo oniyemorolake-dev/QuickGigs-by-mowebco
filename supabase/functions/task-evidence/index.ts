@@ -34,6 +34,39 @@ async function loadTask(supabase: ReturnType<typeof createClient>, taskId: strin
   return (data && data[0] ? data[0] : null) as Record<string, unknown> | null;
 }
 
+/** In-person gigs use an arrival PIN; remote ones have nobody to hand it over. */
+function needsArrivalPin(task: Record<string, unknown>): boolean {
+  const kind = String(getField(task, 'location_type') || '').toLowerCase();
+  const where = String(getField(task, 'location') || '').toLowerCase();
+  return kind !== 'remote' && !where.startsWith('remote');
+}
+
+/** The gig's PIN, created the first time the poster's app asks for it. */
+async function arrivalPin(
+  supabase: ReturnType<typeof createClient>,
+  taskId: string,
+  create: boolean,
+): Promise<{ pin: string; verified: boolean } | null> {
+  try {
+    const read = async () => {
+      const { data, error } = await supabase.from('task_pins').select('pin,verified_at').eq('task_id', taskId).maybeSingle();
+      if (error) throw error;
+      return data ? { pin: String(data.pin), verified: !!data.verified_at } : null;
+    };
+    const have = await read();
+    if (have || !create) return have;
+    const n = crypto.getRandomValues(new Uint32Array(1))[0] % 10000;
+    await supabase.from('task_pins').upsert(
+      { task_id: taskId, pin: String(n).padStart(4, '0') },
+      { onConflict: 'task_id', ignoreDuplicates: true },
+    );
+    return await read();
+  } catch (err) {
+    console.warn('task-evidence: arrival PIN unavailable', err);
+    return null;
+  }
+}
+
 async function loadAcceptedWorker(supabase: ReturnType<typeof createClient>, taskId: string) {
   const { data } = await supabase
     .from('applications')
@@ -138,6 +171,17 @@ Deno.serve(async (req) => {
           posted_by: party.posterId,
         },
         worker_id: party.workerId,
+        // The PIN itself only ever goes to the poster.
+        ...(await (async () => {
+          const live = String(getField(task, 'status') || '').toLowerCase() === 'in_progress';
+          if (!live || !needsArrivalPin(task)) return { arrival_pin_required: false };
+          const p = await arrivalPin(supabase, taskId, party.role === 'poster');
+          return {
+            arrival_pin_required: party.role === 'poster' ? !!p : !!p && !p.verified,
+            arrival_pin_verified: !!(p && p.verified),
+            ...(party.role === 'poster' && p ? { arrival_pin: p.pin } : {}),
+          };
+        })()),
         stamps: stamps || [],
         evidence_photos: photos || [],
         disputes: disputes || [],
@@ -164,6 +208,28 @@ Deno.serve(async (req) => {
       let lng: number | null = null;
       let distanceM: number | null = null;
       let locationStatus = 'none';
+
+      if (stampType === 'arrived' && needsArrivalPin(task)) {
+        // The poster reads the PIN out when the tasker is at the door. No PIN
+        // row yet means the poster has not opened the gig: nothing to check.
+        const p = await arrivalPin(supabase, taskId, false);
+        if (p && !p.verified) {
+          const given = String(body.pin || '').replace(/\D/g, '');
+          if (given.length !== 4) {
+            return json({ ok: false, error: 'pin_required', message: 'Ask the client for their 4-digit arrival PIN.' }, 400);
+          }
+          const { data: verdict } = await supabase.rpc('qg_rate_limit_hit', {
+            p_uid: identity.uid, p_action: 'arrival_pin:' + taskId, p_limit: 6, p_window_seconds: 900,
+          });
+          if (verdict && (verdict as Record<string, unknown>).allowed === false) {
+            return json({ ok: false, error: 'pin_locked', message: 'Too many tries. Wait 15 minutes, or message the client.' }, 429);
+          }
+          if (given !== p.pin) {
+            return json({ ok: false, error: 'pin_wrong', message: 'That PIN does not match. Check it with the client.' }, 400);
+          }
+          await supabase.from('task_pins').update({ verified_at: new Date().toISOString() }).eq('task_id', taskId);
+        }
+      }
 
       if (stampType === 'arrived') {
         const rawLat = Number(body.lat);

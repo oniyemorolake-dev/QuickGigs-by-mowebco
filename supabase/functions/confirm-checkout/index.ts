@@ -255,9 +255,14 @@ Deno.serve(async (req) => {
       .from('payments')
       .update(heldPatch)
       .eq('stripe_id', session.id)
+      .eq('status', 'pending')
       .select('payment_id');
 
-    if (!bySession || !bySession.length) {
+    // Already recorded under its payment id (held, paid out or refunded)?
+    const { data: settled } = await supabase
+      .from('payments').select('payment_id').eq('stripe_id', paymentIntentId).limit(1);
+
+    if ((!bySession || !bySession.length) && !(settled && settled.length)) {
       let updated = false;
       for (const key of taskIdKeys(taskId)) {
         const { data: byTask } = await supabase

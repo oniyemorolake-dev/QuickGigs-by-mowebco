@@ -70,6 +70,17 @@
       .sg-live-banner{width:100%;display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:var(--surface);color:var(--text);font:inherit;font-size:14px;font-weight:600;text-align:left;cursor:pointer;}
       .sg-live-dot{width:9px;height:9px;border-radius:50%;background:var(--green);flex:none;}
       .sg-live-go{margin-left:auto;color:var(--primary);font-weight:600;}
+      .sg-pin-card{margin-top:14px;padding:14px 16px;border-radius:14px;border:1px solid var(--border);background:var(--surface);text-align:center;}
+      .sg-pin-card small{display:block;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);}
+      .sg-pin-digits{display:flex;justify-content:center;gap:8px;margin:10px 0 8px;}
+      .sg-pin-digits span{width:46px;height:56px;border-radius:12px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;}
+      .sg-pin-card p{margin:0;font-size:13px;color:var(--text-muted);line-height:1.45;}
+      .sg-pin-ov{position:fixed;inset:0;z-index:11800;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;}
+      .sg-pin-sheet{width:100%;max-width:480px;background:var(--surface);color:var(--text);border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));box-sizing:border-box;text-align:center;}
+      .sg-pin-sheet h2{margin:0 0 4px;font-size:19px;font-weight:700;}
+      .sg-pin-sheet p{margin:0 0 14px;font-size:13.5px;color:var(--text-muted);}
+      .sg-pin-sheet input{width:200px;height:60px;border-radius:14px;border:1px solid var(--border);background:var(--bg);color:var(--text);font:inherit;font-size:30px;font-weight:700;letter-spacing:.4em;text-align:center;padding-left:.4em;box-sizing:border-box;}
+      .sg-pin-err{min-height:18px;margin:8px 0 0;font-size:13px;color:var(--danger,#c0392b);}
       .sg-money-strip{display:flex;align-items:stretch;gap:0;border:1px solid var(--border);border-radius:14px;background:var(--surface);color:var(--text);text-decoration:none;overflow:hidden;}
       .sg-money-strip>span{flex:1;padding:11px 12px;min-width:0;}
       .sg-money-strip>span+span{border-left:1px solid var(--border);}
@@ -101,6 +112,7 @@
     <p class="sg-sub" style="margin-top:3px" id="sgActiveFor"></p>
     <div class="sg-irow" id="sgActiveWhereRow"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5a7 7 0 0 0-14 0C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span id="sgActiveWhere"></span></div>
     <div class="sg-irow" id="sgActiveWhenRow"><svg class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="sgActiveWhen"></span></div>
+    <div id="sgActivePin" hidden></div>
     <div class="sg-next" id="sgActiveNextCard"><small>Next</small><b id="sgActiveNext">Arrive and confirm with client</b></div>
     <div class="sg-steps" id="sgActiveSteps"></div>
     <div id="sgActiveExtras"></div>
@@ -1050,6 +1062,7 @@ var paymentByTaskId = {};
   }
 
   function paintSteps(t, mineAsPoster) {
+    paintPin(t, mineAsPoster);
     var done = stampsDone(activeTaskId);
     var finished = taskStatusOf(t) === 'completed';
     /* The design draws three stops. "On the way" is the on_my_way stamp;
@@ -1098,16 +1111,66 @@ var paymentByTaskId = {};
       return { label: 'Mark complete', next: 'The tasker has started. Confirm when the work is done', action: function () { markComplete(taskId, $('sgActivePrimary')); } };
     }
     if (!done.on_my_way) return { label: 'I am on my way', next: 'Set off and let the client know', action: function () { stamp(taskId, 'on_my_way'); } };
-    if (!done.arrived) return { label: 'Mark as Arrived', next: 'Arrive and confirm with client', action: function () { stamp(taskId, 'arrived'); } };
+    if (!done.arrived) {
+      var needPin = !!((evidenceByTask[taskId] || {}).arrival_pin_required);
+      return { label: needPin ? 'Enter arrival PIN' : 'Mark as Arrived',
+        next: needPin ? 'When you arrive, ask the client for their 4-digit PIN' : 'Arrive and confirm with client',
+        action: function () { if (needPin) askPin(taskId); else stamp(taskId, 'arrived'); } };
+    }
     if (!done.started) return { label: 'Start gig', next: 'Start the work', action: function () { stamp(taskId, 'started'); } };
     return { label: 'Waiting for poster', next: 'The poster confirms when the work is done. You are paid after that', action: null };
   }
 
-  async function stamp(taskId, type) {
+  /* Poster's side: the PIN to read out. Tasker's side: nothing until they arrive. */
+  function paintPin(t, mineAsPoster) {
+    var box = $('sgActivePin');
+    if (!box) return;
+    var ev = evidenceByTask[String(getField(t, 'TASK_ID'))] || {};
+    var done = stampsDone(String(getField(t, 'TASK_ID')));
+    if (!mineAsPoster || !ev.arrival_pin || done.arrived || taskStatusOf(t) !== 'in_progress') { box.hidden = true; box.innerHTML = ''; return; }
+    box.hidden = false;
+    box.innerHTML = '<div class="sg-pin-card"><small>Arrival PIN</small><div class="sg-pin-digits" translate="no">' +
+      String(ev.arrival_pin).split('').map(function (d) { return '<span>' + esc(d) + '</span>'; }).join('') +
+      '</div><p>Give this to your tasker when they arrive, in person. It confirms the right person is at your door. Do not send it before they are there.</p></div>';
+  }
+  /* Tasker's side: type the PIN the client reads out. */
+  function askPin(taskId) {
+    var ov = document.createElement('div');
+    ov.className = 'sg-pin-ov';
+    ov.innerHTML = '<div class="sg-pin-sheet" role="dialog" aria-modal="true" aria-label="Arrival PIN"><h2>Arrival PIN</h2>' +
+      '<p>Ask the client for their 4-digit PIN to confirm you have arrived.</p>' +
+      '<input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="4" aria-label="4-digit PIN">' +
+      '<p class="sg-pin-err" role="alert"></p>' +
+      '<button type="button" class="sg-btn teal" disabled>Confirm arrival</button>' +
+      '<button type="button" class="sg-btn sg-btn-quiet" data-x>Cancel</button></div>';
+    document.body.appendChild(ov);
+    var input = ov.querySelector('input'), go = ov.querySelector('.sg-btn.teal'), err = ov.querySelector('.sg-pin-err');
+    input.focus();
+    input.oninput = function () { input.value = input.value.replace(/\D/g, '').slice(0, 4); go.disabled = input.value.length !== 4; err.textContent = ''; };
+    ov.addEventListener('click', function (e) { if (e.target === ov || e.target.closest('[data-x]')) ov.remove(); });
+    go.onclick = async function () {
+      go.disabled = true;
+      go.textContent = 'Checking…';
+      var res = await stamp(taskId, 'arrived', { pin: input.value, quiet: true });
+      if (res && res.ok !== false) { ov.remove(); return; }
+      err.textContent = (res && res.message) || 'Could not confirm. Try again.';
+      go.textContent = 'Confirm arrival';
+      input.value = '';
+      input.focus();
+    };
+  }
+
+  async function stamp(taskId, type, extra) {
     var btn = $('sgActivePrimary');
   btn.disabled = true;
     if (typeof QG_stampTask !== 'function') { toast('Check-in is not available right now.', false); btn.disabled = false; return; }
-    var res = await QG_stampTask(taskId, type);
+    var res = await QG_stampTask(taskId, type, extra);
+    if (res && res.ok === false && res.error === 'pin_required' && !(extra && extra.pin)) {
+      btn.disabled = false;
+      askPin(taskId);
+      return res;
+    }
+    if (extra && extra.quiet && (!res || res.ok === false)) { btn.disabled = false; return res || { ok: false }; }
     if (!res || res.ok === false) {
   btn.disabled = false;
       toast((res && (res.message || res.error)) || 'Could not check in — try again.', false);
@@ -1120,6 +1183,7 @@ var paymentByTaskId = {};
     paintSteps(t, taskBelongsToPoster(t, currentUserId));
     toast(type === 'arrived' ? 'Marked as arrived' : 'Updated');
     if (typeof haptic === 'function') haptic([10, 20]);
+    return res;
   }
 
   function paintExtras(t, mineAsPoster, otherId, otherName) {
@@ -1663,6 +1727,7 @@ var paymentByTaskId = {};
         var next = el.getAttribute('data-switch-mode') === 'poster' ? 'poster' : 'tasker';
         if (typeof setMode === 'function') setMode(next);
         if (typeof QG_applyRoleMode === 'function') QG_applyRoleMode();
+        if (typeof window.QG_modeSwitchScreen === 'function') window.QG_modeSwitchScreen(next);
         activeTab = normalizeTab(activeTab);
         paintSeg();
           renderTab();
@@ -1839,6 +1904,7 @@ var paymentByTaskId = {};
   };
 })();
 </script>
+<script defer src="qg-switch.js?v=1"></script>
 <script defer src="qg-push.js?v=2"></script>
 <script defer src="qg-lang.js?v=1"></script>
 </body>
