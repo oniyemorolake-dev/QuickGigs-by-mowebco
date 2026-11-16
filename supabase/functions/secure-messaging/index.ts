@@ -7,6 +7,7 @@ import {
   isExemptBody,
   isForgedSystemBody,
   offPlatformWarning,
+  extraContactReason,
 } from '../_shared/off-platform.ts';
 import { checkRateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
 
@@ -178,6 +179,49 @@ Deno.serve(async (req) => {
       const limit = await checkRateLimit(supabase, uid, 'send_message');
       if (!limit.allowed) return rateLimitResponse(limit, corsHeaders);
 
+      // Too many blocked attempts: a short time-out, so the filter cannot be
+      // probed for gaps one variation at a time.
+      const hourAgo = new Date(Date.now() - 3600000).toISOString();
+      let recentBlocks = 0;
+      try {
+        const { count } = await supabase.from('contact_blocks')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', uid).gte('created_at', hourAgo);
+        recentBlocks = count || 0;
+      } catch (_e) { /* table not there yet: no time-out */ }
+      if (recentBlocks >= 6) {
+        return json({
+          success: false, error: 'contact_cooldown', blocked: true,
+          message: 'Chat is paused for up to an hour after repeated attempts to share contact details.',
+        }, 429);
+      }
+      const noteBlock = async (reason: string) => {
+        try {
+          await supabase.from('contact_blocks').insert({
+            user_id: uid, conv_id: String(conv.conv_id), task_id: String(conv.task_id || ''), reason,
+          });
+        } catch (_e) { /* best effort */ }
+      };
+
+      // Photos cannot be read for phone numbers, so they open only once the
+      // tasker has arrived: by then the two have met and there is nothing to hide.
+      if (text.startsWith('[img]')) {
+        let met = false;
+        const convTaskId = String(conv.task_id || '');
+        if (convTaskId) {
+          const { data: stamps } = await supabase.from('task_status_stamps')
+            .select('stamp_type').eq('task_id', convTaskId)
+            .in('stamp_type', ['arrived', 'started', 'completed']).limit(1);
+          met = !!(stamps && stamps.length);
+        }
+        if (!met) {
+          return json({
+            success: false, error: 'photos_locked', blocked: true,
+            message: 'Photos unlock in chat once the tasker has arrived.',
+          }, 403);
+        }
+      }
+
       // System notices are generated server-side (task-evidence). Nothing in the
       // frontend sends one — sendSystemChatMessage is defined but never called —
       // so a client body claiming the system prefix is a forgery attempt, and
@@ -207,8 +251,20 @@ Deno.serve(async (req) => {
           .filter((b) => !isExemptBody(b))
           .reverse();
 
-        const verdict = analyzeOffPlatformContact(text, recentTexts);
+        let verdict = analyzeOffPlatformContact(text, recentTexts);
+        if (!verdict.blocked) {
+          const why = extraContactReason(recentTexts.concat([text]).join(' '));
+          if (why) {
+            verdict = {
+              blocked: true, reason: why,
+              message: why === 'off_platform_payment'
+                ? 'Payment stays on SwiftGigs. Gigs paid outside the app are not protected and can get an account removed.'
+                : offPlatformWarning(),
+            };
+          }
+        }
         if (verdict.blocked) {
+          await noteBlock(verdict.reason || 'pattern');
           return json({
             success: false,
             error: 'off_platform_contact',

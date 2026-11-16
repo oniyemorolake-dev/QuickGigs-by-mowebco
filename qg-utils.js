@@ -727,6 +727,61 @@ function logFraudContactEvent(detail) {
   }
 }
 
+/**
+ * Second pass over a message (plus the sender's recent ones): the ways people
+ * get round the first filter. Spelled-out numbers, look-alike characters,
+ * naming an email provider, asking for a number, and arranging to pay outside
+ * the app. Returns a reason, or '' when the text is fine.
+ * Kept identical in qg-utils.js (browser) and _shared/off-platform.ts (server).
+ */
+function extraContactReason(input) {
+  var s = String(input == null ? '' : input);
+  try { s = s.normalize('NFKC'); } catch (e) {}
+  s = s.toLowerCase()
+    .replace(/[​-‏⁠﻿️⃣]/g, '')      // zero-width and keycap marks
+    .replace(/\[img\]\S*/g, ' ')
+    .replace(/\$\s?\d+(?:\.\d{1,2})?/g, ' ');
+
+  if (/\b(?:g\s?mail|hot\s?mail|yahoo|outlook|icloud|proton\s?mail)\b/.test(s)) return 'email_provider';
+  if (/\b(?:dot\s+(?:com|ca|net|org)|at\s+(?:symbol|sign))\b/.test(s)) return 'spoken_email';
+  if (/\b(?:messenger|i\s?message|face\s?time|we\s?chat|kik|linkedin|twitter|my\s+socials?|my\s+handle|my\s+user\s?name|user\s?name\s+is|look\s+me\s+up|find\s+me\s+on|search\s+(?:for\s+)?me\s+on|google\s+me|my\s+(?:cell|phone|digits|contact\s+info|contact\s+details)|your\s+(?:number|cell|phone|email|contact)|phone\s+number|give\s+(?:me|you)\s+a\s+(?:call|ring)|ring\s+me|(?:i(?:'ll|\s+will)?|can\s+i)\s+(?:call|text)\s+you)\b/.test(s)) return 'contact_request';
+  if (/\b(?:pay(?:ing)?\s+(?:(?:me|you|him|her)\s+)?(?:in\s+)?cash|in\s+cash|cash\s+(?:instead|only|is\s+fine|works|deal|job|in\s+hand)|(?:outside|off|out\s+of|without)\s+(?:of\s+)?(?:the\s+|this\s+)?(?:app|platform|site|swift\s?gigs)|(?:avoid|skip|dodge)\s+(?:the\s+)?fees?|save\s+on\s+(?:the\s+)?fees?|cancel\s+(?:it|the\s+gig|this)?\s*(?:and|then)\s+(?:i|we|you)(?:'ll|\s+will|\s+can)?\s+pay)\b/.test(s)) return 'off_platform_payment';
+
+  // Numbers written as words: "four oh three, five five five ...", "double seven".
+  var MAP = { zero: '0', oh: '0', nought: '0', one: '1', two: '2', three: '3', four: '4', five: '5', six: '6', seven: '7', eight: '8', nine: '9' };
+  var fromWords = 0;
+  var t = s.replace(/\b(double|triple)\s+(zero|oh|nought|one|two|three|four|five|six|seven|eight|nine|\d)\b/g, function (m, k, w) {
+    var n = k === 'double' ? 2 : 3;
+    fromWords += n;
+    return new Array(n + 1).join(MAP[w] || w);
+  });
+  t = t.replace(/\b(zero|oh|nought|one|two|three|four|five|six|seven|eight|nine)\b/g, function (m) { fromWords++; return MAP[m]; });
+  if (fromWords >= 3 && /(?:\d[\s\-.,\/()]*){7,}/.test(t)) return 'spelled_phone';
+  return '';
+}
+
+/* Run the second pass after the first, over the same recent-message window. */
+var _qgBaseAnalyzeContact = analyzeOffPlatformContact;
+analyzeOffPlatformContact = function (text, recentTexts, opts) {
+  var first = _qgBaseAnalyzeContact(text, recentTexts, opts);
+  if (first && first.blocked) return first;
+  if (typeof window !== 'undefined' && window.QG_CONFIG && window.QG_CONFIG.blockOffPlatformContact === false) return first;
+  var recent = (recentTexts || []).slice(-6);
+  try {
+    if (opts && opts.convId && opts.senderId && typeof getFraudBufferTexts === 'function') {
+      recent = getFraudBufferTexts(opts.convId, opts.senderId).slice(-6);
+    }
+  } catch (e) {}
+  var why = extraContactReason(recent.concat([String(text || '')]).join(' '));
+  if (!why) return first;
+  return {
+    blocked: true, softWarn: false, reason: why,
+    message: why === 'off_platform_payment'
+      ? 'Payment stays on SwiftGigs. Gigs paid outside the app are not protected and can get an account removed.'
+      : 'Sharing contact details is against SwiftGigs rules. Keep chat and payment on SwiftGigs.'
+  };
+};
+window.extraContactReason = extraContactReason;
 window.analyzeOffPlatformContact = analyzeOffPlatformContact;
 window.containsOffPlatformContact = containsOffPlatformContact;
 window.containsFraud = containsOffPlatformContact;

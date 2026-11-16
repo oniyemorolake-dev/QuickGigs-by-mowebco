@@ -125,6 +125,26 @@
       });
     });
 
+    // People who keep trying to swap contact details or arrange cash.
+    var byUser = {};
+    (window.contactBlocks || []).forEach(function (b) {
+      var u = String(f(b, 'user_id') || '');
+      if (!u) return;
+      var g = byUser[u] || (byUser[u] = { n: 0, cash: 0, last: f(b, 'created_at') });
+      g.n++;
+      if (f(b, 'reason') === 'off_platform_payment') g.cash++;
+    });
+    Object.keys(byUser).forEach(function (u) {
+      var g = byUser[u];
+      if (g.n < 3 && !g.cash) return;
+      items.push({
+        kind: 'contact', tone: 's-open', label: 'Going off-platform?',
+        text: personName(u) + ' was blocked ' + g.n + (g.n === 1 ? ' time' : ' times') + ' this week for sharing contact details' +
+          (g.cash ? ', including ' + g.cash + ' about paying outside the app' : ''),
+        who: 'Open Users to warn or suspend them', when: g.last
+      });
+    });
+
     (window.notificationQueue || []).forEach(function (n) {
       var err = String(f(n, 'error_message') || '');
       if (!err || err === 'expired_before_sender_existed') return;

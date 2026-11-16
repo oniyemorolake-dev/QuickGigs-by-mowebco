@@ -908,7 +908,7 @@ onAuthStateChanged(auth, (user) => {
       renderMessages();
       scrollToBottom();
       var result = await sendChatMessage(selectedId, currentUserId, body, [], { convId: selectedId, senderId: currentUserId });
-      if (!result || !result.success) throw new Error((result && result.error) || 'Photo could not be sent');
+      if (!result || !result.success) throw new Error((result && (result.message || result.error)) || 'Photo could not be sent');
       await refreshMessages({ forceScroll: true });
     } catch (err) {
       console.error('[SwiftGigs messages] image send failed', err);

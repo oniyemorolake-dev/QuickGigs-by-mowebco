@@ -157,7 +157,7 @@ async function handleFetchDashboard(supabase: ReturnType<typeof createClient>) {
   const [
     users, tasks, disputes, reports, applications, waitlist, payments,
     adminActions, adminNotes, reviews, userWarnings, platformBanner,
-    notificationQueue, errorLog,
+    notificationQueue, errorLog, contactBlocks,
   ] = await Promise.all([
     supabase.from('users').select('*').order('created_at', { ascending: false }).limit(2000),
     supabase.from('tasks').select('*').order('created_at', { ascending: false }).limit(2000),
@@ -177,6 +177,9 @@ async function handleFetchDashboard(supabase: ReturnType<typeof createClient>) {
     supabase.from('error_log').select('*')
       .gte('created_at', new Date(Date.now() - 86400000).toISOString())
       .order('created_at', { ascending: false }).limit(500),
+    supabase.from('contact_blocks').select('user_id,reason,created_at')
+      .gte('created_at', new Date(Date.now() - 7 * 86400000).toISOString())
+      .order('created_at', { ascending: false }).limit(1000),
   ]);
 
   return json({
@@ -196,6 +199,7 @@ async function handleFetchDashboard(supabase: ReturnType<typeof createClient>) {
     platform_banner: platformBanner.data || null,
     notification_queue: notificationQueue.data || [],
     error_log: errorLog.data || [],
+    contact_blocks: contactBlocks.data || [],
   });
 }
 
