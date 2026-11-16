@@ -64,6 +64,18 @@ applied on 14 November, evening).
 4. Set a phone to French and open the site.
 5. Google sign-in (never confirmed after the API key restriction fix).
 
+### 1.5b Before inviting public testers
+
+- Make the GitHub repo private. It is public today: anyone can read the full
+  code, including payment and anti-fraud logic. A proprietary licence file
+  (all rights reserved, MoTechCo) was added on 16 November. GitHub Pages on a
+  personal account only serves private repos with GitHub Pro, so either
+  upgrade (about US$4/month) or move hosting to a free host that serves
+  private repos (Netlify, Cloudflare Pages), ideally together with the move
+  to `swiftgigs.ca`. Making it private on the free plan takes the site down.
+- `swiftgigs.ca`: two failed Namecheap checkouts on 16 November charged the
+  card twice with no domain registered. Get those refunded before buying again.
+
 ### 1.6 Go-live, only on Morolake's word
 
 Live Stripe keys, `STRIPE_LIVE_MODE=true`, `pk_live_` in `qg-config.js`, a real
