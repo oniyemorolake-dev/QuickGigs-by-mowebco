@@ -235,7 +235,9 @@ async function findHeldPayment(
     }
   }
 
-  const { data: byPair } = await supabase
+  // Other gigs between the same two people are never candidates when this
+  // gig has a proper id: releasing gig B must not touch gig A's payment.
+  const { data: byPair } = taskUuid ? { data: [] } : await supabase
     .from('payments')
     .select('*')
     .eq('poster_id', posterId)

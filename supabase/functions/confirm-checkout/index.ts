@@ -132,6 +132,7 @@ async function unlockConversation(
     .select('conv_id')
     .eq('poster_id', posterId)
     .eq('worker_id', workerId)
+    .is('task_id', null)
     .in('status', ['in_progress', 'application'])
     .order('created_at', { ascending: false })
     .limit(1);

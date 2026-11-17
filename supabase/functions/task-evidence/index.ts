@@ -138,6 +138,7 @@ Deno.serve(async (req) => {
         const { data: convs } = await supabase
           .from('conversations')
           .select('conv_id')
+          .eq('task_id', taskId)
           .eq('poster_id', party.posterId)
           .eq('worker_id', party.workerId)
           .limit(5);
