@@ -246,7 +246,9 @@ async function upsertPendingPayment(
   const workerId = String(row.worker_id || '');
   let existing: { payment_id?: string }[] | null = null;
 
-  if (posterId && workerId) {
+  // Reuse a pending row only for the same gig. (Matching on the two people
+  // re-pointed an older gig's pending payment at a new gig.)
+  if (posterId && workerId && !isUuidLike(taskId)) {
     const byPair = await supabase
       .from('payments')
       .select('payment_id')
@@ -389,17 +391,9 @@ Deno.serve(async (req) => {
       }, 400);
     }
 
-    // Already paid? Match by poster+worker (reliable) then UUID task_id
-    const { data: pairPaid } = await supabase
-      .from('payments')
-      .select('payment_id,status')
-      .eq('poster_id', posterId)
-      .eq('worker_id', workerId)
-      .in('status', ['held', 'completed', 'paid'])
-      .limit(1);
-    if (pairPaid && pairPaid.length) {
-      return json({ ok: false, error: 'already_paid' }, 409);
-    }
+    // Already paid? Only ever judged by THIS gig. Matching on the two people
+    // meant a repeat customer could never pay for a second gig with the same
+    // tasker: the first gig's payment made every later one "already paid".
     const { data: uuidPaid } = await supabase
       .from('payments')
       .select('payment_id')

@@ -55,14 +55,21 @@ async function findPaidPayment(
   stripe: Stripe,
   posterId: string,
   workerId: string,
+  taskId = '',
 ) {
-  const { data: rows } = await supabase
+  const { data: allRows } = await supabase
     .from('payments')
     .select('*')
     .eq('poster_id', posterId)
     .eq('worker_id', workerId)
     .order('created_at', { ascending: false })
     .limit(20);
+
+  // A chat belongs to one gig. Only that gig's payment can unlock it: an older
+  // paid gig between the same two people must not open a new, unpaid one.
+  const rows = /^[0-9a-f-]{36}$/i.test(taskId)
+    ? (allRows || []).filter((r) => String(r.task_id || '') === taskId)
+    : (allRows || []);
 
   if (!rows || !rows.length) return null;
 
@@ -157,7 +164,7 @@ async function syncUnlockByConversation(
     return json({ ok: false, error: 'not_participant' }, 403);
   }
 
-  const payment = await findPaidPayment(supabase, stripe, conv.poster_id, conv.worker_id);
+  const payment = await findPaidPayment(supabase, stripe, conv.poster_id, conv.worker_id, String(conv.task_id || ''));
   if (!payment) return json({ ok: false, error: 'not_paid' }, 402);
 
   await supabase
