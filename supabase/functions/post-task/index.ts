@@ -3,7 +3,6 @@ import { isTeenDateOfBirth } from '../_shared/age.ts';
 import { authErrorStatus, requireFirebaseUser } from '../_shared/firebase-auth.ts';
 import { haversineKm, isCanadianCoordinate, roundCoord } from '../_shared/geo.ts';
 import { geocodeCanada } from '../_shared/geocode-canada.ts';
-import { haversineKm, isCanadianCoordinate, roundCoord } from '../_shared/geo.ts';
 import { checkRateLimit, rateLimitResponse } from '../_shared/rate-limit.ts';
 import { analyzeListingContact } from '../_shared/off-platform.ts';
 
