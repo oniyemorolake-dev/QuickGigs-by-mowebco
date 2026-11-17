@@ -749,9 +749,13 @@ window.SG_signOut = async function () {
   var roleAccessTried = false;
 
   async function flipMode(next) {
+    // Show the switching card the instant they tap, while the server confirms.
+    if (typeof window.QG_modeSwitchScreen === 'function') window.QG_modeSwitchScreen(next, { hold: true });
+    var cancelSwitch = function () { if (typeof window.QG_modeSwitchCancel === 'function') window.QG_modeSwitchCancel(); };
     if (typeof setQuickGigsMode === 'function') {
       var flipped = await setQuickGigsMode(next, { toast: true });
       if (flipped && flipped.error === next + '_role_required' && typeof QG_offerRoleOptIn === 'function') {
+        cancelSwitch();
         QG_offerRoleOptIn(next);
         return;
       }
@@ -764,6 +768,7 @@ window.SG_signOut = async function () {
           window.location.href = 'dashboard.html?mode=' + encodeURIComponent(next);
           return;
         }
+        cancelSwitch();
         toast('Could not switch to ' + (next === 'tasker' ? 'Tasker' : 'Poster') + ' — try again.', false);
         return;
       }
@@ -771,6 +776,7 @@ window.SG_signOut = async function () {
       if (typeof QG_setActiveRoleMode === 'function') {
         var roleRes = await QG_setActiveRoleMode(next);
         if (roleRes && !roleRes.success) {
+          cancelSwitch();
           if (roleRes.error === next + '_role_required' && typeof QG_offerRoleOptIn === 'function') {
             QG_offerRoleOptIn(next);
             return;
@@ -1129,7 +1135,7 @@ window.SG_signOut = async function () {
   });
 })();
 </script>
-<script defer src="qg-switch.js?v=1"></script>
+<script defer src="qg-switch.js?v=2"></script>
 <script defer src="qg-push.js?v=2"></script>
 <script defer src="qg-lang.js?v=1"></script>
 </body>
