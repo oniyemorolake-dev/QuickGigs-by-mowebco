@@ -14,7 +14,7 @@
  * every asset refreshes itself within one visit, whatever BUILD_ID says.
  * A BUILD_ID change still starts a clean cache, as before.
  */
-var BUILD_ID = 'e084991-1794878145';
+var BUILD_ID = '89e5b96-1794878670';
 var CACHE_NAME = 'quickgigs-' + BUILD_ID;
 var OFFLINE_FALLBACK = '/dashboard.html';
 
