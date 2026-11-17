@@ -721,6 +721,26 @@ onAuthStateChanged(auth, (user) => {
     earlyTasks = getTasks().catch(function () { return null; });
   }
 
+  /* Browse keeps its own copy of the open gigs. It used to share one with
+     My gigs, which stores only your own gigs, so coming back to Browse showed
+     an empty list until the real one arrived. */
+  var BROWSE_CACHE_KEY = 'sg-browse-open-v1';
+  var BROWSE_CACHE_MS = 5 * 60 * 1000;
+  function readBrowseCache() {
+    try {
+      var c = JSON.parse(sessionStorage.getItem(BROWSE_CACHE_KEY) || 'null');
+      if (!c || !c.at || Date.now() - c.at > BROWSE_CACHE_MS || !Array.isArray(c.items)) return null;
+      return c.items;
+    } catch (e) { return null; }
+  }
+  function writeBrowseCache(items) {
+    try { sessionStorage.setItem(BROWSE_CACHE_KEY, JSON.stringify({ at: Date.now(), items: items || [] })); } catch (e) {}
+  }
+  function openGigsDetail() {
+    if (typeof sbGetTasksList !== 'function' || typeof SELECT_TASKS_DETAIL === 'undefined') return Promise.resolve(null);
+    return sbGetTasksList('status=eq.open', 100, { select: SELECT_TASKS_DETAIL });
+  }
+
   async function loadUserBits() {
     var uid = currentUserId();
     var jobs = [hydratePosterNames()];
@@ -739,9 +759,8 @@ onAuthStateChanged(auth, (user) => {
   }
 
   async function doLoadTasks() {
-    // Only a copy from the last minute is painted first. Older copies showed
-    // gigs that were already taken or closed before the real list replaced them.
-    var cached = typeof readTasksCache === 'function' ? readTasksCache(false) : null;
+    // The last list is painted at once; the real one replaces it a moment later.
+    var cached = readBrowseCache();
     if (cached && cached.length) {
       allTasks = browseable(cached.map(normaliseTask));
       tasksLoaded = true;
@@ -750,8 +769,10 @@ onAuthStateChanged(auth, (user) => {
     try {
       var items = null;
       if (earlyTasks) { items = await earlyTasks; earlyTasks = null; }
-      if (!items) items = typeof getTasks === 'function' ? await getTasks() : [];
+      // An empty early answer is checked once more before "No gigs" is shown.
+      if (!items || !items.length) items = typeof getTasks === 'function' ? await getTasks() : [];
       allTasks = browseable((items || []).map(normaliseTask));
+      writeBrowseCache(items || []);
     } catch (err) {
       console.warn('Supabase unreachable:', err);
       if ((!cached || !cached.length) && typeof QG_errorStateHtml === 'function') {
@@ -767,11 +788,14 @@ onAuthStateChanged(auth, (user) => {
     await loadUserBits();           // names, saved and applied marks follow
     render();
 
-    // Second pass on the detail select, so scheduled_at and coordinates are present.
-    if (typeof fetchAllTasksFresh === 'function') {
-      fetchAllTasksFresh().then(function (fresh) {
+    // Second pass for the full details (exact time, map pin). Open gigs only:
+    // this used to download every gig ever posted on each visit.
+    {
+      openGigsDetail().then(function (fresh) {
         if (!fresh || !fresh.length) return;
-        allTasks = browseable(fresh.map(normaliseTask));
+        var rows = typeof normalizeTaskRow === 'function' ? fresh.map(normalizeTaskRow) : fresh;
+        allTasks = browseable(rows.map(normaliseTask));
+        writeBrowseCache(rows);
         return loadUserBits();
       }).then(render).catch(function (err) {
         console.warn('Background task refresh failed:', err);
@@ -1373,11 +1397,20 @@ onAuthStateChanged(auth, (user) => {
   // ── Boot ──────────────────────────────────────────────────────────────────
   window.SG_onUser = function () {
     if (typeof QG_loadAgeTier === 'function' && window._currentUser) {
+      // The age group is remembered on this phone, so the list does not wait
+      // for the profile check on every visit. The check still runs and wins.
+      var tierKey = 'sg-age-tier:' + window._currentUser.uid;
+      try {
+        var known = localStorage.getItem(tierKey);
+        if (known === 'teen' || known === 'adult') { window._qgAgeTier = known; tierReady = true; render(); }
+      } catch (e) {}
       QG_loadAgeTier(window._currentUser.uid).then(function (result) {
         window._qgAgeTier = (result && result.tier) || 'adult';
+        // Only a real profile answer is remembered, never a failed lookup.
+        if (result && result.user) { try { localStorage.setItem(tierKey, window._qgAgeTier); } catch (e) {} }
         tierReady = true;
         render();
-      }).catch(function () { window._qgAgeTier = 'adult'; tierReady = true; render(); });
+      }).catch(function () { if (!tierReady) { window._qgAgeTier = 'adult'; tierReady = true; } render(); });
     } else {
       window._qgAgeTier = 'adult';
       tierReady = true;

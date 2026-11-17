@@ -483,6 +483,8 @@ async function sbGetOrThrow(table, filters, order, limit, opts) {
       extra.Prefer = 'count=exact';
     }
     var headers = await getSupabaseHeaders(extra, opts);
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(function () { controller.abort(); }, 8000);
     var res = await fetch(url, { method: 'GET', headers: headers, signal: controller.signal });
     if (!res.ok) {
       var errText = await res.text();
@@ -560,7 +562,9 @@ async function sbGetTasksList(filters, limit, opts) {
       lastErr = err;
       var msg = String(err.message || err);
       if (msg.indexOf('created_at') >= 0 || msg.indexOf('42703') >= 0) continue;
-      if (!orders[i]) throw err;
+      // Anything else (no signal, timeout, server refusal) will not be fixed by
+      // asking again in a different order. Retrying here tripled every wait.
+      throw err;
     }
   }
   if (lastErr) console.warn('sbGetTasksList failed:', lastErr);
@@ -578,15 +582,6 @@ async function getOpenTasksPage(pageIndex, pageSize) {
     null,
     { select: SELECT_TASKS_BROWSE, range: [from, to] }
   );
-  // Until supabase/tasks-location.sql is applied, fall back without lat/lng.
-  if ((!rows || !rows.length) && SELECT_TASKS_BROWSE.indexOf('lat') >= 0) {
-    var legacy = SELECT_TASKS_BROWSE.replace(/,lat,lng/, '');
-    rows = await sbGetTasksList(
-      'status=eq.open',
-      null,
-      { select: legacy, range: [from, to] }
-    );
-  }
   return (rows || []).map(normalizeTaskRow);
 }
 

@@ -471,14 +471,18 @@ var paymentByTaskId = {};
   }
   async function loadMoney(force) {
     if (!isWorker() || walletLoading || typeof callVerifiedFunction !== 'function') { paintMoney(); return; }
-    if (!force && walletSnap && Date.now() - walletAt < 30000) { paintMoney(); return; }
+    if (!force && walletAt && Date.now() - walletAt < 30000) { paintMoney(); return; }
     walletLoading = true;
     paintMoney();
     try {
       var url = (window.QG_CONFIG && window.QG_CONFIG.walletUrl) || 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/request-payout';
       var res = await callVerifiedFunction(url, { action: 'snapshot' });
-      if (res && res.ok !== false && res.available_cents != null) { walletSnap = res; walletAt = Date.now(); }
-    } catch (e) {} finally { walletLoading = false; paintMoney(); }
+      if (res && res.ok !== false && res.available_cents != null) walletSnap = res;
+    } catch (e) {} finally {
+      // Stamped on failure too: a dropped connection used to re-ask on every
+      // repaint of the list, piling requests on top of each other.
+      walletAt = Date.now(); walletLoading = false; paintMoney();
+    }
   }
 
   /* Live gigs stay one tap away from every tab, so an in-progress gig is never

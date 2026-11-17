@@ -19,7 +19,7 @@ var CACHE_NAME = 'quickgigs-' + BUILD_ID;
 var OFFLINE_FALLBACK = '/dashboard.html';
 
 // How long a slow network may hold up a page before the cached copy is used.
-var HTML_TIMEOUT_MS = 3500;
+var HTML_TIMEOUT_MS = 1800;
 // Each asset is re-checked at most this often (conditional request, usually a 304).
 var REVALIDATE_EVERY_MS = 5 * 60 * 1000;
 
