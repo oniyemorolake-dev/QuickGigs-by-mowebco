@@ -973,7 +973,12 @@ window.SG_signOut = async function () {
     if (typeof getUserByFirebaseUid === 'function') {
       try { dbUser = await getUserByFirebaseUid(targetId, isOwnProfile ? { fresh: true } : undefined); } catch (e) {}
     }
-    if (isOwnProfile && dbUser && (dbUser.stripe_connect_id || backFromStripe) && typeof window.QG_syncConnectStatus === 'function') {
+    // The payout check talks to Stripe and takes a second or more. Only a
+    // return from Stripe setup waits for it; otherwise the profile shows first
+    // and the payout card updates when the answer lands.
+    var stripeLater = isOwnProfile && !backFromStripe && dbUser && dbUser.stripe_connect_id &&
+      typeof window.QG_syncConnectStatus === 'function';
+    if (isOwnProfile && dbUser && backFromStripe && typeof window.QG_syncConnectStatus === 'function') {
       try {
         payoutStatus = await window.QG_syncConnectStatus(user.uid);
         if (typeof getUserByFirebaseUid === 'function') {
@@ -1019,13 +1024,16 @@ window.SG_signOut = async function () {
       memberSince: ''
     }, localProfile, dbProfile);
 
+    // The photo lookup no longer holds the page back; the head repaints if it
+    // finds a different picture.
     if (typeof resolveUserAvatarUrl === 'function') {
-      try {
-        var resolved = await resolveUserAvatarUrl(targetId);
-        if (typeof hasProfilePhotoUrl === 'function' ? hasProfilePhotoUrl(resolved) : !!resolved) {
-          profileData.avatar_url = resolved;
-        }
-      } catch (e) {}
+      Promise.resolve(resolveUserAvatarUrl(targetId)).then(function (resolved) {
+        var has = typeof hasProfilePhotoUrl === 'function' ? hasProfilePhotoUrl(resolved) : !!resolved;
+        if (!has || resolved === profileData.avatar_url) return;
+        profileData.avatar_url = resolved;
+        if (isOwnProfile) window._currentUserAvatarUrl = resolved;
+        paintHead();
+      }).catch(function () {});
     }
     if (isOwnProfile && profileData.avatar_url) window._currentUserAvatarUrl = profileData.avatar_url;
 
@@ -1039,6 +1047,16 @@ window.SG_signOut = async function () {
     renderVerification();
     renderPayouts();
     renderPaymentHistory();
+
+    if (stripeLater) {
+      window.QG_syncConnectStatus(user.uid).then(function (st) {
+        payoutStatus = st;
+        return typeof getUserByFirebaseUid === 'function' ? getUserByFirebaseUid(targetId, { fresh: true }) : null;
+      }).then(function (row) {
+        if (row) dbUser = row;
+        renderPayouts();
+      }).catch(function () {});
+    }
 
     var reviews = [];
     try {

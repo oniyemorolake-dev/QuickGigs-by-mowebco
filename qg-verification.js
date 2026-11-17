@@ -420,12 +420,24 @@
       strip.hidden = true;
       return;
     }
-    load().then(function () {
-      if (emailAlreadyConfirmed(user) && strip) strip.hidden = true;
-    });
+    // Emails confirmed with the 6-digit code are recorded on our server, not on
+    // the sign-in account, so the sign-in account alone still says "unconfirmed".
+    // The strip used to show on every open and vanish a moment later. It now
+    // stays hidden until the server has answered, and a confirmed email is
+    // remembered on this phone.
+    var okKey = user && user.uid ? 'sg-email-ok:' + user.uid : '';
+    try { if (okKey && localStorage.getItem(okKey) === '1') { strip.hidden = true; return; } } catch (e0) {}
     var unverified = !!(user && user.emailVerified === false);
-    strip.hidden = !unverified;
+    strip.hidden = true;
     if (!unverified) return;
+    load().then(function (st) {
+      if (emailAlreadyConfirmed(user)) {
+        try { if (okKey) localStorage.setItem(okKey, '1'); } catch (e1) {}
+        strip.hidden = true;
+      } else if (st && st.success !== false && st.email_verified === false) {
+        strip.hidden = false;
+      }
+    }).catch(function () {});
     var link = document.getElementById('sgVerifyLink');
     if (link && !link.getAttribute('data-qg-verify-wired')) {
       link.setAttribute('data-qg-verify-wired', '1');
