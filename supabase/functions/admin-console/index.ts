@@ -379,13 +379,25 @@ Deno.serve(async (req) => {
 
       case 'task_status': {
         const taskId = String(body.task_id || '').trim();
-        const status = String(body.status || '').toLowerCase();
+        let status = String(body.status || '').toLowerCase();
         if (!taskId || !ALLOWED_TASK_STATUS.has(status)) {
           return json({ success: false, error: 'invalid_status' }, 400);
         }
+        // Unhiding (removed -> open) must put a gig back where it was. Setting a
+        // gig that already has an accepted tasker to "open" made it unpayable.
+        if (status === 'open') {
+          const { data: cur } = await supabase.from('tasks').select('status').eq('task_id', taskId).maybeSingle();
+          if (String(cur?.status || '').toLowerCase() === 'removed') {
+            const { data: apps } = await supabase.from('applications')
+              .select('status').eq('task_id', taskId).in('status', ['accepted', 'completed']).limit(5);
+            const st = (apps || []).map((a: { status: string }) => String(a.status).toLowerCase());
+            if (st.includes('completed')) status = 'completed';
+            else if (st.includes('accepted')) status = 'in_progress';
+          }
+        }
         const { data, error } = await supabase.from('tasks').update({ status }).eq('task_id', taskId).select().maybeSingle();
         if (error || !data) return json({ success: false, error: 'update_failed' }, 500);
-        const logType = status === 'removed' ? 'task_hide' : status === 'open' ? 'task_unhide' : 'task_status';
+        const logType = status === 'removed' ? 'task_hide' : String(body.status || '').toLowerCase() === 'open' ? 'task_unhide' : 'task_status';
         await logAction(supabase, adminEmail, logType, 'task', taskId, { status, bulk: !!body.bulk });
         return json({ success: true, ok: true, task: data });
       }

@@ -535,10 +535,11 @@
       showToast('Could not update task', 'red');
       return result || { success: false };
     }
-    t.status = next;
-    if (typeof mergeTaskInCache === 'function') mergeTaskInCache(tid, { status: next });
-    await logAdminAction(next === 'removed' ? 'task_hide' : 'task_unhide', 'task', tid, {});
-    showToast(next === 'removed' ? 'Task hidden (status=removed)' : 'Task unhidden', 'amber');
+    // The server decides what "unhidden" means (open, in progress or completed).
+    var landed = (result.task && result.task.status) || next;
+    t.status = landed;
+    if (typeof mergeTaskInCache === 'function') mergeTaskInCache(tid, { status: landed });
+    showToast(next === 'removed' ? 'Gig hidden from everyone' : 'Gig is visible again (' + String(landed).replace('_', ' ') + ')', 'amber');
     applyAdminTasksView();
     if (typeof renderOverview === 'function') renderOverview();
     if (typeof renderModerationQueue === 'function') renderModerationQueue();
