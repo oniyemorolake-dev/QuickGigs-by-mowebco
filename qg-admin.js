@@ -410,6 +410,8 @@
       showToast('User banned', 'red');
       renderUsers(window.users);
       closeAdminDrawer();
+    } else {
+      showToast(result.error === 'cannot_ban_admin' ? 'Admin accounts cannot be banned.' : 'Could not ban: ' + (result.message || result.error || 'unknown error'), 'red');
     }
   }
 

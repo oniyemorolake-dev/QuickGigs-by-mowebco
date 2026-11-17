@@ -281,7 +281,8 @@ Deno.serve(async (req) => {
           source: 'admin',
           report_id: body.report_id || null,
         });
-        await supabase.from('users').update({ status: 'warned' }).eq('firebase_uid', uid);
+        const { error: warnErr } = await supabase.from('users').update({ status: 'warned' }).eq('firebase_uid', uid);
+        if (warnErr) return json({ success: false, error: 'update_failed', message: warnErr.message }, 500);
         const warnings = await supabase.from('user_warnings').select('warning_id').eq('user_id', uid);
         const count = (warnings.data || []).length;
         if (count >= 3) {
@@ -294,8 +295,14 @@ Deno.serve(async (req) => {
       case 'user_ban': {
         const uid = String(body.user_id || body.firebase_uid || '').trim();
         if (!uid) return json({ success: false, error: 'missing_user' }, 400);
-        if (await isAdminUser(supabase, uid)) return json({ success: false, error: 'cannot_ban_admin' }, 400);
-        await supabase.from('users').update({ status: 'banned' }).eq('firebase_uid', uid);
+        if (await isAdminUser(supabase, uid)) {
+          return json({ success: false, error: 'cannot_ban_admin', message: 'Admin accounts cannot be banned.' }, 400);
+        }
+        const { data: banned, error: banErr } = await supabase.from('users')
+          .update({ status: 'banned' }).eq('firebase_uid', uid).select('firebase_uid');
+        if (banErr || !banned || !banned.length) {
+          return json({ success: false, error: 'update_failed', message: banErr?.message || 'User not found.' }, 500);
+        }
         await logAction(supabase, adminEmail, 'user_ban', 'user', uid, {});
         return json({ success: true, ok: true });
       }
@@ -303,7 +310,8 @@ Deno.serve(async (req) => {
       case 'user_unban': {
         const uid = String(body.user_id || body.firebase_uid || '').trim();
         if (!uid) return json({ success: false, error: 'missing_user' }, 400);
-        await supabase.from('users').update({ status: 'active' }).eq('firebase_uid', uid);
+        const { error: unbanErr } = await supabase.from('users').update({ status: 'active' }).eq('firebase_uid', uid);
+        if (unbanErr) return json({ success: false, error: 'update_failed', message: unbanErr.message }, 500);
         await logAction(supabase, adminEmail, 'user_unban', 'user', uid, {});
         return json({ success: true, ok: true });
       }
