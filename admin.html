@@ -924,6 +924,8 @@ async function loadData(){
     window.notificationQueue=Array.isArray(data.notification_queue)?data.notification_queue:[];
     window.errorLog=Array.isArray(data.error_log)?data.error_log:[];
     window.contactBlocks=Array.isArray(data.contact_blocks)?data.contact_blocks:[];
+    if(Array.isArray(data.tips)) window.adminTips=data.tips;
+    if(Array.isArray(data.payouts)) window.adminPayouts=data.payouts;
     window.users = users;
     window.tasks = tasks;
     window.payments = payments;
@@ -972,6 +974,7 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 
 function renderRevenue(){
+  if (typeof window.QG_renderRevenueV2 === 'function') { window.QG_renderRevenueV2(); return; }
   var stats = adminPaymentStats(payments);
   var grid = document.getElementById('revenueStatsGrid');
   if (grid) {
@@ -1319,5 +1322,6 @@ window.currentSection=currentSection;
 <script src="qg-admin-power.js?v=1"></script>
 <script src="qg-admin-dash.js?v=1"></script>
 <script src="qg-admin-ops.js?v=4"></script>
+<script src="qg-admin-revenue.js?v=1"></script>
 </body>
 </html>

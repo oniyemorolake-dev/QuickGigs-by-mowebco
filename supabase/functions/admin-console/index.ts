@@ -157,7 +157,7 @@ async function handleFetchDashboard(supabase: ReturnType<typeof createClient>) {
   const [
     users, tasks, disputes, reports, applications, waitlist, payments,
     adminActions, adminNotes, reviews, userWarnings, platformBanner,
-    notificationQueue, errorLog, contactBlocks,
+    notificationQueue, errorLog, contactBlocks, tips, payouts,
   ] = await Promise.all([
     supabase.from('users').select('*').order('created_at', { ascending: false }).limit(2000),
     supabase.from('tasks').select('*').order('created_at', { ascending: false }).limit(2000),
@@ -165,7 +165,7 @@ async function handleFetchDashboard(supabase: ReturnType<typeof createClient>) {
     supabase.from('reports').select('*').order('created_at', { ascending: false }).limit(500),
     supabase.from('applications').select('*').order('created_at', { ascending: false }).limit(2000),
     supabase.from('waitlist').select('*').order('created_at', { ascending: false }).limit(2000),
-    supabase.from('payments').select('*').order('created_at', { ascending: false }).limit(500),
+    supabase.from('payments').select('*').order('created_at', { ascending: false }).limit(5000),
     supabase.from('admin_actions').select('*').order('created_at', { ascending: false }).limit(100),
     supabase.from('admin_notes').select('*').order('created_at', { ascending: false }).limit(50),
     supabase.from('reviews').select('*').order('created_at', { ascending: false }).limit(300),
@@ -180,6 +180,9 @@ async function handleFetchDashboard(supabase: ReturnType<typeof createClient>) {
     supabase.from('contact_blocks').select('user_id,reason,created_at')
       .gte('created_at', new Date(Date.now() - 7 * 86400000).toISOString())
       .order('created_at', { ascending: false }).limit(1000),
+    // Money records for the Revenue screen and tax exports.
+    supabase.from('tips').select('*').order('created_at', { ascending: false }).limit(2000),
+    supabase.from('payouts').select('*').order('created_at', { ascending: false }).limit(2000),
   ]);
 
   return json({
@@ -192,6 +195,8 @@ async function handleFetchDashboard(supabase: ReturnType<typeof createClient>) {
     applications: applications.data || [],
     waitlist: waitlist.data || [],
     payments: payments.data || [],
+    tips: tips.data || [],
+    payouts: payouts.data || [],
     admin_actions: adminActions.data || [],
     admin_notes: adminNotes.data || [],
     reviews: reviews.data || [],
