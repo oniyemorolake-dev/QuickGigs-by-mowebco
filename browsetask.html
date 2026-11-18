@@ -316,7 +316,7 @@ onAuthStateChanged(auth, (user) => {
   function distanceLabel(t) {
     if (t._distanceKm == null) return '';
     return typeof formatDistanceKm === 'function'
-      ? formatDistanceKm(t._distanceKm) + ' away'
+      ? formatDistanceKm(t._distanceKm).replace(/\s+away$/, '') + ' away'
       : t._distanceKm.toFixed(1) + ' km away';
   }
   /* sortTasksByProximity only stamps _distanceKm on the pairs its comparator
