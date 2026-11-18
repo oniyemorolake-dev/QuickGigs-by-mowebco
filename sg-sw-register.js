@@ -19,6 +19,7 @@
   if (!('serviceWorker' in navigator)) return;
 
   var refreshing = false;
+  var newBuild = '';   // set when the server reports a build this app is not running
   var hadController = !!navigator.serviceWorker.controller;
 
   function isTyping() {
@@ -31,6 +32,18 @@
     if (refreshing) return;
     refreshing = true;
     window.location.reload();
+  }
+
+  /* A new build was published: drop the saved copies of the app's files so
+     the reload fetches every one fresh, even if the phone has not picked up
+     the new service worker yet. Otherwise a plain reload. */
+  function freshReload() {
+    if (!newBuild) { reloadOnce(); return; }
+    try { sessionStorage.setItem('sg-applied-build', newBuild); } catch (e) {}
+    var wipe = (window.caches && caches.keys)
+      ? caches.keys().then(function (keys) { return Promise.all(keys.map(function (k) { return caches.delete(k); })); })
+      : Promise.resolve();
+    Promise.race([wipe, new Promise(function (r) { setTimeout(r, 1500); })]).then(reloadOnce, reloadOnce);
   }
 
   function showUpdateReady() {
@@ -52,14 +65,14 @@
       'cursor:pointer;max-width:calc(100vw - 32px);white-space:nowrap';
     pill.addEventListener('click', function () {
       try { sessionStorage.setItem('sg-update-applied', String(Date.now())); } catch (e) {}
-      reloadOnce();
+      freshReload();
     });
     document.body.appendChild(pill);
   }
 
   function applyUpdate() {
     // Never yank the page from under someone who is typing or looking at it.
-    if (document.visibilityState === 'hidden' && !isTyping()) reloadOnce();
+    if (document.visibilityState === 'hidden' && !isTyping()) freshReload();
     else showUpdateReady();
   }
 
@@ -78,7 +91,7 @@
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'hidden' &&
         document.getElementById('sg-update-ready') && !isTyping()) {
-      reloadOnce();
+      freshReload();
     }
   });
 
@@ -108,8 +121,43 @@
         } catch (e2) {}
       }
 
+      /* Ask the server which build is live and compare with the one this app
+         is running. Before this, a fix only showed up when the app was closed
+         and reopened, or after 20 minutes. The file is tiny. */
+      function runningBuild() {
+        return new Promise(function (resolve) {
+          var ctrl = navigator.serviceWorker.controller;
+          if (!ctrl || typeof MessageChannel !== 'function') { resolve(''); return; }
+          var ch = new MessageChannel();
+          var t = setTimeout(function () { resolve(''); }, 1500);
+          ch.port1.onmessage = function (ev) { clearTimeout(t); resolve((ev.data && ev.data.buildId) || ''); };
+          try { ctrl.postMessage({ type: 'GET_BUILD_ID' }, [ch.port2]); } catch (e) { clearTimeout(t); resolve(''); }
+        });
+      }
+      var lastBuildCheck = 0;
+      function checkBuild() {
+        if (document.visibilityState === 'hidden' || !navigator.onLine) return;
+        var now = Date.now();
+        if (now - lastBuildCheck < 45 * 1000) return;
+        lastBuildCheck = now;
+        Promise.all([
+          fetch('/qg-build-id.json?t=' + now, { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+          runningBuild()
+        ]).then(function (res) {
+          var live = res[0] && res[0].buildId;
+          var mine = res[1];
+          if (!live || !mine || live === mine) return;
+          try { if (sessionStorage.getItem('sg-applied-build') === live) return; } catch (e) {}
+          newBuild = live;
+          try { reg.update(); } catch (e2) {}
+          applyUpdate();
+        });
+      }
+      setInterval(checkBuild, 2 * 60 * 1000);
+      setTimeout(checkBuild, 15 * 1000);
+
       document.addEventListener('visibilitychange', function () {
-        if (document.visibilityState === 'visible') check(false);
+        if (document.visibilityState === 'visible') { check(false); checkBuild(); }
       });
       window.addEventListener('focus', function () { check(false); });
       window.addEventListener('online', function () { check(true); });
