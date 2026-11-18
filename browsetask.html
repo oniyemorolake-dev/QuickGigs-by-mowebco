@@ -954,8 +954,57 @@ onAuthStateChanged(auth, (user) => {
     } catch (e) { el.hidden = true; }
   }
 
+  /* A gig in another city (usually opened from a shared link, since Browse
+     only lists nearby gigs) asks once before applying, so nobody applies by
+     mistake and then has to cancel on the poster. */
+  var FAR_KM = 60;
+  function farFromViewer(t) {
+    if (!t || (typeof isRemoteTask === 'function' && isRemoteTask(t))) return null;
+    var km = t._distanceKm;
+    if (km == null && typeof taskDistanceKm === 'function' && typeof getGeoFilterPos === 'function') {
+      var pos = getGeoFilterPos();
+      if (pos) { var d = taskDistanceKm(t, pos); if (isFinite(d)) km = d; }
+    }
+    var gigCity = String(t.location || '').split(',')[0].trim();
+    if (km != null) return km > FAR_KM ? { km: km, city: gigCity } : null;
+    // No coordinates: fall back to comparing city names.
+    var mine = typeof getUserCityLabel === 'function' ? getUserCityLabel() : '';
+    if (mine && gigCity && typeof taskInCity === 'function' && !taskInCity(t, mine)) return { km: null, city: gigCity, mine: mine };
+    return null;
+  }
+  function confirmFar(info) {
+    return new Promise(function (resolve) {
+      var where = info.city || 'another city';
+      var how = info.km != null
+        ? Math.round(info.km) + ' km from you'
+        : 'outside ' + info.mine;
+      var ov = document.createElement('div');
+      ov.style.cssText = 'position:fixed;inset:0;z-index:12000;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center';
+      ov.innerHTML = '<div role="dialog" aria-modal="true" aria-labelledby="sgFarTitle" style="width:100%;max-width:480px;background:var(--surface);color:var(--text);' +
+        'border-radius:20px 20px 0 0;padding:22px 18px calc(20px + env(safe-area-inset-bottom));box-sizing:border-box">' +
+        '<h2 id="sgFarTitle" style="margin:0 0 6px;font-size:19px;font-weight:700">This gig is far away</h2>' +
+        '<p style="margin:0 0 16px;font-size:14.5px;line-height:1.5;color:var(--text-muted)">It is in <b style="color:var(--text)">' + esc(where) +
+        '</b>, ' + esc(how) + '. You would need to get there yourself at the time it is booked. Still want to apply?</p>' +
+        '<button type="button" class="sg-btn teal" data-far-go style="display:flex;align-items:center;justify-content:center;width:100%;min-height:50px;margin:0">Yes, apply anyway</button>' +
+        '<button type="button" class="sg-btn sg-btn-quiet" data-far-no style="display:flex;align-items:center;justify-content:center;width:100%;min-height:50px;margin:10px 0 0">Back to gigs near me</button>' +
+        '</div>';
+      function done(ok) { ov.remove(); resolve(ok); }
+      ov.addEventListener('click', function (e) {
+        if (e.target.closest('[data-far-go]')) done(true);
+        else if (e.target === ov || e.target.closest('[data-far-no]')) done(false);
+      });
+      document.body.appendChild(ov);
+    });
+  }
+
   async function openApply() {
     if (!activeTask) return;
+
+    var far = farFromViewer(activeTask);
+    if (far && !activeTask._farOk) {
+      if (!(await confirmFar(far))) return;
+      activeTask._farOk = true;   // asked once per gig
+    }
 
     if (typeof getMode === 'function' && getMode() === 'poster') {
       var taskerAllowed = typeof QG_canUseRole === 'function' ? QG_canUseRole('tasker') : null;
