@@ -277,7 +277,14 @@
       document.documentElement.setAttribute('data-mode', mode);
       if (typeof applyRoleTheme === 'function') applyRoleTheme();
       showRoleToast(mode);
-      setTimeout(function () { window.location.href = 'dashboard.html'; }, 180);
+      // A page that sent them here (posting a gig) can ask to be returned to.
+      var back = 'dashboard.html';
+      try {
+        var asked = sessionStorage.getItem('qg-after-role-optin');
+        sessionStorage.removeItem('qg-after-role-optin');
+        if (/^[a-z]+\.html$/i.test(asked || '')) back = asked;
+      } catch (eBack) {}
+      setTimeout(function () { window.location.href = back; }, 180);
     };
   }
 

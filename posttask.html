@@ -881,7 +881,21 @@ onAuthStateChanged(auth, (user) => {
     byId('sgRoleGateSwitch').onclick = async function () {
       if (typeof QG_setActiveRoleMode === 'function') {
         var r = await QG_setActiveRoleMode('poster');
-        if (!r.success) { toast(r.message || 'Could not switch to Poster.'); return; }
+        if (!r.success) {
+          // An account that started as a Tasker has no Poster side yet. Offer to
+          // turn it on (terms, one tap) and come straight back to this page.
+          if (r.error === 'poster_role_required' && typeof QG_offerRoleOptIn === 'function') {
+            try { sessionStorage.setItem('qg-after-role-optin', 'posttask.html'); } catch (e) {}
+            byId('sgRoleGate').classList.remove('open');
+            document.body.style.overflow = '';
+            QG_offerRoleOptIn('poster');
+            return;
+          }
+          toast(r.error === 'teen_poster_unavailable'
+            ? 'Poster mode becomes available when you turn 18.'
+            : (r.message || 'Could not switch to Poster. Check your connection and try again.'));
+          return;
+        }
       } else if (typeof setMode === 'function') {
         setMode('poster');
       }
