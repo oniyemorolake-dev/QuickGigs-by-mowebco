@@ -229,7 +229,7 @@
     if ($('rvStyles')) return;
     var s = document.createElement('style');
     s.id = 'rvStyles';
-    s.textContent = CSS;
+    s.textContent = CSS + DASH_CSS;
     document.head.appendChild(s);
   }
 
@@ -275,16 +275,7 @@
       'SwiftGigs earns a ' + feePct + '% fee from the tasker when a gig is completed. Tips go 100% to the tasker. ' +
       'Stripe\'s own processing fees are not stored here; see Stripe dashboard, Balance, Transactions.</p>';
 
-    html += '<div class="rv-grid">' +
-      card(money(t.fee), 'SwiftGigs fees earned', 'Your revenue on gigs completed in this period', true) +
-      card(money(t.feePending), 'Fees still in escrow', 'Earned when those gigs are completed') +
-      card(money(t.gross), 'Gross paid by posters', 'Held and paid gig payments, before refunds') +
-      card(money(t.toTasker), 'Paid to taskers', 'Gig earnings released to taskers') +
-      card(money(t.tip), 'Tips', 'Collected for taskers, not SwiftGigs revenue') +
-      card(money(t.refunded), 'Refunded to posters', 'Gig payments returned') +
-      card(String(t.paidGigs) + ' of ' + t.gigs, 'Gigs completed', 'Completed out of all paid gigs') +
-      card(t.paidGigs ? money(t.fee / t.paidGigs) : '$0.00', 'Average fee per gig', '') +
-    '</div>';
+    html += dashboardHtml(rows);
 
     html += monthsTable(rows);
 
@@ -322,6 +313,7 @@
     host.innerHTML = html;
     host._rvRows = rows;
     wire(host);
+    wireTips(host);
   }
 
   function opt(v, label) { return '<option value="' + v + '"' + (state.range === v ? ' selected' : '') + '>' + label + '</option>'; }
@@ -417,6 +409,281 @@
       '</div>';
     ov.onclick = function (e) { if (e.target === ov || e.target.closest('[data-x]')) ov.remove(); };
     document.body.appendChild(ov);
+  }
+
+  /* ── Dashboard charts ────────────────────────────────────────────────
+     Plain SVG, no chart library. Colours are the validated categorical set
+     (checked for colour-blind separation in light and dark); every mark has
+     a hover tooltip and every chart carries its numbers as text too. */
+  var DASH_CSS = '' +
+    '.rv-dash{--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--sOther:#8a8a85;--grid:rgba(127,127,127,.18)}' +
+    'html.light .rv-dash,body.light .rv-dash{--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--s5:#e87ba4;--sOther:#a3a29c}' +
+    '.rv-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:12px}' +
+    '.rv-kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;text-align:center}' +
+    '.rv-kpi h4{margin:0 0 6px;font-size:12.5px;font-weight:600;color:var(--text-muted)}' +
+    '.rv-kpi .a{font-size:22px;font-weight:700;color:var(--green);font-variant-numeric:tabular-nums}' +
+    '.rv-kpi .al{font-size:10.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em}' +
+    '.rv-kpi .c{font-size:18px;font-weight:700;margin-top:8px;font-variant-numeric:tabular-nums}' +
+    '.rv-kpi.hero{border-color:var(--green)}' +
+    '.rv-kpi .d{font-size:11px;margin-top:3px;color:var(--text-muted)}.rv-kpi .d.up{color:var(--green)}.rv-kpi .d.down{color:var(--danger,#e5484d)}' +
+    '.rv-panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:10px;margin-bottom:16px}' +
+    '.rv-panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px}' +
+    '.rv-panel h4{margin:0 0 2px;font-size:13.5px;font-weight:700}' +
+    '.rv-panel p{margin:0 0 10px;font-size:11.5px;color:var(--text-muted)}' +
+    '.rv-hbar{display:grid;grid-template-columns:118px 1fr 74px;align-items:center;gap:8px;font-size:12.5px;margin:7px 0}' +
+    '.rv-hbar .l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+    '.rv-hbar .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--text-muted)}' +
+    '.rv-hbar .track{height:14px;border-radius:4px;background:var(--grid);position:relative}' +
+    '.rv-hbar .fill{position:absolute;left:0;top:0;bottom:0;border-radius:0 4px 4px 0;min-width:3px}' +
+    '.rv-legend{list-style:none;margin:0;padding:0;font-size:12.5px}' +
+    '.rv-legend li{display:flex;align-items:center;gap:8px;margin:6px 0}' +
+    '.rv-legend i{width:10px;height:10px;border-radius:3px;flex:none}' +
+    '.rv-legend b{margin-left:auto;font-weight:600;font-variant-numeric:tabular-nums}' +
+    '.rv-legend small{color:var(--text-muted);width:40px;text-align:right}' +
+    '.rv-donut{display:flex;gap:16px;align-items:center;flex-wrap:wrap}' +
+    '.rv-empty{font-size:12.5px;color:var(--text-muted);padding:18px 0;text-align:center}' +
+    '.rv-tip{position:fixed;z-index:6000;pointer-events:none;background:#111;color:#fff;font-size:12px;line-height:1.4;padding:6px 9px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.3);max-width:240px;display:none}';
+
+  var SLOTS = ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)', 'var(--s5)'];
+
+  function prettyCat(c) {
+    var s = String(c || '').trim();
+    if (!s) return 'Other';
+    s = s.replace(/[_-]+/g, ' ');
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+  function taskOf(id) {
+    return (window.tasks || []).find(function (x) { return String(x.task_id || x.id) === String(id); }) || null;
+  }
+  function cityOf(loc) {
+    var c = String(loc || '').split(',')[0].trim();
+    return c || 'Unknown';
+  }
+  function pct(a, b) { return b ? Math.round(a / b * 100) + '%' : '0%'; }
+
+  /* Same-length window just before the selected one, for the "vs previous" line. */
+  function prevRows() {
+    if (state.range === 'all') return null;
+    var b = rangeBounds();
+    if (b[0] < '1000' || b[1] > '9000') return null;
+    var start = new Date(b[0] + 'T12:00:00'), end = new Date(b[1] + 'T12:00:00');
+    var days = Math.round((end - start) / 86400000) + 1;
+    if (state.range === 'month' || state.range === 'lastmonth') {
+      // compare with the whole previous calendar month
+      var pm = new Date(start.getFullYear(), start.getMonth() - 1, 1);
+      var pEnd = new Date(start.getFullYear(), start.getMonth(), 0);
+      if (state.range === 'month') pEnd = new Date(pm.getFullYear(), pm.getMonth(), Math.min(end.getDate(), pEnd.getDate()));
+      return slice(fmtD(pm), fmtD(pEnd));
+    }
+    if (state.range === 'year' || state.range === 'lastyear') {
+      return slice((start.getFullYear() - 1) + b[0].slice(4), (end.getFullYear() - 1) + b[1].slice(4));
+    }
+    var pe = new Date(start.getTime() - 86400000), ps = new Date(start.getTime() - days * 86400000);
+    return slice(fmtD(ps), fmtD(pe));
+    function fmtD(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+    function slice(a, z) { return ledger().filter(function (r) { var d = ymd(r.date); return d && d >= a && d <= z; }); }
+  }
+  function delta(now, before) {
+    if (before == null) return '';
+    if (!before && !now) return '<div class="d">No change vs previous</div>';
+    if (!before) return '<div class="d up">New this period</div>';
+    var ch = Math.round((now - before) / before * 100);
+    if (!ch) return '<div class="d">Same as previous</div>';
+    return '<div class="d ' + (ch > 0 ? 'up' : 'down') + '">' + (ch > 0 ? '+' : '') + ch + '% vs previous</div>';
+  }
+
+  function kpi(title, amount, count, countLabel, hero, change) {
+    return '<div class="rv-kpi' + (hero ? ' hero' : '') + '"><h4>' + esc(title) + '</h4>' +
+      '<div class="a">' + esc(amount) + '</div><div class="al">Amount</div>' + (change || '') +
+      '<div class="c">' + esc(count) + '</div><div class="al">' + esc(countLabel || 'Gigs') + '</div></div>';
+  }
+
+  function hbars(items, color, fmt) {
+    if (!items.length) return '<div class="rv-empty">No data in this period</div>';
+    var max = Math.max.apply(null, items.map(function (x) { return x.value; })) || 1;
+    return items.map(function (x) {
+      var w = Math.max(1, Math.round(x.value / max * 100));
+      return '<div class="rv-hbar"><span class="l" title="' + esc(x.label) + '">' + esc(x.label) + '</span>' +
+        '<span class="track" data-tip="' + esc(x.label + ': ' + fmt(x.value) + (x.extra ? ' · ' + x.extra : '')) + '">' +
+        '<span class="fill" style="width:' + w + '%;background:' + color + '"></span></span>' +
+        '<span class="v">' + esc(fmt(x.value)) + '</span></div>';
+    }).join('');
+  }
+
+  function donut(slices, total) {
+    if (!total) return '<div class="rv-empty">No paid gigs in this period</div>';
+    var R = 54, r = 34, cx = 64, cy = 64, a0 = -Math.PI / 2;
+    var paths = slices.map(function (s, i) {
+      var frac = s.value / total;
+      var a1 = a0 + frac * Math.PI * 2;
+      var d;
+      if (frac >= 0.9999) {
+        d = 'M' + (cx + R) + ' ' + cy + 'A' + R + ' ' + R + ' 0 1 1 ' + (cx - R) + ' ' + cy + 'A' + R + ' ' + R + ' 0 1 1 ' + (cx + R) + ' ' + cy +
+          'M' + (cx + r) + ' ' + cy + 'A' + r + ' ' + r + ' 0 1 0 ' + (cx - r) + ' ' + cy + 'A' + r + ' ' + r + ' 0 1 0 ' + (cx + r) + ' ' + cy + 'Z';
+      } else {
+        var big = frac > 0.5 ? 1 : 0;
+        var p = function (rad, a) { return (cx + rad * Math.cos(a)).toFixed(2) + ' ' + (cy + rad * Math.sin(a)).toFixed(2); };
+        d = 'M' + p(R, a0) + 'A' + R + ' ' + R + ' 0 ' + big + ' 1 ' + p(R, a1) + 'L' + p(r, a1) + 'A' + r + ' ' + r + ' 0 ' + big + ' 0 ' + p(r, a0) + 'Z';
+      }
+      a0 = a1;
+      return '<path d="' + d + '" fill="' + s.color + '" stroke="var(--surface)" stroke-width="2" fill-rule="evenodd" data-tip="' +
+        esc(s.label + ': ' + money(s.value) + ' (' + pct(s.value, total) + ')') + '"></path>';
+    }).join('');
+    var svg = '<svg viewBox="0 0 128 128" width="150" height="150" role="img" aria-label="Gross by category">' + paths +
+      '<text x="64" y="61" text-anchor="middle" font-size="9" fill="currentColor" opacity=".65">Total</text>' +
+      '<text x="64" y="75" text-anchor="middle" font-size="12.5" font-weight="700" fill="currentColor">' + esc(money(total)) + '</text></svg>';
+    var legend = '<ul class="rv-legend" style="flex:1;min-width:170px">' + slices.map(function (s) {
+      return '<li><i style="background:' + s.color + '"></i>' + esc(s.label) + '<b>' + esc(money(s.value)) + '</b><small>' + pct(s.value, total) + '</small></li>';
+    }).join('') + '</ul>';
+    return '<div class="rv-donut">' + svg + legend + '</div>';
+  }
+
+  function columns(months) {
+    if (!months.length) return '<div class="rv-empty">No fees in this period</div>';
+    var W = 320, H = 150, padL = 4, padB = 22, padT = 18;
+    var max = Math.max.apply(null, months.map(function (m) { return m.fee + m.feePending; })) || 1;
+    var slot = (W - padL) / months.length;
+    var bw = Math.max(6, Math.min(34, slot * 0.6));
+    var plotH = H - padB - padT;
+    var bars = months.map(function (m, i) {
+      var x = padL + i * slot + (slot - bw) / 2;
+      var hEarned = m.fee / max * plotH;
+      var hPend = m.feePending / max * plotH;
+      var base = H - padB;
+      var label = monthLabel(m.key);
+      var short = label.split(' ')[0].slice(0, 3);
+      var out = '';
+      // earned at the baseline, escrow stacked above it with a 2px gap
+      if (hEarned > 0) out += '<rect x="' + x.toFixed(1) + '" y="' + (base - hEarned).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + hEarned.toFixed(1) +
+        '" rx="' + (hPend > 0 ? 0 : 4) + '" fill="var(--s1)" data-tip="' + esc(label + ' · fees earned ' + money(m.fee)) + '"></rect>';
+      if (hPend > 0) out += '<rect x="' + x.toFixed(1) + '" y="' + (base - hEarned - hPend - (hEarned > 0 ? 2 : 0)).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + hPend.toFixed(1) +
+        '" rx="4" fill="var(--s3)" data-tip="' + esc(label + ' · fees in escrow ' + money(m.feePending)) + '"></rect>';
+      // invisible, larger hit area for the whole month
+      out += '<rect x="' + (padL + i * slot).toFixed(1) + '" y="' + padT + '" width="' + slot.toFixed(1) + '" height="' + plotH + '" fill="transparent" data-tip="' +
+        esc(label + ' · earned ' + money(m.fee) + ' · in escrow ' + money(m.feePending) + ' · ' + m.gigs + ' paid gigs') + '"></rect>';
+      out += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="10" fill="currentColor" opacity=".6">' + esc(short) + '</text>';
+      if (i === months.length - 1 && m.fee + m.feePending > 0) {
+        out += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (base - hEarned - hPend - 6).toFixed(1) + '" text-anchor="middle" font-size="10" font-weight="700" fill="currentColor">' +
+          esc(money(m.fee + m.feePending)) + '</text>';
+      }
+      return out;
+    }).join('');
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="' + H + '" role="img" aria-label="Fees by month" style="overflow:visible">' +
+      '<line x1="0" x2="' + W + '" y1="' + (H - padB) + '" y2="' + (H - padB) + '" stroke="var(--grid)"></line>' + bars + '</svg>' +
+      '<ul class="rv-legend" style="display:flex;gap:16px"><li><i style="background:var(--s1)"></i>Fees earned</li><li><i style="background:var(--s3)"></i>Fees in escrow</li></ul>';
+  }
+
+  function funnel() {
+    var b = rangeBounds();
+    var inR = function (v) { var d = ymd(toDate(v)); return d && d >= b[0] && d <= b[1]; };
+    var gigs = (window.tasks || []).filter(function (t) { return inR(t.created_at); });
+    var ids = {};
+    gigs.forEach(function (t) { ids[String(t.task_id || t.id)] = t; });
+    var applied = {}, accepted = {};
+    (window.applications || []).forEach(function (a) {
+      var id = String(a.task_id);
+      if (!ids[id]) return;
+      applied[id] = true;
+      if (String(a.status || '').toLowerCase() === 'accepted') accepted[id] = true;
+    });
+    gigs.forEach(function (t) {
+      var st = String(t.status || '').toLowerCase();
+      if (st === 'in_progress' || st === 'completed') { accepted[String(t.task_id || t.id)] = true; applied[String(t.task_id || t.id)] = true; }
+    });
+    var paid = {}, done = {};
+    (window.payments || []).forEach(function (p) {
+      var id = String(p.task_id); var st = String(p.status || '').toLowerCase();
+      if (!ids[id]) return;
+      if (st === 'held' || st === 'paid' || st === 'completed') paid[id] = true;
+      if (st === 'paid' || st === 'completed') done[id] = true;
+    });
+    var n = gigs.length;
+    var steps = [
+      ['Posted', n], ['Got applicants', Object.keys(applied).length], ['Tasker accepted', Object.keys(accepted).length],
+      ['Paid into escrow', Object.keys(paid).length], ['Completed', Object.keys(done).length]
+    ];
+    if (!n) return '<div class="rv-empty">No gigs posted in this period</div>';
+    return steps.map(function (s) {
+      var w = Math.max(1, Math.round(s[1] / n * 100));
+      return '<div class="rv-hbar"><span class="l">' + esc(s[0]) + '</span>' +
+        '<span class="track" data-tip="' + esc(s[0] + ': ' + s[1] + ' gigs (' + pct(s[1], n) + ' of posted)') + '">' +
+        '<span class="fill" style="width:' + w + '%;background:var(--s1)"></span></span>' +
+        '<span class="v">' + s[1] + ' · ' + pct(s[1], n) + '</span></div>';
+    }).join('');
+  }
+
+  function dashboardHtml(rows) {
+    var gig = rows.filter(function (r) { return r.kind === 'gig'; });
+    function sum(list, f) { return list.reduce(function (a, r) { return a + f(r); }, 0); }
+    var held = gig.filter(function (r) { return r.status === 'held'; });
+    var done = gig.filter(function (r) { return r.status === 'paid' || r.status === 'completed'; });
+    var refunded = gig.filter(function (r) { return r.status === 'refunded'; });
+    var live = held.concat(done);
+    var tips = rows.filter(function (r) { return r.kind === 'tip' && r.tip; });
+    var fees = sum(done, function (r) { return r.fee; });
+    var prev = prevRows();
+    function was(filterFn, valFn) {
+      if (!prev) return null;
+      return sum(prev.filter(filterFn), valFn);
+    }
+    var isGig = function (st) { return function (r) { return r.kind === 'gig' && st.indexOf(r.status) >= 0; }; };
+
+    var html = '<div class="rv-dash"><div class="rv-kpis">' +
+      kpi('SwiftGigs fees earned', money(fees), done.length ? money(fees / done.length) : '$0.00', 'Average per gig', true,
+        delta(fees, was(isGig(['paid', 'completed']), function (r) { return r.fee; }))) +
+      kpi('In escrow', money(sum(held, function (r) { return r.gross; })), held.length, 'Gigs', false,
+        delta(sum(held, function (r) { return r.gross; }), was(isGig(['held']), function (r) { return r.gross; }))) +
+      kpi('Completed', money(sum(done, function (r) { return r.gross; })), done.length, 'Gigs', false,
+        delta(sum(done, function (r) { return r.gross; }), was(isGig(['paid', 'completed']), function (r) { return r.gross; }))) +
+      kpi('Refunded', money(sum(refunded, function (r) { return r.refunded; })), refunded.length, 'Gigs', false,
+        delta(sum(refunded, function (r) { return r.refunded; }), was(isGig(['refunded']), function (r) { return r.refunded; }))) +
+      kpi('Total paid by posters', money(sum(gig, function (r) { return r.gross; })), gig.filter(function (r) { return r.status !== 'pending'; }).length, 'Gigs', false,
+        delta(sum(gig, function (r) { return r.gross; }), was(function (r) { return r.kind === 'gig'; }, function (r) { return r.gross; }))) +
+      kpi('Tips to taskers', money(sum(tips, function (r) { return r.tip; })), tips.length, 'Tips', false,
+        delta(sum(tips, function (r) { return r.tip; }), was(function (r) { return r.kind === 'tip'; }, function (r) { return r.tip; }))) +
+    '</div><div class="rv-panels">';
+
+    html += '<div class="rv-panel"><h4>Gig funnel</h4><p>Gigs posted in this period, and how far they got</p>' + funnel() + '</div>';
+
+    // Gross by category: top four + Other, colour fixed to the category's rank in this view.
+    var byCat = {};
+    live.forEach(function (r) { var t = taskOf(r.taskId); var c = prettyCat(t && t.category); byCat[c] = (byCat[c] || 0) + r.gross; });
+    var cats = Object.keys(byCat).map(function (k) { return { label: k, value: byCat[k] }; }).sort(function (a, b) { return b.value - a.value; });
+    var slices = cats.slice(0, 4).map(function (c, i) { return { label: c.label, value: c.value, color: SLOTS[i] }; });
+    var rest = cats.slice(4).reduce(function (a, c) { return a + c.value; }, 0);
+    if (rest > 0) slices.push({ label: 'Other', value: rest, color: 'var(--sOther)' });
+    html += '<div class="rv-panel"><h4>By category</h4><p>What posters paid, held and completed gigs</p>' +
+      donut(slices, sum(live, function (r) { return r.gross; })) + '</div>';
+
+    var byCity = {}, cityCount = {};
+    live.forEach(function (r) { var c = cityOf(r.city); byCity[c] = (byCity[c] || 0) + r.gross; cityCount[c] = (cityCount[c] || 0) + 1; });
+    var cities = Object.keys(byCity).map(function (k) { return { label: k, value: byCity[k], extra: cityCount[k] + ' gigs' }; })
+      .sort(function (a, b) { return b.value - a.value; }).slice(0, 6);
+    html += '<div class="rv-panel"><h4>By city</h4><p>What posters paid, top six cities</p>' + hbars(cities, 'var(--s1)', money) + '</div>';
+
+    var months = monthBuckets(rows).slice().reverse();
+    html += '<div class="rv-panel"><h4>Fees by month</h4><p>Your revenue, earned and still in escrow</p>' + columns(months) + '</div>';
+
+    return html + '</div></div>';
+  }
+
+  function wireTips(host) {
+    var tip = document.getElementById('rvTip');
+    if (!tip) { tip = document.createElement('div'); tip.id = 'rvTip'; tip.className = 'rv-tip'; document.body.appendChild(tip); }
+    function show(e) {
+      var el = e.target.closest && e.target.closest('[data-tip]');
+      if (!el || !host.contains(el)) { tip.style.display = 'none'; return; }
+      tip.textContent = el.getAttribute('data-tip');
+      tip.style.display = 'block';
+      var x = e.clientX + 12, y = e.clientY + 12;
+      var w = tip.offsetWidth, h = tip.offsetHeight;
+      if (x + w > window.innerWidth - 8) x = e.clientX - w - 12;
+      if (y + h > window.innerHeight - 8) y = e.clientY - h - 12;
+      tip.style.left = x + 'px'; tip.style.top = y + 'px';
+    }
+    host.onmousemove = show;
+    host.onmouseleave = function () { tip.style.display = 'none'; };
+    host.ontouchstart = function (e) { if (e.touches && e.touches[0]) show({ target: e.target, clientX: e.touches[0].clientX, clientY: e.touches[0].clientY }); };
   }
 
   /* ── CSV ─────────────────────────────────────────────────────────────── */
