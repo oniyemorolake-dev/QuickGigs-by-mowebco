@@ -559,13 +559,13 @@ body.page-admin .health-item-val .hv-empty{font-size:13px;font-weight:500;color:
   <!-- ANALYTICS -->
   <div id="section-analytics" style="display:none">
     <div class="bottom-grid" style="grid-template-columns:1fr 1fr">
-      <div class="mini-card"><div class="mc-title">Signups over time</div><div style="display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:10px" id="signupChart"></div><div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--text-muted)"><span>Jun 20</span><span>Jun 22</span><span>Jun 24</span><span>Jun 26</span><span>Jun 28</span><span>Jun 30</span><span>Jul 2</span></div></div>
-      <div class="mini-card"><div class="mc-title">Tasks posted over time</div><div style="display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:10px" id="taskChart"></div><div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--text-muted)"><span>Jun 20</span><span>Jun 22</span><span>Jun 24</span><span>Jun 26</span><span>Jun 28</span><span>Jun 30</span><span>Jul 2</span></div></div>
+      <div class="mini-card"><div class="mc-title">Signups per week <span class="mc-sub">Last 8 weeks</span></div><div style="display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:10px" id="signupChart"></div><div class="an-axis" id="signupAxis" style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--text-muted)"></div></div>
+      <div class="mini-card"><div class="mc-title">Gigs posted per week <span class="mc-sub">Last 8 weeks</span></div><div style="display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:10px" id="taskChart"></div><div class="an-axis" id="taskAxis" style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--text-muted)"></div></div>
     </div>
     <div class="bottom-grid" style="grid-template-columns:1fr 1fr 1fr">
-      <div class="mini-card"><div class="mc-title">Peak posting hours</div><div id="peakHours"></div></div>
-      <div class="mini-card"><div class="mc-title">Avg task value</div><div style="font-size:30px;font-weight:700;color:var(--green);margin-top:8px;font-variant-numeric:tabular-nums">$67</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px">CAD per task</div></div>
-      <div class="mini-card"><div class="mc-title">Top neighbourhoods</div><div id="neighbourhoods"></div></div>
+      <div class="mini-card"><div class="mc-title">Peak posting hours <span class="mc-sub">Alberta time</span></div><div id="peakHours"></div></div>
+      <div class="mini-card"><div class="mc-title">Average gig value</div><div id="avgGigValue" style="font-size:30px;font-weight:700;color:var(--green);margin-top:8px;font-variant-numeric:tabular-nums">$0</div><div id="avgGigSub" style="font-size:12px;color:var(--text-muted);margin-top:4px">CAD per gig</div></div>
+      <div class="mini-card"><div class="mc-title">Top cities <span class="mc-sub">Gigs posted</span></div><div id="neighbourhoods"></div></div>
     </div>
   </div>
 
@@ -939,9 +939,6 @@ async function loadData(){
   }
 }
 
-function getDemoUsers(){return [{user_id:'1',name:'Sarah K.',email:'sarah@gmail.com',role:'worker',created_at:'2026-06-10',status:'active'},{user_id:'2',name:'James O.',email:'james@gmail.com',role:'both',created_at:'2026-06-12',status:'active'},{user_id:'3',name:'Aisha M.',email:'aisha@gmail.com',role:'poster',created_at:'2026-06-15',status:'warned'},{user_id:'4',name:'David T.',email:'david@gmail.com',role:'worker',created_at:'2026-06-08',status:'banned'},{user_id:'5',name:'Priya N.',email:'priya@gmail.com',role:'both',created_at:'2026-06-18',status:'active'},{user_id:'6',name:'Marcus L.',email:'marcus@gmail.com',role:'worker',created_at:'2026-06-20',status:'active'}];}
-function getDemoTasks(){return [{task_id:'1',title:'Deep clean 2 bedroom apartment',posted_by:'James O.',budget:120,task_mode:'standard',status:'in_progress',created_at:'2026-06-21'},{task_id:'2',title:'Grocery run — Superstore NW',posted_by:'Aisha M.',budget:30,task_mode:'quick',status:'completed',created_at:'2026-06-20'},{task_id:'3',title:'Math tutor Grade 10',posted_by:'Sarah K.',budget:35,task_mode:'recurring',status:'open',created_at:'2026-06-22'},{task_id:'4',title:'Box braids — natural hair',posted_by:'Priya N.',budget:80,task_mode:'standard',status:'completed',created_at:'2026-06-19'},{task_id:'5',title:'Moving couch to storage',posted_by:'Marcus L.',budget:60,task_mode:'standard',status:'in_progress',created_at:'2026-06-21'}];}
-function getDemoDisputes(){return [{id:'1',task:'Box braids — natural hair',poster:'Priya N.',worker:'Sarah K.',status:'open',opened:'2 hrs ago',reason:'Worker did not complete task as agreed'},{id:'2',task:'Moving couch to storage',poster:'Marcus L.',worker:'David T.',status:'open',opened:'5 hrs ago',reason:'Poster refused to release payment'},{id:'3',task:'Grocery run NW',poster:'Aisha M.',worker:'James O.',status:'resolved',opened:'2 days ago',reason:'Item damaged during delivery'}];}
 
 function adminPayField(p, key) {
   if (!p) return '';
@@ -1054,10 +1051,17 @@ function renderOverview(){
   var payStats = adminPaymentStats(payments);
   var platformFeesPaid = payStats.paidFees;
   var escrowHeld = payStats.held;
-  var revenueChartData = [0,0,0,0,0,0,Math.max(platformFeesPaid, payments.length > 0 ? 1 : 0)];
+  // Last 7 days, running totals, so each sparkline ends on the number shown.
+  var revenueChartData = (function(){
+    var paid=payments.filter(function(p){var st=String(p.status||'').toLowerCase();return st==='paid'||st==='completed';});
+    var now=new Date(),end=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1).getTime(),out=[];
+    for(var i=6;i>=0;i--){var cut=end-i*86400000;out.push(paid.reduce(function(a,p){var d=adminWhen(p.completed_at||p.created_at);return a+(d&&d.getTime()<cut?Number(p.platform_fee||0):0);},0));}
+    return out;
+  })();
   document.getElementById('statUsers').textContent=users.length;
   document.getElementById('statUsersSub').textContent=active+' active · '+warned+' warned · '+banned+' banned';
-  document.getElementById('userTrend').textContent='↑ '+users.length+' total';
+  var newWeek=users.filter(function(u){var d=adminWhen(u.created_at);return d&&Date.now()-d.getTime()<7*86400000;}).length;
+  document.getElementById('userTrend').textContent=newWeek?('+'+newWeek+' this week'):'None new this week';
   document.getElementById('statTasks').textContent=tasks.length;
   document.getElementById('statTasksSub').textContent=doneT+' completed · '+(tasks.length-doneT)+' active';
   document.getElementById('statDisputes').textContent=openD;
@@ -1066,15 +1070,15 @@ function renderOverview(){
   document.getElementById('reportBadge').textContent=openR;
   if(openD===0){document.getElementById('alertBanner').style.display='none';document.getElementById('disputeTrend').textContent='All clear';document.getElementById('disputeTrend').className='trend trend-up';}
   else{document.getElementById('alertBanner').style.display='flex';document.getElementById('alertBanner').querySelector('.alert-text').textContent=openD+' open dispute(s) and '+openR+' open report(s) need review.';}
-  renderMiniChart('chartUsers',[5,8,12,18,22,30,users.length],'var(--primary)');
-  renderMiniChart('chartTasks',[1,2,3,5,7,10,tasks.length],'var(--green)');
+  renderMiniChart('chartUsers',adminSeries(users,'created_at',7,1,true).values,'var(--primary)');
+  renderMiniChart('chartTasks',adminSeries(tasks,'created_at',7,1,true).values,'var(--green)');
   renderMiniChart('chartRevenue', revenueChartData,'var(--attention)');
-  renderMiniChart('chartDisputes',[0,1,2,1,3,2,openD],'var(--danger)');
+  renderMiniChart('chartDisputes',adminSeries(disputes,'created_at',7,1,false).values,'var(--danger)');
   var revEl = document.getElementById('statRevenue');
   var revSub = document.getElementById('statRevenueSub');
   if (revEl) revEl.textContent = '$' + platformFeesPaid.toFixed(2);
   if (revSub) revSub.textContent = escrowHeld.toFixed(2) + ' CAD in escrow · ' + payments.length + ' payments';
-  renderActivity();renderCategories();renderRecentSignups();
+  renderActivity();renderCategories();renderRecentSignups();renderNotifications();
   try { renderHealth(); } catch (e) { console.warn('renderHealth failed', e); }
 }
 
@@ -1097,14 +1101,61 @@ function adminEscAttr(s){
   return typeof escAttr === 'function' ? escAttr(s) : adminEsc(s).replace(/\r?\n/g,' ');
 }
 
+/* Admin feed helpers: real rows only, newest first. */
+function adminWhen(v){var d=v?new Date(v):null;return d&&!isNaN(d)?d:null;}
+function adminAgo(d){
+  var s=Math.max(0,Math.round((Date.now()-d.getTime())/1000));
+  if(s<60) return 'just now';
+  var m=Math.round(s/60); if(m<60) return m+'m ago';
+  var h=Math.round(m/60); if(h<24) return h+'hr ago';
+  var dd=Math.round(h/24); return dd+(dd===1?' day ago':' days ago');
+}
+function adminUserName(uid){
+  var u=(users||[]).find(function(x){return String(x.firebase_uid||x.user_id)===String(uid);});
+  return u?(u.name||u.email||'A user'):'A user';
+}
+function adminTaskTitle(id){
+  var t=(tasks||[]).find(function(x){return String(x.task_id||x.id)===String(id);});
+  return t?(t.title||'a gig'):'a gig';
+}
+
 function renderActivity(){
-  var items=[{dot:'var(--green)',text:'Sarah K. completed Deep clean apartment',time:'2m ago'},{dot:'var(--primary)',text:'New user signed up — Priya N.',time:'15m ago'},{dot:'var(--danger)',text:'Dispute opened — Box braids task',time:'1hr ago'},{dot:'var(--attention)',text:'Contact share attempt blocked in chat',time:'2hr ago'},{dot:'var(--green)',text:'James O. applied to 2 tasks',time:'3hr ago'},{dot:'var(--primary)',text:'Task posted — Math tutor Grade 10',time:'4hr ago'}];
-  document.getElementById('activityFeed').innerHTML=items.map(function(i){return '<div class="activity-item"><div class="act-dot" style="background:'+i.dot+'"></div><div class="act-content"><div class="act-text">'+adminEsc(i.text)+'</div><div class="act-time">'+adminEsc(i.time)+'</div></div></div>';}).join('');
+  var ev=[];
+  function add(when,dot,text){var d=adminWhen(when);if(d) ev.push({d:d,dot:dot,text:text});}
+  (users||[]).forEach(function(u){add(u.created_at,'var(--primary)','New user signed up: '+(u.name||u.email||'unnamed'));});
+  (tasks||[]).forEach(function(t){
+    add(t.created_at,'var(--primary)','Gig posted: '+(t.title||'Untitled')+(t.location?' ('+String(t.location).split(',')[0]+')':''));
+    if(t.poster_confirmed_at) add(t.poster_confirmed_at,'var(--green)','Gig completed: '+(t.title||'Untitled'));
+  });
+  (applications||[]).forEach(function(a){add(a.created_at,'var(--green)',(a.worker_name||adminUserName(a.worker_id))+' applied to '+adminTaskTitle(a.task_id));});
+  (payments||[]).forEach(function(p){
+    var st=String(p.status||'').toLowerCase(), amt='$'+Number(p.amount||0).toFixed(2);
+    if(st==='held'||st==='paid'||st==='completed') add(p.created_at,'var(--green)',amt+' paid into escrow for '+adminTaskTitle(p.task_id));
+    if(st==='paid'||st==='completed') add(p.completed_at,'var(--green)','Tasker paid out for '+adminTaskTitle(p.task_id));
+    if(st==='refunded') add(p.completed_at||p.created_at,'var(--danger)',amt+' refunded for '+adminTaskTitle(p.task_id));
+  });
+  (disputes||[]).forEach(function(d){add(d.created_at,'var(--danger)','Dispute opened: '+(d.task_title||adminTaskTitle(d.task_id)));});
+  (reports||[]).forEach(function(r){add(r.created_at,'var(--attention)','Report: '+(r.target_label||r.target_type||'content')+(r.reason?' ('+r.reason+')':''));});
+  (window.contactBlocks||[]).forEach(function(b){add(b.created_at,'var(--attention)','Contact share blocked in chat ('+adminUserName(b.user_id)+')');});
+  ev.sort(function(a,b){return b.d-a.d;});
+  var dayAgo=Date.now()-86400000;
+  var recent=ev.filter(function(e){return e.d.getTime()>=dayAgo;});
+  var list=(recent.length?recent:ev).slice(0,12);
+  var sub=document.querySelector('[data-dash-id="activity"] .mc-sub');
+  if(sub) sub.textContent=recent.length?'Last 24hrs':'Latest';
+  var box=document.getElementById('activityFeed');
+  if(!list.length){box.innerHTML='<div class="admin-empty">No activity yet</div>';return;}
+  box.innerHTML=list.map(function(i){return '<div class="activity-item"><div class="act-dot" style="background:'+i.dot+'"></div><div class="act-content"><div class="act-text">'+adminEsc(i.text)+'</div><div class="act-time">'+adminEsc(adminAgo(i.d))+'</div></div></div>';}).join('');
 }
 
 function renderCategories(){
-  var cats=[{label:'Errands',pct:90,val:'4'},{label:'Home',pct:70,val:'3'},{label:'Tutoring',pct:50,val:'2'},{label:'Beauty',pct:35,val:'1'},{label:'Tech',pct:25,val:'1'},{label:'Care',pct:25,val:'1'}];
-  document.getElementById('categoryChart').innerHTML=cats.map(function(c){return '<div class="bar-item"><div class="bar-label">'+adminEsc(c.label)+'</div><div class="bar-track"><div class="bar-fill" style="width:'+c.pct+'%"></div></div><div class="bar-val">'+adminEsc(c.val)+' tasks</div></div>';}).join('');
+  var counts={};
+  (tasks||[]).forEach(function(t){var c=String(t.category||'other').replace(/[_-]+/g,' ').trim()||'other';c=c.charAt(0).toUpperCase()+c.slice(1);counts[c]=(counts[c]||0)+1;});
+  var cats=Object.keys(counts).map(function(k){return {label:k,n:counts[k]};}).sort(function(a,b){return b.n-a.n;}).slice(0,6);
+  var box=document.getElementById('categoryChart');
+  if(!cats.length){box.innerHTML='<div class="admin-empty">No gigs posted yet</div>';return;}
+  var max=cats[0].n||1;
+  box.innerHTML=cats.map(function(c){return '<div class="bar-item"><div class="bar-label">'+adminEsc(c.label)+'</div><div class="bar-track"><div class="bar-fill" style="width:'+Math.max(4,Math.round(c.n/max*100))+'%"></div></div><div class="bar-val">'+c.n+'</div></div>';}).join('');
 }
 
 function renderRecentSignups(){
@@ -1214,13 +1265,47 @@ function renderFraudLog(){
   if(typeof renderFraudAlerts==='function') renderFraudAlerts();
 }
 
+/* Counts per day (or per week) ending today, Alberta time. */
+function adminSeries(list,field,buckets,daysPer,cumulative){
+  var out=[],now=new Date(),end=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1).getTime();
+  var size=daysPer*86400000,start=end-buckets*size,before=0;
+  for(var i=0;i<buckets;i++) out.push(0);
+  (list||[]).forEach(function(x){
+    var d=adminWhen(typeof field==='function'?field(x):x[field]);if(!d) return;
+    var t=d.getTime();
+    if(t<start){before++;return;}
+    if(t>=end) return;
+    out[Math.min(buckets-1,Math.floor((t-start)/size))]++;
+  });
+  if(cumulative){var run=before;out=out.map(function(v){run+=v;return run;});}
+  return {values:out,start:start,size:size};
+}
+function adminBars(id,axisId,series,color,unit){
+  var v=series.values,m=Math.max.apply(null,v)||1;
+  document.getElementById(id).innerHTML=v.map(function(n,i){
+    var from=new Date(series.start+i*series.size);
+    var label=from.toLocaleDateString('en-CA',{month:'short',day:'numeric'});
+    return '<div style="flex:1;background:'+color+';border-radius:4px 4px 0 0;height:'+(n?Math.max(6,Math.round(n/m*100)):2)+'%;opacity:'+(n?1:.25)+'" title="Week of '+label+': '+n+' '+unit+'"></div>';
+  }).join('');
+  var ax=document.getElementById(axisId);
+  if(ax) ax.innerHTML=[0,Math.floor(v.length/2),v.length-1].map(function(i){return '<span>'+new Date(series.start+i*series.size).toLocaleDateString('en-CA',{month:'short',day:'numeric'})+'</span>';}).join('');
+}
 function renderAnalytics(){
-  var sd=[2,5,8,12,18,25,39],td=[0,1,3,5,7,10,12];
-  var m1=Math.max.apply(null,sd),m2=Math.max.apply(null,td);
-  document.getElementById('signupChart').innerHTML=sd.map(function(v,i){var h=Math.max(8,Math.round((v/m1)*100));return '<div style="flex:1;background:var(--primary);border-radius:4px 4px 0 0;height:'+h+'%;opacity:'+(0.4+i*0.08)+'" title="'+v+' signups"></div>';}).join('');
-  document.getElementById('taskChart').innerHTML=td.map(function(v,i){var h=Math.max(8,Math.round((v/m2)*100));return '<div style="flex:1;background:var(--green);border-radius:4px 4px 0 0;height:'+h+'%;opacity:'+(0.4+i*0.08)+'" title="'+v+' tasks"></div>';}).join('');
-  document.getElementById('peakHours').innerHTML=['6am','9am','12pm','3pm','6pm','9pm'].map(function(h,i){var p=[10,25,40,30,80,60][i];return '<div class="bar-item"><div class="bar-label">'+h+'</div><div class="bar-track"><div class="bar-fill" style="width:'+p+'%"></div></div><div class="bar-val">'+p+'%</div></div>';}).join('');
-  document.getElementById('neighbourhoods').innerHTML=['Toronto','Vancouver','Montreal','Calgary','Halifax'].map(function(n,i){var p=[90,70,60,45,30][i];return '<div class="bar-item"><div class="bar-label" style="width:110px">'+n+'</div><div class="bar-track"><div class="bar-fill" style="width:'+p+'%"></div></div></div>';}).join('');
+  adminBars('signupChart','signupAxis',adminSeries(users,'created_at',8,7,false),'var(--primary)','signups');
+  adminBars('taskChart','taskAxis',adminSeries(tasks,'created_at',8,7,false),'var(--green)','gigs');
+  // Posting hour in Alberta time, grouped into 3-hour slots.
+  var slots=['12am','3am','6am','9am','12pm','3pm','6pm','9pm'],cnt=[0,0,0,0,0,0,0,0],fmt=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Edmonton',hour:'numeric',hourCycle:'h23'});
+  (tasks||[]).forEach(function(t){var d=adminWhen(t.created_at);if(!d) return;cnt[Math.floor(Number(fmt.format(d))/3)%8]++;});
+  var total=cnt.reduce(function(a,b){return a+b;},0),max=Math.max.apply(null,cnt)||1;
+  document.getElementById('peakHours').innerHTML=total?slots.map(function(h,i){return '<div class="bar-item"><div class="bar-label">'+h+'</div><div class="bar-track"><div class="bar-fill" style="width:'+Math.round(cnt[i]/max*100)+'%"></div></div><div class="bar-val">'+Math.round(cnt[i]/total*100)+'%</div></div>';}).join(''):'<div class="admin-empty">No gigs posted yet</div>';
+  var priced=(tasks||[]).map(function(t){return Number(t.budget||t.hourly_rate||0);}).filter(function(n){return n>0;});
+  var avg=priced.length?priced.reduce(function(a,b){return a+b;},0)/priced.length:0;
+  document.getElementById('avgGigValue').textContent='$'+Math.round(avg);
+  document.getElementById('avgGigSub').textContent='CAD per gig, across '+priced.length+' gig'+(priced.length===1?'':'s');
+  var cities={};
+  (tasks||[]).forEach(function(t){var c=String(t.location||'').split(',')[0].trim();if(!c||/remote/i.test(c)) return;cities[c]=(cities[c]||0)+1;});
+  var top=Object.keys(cities).map(function(k){return {c:k,n:cities[k]};}).sort(function(a,b){return b.n-a.n;}).slice(0,5),cm=top.length?top[0].n:1;
+  document.getElementById('neighbourhoods').innerHTML=top.length?top.map(function(x){return '<div class="bar-item"><div class="bar-label" style="width:110px">'+adminEsc(x.c)+'</div><div class="bar-track"><div class="bar-fill" style="width:'+Math.round(x.n/cm*100)+'%"></div></div><div class="bar-val">'+x.n+'</div></div>';}).join(''):'<div class="admin-empty">No gigs posted yet</div>';
 }
 
 window.showSection=function(section,btn){
@@ -1278,8 +1363,32 @@ window.viewDispute=function(id){var d=disputes.find(function(x){return String(x.
 window.resolveDispute=function(id){var d=disputes.find(function(x){return String(x.dispute_id||x.id)===String(id);});if(!d) return;openModal('Resolve dispute','Mark dispute as resolved?','','Mark resolved','success',async function(){if(typeof callAdminConsole!=='function') return false;var did=String(d.dispute_id||d.id);var result=await callAdminConsole('dispute_status',{dispute_id:did,status:'resolved'});if(!result||!result.success){showToast('Could not resolve dispute','red');return false;}d.status='resolved';d.resolved_at=new Date().toISOString();renderDisputes();var open=disputes.filter(function(x){return (x.status||'open')==='open';}).length;document.getElementById('statDisputes').textContent=open;document.getElementById('disputeBadge').textContent=open;if(open===0){document.getElementById('alertBanner').style.display='none';}showToast('Dispute resolved','green');},true);};
 
 function renderNotifications(){
-  var notifs=[{title:'Open dispute',text:'Box braids task — Priya N. vs Sarah K.',time:'2hr ago',unread:true},{title:'Open dispute',text:'Moving task — Marcus L. vs David T.',time:'5hr ago',unread:true},{title:'Fraud attempt',text:'Phone sharing blocked — James O.',time:'2hr ago',unread:true},{title:'New signup',text:'Priya N. joined as Both',time:'1 day ago',unread:false},{title:'Warning issued',text:'Aisha M. received a warning',time:'2 days ago',unread:false}];
-  document.getElementById('notifList').innerHTML=notifs.map(function(n){return '<div class="notif-item'+(n.unread?' unread':'')+'"><div class="notif-item-title">'+adminEsc(n.title)+'</div><div class="notif-item-text">'+adminEsc(n.text)+'</div><div class="notif-item-time">'+adminEsc(n.time)+'</div></div>';}).join('');
+  var n=[], dayAgo=Date.now()-86400000;
+  (disputes||[]).filter(function(d){var st=String(d.status||'open').toLowerCase();return st!=='resolved'&&st!=='closed';}).forEach(function(d){
+    var when=adminWhen(d.created_at);
+    n.push({title:'Open dispute',text:(d.task_title||adminTaskTitle(d.task_id))+(d.reason?': '+d.reason:''),d:when,unread:true});
+  });
+  (reports||[]).filter(function(r){var st=String(r.status||'open').toLowerCase();return st==='open'||st==='pending'||st==='new';}).forEach(function(r){
+    n.push({title:'Report to review',text:(r.target_label||r.target_type||'Content')+(r.reason?': '+r.reason:''),d:adminWhen(r.created_at),unread:true});
+  });
+  var blocks=(window.contactBlocks||[]).filter(function(b){var d=adminWhen(b.created_at);return d&&d.getTime()>=dayAgo;});
+  if(blocks.length){
+    var who={};blocks.forEach(function(b){who[b.user_id]=(who[b.user_id]||0)+1;});
+    var top=Object.keys(who).sort(function(a,b){return who[b]-who[a];})[0];
+    n.push({title:'Contact sharing blocked',text:blocks.length+' attempt'+(blocks.length===1?'':'s')+' in 24 hrs, most by '+adminUserName(top)+' ('+who[top]+')',d:adminWhen(blocks[0].created_at),unread:blocks.length>=3});
+  }
+  (payments||[]).forEach(function(p){
+    if(String(p.status||'').toLowerCase()!=='held') return;
+    var t=(tasks||[]).find(function(x){return String(x.task_id||x.id)===String(p.task_id);});
+    if(t&&String(t.status||'').toLowerCase()==='completed') n.push({title:'Payout stuck',text:'Gig completed but $'+Number(p.amount||0).toFixed(2)+' still held: '+(t.title||'gig'),d:adminWhen(p.created_at),unread:true});
+  });
+  n.sort(function(a,b){return (b.d||0)-(a.d||0);});
+  var unread=n.filter(function(x){return x.unread;}).length;
+  var dot=document.querySelector('.notif-btn .notif-dot');
+  if(dot) dot.style.display=unread?'':'none';
+  var box=document.getElementById('notifList');
+  if(!n.length){box.innerHTML='<div class="notif-item"><div class="notif-item-text">Nothing needs your attention</div></div>';return;}
+  box.innerHTML=n.slice(0,15).map(function(x){return '<div class="notif-item'+(x.unread?' unread':'')+'"><div class="notif-item-title">'+adminEsc(x.title)+'</div><div class="notif-item-text">'+adminEsc(x.text)+'</div><div class="notif-item-time">'+(x.d?adminEsc(adminAgo(x.d)):'')+'</div></div>';}).join('');
 }
 
 function openModal(title,sub,fields,confirmLabel,confirmClass,onConfirm,showNote){
