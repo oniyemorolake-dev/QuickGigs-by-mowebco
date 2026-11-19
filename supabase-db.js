@@ -3121,7 +3121,7 @@ function notifyChatRecipientAsync(convId, senderId, preview) {
       var senderName = typeof getUserNameByFirebaseUid === 'function'
         ? await getUserNameByFirebaseUid(senderId)
         : 'a SwiftGigs member';
-      var chatLink = 'https://quickgigs.ca/chat.html?conv=' + encodeURIComponent(convId);
+      var chatLink = 'https://swiftgigs.ca/chat.html?conv=' + encodeURIComponent(convId);
       if (typeof notifyNewChatMessage === 'function') {
         // Do not fetch other users' email on the client — queue by user_id only.
         await notifyNewChatMessage(recipientId, '', {
@@ -4782,7 +4782,7 @@ async function unlockChatForTask(taskId, posterId, workerId) {
     try {
       var title = taskRow ? (taskRow.title || taskRow.TITLE || '') : (conv.task_title || '');
       var unlockRule = (window.QG_CONFIG && window.QG_CONFIG.chatUnlockAfter) || 'accept';
-      var chatLink = 'https://quickgigs.ca/chat.html?conv=' + encodeURIComponent(String(conv.conv_id));
+      var chatLink = 'https://swiftgigs.ca/chat.html?conv=' + encodeURIComponent(String(conv.conv_id));
       if (unlockRule === 'payment') {
         await notifyTaskFunded(workerId, '', {
           taskTitle: title,

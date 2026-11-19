@@ -119,7 +119,7 @@ export async function settleTip(
           type: 'tip_received',
           subject: `You got a ${dollars} tip`,
           body_text: `The poster of "${task?.title || 'your gig'}" sent you a ${dollars} tip. All of it is yours and it is in your SwiftGigs balance now.`,
-          payload: { link: 'https://quickgigs.ca/profile.html#earnings', tip_id: tipId, amount_cents: cents },
+          payload: { link: 'https://swiftgigs.ca/profile.html#earnings', tip_id: tipId, amount_cents: cents },
         });
       }
     } catch (noteErr) {

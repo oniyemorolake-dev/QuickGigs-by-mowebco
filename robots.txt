@@ -9,4 +9,4 @@ Disallow: /admin.html
 Disallow: /admin-login.html
 Disallow: /review.html
 
-Sitemap: https://quickgigs.ca/sitemap.xml
+Sitemap: https://swiftgigs.ca/sitemap.xml

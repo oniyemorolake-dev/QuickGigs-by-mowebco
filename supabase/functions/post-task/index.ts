@@ -77,8 +77,8 @@ async function notifyMatchingTaskers(supabase: SupabaseClient, task: TaskRow) {
   const location = String(task.location || '');
   const budget = Number(task.budget) || 0;
   const link = taskId
-    ? `https://quickgigs.ca/browsetask.html?task=${encodeURIComponent(taskId)}`
-    : 'https://quickgigs.ca/browsetask.html';
+    ? `https://swiftgigs.ca/browsetask.html?task=${encodeURIComponent(taskId)}`
+    : 'https://swiftgigs.ca/browsetask.html';
 
   const { data: candidates, error } = await supabase
     .from('users')

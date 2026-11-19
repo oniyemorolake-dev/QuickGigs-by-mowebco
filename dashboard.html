@@ -6,7 +6,7 @@
 <title>Home — SwiftGigs</title>
 <meta name="description" content="Your SwiftGigs dashboard for posting tasks and finding work as a tasker.">
 <meta name="robots" content="noindex,nofollow">
-<link rel="canonical" href="https://quickgigs.ca/dashboard.html">
+<link rel="canonical" href="https://swiftgigs.ca/dashboard.html">
 <link rel="manifest" href="/manifest.json?v=4">
 <link rel="apple-touch-icon" href="/QuickGigsLogo.png" sizes="180x180">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -629,7 +629,7 @@
         var title = n.title || '';
         var body = n.body || n.message || title || '';
         var link = n.link || n.url || '';
-        if (link && link.indexOf('quickgigs.ca/') >= 0) {
+        if (link && link.indexOf('swiftgigs.ca/') >= 0) {
           link = link.replace(/^https?:\/\/(www\.)?quickgigs\.ca\//i, '');
         }
         var when = payDate(n);

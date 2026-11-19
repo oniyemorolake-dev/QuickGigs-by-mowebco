@@ -210,7 +210,7 @@ Deno.serve(async (req) => {
         guardian_email: guardianEmail,
         application_id: String(data.app_id),
       });
-      const siteUrl = (Deno.env.get('SITE_URL') || 'https://quickgigs.ca').replace(/\/$/, '');
+      const siteUrl = (Deno.env.get('SITE_URL') || 'https://swiftgigs.ca').replace(/\/$/, '');
       const queueUrl = `${siteUrl}/guardian-portal.html?token=${encodeURIComponent(token)}`;
       try {
         await emailGuardian(guardianEmail, String(actor.name || 'Your teen'), String(task.title || 'a gig'), queueUrl);

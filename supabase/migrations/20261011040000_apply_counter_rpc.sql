@@ -197,8 +197,8 @@ BEGIN
     RETURN;
   END IF;
 
-  link_posted := 'https://quickgigs.ca/mytasks.html?tab=posted&expand=' || task_id_text;
-  link_applied := 'https://quickgigs.ca/mytasks.html?tab=applied&expand=' || task_id_text;
+  link_posted := 'https://swiftgigs.ca/mytasks.html?tab=posted&expand=' || task_id_text;
+  link_applied := 'https://swiftgigs.ca/mytasks.html?tab=applied&expand=' || task_id_text;
   gs := lower(coalesce(newj->>'guardian_status', 'approved'));
   old_gs := lower(coalesce(oldj->>'guardian_status', ''));
   new_st := lower(coalesce(newj->>'status', 'pending'));
@@ -251,9 +251,9 @@ BEGIN
     PERFORM public.qg_notify_user(
       worker, 'application_declined', 'Application declined',
       'Your application for ' || title || ' was not accepted.',
-      'https://quickgigs.ca/browsetask.html', 'Update on ' || title,
+      'https://swiftgigs.ca/browsetask.html', 'Update on ' || title,
       'Your application for ' || title || ' was not accepted.',
-      payload || jsonb_build_object('link', 'https://quickgigs.ca/browsetask.html')
+      payload || jsonb_build_object('link', 'https://swiftgigs.ca/browsetask.html')
     );
   END IF;
 

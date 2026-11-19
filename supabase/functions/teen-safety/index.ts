@@ -91,7 +91,7 @@ async function queueGuardianEmail(
           from: Deno.env.get('FROM_EMAIL') || 'SwiftGigs <notifications@quickgigs.ca>',
           to: [email],
           subject: opts.subject,
-          text: opts.body + '\n\n— SwiftGigs\nhttps://quickgigs.ca',
+          text: opts.body + '\n\n— SwiftGigs\nhttps://swiftgigs.ca',
         }),
       });
       await supabase

@@ -30,7 +30,7 @@ window.QG_CONFIG = {
   postTaskUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/post-task',
   geocodeCanadaUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/geocode-canada',
   submitApplicationUrl: 'https://nuyfqsxstsrbloztzgau.supabase.co/functions/v1/submit-application',
-  shareBaseUrl: 'https://quickgigs.ca',
+  shareBaseUrl: 'https://swiftgigs.ca',
   // Google Analytics 4 — set to G-XXXXXXXXXX to disable, or your live Measurement ID
   ga4MeasurementId: 'G-82SPKK654N',
   ga4ConversionLabel: '',

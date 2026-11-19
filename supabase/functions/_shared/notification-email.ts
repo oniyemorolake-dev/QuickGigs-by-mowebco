@@ -12,7 +12,7 @@ export type BuiltEmail = {
   html: string;
 };
 
-const SITE = 'https://quickgigs.ca';
+const SITE = 'https://swiftgigs.ca';
 const PREFS_URL = `${SITE}/profile.html`;
 const SUPPORT = 'support@quickgigs.ca';
 const BRAND = '#6b3fa0';
@@ -102,7 +102,7 @@ function wrapHtml(opts: {
           <tr>
             <td style="padding:16px 24px 22px;border-top:1px solid #f0eef8;">
               <p style="margin:0;font-size:11px;line-height:1.5;color:#9a91b8;font-family:Arial,Helvetica,sans-serif;text-align:center;">
-                SwiftGigs · Canada · <a href="${SITE}" style="color:${BRAND};text-decoration:none;">quickgigs.ca</a>
+                SwiftGigs · Canada · <a href="${SITE}" style="color:${BRAND};text-decoration:none;">swiftgigs.ca</a>
               </p>
             </td>
           </tr>

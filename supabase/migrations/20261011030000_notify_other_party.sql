@@ -125,8 +125,8 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  link_posted := 'https://quickgigs.ca/mytasks.html?tab=posted&expand=' || task_id_text;
-  link_applied := 'https://quickgigs.ca/mytasks.html?tab=applied&expand=' || task_id_text;
+  link_posted := 'https://swiftgigs.ca/mytasks.html?tab=posted&expand=' || task_id_text;
+  link_applied := 'https://swiftgigs.ca/mytasks.html?tab=applied&expand=' || task_id_text;
   gs := lower(coalesce(newj->>'guardian_status', 'approved'));
   old_gs := lower(coalesce(oldj->>'guardian_status', ''));
   new_st := lower(coalesce(newj->>'status', 'pending'));
@@ -201,10 +201,10 @@ BEGIN
       'application_declined',
       'Application declined',
       'Your application for “' || title || '” was not accepted.',
-      'https://quickgigs.ca/browsetask.html',
+      'https://swiftgigs.ca/browsetask.html',
       'Update on “' || title || '”',
       'Your application for “' || title || '” was not accepted. Browse other gigs on SwiftGigs.',
-      payload || jsonb_build_object('link', 'https://quickgigs.ca/browsetask.html')
+      payload || jsonb_build_object('link', 'https://swiftgigs.ca/browsetask.html')
     );
   END IF;
 
@@ -307,7 +307,7 @@ BEGIN
     WHEN left(NEW.body, 5) = '[img]' THEN 'Photo'
     ELSE left(btrim(NEW.body), 80)
   END;
-  link := 'https://quickgigs.ca/messages.html?conv=' || conv_id_text;
+  link := 'https://swiftgigs.ca/messages.html?conv=' || conv_id_text;
 
   PERFORM public.qg_notify_user(
     recipient,
@@ -361,7 +361,7 @@ BEGIN
   poster := coalesce(NEW.posted_by, '');
   title := coalesce(nullif(btrim(NEW.title), ''), 'your task');
   task_id_text := NEW.task_id::text;
-  link := 'https://quickgigs.ca/mytasks.html?tab=completed';
+  link := 'https://swiftgigs.ca/mytasks.html?tab=completed';
 
   SELECT a.worker_id INTO worker
   FROM public.applications a
@@ -434,7 +434,7 @@ BEGIN
         END IF;
         title := coalesce(nullif(btrim(NEW.task_title), ''), 'your task');
         conv_id_text := NEW.conv_id::text;
-        link := 'https://quickgigs.ca/messages.html?conv=' || conv_id_text;
+        link := 'https://swiftgigs.ca/messages.html?conv=' || conv_id_text;
         payload := jsonb_build_object(
           'taskTitle', title,
           'taskId', NEW.task_id::text,

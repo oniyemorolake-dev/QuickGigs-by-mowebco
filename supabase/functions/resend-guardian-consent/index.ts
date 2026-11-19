@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
 
     const resendKey = Deno.env.get('RESEND_API_KEY') || '';
     if (!resendKey) throw new Error('resend_not_configured');
-    const siteUrl = (Deno.env.get('SITE_URL') || 'https://quickgigs.ca').replace(/\/$/, '');
+    const siteUrl = (Deno.env.get('SITE_URL') || 'https://swiftgigs.ca').replace(/\/$/, '');
     const consentUrl = `${siteUrl}/parent-consent.html?token=${encodeURIComponent(token)}`;
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',

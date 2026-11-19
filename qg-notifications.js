@@ -12,7 +12,7 @@
       body: function (p) {
         return (p.workerName || 'A tasker') + ' applied to your task “' + (p.taskTitle || '') + '”' +
           (p.offer ? ' with an offer of $' + p.offer : '') + '.\n\nOpen SwiftGigs to review applicants:\n' +
-          (p.link || 'https://quickgigs.ca/mytasks.html?tab=posted');
+          (p.link || 'https://swiftgigs.ca/mytasks.html?tab=posted');
       }
     },
     application_declined: {
@@ -20,7 +20,7 @@
       body: function (p) {
         return 'Your application for “' + (p.taskTitle || 'a task') +
           '” was not accepted.\n\nBrowse other gigs:\n' +
-          (p.link || 'https://quickgigs.ca/browsetask.html');
+          (p.link || 'https://swiftgigs.ca/browsetask.html');
       }
     },
     application_accepted: {
@@ -28,7 +28,7 @@
       body: function (p) {
         return 'Great news — ' + (p.posterName || 'The poster') + ' accepted your application for “' +
           (p.taskTitle || '') + '”.\n\nHead to My Tasks to message them and get started:\n' +
-          (p.link || 'https://quickgigs.ca/mytasks.html?tab=inprogress');
+          (p.link || 'https://swiftgigs.ca/mytasks.html?tab=inprogress');
       }
     },
     task_completed: {
@@ -36,7 +36,7 @@
       body: function (p) {
         return '“' + (p.taskTitle || 'Your task') + '” was marked complete on SwiftGigs.\n\n' +
           'Please leave a review to help the community:\n' +
-          (p.link || 'https://quickgigs.ca/mytasks.html?tab=completed');
+          (p.link || 'https://swiftgigs.ca/mytasks.html?tab=completed');
       }
     },
     new_message: {
@@ -46,7 +46,7 @@
         return (p.senderName || 'Someone') + ' sent you a message' +
           (p.taskTitle ? ' about “' + p.taskTitle + '”' : '') +
           '.\n\nOpen SwiftGigs to read and reply:\n' +
-          (p.link || 'https://quickgigs.ca/messages.html');
+          (p.link || 'https://swiftgigs.ca/messages.html');
       }
     },
     guardian_consent: {
@@ -54,7 +54,7 @@
       body: function (p) {
         return 'Hi,\n\n' + (p.teenName || 'Your teen') + ' signed up for SwiftGigs and listed you as their parent/guardian.\n\n' +
           'Because they are 16 or 17, we need your approval before they can post or apply to tasks.\n\n' +
-          'Approve their account here:\n' + (p.consentUrl || 'https://quickgigs.ca/parent-consent.html') + '\n\n' +
+          'Approve their account here:\n' + (p.consentUrl || 'https://swiftgigs.ca/parent-consent.html') + '\n\n' +
           'If you did not authorize this, ignore this email or contact support@quickgigs.ca.\n\n— SwiftGigs';
       }
     },
@@ -62,7 +62,7 @@
       subject: function (p) { return 'Chat unlocked for “' + (p.taskTitle || 'your task') + '”'; },
       body: function (p) {
         return 'You can message about “' + (p.taskTitle || 'your task') + '” now:\n' +
-          (p.link || 'https://quickgigs.ca/messages.html');
+          (p.link || 'https://swiftgigs.ca/messages.html');
       }
     },
     task_funded: {
@@ -70,7 +70,7 @@
       body: function (p) {
         return 'Payment is secured for “' + (p.taskTitle || 'your task') +
           '”. You can message the other party now:\n' +
-          (p.link || 'https://quickgigs.ca/messages.html');
+          (p.link || 'https://swiftgigs.ca/messages.html');
       }
     },
     guardian_pending: {
@@ -78,14 +78,14 @@
       body: function (p) {
         return 'Ask ' + (p.guardianName || 'your parent/guardian') +
           ' to approve your SwiftGigs account before you can apply or post.\n\n' +
-          (p.link || 'https://quickgigs.ca/dashboard.html');
+          (p.link || 'https://swiftgigs.ca/dashboard.html');
       }
     },
     guardian_approved: {
       subject: function () { return 'Your SwiftGigs account was approved' },
       body: function (p) {
         return 'Great news — your parent/guardian approved your account. You can apply to gigs now.\n\n' +
-          (p.link || 'https://quickgigs.ca/dashboard.html');
+          (p.link || 'https://swiftgigs.ca/dashboard.html');
       }
     },
     waitlist_invite: {
@@ -93,7 +93,7 @@
       body: function (p) {
         return 'Hi,\n\nYou\'re on the SwiftGigs waitlist — we\'re ready for you to join the beta.\n\n' +
           'SwiftGigs is Canada\'s marketplace for everyday tasks. Post a gig or earn helping others in your community.\n\n' +
-          'Create your free account here:\n' + (p.link || 'https://quickgigs.ca/signup.html') + '\n\n' +
+          'Create your free account here:\n' + (p.link || 'https://swiftgigs.ca/signup.html') + '\n\n' +
           'See you on SwiftGigs,\n— The SwiftGigs team';
       }
     },
@@ -101,7 +101,7 @@
       subject: function () { return 'Reminder: your SwiftGigs beta invite is waiting'; },
       body: function (p) {
         return 'Hi,\n\nJust a friendly reminder — your SwiftGigs beta invite is still open.\n\n' +
-          'Sign up free and start posting tasks or browsing gigs:\n' + (p.link || 'https://quickgigs.ca/signup.html') + '\n\n' +
+          'Sign up free and start posting tasks or browsing gigs:\n' + (p.link || 'https://swiftgigs.ca/signup.html') + '\n\n' +
           '— SwiftGigs';
       }
     },
@@ -110,7 +110,7 @@
       body: function (p) {
         return (p.posterName || 'The poster') + ' countered your application at $' + (p.amount || '?') +
           ' for “' + (p.taskTitle || '') + '”.\n\nAccept, decline, or counter back in My Tasks:\n' +
-          (p.link || 'https://quickgigs.ca/mytasks.html?tab=applied');
+          (p.link || 'https://swiftgigs.ca/mytasks.html?tab=applied');
       }
     },
     counter_offer_reply: {
@@ -118,7 +118,7 @@
       body: function (p) {
         return (p.workerName || 'A tasker') + ' countered back at $' + (p.amount || '?') +
           ' on “' + (p.taskTitle || '') + '”.\n\nReview in My Tasks → Posted:\n' +
-          (p.link || 'https://quickgigs.ca/mytasks.html?tab=posted');
+          (p.link || 'https://swiftgigs.ca/mytasks.html?tab=posted');
       }
     },
     counter_offer_accepted: {
@@ -126,7 +126,7 @@
       body: function (p) {
         return (p.partyName || 'They') + ' accepted $' + (p.amount || '?') +
           ' for “' + (p.taskTitle || '') + '”.\n\nOpen SwiftGigs to continue:\n' +
-          (p.link || 'https://quickgigs.ca/mytasks.html');
+          (p.link || 'https://swiftgigs.ca/mytasks.html');
       }
     },
     task_removed_admin: {
@@ -141,7 +141,7 @@
       body: function (p) {
         return 'Hi,\n\nA task you applied to was removed by SwiftGigs moderation.\n\nTask: “' + (p.taskTitle || '') +
           '”\nReason: ' + (p.reason || 'Not specified') + '\n\nBrowse other gigs:\n' +
-          (p.link || 'https://quickgigs.ca/browsetask.html') + '\n\n— SwiftGigs';
+          (p.link || 'https://swiftgigs.ca/browsetask.html') + '\n\n— SwiftGigs';
       }
     },
     new_gig_match: {
@@ -150,7 +150,7 @@
         return 'A new SwiftGigs task matches your alerts:\n\n“' + (p.taskTitle || '') + '”\n' +
           (p.location || 'Near you') + (p.budget ? ' · $' + p.budget : '') +
           (p.distanceKm != null ? '\nAbout ' + p.distanceKm + ' km away' : '') +
-          '\n\nOpen the gig:\n' + (p.link || 'https://quickgigs.ca/browsetask.html') +
+          '\n\nOpen the gig:\n' + (p.link || 'https://swiftgigs.ca/browsetask.html') +
           '\n\nManage alerts in your Tasker profile settings.\n\n— SwiftGigs';
       }
     },
@@ -324,7 +324,7 @@
         taskId: taskId,
         workerName: application && (application.worker_name || application.WORKER_NAME),
         offer: application && (application.price || application.PRICE),
-        link: 'https://quickgigs.ca/mytasks.html?tab=posted' + (taskId ? '&expand=' + encodeURIComponent(taskId) : '')
+        link: 'https://swiftgigs.ca/mytasks.html?tab=posted' + (taskId ? '&expand=' + encodeURIComponent(taskId) : '')
       }
     });
   }
@@ -338,7 +338,7 @@
       payload: {
         taskTitle: titled(task && (task.title || task.TITLE)),
         posterName: posterName,
-        link: 'https://quickgigs.ca/mytasks.html?tab=inprogress'
+        link: 'https://swiftgigs.ca/mytasks.html?tab=inprogress'
       }
     });
   }
@@ -349,8 +349,8 @@
     var convId = payload.convId || '';
     var link = payload.link ||
       (convId
-        ? 'https://quickgigs.ca/chat.html?conv=' + encodeURIComponent(convId)
-        : 'https://quickgigs.ca/messages.html');
+        ? 'https://swiftgigs.ca/chat.html?conv=' + encodeURIComponent(convId)
+        : 'https://swiftgigs.ca/messages.html');
     return queueEmailNotification({
       type: 'task_funded',
       userId: workerId,
@@ -374,7 +374,7 @@
       inAppOnly: true,
       payload: {
         guardianName: payload.guardianName,
-        link: payload.link || 'https://quickgigs.ca/dashboard.html'
+        link: payload.link || 'https://swiftgigs.ca/dashboard.html'
       }
     });
   }
@@ -388,7 +388,7 @@
       email: '',
       inAppOnly: true,
       payload: {
-        link: payload.link || 'https://quickgigs.ca/dashboard.html'
+        link: payload.link || 'https://swiftgigs.ca/dashboard.html'
       }
     });
   }
@@ -402,7 +402,7 @@
       payload: {
         taskTitle: titled(task && (task.title || task.TITLE)),
         role: role,
-        link: 'https://quickgigs.ca/mytasks.html?tab=completed'
+        link: 'https://swiftgigs.ca/mytasks.html?tab=completed'
       }
     });
   }
@@ -418,14 +418,14 @@
         senderName: payload.senderName,
         taskTitle: titled(payload.taskTitle),
         preview: payload.preview,
-        link: payload.link || 'https://quickgigs.ca/messages.html'
+        link: payload.link || 'https://swiftgigs.ca/messages.html'
       }
     });
   }
 
   async function sendWaitlistEmail(email, type) {
     if (!email) return { success: false, error: 'missing_email' };
-    var base = (window.QG_CONFIG && window.QG_CONFIG.shareBaseUrl) || 'https://quickgigs.ca';
+    var base = (window.QG_CONFIG && window.QG_CONFIG.shareBaseUrl) || 'https://swiftgigs.ca';
     return queueEmailNotification({
       type: type,
       userId: 'waitlist:' + email,
@@ -465,7 +465,7 @@
         amount: payload.amount,
         posterName: payload.posterName,
         partyName: payload.posterName || 'The poster',
-        link: 'https://quickgigs.ca/mytasks.html?tab=applied' + (taskId ? '&expand=' + encodeURIComponent(taskId) : '')
+        link: 'https://swiftgigs.ca/mytasks.html?tab=applied' + (taskId ? '&expand=' + encodeURIComponent(taskId) : '')
       }
     });
   }
@@ -485,7 +485,7 @@
         amount: payload.amount,
         workerName: payload.workerName,
         partyName: payload.workerName || 'The tasker',
-        link: 'https://quickgigs.ca/mytasks.html?tab=posted' + (taskId ? '&expand=' + encodeURIComponent(taskId) : '')
+        link: 'https://swiftgigs.ca/mytasks.html?tab=posted' + (taskId ? '&expand=' + encodeURIComponent(taskId) : '')
       }
     });
   }
@@ -504,7 +504,7 @@
         payload: {
           taskTitle: taskTitle,
           reason: reason,
-          link: 'https://quickgigs.ca/mytasks.html?tab=posted'
+          link: 'https://swiftgigs.ca/mytasks.html?tab=posted'
         }
       });
     }
@@ -525,7 +525,7 @@
         payload: {
           taskTitle: taskTitle,
           reason: reason,
-          link: 'https://quickgigs.ca/mytasks.html?tab=applied'
+          link: 'https://swiftgigs.ca/mytasks.html?tab=applied'
         }
       });
     }

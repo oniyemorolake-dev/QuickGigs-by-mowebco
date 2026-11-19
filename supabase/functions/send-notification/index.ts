@@ -25,8 +25,8 @@ function pushUrl(type: string, payload: NotifPayload): string {
   const link = String((payload as Record<string, unknown>).link || '');
   try {
     if (link) {
-      const u = new URL(link, 'https://quickgigs.ca');
-      if (u.hostname === 'quickgigs.ca' || u.hostname === 'www.quickgigs.ca') return u.pathname + u.search + u.hash;
+      const u = new URL(link, 'https://swiftgigs.ca');
+      if (['swiftgigs.ca', 'www.swiftgigs.ca', 'quickgigs.ca', 'www.quickgigs.ca'].indexOf(u.hostname) >= 0) return u.pathname + u.search + u.hash;
     }
   } catch { /* fall through to the default */ }
   const byType: Record<string, string> = {

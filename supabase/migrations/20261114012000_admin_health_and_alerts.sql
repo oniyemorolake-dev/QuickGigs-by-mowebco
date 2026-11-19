@@ -130,11 +130,11 @@ begin
   end if;
 
   body := 'SwiftGigs needs a look:' || E'\n\n- ' || array_to_string(problems, E'\n- ')
-       || E'\n\nOpen Launch control: https://quickgigs.ca/admin.html';
+       || E'\n\nOpen Launch control: https://swiftgigs.ca/admin.html';
 
   insert into public.notification_queue (user_id, email, type, subject, body_text, payload)
   select a.user_id, u.email, 'admin_alert', 'SwiftGigs alert: ' || problems[1], body,
-         jsonb_build_object('link', 'https://quickgigs.ca/admin.html', 'problems', to_jsonb(problems))
+         jsonb_build_object('link', 'https://swiftgigs.ca/admin.html', 'problems', to_jsonb(problems))
     from public.admins a
     join public.users u on u.firebase_uid = a.user_id
    where coalesce(u.email, '') <> '';

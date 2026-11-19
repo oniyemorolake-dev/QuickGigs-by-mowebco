@@ -1,6 +1,6 @@
 // SwiftGigs — Stripe Checkout for accepted task (poster pays)
 // Deploy: supabase functions deploy create-checkout --no-verify-jwt
-// Secrets: STRIPE_SECRET_KEY, SITE_URL (https://quickgigs.ca), SUPABASE_SERVICE_ROLE_KEY
+// Secrets: STRIPE_SECRET_KEY, SITE_URL (https://swiftgigs.ca), SUPABASE_SERVICE_ROLE_KEY
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';

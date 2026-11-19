@@ -200,7 +200,7 @@ Deno.serve(async (req) => {
     const needsStripe = ['start_tasker_id_check', 'sync_tasker_id_check', 'start_poster', 'sync_poster'].includes(action);
     if (needsStripe && !stripeKey) return json({ ok: false, error: 'stripe_not_configured' }, 503);
     const stripe = needsStripe ? new Stripe(stripeKey, { apiVersion: '2023-10-16' }) : null;
-    const siteUrl = (Deno.env.get('SITE_URL') || 'https://quickgigs.ca').replace(/\/$/, '');
+    const siteUrl = (Deno.env.get('SITE_URL') || 'https://swiftgigs.ca').replace(/\/$/, '');
 
     if (action === 'start_tasker_id_check') {
       if (!stripe) return json({ ok: false, error: 'stripe_not_configured' }, 503);

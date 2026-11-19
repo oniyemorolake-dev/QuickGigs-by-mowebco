@@ -126,7 +126,7 @@
   }
 
   function continueUrl() {
-    return 'https://quickgigs.ca/dashboard.html';
+    return 'https://swiftgigs.ca/dashboard.html';
   }
 
   var sendInFlight = {};

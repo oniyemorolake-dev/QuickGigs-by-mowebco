@@ -298,7 +298,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const siteUrl = (Deno.env.get('SITE_URL') || 'https://quickgigs.ca').replace(/\/$/, '');
+    const siteUrl = (Deno.env.get('SITE_URL') || 'https://swiftgigs.ca').replace(/\/$/, '');
     // Answer Stripe's "business details" screen for the tasker (industry, website,
     // product description) so they only see identity + bank questions.
     try {

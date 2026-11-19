@@ -504,7 +504,7 @@ Deno.serve(async (req) => {
           : await supabase.from('waitlist').insert({ email, ...patch }).select().maybeSingle();
         if (saved.error || !saved.data) return json({ success: false, error: 'save_failed' }, 500);
 
-        const siteUrl = (Deno.env.get('SITE_URL') || 'https://quickgigs.ca').replace(/\/$/, '');
+        const siteUrl = (Deno.env.get('SITE_URL') || 'https://swiftgigs.ca').replace(/\/$/, '');
         const link = siteUrl + '/signup.html?ref=waitlist';
         const queued = await supabase.from('notification_queue').insert({
           user_id: 'waitlist:' + email,

@@ -7,17 +7,17 @@
 <title>Sign up — SwiftGigs</title>
 <meta name="description" content="Create a free SwiftGigs account to hire local help or earn money doing tasks in Calgary, Edmonton, and beyond.">
 <meta name="robots" content="index,follow">
-<link rel="canonical" href="https://quickgigs.ca/signup.html">
+<link rel="canonical" href="https://swiftgigs.ca/signup.html">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://quickgigs.ca/signup.html">
+<meta property="og:url" content="https://swiftgigs.ca/signup.html">
 <meta property="og:title" content="Sign up — SwiftGigs">
 <meta property="og:description" content="Create a free SwiftGigs account to hire local help or earn money doing tasks in Calgary, Edmonton, and beyond.">
-<meta property="og:image" content="https://quickgigs.ca/sg-og.jpg">
+<meta property="og:image" content="https://swiftgigs.ca/sg-og.jpg">
 <meta property="og:locale" content="en_CA">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Sign up — SwiftGigs">
 <meta name="twitter:description" content="Create a free SwiftGigs account to hire local help or earn money doing tasks in Calgary, Edmonton, and beyond.">
-<meta name="twitter:image" content="https://quickgigs.ca/sg-og.jpg">
+<meta name="twitter:image" content="https://swiftgigs.ca/sg-og.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com">
@@ -699,7 +699,7 @@ async function sendSignupEmailConfirmation(user) {
     if (code === 'auth/too-many-requests') return { sent: true, throttled: true };
     try {
       await sendEmailVerification(user, {
-        url: 'https://quickgigs.ca/dashboard.html',
+        url: 'https://swiftgigs.ca/dashboard.html',
         handleCodeInApp: false
       });
       return { sent: true };

@@ -283,7 +283,7 @@ Deno.serve(async (req) => {
     let consentUrl = '';
     let emailQueued = false;
     if (isTeen) {
-      const siteUrl = (Deno.env.get('SITE_URL') || 'https://quickgigs.ca').replace(/\/$/, '');
+      const siteUrl = (Deno.env.get('SITE_URL') || 'https://swiftgigs.ca').replace(/\/$/, '');
       consentUrl = `${siteUrl}/parent-consent.html?token=${encodeURIComponent(consentToken)}`;
       try {
         await sendGuardianEmail(guardianEmail, row.name || 'Your teen', consentUrl);

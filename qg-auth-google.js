@@ -7,7 +7,7 @@
       return 'Google sign-in was cancelled. Tap Continue with Google to try again.';
     }
     if (code === 'auth/popup-blocked') {
-      return 'Your browser blocked the Google window. Tap Continue with Google once more, or allow pop-ups for quickgigs.ca.';
+      return 'Your browser blocked the Google window. Tap Continue with Google once more, or allow pop-ups for swiftgigs.ca.';
     }
     if (code === 'auth/account-exists-with-different-credential') {
       return 'This email already has a password account. Log in with email and password instead.';
@@ -31,7 +31,7 @@
       return 'Google sign-in is temporarily unavailable. Try email login, or contact support@quickgigs.ca.';
     }
     if (code === 'auth/unauthorized-domain') {
-      return 'This domain is not authorized for Google sign-in. Add quickgigs.ca under Firebase → Authentication → Settings → Authorized domains.';
+      return 'This domain is not authorized for Google sign-in. Add swiftgigs.ca under Firebase → Authentication → Settings → Authorized domains.';
     }
     if (
       code === 'auth/invalid-credential' ||
@@ -47,7 +47,7 @@
 
   window.qgGoogleFirebaseSetupHint =
     'Google sign-in could not complete. Confirm Google is enabled in Firebase Authentication, ' +
-    'quickgigs.ca is an authorized domain, and try again. If it keeps failing, use email signup or contact support@quickgigs.ca.';
+    'swiftgigs.ca is an authorized domain, and try again. If it keeps failing, use email signup or contact support@quickgigs.ca.';
 
   window.qgResetGoogleBtn = function (btnId) {
     var btn = document.getElementById(btnId || 'googleLoginBtn');
@@ -58,7 +58,7 @@
 
   /**
    * Redirect sign-in is off. The Firebase sign-in page lives on a different
-   * site (firebaseapp.com) from quickgigs.ca, and Safari, every iPhone/iPad
+   * site (firebaseapp.com) from swiftgigs.ca, and Safari, every iPhone/iPad
    * browser and current Chrome block the storage it relies on. The redirect came
    * back with nobody signed in. A popup does not have that problem.
    */
@@ -75,7 +75,7 @@
     return false;
   };
   window.qgInAppBrowserMessage =
-    'Google sign-in does not work inside this app\'s built-in browser. Open quickgigs.ca in Safari or Chrome, or use your email and password here.';
+    'Google sign-in does not work inside this app\'s built-in browser. Open swiftgigs.ca in Safari or Chrome, or use your email and password here.';
 
   window.qgGetDashboardRedirect = function () {
     return typeof getDashboardUrl === 'function'

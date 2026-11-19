@@ -1432,7 +1432,7 @@ window.formatFeeBreakdownHtml = formatFeeBreakdownHtml;
         if (parsedBody && typeof parsedBody === 'object') {
           parsedBody.canHandleCodeInApp = true;
           if (!parsedBody.continueUrl && !parsedBody.continueUri) {
-            parsedBody.continueUrl = 'https://quickgigs.ca/dashboard.html';
+            parsedBody.continueUrl = 'https://swiftgigs.ca/dashboard.html';
           }
           init = Object.assign({}, init || {}, { body: JSON.stringify(parsedBody) });
           arguments[1] = init;
