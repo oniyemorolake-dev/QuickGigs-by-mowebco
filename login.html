@@ -411,6 +411,21 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     if (error.code === 'auth/user-not-found') message = 'No account found with this email. Sign up first';
     if (error.code === 'auth/wrong-password') message = 'Incorrect password. Try again.';
     if (error.code === 'auth/invalid-credential') message = 'Invalid email or password. Try again.';
+    // Anything that is not about the email or password says so, instead of
+    // blaming the password (a blocked web address looked like a wrong password).
+    var knownCred = ['auth/invalid-email','auth/user-not-found','auth/wrong-password','auth/invalid-credential','auth/invalid-login-credentials'];
+    if (error.code && knownCred.indexOf(error.code) < 0) {
+      if (/referer|referrer|api-key/i.test(String(error.code) + ' ' + String(error.message || ''))) {
+        message = 'Sign-in is not set up for this web address yet. Please try again shortly.';
+      } else if (error.code === 'auth/network-request-failed') {
+        message = 'No connection. Check your internet and try again.';
+      } else if (error.code === 'auth/too-many-requests') {
+        message = 'Too many attempts. Wait a few minutes, or reset your password.';
+      } else {
+        message = 'Could not sign in (' + String(error.code).replace('auth/', '') + '). Try again.';
+      }
+      try { if (typeof qgLogClientError === 'function') qgLogClientError('login', 0, String(error.code), String(error.message || ''), 'login.html'); } catch (eLog) {}
+    }
     errorMsg.textContent = message;
     errorMsg.style.display = 'block';
     submitBtn.textContent = 'Log in →';
